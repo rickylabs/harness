@@ -1,6 +1,8 @@
 # Research — architecture-foundation--seed
 
-**Stage B, partial.** Repo leg drafted. External leg started. Document leg not begun.
+**Stage B, complete.** Repo leg drafted (Stage A). External leg complete (§7). Document leg complete
+(§8). Corrections to earlier sections are recorded in §9 rather than by silent edit; owner forks
+surfaced by this stage are in §10.
 
 Every claim below is cited to a repository path at the baseline pinned in `supervisor.md`, or
 to a URL retrieved on 2026-08-14. Claims that could not be verified are listed in §5 as
@@ -16,13 +18,35 @@ findings requiring spikes, and are **not** inputs to any decision.
 2. **NetScript already contains the entire runtime spine** the product needs — tasks, jobs,
    workers, sagas, triggers, streams, KV persistence with optimistic concurrency, multi-runtime
    execution, and OS-service deployment. Very little needs inventing. (§3)
-3. **The doctrine ported across a total stack swap** — Deno/JSR/Aspire to Next.js/React/Sanity/bun —
-   with mechanics transferring cleanly and domain knowledge transferring not at all. (§4)
+3. **The doctrine's *artifacts* ported across a total stack swap** — Deno/JSR/Aspire to
+   Next.js/React/Sanity/bun. **Its lifecycle did not.** The host repository received templates,
+   profiles and a four-phase run loop; the nine-stage lifecycle PR #14 executed was imported from
+   NetScript by the operator at run time. This corrects the claim originally made in §4. (§4, §8.9)
 4. **The run-state ownership question is unresolved and load-bearing.** The two live
    implementations disagree, and PR #14 logged the disagreement as accepted drift rather than
-   resolving it. Every control-plane question depends on it. (§6)
-5. **The competitive middle is empty.** The two nearest products own the surfaces on either
-   side of the process substrate and neither owns the substrate. (§7)
+   resolving it. Every control-plane question depends on it — and §8.9 shows the disagreement is
+   downstream of *which lifecycle is the product*, not independent of it. (§6, §8.9)
+5. **The competitive middle is empty, and the falsification attempt failed to close it.** Nine
+   subjects examined. Every one records the *interaction* rather than the work; every gate that
+   exists gates capability or merge, never phase transition; every review inspects the diff after
+   mutation; and **not one of the nine requires evidence for a claim**. (§7)
+6. **The doctrine drifts measurably between repositories that share it.** Three different verdict
+   vocabularies across three sibling repositories, one verdict invented in flight with no upstream
+   definition, and a whole lifecycle stage lost in transcription. This is direct evidence for the
+   product's premise, produced accidentally. (§8.10, §8.11)
+7. **The reusable artifact contract has a stable core of nine files** plus run-type extensions, and
+   the mechanics that make it work are not the file list — they are the draft-ID join key, the
+   deliberate narrative/manifest redundancy, the "exists today" gate column, the negative-case proof
+   rule and the honesty rule. (§8)
+8. **The acute strategic risk is platform absorption, not standardisation.** AGENTS.md and MCP
+   standardise the layer beneath the substrate and show no trajectory toward it. GitHub already
+   holds every component needed to formalise its informal research→plan→iterate loop into an
+   enforced lifecycle. (§7.9, §10 OF-b)
+9. **"Any TypeScript project" is not currently true of the daemon.** Spike F-2 was executed. The
+   NetScript contracts and in-memory core run on Bun; the deployable worker runtime does not,
+   because `Deno.*` is called directly in runtime paths — including inside the code that selects
+   the non-Deno fallback. This is a positioning constraint to state honestly, not a bug to defer.
+   (§5.1, correcting §3.5)
 
 ---
 
@@ -137,6 +161,14 @@ restart it.
 Documented adapter fallbacks: Redis replaces Deno KV, and an in-memory scheduler replaces
 `Deno.cron`. **Not verified by execution in this run** — see §5, F-2.
 
+> **Corrected by spike F-2 — see §5.1.** Now verified by execution, and the claim only half holds.
+> Installation succeeds on both Node and Bun. Execution succeeds on Bun for the **in-memory core**
+> and fails for the **deployable runtime**, because `Deno.*` globals are called directly in runtime
+> code paths — including inside `packages/kv/application/auto-detect.ts`, which reads `Deno.env` *to
+> select the fallback provider*. The documented fallbacks therefore cannot rescue a non-Deno host.
+> Node did not execute at all on this host, blocked earlier by a transitive dependency using
+> `using` syntax that Node 22 cannot parse.
+
 ### 3.6 Extension model
 
 Plugins expose contribution *ports*; the host wires them at runtime. Each plugin is split into
@@ -171,6 +203,12 @@ What transferred unchanged: run-ID naming, lifecycle phases, stable/ephemeral sp
 shapes, principle set, knowledge-base structure. What required complete rewriting: all
 knowledge-base content, all profile checklists, all skill content.
 
+> **Corrected by the document leg — see §8.9 and §9.** "Lifecycle phases" did **not** transfer. The
+> `website` harness carries a four-phase run loop with no stage gates, owner forks, adversarial
+> review, plan-eval, gate matrix or filing discipline. The nine-stage lifecycle PR #14 executed was
+> imported from NetScript's `workflow/seed-run.md` by the operator at run time, as PR #14's own
+> `supervisor.md` states. The rest of this section stands; this sentence does not.
+
 **This asymmetry is the product seam.** Mechanics are shippable; knowledge must be scaffolded
 and authored per project. A distribution that ships only mechanics is correct; one that ships
 example knowledge as if it were reusable would be actively harmful.
@@ -189,17 +227,94 @@ inputs to a locked decision until their spike resolves.
 | ID | Claim | Why it matters | Spike |
 |---|---|---|---|
 | F-1 | A harness run maps cleanly onto the existing saga model | Determines whether run orchestration is built or inherited | Model stages A→H as a saga; prove gate-blocking and compensation on a failing Stage G |
-| F-2 | NetScript plugins function on Node and Bun via the documented Redis/in-memory fallbacks | The product targets "any TypeScript project"; if the daemon is Deno-only, that is a positioning constraint, not a bug | Install `@netscript/plugin-workers` under Bun and Node; execute one job end to end |
+| F-2 | NetScript plugins function on Node and Bun via the documented Redis/in-memory fallbacks | The product targets "any TypeScript project"; if the daemon is Deno-only, that is a positioning constraint, not a bug | **RESOLVED 2026-08-14 — PARTIAL, see §5.1.** Core runs on Bun; deployable runtime does not; Node blocked before execution |
 | F-3 | `TaskDefinition.type: 'powershell'` can supervise a WSL-hosted process from Windows and vice versa | This is the specific pain named in the brief | Cross-boundary health-check and restart, both directions, measured |
 | F-4 | `correlationId` + `topic` are sufficient to reconstruct a full orchestrator→leaf agent tree | The dashboard's primary view depends on it | Reconstruct a 3-level tree from KV alone, with no additional schema |
 | F-5 | Bootstrap cost into a new repository is 4–6 hours of authoring | Onboarding claim; affects the entire adoption story | Time a real port into a fourth, unrelated repository |
 | F-6 | Deno KV is adequate as the run store for a multi-machine, mobile-read workload | Directly determines §6 | Load and latency test with a remote reader over a tunnel |
+
+### 5.1 F-2 — resolved 2026-08-14. Verdict: **PARTIAL**, and the honest reading is negative.
+
+Run in this session because F-2 gates the product's central adoption claim. **The result is
+recorded whichever way it went**; it went badly for the claim, and that is stated plainly.
+
+**Toolchain on the test host:** `node v22.20.0`, `npm 10.9.2`, `bun 1.3.1`, `deno 2.9.4`.
+
+**What is published.** `https://jsr.io/@netscript/plugin-workers-core/meta.json` and
+`https://jsr.io/@netscript/plugin-workers/meta.json` both return `200`, latest `0.0.6`, with full
+export maps. The packages are real and installable. `packages/plugin-workers-core/README.md:17-23`
+explicitly advertises Node and Bun installation, and `:90-103` documents the in-memory defaults and
+testing primitives. **Install is not the problem.**
+
+| Step | Node v22.20.0 | Bun 1.3.1 |
+|---|---|---|
+| `jsr add @netscript/plugin-workers-core @netscript/plugin-workers` | ✅ 172 packages, exit 0 | ✅ both at `0.0.6`, exit 0 |
+| Execute one job end to end via `-core` in-memory | ❌ **exit 1**, `SyntaxError` before any of our code ran | ✅ **exit 0** — `{"dispatches":1,"result":{"success":true,...},"terminalStatus":"completed"}` |
+| Execute via the deployable `@netscript/plugin-workers/runtime` | not reached | ❌ `ReferenceError: Temporal is not defined`, then after polyfill `ReferenceError: Deno is not defined` |
+
+**Two distinct failures, and they are not the same kind of thing.**
+
+1. **Node did not execute at all**, and the cause is a *transitive dependency*, not NetScript:
+   `@jsr/david__shell/src/commands/touch.js:18` uses `using _f = await create(...)` — explicit
+   resource management, which Node 22 cannot parse. This is a **toolchain floor**, plausibly fixed
+   by a newer Node, and it is the one part of this result that is an artifact of the test host.
+2. **Bun ran the core and could not run the runtime**, and the cause *is* NetScript. `Deno` globals
+   are called **directly in runtime code paths, not behind an adapter**:
+   - `packages/plugin-workers-core/src/stores/kv-worker-idempotency-store.ts:201-218` — `Deno.env`,
+     `Deno.errors`
+   - `packages/kv/application/auto-detect.ts:123-166` — `Deno.env.get('CACHE_PROVIDER')` inside
+     provider auto-detection, i.e. **the fallback selection mechanism itself requires Deno**
+   - `packages/kv/application/shared.ts:244-250` — falls back to `Deno.openKv`
+   - `plugins/workers/bin/runtime.ts:57-65` — `Deno.env`
+   - `packages/cron/mod.ts:99-149` — memory fallback exists, but the **Node adapter is explicitly
+     unimplemented**
+   - the same pattern in sagas and triggers: `plugins/sagas/src/runtime/saga-runner.ts:58,181-199`,
+     `packages/plugin-sagas-core/src/stores/kv-saga-store.ts:37-40`,
+     `packages/plugin-triggers-core/src/stores/kv-trigger-runtime-stores.ts:26-29`,
+     `plugins/triggers/src/runtime/project-trigger-registry.ts:7-49`
+
+**Finding.** The claim in §3.5 that NetScript has "runtime reach beyond Deno" is true for the
+**contract and in-memory core** and false for the **deployable runtime**. The documented
+Redis/in-memory fallbacks do not rescue this, because `auto-detect.ts` reads `Deno.env` *to choose
+the fallback*. The Deno dependency is not at the edge; it is in the selection path.
+
+**Consequence for the product — stated as the brief demanded.** *"Any TypeScript project"* is
+**not currently a true claim about the daemon**. It is true about the *contracts*. Three positions
+are available and this is a Stage C input, not a decision to take here:
+
+1. Ship the daemon as **Deno-only**, and state it. Honest, narrows the market, costs nothing.
+2. Put the `Deno.*` calls behind a runtime port and supply Node/Bun adapters. This is a real
+   change to NetScript, in a repository outside this run's mutation surface.
+3. Ship the harness product as **contract-first** — the artifact contract, CLI and schema run
+   anywhere; the *worker daemon* is Deno-only until (2) lands.
+
+**Recommended framing for Stage C:** option 3, because it matches what the evidence shows actually
+works today and does not require a change to a sibling repository to make the product's first claim
+true.
+
+**Residual doubt, named.** The Node result would change on a Node version that parses explicit
+resource management (24+). It is **not yet known** whether a newer Node then hits the same `Deno`
+globals — it almost certainly does, since the Bun run proves the globals are reached from the
+runtime entry point, but that specific chain was not executed. This does not change the finding
+about the deployable runtime; it changes only the Node story's *first* failure mode.
+
+**Follow-up worth filing at Stage E:** NetScript has no Node/Bun CI smoke test for
+`@netscript/plugin-workers-core/testing` or `@netscript/plugin-workers/runtime`. The README claims
+cross-runtime support that nothing tests. That is a gate whose negative case has never been
+demonstrated — precisely the failure `gates/gate-matrix.md` §3 warns about (§8.4).
+
+**Out of surface:** no NetScript file was modified. Scratch artifacts live in session storage.
 
 ---
 
 ## 6. The unresolved contradiction: who owns run state
 
 The two live implementations disagree, and the disagreement is documented rather than settled.
+
+> **Reframed by the document leg — see §8.9.** The two positions are each internally consistent
+> *for the lifecycle their repository actually runs*: a four-phase loop produces nothing worth
+> keeping, a nine-stage lifecycle produces a reviewable record. The contradiction is therefore
+> **downstream of which lifecycle the product ships** (owner fork OF-a, §10), not independent of it.
 
 - `website/.llm/harness/` treats runs as **ephemeral**: `.llm/tmp/run/<id>/`, gitignored,
   auto-cleaned after durable learnings are promoted into the knowledge base. Stated rationale:
@@ -237,16 +352,245 @@ decided here.
 
 ---
 
-## 7. External leg (started, incomplete)
+## 7. External leg (complete)
 
 Retrieved 2026-08-14. Held to the citation bar: vendor pages are cited for *intent*, not for
-*behaviour*.
+*behaviour*. Where a subject is open source, the claim is cited to source or schema rather than to
+documentation. Where a subject is closed source, the limit of what can be verified is stated.
 
-**t3.codes** — open-source control interface for coding agents by the Ping.gg team.
-Multi-vendor (Codex, Claude Code, Cursor, opencode, Grok), bring-your-own-key, web + Electron +
-native mobile, git integration, per-project session threads, `npx t3` to start a local server,
-remote control over LAN / Tailscale / tunnel. Source: `github.com/pingdotgg/t3code`; overview
-via `betterstack.com/community/guides/ai/t3-code/`.
+**The leg was run as a falsification attempt, not a survey.** The instruction to each pass was to
+find a product that already owns the process substrate, and to report it plainly if found. Nine
+subjects were examined. **None owns it.** The detail of *how* each one falls short is more useful
+than the verdict, because each near-miss names a component the product must supply.
+
+### 7.0 The comparison matrix
+
+| Subject | Unit of record | Staged work with gates | Citation bar / adversarial review | Where state lives |
+|---|---|---|---|---|
+| **t3.codes** | session | no | no / no | local server + git |
+| **Linear** | issue | workflow states (human) | no / no | hosted backend |
+| **Conductor** | **workspace** (= branch + worktree) | no — a merge-time checklist | no / self-review by the same agent | local worktree + app state; cloud microVM since v0.78.0 |
+| **Vibe Kanban** | issue (plan) + task attempt (execution) | no — attempt phases are infra events | no / no | local SQLite + git worktrees; cloud layer sunsetting |
+| **Sculptor** | session | no | no / post-hoc output suggestions | local app store + Docker containers |
+| **OpenHands** | **conversation** (= append-only `EventStream`) | no | no / **Critic** — but post-`FinishAction` | pluggable FileStore: local, S3, GCS |
+| **Cursor cloud agents** | agent run | **partial — Plan Mode** | no / no | hosted backend + ephemeral VM; git for the product |
+| **Copilot cloud agent** | **session** | no — permission gates, not process gates | no / **code review** — reviews diffs, not plans | GitHub backend session logs + branch; ephemeral runner |
+| **AGENTS.md / MCP** | n/a — not units of work | no | no / no | n/a |
+
+### 7.1 Conductor
+
+Closed-source macOS app, now with a cloud mode. The unit of record is stated explicitly in its own
+documentation: *"The workspace is the unit of delegation. The branch and pull request are the unit
+of integration."* — <https://www.conductor.build/docs/concepts/workflow>. A workspace is 1:1 with a
+git branch and worktree.
+
+Its `Checks` tab is the nearest thing to a gate: it lists unresolved todos, failing CI and open
+comments, and *"may block or discourage merge actions when required work is still open"*
+(<https://www.conductor.build/docs/reference/checks>). This is a **merge-time checklist**, not a
+lifecycle gate — there is no phase that must produce an artifact before the next phase may open.
+Its `Review` action has the **same agent in the same workspace** inspect its own diff
+(<https://www.conductor.build/docs/guides/review-and-merge>) — self-review, not an adversarial
+reviewer in a separate context. Plan Mode
+(<https://www.conductor.build/docs/concepts/agent-modes>) is a within-session human approval.
+
+Cloud workspaces run in isolated microVMs, persist when the laptop closes, and expose a public API
+(<https://www.conductor.build/changelog/0.78.0-introducing-conductor-cloud>, 30 Jul 2026).
+
+**Assessment: closest of the three parallel-agent apps, and still not close.** It has the
+substrate's *infrastructure* — durable multi-machine state, an API, a workspace abstraction — and
+none of its *semantics*.
+
+### 7.2 Vibe Kanban
+
+Open source, Apache 2.0, Rust + SQLite. **Sunsetting** — the README carries a shutdown notice and
+the hosted issue/comment services are being withdrawn, with the project going community-maintained
+(<https://www.vibekanban.com/blog/shutdown>; repository README at
+<https://github.com/BloopAI/vibe-kanban>).
+
+Read from schema rather than documentation: the init migration defines `tasks` with
+`status ∈ (todo, inprogress, done, cancelled, inreview)`, `task_attempts` each carrying its own
+`worktree_path` and `executor`, and `task_attempt_activities` with
+`status ∈ (init, setuprunning, setupcomplete, setupfailed, executorrunning, executorcomplete,
+executorfailed, paused)` —
+<https://github.com/BloopAI/vibe-kanban/blob/4deb7eca8f381f7cbc1f9d15515a9ab8f8009053/crates/db/migrations/20250617183714_init.sql>.
+
+This is the single most instructive negative result in the leg. Vibe Kanban has a **two-level unit
+of record** — an issue for intent and an attempt for execution — which is structurally the shape
+the product needs. But `task_attempt_activities` records *runtime infrastructure phases* (did the
+worktree set up, did the executor start), not *knowledge-work stages*. It logs what the machine
+did, never what the work established. `inreview` is one human-signalled bit.
+
+**Assessment: proves that the two-level record is a natural design, and that arriving at it does
+not give you the substrate.** Its sunsetting is also a market datum, not just trivia.
+
+### 7.3 Sculptor (Imbue)
+
+Closed source, Mac/Linux, Docker-container isolation rather than worktrees. The unit of record is
+the session: *"Sculptor saves every agent session with its plans, chats, tool calls, and code
+changes all intact"* — <https://imbue.com/blog/sculptor-announce>. Its `Suggestions` beta and
+roadmapped "instruction audits" review the agent's **output code** after the fact.
+
+**Citation-bar caveat, stated because the doctrine requires it:** Sculptor has no public
+repository and no technical documentation beyond this announcement page. Everything above is
+**vendor intent**. Its actual behaviour is unverified and would need the binary to settle.
+
+### 7.4 OpenHands
+
+Open source, MIT. The unit of record is the **conversation**, materialised as an append-only event
+stream: every event is written as a numbered JSON file under
+`sessions/{sid}/events/{id}.json`, per `openhands/storage/locations.py`
+(<https://github.com/togethercomputer/OpenHands/blob/9943edc64d2b8c1655be452ea47ef83724fd73bf/openhands/storage/locations.py>),
+with the write happening on every `add_event()` in `openhands/events/stream.py`
+(<https://github.com/togethercomputer/OpenHands/blob/9943edc64d2b8c1655be452ea47ef83724fd73bf/openhands/events/stream.py>).
+Storage is a pluggable FileStore — local, S3 or GCS — so a second machine pointed at the same
+bucket with the same `sid` can resume. Note the upstream `All-Hands-AI/OpenHands` repository has
+rebranded to "Agent Canvas"; the Python agent now lives in the `OpenHands/software-agent-sdk`
+line, which is why the citation above is to a preserved fork.
+
+The **Critic** is the most serious near-miss in the entire leg. It is a separate LLM that scores
+the agent's output between 0.0 and 1.0 and, under `IterativeRefinementConfig`, re-prompts below a
+threshold (<https://docs.openhands.dev/sdk/guides/critic>). It is documented as **highly
+experimental**. Decisively: **it fires on `FinishAction` — after every world mutation has already
+happened.** It is a post-hoc scorer with a retry loop, not a gate. File-based sub-agents
+(<https://docs.openhands.dev/sdk/guides/agent-file-based>) let a user define a `code-reviewer`
+sub-agent, but nothing forces it to run and nothing blocks on its verdict.
+
+**Assessment: OpenHands has the durable-event-log substrate the product needs and inverts the gate.**
+Its evaluation happens after mutation; the doctrine's entire premise is that evaluation happens
+before it.
+
+### 7.5 Cursor cloud agents
+
+Closed source, hosted. Unit of record is the **agent run**, addressable by URL, carrying the
+transcript, tool calls, artifacts and diff metadata
+(<https://cursor.com/docs/cloud-agent>). Runs execute in ephemeral Ubuntu VMs; the durable product
+is the branch and PR. Environment `Builds` record the exact commit SHA per repository, giving a
+run → build → SHA provenance chain (<https://cursor.com/docs/cloud-agent/builds>).
+
+**Plan Mode is the only real pre-execution gate found anywhere in this leg.** The agent asks
+clarifying questions, researches, produces a plan, and **cannot proceed to code until the user
+clicks build**; the plan is a durable Markdown artifact, optionally saved into the workspace for
+team sharing (<https://cursor.com/docs/agent/plan-mode>). That is genuinely more than an ephemeral
+chat exchange.
+
+Four things keep it from being the substrate, and each names a requirement for the product:
+
+1. The plan is produced **in the same context that executes it**. There is no separation.
+2. Nothing binds execution to the plan — the artifact is not enforced, only advisory.
+3. The gate is **purely human**; there is no machine-readable verdict on the plan's quality.
+4. **Plan Mode is IDE-only.** Cloud agent runs launched from the API, Slack, GitHub or Linear do
+   not pass through it. The gate is absent precisely where the work is automated.
+
+Hooks (`preToolUse`, `beforeShellExecution`, …) can abort individual tool calls
+(<https://cursor.com/docs/cloud-agent>). That gates *capability*, not *process*.
+
+### 7.6 GitHub Copilot cloud agent
+
+The unit of record is the **session**, not the issue and not the PR. The issue is an input, the
+`copilot/*` branch is the workspace, the PR is an output; the session is what connects them, is
+listed and archived in the agents panel, and carries the internal reasoning log
+(<https://docs.github.com/en/copilot/how-tos/copilot-on-github/use-copilot-agents/manage-and-track-agents>;
+<https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent>). Sessions are
+queryable in natural language after the fact. Commit messages link back to the session log.
+
+GitHub documents a **research → plan → iterate → PR** pattern
+(<https://docs.github.com/en/copilot/how-tos/copilot-on-github/use-copilot-agents/research-plan-iterate>).
+This is **conversational, not enforced**: they are successive prompts in one session, there is no
+plan artifact of record, and nothing prevents the agent writing code without one.
+
+The real gates that exist are **permission gates, not process gates**, and the distinction matters:
+Copilot cannot push to protected branches, Actions workflows require approval, sessions are capped
+at 59 minutes (same source). `.github/hooks/*.json` `preToolUse` hooks can approve or deny
+individual tool executions synchronously
+(<https://docs.github.com/en/copilot/concepts/agents/hooks>) — again, capability not lifecycle. You
+cannot express "no code until a plan artifact passes".
+
+**Copilot code review** is a distinct reviewer agent with full-repository context and two effort
+levels, and since 18 Jun 2026 it reads `AGENTS.md`
+(<https://github.blog/changelog/2026-06-18-copilot-code-review-agents-md-support-and-ui-improvements/>;
+<https://docs.github.com/en/copilot/concepts/agents/code-review>). It reviews **diffs, not plans**,
+it runs after the code exists, it is optional, and it cannot approve a PR.
+
+**Assessment: the closest thing to a durable unit of record beyond the PR, and it is unstructured.**
+A session log is a transcript. It has no artifact schema, no stages, no verdict, no drift register.
+
+### 7.7 AGENTS.md and MCP — is the seam being standardised shut?
+
+This was examined as a strategic question, not a competitive one.
+
+**AGENTS.md** is stewarded by the Agentic AI Foundation, formed December 2025 as a series of LF
+Projects under the Linux Foundation, co-founded by Anthropic, Block and OpenAI
+(<https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation>;
+<https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation>).
+Its content is build/test commands, code style, directory structure, PR conventions, security
+notes — and it has **no required fields** (<https://agents.md>). It specifies **nothing** about
+lifecycle, staging, gates, evidence, adversarial review, artifact schemas, or owner-decision
+pauses. It is a README for agents.
+
+**MCP** is now under the same foundation, specification version `2025-11-25`, governed by SEPs and
+working groups (<https://modelcontextprotocol.io/community/governance>). It standardises a
+capability-transport layer: tools, resources, prompts, sampling, elicitation, roots, over JSON-RPC.
+Its experimental **Tasks** primitive (SEP-1686/SEP-2663) is a call-now/fetch-later pattern, and the
+2026 roadmap's work on it is **retry semantics and expiry policies**
+(<https://modelcontextprotocol.io/development/roadmap>) — the lifecycle of a *tool call result*,
+not of a *unit of work*. MCP `prompts` are parameterised message templates, explicitly
+user-controlled (<https://modelcontextprotocol.io/specification/2025-06-18/server/prompts>); they
+do not encroach on workflow definition.
+
+**Neither standard covers the substrate, and neither is heading there.** What they do is
+standardise the layer *beneath* it, which is favourable: a product at the process layer consumes
+AGENTS.md and MCP rather than competing with them.
+
+### 7.8 The gap, restated after the falsification attempt
+
+The original §7 claim — that t3.codes owns the session surface, Linear owns the intent surface, and
+neither owns the process substrate — **survives contact with seven further subjects**. It should
+now be stated more precisely, because the failure modes cluster into four repeatable shapes:
+
+1. **The unit of record is the transport, not the work.** Session, conversation, run, workspace.
+   Every subject records *the interaction*; none records *what the work established*. OpenHands is
+   the extreme case: a perfectly durable, replayable, multi-machine event log of an untyped
+   conversation.
+2. **Gates exist, at the wrong layer.** Copilot's hooks and branch protections, Cursor's hooks,
+   Conductor's checks. All gate **capability** (may this tool run, may this branch be pushed) or
+   **merge** (is CI green). None gates **phase transition**.
+3. **Review exists, aimed at the diff.** Copilot code review, Conductor's Review action, Sculptor's
+   Suggestions, OpenHands' Critic. Every one of them inspects the artefact **after** the world has
+   been changed. The doctrine's adversarial review attacks the **plan**, before.
+4. **Nothing anywhere requires evidence.** Not one of the nine subjects has any mechanism obliging
+   a claim to carry a source. The citation bar has **no prior art at all** in this market.
+
+And one asymmetry worth carrying into Stage C: Cursor **has** a pre-execution gate but only in the
+IDE, and Copilot **has** a durable queryable session record but with no structure in it. The two
+halves of the substrate exist, in different products, in the surfaces where they are least useful.
+
+### 7.9 Strategic risk: platform absorption, not standardisation
+
+Stated bluntly because the brief asked for it. Three convergence vectors were assessed:
+
+| Vector | Would it close the seam? | Horizon |
+|---|---|---|
+| AGENTS.md extends into lifecycle | Would require the spec to add phases, gates or evidence rules. Its stated philosophy is "no required fields". **Zero indication of this direction.** | not on any visible horizon |
+| MCP Tasks matures into process | Would require lifecycle phases and blocking verdicts in the protocol. Roadmap is retry + expiry. | 3–5 years if ever |
+| **GitHub formalises research→plan→iterate** | **Yes.** GitHub already has the session record, the agents panel, hooks, a review agent, the PR lifecycle, the branch model and the runner. It needs only to make the informal loop enforced, add a plan artifact, and wire code review as a blocking step. | **12–24 months, plausibly** |
+
+The current GitHub architecture is **permissive** — hooks *may* deny a tool call, code review is
+*optional* — and that permissiveness is what leaves the seam open. The risk is a shift to a
+prescriptive architecture, which GitHub is uniquely positioned to make stick.
+
+**This is the single most consequential external finding and it is a product-strategy input, not a
+technical one.** It is raised, not resolved. It becomes a numbered owner fork at Stage E: does the
+product position *on* the GitHub platform as its process layer, or *independent of* it? See §10.
+
+### 7.10 t3.codes and Linear — the first-pass subjects, retained
+
+Covered in the earlier pass and kept here unchanged, since the matrix in §7.0 depends on them.
+
+**t3.codes** — open-source control interface for coding agents by the Ping.gg team. Multi-vendor
+(Codex, Claude Code, Cursor, opencode, Grok), bring-your-own-key, web + Electron + native mobile,
+git integration, per-project session threads, `npx t3` to start a local server, remote control over
+LAN / Tailscale / tunnel. Source: `github.com/pingdotgg/t3code`; overview via
+`betterstack.com/community/guides/ai/t3-code/`.
 
 Relevance: this is the closest existing implementation of the *shell* the brief describes — CLI
 install, local server, mobile client, remote steering. It manages **sessions**. It carries no
@@ -261,19 +605,420 @@ Relevance: owns **intent** — initiatives, projects, milestones. Agents are par
 board. The unit of record is an issue, not a run, and there is no artifact contract for how a
 decision was reached.
 
-**The gap.** t3.codes owns the session surface. Linear owns the intent surface. The process
-substrate between them — how work is staged, evidenced, contested, gated and made reviewable —
-is owned by neither. That substrate is what this repository has already proven across three
-codebases.
+---
 
-**Not yet covered by the external leg**, and required before Stage C closes: Conductor, Vibe
-Kanban, Sculptor, OpenHands, Devin's orchestration surface, Cursor background agents, GitHub's
-own Copilot coding-agent task model, and the AGENTS.md / MCP standardisation trajectory.
+## 8. Document leg (complete)
+
+The document leg read `autocorner/website` PR #14 — **all 20 artifacts individually**, not its PR
+body — plus the harness doctrine in `rickylabs/netscript` and `autocorner/website`. It was read for
+**mechanics, not domain content**: the tyres, booking slots, Convex and Sanity material is ignored
+throughout.
+
+PR #14 is `Autocorner-J-C-C-Oberson/website#14`, open, `+3765/-0` across 20 files, head
+`claude/autocorner-plan-repo-architecture-xeiboa`, tip `29b2a7f4`
+(<https://github.com/Autocorner-J-C-C-Oberson/website/pull/14>). Artifacts were retrieved through
+the GitHub contents API at that SHA. **No sibling repository was modified.**
+
+### 8.1 The artifact set, and what each artifact is *for*
+
+This is the reusable contract. Twenty files in four groups.
+
+| Artifact | Group | Function — what it exists to prevent |
+|---|---|---|
+| `README.md` | index | Read order + **authority banner**. Prevents the run being mistaken for a live source of truth after filing |
+| `supervisor.md` | identity | Who is working, on what baseline, under which lane, permitted to touch what. Prevents scope absorption |
+| `research.md` | corpus | The three legs, every claim tagged. Prevents belief entering a plan |
+| `plan.md` | lock | Decisions, forks, spikes, DAG, milestones, risks, stage gates. The single locked artifact |
+| `adversarial-review.md` | gate | Findings + per-finding disposition. Prevents a plan being accepted unattacked |
+| `plan-eval.md` | gate | One verdict. The thing that unblocks mutation |
+| `worklog.md` | trail | Append-only progress by stage |
+| `drift.md` | trail | Every divergence, with a disposition. Prevents silent reconciliation |
+| `context-pack.md` | trail | Cold resume. Prevents the run dying with the session |
+| `architecture/monorepo-target.md` | design | Target structure + import-boundary table |
+| `architecture/booking-domain-contract.md` | design | Domain rules + acceptance fixtures |
+| `architecture/data-flow-contract.md` | design | Ownership register — who owns which entity, in which direction |
+| `architecture/form-system-contract.md` | design | The genericity contract for a shared subsystem |
+| `orchestration/cluster.md` | dispatch | Coordinator / topic orchestrators / leaf supervisors / watchers |
+| `orchestration/pr-proposals.md` | dispatch | 32 proposed PRs in dependency order, each with a Definition of Done |
+| `orchestration/agent-briefs.md` | dispatch | Copy-paste briefs per role. Prevents launch from chat history |
+| `board/epics-and-issues.md` | filing | Draft issue text — explicitly not filed |
+| `board/filing-manifest.json` | filing | The machine-readable one-shot filing plan |
+| `board/labels.yml` | filing | Proposed label set, create-only |
+| `gates/gate-matrix.md` | gates | What proves each slice, **including the gates the repo does not have** |
+
+Four observations that matter more than the list:
+
+1. **Nine of the twenty are the portable core** — `README`, `supervisor`, `research`, `plan`,
+   `adversarial-review`, `plan-eval`, `worklog`, `drift`, `context-pack`. The other eleven are
+   *shaped by the run type*: `architecture/`, `orchestration/`, `board/` and `gates/` exist because
+   this was a board-producing seed run. `seed-run.md` says so explicitly: what is fixed is *"each
+   stage's contract, not its folder names"*, and *"if you are copying the exemplar's folder names
+   without knowing why, stop"* (`netscript/.llm/harness/workflow/seed-run.md`).
+2. **There is exactly one machine-readable artifact** — `filing-manifest.json`. Everything else is
+   markdown for humans and agents. The one file that drives an irreversible operation is structured.
+   That is a deliberate boundary and the product should preserve it.
+3. **The gate artifact records what does not exist.** `gate-matrix.md` has an "Exists today" column
+   with `no` in it repeatedly, and a §4 titled *what this repo deliberately does not gate*. Absence
+   is recorded as a decision.
+4. **`adversarial-review.md` and `plan-eval.md` are separate files with separate verdicts**, written
+   by a different session from the author.
+
+### 8.2 The shape of the decision register
+
+`plan.md` §2, `D-0`…`D-18`. Every entry is prose, not a table row, and every entry has the same
+four parts:
+
+1. **A bolded imperative title** that states the decision as a rule — *"D-3 — The slot engine is a
+   pure, unit-tested domain package with zero I/O."* It reads as an instruction, not a topic.
+2. **The decision's content**, stated so it is falsifiable at merge time.
+3. **Rationale, cited**, carrying the evidence tag — `[doc]`, `[repo]`, `[ext]` — and a path or URL.
+4. **The failure it prevents**, named. D-14: *"A 'booking funnel' that carries its own step logic is
+   the failure this decision exists to prevent."*
+
+Three structural properties are load-bearing:
+
+- **Decisions cross-reference the fork that is still open inside them.** D-2 locks that availability
+  is a separate model, and explicitly hands the *storage location* to fork F-5: *"Which store holds
+  it is fork **F-5**; that it is separate from `openingHours` is **locked** either way."* A decision
+  can be partially locked. This is the mechanism that stops an unanswerable question blocking an
+  answerable one.
+- **Decisions carry their own enforcement.** D-13 ends with *"the checkable consequence"*; D-14 is
+  enforced by a named grep gate. A decision with no gate is visibly incomplete.
+- **Changing a locked decision is a re-intake checkpoint, not an edit** (`plan.md` §2 preamble).
+
+### 8.3 The shape of an owner fork
+
+`plan.md` §3, titled *"Owner forks — decisions this plan will not take for you"*. A table with
+exactly five columns: **# · Fork · Options · Recommendation · Cost if wrong**.
+
+The mechanics worth stealing:
+
+- **The recommendation is always present and always argued.** F-1 recommends J+3 *"— both prose
+  sources give the Friday→Wednesday example, which only J+3 produces"*. Refusing to recommend is not
+  neutrality; it is abdication.
+- **The cost is concrete and directional**, not a severity label. F-5: *"Redoing 2.1 configuration
+  and part of M2."*
+- **Forks are typed by what they block, and the types differ.** The preamble states three distinct
+  classes: forks that block **filing** (F-1…F-5, F-11), forks answerable **during** the first wave
+  (F-6…F-8), and a fork that blocks **dispatch but not filing** (F-9). Held scope stays visible on
+  the board with a `status:tbc` label rather than being deleted.
+- **A fork can be conditional on another fork.** F-10 exists only if F-9 resolves one way, and its
+  owning spike S-2 is explicitly *"pending — held"*, not *"pending"* — because running it would
+  spend effort on a position that may be dropped.
+- **Owner-signalled leanings are recorded without being treated as answers.** F-9 reads
+  *"Owner-signalled: likely (a)"* and remains open.
+- **Fork state is mirrored into the filing manifest as data**: `"blockedByForks": ["F-1","F-2"]`.
+  The fork is not only prose; it is a machine-readable precondition.
+
+### 8.4 How gates are expressed
+
+Three distinct layers, and conflating them is the failure the artifact set is built to avoid.
+
+**Layer 1 — stage gates**, `plan.md` §8. A five-row table over stages E→I with `done` / `PASS` /
+`blocked` and the rule for each. Stage G is the hard stop.
+
+**Layer 2 — work gates**, `gates/gate-matrix.md` §1. Each row is `Gate · Command · Exists today ·
+Created by · Blocking`. The **"Exists today"** column is the innovation: it forces the plan to
+distinguish a gate that runs from a gate that is aspirational. §2 then maps every issue to its
+required gates as a checkbox grid.
+
+**Layer 3 — gate integrity rules**, §3, carried from NetScript doctrine. These are the sharpest
+mechanics in the whole PR and each exists because its absence produced a real false-green:
+
+- **Proof of firing.** *"A gate counts only once its negative case is demonstrated… A guard whose
+  predicate can never be true looks correct and does nothing — that is the signature failure of this
+  kind of work."*
+- **Pass is distinguishable from did-not-run.** *"'No red' is not 'green'; silence is a failure."*
+- **Name the checks, do not count greens.** Assert *named* required checks report `SUCCESS`.
+- **Latest run per check name**, when auditing a merged PR — *"summing all runs manufactures false
+  reds, the mirror image of counting greens."*
+- **Expensive gates are serialised** — concurrent e2e failures are contention, not defects.
+- **The honesty rule.** *"A criterion that cannot be truthfully ticked moves with its issue to the
+  next milestone. It is never ticked to clear a gate."*
+
+And a fourth thing that is not a layer but is essential: **five of the fourteen gates are greps
+standing in for architectural properties**, and the matrix says so, and says that two of them
+(`no-duplicate-domain`, `stega-scan`) *"cannot be fully mechanical; they narrow the reviewer's
+search, and the reviewer's recorded verdict is the gate. Say so in the gate record rather than
+implying the grep proved it."*
+
+### 8.5 How the filing manifest works
+
+`board/filing-manifest.json`, 103 lines, and the only structured artifact in the run. Its shape:
+
+- `$comment` — a **NOT EXECUTED** banner and the conditions under which it may be executed.
+- `run`, `repo`, `baselineSha` — provenance.
+- `preconditions[]` — five prose conditions including *"owner ratified forks … in-turn (a relayed or
+  stale approval does not count)"* and *"board verified still empty immediately before filing"*.
+- `order[]` — `labels → milestones → epics → subIssues → verificationIssues → filingLog`. Dependency
+  order is data, not narrative.
+- `labels` — `{source, rule: "create only; never delete an existing label", count}`.
+- `milestones[]`, `epics[]`, `subIssues[]` — each entity carries a **`draftId`** (`E8-S4`), its
+  parent, milestone, labels, and — critically — `deps[]`, `blockedByForks[]`, `planEval`, `tbc`,
+  `doNotDispatch`, `timeboxHours`, `unbilled`, `offerPosition`, `designPass`.
+- `verificationIssues[]` — observational issues carrying `"Observational — no PR may close this."`
+  and one carrying `"fileOnlyIf": "F-9 == keep"`.
+- `supersession` — `KEEP`/`FOLD`/`CLOSE` reconciliation of pre-existing issues; here an empty map
+  with a note recording that the board was verified empty, so the absence is evidenced.
+- `totals` — asserted counts, used by the adversarial reviewer to catch drift.
+
+Four mechanics generalise:
+
+1. **The draft ID is the join key** across `plan.md`, `pr-proposals.md`, `agent-briefs.md`,
+   `gate-matrix.md` and the manifest — and `FILING-LOG.md` maps `draftId → live issue number` after
+   filing. Nothing references a live issue number before it exists.
+2. **Filing is one shot from a committed manifest**, never incremental and never from chat.
+3. **The manifest is the thing the adversarial reviewer diffs against the narrative.** Finding 2 of
+   `adversarial-review.md` was exactly this: *"The filing manifest had drifted from the approved
+   dependency graph"* — three missing edges, caught because the DAG existed in two forms and they
+   could be compared. **Deliberate redundancy is a review instrument.**
+4. **`totals` caught stale counts** (finding 3) for the same reason.
+
+### 8.6 How the artifacts cross-reference each other
+
+The cross-reference discipline is what makes twenty files one document.
+
+- **Every artifact is addressed by path and section**, never by name alone: `plan.md` D-4,
+  `research.md` §3.2, `gates/gate-matrix.md`, `architecture/data-flow-contract.md` §7. Deep links,
+  in both directions.
+- **Registers point at each other by ID.** `drift.md` D-19 resolves to `plan.md` D-14 and
+  `form-system-contract.md`; `plan.md` D-0 records itself into `drift.md` D-4; risk R-14 names the
+  decisions that mitigate it and the gate that catches it. Four ID namespaces coexist — decisions
+  `D-n`, forks `F-n`, spikes `S-n`, risks `R-n`, drift `D-n`, board drafts `E<n>-S<n>` — and the
+  **decision and drift namespaces collide**, both being `D-n`. In practice they are disambiguated
+  only by context. That is a real defect in an otherwise clean scheme and the product should not
+  inherit it.
+- **`README.md` is a numbered read order**, and `context-pack.md` carries a *"reading slices by
+  task"* table mapping a task to the minimum set of documents. Neither says "read everything".
+- **Cross-references are load-bearing at dispatch**: `agent-briefs.md` §2 tells a leaf supervisor to
+  paste its Definition of Done *"verbatim from `pr-proposals.md` — these are the boxes the close-gate
+  reads"*.
+- **The authority banner resolves conflict directionally.** After filing, *"GitHub wins on
+  conflict"*; the run stops being a source of truth and becomes the reasoning behind one — without
+  retroactive rewriting.
+
+### 8.7 Evidence discipline, in full
+
+`supervisor.md` § Evidence discipline defines five tags, used throughout `research.md`:
+
+| Tag | Meaning |
+|---|---|
+| `[repo]` | verified against files at the baseline SHA, cited `path:line` |
+| `[doc]` | read from a supplied document, cited by document + page |
+| `[ext]` | verified against an external source, cited by URL |
+| `[inferred]` | reasoned from the above, **with the reasoning shown so it can be attacked** |
+| `[unverified]` | load-bearing and not proven; **each one has an owning spike** |
+
+And the enforcement clause: *"An `[unverified]` claim may not be silently promoted. The Stage-G
+evaluator is entitled to fail this plan on any load-bearing `[inferred]` or `[unverified]` claim
+that lacks a spike."*
+
+This is materially stronger than the citation bar as this run currently states it. `[inferred]` in
+particular is a category this repository's doctrine lacks: it legitimises reasoning while making it
+attackable. **Recommended for adoption into the product's contract.**
+
+A second discipline worth carrying: `drift.md` closes with *"Each spike writes its answer here
+whichever way it goes. A confirmed assumption is as much a finding as a falsified one, and recording
+only the falsifications is how the next program inherits a guess instead of a fact."*
+
+### 8.8 Doctrine comparison: what actually exists in each repository
+
+Read from both trees, not from either's self-description.
+
+| | `netscript/.llm/harness/` | `website/.llm/harness/` |
+|---|---|---|
+| Top-level | `README`, `DOCTRINE-REF` | `README`, `WORKFLOW`, `HELP`, `INDEX`, `PRINCIPLES`, `LESSONS` |
+| Lifecycle | `workflow/` — 10 files incl. `run-loop.md`, `seed-run.md`, `supervisor.md`, `lane-policy.md`, `activation.md`, `escalation.md`, `circuit-breakers.md`, `retrieval-order.md` | `WORKFLOW.md` — **one file, four phases** |
+| Templates | 11, all lifecycle: `supervisor`, `research`, `plan`, `plan-eval`, `evaluate`, `implement`, `worklog`, `context-pack`, `drift`, `debt-entry`, `phase-registry`, `agent-briefing` | 13, of which **7 lifecycle** and **6 domain-specific** (`sanity-schema-change`, `autoscout-contract-change`, `route-change`, `filter-search-change`, `new-page-builder-block`, `cross-boundary-check`) |
+| Gates | `gates/` — 7 files: `plan-gate`, `static`, `fitness`, `runtime`, `consumer`, `release`, `archetype-gate-matrix` | none |
+| Evaluator | `evaluator/` — `protocol`, `plan-protocol`, `verdict-definitions`, `anti-pattern-catalog` | one `evaluate.md` template |
+| Archetypes | `archetypes/` — 7 archetypes + 3 scope overlays | `profiles/` — 5 domain profiles |
+| Debt | `debt/arch-debt.md` — 142 KB | none |
+| Lessons | `lessons/` — 7 files | `LESSONS.md` — one file |
+| Run storage | `.llm/runs/<id>/` durable | `.llm/tmp/run/<id>/` **ephemeral, gitignored** |
+
+### 8.9 Falsification: the lifecycle did not port
+
+**This contradicts §4 of this document and it is the most important finding of the document leg.**
+
+§4 states that what transferred to `autocorner/website` unchanged included *"lifecycle phases"*.
+Read against both trees, that is **not correct**, and PR #14 proves it from its own header.
+
+- The `website` harness lifecycle is **four phases** — Bootstrap, Execute, Evaluate, Close —
+  in a single `WORKFLOW.md` (`website/.llm/harness/WORKFLOW.md`). It has **no** supervisor stage,
+  **no** discovery stage, **no** plan lock, **no** adversarial review, **no** plan-eval, **no**
+  ratification stage, **no** owner-fork mechanism, **no** gate matrix and **no** filing discipline.
+  Its verdict set is three values. Its `INDEX.md` promotion rules end with *"Do not let `.llm/tmp/`
+  become archival storage"*.
+- The **A→I stage lifecycle PR #14 actually executed came from NetScript**, not from the host repo.
+  PR #14's own `supervisor.md` says so in its identity table: *"Profile | NetScript
+  `.llm/harness/workflow/seed-run.md` (Stage A–E executed; F–I proposed)"* and *"Host harness |
+  Autocorner `.llm/harness/` — profiles `integration` + `app` + `docs`, templates `plan.md`,
+  `context-pack.md`, `drift.md`, `cross-boundary-check.md`"*.
+
+**What the host repository supplied was templates and profiles. The lifecycle was imported by the
+operator at run time from a repository the host does not depend on and does not vendor.**
+
+Consequences, and they are not small:
+
+1. **The portable unit proven by the port is smaller than §4 claims.** What demonstrably ported is
+   the *artifact shape* — run-ID naming, the stable/ephemeral split, the template set, the principle
+   set, the knowledge-base structure. The *process* did not port; it was carried.
+2. **The heavyweight lifecycle has exactly one instantiation outside its home repository**, PR #14,
+   and it was **operator-carried, not repo-carried**. Its own `seed-run.md` is candid about this:
+   *"This profile's acceptance test is the next real seed run, not the PR that lands this file… Until
+   that dogfood run passes, treat this doc as provisionally promoted."*
+3. **This is the product.** The gap between "the doctrine is portable" and "the doctrine was
+   physically carried in a human's head into a repository that could not supply it" is precisely
+   the distribution problem the product exists to solve. The finding strengthens the product case
+   while weakening the evidence claim §4 made for it.
+4. It also means the two live implementations disagreeing about run-state ownership (§6) is a
+   *symptom* of the same root cause, not an independent contradiction: `website` says ephemeral
+   because its four-phase lifecycle has nothing durable to keep; NetScript says durable because its
+   nine-stage lifecycle produces a reviewable record. **Both are internally consistent.** D-1 is
+   therefore not "which of two arbitrary conventions" — it is *"which lifecycle is the product,"*
+   with the storage model following from it.
+
+### 8.10 Falsification: the verdict vocabulary is not stable
+
+`.llm/harness/WORKFLOW.md` in **this** repository states that the verdict vocabulary is *"used
+identically in Stage F and Stage G so that automation can read them"*, listing `PASS`,
+`PASS AFTER NARROW FIXES`, `FAIL_FIX`, `FAIL_RESCOPE`.
+
+Against the evidence base, that is false in three ways:
+
+| Source | Verdict set |
+|---|---|
+| `netscript/.llm/harness/evaluator/verdict-definitions.md` | `PASS`, `FAIL_PLAN`, `FAIL_FIX`, `FAIL_RESCOPE`, `FAIL_DEBT` |
+| `website/.llm/harness/WORKFLOW.md` §3 | `PASS`, `FAIL_FIX`, `FAIL_RESCOPE` |
+| `harness/.llm/harness/WORKFLOW.md` (this repo) | `PASS`, `PASS AFTER NARROW FIXES`, `FAIL_FIX`, `FAIL_RESCOPE` |
+| PR #14 as actually emitted | initial `FAIL_FIX (narrow)`; final **`PASS AFTER NARROW FIXES`**; Stage G `PASS` |
+
+`PASS AFTER NARROW FIXES` appears in **neither** source doctrine — it was invented in flight by
+PR #14's reviewer and then transcribed into this repository's doctrine as if it were inherited.
+`FAIL_PLAN` and `FAIL_DEBT`, which have precise definitions upstream, were dropped.
+
+Three verdict sets, four in practice, across three repositories and one run. **A vocabulary that
+three sibling repositories cannot hold stable will not survive distribution to strangers.** If a
+verdict is to be machine-readable — which is the stated reason it exists — it must be versioned and
+validated, not transcribed. This is a design input for Stage D, and it is direct evidence for the
+product's core claim that doctrine drifts without a mechanism.
+
+### 8.11 Additional mechanics worth carrying, from the NetScript doctrine
+
+Read from `netscript/.llm/harness/`, which PR #14 executed against.
+
+- **Stage I — handoff** exists in `seed-run.md` and is **missing from this repository's transcribed
+  `WORKFLOW.md`**, which stops at H. Its rule: *"implementation lanes launched from GitHub + the
+  design packs, not this run's chat history"*. That is a load-bearing rule about where authority
+  lives after a run and it was dropped in transcription. Recorded as drift.
+- **Supervisor identity is an activation precondition**: *"A run dir without it is not activated"*,
+  and — the reason it is enforced — *"the exemplar itself skipped it and its identity had to be
+  recovered by transcript search"* (`workflow/seed-run.md`; `templates/supervisor.md`).
+- **Generator ≠ evaluator, and no lane self-certifies** — two invariants, stated as hard.
+- **The reviewer is *unoriented***: *"gets the artifacts, not the supervisor's framing"*, runs on a
+  model **distinct from every lane that authored the plan**, and produces **findings only** — the
+  supervisor triages and commits the fixes. Reviewer and fixer are different roles.
+- **The Plan-Gate is a checklist with a binary consequence** (`gates/plan-gate.md`): eight boxes,
+  any unchecked box → `FAIL_PLAN`, **two `FAIL_PLAN` cycles then escalate to the user**. A bounded
+  retry count before human escalation is a mechanic this run's doctrine lacks entirely.
+- **Absence of a script is not permission to omit a check** — report `PENDING_SCRIPT` with manual
+  evidence.
+- **A gate can be satisfied by a debt entry**, and `FAIL_DEBT` exists as a verdict whose remedy is
+  *bookkeeping*, not implementation. Debt is a first-class lifecycle citizen.
+- **Approval does not survive compaction** — *"re-surface, never route around"* (`seed-run.md`
+  Stage H).
+- **`context-pack.md` has a defined schema** in NetScript's template — run metadata, current state,
+  completed, in progress, next steps, key decisions, files changed, **gates with evidence**, open
+  questions, drift and debt. This run's `context-pack.md` is free-form prose by comparison.
+
+### 8.12 What the document leg establishes for the product
+
+1. **The artifact contract is real, reusable, and has a stable core of nine files** plus run-type
+   extensions. It is the most concrete deliverable this product can ship.
+2. **The mechanics that make it work are not the file list** — they are the ID join key, the
+   deliberate redundancy between narrative and manifest, the "exists today" column, the negative-case
+   proof rule, the honesty rule, and the five-column fork table.
+3. **The evidence tags — including `[inferred]` — are a better citation bar than the one this run
+   currently states**, and should be adopted.
+4. **The lifecycle does not travel on its own.** That is the product's reason to exist, and it also
+   means the evidence base is weaker than §4 claimed. Both statements are true and both must be
+   carried into Stage C without averaging them.
 
 ---
 
-## 8. Document leg
+## 9. Corrections to earlier sections
 
-Not begun. Expected inputs: the brief transcript that opened this run, prior run artifacts in
-the three sibling repositories, and `autocorner/website` PR #14 in full (its body is
-summarised above; its 20 artifacts have not been read individually).
+Recorded here rather than by editing the earlier text, so the change is dated and attackable.
+
+| Section | Original claim | Correction | Source |
+|---|---|---|---|
+| §4 | *"What transferred unchanged: run-ID naming, **lifecycle phases**, stable/ephemeral split, template shapes, principle set, knowledge-base structure."* | **Lifecycle phases did not transfer.** The `website` harness has a four-phase lifecycle and no stage gates, forks, adversarial review, plan-eval, gate matrix or filing discipline. PR #14 imported NetScript's `seed-run.md` at run time. What ported is the artifact shape; the process was operator-carried. | §8.9 |
+| §6 | Presents the ephemeral/durable disagreement as two positions of equal standing on the same lifecycle | Both positions are internally consistent **for different lifecycles**. D-1 is therefore downstream of "which lifecycle is the product", not independent of it. | §8.9(4) |
+| §7 | *"The competitive middle is empty"*, based on two subjects | **Upheld** against nine subjects, and sharpened into four repeatable failure shapes. The citation bar in particular has **no prior art at all**. Newly identified: platform-absorption risk from GitHub on a 12–24 month horizon. | §7.8, §7.9 |
+| doctrine | `.llm/harness/WORKFLOW.md` presents its verdict vocabulary as stable and shared | Three different verdict sets exist across the three repositories; `PASS AFTER NARROW FIXES` was invented in flight and has no upstream definition; `FAIL_PLAN` and `FAIL_DEBT` were dropped. Stage I was dropped from the transcription. | §8.10, §8.11 |
+| §3.5 | *"31 packages … installable on Node and Bun … Redis replaces Deno KV, an in-memory scheduler replaces `Deno.cron`."* | Installable, yes; **runnable, no**. The deployable worker runtime calls `Deno.*` directly, including inside the provider auto-detection that chooses the fallback. Verified by execution. | §5.1 |
+| brief | *"any TypeScript project"* | Currently true of the **contracts and in-memory core**, not of the **daemon**. This is a positioning constraint to state, not a bug to defer. | §5.1 |
+
+---
+
+## 10. Owner forks surfaced by Stage B
+
+Not numbered — numbering happens in `plan.md` at Stage E. Recorded here so they are not lost, per
+the standing constraint that owner decisions are raised and never taken silently.
+
+### OF-a — Which lifecycle is the product?
+
+**Question.** Does the product ship the **nine-stage seed-run lifecycle** (A–I: supervisor,
+discovery, synthesis, design packs, plan lock, adversarial review, plan-eval, ratification, handoff),
+the **four-phase run-loop** (bootstrap, execute, evaluate, close), or **both, with the heavy one as
+an opt-in profile**?
+
+**Why it is an owner decision and not a technical one.** §8.9 shows the heavyweight lifecycle has one
+instantiation outside its home repository and was carried by an operator. The four-phase lifecycle is
+the one that actually ported. Choosing the heavy lifecycle as the default sets the product's
+adoption cost; choosing the light one sets its differentiation. This is a positioning question.
+
+**Recommendation.** Ship **both, with the light loop as the default and the heavy lifecycle as an
+opt-in run profile**, because that is what the evidence shows people actually do — `website` runs
+four phases daily and escalated to nine exactly once, for a board-shaped program.
+
+**Cost if wrong.** Defaulting heavy makes the product feel like ceremony on the first run, which is
+the only run most evaluators perform. Defaulting light and never shipping the heavy profile removes
+the differentiator, since the light loop is close to what Cursor's Plan Mode already gives for free.
+
+### OF-b — Position on the GitHub platform, or independent of it?
+
+**Question.** Is the product a **process layer that runs on GitHub** — consuming sessions, PRs,
+checks and the agents panel as substrate — or **an independent substrate** for which GitHub is one
+transport among several?
+
+**Why now.** §7.9 finds GitHub already holds every component needed to formalise its informal
+research→plan→iterate loop into an enforced lifecycle, on a plausible 12–24 month horizon. This
+decision shapes the run-state contract (D-1), the control plane, and the entire competitive story.
+
+**Recommendation.** **Independent substrate, GitHub-native by default.** The run directory is the
+record; GitHub is the highest-quality projection of it and the one most users want. This is the only
+position that survives GitHub formalising its loop, because the product then becomes complementary
+rather than redundant.
+
+**Cost if wrong.** Betting independent when the platform absorbs the seam means carrying the cost of
+an abstraction nobody needs. Betting on-platform and being absorbed means the product is a feature.
+
+### OF-c — Is `[inferred]` an admissible evidence class?
+
+**Question.** This run's citation bar admits only cited claims and spike-owned unknowns. PR #14's
+discipline (§8.7) adds `[inferred]` — reasoning from cited evidence, with the reasoning shown so it
+can be attacked. Does the product's contract admit it?
+
+**Recommendation.** **Yes.** A bar that cannot express "reasoned from these two cited facts" pushes
+real reasoning into uncited prose, which is worse. It must carry the reasoning inline and remain
+attackable at the gate.
+
+**Cost if wrong.** Admitting it without discipline reopens the door to belief-as-finding. Refusing it
+makes the bar unusable for design work and it will be violated silently.
+
+The four forks already recorded in `context-pack.md` — licence and open-source posture, product
+name, whether the product unifies both senses of "harness", and hosted versus local control plane —
+remain open and unchanged.
+
