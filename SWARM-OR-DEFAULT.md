@@ -1,0 +1,1 @@
+openrouter default smoke works
