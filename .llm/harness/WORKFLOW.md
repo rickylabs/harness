@@ -124,7 +124,7 @@ Used identically in Stage F and Stage G so that automation can read them.
 Independent evaluation stages use a model that did not author the artifact under review.
 Current defaults (operator-set 2026-08-29; override per run in the /swarm block or run docs):
 
-| Evaluation | Default model | Where |
+| Evaluation | Hosted default (OpenRouter) | Local default (N5 Air) |
 |---|---|---|
-| Plan evaluation (Stage G) | `qwen3.8-flash-next` (local `n5air/qwen3.8-flash-next`; OpenRouter: `qwen/qwen3.8-flash`) | independent session |
-| Implementation evaluation (post-Stage-H review) | `z-ai/glm-5.3-flash` (OpenRouter) | independent session |
+| Plan evaluation (Stage G) | `qwen/qwen3.8-flash` (Qwen3.8-Flash-Next) | `n5air/qwen3.8-27b` (Qwen 3.8 27B) |
+| Implementation evaluation (post-Stage-H review) | `z-ai/glm-5.3-flash` | Laguna |
