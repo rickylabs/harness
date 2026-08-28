@@ -127,4 +127,4 @@ Current defaults (operator-set 2026-08-29; override per run in the /swarm block 
 | Evaluation | Hosted default (OpenRouter) | Local default (N5 Air) |
 |---|---|---|
 | Plan evaluation (Stage G) | `qwen/qwen3.8-flash` (Qwen3.8-Flash-Next) | `n5air/qwen3.8-27b` (Qwen 3.8 27B) |
-| Implementation evaluation (post-Stage-H review) | `z-ai/glm-5.3-flash` | Laguna |
+| Implementation evaluation (post-Stage-H review) | `z-ai/glm-5.3-flash` | `n5air/ling-3.0-flash` (Ling 3.0 Flash, Q5_K_S — run on ROCm `n5air-rocm`, segfaults on Vulkan) |
