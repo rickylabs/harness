@@ -116,3 +116,15 @@ Used identically in Stage F and Stage G so that automation can read them.
 | `PASS AFTER NARROW FIXES` | Proceed once the listed, bounded fixes land. No re-review needed. |
 | `FAIL_FIX` | The plan is sound; specific parts are wrong. Fix and re-run this stage. |
 | `FAIL_RESCOPE` | The plan is addressing the wrong problem. Return to Stage C. |
+
+---
+
+## Default evaluation models
+
+Independent evaluation stages use a model that did not author the artifact under review.
+Current defaults (operator-set 2026-08-29; override per run in the /swarm block or run docs):
+
+| Evaluation | Default model | Where |
+|---|---|---|
+| Plan evaluation (Stage G) | `qwen3.8-flash-next` (local `n5air/qwen3.8-flash-next`; OpenRouter: `qwen/qwen3.8-flash`) | independent session |
+| Implementation evaluation (post-Stage-H review) | `z-ai/glm-5.3-flash` (OpenRouter) | independent session |
