@@ -20,9 +20,9 @@ before your first mutation. They are short by design.
 
 ## What this repository is
 
-A product being designed by its own method. There is **no product code yet**. The current
-work is the founding architecture run at
-[`.llm/runs/architecture-foundation--seed/`](.llm/runs/architecture-foundation--seed/).
+A product being designed by its own method. The founding architecture run at
+[`.llm/runs/architecture-foundation--seed/`](.llm/runs/architecture-foundation--seed/)
+records that design; the board says what is built.
 
 Treat that run directory as the working surface. Treat everything else as either doctrine
 (stable, change deliberately) or entry points (rarely change).

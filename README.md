@@ -2,8 +2,9 @@
 
 **An agentic harness and toolchain for TypeScript projects, built on [NetScript](https://github.com/rickylabs/netscript).**
 
-> Status: **pre-architecture**. This repository currently contains no product code.
-> It contains the harness doctrine and the seed run that is designing the product.
+> Status lives on the board, not in this file — see the
+> [E0 roadmap](https://github.com/rickylabs/harness/issues/30) for what is built and what is not.
+> This repository holds the harness doctrine, the run artifacts, and the dsh plugin layer.
 
 ---
 
@@ -72,17 +73,22 @@ down to leaf. Steer from a phone; review on a desktop.
 - **Deterministic work belongs in the daemon.** Anything an agent is asked to do repeatedly and identically is a bug in the harness.
 - **Local first, vendor neutral.** Claude Code, Codex, opencode, Copilot — the harness outlives whichever one you opened this morning.
 
-The [E1 roadmap](https://github.com/rickylabs/harness/issues/31) makes each commitment
+The [E0 roadmap](https://github.com/rickylabs/harness/issues/30) makes each commitment
 executable in a named epic:
 
 | Commitment | Executable in |
 |---|---|
-| Artifacts over chat | [E9 — telemetry sink](https://github.com/rickylabs/harness/issues/39) |
-| Citations or it is not a claim | [E6 — workflow step contract](https://github.com/rickylabs/harness/issues/36) |
-| Owner forks are raised, never resolved silently | [E6 — coordinator](https://github.com/rickylabs/harness/issues/36) → [E7 — issue bridge](https://github.com/rickylabs/harness/issues/37) |
-| Nothing mutates before a gate passes | [E5 — admission control and sandbox boundary](https://github.com/rickylabs/harness/issues/35) |
-| Deterministic work belongs in the daemon | [E6 — coordinator](https://github.com/rickylabs/harness/issues/36) |
-| Local first, vendor neutral | [E3 — two-seam provider split](https://github.com/rickylabs/harness/issues/33) |
+| Artifacts over chat | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) — *partial* |
+| Citations or it is not a claim | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) — *partial* |
+| Owner forks are raised, never resolved silently | [E6 — Coordinator](https://github.com/rickylabs/harness/issues/36) → [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) |
+| Nothing mutates before a gate passes | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) |
+| Deterministic work belongs in the daemon | [E6 — Coordinator](https://github.com/rickylabs/harness/issues/36) |
+| Local first, vendor neutral | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) |
+
+Two mappings are marked *partial* because no epic owns them outright: E9 makes artifacts
+durable but does not decide what has to become one, and E6 carries evidence between steps
+but sets no citation bar. Both need an owner before the commitment is real. A tidy table
+that hid this would be worth less than the gap it papered over.
 
 ## Current run
 
@@ -94,8 +100,8 @@ It designs this product using this product's own method. See
 
 ```
 doctrine/           doctrine — how to work here (stable, portable)
+packages/           the dsh plugin layer — one package per subsystem
 .llm/runs/          run artifacts — durable, reviewed via PR
-.agents/skills/     behavioural skills — how to decide (project-specific)
 AGENTS.md           entry point, agent mode
 CLAUDE.md           entry point, standard mode
 ```
