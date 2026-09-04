@@ -9,4 +9,5 @@ issue, the status checker accepts a missing status, and malformed taxonomy input
 The evidence and per-check dispositions are in
 [`adversarial-review.md`](adversarial-review.md). This run reviewed PR head
 [`0a6dfe7`](https://github.com/rickylabs/harness/commit/0a6dfe79af4ba30bab4946a62d5cfdbfd0be6256)
-without modifying or pushing its branch.
+without modifying or pushing its branch. The matching evidence comment is
+[`issuecomment-5547700080`](https://github.com/rickylabs/harness/pull/98#issuecomment-5547700080).

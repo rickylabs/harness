@@ -23,3 +23,6 @@ and 57 forge tests passed.
 
 The complete commands, fixture inputs, results, and immutable citations are in
 [`adversarial-review.md`](adversarial-review.md).
+The same evidence was published on PR #98 as
+[`issuecomment-5547700080`](https://github.com/rickylabs/harness/pull/98#issuecomment-5547700080),
+and the durable artifacts are proposed by review PR [#102](https://github.com/rickylabs/harness/pull/102).

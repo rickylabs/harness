@@ -22,3 +22,9 @@ discarding three.
 The first static scan attempted `rg`, which was unavailable in the review shell and exited 127. It was
 rerun with `grep`; the credential-signature scan returned no matches and the delete-call scan found no
 transport or call site.
+
+The worktree had no Git author identity despite the operator preamble saying it was already set. The
+authenticated account's login and noreply address were installed in repository-local Git config; no
+global config or commit attribution footer was added. The installed `gh` also rejected `--json` on
+`gh pr create`; the command was rerun without that output-only flag and the created PR was verified
+through the REST API.

@@ -22,3 +22,7 @@
   hand-written skill remained byte-identical.
 - Recorded verdict `FAIL_FIX`; no live labels, repository configuration, or reviewed-branch files were
   changed.
+- Committed and pushed the first artifact set, then opened draft review PR
+  [#102](https://github.com/rickylabs/harness/pull/102) as required by the operator pipeline.
+- Published the complete per-check evidence as a plain comment on PR #98:
+  [`issuecomment-5547700080`](https://github.com/rickylabs/harness/pull/98#issuecomment-5547700080).
