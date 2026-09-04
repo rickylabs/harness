@@ -32,3 +32,10 @@
   recorded in `drift.md` rather than assumed read.
 - Recorded verdict `FAIL_FIX` with six blocking findings and a command/result disposition for every
   requested review checkbox.
+- Published the evidence verbatim as the sole review comment on PR #101, anchored to `ad8ce70`:
+  [`pullrequestreview-5118804546`](https://github.com/rickylabs/harness/pull/101#pullrequestreview-5118804546).
+- Opened the review-artifact PR as draft at
+  [`rickylabs/harness#104`](https://github.com/rickylabs/harness/pull/104).
+- Final artifact validation passed: `git diff --check`, every relative Markdown target exists, the
+  published review matches `adversarial-review.md` byte-for-byte apart from the API command's added
+  trailing newline, the PR title is conventional, and its body ends with the required issue line.

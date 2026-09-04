@@ -24,4 +24,5 @@ anomaly kinds, read-only `gh` argv, credential isolation, shell-injection resist
 decoupling from `forge`.
 
 The full command record is in [`adversarial-review.md`](adversarial-review.md). The matching review
-comment URL is recorded in [`worklog.md`](worklog.md).
+was published on PR #101 as
+[`pullrequestreview-5118804546`](https://github.com/rickylabs/harness/pull/101#pullrequestreview-5118804546).
