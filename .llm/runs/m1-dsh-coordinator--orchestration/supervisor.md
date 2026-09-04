@@ -22,46 +22,68 @@ integration branch does not apply.
 
 ## Routes in force
 
-Bound as of 2026-09-04. The lanes are no longer `unbound`: W0 established that an unbound lane does
-not fail closed, it silently inherits the host default, so every lane below names a model and an
-effort. Reference `.llm/harness/workflow/lane-policy.md` for the complete route table; only the rows
-this milestone actually launches are copied here.
+**The route table is not copied here.** It lives in `rickylabs/netscript` as
+`.llm/harness/workflow/lane-policy.md` (human-facing) with its machine bindings in
+`.llm/tools/agentic/runtime/routing-policy.ts` and the model-id strings in
+`.llm/tools/agentic/config/models.ts`. That is the ruleset this run resolves against, and a copy in
+here would be a second source of truth that drifts silently — which is the failure this run already
+recorded twice. What this section records is the part that is genuinely *this run's* decision: which
+lane each piece of work belongs to. Model and effort resolve from the ruleset at dispatch time and
+are recorded as observed, not as intended.
 
-| Task lane | Policy route | In force this run | Role |
-| --- | --- | --- | --- |
-| milestone coordinator | `astra@medium → fable_5_1@medium → opus_5@xhigh` | `opus_5@xhigh` (desktop session) | Step 0 freeze, wave plan, cluster state, dispatch gate, owner reporting |
-| architecture (privileged) | `opus_5@xhigh` | `opus_5@xhigh` | the deliverable itself — the coordinator layer's structure |
-| `light_implementation` | Codex · Sol · low | Codex · Sol · low | small, well-specified leaves |
-| `normal_implementation` | Codex · Sol · medium | Codex · Sol · medium | default implementer for M1 leaves |
-| `complex_implementation` | Codex · Sol · high | Codex · Sol · high | new subsystems (`#42` ran here) |
-| `deep_analysis` | Fable 5 · medium | **blocked** → Codex · Sol · high | architecture/design analysis inside a leaf |
-| `review_claude` | Codex · Sol · xhigh | Codex · Sol · xhigh | review of Claude-authored PRs (**PR #91**) |
-| `review_codex_complex` | Fable 5 · medium | **blocked** → Opus 5 · medium | review of Sol·high work (**PR #90**) |
-| `review_codex` | Fable 5 · low | **blocked** → Opus 5 · low | review of Sol·medium work |
-| `review_codex_light` | Opus 5 · high | Opus 5 · high | review of Sol·low work |
-| `review_codex_fast` | Opus 5 · medium | Opus 5 · medium | review of Luna·max work |
-| `chore_code` | Claude · Opus 5 · medium | Claude · Opus 5 · medium | mechanical leaves |
-| `documentation_review` | Claude · Sonnet 5 · high | Claude · Sonnet 5 · high | docs lane review |
-| `docs_audit` | Codex · Sol · medium | Codex · Sol · medium | opposite-family by design; no cross-family fallback |
-| `formal_plan_evaluation` | native opposite-family | Fable 5 · medium **blocked** → Qwen 3.8 Flash · max | PLAN-EVAL |
-| `formal_impl_evaluation` | native opposite-family | Fable 5 · medium **blocked** → GLM 5.3 Flash · max | IMPL-EVAL of Codex work |
-| `major_ui_ux_design` | GLM 5.2 · xhigh | dormant | no UI in M1 (`apps/` is out of scope by owner decision) |
+These are resolved, not transcribed. To re-derive any row, call the ruleset's own resolvers —
+`resolveCanonicalRoute(lane, at)`, `resolveCanonicalOrdinaryReviewRoute(assignment, at)`,
+`resolveCanonicalFormalEvaluatorRoute(assignment, at)` and `selectFallbackCandidate(candidates,
+context)` — rather than reading a table into a brief by hand. The resolvers enforce the invariants
+themselves: they throw when generator and evaluator share a session, when the evaluator is the same
+family as the author, and when a formal evaluator's `fallbackReason` does not match its route.
 
-The two `formal_*_evaluation` fallbacks are **relay** lanes, and the matrix restricts those to OPEN
-models. They were unreachable earlier today because the OpenRouter account excluded endpoints with
-permissive data policies; the owner opened those toggles on 2026-09-04, so `Qwen 3.8 Flash · max`
-and `GLM 5.3 Flash · max` are now routable and the "AGY Gemini 3.6 Flash · high if OpenRouter
-limited" second fallback is not needed. Two consequences worth stating rather than discovering:
-relay evaluator prompts now reach providers that may train on them, so they must carry only the
-diff under review and never run artifacts, credentials or `.llm/` evidence; and GLM over OpenRouter
-returns no thinking blocks, so a GLM verdict is citable as "tools + streaming, no reasoning trace"
-and never as reasoning evidence for a gate.
+| Work | Lane | Why this lane |
+| --- | --- | --- |
+| milestone coordination | coordinator row, third tier | first two tiers unreachable from this session; see the override below |
+| architecture (privileged) | `architecture` | authorized below; the deliverable *is* an architecture |
+| `#40` → PR #91 | implementation, Claude family | as launched; the launch identity defect is recorded in `drift.md` |
+| `#42` → PR #90 | `complex_implementation` | new subsystem, Codex family |
+| review of PR #91 | `review_claude` | generator was Claude, so the evaluator is Codex family |
+| review of PR #90 | `review_codex_complex` | generator was Codex at `high`, so the evaluator is Claude family |
+| IMPL-EVAL of PR #91 | `formal_impl_evaluation` (Claude work) | native opposite-family |
+| IMPL-EVAL of PR #90 | `formal_impl_evaluation` (Codex work) | native opposite-family |
 
-Two invariants constrain how this table may be read. **Generator ≠ evaluator:** a lane may not
-review its own output, so PR #91 (Claude-authored) routes to a Codex reviewer and PR #90
-(Codex-authored) routes to a Claude reviewer — the substitutions below preserve that property, which
-is the only reason they are acceptable. **No implicit escalation:** where a fallback is a *higher*
-effort than the blocked primary it is recorded here explicitly rather than chosen at launch.
+Two invariants constrain how these rows resolve. **Generator ≠ evaluator:** no lane reviews its own
+output, which is why the two review rows point at opposite families and why a missing evaluator is a
+recorded blocker rather than permission to self-certify. **No implicit escalation:** where the
+ruleset's fallback is a higher effort than its primary, the substitution is recorded before launch,
+never chosen at launch.
+
+### Fable 5 unavailable until midnight (2026-09-04)
+
+Of the rows above, exactly **two** resolve to a Fable primary, and both are on PR #90. They do not
+collapse into one pass — they are different lanes with different declared fallbacks:
+
+| Row | Primary | In force until midnight |
+| --- | --- | --- |
+| review of PR #90 (`review_codex_complex`) | Fable 5 · medium | **Opus 5 · medium** |
+| IMPL-EVAL of PR #90 (`formal_impl_evaluation`, `evaluatesFamily: openai`) | Fable 5 · medium | **GLM 5.3 Flash · max** (`z-ai/glm-5.3-flash`, provider `openrouter`, condition `open_model_route`, reached with `fallbackReason: 'native_quota_limit'`) |
+
+`review_codex_complex` is the correct lane for PR #90 because the ruleset pairs review effort to
+*implementation* effort: `#42` ran `complex_implementation` (Sol · high), which pairs to
+`review_codex_complex`. `resolveCanonicalOrdinaryReviewRoute` returns the generic `review_codex`
+row for any OpenAI-authored slice — it keys on family, not effort — so the paired lane must be
+selected explicitly rather than taken from that resolver's output.
+
+PR #91's entire path is Codex family and is unaffected — it dispatches with no substitution at all.
+Both substitutions are the ruleset's own token-limit fallbacks, and both lapse at midnight; they are
+a dated observation, not a change to the ruleset. The relay row is reachable because the OpenRouter
+account's data-policy toggles were opened on 2026-09-04, so the second-order "AGY Gemini if
+OpenRouter limited" hop is not needed. Two standing conditions on that row: relay briefs carry the
+diff under review and nothing else — no run artifacts, no `.llm/` evidence, no credentials — and a
+GLM verdict over OpenRouter is citable as "tools + streaming, no reasoning trace" and never as
+reasoning evidence.
+
+This window is a **symptom, not the cause** of anything in this run. `#40` did not run a
+blocked lane — it ran *off* the table entirely, on a host default, and Fable has no implementer row
+under any lane. A rate limit is simply what made a silent misroute visible. The finding is the
+launch-identity defect in `drift.md`; the Fable window is how it surfaced.
 
 ## Recorded lane/eval overrides
 

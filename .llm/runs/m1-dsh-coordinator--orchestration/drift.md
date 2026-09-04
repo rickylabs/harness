@@ -182,10 +182,19 @@ documentation.
   (`.llm/harness/workflow/lane-policy.md` in `rickylabs/netscript`). Two further caveats: a session
   must **always** launch with a model named by the matrix, and the default must **never** be Fable 5
   — it is Opus 5 medium.
-- **Why this is a fallback and not an exception:** the matrix already anticipates exactly this. Its
-  route table carries a declared **token-limit fallback** column precisely so a quota-blocked
-  primary has a pre-ratified successor, and every Fable primary has one. Nothing here is invented
-  for the occasion; the blocked lanes are read off the table.
+- **Why this is a fallback and not an exception:** the ruleset already anticipates exactly this.
+  Its route table carries a declared **token-limit fallback** column so a quota-blocked primary
+  has a pre-ratified successor, and the substitutions here were obtained by calling
+  `resolveCanonicalFormalEvaluatorRoute` / `resolveCanonicalRoute`, not by transcribing rows.
+- **Scope, stated precisely:** the policy contains six Fable rows; this milestone reaches **two**,
+  both on PR #90 — its `review_codex_complex` review (→ Opus 5 · medium) and its
+  `formal_impl_evaluation` (→ `z-ai/glm-5.3-flash` · max over OpenRouter). PR #91 is Codex family
+  end to end. An earlier draft of this entry listed the whole Fable column as blocked, which
+  overstated the exposure fourfold and is corrected here.
+- **The window is a symptom, not the cause.** `#40` was not running a blocked lane; it was running
+  *off* the table entirely. Fable has no implementer row under any lane — it is a sub-agent
+  analysis and evaluator model. A rate limit is simply what made a silent misroute visible. The
+  finding is the launch-identity defect; Fable being down is how it surfaced.
 - **Action:** host default changed from `claude-fable-5-1` to `claude-opus-5` with effort `medium`
   (snapshot kept at `~/.claude/backups/settings.json.backup.1788552925`). `#40`'s live session was
   moved to Opus 5 medium in place rather than torn down — it was already `done` with PR #91 open,

@@ -307,10 +307,14 @@ recorded in `supervisor.md` § Routes in force:
   (snapshot: `~/.claude/backups/settings.json.backup.1788552925`).
 - `#40`'s live session switched in place to `claude-opus-5` + `medium` — it was already `done`, so
   tearing it down would have discarded PR #91 to fix a binding with no remaining turns to affect.
-- Every Fable-primary lane this milestone needs now carries its pre-ratified successor:
-  `review_codex_complex` → Opus 5 · medium, `review_codex` → Opus 5 · low, `deep_analysis` →
-  Codex · Sol · high, `formal_impl_evaluation` → GLM 5.3 Flash · max. All are read off the matrix;
-  none is invented for the occasion. All lapse at midnight.
+- **Two** rows in this milestone resolve to a Fable primary, both on PR #90, and both were
+  resolved by calling the ruleset rather than reading its table: its review
+  (`review_codex_complex`, paired to the Sol·high implementation) falls back to Opus 5 · medium,
+  and its IMPL-EVAL (`formal_impl_evaluation`, `evaluatesFamily: openai`) falls back to
+  `z-ai/glm-5.3-flash` · max over OpenRouter. PR #91 is Codex family end to end and needs no
+  substitution at all. Both lapse at midnight. Every other Fable row in the policy —
+  `deep_analysis`, `docs_polish`, `formal_plan_evaluation`, `review_codex` — is a row this
+  milestone never reaches, and listing them as "blocked" would be inventing exposure.
 - Every `/swarm` block emitted from here carries explicit `model:` and `effort:` rows. `#36`'s
   grammar already supports both keys, so this needs no dispatcher change.
 
