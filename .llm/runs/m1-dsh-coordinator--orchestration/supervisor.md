@@ -153,7 +153,7 @@ Pinned so a later reader can reproduce what this run was reading, per the patter
 
 ## Deliberate deviations
 
-Recorded here rather than left for a reader to infer. Both are honest states, not gaps.
+Recorded here rather than left for a reader to infer. Each is an honest state, not a gap.
 
 1. **Canary is `not-planned`.** `canary-cadence.md` expects a canary target per boundary. This
    repository publishes nothing yet — there is no artifact to canary. The first meaningful canary
@@ -167,6 +167,13 @@ Recorded here rather than left for a reader to infer. Both are honest states, no
    are copies from the netscript pin above. This repository must be able to run its own dispatch
    gate without a netscript checkout on the box. Four files, one external import (`@std/path`).
    Drift against upstream is a known cost, logged in `drift.md`.
+4. **`#92` reviews PR #91 at `high`, where `review_claude` specifies `xhigh`.** The `/swarm`
+   block declared `xhigh`; the dispatcher does not bind effort, so the session inherited
+   `~/.codex/config.toml`. Not torn down: a relaunch inherits the same default and changes
+   nothing, and raising the global Codex pin to win one tier would silently re-route every
+   future Codex implementer on the host. The review's load-bearing invariants — opposite-family
+   evaluator, generator ≠ evaluator — are intact. Recorded as observed-vs-requested; the
+   dispatcher fix is in `drift.md`.
 
 ## Artifacts and how to re-check them
 

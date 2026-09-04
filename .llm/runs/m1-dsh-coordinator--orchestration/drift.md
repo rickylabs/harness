@@ -269,3 +269,57 @@ documentation.
 - **Unchanged:** GLM over OpenRouter still returns zero thinking blocks. A GLM verdict is evidence
   of "tools + streaming, no reasoning trace" and must never be cited as reasoning evidence.
 - **Evidence:** owner-supplied OpenRouter privacy settings, 2026-09-04 22:27.
+
+## 2026-09-04 — `/swarm` binds the agent. It does not bind the model or the effort.
+
+One commit ago this run recorded that `#40` launched on an inherited model because its `/swarm` block
+declared none, and the remediation was to add explicit `model:` and `effort:` keys to the dispatch
+blocks. Dispatching the two W0 reviews tested that remediation, and it does not hold. The keys are
+read by humans. They are not read by the dispatcher.
+
+**The dispatch that proved it.** `#92` (review of PR #91) declared `harness: codex`,
+`model: gpt-5.6-sol`, `effort: xhigh`. Its lane is `review_claude`, whose route is
+Codex · `gpt-5.6-sol` · **`xhigh`**. What actually launched, read out of the session rollout rather
+than out of the brief:
+
+| Dimension | Declared in `/swarm` | Observed at launch | Where the observed value came from |
+| --- | --- | --- | --- |
+| agent | `codex` | `codex` | **the `/swarm` block** — `divybot.json`'s `harness` target defaults to `claude`, so `codex` can only have come from the issue body |
+| model | `gpt-5.6-sol` | `gpt-5.6-sol` | `~/.codex/config.toml` — which already pins that model, so this match proves nothing |
+| effort | `xhigh` | `high` | `~/.codex/config.toml`'s `model_reasoning_effort = "high"` |
+
+`#93` (review of PR #90) tells the same story from the other side: declared `claude-opus-5` /
+`medium`, observed `claude-opus-5` / `medium` — but those are exactly the host defaults that were
+changed earlier today, so again the match is inheritance, not binding.
+
+**Why the agent dimension is the decisive evidence.** `divybot.json` carries
+`{ "label": "harness", "repo": "rickylabs/harness", "agent": "claude" }` and nothing else — no model
+field, no effort field, no argv or env passthrough anywhere in the file. If the `/swarm` block were
+inert, `#92` would have spawned **claude**. It spawned codex. So the dispatcher does parse the block;
+it parses `harness:` and stops. `model:` and `effort:` fall through to the host config silently, with
+no warning and no record.
+
+**What this changes.** The `#40` finding was that a dispatch inherited its model instead of declaring
+it. That was too generous. The dispatch had no way to declare it. Writing `model:` into an issue body
+is a comment, and the previous commit's remediation — patching the `#40` and `#42` blocks — is
+therefore documentation of intent, not a route binding. It should be read that way and not as a fix.
+The single binding surface for model and effort today is the per-host agent config
+(`~/.claude/settings.json`, `~/.codex/config.toml`), which is global to the host: every Claude agent
+on `n5-agents` gets one model and one effort, and every Codex agent gets one model and one effort.
+A ruleset with per-lane efforts cannot be expressed through a per-host default. The two cannot both
+be satisfied, and today the host wins.
+
+**The one deviation this produced, stated plainly.** `#92` is reviewing PR #91 at `high` where
+`review_claude` specifies `xhigh` — one tier under-provisioned. It is not being torn down: the
+invariants that carry the review's weight are intact (opposite-family evaluator, generator ≠
+evaluator, no self-certification), a relaunch would inherit the same host default and change nothing,
+and mutating the global Codex pin to `xhigh` to win one tier would silently re-route every future
+Codex implementer on the host — a larger drift than the one it fixes. Recorded as observed-vs-
+requested, which is what launch identity being data rather than prose is for.
+
+**Fix, and who owns it.** This is a dispatcher change, not an issue-body change: divybot must read
+`model:`/`effort:` and pass them through as spawn arguments (`codex -c model_reasoning_effort=…`,
+`claude --model …`), or refuse the dispatch when a block names a route it cannot bind. Failing closed
+is the better default here — a review that silently runs a tier low is worse than one that does not
+start, because it produces a verdict that looks routed and is not. Until then, every dispatch's
+effort must be verified after launch rather than assumed, and this run does that.

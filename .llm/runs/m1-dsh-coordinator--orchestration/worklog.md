@@ -315,8 +315,12 @@ recorded in `supervisor.md` § Routes in force:
   substitution at all. Both lapse at midnight. Every other Fable row in the policy —
   `deep_analysis`, `docs_polish`, `formal_plan_evaluation`, `review_codex` — is a row this
   milestone never reaches, and listing them as "blocked" would be inventing exposure.
-- Every `/swarm` block emitted from here carries explicit `model:` and `effort:` rows. `#36`'s
-  grammar already supports both keys, so this needs no dispatcher change.
+- Every `/swarm` block emitted from here carries explicit `model:` and `effort:` rows. The
+  closing half of this bullet originally read "so this needs no dispatcher change"; dispatching
+  the reviews disproved it. `#36`'s grammar accepts both keys and the dispatcher ignores both —
+  it binds `harness:` and nothing else. The rows are a record of intent, and the model and effort
+  a session actually launches with must be read back from the session, not from the brief. See
+  Stage D and `drift.md`.
 
 ### Correction to the Stage C dispatch record
 
@@ -333,6 +337,51 @@ liveness probe `#33`/`#51` should be built on, and is what settled the first cor
 only enforces generator ≠ evaluator when both ids are non-empty, and recording a placeholder
 evaluator would assert a review that has not happened. It is filled when the review lanes are
 dispatched.
+
+## Stage D — W0 reviews dispatched, and what the dispatch proved
+
+Both W0 pull requests now have an opposite-family reviewer running. The routes were resolved by
+calling the ruleset, not by reading its table; the launched sessions were then read back to check
+what actually bound.
+
+| Issue | Reviews | Lane | Route the ruleset resolved | Session | Observed at launch |
+| --- | --- | --- | --- | --- | --- |
+| `#92` | PR #91 | `review_claude` | Codex · `gpt-5.6-sol` · `xhigh` | `n5-agents/codex-92` | `gpt-5.6-sol` · **`high`** |
+| `#93` | PR #90 | `review_codex_complex` | Fable 5 · medium, quota-blocked → Opus 5 · medium | `n5-agents/claude-93` | `claude-opus-5` · `medium` |
+
+`#93` is on route. `#92` is one effort tier under it, and the reason is not a mistake in the brief —
+the brief declared `xhigh`. It is that `/swarm`'s `model:` and `effort:` keys are not bindings.
+`drift.md` carries the evidence; the short form is that `divybot.json`'s `harness` target defaults to
+`agent: claude` and `#92` spawned **codex**, which proves the block is parsed, while the declared
+`xhigh` lost to `~/.codex/config.toml`'s `high`, which proves only `harness:` is honoured. `#93`'s
+match is inheritance too — `claude-opus-5` · `medium` are the host defaults changed earlier today —
+so it confirms nothing about binding and should not be read as confirmation.
+
+The practical consequence for this milestone: the previous commit's remediation for `#40` documents
+intent and does not route, and until the dispatcher binds these keys, **every launch must be read
+back from the session rather than trusted from the brief**. That read-back is now part of dispatch
+and is what produced the table above.
+
+`#92` is not being torn down over the tier. The invariants that make a review load-bearing hold —
+opposite family, generator ≠ evaluator, no self-certification — a relaunch would inherit the same
+default, and raising the global Codex pin to `xhigh` to win one tier would silently re-route every
+future Codex implementer on the host. It is recorded as a deviation in `supervisor.md` instead.
+
+### Leaf state
+
+Both leaves move `gating` → `evaluating` and carry their observed evaluator ids
+(`divybot/n5-agents/codex-92`, `divybot/n5-agents/claude-93`). Each lane holds exactly one
+evaluating leaf, inside the `activeEvaluatorsPerLane: 1` limit. The ids are the sessions that exist,
+not the sessions that were requested — which is the same distinction the table above turns on.
+
+### Not yet dispatched
+
+The two `formal_impl_evaluation` gates are deliberately held until the ordinary reviews return.
+PR #90's IMPL-EVAL is the relay row (`z-ai/glm-5.3-flash` · max over OpenRouter, reached with
+`fallbackReason: 'native_quota_limit'`), and it carries two standing conditions worth restating
+before it launches: its brief carries the diff under review and nothing else — no run artifacts, no
+`.llm/` evidence, no credentials — and a GLM verdict over OpenRouter is citable as "tools +
+streaming, no reasoning trace", never as reasoning evidence for a gate.
 
 ## Handoff Notes
 
