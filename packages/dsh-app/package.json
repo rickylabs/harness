@@ -1,0 +1,41 @@
+{
+  "name": "@rickylabs/dsh-app",
+  "version": "0.0.0",
+  "description": "Our dsh profile and bundle (cordis.patch.yml) composing every plugin package",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --emitDeclarationOnly",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@rickylabs/board": "workspace:*",
+    "@rickylabs/contracts": "workspace:*",
+    "@rickylabs/coordinator": "workspace:*",
+    "@rickylabs/forge": "workspace:*",
+    "@rickylabs/governance": "workspace:*",
+    "@rickylabs/llm-local": "workspace:*",
+    "@rickylabs/netscript-bridge": "workspace:*",
+    "@rickylabs/provider-acp": "workspace:*",
+    "@rickylabs/provider-claude": "workspace:*",
+    "@rickylabs/provider-codex": "workspace:*",
+    "@rickylabs/provider-opencode": "workspace:*",
+    "@rickylabs/routing": "workspace:*",
+    "@rickylabs/telemetry": "workspace:*",
+    "@deepseek-ai/dsh": "^0.1.2-rc.1"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../board"
+    },
+    {
+      "path": "../contracts"
+    },
+    {
+      "path": "../coordinator"
+    },
+    {
+      "path": "../forge"
+    },
+    {
+      "path": "../governance"
+    },
+    {
+      "path": "../llm-local"
+    },
+    {
+      "path": "../netscript-bridge"
+    },
+    {
+      "path": "../provider-acp"
+    },
+    {
+      "path": "../provider-claude"
+    },
+    {
+      "path": "../provider-codex"
+    },
+    {
+      "path": "../provider-opencode"
+    },
+    {
+      "path": "../routing"
+    },
+    {
+      "path": "../telemetry"
+    }
+  ]
+}
