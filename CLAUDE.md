@@ -5,6 +5,6 @@ is that you are expected to ask before mutating anything outside the active run 
 
 Quick orientation:
 
-- Doctrine: [`.llm/harness/WORKFLOW.md`](.llm/harness/WORKFLOW.md), [`.llm/harness/PRINCIPLES.md`](.llm/harness/PRINCIPLES.md)
+- Doctrine: [`doctrine/WORKFLOW.md`](doctrine/WORKFLOW.md), [`doctrine/PRINCIPLES.md`](doctrine/PRINCIPLES.md)
 - Active run: [`.llm/runs/architecture-foundation--seed/`](.llm/runs/architecture-foundation--seed/)
 - Start with that run's `context-pack.md` — it is written to be the single file that resumes the work.

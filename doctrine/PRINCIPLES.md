@@ -52,7 +52,7 @@ mix in one file — that is what makes a harness unportable.
 
 ### 9. Non-duplication
 
-Each fact has one home. Harness doctrine lives in `.llm/harness/`. Durable project knowledge
+Each fact has one home. Harness doctrine lives in `doctrine/`. Durable project knowledge
 lives in the knowledge base. Run-specific reasoning lives in the run directory. A fact in two
 places is a future contradiction.
 

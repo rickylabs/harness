@@ -14,8 +14,8 @@ Optionally scoped:
 use harness, profile: architecture: design the run-state ownership model
 ```
 
-This binds you to the doctrine in [`.llm/harness/`](.llm/harness/). Read
-[`WORKFLOW.md`](.llm/harness/WORKFLOW.md) and [`PRINCIPLES.md`](.llm/harness/PRINCIPLES.md)
+This binds you to the doctrine in [`doctrine/`](doctrine/). Read
+[`WORKFLOW.md`](doctrine/WORKFLOW.md) and [`PRINCIPLES.md`](doctrine/PRINCIPLES.md)
 before your first mutation. They are short by design.
 
 ## What this repository is

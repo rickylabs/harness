@@ -72,16 +72,28 @@ down to leaf. Steer from a phone; review on a desktop.
 - **Deterministic work belongs in the daemon.** Anything an agent is asked to do repeatedly and identically is a bug in the harness.
 - **Local first, vendor neutral.** Claude Code, Codex, opencode, Copilot — the harness outlives whichever one you opened this morning.
 
+The [E1 roadmap](https://github.com/rickylabs/harness/issues/31) makes each commitment
+executable in a named epic:
+
+| Commitment | Executable in |
+|---|---|
+| Artifacts over chat | [E9 — telemetry sink](https://github.com/rickylabs/harness/issues/39) |
+| Citations or it is not a claim | [E6 — workflow step contract](https://github.com/rickylabs/harness/issues/36) |
+| Owner forks are raised, never resolved silently | [E6 — coordinator](https://github.com/rickylabs/harness/issues/36) → [E7 — issue bridge](https://github.com/rickylabs/harness/issues/37) |
+| Nothing mutates before a gate passes | [E5 — admission control and sandbox boundary](https://github.com/rickylabs/harness/issues/35) |
+| Deterministic work belongs in the daemon | [E6 — coordinator](https://github.com/rickylabs/harness/issues/36) |
+| Local first, vendor neutral | [E3 — two-seam provider split](https://github.com/rickylabs/harness/issues/33) |
+
 ## Current run
 
 `.llm/runs/architecture-foundation--seed/` — the founding architecture run.
 It designs this product using this product's own method. See
-[`.llm/harness/WORKFLOW.md`](.llm/harness/WORKFLOW.md) for how to pick it up from any CLI.
+[`doctrine/WORKFLOW.md`](doctrine/WORKFLOW.md) for how to pick it up from any CLI.
 
 ## Repository map
 
 ```
-.llm/harness/       doctrine — how to work here (stable, portable)
+doctrine/           doctrine — how to work here (stable, portable)
 .llm/runs/          run artifacts — durable, reviewed via PR
 .agents/skills/     behavioural skills — how to decide (project-specific)
 AGENTS.md           entry point, agent mode
