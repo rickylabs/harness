@@ -10,9 +10,10 @@
     "node": ">=24"
   },
   "scripts": {
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
-    "clean": "pnpm -r clean"
+    "check:graph": "node scripts/check-project-graph.mjs",
+    "build": "pnpm run check:graph && pnpm -r run build",
+    "typecheck": "pnpm run check:graph && pnpm -r run typecheck",
+    "clean": "pnpm -r run clean"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
