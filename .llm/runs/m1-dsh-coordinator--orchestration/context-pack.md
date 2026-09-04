@@ -12,10 +12,15 @@
 
 ## Current State
 
-Orchestrator profile mode is **enabled and gated green** for milestone M1. The board carries 49
-leaf issues under nine epics; the cluster control plane exists, validates, and knows exactly which
-issue belongs to which lane and which wave. No lane is bound to a session and no work has been
-dispatched — that is the correct state for a validated Step 0 awaiting an owner go.
+Orchestrator profile mode is **enabled, gated green, and running**. Wave 0 is dispatched: `#40`
+(claude, `internals`) and `#42` (codex, `docs`) carry the `harness` label and are live. The other
+47 leaves are unlabelled and inert.
+
+**One coordinator owns the whole milestone.** The two-thread lane split published in `#30` is
+retracted — the second thread was already committed to unrelated work and was never running this
+programme. Its harness-related findings were parked, recovered, and reconciled into this run before
+any agent started; see `reconciliation.md`. All four topic lanes are bound to
+`harness-m1/<lane>/claude-opus-5-desktop-5dc200b1`.
 
 Everything below wave 0 is unblocked. The `features` lane is idle by design until `#51` lands the
 dispatch contract in wave 1; dispatching it earlier would fork that contract four ways.
@@ -27,19 +32,30 @@ dispatch contract in wave 1; dispatching it earlier would fork that contract fou
 - Gate tooling vendored in-repo with a `deno.json` that runs it.
 - Step 0 artifacts generated from the live board: intake, inventory, dependency DAG, cluster state.
 - `milestone-status.md` rendered; dispatch gate green with zero errors and zero findings.
+- Stage B: vendor CLI inventory, credential presence, and paid-transport reachability established.
+- The N5 thread's parked work recovered off an `/ephemeral` mount and reconciled — four receipts,
+  two corrections to Stage B, and the `ctx.agentTeams` contract it flagged as an unretrieved gap.
+- Four lanes bound to a real coordinator identity; `topic-orchestrators-unbound` resolved.
+- **Wave 0 dispatched** — `#40` and `#42` labelled.
 
 ## In Progress
 
-- Nothing is executing. The run is parked at a green gate.
+- `#40` — pnpm workspace skeleton, TS project references, 14 buildable package stubs (claude).
+- `#42` — doctrine move into `doctrine/` plus the commitment-to-epic pointer table (codex).
+- Both are attached runs bounded at `timeout: 180m`. Neither has opened a PR yet, which is why
+  `state.leaves[]` is still empty — the schema records a leaf only once a PR exists.
 
 ## Next Steps
 
-1. Owner decides whether to bind the four topic lanes and dispatch wave 0.
-2. Owner decides `#62` — the sandboxctl execution channel — which unblocks all of E5.
-3. On go: record the Stage B provider-quota and paid-transport checks in `worklog.md`, then bind
-   lanes and dispatch W0 attached, never one-shot, through the agentic suite.
-4. Brief the N5 supervisor thread against `#30` so it starts from this architecture instead of
-   rediscovering it. It owns `#33` `#34` `#37`.
+1. Watch `#40` and `#42` to first PR. A leaf that **closes without an open PR** was torn down by
+   its `timeout:`, not completed — reopen and re-dispatch rather than counting it done.
+2. On `#40`'s PR: release `#41`, `#43`, `#44`, `#45`. They are held only because they edit files
+   `#40` creates, and `#43` owns the root `README` / `AGENTS.md` / `CLAUDE.md`.
+3. **Owner:** decide `#62` — ssh executor or privileged sidecar — which unblocks all of E5. It now
+   carries hard evidence: `ai-agents` cannot see the host daemon at all (`reconciliation.md` § 1.3).
+4. **Owner:** merge PR `#89`, and ratify "adopt the `ctx.agentTeams` shapes, not the dependency".
+5. Before W3: rescope `#65` from service repair to the health-probe contract `#34` already calls
+   for, and re-plan `#36` on `TeamTaskSnapshot` shapes.
 
 ## Key Decisions
 
@@ -52,6 +68,8 @@ dispatch contract in wave 1; dispatching it earlier would fork that contract fou
 | Two seams, not one | architecture | vendor CLIs → `ctx.subagents`; API/local models → `ctx.llm` |
 | Gate at the sandbox boundary | architecture | dsh cannot gate tool calls inside a vendor CLI child |
 | Strangler-fig on divybot | plan | one dispatch payload, per-target flag selects provider or divybot |
+| Single coordinator for all nine epics | owner | the two-thread split in `#30` is retracted, not reassigned |
+| Adopt `ctx.agentTeams` shapes, not the dependency | proposed | experimental private seam; copy `revision` CAS, `blockedBy`, `writeScopes` |
 
 ## Files Changed
 
@@ -82,8 +100,13 @@ dispatch contract in wave 1; dispatching it earlier would fork that contract fou
 
 ## Drift and Debt
 
-- Drift: one entry — vendored gate tooling now has two copies with independent lifecycles.
-- Debt: lane orchestrator ids are placeholders until Stage C binds real sessions.
+- Drift: eight entries. The significant one is the retracted two-thread lane split — for a period
+  the board asserted ownership that did not exist, which is the exact failure the status file is
+  meant to make impossible.
+- Debt: `build-cluster.ts` is no longer safe to re-run blind. It regenerates state from the frozen
+  inventory and would discard lane bindings, the resolved blocker and the dispatch record while
+  agents are running against the board it describes. Renderer and validator stay safe; they read.
+- Debt: the `#41`/`#43`/`#44`/`#45` file-collision constraint lives in prose, not in data.
 
 ## Commits
 

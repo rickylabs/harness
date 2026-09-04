@@ -30,11 +30,15 @@
    fails loudly rather than producing a plausible-looking DAG.
 5. **Status rendered and the gate run green.**
 
-### Deliberate non-application of the `harness` label
+### Application of the `harness` label is an action, not metadata
 
-No M1 issue carries the `harness` label. In this repository that label is the live Orchid/divybot
-dispatch trigger — applying it starts a real agent on the N5. Labelling here is an action, not
-metadata.
+In this repository the `harness` label is the live Orchid/divybot dispatch trigger — applying it
+starts a real agent on the N5 and binds subscription quota. It was therefore withheld from all 49
+leaves through Stage A and Stage B, while the board was being frozen and gated.
+
+It has still not been applied to any of them. All 49 leaves remain unlabelled, and the only issues
+carrying it in this repository are the closed pre-programme smoke tests. Anyone adding the label to
+an M1 issue is dispatching an agent, not annotating a board.
 
 ## Progress Log
 
@@ -46,6 +50,13 @@ metadata.
 | 2026-09-04 | step-0 | freeze | intake / inventory / DAG / state generated from `gh` |
 | 2026-09-04 | step-0 | render | `milestone-status.md` generated |
 | 2026-09-04 | step-0 | gate | `{ ok: true, errors: [], findings: [] }` |
+| 2026-09-04 | stage-b | quota + transport | hosted transport live; local inference down; codex version reading is a finding |
+| 2026-09-04 | stage-c | arm W0 bodies | `/swarm` block prepended to `#40` and `#42`; label withheld, so inert |
+| 2026-09-04 | stage-c | hold dispatch | lane split retracted; consolidating to a single coordinator |
+| 2026-09-04 | reconcile | absorb N5 park | Stage B corrected to proof; `#65` rescoped; `#62` gains evidence; `agent-team` retrieved |
+| 2026-09-04 | stage-c | bind lanes | all four lanes bound to one coordinator; `topic-orchestrators-unbound` resolved |
+| 2026-09-04 | stage-c | gate | red on cadence, then `{ ok: true, errors: [], findings: [] }` |
+| 2026-09-04 | stage-c | **dispatch W0** | `harness` label applied to `#40` (claude) and `#42` (codex); 47 leaves still inert |
 
 ## Decisions
 
@@ -84,22 +95,155 @@ this run. `reporting.environment` counts **run-owned** resources — the field e
 leaked Aspire apps and orphaned sandboxes — so it correctly reads zero. The fleet baseline is
 recorded here so a future reader does not read that zero as "nothing is running on the box".
 
-## Stage B — not entered
+## Stage B — provider quota and transport checks
 
-Stage B requires **recorded** provider-quota and paid-transport check output in this file before
-any dispatch. Those checks are deliberately not run yet: nothing is being dispatched, and their
-output is a snapshot that would be stale by the time a lane actually starts.
+Recorded 2026-09-04, before any lane was bound. These are **dated observations**, not
+configuration: the numbers move continuously and must never be committed as settings or read by a
+later run as still-true. Credential files were checked for presence and size only; no file
+contents were read, printed or stored.
 
-When the owner authorizes dispatch, record here, in this file, before binding any lane:
+### Vendor CLIs available on `ai-agents`
 
-- Provider quota position per account for each vendor CLI that will carry a lane, from the
-  governor's own reading — claude rate-limit headers and codex rollout `token_count` — not from a
-  guess about what is probably left.
-- Paid-transport reachability for the OpenRouter path, since the evaluator lane depends on it and
-  a transport failure there presents as "the evaluator is slow", one layer above the cause.
+| CLI | Reading |
+| --- | --- |
+| `claude` | 2.1.260 |
+| `opencode` | 1.18.27 |
+| `agy` | 1.1.26 |
+| `codex` | printed a stale-temp-dir permission warning instead of a version |
 
-Allowance snapshots are operational state. They belong in this worklog as a dated observation and
-must never be committed as configuration.
+The `codex` reading is a **finding, not a version**. It reports a permission problem on a leftover
+temp directory rather than answering `--version`. It is very likely cosmetic, but a lane bound to
+codex should be watched on its first slice rather than assumed healthy, because this is exactly
+the shape of failure that presents later as "the agent started and did nothing".
+
+All four provider credential files are present with non-zero size.
+
+### Paid transport reachability
+
+| Endpoint | Result | Reading |
+| --- | --- | --- |
+| OpenRouter | `200` | reachable and authenticated — the evaluator path is live |
+| `api.anthropic.com` | `401` | reachable; unauthenticated probe, so 401 is the expected answer |
+| `chatgpt.com` | `403` | reachable; bot-gated, as expected from a container |
+
+The distinction that matters: `401`/`403` are *answers*, which proves the transport works. A
+transport failure on the evaluator path presents one layer above its cause — as "the evaluator is
+slow" — which is why this is checked before dispatch rather than diagnosed during it.
+
+### Local inference is down — dispatch consequence
+
+From `ai-agents`, all three local endpoints fail to connect:
+
+| Endpoint | Result |
+| --- | --- |
+| `lm-studio:1234` | `000ERR` |
+| `llama-vulkan:8080` | `000ERR` |
+| `llama-rocm:8081` | `000ERR` |
+
+This is **not** a network fault. DNS from `ai-shared` resolves all three correctly
+(`10.4.12.35` / `10.4.12.37` / `10.4.12.39`), and both llama containers log nothing at all.
+
+**Corrected 2026-09-04 by independent reproduction** — see `reconciliation.md` § 1. The N5 thread
+measured the failure mode rather than the failure: it is **connection refused** with
+`time_connect=0.000000s`, not a timeout. A refusal is an RST, so the SYN reached the host and was
+actively rejected; a firewall DROP or a routing fault would time out instead. L3 and DNS are
+therefore proven good end to end, and "the services are not listening" is established rather than
+inferred.
+
+**And it is very probably not a fault at all.** `#34` already records that `llama-rocm`'s entrypoint
+is `sleep infinity` — starting the container does not start a server. That predicts every
+observation here: container up so DNS resolves, logs empty because `sleep infinity` emits nothing,
+nothing listening because no server was ever started. LM Studio on `:1234` is the ordinary separate
+case of the server toggle being off. `#65` is rescoped accordingly, from "repair a broken service"
+to the health-probe contract `#34` already calls for.
+
+**A further constraint, not visible from this session:** `ai-agents` runs with
+`DOCKER_HOST=tcp://netscript-dind:2375`, and `docker inspect lm-studio` there returns
+`No such object`. The local model containers live on the **NAS host daemon**, and no host socket is
+mounted into `ai-agents`. Nothing that has to start or health-check them can be driven from the
+container this run can reach — which is direct evidence for the `#62` owner decision.
+
+**Consequence for this milestone:** route hosted, and do not schedule local evaluators. No W0 or W1
+leaf depends on local inference, so this does not block dispatch. `#59` and `#60` (the capability
+probes and the local capability matrix) cannot be verified against a live backend until a start step
+exists and the daemon-boundary question in `#62` is answered.
+
+Separately: `llama-vulkan` is **Up**, against a standing operational constraint that it stay
+stopped. Recorded here as an observation for the owner; not acted on, because stopping containers on
+the box is outside this run's authority — and, per the constraint above, not even possible from it.
+
+
+## Stage C — Wave 0 dispatched
+
+`#40` (claude, `internals`) and `#42` (codex, `docs`) carry the `harness` label as of
+2026-09-04. Everything else in the milestone — 47 leaves — remains unlabelled and inert.
+
+**Fired is not the same as picked up, and these artifacts keep the two apart.** Applying the label
+is this coordinator's act, and it is done. Whether divybot has claimed the issue is a separate
+observable, and at the time of writing it is **not yet confirmed**: no comment on either issue, no
+branch, no PR.
+
+This repository has **no GitHub Actions workflows at all** — `gh run list` returns nothing — so no
+Actions run will ever appear for a dispatch. divybot is an out-of-band poller, which means the
+absence of a workflow run is not evidence of anything and is the wrong place to look. The signals
+that do indicate pickup are, in order: a comment on the issue, a pushed branch, then a PR. A
+dispatch that produces none of them within a reasonable window has not started, and the correct
+response is to check that divybot is polling — not to re-apply the label.
+
+### What was dispatched, and what was deliberately not
+
+Both bodies carry a `/swarm` block prepended before the label was applied: `harness:` selects the
+provider, `timeout: 180m` bounds the run. In this repository the **label is the trigger and the body
+is only configuration**, so the bodies sat armed and inert until the moment the label landed. That
+ordering was chosen on purpose — it makes arming reviewable as a separate act from firing.
+
+`#41`, `#43`, `#44` and `#45` are W0 leaves that were **not** dispatched. All four edit files that
+`#40` creates, and `#43` owns the root `README` / `AGENTS.md` / `CLAUDE.md` — the highest-collision
+surface in the repository. They are held until `#40`'s PR is up, at which point the collision is
+against a known tree instead of an imagined one.
+
+This is the concrete case for the `writeScopes` finding in `reconciliation.md` § 2: the reason those
+four cannot run concurrently is a fact about paths, and it is currently held only in this paragraph
+and in a coordinator's head rather than as data the control plane can check.
+
+### Authorization
+
+Dispatching W0 was an open owner decision (`start-wave-0`) and it has been removed from
+`reporting.ownerDecisions`. The provenance, recorded explicitly because dropping an owner decision
+is exactly the kind of edit that must never rest on an unsourced assertion:
+
+- *"once the epic and sub issues are created enable orchestrator profile mode using the updated
+  harness and AGENTIC toolchain we just merged"* — the instruction that defines this run.
+- *"proceed"*, then *"proceed with any work pending"*.
+- *"become the only coordinator of the milestone and 100% adhere to the harness profile"* — which
+  also removed the second thread as a precondition.
+
+The stated precondition for resuming — reconciling the parked thread's findings — is met in
+`reconciliation.md`, whose § 5 records the specific thing that had to be ruled out: nothing in the
+handoff contradicts a wave assignment or a dependency edge. The dispatch gate is green with no
+errors and no findings.
+
+### Two traps a later reader must not walk into
+
+**A closed leaf is not a finished leaf.** `timeout: 180m` teardown closes the inbox issue, and here
+the inbox issue *is* the milestone leaf. If `#40` or `#42` closes **without an open PR against
+`main`**, that is a fired timeout, not completion — reopen it and re-dispatch. Treating it as done
+would silently drop a committed leaf from the board while the status file still counted it.
+
+**Re-running the generator now would reset the live control plane.** `build-cluster.ts` regenerates
+`milestone-cluster-state.json` from the frozen inventory, which would discard lane bindings, the
+resolved blocker, the dropped owner decision and the dispatch record — while agents are running
+against the board it describes. From here the generator is only safe to re-run if its output is
+reconciled against live state, not written over it. Renderer and validator remain safe at any time;
+they read.
+
+### Leaves stay empty until PRs exist
+
+`state.leaves[]` records nothing for this dispatch. The schema requires a positive `prNumber` and a
+non-empty `headSha` per entry, so a leaf becomes recordable when its agent opens a PR — not when its
+agent starts. Dispatch is visible in the lane matrix (`internals` and `docs` are `active` with
+`activeItems` `[40]` and `[42]`); completion will be visible in `leaves[]`. The two are deliberately
+different surfaces and should not be conflated when reading the status file.
 
 ## Handoff Notes
 
@@ -107,8 +251,13 @@ must never be committed as configuration.
   authorization, the doctrine pins and the three deliberate deviations.
 - `milestone-cluster-state.json` is the control plane; `milestone-status.md` is its generated
   view. Never edit the view.
-- The two open owner decisions — dispatch W0, and the sandboxctl execution channel (`#62`) — are
-  in `reporting.ownerDecisions` and are the only things standing between a green gate and work
-  starting.
-- The N5 supervisor thread owns epics `#33` `#34` `#37`. Point it at `#30` for the architecture
-  record rather than letting it rediscover the two-seam split.
+- **W0 is dispatched.** `#40` and `#42` are labelled and running; see Stage C for the two traps
+  that come with that (a timeout teardown closes a leaf, and re-running `build-cluster.ts` would
+  reset the live control plane).
+- Two owner decisions remain open in `reporting.ownerDecisions`: the sandboxctl execution channel
+  (`#62`, now carrying hard evidence — see `reconciliation.md` § 1.3) and the canary shape for a
+  greenfield repo. Neither blocks W0; `#62` blocks `#62`–`#67`.
+- **This run has one coordinator for the whole milestone.** The two-thread lane split published in
+  `#30` is retracted — see the drift entry. No epic in M1 is owned by another thread, and no scope
+  is being held open for one. `#30` still carries the superseded split in a comment; treat this
+  file and the drift log as the current record until that comment is corrected on the board.

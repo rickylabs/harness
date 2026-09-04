@@ -15,7 +15,7 @@
   "lanes": [
     {
       "id": "docs",
-      "orchestratorAgentId": "harness-m1/docs/unbound",
+      "orchestratorAgentId": "harness-m1/docs/claude-opus-5-desktop-5dc200b1",
       "issueNumbers": [
         42,
         43,
@@ -24,7 +24,7 @@
     },
     {
       "id": "internals",
-      "orchestratorAgentId": "harness-m1/internals/unbound",
+      "orchestratorAgentId": "harness-m1/internals/claude-opus-5-desktop-5dc200b1",
       "issueNumbers": [
         40,
         41,
@@ -52,14 +52,14 @@
     },
     {
       "id": "fixes",
-      "orchestratorAgentId": "harness-m1/fixes/unbound",
+      "orchestratorAgentId": "harness-m1/fixes/claude-opus-5-desktop-5dc200b1",
       "issueNumbers": [
         67
       ]
     },
     {
       "id": "features",
-      "orchestratorAgentId": "harness-m1/features/unbound",
+      "orchestratorAgentId": "harness-m1/features/claude-opus-5-desktop-5dc200b1",
       "issueNumbers": [
         51,
         52,
@@ -291,10 +291,10 @@
   "canaryCheckpoints": [],
   "reporting": {
     "cadenceMinutes": 60,
-    "lastReportAt": "2026-09-04T18:32:29.156Z",
-    "nextReportDueAt": "2026-09-04T19:27:29.156Z",
-    "lastReportRef": "worklog.md#stage-a--cluster-bootstrap",
-    "headline": "Step 0 frozen and Stage A bootstrapped: 49 leaves across 6 waves, four topic lanes allocated, zero dispatched. Wave 0 is unblocked; the features lane is correctly idle until #51 lands.",
+    "lastReportAt": "2026-09-04T19:39:34.527Z",
+    "nextReportDueAt": "2026-09-04T20:39:34.527Z",
+    "lastReportRef": "worklog.md#stage-c--wave-0-dispatched",
+    "headline": "Wave 0 fired: the `harness` label is applied to #40 (internals, claude) and #42 (docs, codex); divybot pickup is not yet confirmed, and 47 leaves remain unlabelled. The two-thread lane split is retracted — one coordinator now owns all four lanes. The N5 thread's parked findings are reconciled: Stage B upgraded to proof, #65 rescoped, #62 gained decisive evidence.",
     "currentMainSha": "b7d5e586e32f31ef44cab7b1327ab890f8e23794",
     "canary": {
       "target": "harness@0.1.0-next",
@@ -373,19 +373,23 @@
     "orchestratorMatrix": [
       {
         "lane": "docs",
-        "state": "queued",
-        "activeItems": [],
-        "lastConcreteProgressAt": "2026-09-04T18:32:29.156Z",
+        "state": "active",
+        "activeItems": [
+          42
+        ],
+        "lastConcreteProgressAt": "2026-09-04T19:39:34.527Z",
         "blocker": null,
-        "nextAction": "Wave 0: take #42 (doctrine port to doctrine/) and #43 (root agent entry points) as one leaf; #45 is a written decision, not code."
+        "nextAction": "#42 dispatched to codex. Watch the first slice: codex answers --version with a stale-temp-dir permission warning, which is the shape of failure that presents later as 'started and did nothing'."
       },
       {
         "lane": "internals",
-        "state": "queued",
-        "activeItems": [],
-        "lastConcreteProgressAt": "2026-09-04T18:32:29.156Z",
+        "state": "active",
+        "activeItems": [
+          40
+        ],
+        "lastConcreteProgressAt": "2026-09-04T19:39:34.527Z",
         "blocker": null,
-        "nextAction": "Wave 0: dispatch #40 (pnpm workspace) as the first leaf — every other wave-0 and wave-1 node depends on it."
+        "nextAction": "#40 dispatched to claude. Hold #41, #43, #44 and #45 until its PR is up — all four edit files #40 creates, and #43 owns the root entry points."
       },
       {
         "lane": "fixes",
@@ -393,7 +397,7 @@
         "activeItems": [],
         "lastConcreteProgressAt": "2026-09-04T18:32:29.156Z",
         "blocker": null,
-        "nextAction": "Idle by design in wave 0. #67 lands in wave 3; defects filed from inside the run enter this lane at a re-intake checkpoint."
+        "nextAction": "One issue, and nothing to fix yet in a greenfield repo. Fills as the other lanes produce code."
       },
       {
         "lane": "features",
@@ -401,26 +405,17 @@
         "activeItems": [],
         "lastConcreteProgressAt": "2026-09-04T18:32:29.156Z",
         "blocker": "Waits on #51 (DispatchRequest) in wave 1 — dispatching earlier would fork the contract.",
-        "nextAction": "Blocked until wave 1 lands #51 (DispatchRequest). No features leaf may be dispatched before then."
+        "nextAction": "Idle by design until #51 lands the dispatch contract in wave 1. Dispatching a provider earlier forks that contract four ways."
       }
     ],
     "blockers": [
       {
         "id": "sandboxctl-execution-channel",
         "category": "infrastructure",
-        "summary": "sandboxctl runs on the N5 host and the coordinator has no execution channel to it, so the sandbox gate cannot be wired.",
+        "summary": "sandboxctl runs on the N5 host and the coordinator has no execution channel to it. Now established rather than assumed: ai-agents runs with DOCKER_HOST=tcp://netscript-dind:2375 and cannot see the host daemon at all (docker inspect lm-studio -> No such object), and no host socket is mounted into it.",
         "impact": "Wave 3 governance work (#63-#67) cannot start, and the gate that replaces per-tool approval for vendor CLI children has nowhere to live. Everything else proceeds.",
         "owner": "owner (chautems-eric)",
-        "nextAction": "Decide #62: an ssh executor held by the coordinator, or a narrow privileged sidecar exposing sandboxctl over HTTP on ai-shared.",
-        "ownerDecisionRequired": true
-      },
-      {
-        "id": "topic-orchestrators-unbound",
-        "category": "evaluator-transport",
-        "summary": "The four topic lanes are allocated but no session is bound to any of them; the orchestratorAgentId values carry an explicit /unbound suffix.",
-        "impact": "No implementation or evaluation leaf can be dispatched. This is the correct state for a validated Step 0 that has not yet been told to start work.",
-        "owner": "coordinator",
-        "nextAction": "On the owner's go, bind the lanes per lane-policy.md and record the real session identity, worktree and PR head on each leaf before dispatch.",
+        "nextAction": "Decide #62: an ssh executor held by the coordinator, or a narrow privileged sidecar exposing sandboxctl over HTTP on ai-shared. The evidence removes any middle option that would have run from inside ai-agents.",
         "ownerDecisionRequired": true
       }
     ],
@@ -431,19 +426,6 @@
       "dockerCustomNetworks": 0
     },
     "ownerDecisions": [
-      {
-        "id": "start-wave-0",
-        "question": "Bind the four topic lanes and dispatch wave 0, or hold at a validated Step 0?",
-        "whyOwnerOnly": "Dispatching binds subscription quota across accounts and starts real agents on the N5. The gate is green either way; only the owner decides when the spend starts.",
-        "blockedItems": [
-          40,
-          41,
-          42,
-          43,
-          44,
-          45
-        ]
-      },
       {
         "id": "sandboxctl-execution-channel",
         "question": "ssh executor or privileged sidecar for sandboxctl? The sidecar is narrower and auditable; the ssh executor is zero new code and broad authority.",
@@ -480,5 +462,5 @@
     "contentSha": null,
     "evidence": []
   },
-  "updatedAt": "2026-09-04T18:32:29.156Z"
+  "updatedAt": "2026-09-04T19:39:34.527Z"
 }

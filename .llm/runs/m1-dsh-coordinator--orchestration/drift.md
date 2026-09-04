@@ -68,3 +68,55 @@ documentation.
   as the other lanes produce code. Rebalancing by reclassifying feature work into `fixes` would
   make the lane look healthy and the board dishonest.
 - **Evidence:** `milestone-status.md` → orchestrator matrix.
+
+## 2026-09-04 — The two-thread lane split was never real, and is retracted
+
+- **What:** the programme was planned and published as two coordinating threads — this run on
+  architecture (`#31` `#32` `#36` `#38`), a NetScript supervisor thread on software
+  (`#33` `#34` `#37`), and `#35` `#39` joint. The split was published as a comment on `#30` and a
+  steer was delivered to that thread.
+- **Source:** `#30` comment; `context-pack.md` § Next Steps; `worklog.md` § Handoff Notes.
+- **Expected:** a second thread picking up three epics and reporting findings back.
+- **Actual:** that thread was already committed to unrelated work and was not running this
+  programme. Three epics had no owner while the board recorded them as owned, and the steer landed
+  in a thread whose context it did not describe.
+- **Severity:** significant. This is not a scheduling inconvenience — for a period the board
+  asserted ownership that did not exist, which is the specific failure the status file is meant to
+  make impossible.
+- **Action:** retract, do not reassign. The milestone consolidates to a single coordinator for all
+  nine epics. Scope is not held open for a thread that is not working it, and no lane is bound to
+  an identity that is not real — the same reasoning that put `/unbound` on the lane ids in the
+  first place, applied one level up.
+- **Consequence for dispatch:** W0 is armed and held rather than fired. That thread's
+  harness-related findings are reconciled into this run before any agent starts, because it saw the
+  box directly and its evidence is not otherwise available here. Dispatching first would mean
+  agents building on a picture already known to be incomplete.
+- **Evidence:** `worklog.md` § Stage C — prepared and held.
+
+## 2026-09-04 — Local inference is down across all three backends
+
+- **What:** from `ai-agents`, `lm-studio:1234`, `llama-vulkan:8080` and `llama-rocm:8081` all fail
+  to connect.
+- **Source:** Stage B transport checks.
+- **Expected:** a local tier available for cheap evaluator work and for verifying the capability
+  probes.
+- **Actual:** all three refuse connection. DNS from `ai-shared` resolves every one of them
+  correctly and both llama containers log nothing at all, so the services are not listening — this
+  is not a network fault.
+- **Severity:** minor for M1, significant for the run that verifies `#59` and `#60`.
+- **Action:** route hosted and schedule no local evaluators. No W0 or W1 leaf depends on local
+  inference, so dispatch is not blocked. `#59` and `#60` cannot be verified against a live backend
+  until the cause is fixed on the box.
+- **Evidence:** `worklog.md` § Stage B.
+
+## 2026-09-04 — `codex --version` answers with a permission warning
+
+- **What:** `codex` on `ai-agents` prints a stale-temp-dir permission warning instead of a version
+  string.
+- **Source:** Stage B CLI inventory.
+- **Expected:** a version.
+- **Severity:** minor, pending.
+- **Action:** accept for now, but watch the first codex-bound slice rather than assuming health.
+  This is the shape of failure that presents later as "the agent started and did nothing", and the
+  cost of noticing it at dispatch time is far lower than at review time.
+- **Evidence:** `worklog.md` § Stage B.
