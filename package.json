@@ -1,0 +1,22 @@
+{
+  "name": "@rickylabs/harness-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Monorepo of DeepSeek Harness (dsh) plugin packages — the deterministic coordinator layer",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "check:graph": "node scripts/check-project-graph.mjs",
+    "build": "pnpm run check:graph && pnpm -r run build",
+    "typecheck": "pnpm run check:graph && pnpm -r run typecheck",
+    "clean": "pnpm -r run clean"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.1",
+    "typescript": "~5.9.3"
+  }
+}

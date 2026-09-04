@@ -1,0 +1,13 @@
+packages:
+  - packages/*
+
+# Native build scripts pulled in transitively by @deepseek-ai/dsh (node-pty, koffi, ...).
+# The workspace skeleton never executes dsh, so they stay unbuilt here (pnpm 11 refuses to
+# install silently while a dependency's build script is neither allowed nor denied). E2 (dsh
+# app shell) owns flipping the ones the runtime needs to true.
+allowBuilds:
+  '@deepseek-ai/dsh-subprocess-local': false
+  '@google/genai': false
+  koffi: false
+  node-pty: false
+  protobufjs: false

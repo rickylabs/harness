@@ -1,0 +1,25 @@
+{
+  "name": "@rickylabs/coordinator",
+  "version": "0.0.0",
+  "description": "MASTER agent \u2014 milestone \u2192 epic \u2192 task workflows",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --emitDeclarationOnly",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  }
+}

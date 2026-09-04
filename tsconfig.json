@@ -1,0 +1,19 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/board" },
+    { "path": "packages/contracts" },
+    { "path": "packages/coordinator" },
+    { "path": "packages/dsh-app" },
+    { "path": "packages/forge" },
+    { "path": "packages/governance" },
+    { "path": "packages/llm-local" },
+    { "path": "packages/netscript-bridge" },
+    { "path": "packages/provider-acp" },
+    { "path": "packages/provider-claude" },
+    { "path": "packages/provider-codex" },
+    { "path": "packages/provider-opencode" },
+    { "path": "packages/routing" },
+    { "path": "packages/telemetry" }
+  ]
+}

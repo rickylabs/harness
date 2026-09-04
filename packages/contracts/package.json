@@ -1,0 +1,27 @@
+{
+  "name": "@rickylabs/contracts",
+  "version": "0.0.0",
+  "description": "Published route and type definitions for the netscript UIs (public npm, no secrets)",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b --emitDeclarationOnly",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  }
+}
