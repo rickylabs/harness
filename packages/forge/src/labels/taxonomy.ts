@@ -177,11 +177,32 @@ export const epicLabel = (slug: string, description: string): LabelSpec =>
 /** Longest slug worth putting in a label. Past this a label stops being readable in a filter. */
 const MAX_SLUG = 40;
 
+/** Width of the disambiguating suffix a truncated slug carries, including its separator. */
+const SUFFIX = 7;
+
+/**
+ * Deterministic short digest (FNV-1a, base36). Pure and dependency-free so that slugify stays a
+ * plain function of its input — the same title must produce the same label on every machine.
+ */
+function digest(input: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < input.length; i += 1) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36).padStart(SUFFIX - 1, "0").slice(0, SUFFIX - 1);
+}
+
 /**
  * Normalize a free-text name into a label-safe slug.
  *
  * Long input is cut back to a word boundary rather than at the character limit: `epic:e6-board-`
  * is not a shorter label, it is a broken one, and it sorts confusingly next to its siblings.
+ *
+ * A truncated slug also carries a digest of the *full* input. Truncation alone is not injective —
+ * two epics whose titles share a long prefix collapse to the same slug, and a collision here does
+ * not fail loudly, it merges two epics into one label and loses the second. Six base36 characters
+ * cost readability that the alternative cannot afford.
  */
 export function slugify(input: string): string {
   const full = input
@@ -192,11 +213,16 @@ export function slugify(input: string): string {
 
   if (full.length <= MAX_SLUG) return full;
 
-  const cut = full.slice(0, MAX_SLUG);
+  const room = MAX_SLUG - SUFFIX;
+  const cut = full.slice(0, room);
   const boundary = cut.lastIndexOf("-");
   // Only honour a boundary that leaves something recognizable behind.
-  return (boundary >= MAX_SLUG / 2 ? cut.slice(0, boundary) : cut).replace(/-+$/, "");
+  const head = (boundary >= room / 2 ? cut.slice(0, boundary) : cut).replace(/-+$/, "");
+  return `${head}-${digest(full)}`;
 }
+
+/** What GitHub will accept, once `#` is gone and case is settled. */
+const HEX_COLOR = /^[0-9a-f]{6}$/;
 
 /** GitHub accepts colors with or without `#`; everything downstream wants the bare six digits. */
 export function normalizeColor(color: string): string {
@@ -204,10 +230,42 @@ export function normalizeColor(color: string): string {
 }
 
 /**
- * The single-status rule, as a check rather than a paragraph. Returns the offending labels so a
- * caller can report them; an empty array means the item is well-formed.
+ * Whether a color is one this tool may send. The type says six hex digits, but a type cannot
+ * inspect a string parsed out of a file — without this check `not-a-color` reaches a POST body and
+ * the run fails partway through an apply, having already created labels.
  */
-export function violatesSingleStatus(labelNames: readonly string[]): readonly string[] {
-  const statuses = labelNames.filter((n) => n.startsWith("status:"));
-  return statuses.length > 1 ? statuses : [];
+export function isValidColor(color: string): boolean {
+  return HEX_COLOR.test(normalizeColor(color));
+}
+
+/** The status family's prefix, including its separator, so `statuspage:` cannot match it. */
+const STATUS_PREFIX = "status:";
+
+/**
+ * The status labels on an item, matched the way GitHub matches label names: case-insensitively.
+ * A case-sensitive filter reports `Status:ready` and `status:shipped` as one status, which is the
+ * board's most dangerous kind of wrong answer — it looks well-formed.
+ */
+export function statusLabelsOf(labelNames: readonly string[]): readonly string[] {
+  return labelNames.filter((n) => n.toLowerCase().startsWith(STATUS_PREFIX));
+}
+
+/**
+ * The single-status rule, as a check rather than a paragraph.
+ *
+ * `missing` is a distinct verdict from `ok`, not an empty list of offenders. An item with no status
+ * is not well-formed — it is invisible to the board, which is the failure mode this whole package
+ * exists to make visible.
+ */
+export type StatusVerdict =
+  | { readonly kind: "ok"; readonly status: string }
+  | { readonly kind: "missing" }
+  | { readonly kind: "multiple"; readonly statuses: readonly string[] };
+
+export function classifyStatus(labelNames: readonly string[]): StatusVerdict {
+  const statuses = statusLabelsOf(labelNames);
+  const [only] = statuses;
+  if (only === undefined) return { kind: "missing" };
+  if (statuses.length === 1) return { kind: "ok", status: only };
+  return { kind: "multiple", statuses };
 }

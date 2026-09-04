@@ -13,7 +13,7 @@
 import { readFile } from "node:fs/promises";
 
 import type { LabelFamily, LabelSpec } from "./taxonomy.js";
-import { normalizeColor } from "./taxonomy.js";
+import { isValidColor, normalizeColor } from "./taxonomy.js";
 
 export const LABELS_FILE = ".github/labels.yml";
 
@@ -72,12 +72,20 @@ export function parseLabelsFile(text: string, lanePrefix = "lane"): ParsedLabels
 
   const flush = () => {
     if (!current) return;
+    const color = current.color ?? "ededed";
     if (current.name === undefined || current.name.length === 0) {
       issues.push({ line: current.line, message: "label entry has no `name`" });
+    } else if (!isValidColor(color)) {
+      // Recorded rather than defaulted. A silently corrected color is a file that disagrees with
+      // the repository it claims to describe, and the human who typed it never finds out.
+      issues.push({
+        line: current.line,
+        message: `${current.name}: color ${JSON.stringify(color)} is not six hex digits`,
+      });
     } else {
       labels.push({
         name: current.name,
-        color: normalizeColor(current.color ?? "ededed"),
+        color: normalizeColor(color),
         description: current.description ?? "",
         family: familyOf(current.name, lanePrefix),
         origin: "core",

@@ -20,6 +20,7 @@ import {
   LABELS_FILE,
   loadLabelsFile,
   renderLabelsFile,
+  type ParseIssue,
 } from "./labels/file.js";
 import {
   detectRepoSlug,
@@ -27,6 +28,7 @@ import {
   isAvailable,
   type ExistingLabel,
   type GitHubTransport,
+  type TransportProbe,
 } from "./labels/github.js";
 import { formatPlan, isClean, planLabels, type LabelPlan } from "./labels/plan.js";
 import { CORE_TAXONOMY, type LabelSpec } from "./labels/taxonomy.js";
@@ -48,7 +50,7 @@ options
   --cwd <path>          repository root (default: the working directory)
   --no-detect           portable core only; derive nothing from this repository
   --force               settle conflicts and overwrite files this tool did not generate
-  --dry-run             for 'skill install' and 'init': report without writing
+  --dry-run             report every change without writing a file or touching the repository
   --json                machine-readable output
   -h, --help            this text
 
@@ -66,10 +68,13 @@ interface Context {
   readonly detectionNotes: readonly string[];
   readonly evidence: readonly { label: string; source: string }[];
   readonly skillDirs: readonly string[];
+  /** Rows of `.github/labels.yml` the parser could not use. Non-empty blocks every command. */
+  readonly fileIssues: readonly ParseIssue[];
 }
 
 class UsageError extends Error {}
 class TransportError extends Error {}
+class FileError extends Error {}
 
 const out = (line = ""): void => {
   process.stdout.write(`${line}\n`);
@@ -83,6 +88,7 @@ async function resolveContext(options: {
   repoRoot: string;
   repo?: string | undefined;
   detect: boolean;
+  probe?: (() => Promise<TransportProbe>) | undefined;
 }): Promise<Context> {
   const repo = options.repo ?? (await detectRepoSlug(options.repoRoot));
   if (!repo) {
@@ -91,7 +97,7 @@ async function resolveContext(options: {
     );
   }
 
-  const probe = await detectTransport();
+  const probe = await (options.probe ?? detectTransport)();
   const transport = isAvailable(probe) ? probe : null;
   const transportNote = isAvailable(probe) ? probe.authNote : probe.reasons.join("; ");
 
@@ -119,10 +125,10 @@ async function resolveContext(options: {
   if (listNote) notes.unshift(listNote);
   if (fromFile) {
     notes.unshift(`${LABELS_FILE}: ${fromFile.labels.length} label(s) — this file wins on overlap`);
-    for (const issue of fromFile.issues) notes.push(`${LABELS_FILE}:${issue.line} ${issue.message}`);
   }
 
   return {
+    fileIssues: fromFile?.issues ?? [],
     repoRoot: options.repoRoot,
     repo,
     transport,
@@ -135,6 +141,22 @@ async function resolveContext(options: {
     skillDirs: await detectSkillDirs(options.repoRoot),
   };
 }
+
+/**
+ * Refuse to act on a labels file the parser could not fully read.
+ *
+ * `ParsedLabelsFile.issues` is a gate, not a note. Treating it as advisory means a typo'd row is
+ * dropped, the rows around it are applied anyway, and the result is a repository that half-matches
+ * a file nobody knows is broken — the drift gate then reports clean, because it compares against
+ * the same truncated parse.
+ */
+const requireParsableFile = (ctx: Context): void => {
+  if (ctx.fileIssues.length === 0) return;
+  const lines = ctx.fileIssues.map((i) => `  ${LABELS_FILE}:${i.line}  ${i.message}`);
+  throw new FileError(
+    [`${LABELS_FILE} has ${ctx.fileIssues.length} unusable row(s); refusing to continue:`, ...lines].join("\n"),
+  );
+};
 
 const requireTransport = (ctx: Context): GitHubTransport => {
   if (!ctx.transport) {
@@ -216,12 +238,14 @@ function reportPlan(plan: LabelPlan, json: boolean): void {
 }
 
 function cmdPlan(ctx: Context, force: boolean, json: boolean): number {
+  requireParsableFile(ctx);
   requireTransport(ctx);
   reportPlan(buildPlan(ctx, force), json);
   return 0;
 }
 
 function cmdCheck(ctx: Context, json: boolean): number {
+  requireParsableFile(ctx);
   requireTransport(ctx);
   const plan = buildPlan(ctx, false);
   reportPlan(plan, json);
@@ -233,9 +257,22 @@ function cmdCheck(ctx: Context, json: boolean): number {
   return 1;
 }
 
-async function cmdApply(ctx: Context, force: boolean, json: boolean): Promise<number> {
+async function cmdApply(
+  ctx: Context,
+  force: boolean,
+  dryRun: boolean,
+  json: boolean,
+): Promise<number> {
+  requireParsableFile(ctx);
   const transport = requireTransport(ctx);
   const plan = buildPlan(ctx, force);
+
+  if (dryRun) {
+    reportPlan(plan, json);
+    if (!json) out("dry run — nothing was created or updated");
+    return plan.counts.conflict > 0 ? 1 : 0;
+  }
+
   const result = await applyPlan(transport, ctx.repo, plan);
 
   if (json) {
@@ -272,7 +309,8 @@ async function cmdApply(ctx: Context, force: boolean, json: boolean): Promise<nu
   return plan.counts.conflict > 0 ? 1 : 0;
 }
 
-async function cmdEject(ctx: Context, json: boolean): Promise<number> {
+async function cmdEject(ctx: Context, dryRun: boolean, json: boolean): Promise<number> {
+  requireParsableFile(ctx);
   const path = join(ctx.repoRoot, LABELS_FILE);
   // De-duplicate by name, first wins — the same precedence the planner uses, so the ejected file
   // and the applied taxonomy cannot disagree.
@@ -284,10 +322,12 @@ async function cmdEject(ctx: Context, json: boolean): Promise<number> {
     return true;
   });
 
-  await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, renderLabelsFile(specs, ctx.repo), "utf8");
-  if (json) out(JSON.stringify({ path: LABELS_FILE, labels: specs.length }, null, 2));
-  else out(`wrote ${LABELS_FILE} — ${specs.length} label(s)`);
+  if (!dryRun) {
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, renderLabelsFile(specs, ctx.repo), "utf8");
+  }
+  if (json) out(JSON.stringify({ path: LABELS_FILE, labels: specs.length, written: !dryRun }, null, 2));
+  else out(`${dryRun ? "would write" : "wrote"} ${LABELS_FILE} — ${specs.length} label(s)`);
   return 0;
 }
 
@@ -328,8 +368,10 @@ async function cmdInit(
   json: boolean,
 ): Promise<number> {
   if (!json) out("== labels ==");
-  const ejected = await cmdEject(ctx, json);
-  const applied = ctx.transport ? await cmdApply(ctx, flags.force, json) : 3;
+  // Every leg gets the flag. `init --dry-run` that ejects a file and sends 28 label mutations is
+  // not a partial implementation of dry-run, it is the opposite of the promise the flag makes.
+  const ejected = await cmdEject(ctx, flags.dryRun, json);
+  const applied = ctx.transport ? await cmdApply(ctx, flags.force, flags.dryRun, json) : 3;
   if (!ctx.transport && !json) {
     out(`skipped apply — ${ctx.transportNote}`);
   }
@@ -343,7 +385,18 @@ async function cmdInit(
 
 // ── entry ────────────────────────────────────────────────────────────────────
 
-export async function main(argv: readonly string[]): Promise<number> {
+/**
+ * Seam for exercising the real entry point against a transport that is not the network.
+ *
+ * The negative controls this package cares about — `--dry-run` sending nothing, a broken labels
+ * file blocking apply — are only worth anything if they run the actual CLI. A test that
+ * reimplements the command proves the reimplementation.
+ */
+export interface CliOverrides {
+  readonly probeTransport?: () => Promise<TransportProbe>;
+}
+
+export async function main(argv: readonly string[], overrides: CliOverrides = {}): Promise<number> {
   let parsed;
   try {
     parsed = parseArgs({
@@ -386,6 +439,7 @@ export async function main(argv: readonly string[]): Promise<number> {
       repoRoot,
       repo: values.repo,
       detect: !(values["no-detect"] ?? false),
+      probe: overrides.probeTransport,
     });
 
     switch (command) {
@@ -396,9 +450,9 @@ export async function main(argv: readonly string[]): Promise<number> {
       case "labels:check":
         return cmdCheck(ctx, json);
       case "labels:apply":
-        return await cmdApply(ctx, force, json);
+        return await cmdApply(ctx, force, dryRun, json);
       case "labels:eject":
-        return await cmdEject(ctx, json);
+        return await cmdEject(ctx, dryRun, json);
       case "skill":
         if (sub !== undefined && sub !== "install") {
           throw new UsageError(`unknown command: skill ${sub}`);
@@ -419,6 +473,12 @@ export async function main(argv: readonly string[]): Promise<number> {
     if (error instanceof TransportError) {
       out(error.message);
       return 3;
+    }
+    if (error instanceof FileError) {
+      out(error.message);
+      out();
+      out(`fix the row(s) above, or delete ${LABELS_FILE} and re-run 'dsh-forge labels eject'.`);
+      return 1;
     }
     out(error instanceof Error ? error.message : String(error));
     return 1;

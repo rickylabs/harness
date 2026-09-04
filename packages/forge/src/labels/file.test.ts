@@ -64,6 +64,23 @@ describe("labels.yml round trip", () => {
     const parsed = parseLabelsFile(["- name: x", '  color: "#AABBCC"'].join("\n"));
     assert.equal(parsed.labels[0]?.color, "aabbcc");
   });
+
+  it("records a color it cannot use instead of passing it through", () => {
+    // Without this the string reaches a POST body: the apply fails partway, having already
+    // created every label ahead of the bad row.
+    for (const bad of ["not-a-color", '""', '"#fff"']) {
+      const parsed = parseLabelsFile(["- name: x", `  color: ${bad}`].join("\n"));
+      assert.deepEqual(parsed.labels, [], `${bad} produced a label`);
+      assert.equal(parsed.issues.length, 1, `${bad} produced no issue`);
+      assert.match(parsed.issues[0]?.message ?? "", /not six hex digits/);
+    }
+  });
+
+  it("still defaults a missing color, which was never the broken case", () => {
+    const parsed = parseLabelsFile(["- name: x"].join("\n"));
+    assert.equal(parsed.labels[0]?.color, "ededed");
+    assert.deepEqual(parsed.issues, []);
+  });
 });
 
 describe("familyOf", () => {

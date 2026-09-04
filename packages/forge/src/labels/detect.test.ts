@@ -136,6 +136,43 @@ describe("detectRepoLabels", () => {
     assert.deepEqual(names(result.labels), ["epic:board-projection", "epic:github-bridge"]);
   });
 
+  it("names the epic it dropped to a collision instead of letting it vanish", async () => {
+    // First-wins de-duplication is right; doing it silently is not. The dropped epic's tasks end
+    // up under another epic's label, and the only signal was an absence in a list nobody diffs.
+    const shared = "Coordinator workflows and the board projection surface for";
+    const result = await detectRepoLabels({
+      repoRoot: root,
+      repo: "owner/repo",
+      transport: fakeTransport([
+        { number: 501, title: `${shared} the first team`, labels: [] },
+        { number: 502, title: `${shared} the second team`, labels: [] },
+      ]),
+      existing: [],
+      families: ["epic"],
+    });
+
+    // The slugs are distinct now, so both survive — which is the fix. Were they to collide, the
+    // note below is what tells the operator, and one of the two labels would be absent.
+    assert.equal(result.labels.length, 2, "distinct titles collapsed into one epic label");
+    assert.notEqual(names(result.labels)[0], names(result.labels)[1]);
+  });
+
+  it("reports a genuine collision rather than skipping the second issue", async () => {
+    const result = await detectRepoLabels({
+      repoRoot: root,
+      repo: "owner/repo",
+      transport: fakeTransport([
+        { number: 601, title: "E6 — Coordinator", labels: [] },
+        { number: 602, title: "E6 — something else entirely", labels: [] },
+      ]),
+      existing: [],
+      families: ["epic"],
+    });
+
+    assert.deepEqual(names(result.labels), ["epic:e6"]);
+    assert.match(result.notes.join("\n"), /#602: slug `e6` already claimed by #601/);
+  });
+
   it("says why, rather than proposing nothing silently, when there is no evidence", async () => {
     const bare = await mkdtemp(join(tmpdir(), "dsh-forge-bare-"));
     try {

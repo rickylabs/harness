@@ -24,16 +24,19 @@ export {
   TYPE_LABELS,
   areaLabel,
   ciLabel,
+  classifyStatus,
   epicLabel,
   gateLabel,
+  isValidColor,
   laneLabel,
   normalizeColor,
   slugify,
-  violatesSingleStatus,
+  statusLabelsOf,
   waveLabel,
   type LabelFamily,
   type LabelOrigin,
   type LabelSpec,
+  type StatusVerdict,
 } from "./labels/taxonomy.js";
 
 export {

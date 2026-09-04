@@ -251,11 +251,23 @@ async function detectEpics(repo: string, transport: GitHubTransport | null): Pro
     return { labels, evidence, notes };
   }
 
-  const seen = new Set<string>();
+  // First-wins de-duplication is correct, but it must never be silent: a dropped epic is an epic
+  // whose tasks land under someone else's label, and the only signal was an absence.
+  const claimed = new Map<string, number>();
   for (const issue of issues.slice(0, 24)) {
     const slug = epicSlug(issue.title);
-    if (slug.length === 0 || seen.has(slug)) continue;
-    seen.add(slug);
+    if (slug.length === 0) {
+      notes.push(`issue #${issue.number}: title yields no label-safe slug — no epic: label proposed`);
+      continue;
+    }
+    const owner = claimed.get(slug);
+    if (owner !== undefined) {
+      notes.push(
+        `issue #${issue.number}: slug \`${slug}\` already claimed by #${owner} — no epic: label proposed; retitle one of them`,
+      );
+      continue;
+    }
+    claimed.set(slug, issue.number);
     labels.push(epicLabel(slug, `${issue.title} (#${issue.number})`));
     evidence.push({ label: `epic:${slug}`, source: `issue #${issue.number}` });
   }
