@@ -245,6 +245,91 @@ agent starts. Dispatch is visible in the lane matrix (`internals` and `docs` are
 `activeItems` `[40]` and `[42]`); completion will be visible in `leaves[]`. The two are deliberately
 different surfaces and should not be conflated when reading the status file.
 
+## Stage C — model binding corrected
+
+W0 finished. Both leaves produced pull requests, and getting there exposed a defect in the dispatch
+path that matters more than either leaf: **the milestone's routing matrix was not binding on
+anything that actually launched.**
+
+### What W0 produced
+
+| Leaf | Lane | Agent | PR | Head |
+| --- | --- | --- | --- | --- |
+| `#42` | docs | codex (`gpt-5.6-sol`, `high`) | **#90** | `800b05cb3887f1edb3e4b13cea90b261b14b814f` |
+| `#40` | internals | claude (`claude-fable-5-1`, then `claude-opus-5`) | **#91** | `6f348ba17cf761176633e9f7859c40670c6cfd18` |
+
+`#42` finished first and cleanly. `#40` finished slowly, and the difference between them is the
+whole finding.
+
+### The evidence chain
+
+Tracing why `#40` crawled while `#42` did not, on primary evidence at each step:
+
+1. divybot logged `issue #40: goal inject failed: goal did not register after retries`, then
+   `spawned` — in the same second. The inject succeeded on a later retry; the agent did get its
+   goal.
+2. The session transcript at `/home/agent/.claude/projects/-ephemeral-orch-work-issue-40/*.jsonl`
+   shows 80 assistant turns, every one of them on `claude-fable-5-1`, interleaved with
+   `rate_limit_error` and `rate limit. Please try again later.`.
+3. Fable 5 is rate-limited until midnight. So the failed injects and the slow progress are one fact
+   observed twice.
+4. `#40`'s `/swarm` block declares `harness: claude` and `timeout: 180m` — **no `model:` key**.
+5. `orchid:/data/divybot.json` binds `targets[]` as label → repo → **agent**, and carries no model
+   or effort field anywhere in the file.
+6. Therefore the model resolved to the host default in `/home/agent/.claude/settings.json`:
+   `"model": "claude-fable-5-1"`.
+
+`#42` was immune for exactly the symmetrical reason: `~/.codex/config.toml` pins
+`model = "gpt-5.6-sol"` with `model_reasoning_effort = "high"`, which is on-matrix for
+`complex_implementation`. The codex lane was bound by accident of configuration; the claude lane
+was not bound at all.
+
+### Why this is the finding and not a footnote
+
+The matrix is a *routing* document, and routing that is expressed only as a default is not routing —
+it is a coincidence that holds until someone changes a settings file or a model runs out of quota.
+Both happened here, in the same run. Every `harness: claude` leaf in W1–W3 would have inherited the
+same default. A coordinator that reported "dispatched per matrix" would have been stating a policy,
+not a fact about the process it started.
+
+This is the same class of error as `#33`/`#51`'s liveness problem: a signal that looks identical
+whether or not the underlying thing is true. `RouteIdentity` (requested vs observed) exists in the
+harness invariants precisely for this, and W0 is the argument for implementing it early rather than
+treating it as bookkeeping — the observed model was recoverable here only by reading a transcript
+off the host.
+
+### Fallback applied
+
+Per the owner's instruction and the matrix's own token-limit fallback column, with the substitutions
+recorded in `supervisor.md` § Routes in force:
+
+- Host default `claude-fable-5-1` → `claude-opus-5`, Opus effort `xhigh` → `medium`
+  (snapshot: `~/.claude/backups/settings.json.backup.1788552925`).
+- `#40`'s live session switched in place to `claude-opus-5` + `medium` — it was already `done`, so
+  tearing it down would have discarded PR #91 to fix a binding with no remaining turns to affect.
+- Every Fable-primary lane this milestone needs now carries its pre-ratified successor:
+  `review_codex_complex` → Opus 5 · medium, `review_codex` → Opus 5 · low, `deep_analysis` →
+  Codex · Sol · high, `formal_impl_evaluation` → GLM 5.3 Flash · max. All are read off the matrix;
+  none is invented for the occasion. All lapse at midnight.
+- Every `/swarm` block emitted from here carries explicit `model:` and `effort:` rows. `#36`'s
+  grammar already supports both keys, so this needs no dispatcher change.
+
+### Correction to the Stage C dispatch record
+
+Two conclusions recorded during dispatch were wrong and are corrected in `drift.md`: `#40` was not
+goalless and did not "produce nothing", and the agents are children of `herdr server` under the
+`maint` tmux session rather than of bare `sshd: node@notty`. The second correction is the useful
+one — `herdr agent list` reports per-agent `working`/`done`/`blocked` directly, which is the
+liveness probe `#33`/`#51` should be built on, and is what settled the first correction.
+
+### Gate state
+
+`leaves[]` now carries both W0 entries, `github-prs.json` carries PRs #90, #91 (`leaf`) and #89
+(`coordinator-artifact`). `evaluatorAgentId` is deliberately omitted on both leaves: the validator
+only enforces generator ≠ evaluator when both ids are non-empty, and recording a placeholder
+evaluator would assert a review that has not happened. It is filled when the review lanes are
+dispatched.
+
 ## Handoff Notes
 
 - Read `supervisor.md` first: it carries the operating identity, the privileged-tier
