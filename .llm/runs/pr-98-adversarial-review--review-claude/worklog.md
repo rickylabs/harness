@@ -26,3 +26,5 @@
   [#102](https://github.com/rickylabs/harness/pull/102) as required by the operator pipeline.
 - Published the complete per-check evidence as a plain comment on PR #98:
   [`issuecomment-5547700080`](https://github.com/rickylabs/harness/pull/98#issuecomment-5547700080).
+- Revalidated the committed artifact branch in an isolated `/tmp` worktree because `/ephemeral` is
+  noexec. Frozen install, clean typecheck, clean build, graph checks, and diff checks all exited 0.

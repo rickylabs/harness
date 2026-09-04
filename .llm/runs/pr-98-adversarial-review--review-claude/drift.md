@@ -28,3 +28,10 @@ authenticated account's login and noreply address were installed in repository-l
 global config or commit attribution footer was added. The installed `gh` also rejected `--json` on
 `gh pr create`; the command was rerun without that output-only flag and the created PR was verified
 through the REST API.
+
+Validation from the orchestrator worktree under `/ephemeral` installed successfully but package
+scripts exited 126 because that filesystem is mounted noexec. A first retry created a `/tmp`
+worktree but accidentally retained the original shell working directory, so it reproduced the same
+failure and was discarded as evidence. The corrected retry ran from `/tmp/harness-pr102-validate.*`
+at committed artifact head `88f99c4`; frozen install, clean typecheck, clean build, graph checks, and
+diff checks all exited 0.
