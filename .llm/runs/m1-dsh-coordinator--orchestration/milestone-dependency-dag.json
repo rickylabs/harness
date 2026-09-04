@@ -1,0 +1,613 @@
+{
+  "schemaVersion": 1,
+  "milestone": "M1 — dsh coordinator foundation",
+  "baselineMainSha": "b7d5e586e32f31ef44cab7b1327ab890f8e23794",
+  "nodes": [
+    {
+      "id": "issue:40",
+      "kind": "issue",
+      "issueNumber": 40,
+      "lane": "internals",
+      "title": "E1.1 — pnpm workspace skeleton and shared TypeScript base"
+    },
+    {
+      "id": "issue:41",
+      "kind": "issue",
+      "issueNumber": 41,
+      "lane": "internals",
+      "title": "E1.2 — Pin the toolchain with mise, outside the git checkout"
+    },
+    {
+      "id": "issue:42",
+      "kind": "issue",
+      "issueNumber": 42,
+      "lane": "docs",
+      "title": "E1.3 — Port .llm/harness → doctrine/ with a commitment→epic map"
+    },
+    {
+      "id": "issue:43",
+      "kind": "issue",
+      "issueNumber": 43,
+      "lane": "docs",
+      "title": "E1.4 — Root agent entry points: README, AGENTS.md, CLAUDE.md"
+    },
+    {
+      "id": "issue:44",
+      "kind": "issue",
+      "issueNumber": 44,
+      "lane": "internals",
+      "title": "E1.5 — LICENSE MIT, repo topics, and CI (typecheck + build only)"
+    },
+    {
+      "id": "issue:45",
+      "kind": "issue",
+      "issueNumber": 45,
+      "lane": "docs",
+      "title": "E1.6 — Decide the doctrine/ ↔ Orchid memory/ relationship"
+    },
+    {
+      "id": "issue:46",
+      "kind": "issue",
+      "issueNumber": 46,
+      "lane": "internals",
+      "title": "E2.1 — packages/dsh-app: the `rickylabs` profile and bundle"
+    },
+    {
+      "id": "issue:47",
+      "kind": "issue",
+      "issueNumber": 47,
+      "lane": "internals",
+      "title": "E2.2 — Fork deepseek-harness-docker, keeping the upstream remote"
+    },
+    {
+      "id": "issue:48",
+      "kind": "issue",
+      "issueNumber": 48,
+      "lane": "internals",
+      "title": "E2.3 — deploy/compose/dsh.yaml for the N5"
+    },
+    {
+      "id": "issue:49",
+      "kind": "issue",
+      "issueNumber": 49,
+      "lane": "internals",
+      "title": "E2.4 — Register the stack on the N5 and verify it comes up"
+    },
+    {
+      "id": "issue:50",
+      "kind": "issue",
+      "issueNumber": 50,
+      "lane": "internals",
+      "title": "E2.5 — Golden --dump-config snapshot test"
+    },
+    {
+      "id": "issue:51",
+      "kind": "issue",
+      "issueNumber": 51,
+      "lane": "features",
+      "title": "E3.1 — DispatchRequest and the SubagentProvider contract"
+    },
+    {
+      "id": "issue:52",
+      "kind": "issue",
+      "issueNumber": 52,
+      "lane": "features",
+      "title": "E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk"
+    },
+    {
+      "id": "issue:53",
+      "kind": "issue",
+      "issueNumber": 53,
+      "lane": "features",
+      "title": "E3.3 — provider-codex against the running app-server daemon"
+    },
+    {
+      "id": "issue:54",
+      "kind": "issue",
+      "issueNumber": 54,
+      "lane": "features",
+      "title": "E3.4 — provider-acp: agy on dsh's in-tree ACP driver"
+    },
+    {
+      "id": "issue:55",
+      "kind": "issue",
+      "issueNumber": 55,
+      "lane": "features",
+      "title": "E3.5 — provider-opencode on @opencode-ai/sdk/v2"
+    },
+    {
+      "id": "issue:56",
+      "kind": "issue",
+      "issueNumber": 56,
+      "lane": "features",
+      "title": "E3.6 — Single-writer session lease and run-id keying"
+    },
+    {
+      "id": "issue:57",
+      "kind": "issue",
+      "issueNumber": 57,
+      "lane": "internals",
+      "title": "E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters"
+    },
+    {
+      "id": "issue:58",
+      "kind": "issue",
+      "issueNumber": 58,
+      "lane": "internals",
+      "title": "E4.2 — routing: tiers, the family rule, and fallback chains"
+    },
+    {
+      "id": "issue:59",
+      "kind": "issue",
+      "issueNumber": 59,
+      "lane": "internals",
+      "title": "E4.3 — Capability probes instead of committed constants"
+    },
+    {
+      "id": "issue:60",
+      "kind": "issue",
+      "issueNumber": 60,
+      "lane": "internals",
+      "title": "E4.4 — The local capability matrix, as data"
+    },
+    {
+      "id": "issue:61",
+      "kind": "issue",
+      "issueNumber": 61,
+      "lane": "internals",
+      "title": "E4.5 — Model-id validation at the dispatch boundary"
+    },
+    {
+      "id": "issue:62",
+      "kind": "issue",
+      "issueNumber": 62,
+      "lane": "internals",
+      "title": "E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)"
+    },
+    {
+      "id": "issue:63",
+      "kind": "issue",
+      "issueNumber": 63,
+      "lane": "internals",
+      "title": "E5.2 — Port the Orchid subscription-quota governor"
+    },
+    {
+      "id": "issue:64",
+      "kind": "issue",
+      "issueNumber": 64,
+      "lane": "internals",
+      "title": "E5.3 — Metered-spend regime"
+    },
+    {
+      "id": "issue:65",
+      "kind": "issue",
+      "issueNumber": 65,
+      "lane": "internals",
+      "title": "E5.4 — Local-capacity regime: the third regime, which has no owner today"
+    },
+    {
+      "id": "issue:66",
+      "kind": "issue",
+      "issueNumber": 66,
+      "lane": "internals",
+      "title": "E5.5 — Wire the gate at the sandbox boundary"
+    },
+    {
+      "id": "issue:67",
+      "kind": "issue",
+      "issueNumber": 67,
+      "lane": "fixes",
+      "title": "E5.6 — Boot-parameter verification after every kernel update"
+    },
+    {
+      "id": "issue:68",
+      "kind": "issue",
+      "issueNumber": 68,
+      "lane": "features",
+      "title": "E6.1 — board: task DAG, kanban projection, issue↔card reconciliation"
+    },
+    {
+      "id": "issue:69",
+      "kind": "issue",
+      "issueNumber": 69,
+      "lane": "features",
+      "title": "E6.2 — coordinator: the workflow definitions"
+    },
+    {
+      "id": "issue:70",
+      "kind": "issue",
+      "issueNumber": 70,
+      "lane": "features",
+      "title": "E6.3 — Emit one dispatch payload in the /swarm wire format"
+    },
+    {
+      "id": "issue:71",
+      "kind": "issue",
+      "issueNumber": 71,
+      "lane": "features",
+      "title": "E6.4 — Determinism: persist decisions, not just outcomes"
+    },
+    {
+      "id": "issue:72",
+      "kind": "issue",
+      "issueNumber": 72,
+      "lane": "features",
+      "title": "E6.5 — Structural evaluator independence"
+    },
+    {
+      "id": "issue:73",
+      "kind": "issue",
+      "issueNumber": 73,
+      "lane": "features",
+      "title": "E6.6 — Worktree lifecycle and the auto-archiver hazard"
+    },
+    {
+      "id": "issue:74",
+      "kind": "issue",
+      "issueNumber": 74,
+      "lane": "features",
+      "title": "E7.1 — forge: the issue/PR bridge and label→target mapping"
+    },
+    {
+      "id": "issue:75",
+      "kind": "issue",
+      "issueNumber": 75,
+      "lane": "features",
+      "title": "E7.2 — PR supervision loop"
+    },
+    {
+      "id": "issue:76",
+      "kind": "issue",
+      "issueNumber": 76,
+      "lane": "features",
+      "title": "E7.3 — Dispatch selector: provider or divybot, per target"
+    },
+    {
+      "id": "issue:77",
+      "kind": "issue",
+      "issueNumber": 77,
+      "lane": "features",
+      "title": "E7.4 — Port timeout: semantics"
+    },
+    {
+      "id": "issue:78",
+      "kind": "issue",
+      "issueNumber": 78,
+      "lane": "features",
+      "title": "E7.5 — Preserve the /swarm comment-authority security property"
+    },
+    {
+      "id": "issue:79",
+      "kind": "issue",
+      "issueNumber": 79,
+      "lane": "internals",
+      "title": "E8.1 — contracts: route, payload and event types"
+    },
+    {
+      "id": "issue:80",
+      "kind": "issue",
+      "issueNumber": 80,
+      "lane": "internals",
+      "title": "E8.2 — Snapshot and delta shapes designed for replay"
+    },
+    {
+      "id": "issue:81",
+      "kind": "issue",
+      "issueNumber": 81,
+      "lane": "internals",
+      "title": "E8.3 — Publish @rickylabs/harness-contracts to npm"
+    },
+    {
+      "id": "issue:82",
+      "kind": "issue",
+      "issueNumber": 82,
+      "lane": "internals",
+      "title": "E8.4 — Reference client bindings shared by both cockpits"
+    },
+    {
+      "id": "issue:83",
+      "kind": "issue",
+      "issueNumber": 83,
+      "lane": "features",
+      "title": "E9.1 — SessionTelemetrySink on every run, on both seams"
+    },
+    {
+      "id": "issue:84",
+      "kind": "issue",
+      "issueNumber": 84,
+      "lane": "features",
+      "title": "E9.2 — Push over /api/remote.mux, never poll"
+    },
+    {
+      "id": "issue:85",
+      "kind": "issue",
+      "issueNumber": 85,
+      "lane": "features",
+      "title": "E9.3 — The hierarchy view: milestone → epic → task → subagent"
+    },
+    {
+      "id": "issue:86",
+      "kind": "issue",
+      "issueNumber": 86,
+      "lane": "features",
+      "title": "E9.4 — Backfill from disk, so a coordinator crash loses nothing"
+    },
+    {
+      "id": "issue:87",
+      "kind": "issue",
+      "issueNumber": 87,
+      "lane": "features",
+      "title": "E9.5 — Surface governance state alongside progress"
+    },
+    {
+      "id": "issue:88",
+      "kind": "issue",
+      "issueNumber": 88,
+      "lane": "features",
+      "title": "E9.6 — Observability sink with rotation and failure deep-links"
+    }
+  ],
+  "edges": [
+    {
+      "from": "issue:40",
+      "to": "issue:46",
+      "kind": "requires",
+      "reason": "the dsh profile package needs the pnpm workspace"
+    },
+    {
+      "from": "issue:40",
+      "to": "issue:51",
+      "kind": "requires",
+      "reason": "the DispatchRequest contract needs the workspace"
+    },
+    {
+      "from": "issue:46",
+      "to": "issue:52",
+      "kind": "requires",
+      "reason": "providers attach to the rickylabs profile"
+    },
+    {
+      "from": "issue:46",
+      "to": "issue:53",
+      "kind": "requires",
+      "reason": "providers attach to the rickylabs profile"
+    },
+    {
+      "from": "issue:46",
+      "to": "issue:54",
+      "kind": "requires",
+      "reason": "providers attach to the rickylabs profile"
+    },
+    {
+      "from": "issue:46",
+      "to": "issue:55",
+      "kind": "requires",
+      "reason": "providers attach to the rickylabs profile"
+    },
+    {
+      "from": "issue:51",
+      "to": "issue:52",
+      "kind": "requires",
+      "reason": "every provider implements the shared contract"
+    },
+    {
+      "from": "issue:51",
+      "to": "issue:53",
+      "kind": "requires",
+      "reason": "every provider implements the shared contract"
+    },
+    {
+      "from": "issue:51",
+      "to": "issue:54",
+      "kind": "requires",
+      "reason": "every provider implements the shared contract"
+    },
+    {
+      "from": "issue:51",
+      "to": "issue:55",
+      "kind": "requires",
+      "reason": "every provider implements the shared contract"
+    },
+    {
+      "from": "issue:51",
+      "to": "issue:56",
+      "kind": "requires",
+      "reason": "the lease is keyed on the contract's run id"
+    },
+    {
+      "from": "issue:48",
+      "to": "issue:57",
+      "kind": "requires",
+      "reason": "the adapters point at endpoints the compose file defines"
+    },
+    {
+      "from": "issue:62",
+      "to": "issue:63",
+      "kind": "cross-epic-order",
+      "reason": "the sandboxctl channel decision gates every governance task"
+    },
+    {
+      "from": "issue:62",
+      "to": "issue:64",
+      "kind": "cross-epic-order",
+      "reason": "the sandboxctl channel decision gates every governance task"
+    },
+    {
+      "from": "issue:62",
+      "to": "issue:65",
+      "kind": "cross-epic-order",
+      "reason": "the sandboxctl channel decision gates every governance task"
+    },
+    {
+      "from": "issue:62",
+      "to": "issue:66",
+      "kind": "requires",
+      "reason": "the gate cannot be wired before its execution channel exists"
+    },
+    {
+      "from": "issue:62",
+      "to": "issue:67",
+      "kind": "cross-epic-order",
+      "reason": "the sandboxctl channel decision gates every governance task"
+    },
+    {
+      "from": "issue:51",
+      "to": "issue:69",
+      "kind": "requires",
+      "reason": "the coordinator workflows emit the shared contract"
+    },
+    {
+      "from": "issue:51",
+      "to": "issue:70",
+      "kind": "requires",
+      "reason": "the /swarm payload is the contract's wire form"
+    },
+    {
+      "from": "issue:58",
+      "to": "issue:72",
+      "kind": "requires",
+      "reason": "evaluator independence is selected from the routing matrix"
+    },
+    {
+      "from": "issue:69",
+      "to": "issue:74",
+      "kind": "requires",
+      "reason": "the forge bridge consumes coordinator workflows"
+    },
+    {
+      "from": "issue:70",
+      "to": "issue:76",
+      "kind": "requires",
+      "reason": "the dispatch selector routes the one payload"
+    },
+    {
+      "from": "issue:68",
+      "to": "issue:79",
+      "kind": "requires",
+      "reason": "the published contract exposes the board model"
+    },
+    {
+      "from": "issue:79",
+      "to": "issue:83",
+      "kind": "requires",
+      "reason": "the telemetry sink emits the published event union"
+    },
+    {
+      "from": "issue:79",
+      "to": "issue:84",
+      "kind": "requires",
+      "reason": "remote.mux push uses the published routes"
+    },
+    {
+      "from": "issue:80",
+      "to": "issue:84",
+      "kind": "requires",
+      "reason": "replay semantics are defined by the snapshot/delta shapes"
+    },
+    {
+      "from": "issue:63",
+      "to": "issue:87",
+      "kind": "requires",
+      "reason": "governance state must exist before it can be surfaced"
+    },
+    {
+      "from": "issue:65",
+      "to": "issue:87",
+      "kind": "requires",
+      "reason": "local-capacity headroom must exist before it can be surfaced"
+    },
+    {
+      "from": "issue:56",
+      "to": "issue:86",
+      "kind": "requires",
+      "reason": "disk backfill is keyed on our run id, not a vendor session id"
+    }
+  ],
+  "waves": [
+    {
+      "index": 0,
+      "title": "Foundation — the workspace the rest attaches to",
+      "nodeIds": [
+        "issue:40",
+        "issue:41",
+        "issue:42",
+        "issue:43",
+        "issue:44",
+        "issue:45"
+      ]
+    },
+    {
+      "index": 1,
+      "title": "Shell, contract and the blocking decision",
+      "nodeIds": [
+        "issue:46",
+        "issue:47",
+        "issue:48",
+        "issue:49",
+        "issue:50",
+        "issue:51",
+        "issue:62"
+      ]
+    },
+    {
+      "index": 2,
+      "title": "Both seams — subagent providers and the model gateway",
+      "nodeIds": [
+        "issue:52",
+        "issue:53",
+        "issue:54",
+        "issue:55",
+        "issue:56",
+        "issue:57",
+        "issue:58",
+        "issue:59",
+        "issue:60",
+        "issue:61"
+      ]
+    },
+    {
+      "index": 3,
+      "title": "Governance and the coordinator",
+      "nodeIds": [
+        "issue:63",
+        "issue:64",
+        "issue:65",
+        "issue:66",
+        "issue:67",
+        "issue:68",
+        "issue:69",
+        "issue:70",
+        "issue:71",
+        "issue:72",
+        "issue:73"
+      ]
+    },
+    {
+      "index": 4,
+      "title": "Forge and the published contract",
+      "nodeIds": [
+        "issue:74",
+        "issue:75",
+        "issue:76",
+        "issue:77",
+        "issue:78",
+        "issue:79",
+        "issue:80",
+        "issue:81",
+        "issue:82"
+      ]
+    },
+    {
+      "index": 5,
+      "title": "Telemetry — the \"status ?\" killer",
+      "nodeIds": [
+        "issue:83",
+        "issue:84",
+        "issue:85",
+        "issue:86",
+        "issue:87",
+        "issue:88"
+      ]
+    }
+  ]
+}
