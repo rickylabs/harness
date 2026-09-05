@@ -38,10 +38,10 @@ because a patch that reaches into `@deepseek-ai/dsh-base`'s rows is a fork weari
 
 ### The two seams stay apart
 
-`ctx.subagents` takes autonomous vendor CLIs and meters a **quota window**. `ctx.llm` takes an API
-key and meters **per token**. They are separate services because they are separate resources, and
-collapsing them into one abstraction is the design error the split exists to prevent
-([`AGENTS.md`](../../AGENTS.md)). This package claims the first and leaves the second to dsh.
+`ctx.subagents` and `ctx.llm` are separate services because they are separate resources —
+[`docs/concepts/02-the-two-seams.md`](../../docs/concepts/02-the-two-seams.md) owns that argument.
+What matters here is the composition consequence: **this package claims the first and leaves the
+second to dsh.**
 
 `harness-subagents` registers an **empty** registry and knows nothing about how providers will
 attach — E3 owns that. Claiming the key early is not anticipation, it is a choice about the failure
