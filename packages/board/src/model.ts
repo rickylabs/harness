@@ -28,6 +28,14 @@ export interface SourceIssue {
   readonly draft?: boolean;
   /** Pull requests only: whether it landed. A closed-unmerged PR is not a shipped one. */
   readonly merged?: boolean;
+  /**
+   * Pull requests only: the description, because closing keywords live in it and nowhere else.
+   *
+   * Optional and absent for issues on purpose. Bodies are the largest field on the payload by a
+   * wide margin, and no rule this board enforces reads the body of an issue — fetching them would
+   * multiply the transfer for every projection to serve one check that does not use them.
+   */
+  readonly body?: string;
 }
 
 /** Why an item could not be projected cleanly. Anomalies are surfaced, never silently repaired. */
@@ -44,6 +52,23 @@ export type AnomalyKind =
   | "duplicate-epic-slug"
   /** A task sits in a different milestone from the epic that owns it. */
   | "epic-milestone-conflict"
+  /**
+   * An umbrella closed while its children are still open.
+   *
+   * Kept apart from `closed-but-unshipped` because the two prescribe opposite repairs. That one
+   * says the column is stale and the label should catch up; this one says the *close* was
+   * illegitimate and the issue must be reopened. Reported under one kind, a reader learns to
+   * relabel — which here would move an epic with unstarted children into a terminal column and
+   * make the board's worst claim permanent.
+   */
+  | "epic-closed-by-child"
+  /**
+   * An open pull request whose closing keyword names an umbrella rather than the task it did.
+   *
+   * The only anomaly in this list that fires *before* the damage: it names a merge that has not
+   * happened yet, and the fix is a one-line edit to the body while it is still cheap.
+   */
+  | "closing-keyword-targets-epic"
   /** Two labels of one family on one item, so reading that family is a coin toss. */
   | "duplicate-label"
   /** The fetch was capped, so the board on screen is a prefix of the real one. */

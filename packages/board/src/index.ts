@@ -35,10 +35,12 @@ export type {
 
 export { compareNullableStrings, compareStrings } from "./order.js";
 
-export { DEFAULT_PRIORITY_ORDER, projectBoard, slugOfEpicTitle } from "./project.js";
+export { closingKeywordTargets } from "./closing.js";
+
+export { DEFAULT_PRIORITY_ORDER, epicSlugOf, projectBoard, slugOfEpicTitle } from "./project.js";
 export type { ProjectOptions } from "./project.js";
 
-export { buildHierarchy, epicSlugOf } from "./hierarchy.js";
+export { buildHierarchy } from "./hierarchy.js";
 export type { EpicNode, Hierarchy, MilestoneNode, Progress } from "./hierarchy.js";
 
 export {

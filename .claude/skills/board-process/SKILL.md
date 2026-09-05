@@ -91,6 +91,13 @@ and nobody has to sweep the board by hand. Use `Part of #<n>` for a slice that a
 without finishing it. A merged PR with no closing keyword leaves a finished change and an open
 item asserting the opposite — which is exactly the drift this taxonomy exists to prevent.
 
+**Aim it at the sub-issue you implemented, never at the umbrella.** An umbrella is a container:
+it closes when its last child does, and never because one of them did. GitHub does not know the
+difference and will honour whatever number you wrote, so a keyword pointing at an epic closes it
+over its open children and every board projection after that reports unstarted work as delivered.
+The epic number is the one you have in context while working a sub-task, which is exactly why
+this is easy to get wrong. `Closes #<task>`, `Part of #<epic>` — both lines, every time.
+
 ## PR body
 
 ```markdown
@@ -100,7 +107,8 @@ item asserting the opposite — which is exactly the drift this taxonomy exists 
 
 ## Scope
 
-Closes #<issue>          <!-- or: Part of #<umbrella> -->
+Closes #<task>           <!-- the issue this PR finishes -->
+Part of #<umbrella>      <!-- the epic it sits under; never Closes -->
 
 ## Validation
 
