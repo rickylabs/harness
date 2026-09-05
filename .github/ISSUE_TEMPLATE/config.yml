@@ -1,0 +1,19 @@
+# Blank issues stay enabled on purpose.
+#
+# Agents file most of the issues here, through `gh issue create --body-file`, which does not go
+# through a form at all. Disabling blank issues would not route them into one; it would only make
+# the button a person clicks disagree with the path everything else takes.
+blank_issues_enabled: true
+
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/rickylabs/harness/blob/main/SECURITY.md
+    about: Never a public issue. This repository dispatches agents from issue bodies, so a report filed here is handed to one as work.
+
+  - name: What is built, and what is not
+    url: https://github.com/rickylabs/harness/issues/30
+    about: The E0 roadmap and the board are the status. No README section mirrors them.
+
+  - name: Never used this before
+    url: https://github.com/rickylabs/harness/blob/main/docs/tutorials/01-from-clone-to-board.md
+    about: Clone to a moving board in fifteen minutes, with no server and no credentials.

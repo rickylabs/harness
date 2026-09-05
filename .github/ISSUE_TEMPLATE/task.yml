@@ -1,0 +1,105 @@
+# No `render:` on any textarea, for the reason spelled out in `bug_report.yml`: a rendered field
+# emits a fenced code block, and a fence truncates a dispatched brief silently.
+#
+# This form is shaped like a brief rather than like a request, because that is what it becomes. An
+# issue here is the prompt an agent is given, so the acceptance list is the part that matters — it
+# is what the close gate reads, and a task with no checkable acceptance is a task nobody can tell is
+# finished.
+
+name: Task or feature
+description: "A unit of work: something to build, change, or decide."
+labels: ["type:feat", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not apply the `harness` label** unless you intend to dispatch this now. It starts a
+        real agent on a real host against this body within about thirty seconds, with no
+        confirmation step.
+
+        **No fenced code blocks anywhere in this issue.** Indent by four spaces; use single
+        backticks inline. Keep `#` out of any `key: value` line. A dispatcher stops reading at a
+        fence and runs what it got.
+
+  - type: input
+    id: summary
+    attributes:
+      label: The work, in one line
+      placeholder: dsh-board should emit the closes-relationship for pull request items
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is missing, and why it matters
+      description: The problem, not the solution. If you already know the shape of the fix, say so separately below — a brief that opens with an implementation forecloses the research stage.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance
+      description: |
+        Checkable statements about the finished state. Every box must be truthfully checked before
+        `status:ready-merge`, so write things that can be *observed*, not intentions.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: epic
+    attributes:
+      label: Which epic owns this
+      description: Asked, not labelled — a dropdown cannot set a label. Whoever triages applies the matching `epic:` label and the milestone.
+      options:
+        - "E1 — Monorepo foundation and doctrine port (#31)"
+        - "E2 — dsh app shell: profile, bundle, Docker fork, N5 compose (#32)"
+        - "E3 — Subagent providers over structured protocols (#33)"
+        - "E4 — Model gateway and routing matrix (#34)"
+        - "E5 — Governance: tri-regime admission control (#35)"
+        - "E6 — Coordinator: workflows, task DAG, board projection (#36)"
+        - "E7 — Forge: GitHub bridge, Orchid absorption (#37)"
+        - "E8 — Contracts: published package for the netscript UIs (#38)"
+        - "E9 — Telemetry: the status-? killer (#39)"
+        - "E10 — Docs: the front door, the reference, and the check (#140)"
+        - "None of these — it needs a new epic, or it is loose work"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of change is this
+      description: The form applies `type:feat` by default because that is the common case; if this dropdown says otherwise, triage swaps the label.
+      options:
+        - feat — new capability
+        - chore — tooling, config, housekeeping
+        - refactor — internal change, no behaviour change
+        - perf — performance
+        - test — tests only
+        - docs — documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: forks
+    attributes:
+      label: Owner forks
+      description: |
+        Questions that depend on what the owner wants rather than on what is true. Leave "none" if
+        there are none. Do not answer one yourself and proceed — a decision nobody knows was made is
+        the failure this field exists to prevent.
+      value: none
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Out of scope
+      description: What this task deliberately does not do, and which issue owns it instead. Optional, but it is the cheapest way to stop a run from growing.
