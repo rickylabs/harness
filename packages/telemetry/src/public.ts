@@ -20,6 +20,7 @@
  * entire job is to hand back the path to open.
  */
 
+import type { Liveness } from "./liveness.js";
 import type {
   AttributedRun,
   BoardItemRef,
@@ -33,6 +34,7 @@ import type {
   RunUsage,
   TelemetrySnapshot,
 } from "./model.js";
+import type { ActivityTree, EpicNode, ItemNode, LinkedRef, MilestoneNode } from "./tree.js";
 
 /** A run as published: `RunRecord` minus `origin`. */
 export interface PublicRun {
@@ -139,6 +141,85 @@ export function publicSnapshot(snapshot: TelemetrySnapshot, complete: boolean): 
     unattributed: snapshot.unattributed.map(publicAttributed),
     quota: snapshot.quota,
     notes: snapshot.notes,
+  };
+}
+
+/**
+ * The tree as published.
+ *
+ * Only the runs need projecting: `BoardItemRef`, `LinkedRef` and `Liveness` hold numbers, titles,
+ * labels and timestamps that came from GitHub in the first place, and nothing that names this
+ * machine. The nesting is rebuilt by hand anyway, for the reason the module header gives — a field
+ * added to a node type should not become a published field by nobody's decision.
+ */
+export interface PublicItemNode {
+  readonly item: BoardItemRef;
+  readonly runs: readonly PublicAttributedRun[];
+  readonly links: readonly LinkedRef[];
+  readonly liveness: Liveness;
+}
+
+export interface PublicEpicNode {
+  readonly epic: string | null;
+  readonly item: BoardItemRef | null;
+  readonly tasks: readonly PublicItemNode[];
+  readonly pulls: readonly PublicItemNode[];
+  readonly liveness: Liveness;
+}
+
+export interface PublicMilestoneNode {
+  readonly milestone: string | null;
+  readonly epics: readonly PublicEpicNode[];
+  readonly liveness: Liveness;
+}
+
+export interface PublicTree {
+  readonly generatedAt: string;
+  readonly now: string;
+  readonly complete: boolean;
+  readonly milestones: readonly PublicMilestoneNode[];
+  readonly unattributed: readonly PublicAttributedRun[];
+  readonly quota: readonly QuotaReading[];
+  readonly notes: readonly string[];
+}
+
+function publicItemNode(node: ItemNode): PublicItemNode {
+  return {
+    item: node.item,
+    runs: node.runs.map(publicAttributed),
+    links: node.links,
+    liveness: node.liveness,
+  };
+}
+
+function publicEpicNode(node: EpicNode): PublicEpicNode {
+  return {
+    epic: node.epic,
+    item: node.item,
+    tasks: node.tasks.map(publicItemNode),
+    pulls: node.pulls.map(publicItemNode),
+    liveness: node.liveness,
+  };
+}
+
+function publicMilestoneNode(node: MilestoneNode): PublicMilestoneNode {
+  return {
+    milestone: node.milestone,
+    epics: node.epics.map(publicEpicNode),
+    liveness: node.liveness,
+  };
+}
+
+/** Project the whole tree, subagent trees included. */
+export function publicTree(tree: ActivityTree, complete: boolean): PublicTree {
+  return {
+    generatedAt: tree.generatedAt,
+    now: tree.now,
+    complete,
+    milestones: tree.milestones.map(publicMilestoneNode),
+    unattributed: tree.unattributed.map(publicAttributed),
+    quota: tree.quota,
+    notes: tree.notes,
   };
 }
 

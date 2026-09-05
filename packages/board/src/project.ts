@@ -12,6 +12,7 @@
  * conflict, which makes the board confidently wrong rather than visibly unsure.
  */
 
+import { closingKeywordTargets } from "./closing.js";
 import { DEFAULT_LIFECYCLE, phaseOf, statusLabelsOf, unknownStatusLabels } from "./lifecycle.js";
 import type { Lifecycle } from "./lifecycle.js";
 import { labelValue, labelValues } from "./model.js";
@@ -66,14 +67,33 @@ function toItem(source: SourceIssue, lifecycle: Lifecycle, lanePrefix: string): 
   };
 }
 
+/** The slug an epic issue answers to: its explicit `epic:` label, else one derived from its title. */
+export function epicSlugOf(item: BoardItem): string | null {
+  return item.epic ?? slugOfEpicTitle(item.source.title);
+}
+
 /** Where the epic issues are, keyed by slug. A slug with several claimants keeps all of them. */
 type EpicIndex = ReadonlyMap<string, readonly BoardItem[]>;
+
+/**
+ * The three lookups the item-level rules need, built once over the whole board.
+ *
+ * Bundled rather than passed as three parameters because every rule that needs one of them tends
+ * to need another, and a signature that grows a parameter per rule is one nobody adds a rule to.
+ */
+interface Indexes {
+  readonly epics: EpicIndex;
+  /** Tasks grouped by the epic slug they claim — the children an umbrella is finished by. */
+  readonly children: ReadonlyMap<string, readonly BoardItem[]>;
+  /** Every item by number, so a closing keyword can be resolved to the thing it points at. */
+  readonly byNumber: ReadonlyMap<number, BoardItem>;
+}
 
 function indexEpics(items: readonly BoardItem[]): EpicIndex {
   const index = new Map<string, BoardItem[]>();
   for (const item of items) {
     if (!item.isEpic) continue;
-    const slug = item.epic ?? slugOfEpicTitle(item.source.title);
+    const slug = epicSlugOf(item);
     if (slug === null) continue;
     const found = index.get(slug);
     if (found === undefined) index.set(slug, [item]);
@@ -86,9 +106,56 @@ function indexEpics(items: readonly BoardItem[]): EpicIndex {
   return index;
 }
 
-function anomaliesFor(item: BoardItem, lifecycle: Lifecycle, epics: EpicIndex, lanePrefix: string): readonly Anomaly[] {
+/**
+ * Tasks under each epic slug, lowest issue number first.
+ *
+ * Epics are excluded from their own children, so an epic that carries `epic:e9` to declare its own
+ * slug does not end up counted as a child of itself and hold itself open forever.
+ */
+function indexChildren(items: readonly BoardItem[]): ReadonlyMap<string, readonly BoardItem[]> {
+  const index = new Map<string, BoardItem[]>();
+  for (const item of items) {
+    if (item.isEpic || item.epic === null) continue;
+    const found = index.get(item.epic);
+    if (found === undefined) index.set(item.epic, [item]);
+    else found.push(item);
+  }
+  for (const children of index.values()) children.sort((a, b) => a.source.number - b.source.number);
+  return index;
+}
+
+/**
+ * The open child *issues* of a closed umbrella — empty for everything else.
+ *
+ * Issues only, deliberately. An open pull request under an epic is work in flight and its own
+ * ending is to merge or to close; reopening the epic would not be the repair. An open *issue* is a
+ * commitment nobody has discharged, and an umbrella that closed over one closed early.
+ */
+function openChildrenOf(item: BoardItem, children: Indexes["children"]): readonly BoardItem[] {
+  if (!item.isEpic || item.source.state !== "closed") return [];
+  const slug = epicSlugOf(item);
+  if (slug === null) return [];
+  return (children.get(slug) ?? []).filter(
+    (child) => child.source.state === "open" && child.source.kind === "issue",
+  );
+}
+
+/** At most ten issue numbers, then a count — a detail line, not a report. */
+function listNumbers(items: readonly BoardItem[]): string {
+  const shown = items.slice(0, 10).map((i) => `#${i.source.number}`).join(", ");
+  return items.length > 10 ? `${shown}, +${items.length - 10} more` : shown;
+}
+
+function anomaliesFor(
+  item: BoardItem,
+  lifecycle: Lifecycle,
+  idx: Indexes,
+  lanePrefix: string,
+  repo: string,
+): readonly Anomaly[] {
   const found: Anomaly[] = [];
   const n = item.source.number;
+  const epics = idx.epics;
   const statuses = statusLabelsOf(item.source.labels, lifecycle);
 
   if (statuses.length > 1) {
@@ -153,10 +220,58 @@ function anomaliesFor(item: BoardItem, lifecycle: Lifecycle, epics: EpicIndex, l
     });
   }
 
+  // An umbrella is a container. It is finished when its children are, and never because one of
+  // them is — so a closed epic with an open child was closed by something other than being done.
+  // In the incident this rule comes from, the something was a sub-task's PR naming the epic in its
+  // closing keyword, and for two hours the board reported six unstarted children as delivered.
+  //
+  // Reported whatever column the epic sits in. A closed epic labelled `status:shipped` produces no
+  // other anomaly at all, and that is the worst version of this: the board asserts delivery, every
+  // other check agrees, and only the children know otherwise.
+  const openChildren = openChildrenOf(item, idx.children);
+  if (openChildren.length > 0) {
+    found.push({
+      kind: "epic-closed-by-child",
+      item: n,
+      detail:
+        `is closed with ${openChildren.length} open ${openChildren.length === 1 ? "child" : "children"} ` +
+        `(${listNumbers(openChildren)}); an umbrella closes when its last child does — reopen it, ` +
+        "do not relabel it",
+    });
+  }
+
+  // The keyword check, and the only rule here that fires before the damage: an open pull request
+  // whose body will close an umbrella on merge. Open ones only. A merged PR's body still says what
+  // it said, so reporting those would put a row in the check for every historical mistake, and a
+  // check that cannot reach zero is a check nobody runs.
+  if (item.source.kind === "pull-request" && item.source.state === "open") {
+    for (const target of closingKeywordTargets(item.source.body, repo)) {
+      const targeted = idx.byNumber.get(target);
+      if (targeted === undefined || !targeted.isEpic) continue;
+      found.push({
+        kind: "closing-keyword-targets-epic",
+        item: n,
+        detail:
+          `will close #${target} on merge, which is an umbrella — name the task this PR actually ` +
+          "finishes and use `Part of #" + String(target) + "` for the epic",
+      });
+    }
+  }
+
   // A closed item whose phase is not terminal, and a terminal item still open, are the two ways
   // the column and the issue state can contradict each other. Both are reported against the
   // issue, which is the side that wins.
-  if (item.source.state === "closed" && item.phase !== null && !item.phase.terminal) {
+  //
+  // Except when the close itself was illegitimate. `epic-closed-by-child` has just said to reopen
+  // this issue; saying in the same breath that its column is stale offers the reader a second,
+  // contradictory repair — and the one they can do with a single label edit moves an epic with
+  // unstarted children into a terminal column, which is worse than the state being reported.
+  if (
+    item.source.state === "closed" &&
+    item.phase !== null &&
+    !item.phase.terminal &&
+    openChildren.length === 0
+  ) {
     found.push({
       kind: "closed-but-unshipped",
       item: n,
@@ -218,6 +333,13 @@ export function projectBoard(
 
   const items = issues.map((issue) => toItem(issue, lifecycle, lanePrefix));
   const epics = indexEpics(items);
+  const idx: Indexes = {
+    epics,
+    children: indexChildren(items),
+    // Last write wins on a duplicate number, which cannot happen from a real fetch: `gh` returns
+    // issues and pull requests from one numbering space and neither list repeats.
+    byNumber: new Map(items.map((item) => [item.source.number, item])),
+  };
 
   const rank = (item: BoardItem): number => {
     const index = item.priority === null ? -1 : priorityOrder.indexOf(item.priority);
@@ -263,7 +385,7 @@ export function projectBoard(
   }
 
   for (const item of ordered) {
-    anomalies.push(...anomaliesFor(item, lifecycle, epics, lanePrefix));
+    anomalies.push(...anomaliesFor(item, lifecycle, idx, lanePrefix, options.repo));
   }
 
   return {

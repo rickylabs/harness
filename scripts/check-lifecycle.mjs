@@ -35,10 +35,10 @@
  * real limitation and the mitigation is the exit code: a parse that finds nothing exits 2, never
  * 0. An empty comparison must never be able to look like agreement — that is precisely the bug.
  *
- * Not wired into `build` or `typecheck` yet: `packages/forge` is a stub on some branches and the
- * full taxonomy on others, so a gate here would fail for a reason that has nothing to do with the
- * change under review. When both packages sit on `main`, add `check:lifecycle` alongside
- * `check:graph` in the root `build` and `typecheck` scripts. Until then it is run deliberately.
+ * Wired into the root `build` and `typecheck` scripts alongside `check:graph`, which it deliberately
+ * was not while `packages/forge` was a stub on some branches and the full taxonomy on others — a
+ * gate that fails for a reason unrelated to the change under review teaches people to skip it.
+ * Both packages are on `main` now, so it runs on every build.
  *
  * Exit codes: 0 the lifecycles agree (or no source is present), 1 they do not, 2 nothing could be
  * read — a broken check, which is not the same as a passing one.
@@ -87,7 +87,7 @@ function readBoardLifecycle() {
   return { prefix: prefix[1], phases };
 }
 
-/** The built-in taxonomy: `STATUS_LIFECYCLE` in order, then the terminal and override labels. */
+/** The built-in taxonomy: `STATUS_LIFECYCLE` in order, then the terminal label. */
 function readForgeTaxonomy() {
   if (!existsSync(FORGE_TAXONOMY)) return null;
   const source = stripComments(readFileSync(FORGE_TAXONOMY, "utf8"));
@@ -105,42 +105,73 @@ function readForgeTaxonomy() {
   };
   const terminal = single("STATUS_TERMINAL");
   if (terminal === null) throw new Error("taxonomy.ts declares no `STATUS_TERMINAL`");
-  // `STATUS_OVERRIDE` is deliberately optional: #100 moves `close-gate-override` into the `flag:`
-  // family, and when it leaves forge it must also leave the board's lifecycle. Its absence here
-  // should surface as an extra phase on the board, not as a crash.
-  const override = single("STATUS_OVERRIDE");
+  // There used to be a third constant here, `STATUS_OVERRIDE`, read optionally so that #100 moving
+  // `close-gate-override` into the `flag:` family would show up as an extra column on the board
+  // rather than a crash in this script. #100 landed and the constant is gone; the label it named is
+  // retired, not deleted, so `.github/labels.yml` still carries a row for it — which is why
+  // `readLabelsFile` below has to know what a retired row looks like.
 
   return {
     origin: "packages/forge/src/labels/taxonomy.ts",
-    labels: [...labels, terminal, ...(override === null ? [] : [override])],
+    labels: [...labels, terminal],
     ordered: labels,
     terminal,
   };
 }
 
+/** Strip a trailing `#` comment and one layer of matching quotes. */
+function scalar(raw) {
+  const value = raw.trim().replace(/\s+#.*$/, "");
+  if (value.length >= 2 && (value.startsWith('"') || value.startsWith("'"))) {
+    if (value.endsWith(value[0])) return value.slice(1, -1);
+  }
+  return value;
+}
+
 /**
- * Status labels from an ejected `.github/labels.yml`.
+ * Live status labels from an ejected `.github/labels.yml`.
  *
- * Only the `name:` field matters here, and only for the status family. The file is parsed the same
- * loose way `dsh-forge` parses it — a flat list of `- name: …` entries — because reimplementing
- * YAML to answer one question is how the second parser starts disagreeing with the first.
+ * Read entry by entry rather than line by line, because one field decides whether a row counts:
+ * a `superseded_by:` marks the label retired — still on the repository, still on the items that
+ * carried it, never stamped again. A retired `status:` row is therefore not a column, and counting
+ * it as one would report the board as missing a column it deliberately removed. The rest is parsed
+ * the same loose way `dsh-forge` parses it, because reimplementing YAML to answer one question is
+ * how the second parser starts disagreeing with the first.
  */
 function readLabelsFile() {
   if (!existsSync(LABELS_FILE)) return null;
   const labels = [];
+  let current = null;
+  // Only `status:` rows are kept, and only when they made it to the end of their entry without a
+  // retirement marker — which is why the push happens at the flush and not at the `name:` line.
+  const flush = () => {
+    if (current !== null && !current.retired && current.name.startsWith("status:")) {
+      labels.push(current.name);
+    }
+    current = null;
+  };
+
   for (const raw of readFileSync(LABELS_FILE, "utf8").split("\n")) {
     const line = raw.replace(/\r$/, "");
     if (line.trimStart().startsWith("#")) continue;
-    const m = /^\s*(?:-\s+)?name\s*:\s*(.*)$/.exec(line);
-    if (m === null) continue;
-    let value = m[1].trim().replace(/\s+#.*$/, "");
-    if (value.length >= 2 && (value.startsWith('"') || value.startsWith("'"))) {
-      if (value.endsWith(value[0])) value = value.slice(1, -1);
+
+    const name = /^\s*(?:-\s+)?name\s*:\s*(.*)$/.exec(line);
+    if (name !== null) {
+      flush();
+      current = { name: scalar(name[1]), retired: false };
+      continue;
     }
-    if (value.startsWith("status:")) labels.push(value);
+    const superseded = /^\s*(?:-\s+)?superseded_by\s*:\s*(.*)$/.exec(line);
+    // An empty value is a half-finished edit, not a retirement — the same reading `file.ts` gives
+    // it, so the two parsers cannot disagree about which labels are live.
+    if (superseded !== null && current !== null && scalar(superseded[1]).length > 0) {
+      current.retired = true;
+    }
   }
+  flush();
+
   if (labels.length === 0) {
-    throw new Error(".github/labels.yml exists but declares no `status:` labels");
+    throw new Error(".github/labels.yml exists but declares no live `status:` labels");
   }
   return { origin: ".github/labels.yml", labels, ordered: null, terminal: null };
 }

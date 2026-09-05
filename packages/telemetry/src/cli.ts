@@ -22,7 +22,7 @@ import { homedir } from "node:os";
 
 import { backfillFromDisk, defaultRoots, type BackfillRoots } from "./backfill/index.js";
 import { diagnosticsFor, ALL_POINTERS } from "./diagnostics.js";
-import type { BoardItemRef } from "./model.js";
+import { parseItems, type LoadedItems } from "./items.js";
 import {
   humanBytes,
   livePath,
@@ -31,15 +31,17 @@ import {
   parseEvents,
   resolveObservability,
 } from "./observability.js";
+import { publicRuns, publicSnapshot, publicTree } from "./public.js";
+import { renderSnapshot, renderTree } from "./render.js";
 import type { TelemetryEvent } from "./sink.js";
-import { publicRuns, publicSnapshot } from "./public.js";
-import { renderSnapshot } from "./render.js";
 import { buildSnapshot } from "./snapshot.js";
+import { buildTree } from "./tree.js";
 
 const USAGE = `dsh-telemetry — board activity, read from disk, with no agent awake
 
 usage:
-  dsh-telemetry status [options]     render the current picture
+  dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
+  dsh-telemetry status [options]     runs grouped by epic
   dsh-telemetry runs [options]       one line per run, newest first
   dsh-telemetry why <run-id>         which log to open first for that run
   dsh-telemetry record [options]     append events to the observability log
@@ -47,7 +49,8 @@ usage:
 
 options:
   --home <path>          home directory the stores live under (default: this user's)
-  --items <path>         JSON array of board items to attribute runs to
+  --items <path>         board items to join runs to: "dsh-board snapshot" output, or a
+                         JSON array of {number, title, epic, milestone, phase} refs
   --limit <n>            runs to read per seam, most recent first (default: 500)
   --since <iso>          only runs with activity at or after this time
   --now <iso>            reference time for ages, so output is reproducible
@@ -192,34 +195,30 @@ export function parseFlags(argv: readonly string[]): Flags {
   return { home, items, limit, since, sinceMs, now, json, help, run, kind, rest };
 }
 
-/** The board items to attribute against, and whether asking for them failed. */
-interface LoadedItems {
-  readonly items: BoardItemRef[];
-  readonly note: string | null;
-  /** True only when items were asked for and could not be had. Not asking is not a gap. */
-  readonly degraded: boolean;
-}
-
-/** Read the board items to attribute against. An absent flag is not an error, only a poorer view. */
+/**
+ * Read the board items to attribute against. An absent flag is not an error, only a poorer view.
+ *
+ * The shape check and the adapting both live in `items.ts`, which is where the data actually stops
+ * being `unknown`. This function's only remaining job is the file, and the one case the parser
+ * cannot see: not asking is not a gap.
+ */
 async function loadItems(path: string | null): Promise<LoadedItems> {
   if (path === null) {
     return {
       items: [],
       // Said explicitly: without items every run is unattributed, and that would otherwise look
       // like a board with no work on it rather than a command that was not told where the board is.
-      note: "no --items given: runs are listed but not attributed to epics",
-      degraded: false,
+      notes: ["no --items given: runs are listed but not attributed to epics"],
+      ok: true,
     };
   }
+  let text: string;
   try {
-    const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
-    if (!Array.isArray(parsed)) {
-      return { items: [], note: `${path} is not a JSON array`, degraded: true };
-    }
-    return { items: parsed as BoardItemRef[], note: null, degraded: false };
+    text = await readFile(path, "utf8");
   } catch (error) {
-    return { items: [], note: `${path} could not be read: ${String(error)}`, degraded: true };
+    return { items: [], notes: [`${path} could not be read: ${String(error)}`], ok: false };
   }
+  return parseItems(text, path);
 }
 
 /** Print the notes under a heading. Used when a command's own output would otherwise be silent. */
@@ -443,16 +442,28 @@ export async function main(argv: readonly string[]): Promise<number> {
     return EXIT.incomplete;
   }
 
-  if (command === "status") {
+  if (command === "status" || command === "tree") {
     const loaded = await loadItems(flags.items);
-    const notes = loaded.note === null ? scan.notes : [...scan.notes, loaded.note];
-    const complete = !scan.degraded && !loaded.degraded;
+    const notes = [...scan.notes, ...loaded.notes];
+    const complete = !scan.degraded && loaded.ok;
     const snapshot = buildSnapshot({
       generatedAt: flags.now,
       runs,
       items: loaded.items,
       notes,
     });
+    if (command === "tree") {
+      // The same snapshot, so attribution is decided once and both commands agree about which run
+      // belongs to which item. The items are handed over a second time on purpose: a snapshot only
+      // retains items that runs attached to, and this view exists for the ones nobody has touched.
+      const tree = buildTree({ snapshot, items: loaded.items, now: flags.now });
+      process.stdout.write(
+        flags.json
+          ? `${JSON.stringify(publicTree(tree, complete), null, 2)}\n`
+          : `${renderTree(tree, flags.now)}\n`,
+      );
+      return complete ? EXIT.ok : EXIT.incomplete;
+    }
     process.stdout.write(
       flags.json
         ? `${JSON.stringify(publicSnapshot(snapshot, complete), null, 2)}\n`

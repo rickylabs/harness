@@ -130,6 +130,47 @@ describe("buildSnapshot", () => {
     assert.match(snapshot.notes.join("\n"), /appears under itself — subagent tree truncated/);
   });
 
+  it("does not mistake two records sharing an id for a cycle, and keeps both attributed", () => {
+    // Measured on the real board: a run id is a session id, and a Claude session that was resumed or
+    // compacted is written to more than one transcript, so one id arrives once per transcript. The
+    // old guard was a single reached-set, so the second record was reported as a loop and returned
+    // with `item: null` — its attribution thrown away on a diagnosis that was not true.
+    const snapshot = buildSnapshot({
+      generatedAt: "2026-09-04T22:00:00.000Z",
+      runs: [
+        run({ id: "dup", linkedIssues: [{ number: 85, from: "path" }] }),
+        run({ id: "dup", linkedIssues: [{ number: 85, from: "path" }], updatedAt: "2026-09-04T19:00:00.000Z" }),
+      ],
+      items: [{ number: 85, title: "task", epic: "e9", milestone: "M1", phase: null }],
+    });
+    assert.equal(snapshot.unattributed.length, 0);
+    assert.equal(snapshot.epics[0]?.runs.length, 2);
+    assert.doesNotMatch(snapshot.notes.join("\n"), /appears under itself/);
+  });
+
+  it("reports repeated ids once for the whole scan, with the count", () => {
+    // 128 copies of one sentence is how the real board buried every other note in the snapshot.
+    const runs = Array.from({ length: 40 }, () => run({ id: "dup" }));
+    const snapshot = buildSnapshot({ generatedAt: "2026-09-04T22:00:00.000Z", runs, items: [] });
+    const repeated = snapshot.notes.filter((n) => n.includes("name more than one record"));
+    assert.equal(repeated.length, 1);
+    assert.match(repeated[0] ?? "", /^1 run id\(s\) name more than one record/);
+    assert.match(repeated[0] ?? "", /dup ×40/);
+    // Nothing was dropped: every record is still a run on the snapshot.
+    assert.equal(snapshot.unattributed.length, 40);
+  });
+
+  it("still walks a subagent tree once when the same id is also a root elsewhere", () => {
+    // The second occurrence is not expanded again — its children were placed under the first — so a
+    // repeated id inflates the run count by exactly the records that exist, never by a subtree.
+    const snapshot = buildSnapshot({
+      generatedAt: "2026-09-04T22:00:00.000Z",
+      runs: [run({ id: "dup" }), run({ id: "dup" }), run({ id: "kid", parentId: "dup" })],
+      items: [],
+    });
+    assert.equal(countRuns(snapshot.unattributed), 3);
+  });
+
   it("puts an ambiguous run in front of the operator, with the reason on the same screen", () => {
     // The note has to survive the walk, not just `attributeTo`: an operator who cannot see why a
     // run went unattributed cannot fix the branch name that would have attributed it.

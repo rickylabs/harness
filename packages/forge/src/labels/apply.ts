@@ -25,7 +25,10 @@ export async function applyPlan(
   const skipped = plan.actions.filter((a) => a.kind === "keep" || a.kind === "conflict");
 
   for (const action of plan.actions) {
-    if (action.kind !== "create" && action.kind !== "update") continue;
+    // `retire` is an update on the wire and nothing more — there is no delete here and there is
+    // not meant to be one. The label keeps its name, so every item carrying it keeps carrying it;
+    // only the description changes, to say what to use instead.
+    if (action.kind !== "create" && action.kind !== "update" && action.kind !== "retire") continue;
     const wire = {
       name: action.spec.name,
       color: action.spec.color,
@@ -33,6 +36,8 @@ export async function applyPlan(
     };
     try {
       if (action.kind === "create") await transport.createLabel(repo, wire);
+      // Addressed by the name GitHub has, not the name the spec wants: they are the same for a
+      // retire, and for an update a case-only difference would otherwise 404.
       else await transport.updateLabel(repo, action.current?.name ?? action.spec.name, wire);
       applied.push(action);
     } catch (error) {

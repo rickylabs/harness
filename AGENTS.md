@@ -32,6 +32,60 @@ Treat that run directory as the working surface. Treat everything else as either
 (stable, change deliberately), the plugin layer in [`packages/`](packages/), or entry points
 (rarely change).
 
+## Operational hazard: this repository is a live inbox
+
+**`rickylabs/harness` is the Orchid dispatch inbox, not a quiet workspace.** divybot polls it
+on a 30-second cycle, and applying the **`harness`** label to an issue starts a real agent on a
+real host against that issue's body. There is no draft state and no confirmation step. Tidying
+up the board is enough to spend a run.
+
+What follows from that, every time you touch an issue here:
+
+- **Label deliberately.** `harness` is a trigger, not a tag. Everything else in the taxonomy is
+  inert; this one is not.
+- **The body of a dispatched issue is a prompt, and a dispatcher reads it to find one.** Write
+  no fenced code blocks in it — use four-space indented blocks and single-backtick inline code.
+  A parser that stops at a fence takes everything above it and runs, so the failure mode is a
+  brief silently half as long as the one you wrote, with no error and nothing on the issue to
+  say the agent read less than what is there. Keep `#` out of any `key: value` line as well.
+- **Read the brief back with `gh issue view` before you apply the label.** What that prints is
+  the whole prompt only if it is the whole of what you wrote.
+
+The full rules, generated from the taxonomy actually installed here, are in
+[`.claude/skills/board-process/SKILL.md`](.claude/skills/board-process/SKILL.md). Read it before
+your first board mutation, not after.
+
+## Workspace layout, and the two seams
+
+A pnpm workspace: one package per Cordis plugin under [`packages/`](packages/), each owned by a
+numbered epic, plus `dsh-app` which composes them. [`packages/README.md`](packages/README.md)
+holds the authoritative table of package → owning epic → what it attaches to, and the
+conventions every package inherits. Most directories are still **empty, buildable stubs**; do
+not add behaviour to one before the epic that owns it has defined its contract.
+
+```
+doctrine/                    portable doctrine — how to work here (stable)
+packages/                    the dsh plugin layer — one package per subsystem
+.llm/runs/                   run artifacts — durable, reviewed via PR
+.claude/skills/              generated skills; board-process is the board's rulebook
+AGENTS.md / CLAUDE.md        entry points
+```
+
+**Doctrine lives in [`doctrine/`](doctrine/)** — plain markdown, zero runtime, portable to any
+repository in any language. It is the layer that already ported; treat it as stable and change
+it deliberately. Run artifacts under `.llm/runs/` are durable evidence, not scratch space.
+
+The plugin split is not arbitrary. Two subsystems that both look like "call a model" attach to
+two *different* dsh seams, and the packages are separated to match (#30, "two seams, not one"):
+
+| Seam | What attaches | Metered by | Packages |
+|---|---|---|---|
+| `ctx.subagents` / `SubagentProvider` | autonomous vendor CLIs — Claude Code, Codex, opencode, ACP | quota window | `provider-claude`, `provider-codex`, `provider-acp`, `provider-opencode` (E3 · #33) |
+| `ctx.llm` / `LlmAdapter` | API-key and local models — LM Studio, llama-rocm, OpenRouter | per token | `llm-local` (E4 · #34) |
+
+Collapsing the two into one abstraction is the design error this split exists to prevent: they
+differ in what they are, what they cost, and what running out of them means.
+
 ## Ratified decisions you inherit
 
 These four are ratified in the *Decisions taken* table of

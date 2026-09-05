@@ -14,6 +14,7 @@
     { "path": "packages/provider-codex" },
     { "path": "packages/provider-opencode" },
     { "path": "packages/routing" },
+    { "path": "packages/subagents" },
     { "path": "packages/telemetry" }
   ]
 }

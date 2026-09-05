@@ -15,7 +15,11 @@ importers:
         specifier: ~5.9.3
         version: 5.9.3
 
-  packages/board: {}
+  packages/board:
+    dependencies:
+      '@rickylabs/subagents':
+        specifier: workspace:*
+        version: link:../subagents
 
   packages/contracts: {}
 
@@ -83,6 +87,8 @@ importers:
   packages/provider-opencode: {}
 
   packages/routing: {}
+
+  packages/subagents: {}
 
   packages/telemetry: {}
 

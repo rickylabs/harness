@@ -37,31 +37,51 @@ function childrenByParent(runs: readonly RunRecord[]): Map<string, RunRecord[]> 
 /**
  * Attach the subagent tree under each root run.
  *
- * A cycle in `parent_id` would hang this, and a store written by a live process is not a place to
- * assume acyclicity. The visited set makes a malformed store produce a truncated tree with a note
- * instead of a wedged status command.
+ * Two different failures used to arrive here as one. A cycle in `parent_id` would hang the walk, and
+ * a store written by a live process is not a place to assume acyclicity — so the walk needs a guard.
+ * But the guard was a single set of every id ever reached, which also fires when two *records* carry
+ * one id, and that is not a cycle at all: it is one session read from several transcripts, which is
+ * what a resumed or compacted Claude session looks like on disk. On the real board that misreading
+ * printed 128 copies of "appears under itself" and threw away the item attribution of every run
+ * after the first — evidence discarded on the strength of a diagnosis that was not true.
+ *
+ * So there are two sets. `onPath` is the cycle guard and holds only the ancestors of the run being
+ * attributed. `visited` is the reached set, which still decides what is stranded and now also
+ * distinguishes a repeated id from a loop: such a run keeps its attribution and is simply not
+ * expanded a second time, because its children were already placed under the first occurrence.
  */
 function attribute(
   run: RunRecord,
   children: Map<string, RunRecord[]>,
   items: Map<number, BoardItemRef>,
   visited: Set<string>,
+  onPath: Set<string>,
+  repeated: Map<string, number>,
   notes: string[],
 ): AttributedRun {
-  if (visited.has(run.id)) {
+  if (onPath.has(run.id)) {
     notes.push(`run ${run.id} appears under itself — subagent tree truncated at this point`);
     return { run, item: null, children: [] };
   }
-  visited.add(run.id);
 
   const chosen = attributeTo(run, items);
   if (chosen.note !== null) notes.push(chosen.note);
 
+  if (visited.has(run.id)) {
+    // Counted rather than announced: one note per repeat is how 128 identical lines buried every
+    // other note in the scan. The summary is emitted once, by the caller.
+    repeated.set(run.id, (repeated.get(run.id) ?? 1) + 1);
+    return { run, item: chosen.item, children: [] };
+  }
+  visited.add(run.id);
+  onPath.add(run.id);
+
   const kids = (children.get(run.id) ?? [])
     .slice()
     .sort((a, b) => compareStrings(a.startedAt, b.startedAt) || compareStrings(a.id, b.id))
-    .map((child) => attribute(child, children, items, visited, notes));
+    .map((child) => attribute(child, children, items, visited, onPath, repeated, notes));
 
+  onPath.delete(run.id);
   return { run, item: chosen.item, children: kids };
 }
 
@@ -150,10 +170,12 @@ export function buildSnapshot(input: SnapshotInput): TelemetrySnapshot {
     compareStrings(b.updatedAt, a.updatedAt) || compareStrings(a.id, b.id);
 
   const visited = new Set<string>();
+  const onPath = new Set<string>();
+  const repeated = new Map<string, number>();
   const attributed = roots
     .slice()
     .sort(byRecency)
-    .map((run) => attribute(run, children, items, visited, notes));
+    .map((run) => attribute(run, children, items, visited, onPath, repeated, notes));
 
   // A cycle with no member outside it has no root at all, so the walk above never reaches it. Left
   // here, those runs would vanish from the snapshot entirely — the one outcome this package must
@@ -162,7 +184,22 @@ export function buildSnapshot(input: SnapshotInput): TelemetrySnapshot {
   for (const run of stranded) {
     if (visited.has(run.id)) continue; // Adopted as a child while attributing an earlier stranded run.
     notes.push(`run ${run.id} is in a parent cycle with no root — shown as a root here`);
-    attributed.push(attribute(run, children, items, visited, notes));
+    attributed.push(attribute(run, children, items, visited, onPath, repeated, notes));
+  }
+
+  if (repeated.size > 0) {
+    // One line for the whole scan, naming the worst offenders. A run id is a session id, and a
+    // session that was resumed or compacted is written to more than one transcript — so the same id
+    // legitimately arrives several times, each carrying a different slice of the work. Nothing is
+    // dropped and nothing is merged; the operator is told that `why <id>` will be ambiguous.
+    const worst = [...repeated.entries()]
+      .sort(([aId, a], [bId, b]) => b - a || compareStrings(aId, bId))
+      .slice(0, 3)
+      .map(([id, count]) => `${id} ×${count}`)
+      .join(", ");
+    notes.push(
+      `${repeated.size} run id(s) name more than one record in this scan — a session read from several transcripts arrives once per transcript: ${worst}`,
+    );
   }
 
   const byEpic = new Map<string, AttributedRun[]>();
