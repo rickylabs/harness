@@ -7,8 +7,10 @@
 # - On a completed close, replace the phase label with `status:shipped`. On a not-planned
 #   close, remove the `status:` label entirely — it did not ship.
 # - `type:`, `area:` and `priority:` are additive.
-# - Never delete a label: deleting strips it off every issue that carried it. Deprecate it
-#   here and let a human remove it once nothing uses it.
+# - Never delete a label: deleting strips it off every issue that carried it, so an item that
+#   recorded a decision stops saying so. Retire it instead — move the row to the retired
+#   section below and give it `superseded_by:`. It stays on the repository and on its items,
+#   and stops being stamped on new work.
 
 # ── type: portable core ──
 - name: "type:feat"
@@ -70,9 +72,6 @@
 - name: "status:shipped"
   color: "5319e7"
   description: "Terminal: replaces the phase label when completed work closes"
-- name: "status:close-gate-override"
-  color: "b60205"
-  description: "Audited exception to the closing-keyword acceptance gate"
 
 # ── priority: portable core ──
 - name: "priority:p0"
@@ -103,6 +102,9 @@
 - name: "breaking"
   color: "b60205"
   description: "Introduces a breaking change"
+- name: "flag:close-gate-override"
+  color: "b60205"
+  description: "Audited exception to the closing-keyword acceptance gate"
 
 # ── area: derived from this repository ──
 - name: "area:board"
@@ -179,3 +181,11 @@
 - name: "epic:e0"
   color: "5319e7"
   description: "E0 — Roadmap: harness as the deterministic coordinator layer (#30)"
+
+# ── retired: kept so the items that carry these still say what happened ──
+# Not stamped on new work. Never delete a row here — deleting the label takes the
+# record with it. `dsh-forge labels apply` only rewrites the description.
+- name: "status:close-gate-override"
+  color: "b60205"
+  description: "Retired — use flag:close-gate-override. Left in place so the items it audited still say so."
+  superseded_by: "flag:close-gate-override"

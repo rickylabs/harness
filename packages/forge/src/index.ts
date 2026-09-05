@@ -13,13 +13,15 @@ export const PACKAGE_NAME = "@rickylabs/forge" as const;
 export type PackageName = typeof PACKAGE_NAME;
 
 export {
+  CLOSE_GATE_OVERRIDE,
   CORE_TAXONOMY,
   EVAL_LABELS,
   FLAG_LABELS,
   PRIORITY_LABELS,
+  RETIRED_CLOSE_GATE_STATUS,
+  RETIRED_LABELS,
   STATUS_LABELS,
   STATUS_LIFECYCLE,
-  STATUS_OVERRIDE,
   STATUS_TERMINAL,
   TYPE_LABELS,
   areaLabel,
@@ -27,6 +29,7 @@ export {
   classifyStatus,
   epicLabel,
   gateLabel,
+  isRetired,
   isValidColor,
   laneLabel,
   normalizeColor,

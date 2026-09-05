@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { familyOf, parseLabelsFile, renderLabelsFile } from "./file.js";
-import { CORE_TAXONOMY, areaLabel } from "./taxonomy.js";
+import { CORE_TAXONOMY, RETIRED_LABELS, areaLabel } from "./taxonomy.js";
 
 describe("labels.yml round trip", () => {
   it("survives eject then parse without losing a label", () => {
@@ -24,6 +24,10 @@ describe("labels.yml round trip", () => {
     const text = renderLabelsFile(CORE_TAXONOMY, "owner/repo");
     assert.match(text, /Exactly ONE `status:` label/);
     assert.match(text, /Never delete a label/);
+    // The header promises retirement as the alternative to deleting. A promise the file format
+    // cannot keep is worse than no promise: it sends the reader looking for a section that is not
+    // there, and the label gets deleted anyway.
+    assert.match(text, /superseded_by:/);
   });
 
   it("round-trips descriptions containing quotes and backslashes", () => {
@@ -80,6 +84,44 @@ describe("labels.yml round trip", () => {
     const parsed = parseLabelsFile(["- name: x"].join("\n"));
     assert.equal(parsed.labels[0]?.color, "ededed");
     assert.deepEqual(parsed.issues, []);
+  });
+});
+
+describe("retired rows", () => {
+  it("round-trips a retirement through eject and parse", () => {
+    const retired = [{ ...RETIRED_LABELS[0]! }];
+    const parsed = parseLabelsFile(renderLabelsFile(CORE_TAXONOMY, "owner/repo", retired));
+
+    assert.deepEqual(parsed.issues, []);
+    assert.deepEqual(
+      parsed.retired.map((l) => l.name),
+      retired.map((s) => s.name),
+    );
+    assert.equal(parsed.retired[0]?.supersededBy, retired[0]?.supersededBy);
+  });
+
+  it("keeps a retired row out of `labels`, which is the set the next apply installs", () => {
+    // A retired row left in that list is a row the next apply puts back onto the repository as
+    // live — the one outcome retiring exists to prevent.
+    const text = renderLabelsFile(CORE_TAXONOMY, "owner/repo", [{ ...RETIRED_LABELS[0]! }]);
+    const parsed = parseLabelsFile(text);
+    const names = new Set(parsed.labels.map((l) => l.name));
+    assert.ok(!names.has(RETIRED_LABELS[0]!.name));
+    assert.equal(parsed.labels.length, CORE_TAXONOMY.length);
+  });
+
+  it("emits nothing at all when there is nothing retired", () => {
+    // A heading over an empty list reads as a warning about a hazard this repository does not have.
+    const text = renderLabelsFile(CORE_TAXONOMY, "owner/repo");
+    assert.ok(!text.includes("── retired"));
+  });
+
+  it("treats an empty `superseded_by` as a half-finished edit, not a retirement", () => {
+    // Reading it as one would silently stop stamping a label the author still wanted.
+    const parsed = parseLabelsFile(["- name: type:old", '  superseded_by: ""'].join("\n"));
+    assert.equal(parsed.retired.length, 0);
+    assert.equal(parsed.labels.length, 1);
+    assert.match(parsed.issues[0]?.message ?? "", /superseded_by/);
   });
 });
 

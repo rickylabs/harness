@@ -31,10 +31,21 @@ Exit codes: `0` ok, `1` drift or conflict, `2` usage, `3` no usable GitHub trans
 | family | labels |
 | --- | --- |
 | `type:` | `feat` `fix` `docs` `chore` `refactor` `perf` `test` `umbrella` `sub-pr` |
-| `status:` | the nine-phase lifecycle, plus `shipped` and `close-gate-override` |
+| `status:` | the nine-phase lifecycle, plus `shipped` |
 | `priority:` | `p0`–`p3` |
 | `eval:` | `skip` `third-opinion` |
-| flags | `rfc` `breaking` |
+| flags | `rfc` `breaking` `flag:close-gate-override` |
+
+A `status:` label *is* the board column, so nothing else may occupy it: `flag:close-gate-override`
+records an audited exception to the close gate and sits *alongside* whichever phase the item is
+actually in.
+
+**Retired**, never installed and never deleted — a label that recorded a decision keeps recording it,
+so `dsh-forge` only rewrites its description to name the successor:
+
+| label | use instead |
+| --- | --- |
+| `status:close-gate-override` | `flag:close-gate-override` |
 
 **Derived**, only where the repository provides evidence:
 

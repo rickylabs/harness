@@ -31,7 +31,7 @@ import {
   type TransportProbe,
 } from "./labels/github.js";
 import { formatPlan, isClean, planLabels, type LabelPlan } from "./labels/plan.js";
-import { CORE_TAXONOMY, type LabelSpec } from "./labels/taxonomy.js";
+import { CORE_TAXONOMY, RETIRED_LABELS, type LabelSpec } from "./labels/taxonomy.js";
 import { installSkill } from "./skill/install.js";
 
 const USAGE = `dsh-forge — board taxonomy and process skill, installable into any repository
@@ -67,6 +67,8 @@ interface Context {
   readonly existing: readonly ExistingLabel[];
   readonly lanePrefix: string;
   readonly desired: readonly LabelSpec[];
+  /** Labels the taxonomy has retired. Never installed; corrected where the repo still has one. */
+  readonly retired: readonly LabelSpec[];
   readonly detectionNotes: readonly string[];
   readonly evidence: readonly { label: string; source: string }[];
   readonly skillDirs: readonly string[];
@@ -138,6 +140,9 @@ async function resolveContext(options: {
     existing,
     lanePrefix,
     desired: [...(fromFile?.labels ?? []), ...CORE_TAXONOMY, ...detected.labels],
+    // The file first here too. A repository that retired a label of its own keeps that record,
+    // and the built-in retirements are appended rather than allowed to overwrite it.
+    retired: [...(fromFile?.retired ?? []), ...RETIRED_LABELS],
     detectionNotes: notes,
     evidence: [...detected.evidence],
     skillDirs: await detectSkillDirs(options.repoRoot),
@@ -172,7 +177,7 @@ const requireTransport = (ctx: Context): GitHubTransport => {
 };
 
 const buildPlan = (ctx: Context, force: boolean): LabelPlan =>
-  planLabels(ctx.desired, ctx.existing, { force });
+  planLabels(ctx.desired, ctx.existing, { force, retired: ctx.retired });
 
 // ── commands ─────────────────────────────────────────────────────────────────
 
@@ -254,7 +259,10 @@ function cmdCheck(ctx: Context, json: boolean): number {
   if (isClean(plan)) return 0;
   if (!json) {
     out();
-    out(`drift: ${plan.counts.create} to create, ${plan.counts.update} to update, ${plan.counts.conflict} conflict(s)`);
+    out(
+      `drift: ${plan.counts.create} to create, ${plan.counts.update} to update, ` +
+        `${plan.counts.retire} to retire, ${plan.counts.conflict} conflict(s)`,
+    );
   }
   return 1;
 }
@@ -292,7 +300,10 @@ async function cmdApply(
       ),
     );
   } else {
-    for (const action of result.applied) out(`${action.kind === "create" ? "created" : "updated"}  ${action.spec.name}`);
+    const verb: Record<string, string> = { create: "created", update: "updated", retire: "retired" };
+    for (const action of result.applied) {
+      out(`${(verb[action.kind] ?? "changed").padEnd(8)} ${action.spec.name}`);
+    }
     if (result.applied.length === 0) out("nothing to do — the repository already carries this taxonomy");
     if (result.failed) {
       out();
@@ -316,20 +327,35 @@ async function cmdEject(ctx: Context, dryRun: boolean, json: boolean): Promise<n
   const path = join(ctx.repoRoot, LABELS_FILE);
   // De-duplicate by name, first wins — the same precedence the planner uses, so the ejected file
   // and the applied taxonomy cannot disagree.
+  // Retired names are claimed first, so a label that is both retired and desired ejects only into
+  // the retired block — the same precedence `planLabels` applies, for the same reason.
   const seen = new Set<string>();
-  const specs = ctx.desired.filter((s) => {
-    const key = s.name.toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const dedupe = (rows: readonly LabelSpec[]): readonly LabelSpec[] =>
+    rows.filter((s) => {
+      const key = s.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  const retired = dedupe(ctx.retired);
+  const specs = dedupe(ctx.desired);
 
   if (!dryRun) {
     await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, renderLabelsFile(specs, ctx.repo), "utf8");
+    await writeFile(path, renderLabelsFile(specs, ctx.repo, retired), "utf8");
   }
-  if (json) out(JSON.stringify({ path: LABELS_FILE, labels: specs.length, written: !dryRun }, null, 2));
-  else out(`${dryRun ? "would write" : "wrote"} ${LABELS_FILE} — ${specs.length} label(s)`);
+  if (json) {
+    out(
+      JSON.stringify(
+        { path: LABELS_FILE, labels: specs.length, retired: retired.length, written: !dryRun },
+        null,
+        2,
+      ),
+    );
+  } else {
+    const note = retired.length > 0 ? ` plus ${retired.length} retired` : "";
+    out(`${dryRun ? "would write" : "wrote"} ${LABELS_FILE} — ${specs.length} label(s)${note}`);
+  }
   return 0;
 }
 
@@ -338,18 +364,24 @@ async function cmdSkillInstall(
   flags: { force: boolean; dryRun: boolean; dispatchLabel: string | null },
   json: boolean,
 ): Promise<number> {
+  // Retired first, then desired, on one shared `seen` — the planner's precedence again, so the
+  // skill cannot teach as live a label the same run is retiring.
   const seen = new Set<string>();
-  const specs = ctx.desired.filter((s) => {
-    const key = s.name.toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const dedupe = (rows: readonly LabelSpec[]): readonly LabelSpec[] =>
+    rows.filter((s) => {
+      const key = s.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  const retired = dedupe(ctx.retired);
+  const specs = dedupe(ctx.desired);
 
   const reports = await installSkill({
     repoRoot: ctx.repoRoot,
     repo: ctx.repo,
     specs,
+    retired,
     lanePrefix: ctx.lanePrefix,
     dispatchLabel: flags.dispatchLabel,
     skillDirs: ctx.skillDirs,
