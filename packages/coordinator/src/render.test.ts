@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { selectEvaluator, type Actor, type Candidate } from "./independence.js";
-import { renderDecision } from "./render.js";
+import { planOf, type StepState } from "./plan.js";
+import { renderDecision, renderPlan, renderWorkflow } from "./render.js";
+import { checkWorkflow, MILESTONE_WORKFLOW, type Workflow } from "./workflow.js";
 
 const author: Actor = {
   id: "run-author",
@@ -78,5 +80,76 @@ describe("renderDecision", () => {
 
   it("ends without a trailing newline, so the caller decides how it is written", () => {
     assert.equal(renderDecision(selectEvaluator(author, [codex])).endsWith("\n"), false);
+  });
+});
+
+describe("renderWorkflow", () => {
+  it("leads with the verdict, then the steps", () => {
+    const text = renderWorkflow(MILESTONE_WORKFLOW, checkWorkflow(MILESTONE_WORKFLOW));
+    assert.match(text.split("\n")[0] ?? "", /^workflow: milestone — 11 step\(s\), no problems$/);
+  });
+
+  it("says INVALID first when the definition does not hold up", () => {
+    const broken: Workflow = {
+      name: "broken",
+      steps: [
+        { id: "look", stage: "decompose", kind: "read", needs: [], evidence: [], describe: "look" },
+        { id: "write", stage: "decompose", kind: "effect", needs: ["look"], evidence: [], describe: "write" },
+      ],
+    };
+    const text = renderWorkflow(broken, checkWorkflow(broken));
+    assert.match(text.split("\n")[0] ?? "", /^INVALID/);
+    assert.match(text, /write  ungated-effect/);
+  });
+});
+
+describe("renderPlan", () => {
+  const stateOf = (...states: readonly StepState[]): readonly StepState[] => states;
+  const doneStep = (id: string): StepState => ({ id, outcome: "done", citations: {}, note: null });
+
+  it("puts the fork on line one, ahead of everything else", () => {
+    // A run waiting on a person is not merely stalled — it is stalled on somebody who does not know
+    // it yet, and that has to be the first thing anybody reads.
+    const plan = planOf(
+      MILESTONE_WORKFLOW,
+      stateOf(doneStep("read-milestone"), doneStep("propose-tasks"), {
+        id: "gate-decomposition",
+        outcome: "forked",
+        citations: {},
+        note: "which repo holds the memory store?",
+      }),
+    );
+    const text = renderPlan(plan);
+    assert.match(text.split("\n")[0] ?? "", /^FORKED — 1 owner decision\(s\) waiting/);
+    assert.match(text, /forks \(1\) — for the owner, not for the coordinator:/);
+  });
+
+  it("says a repeated reason once, so one fork does not print eight times", () => {
+    const plan = planOf(
+      MILESTONE_WORKFLOW,
+      stateOf(doneStep("read-milestone"), doneStep("propose-tasks"), {
+        id: "gate-decomposition",
+        outcome: "forked",
+        citations: {},
+        note: "which repo holds the memory store?",
+      }),
+    );
+    const text = renderPlan(plan);
+    assert.equal(text.split("which repo holds the memory store?").length - 1, 2);
+    assert.match(text, /\(as above\)/);
+  });
+
+  it("leads with the runnable count when there is work to do", () => {
+    const plan = planOf(MILESTONE_WORKFLOW, []);
+    assert.match(renderPlan(plan).split("\n")[0] ?? "", /^plan: 1 step\(s\) runnable — 0 of 11 done$/);
+  });
+
+  it("says complete when everything is done", () => {
+    const plan = planOf(MILESTONE_WORKFLOW, MILESTONE_WORKFLOW.steps.map((s) => doneStep(s.id)));
+    assert.match(renderPlan(plan).split("\n")[0] ?? "", /^plan: complete — all 11 step\(s\) done$/);
+  });
+
+  it("ends without a trailing newline", () => {
+    assert.equal(renderPlan(planOf(MILESTONE_WORKFLOW, [])).endsWith("\n"), false);
   });
 });

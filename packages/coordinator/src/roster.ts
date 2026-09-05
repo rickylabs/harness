@@ -68,14 +68,24 @@ function actor(source: Readonly<Record<string, unknown>>): Actor | { readonly mi
  * "independent of *whom*".
  */
 export function parseRoster(text_: string): ParsedRoster {
-  const notes: string[] = [];
   let parsed: unknown;
   try {
     parsed = JSON.parse(text_);
   } catch (error) {
     return { roster: null, notes: [`roster is not JSON: ${(error as Error).message}`] };
   }
+  return readRoster(parsed);
+}
 
+/**
+ * The same reader, over a value that has already been parsed.
+ *
+ * Replay needs this. A journal entry holds the roster as JSON *data*, not as a string, and
+ * re-serialising it only to parse it again would introduce a round-trip that could itself change the
+ * answer — which is precisely the thing a determinism check is supposed to be measuring.
+ */
+export function readRoster(parsed: unknown): ParsedRoster {
+  const notes: string[] = [];
   const document = object(parsed);
   if (document === null) {
     return { roster: null, notes: ['roster is not a JSON object — expected { "author": …, "candidates": […] }'] };

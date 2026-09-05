@@ -12,6 +12,15 @@
  * coming in and a telemetry event going out, both of them structural shapes rather than imports.
  * That is what lets the gate run in CI with no credentials and no network, which is exactly when
  * skipping it is most tempting.
+ *
+ * Around the gate sits the journal: every decision written down with the inputs it was made from, so
+ * it can be fed back through the same code and the answers compared. That is the difference between
+ * a system that logs what it did and one that can be asked whether it would do it again.
+ *
+ * Around both sits the workflow: the milestone run written down as inert data, and a planner that is
+ * a pure function of that definition and the current state. It decides what may run next and refuses
+ * what may not; performing the steps is the daemon's job, and keeping those two apart is what makes
+ * the deciding replayable at all.
  */
 
 /** Workspace package identifier. */
@@ -42,6 +51,84 @@ export {
   type RecordedActor,
 } from "./record.js";
 
-export { renderDecision } from "./render.js";
+export { renderComparison, renderDecision, renderPlan, renderReplay, renderWorkflow } from "./render.js";
 
-export { parseRoster, ROSTER_NOTE_CAP, type ParsedRoster, type Roster } from "./roster.js";
+export {
+  parseRoster,
+  readRoster,
+  ROSTER_NOTE_CAP,
+  type ParsedRoster,
+  type Roster,
+} from "./roster.js";
+
+export {
+  canonicalJson,
+  differences,
+  digest,
+  CircularValueError,
+  DIFF_PATH_CAP,
+  DIGEST_LENGTH,
+} from "./canonical.js";
+
+export {
+  compareJournals,
+  decisionOf,
+  journalLine,
+  parseJournal,
+  planDigest,
+  JOURNAL_NOTE_CAP,
+  type Change,
+  type JournalComparison,
+  type ParsedJournal,
+  type PersistedDecision,
+} from "./journal.js";
+
+export {
+  evaluatorEntry,
+  planEntry,
+  replayJournal,
+  DECIDERS,
+  EVALUATOR_DECIDER,
+  PLAN_DECIDER,
+  type Decider,
+  type Divergence,
+  type ReplayResult,
+  type ReplayVerdict,
+  type Rerun,
+  type Unreplayable,
+} from "./replay.js";
+
+export {
+  checkWorkflow,
+  prerequisites,
+  MILESTONE_WORKFLOW,
+  WORKFLOWS,
+  type Problem,
+  type ProblemRule,
+  type Stage,
+  type Step,
+  type StepKind,
+  type Workflow,
+} from "./workflow.js";
+
+export {
+  admit,
+  parseStates,
+  planOf,
+  readStates,
+  runnable,
+  settle,
+  statesOf,
+  STATE_NOTE_CAP,
+  type Admission,
+  type AdmissionRule,
+  type Halt,
+  type Outcome,
+  type ParsedStates,
+  type Plan,
+  type Settlement,
+  type SettleRule,
+  type StepResult,
+  type StepState,
+  type Waiting,
+} from "./plan.js";
