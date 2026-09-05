@@ -15,7 +15,7 @@
  * this command only decides.
  */
 
-import { appendFile, readFile } from "node:fs/promises";
+import { appendFile, readFile, writeFile } from "node:fs/promises";
 
 import {
   OPPOSITE_FAMILY,
@@ -31,10 +31,25 @@ import {
 } from "./journal.js";
 import { admit, parseStates, planOf, statesOf } from "./plan.js";
 import { recordOf, telemetryLine } from "./record.js";
-import { renderComparison, renderDecision, renderPlan, renderReplay, renderWorkflow } from "./render.js";
+import {
+  renderComparison,
+  renderDecision,
+  renderPlan,
+  renderReplay,
+  renderWorkflow,
+  renderWorktrees,
+} from "./render.js";
 import { evaluatorEntry, planEntry, replayJournal } from "./replay.js";
 import { parseRoster } from "./roster.js";
 import { checkWorkflow, MILESTONE_WORKFLOW, WORKFLOWS, type Workflow } from "./workflow.js";
+import {
+  hazards,
+  judge,
+  keepFileBody,
+  parseCensus,
+  unprotectedWorktrees,
+  KEEP_FILE,
+} from "./worktree.js";
 
 const USAGE = `dsh-coordinator — the deterministic gate between authoring and review
 
@@ -44,6 +59,7 @@ usage:
   dsh-coordinator workflow [options]    print a workflow definition, and check it
   dsh-coordinator plan [options]        what may run next, given the state — the "status ?" answer
   dsh-coordinator admit [options]       may this one step run? exit 1 says no, and why
+  dsh-coordinator worktrees [options]   which worktrees are live, and what the archiver will take
   dsh-coordinator replay [options]      re-run a journal's decisions from their own inputs
   dsh-coordinator diff [options]        compare two journals, and name what changed
 
@@ -53,6 +69,8 @@ options:
   --state <path>     plan/admit: the step states (default: stdin)
   --workflow <name>  which workflow (default: milestone)
   --step <id>        admit: the step being asked about
+  --census <path>    worktrees: what is running and what is on disk (default: stdin)
+  --write            worktrees: write the missing keep files
   --run <id>         the run this decision belongs to, for the record
   --at <iso>         timestamp on the record, so a replay is byte-identical
   --json             the record as JSON instead of prose
@@ -79,6 +97,13 @@ and refuses an effect while any gate among them is unpassed — checking only th
 direct needs would be satisfied by a hand-edited state file, which is the case the
 rule exists for.
 
+The census is { "runs": [{"id","cwd"}], "worktrees": [{"path","keepFile","idleHours"}],
+"sessions": [...] }. A worktree is owned when a run's actual cwd is that directory or
+inside it, compared at segment boundaries — never by name and never by prefix, because
+the inverted form of that mistake reports a live worktree as abandoned to something
+that deletes. A run whose cwd cannot be read protects every worktree it cannot rule
+out, so an incomplete census produces a shorter sweep list, never a longer one.
+
 A journal is JSONL, one decision per line, holding the inputs a decision was made
 from as well as its output. That is what makes "replay" possible: the same inputs
 go back through the same code, and the answers are compared. A decision that comes
@@ -87,9 +112,10 @@ rather than as a change of plan.
 
 exit status:
   0  an evaluator was selected · a step is admitted · a plan has work to do or is
-     complete · a workflow checks out · a replay was identical · two journals agree
-  1  blocked, refused, forked, stalled, divergent, or the plan changed. Read the
-     reason before proceeding.
+     complete · a workflow checks out · a replay was identical · two journals agree ·
+     no worktree is at risk
+  1  blocked, refused, forked, stalled, divergent, the plan changed, or something
+     live is about to be archived. Read the reason before proceeding.
   2  the command line was wrong
   3  the input could not be read, or nothing could be checked
   4  dsh-coordinator itself failed
@@ -122,6 +148,8 @@ interface Flags {
   readonly state: string | null;
   readonly workflow: Workflow;
   readonly step: string | null;
+  readonly census: string | null;
+  readonly write: boolean;
   readonly run: string | null;
   readonly at: string;
   readonly json: boolean;
@@ -139,6 +167,8 @@ export function parseFlags(argv: readonly string[]): Flags {
   let state: string | null = null;
   let workflow: Workflow = MILESTONE_WORKFLOW;
   let step: string | null = null;
+  let census: string | null = null;
+  let write = false;
   let run: string | null = null;
   let at = new Date().toISOString();
   let json = false;
@@ -185,6 +215,12 @@ export function parseFlags(argv: readonly string[]): Flags {
       case "--step":
         step = next();
         break;
+      case "--census":
+        census = next();
+        break;
+      case "--write":
+        write = true;
+        break;
       case "--run":
         run = next();
         break;
@@ -219,7 +255,24 @@ export function parseFlags(argv: readonly string[]): Flags {
         if (arg !== undefined) rest.push(arg);
     }
   }
-  return { roster, policy, state, workflow, step, run, at, json, event, journal, before, after, help, rest };
+  return {
+    roster,
+    policy,
+    state,
+    workflow,
+    step,
+    census,
+    write,
+    run,
+    at,
+    json,
+    event,
+    journal,
+    before,
+    after,
+    help,
+    rest,
+  };
 }
 
 async function readStdin(): Promise<string> {
@@ -422,6 +475,84 @@ async function admitCommand(flags: Flags): Promise<number> {
   return admission.rule === "unknown-step" ? EXIT.usage : EXIT.blocked;
 }
 
+/**
+ * What the archiver will take, and what it must not.
+ *
+ * The census is handed in rather than gathered, for the same reason the roster is: this command has
+ * to be able to run on a laptop, in CI, and on a host where the coordinator has no business calling
+ * `ps`. Whoever can see the fleet writes down what is running and what is on disk; this decides.
+ *
+ * `--write` is the one mutation in this binary, and it is deliberately the additive one. Creating a
+ * `.archive-keep` can only cause a directory to survive; nothing here deletes, marks for deletion, or
+ * emits a list somebody could pipe into `rm`. If this command is wrong, the cost is disk.
+ */
+async function worktrees(flags: Flags): Promise<number> {
+  if (flags.census === null && process.stdin.isTTY === true) {
+    process.stdout.write("no --census and nothing on stdin — give a census file or pipe one in\n");
+    return EXIT.usage;
+  }
+
+  let text: string;
+  try {
+    text = flags.census === null ? await readStdin() : await readFile(flags.census, "utf8");
+  } catch (error) {
+    process.stdout.write(`census could not be read: ${String(error)}\n`);
+    return EXIT.unreadable;
+  }
+
+  const parsed = parseCensus(text);
+  const census = parsed.census;
+  if (census === null) {
+    for (const note of parsed.notes) process.stdout.write(`${note}\n`);
+    return EXIT.unreadable;
+  }
+
+  const judged = judge(census);
+  const written: string[] = [];
+  const failed: string[] = [];
+  if (flags.write) {
+    for (const path of unprotectedWorktrees(census, judged)) {
+      const owner = judged.find((judgement) => judgement.path === path)?.owner ?? "an unnamed run";
+      try {
+        await writeFile(`${path}/${KEEP_FILE}`, keepFileBody(owner, flags.at), "utf8");
+        written.push(path);
+      } catch (error) {
+        failed.push(`${path}: ${String(error)}`);
+      }
+    }
+  }
+
+  // Judged again over what is now true, so the table is the state after the writes rather than the
+  // state that motivated them. A report that still lists a hazard somebody just fixed teaches its
+  // reader to ignore it.
+  const effective =
+    written.length === 0
+      ? census
+      : {
+          ...census,
+          worktrees: census.worktrees.map((fact) =>
+            written.includes(fact.path) ? { ...fact, keepFile: true } : fact,
+          ),
+        };
+  const finalJudged = written.length === 0 ? judged : judge(effective);
+  const found = hazards(effective, finalJudged);
+
+  process.stdout.write(
+    flags.json
+      ? `${JSON.stringify({ worktrees: finalJudged, hazards: found, written, failed }, null, 2)}\n`
+      : `${renderWorktrees(finalJudged, found)}\n`,
+  );
+  for (const note of parsed.notes) process.stderr.write(`census: ${note}\n`);
+  for (const path of written) process.stderr.write(`wrote ${path}/${KEEP_FILE}\n`);
+  for (const line of failed) process.stderr.write(`could not write ${line}\n`);
+
+  if (failed.length > 0) {
+    process.stderr.write("a worktree that should have been protected was not — it is still eligible\n");
+    return EXIT.failed;
+  }
+  return found.length > 0 ? EXIT.blocked : EXIT.ok;
+}
+
 async function readJournal(path: string, label: string): Promise<readonly PersistedDecision[] | null> {
   let text: string;
   try {
@@ -495,6 +626,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   if (command === "workflow") return workflowCommand(flags);
   if (command === "plan") return await plan(flags);
   if (command === "admit") return await admitCommand(flags);
+  if (command === "worktrees") return await worktrees(flags);
   if (command === "replay") return await replay(flags);
   if (command === "diff") return await diff(flags);
 

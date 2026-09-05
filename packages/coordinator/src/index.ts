@@ -21,6 +21,12 @@
  * a pure function of that definition and the current state. It decides what may run next and refuses
  * what may not; performing the steps is the daemon's job, and keeping those two apart is what makes
  * the deciding replayable at all.
+ *
+ * And underneath all of it, the worktree census: a run that takes three days looks exactly like
+ * abandoned scratch to a housekeeping job that deletes on a 48h timer. Deciding which directories
+ * are live is the same kind of question as the rest of this package — an answer that must be right
+ * for a stated reason, because something acts on it — with the difference that being wrong here
+ * destroys work rather than delaying it.
  */
 
 /** Workspace package identifier. */
@@ -51,7 +57,14 @@ export {
   type RecordedActor,
 } from "./record.js";
 
-export { renderComparison, renderDecision, renderPlan, renderReplay, renderWorkflow } from "./render.js";
+export {
+  renderComparison,
+  renderDecision,
+  renderPlan,
+  renderReplay,
+  renderWorkflow,
+  renderWorktrees,
+} from "./render.js";
 
 export {
   parseRoster,
@@ -132,3 +145,34 @@ export {
   type StepState,
   type Waiting,
 } from "./plan.js";
+
+export {
+  hazards,
+  isWithin,
+  judge,
+  keepFileBody,
+  layoutOf,
+  misePathFor,
+  normalizePath,
+  ownerOf,
+  parseCensus,
+  readCensus,
+  sweptByArchiver,
+  unprotectedWorktrees,
+  unregisteredSessions,
+  CENSUS_NOTE_CAP,
+  IDLE_LIMIT_HOURS,
+  KEEP_FILE,
+  PROTECTED_SESSIONS,
+  type Census,
+  type Disposition,
+  type Hazard,
+  type HazardRule,
+  type Judgement,
+  type JudgementRule,
+  type Layout,
+  type LayoutKind,
+  type ParsedCensus,
+  type Run,
+  type WorktreeFact,
+} from "./worktree.js";

@@ -15,6 +15,7 @@ import type { JournalComparison } from "./journal.js";
 import type { Plan } from "./plan.js";
 import type { ReplayResult } from "./replay.js";
 import type { Problem, Workflow } from "./workflow.js";
+import type { Hazard, Judgement } from "./worktree.js";
 
 function describe(actor: Actor): string {
   const effort = actor.effort === null ? "" : ` · ${actor.effort}`;
@@ -229,4 +230,45 @@ export function renderWorkflow(workflow: Workflow, problems: readonly Problem[])
     .map((step) => `    ${pad(step.id, idWidth)}  ${step.evidence.join(", ")}`);
 
   return [...head, ...rows, "", `  must cite (${cites.length}):`, ...cites].join("\n");
+}
+
+/**
+ * The worktree census and what is at risk in it, as lines, without a trailing newline.
+ *
+ * The hazards come before the table and the table is printed in full underneath. The counts are the
+ * answer, but the reason this output exists at all is that somebody is about to trust it with a
+ * decision to delete directories, and a reader who wants to check that judgement one row at a time
+ * must be able to. A summary is the form in which "swept a live worktree" hides.
+ */
+export function renderWorktrees(judged: readonly Judgement[], found: readonly Hazard[]): string {
+  const counted = (disposition: string): number => judged.filter((j) => j.disposition === disposition).length;
+  const head =
+    found.length > 0
+      ? [
+          `AT RISK — ${found.length} hazard(s) across ${judged.length} worktree(s)`,
+          "",
+          "  The archiver is on course to take something that is in use, or a protection exists here",
+          "  and nowhere else. Neither resolves by waiting.",
+          "",
+          ...found.map((hazard) => `    ${hazard.rule}  ${hazard.subject}  ${hazard.detail}`),
+        ]
+      : [
+          `worktrees: ${judged.length} judged — ${counted("protect")} protected, ` +
+            `${counted("leave")} left, ${counted("sweep")} sweepable`,
+        ];
+
+  if (judged.length === 0) return head.join("\n");
+
+  const pathWidth = Math.max(...judged.map((j) => j.path.length));
+  const dispositionWidth = Math.max(...judged.map((j) => j.disposition.length));
+  const ruleWidth = Math.max(...judged.map((j) => j.rule.length));
+  return [
+    ...head,
+    "",
+    ...judged.map(
+      (j) =>
+        `  ${pad(j.path, pathWidth)}  ${pad(j.disposition, dispositionWidth)}  ` +
+        `${pad(j.rule, ruleWidth)}  ${j.detail}`,
+    ),
+  ].join("\n");
 }
