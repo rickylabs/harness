@@ -8,15 +8,8 @@
  *
  * ## Exit codes
  *
- * | code | meaning |
- * | --- | --- |
- * | 0 | clean |
- * | 1 | the board contradicts itself (`check` only) |
- * | 2 | usage error |
- * | 3 | no usable transport — `gh` missing, unauthenticated, or unable to reach GitHub |
- * | 4 | internal error |
- *
- * These are the command's contract, and `1` is the one that has to stay honest: it means the
+ * `EXIT_MEANINGS` below is the table; repeating it here would be a second copy that nothing
+ * compares. `1` is the one that has to stay honest: it means the
  * *board* is wrong, and something reading this in CI will treat it that way. A network failure
  * exiting 1 tells that reader the board is broken when the truth is that nobody looked. So every
  * failure gets its own code, and nothing falls through to 1 by accident — a defect that only
@@ -30,6 +23,34 @@ import { fetchItems, TransportUnavailable, detectRepoSlug } from "./github.js";
 import type { FetchResult } from "./github.js";
 import { projectBoard } from "./project.js";
 import { renderAnomalies, renderColumns, renderHierarchy, renderCompleteness } from "./render.js";
+
+/** The command's contract with whatever called it. Disjoint; nothing falls through to another. */
+export const EXIT = {
+  ok: 0,
+  anomalies: 1,
+  usage: 2,
+  unavailable: 3,
+  failed: 4,
+} as const;
+
+/**
+ * One sentence per code, keyed on `EXIT` — so a code added without a meaning is a type error
+ * rather than an undocumented number that CI discovers by treating it as a board defect.
+ *
+ * This is the only statement of these meanings. The `exit codes` block in `USAGE` renders from it,
+ * and so does `docs/reference/cli/dsh-board.md`, which `pnpm run check:docs` byte-compares.
+ */
+export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
+  ok: "clean: the board was read and it agrees with itself",
+  anomalies: "the board contradicts itself (check only)",
+  usage: "the command line was wrong",
+  unavailable: "no usable transport: gh missing, unauthenticated, or unable to reach GitHub",
+  failed: "dsh-board itself failed",
+};
+
+const EXIT_BLOCK = Object.entries(EXIT)
+  .map(([name, code]) => `  ${code}  ${EXIT_MEANINGS[name as keyof typeof EXIT]}`)
+  .join("\n");
 
 const USAGE = `dsh-board — project a GitHub repository as a board
 
@@ -47,7 +68,7 @@ options:
   --at <iso8601>        timestamp to record on the snapshot (default: now)
 
 exit codes:
-  0 clean · 1 board anomalies (check only) · 2 usage · 3 transport unavailable · 4 internal error
+${EXIT_BLOCK}
 `;
 
 interface Options {
@@ -126,12 +147,12 @@ export async function main(argv: readonly string[], deps: CliDeps = defaultDeps(
     ({ command, options } = parseArgs(argv));
   } catch (error) {
     deps.stderr(`${error instanceof Error ? error.message : String(error)}\n\n${USAGE}`);
-    return 2;
+    return EXIT.usage;
   }
 
   if (command === "help") {
     deps.stdout(USAGE);
-    return 0;
+    return EXIT.ok;
   }
 
   const repo = options.repo ?? (await deps.detectRepoSlug(deps.cwd()));
@@ -140,7 +161,7 @@ export async function main(argv: readonly string[], deps: CliDeps = defaultDeps(
       "could not determine the repository.\n" +
         "Run inside a git repository with a GitHub remote, or pass --repo <owner/name>.\n",
     );
-    return 3;
+    return EXIT.unavailable;
   }
 
   if (command === "doctor") {
@@ -149,11 +170,11 @@ export async function main(argv: readonly string[], deps: CliDeps = defaultDeps(
     try {
       const { items } = await deps.fetchItems(repo, 1);
       deps.stdout(`reachable: yes (${items.length} item sampled)\n`);
-      return 0;
+      return EXIT.ok;
     } catch (error) {
       if (error instanceof TransportUnavailable) {
         deps.stdout(`reachable: no — ${error.message}\n`);
-        return 3;
+        return EXIT.unavailable;
       }
       throw error;
     }
@@ -161,7 +182,7 @@ export async function main(argv: readonly string[], deps: CliDeps = defaultDeps(
 
   if (!["status", "columns", "snapshot", "check"].includes(command)) {
     deps.stderr(`unknown command ${JSON.stringify(command)}\n\n${USAGE}`);
-    return 2;
+    return EXIT.usage;
   }
 
   let fetched: FetchResult;
@@ -172,7 +193,7 @@ export async function main(argv: readonly string[], deps: CliDeps = defaultDeps(
       deps.stderr(
         `${error.message}\n\nInstall the GitHub CLI and run "gh auth login", then retry.\n`,
       );
-      return 3;
+      return EXIT.unavailable;
     }
     throw error;
   }
@@ -195,16 +216,16 @@ export async function main(argv: readonly string[], deps: CliDeps = defaultDeps(
   switch (command) {
     case "status":
       deps.stdout(`${renderHierarchy(buildHierarchy(snapshot))}\n`);
-      return 0;
+      return EXIT.ok;
     case "columns":
       deps.stdout(`${renderColumns(snapshot)}\n`);
-      return 0;
+      return EXIT.ok;
     case "snapshot":
       deps.stdout(`${JSON.stringify(snapshot, null, 2)}\n`);
-      return 0;
+      return EXIT.ok;
     default:
       deps.stdout(`${renderAnomalies(snapshot)}\n`);
-      return snapshot.anomalies.length === 0 ? 0 : 1;
+      return snapshot.anomalies.length === 0 ? EXIT.ok : EXIT.anomalies;
   }
 }
 
@@ -235,7 +256,7 @@ if (invokedDirectly()) {
         `internal error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`,
       );
       // Not 1. Exit 1 means the board contradicts itself, and a crash is not evidence of that.
-      process.exitCode = 4;
+      process.exitCode = EXIT.failed;
     },
   );
 }

@@ -91,10 +91,10 @@ comparison running in CI, what holds it true is a convention — someone remembe
 and conventions decay silently, which is the failure this page opened with.
 
 Documentation was the largest such gap, which is why the docs lane treats it as an engineering
-problem rather than a writing one: the CLI reference is generated from the CLIs and byte-compared
-([#143](https://github.com/rickylabs/harness/issues/143)), and links are checked in CI
-([#147](https://github.com/rickylabs/harness/issues/147)). The rule those issues serve is the one
-stated on the [docs index](../README.md#the-rule-these-docs-are-held-to):
+problem rather than a writing one. The [CLI reference](../reference/cli/README.md) is now generated
+from the CLIs and byte-compared by `pnpm run check:docs`, inside the same `pnpm run build` CI already
+runs; links are next ([#147](https://github.com/rickylabs/harness/issues/147)). The rule that work
+serves is the one stated on the [docs index](../README.md#the-rule-these-docs-are-held-to):
 
 > Every document either states facts it owns, or is generated from the code that owns them.
 

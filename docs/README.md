@@ -18,6 +18,7 @@ explain them.
 
 - New to the project → the [root README](../README.md), then [concepts](concepts/).
 - Want to run something → [Quickstart](../README.md#quickstart).
+- Want a flag, a subcommand or an exit code → [CLI reference](reference/cli/README.md).
 - Want to understand a design decision → [`concepts/`](concepts/) for the model,
   [`doctrine/`](../doctrine/) for the method, and the
   [E0 roadmap](https://github.com/rickylabs/harness/issues/30) for what is ratified.

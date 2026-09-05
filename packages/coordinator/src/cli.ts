@@ -51,6 +51,43 @@ import {
   KEEP_FILE,
 } from "./worktree.js";
 
+/**
+ * Disjoint, and 1 is load-bearing.
+ *
+ * Following `dsh-board`'s shape rather than `dsh-telemetry`'s: 1 is "the thing you asked about is
+ * not clean" and 4 is "I broke". A gate needs those to be different numbers, because a caller that
+ * cannot tell "no legal evaluator exists" from "the tool crashed" will eventually treat both as
+ * noise and dispatch anyway.
+ */
+export const EXIT = {
+  ok: 0,
+  blocked: 1,
+  usage: 2,
+  unreadable: 3,
+  failed: 4,
+} as const;
+
+/**
+ * One sentence per code, keyed on `EXIT` — so a code added without a meaning is a type error
+ * rather than an undocumented number a dispatcher has to guess at.
+ *
+ * This is the only statement of these meanings. The `exit codes` block in `USAGE` renders from it,
+ * and so does `docs/reference/cli/dsh-coordinator.md`, which `pnpm run check:docs` byte-compares.
+ * Which command produced the code is a question the command list above answers; this table says
+ * what the number means, and stays short enough to be read at the point of failure.
+ */
+export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
+  ok: "clean: the question was answered and nothing is in the way",
+  blocked: "blocked, refused, forked, stalled, divergent, or a live worktree is at risk",
+  usage: "the command line was wrong",
+  unreadable: "the input could not be read, or nothing could be checked",
+  failed: "dsh-coordinator itself failed",
+};
+
+const EXIT_BLOCK = Object.entries(EXIT)
+  .map(([name, code]) => `  ${code}  ${EXIT_MEANINGS[name as keyof typeof EXIT]}`)
+  .join("\n");
+
 const USAGE = `dsh-coordinator — the deterministic gate between authoring and review
 
 usage:
@@ -110,32 +147,9 @@ go back through the same code, and the answers are compared. A decision that com
 back different from identical inputs is nondeterminism, and is reported as that
 rather than as a change of plan.
 
-exit status:
-  0  an evaluator was selected · a step is admitted · a plan has work to do or is
-     complete · a workflow checks out · a replay was identical · two journals agree ·
-     no worktree is at risk
-  1  blocked, refused, forked, stalled, divergent, the plan changed, or something
-     live is about to be archived. Read the reason before proceeding.
-  2  the command line was wrong
-  3  the input could not be read, or nothing could be checked
-  4  dsh-coordinator itself failed
+exit codes:
+${EXIT_BLOCK}
 `;
-
-/**
- * Disjoint, and 1 is load-bearing.
- *
- * Following `dsh-board`'s shape rather than `dsh-telemetry`'s: 1 is "the thing you asked about is
- * not clean" and 4 is "I broke". A gate needs those to be different numbers, because a caller that
- * cannot tell "no legal evaluator exists" from "the tool crashed" will eventually treat both as
- * noise and dispatch anyway.
- */
-export const EXIT = {
-  ok: 0,
-  blocked: 1,
-  usage: 2,
-  unreadable: 3,
-  failed: 4,
-} as const;
 
 const POLICIES: Readonly<Record<string, IndependencePolicy>> = {
   [OPPOSITE_FAMILY.name]: OPPOSITE_FAMILY,

@@ -50,6 +50,26 @@ export const EXIT = {
   unwritable: 3,
 } as const;
 
+/**
+ * One sentence per code, keyed on `EXIT` — so a code added without a meaning is a type error
+ * rather than an undocumented number.
+ *
+ * This is the only statement of these meanings. The `exit codes` block in `USAGE` renders from it,
+ * and so does `docs/reference/cli/dsh-profile.md`, which `pnpm run check:docs` byte-compares. Until
+ * this existed the four codes were stated in a doc comment and nowhere a user could see them: the
+ * `--help` text, the one place someone actually looks, listed none of them.
+ */
+export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
+  ok: "installed, or already matching",
+  drift: "check found a difference between what is installed and what this package would write",
+  usage: "the argv did not name a command this tool has",
+  unwritable: "the profile directory could not be written or linked",
+};
+
+const EXIT_BLOCK = Object.entries(EXIT)
+  .map(([name, code]) => `  ${code}  ${EXIT_MEANINGS[name as keyof typeof EXIT]}`)
+  .join("\n");
+
 const USAGE = `dsh-profile — install the rickylabs dsh profile
 
 usage
@@ -64,7 +84,10 @@ options
   --dry-run        with install: report what would change, write nothing
 
 after installing
-  dsh --profile ${PROFILE_NAME} --dump-config     show the composed entry list`;
+  dsh --profile ${PROFILE_NAME} --dump-config     show the composed entry list
+
+exit codes:
+${EXIT_BLOCK}`;
 
 /** Thrown for an argv this tool cannot act on. Mapped to `EXIT.usage`. */
 export class UsageError extends Error {}
