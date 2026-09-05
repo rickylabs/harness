@@ -76,6 +76,10 @@ export const BUNDLE_ROWS: readonly BundleRow[] = [
       "that a provider package has something to attach to, and so that the failure mode of a",
       "deployment with no providers is `no-providers` from `selectProvider` rather than a",
       "missing-service crash at the first dispatch.",
+      "",
+      "It injects `harnessTelemetry` (E9 · #83) and stays PENDING without it. Empty is not the",
+      "same as unwatched: whatever E3 registers is wrapped before it reaches the context, so an",
+      "uninstrumented provider is not something a provider package can produce by forgetting.",
     ],
   },
   {
