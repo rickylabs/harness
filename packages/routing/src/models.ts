@@ -59,6 +59,24 @@ export const MODEL_IDS = {
   agyDocs: "gemini-3.6-flash-high",
 } as const;
 
+/**
+ * Models served from the N5's own GPU, on one of the two local backends.
+ *
+ * Pinned here for the same reason every other id is: `routing` owns model ids, and a second table
+ * naming a model would mean two answers to "which model did that run use". Where each of these can
+ * physically run — and where it must not — is `@rickylabs/llm-local`'s capability matrix (#60),
+ * which reads these ids rather than repeating their spelling.
+ *
+ * The `n5air/` prefix is part of the id, not a router key. It is how the fleet's `WORKFLOW.md`
+ * names the local evaluator seats, and an unprefixed `qwen3.8-27b` would be a different model.
+ */
+export const LOCAL_MODEL_IDS = {
+  /** The local plan-evaluation seat, and the smoke model — LM Studio on Vulkan. */
+  planEvaluator: "n5air/qwen3.8-27b",
+  /** The local implementation-evaluation seat. ROCm only; see the capability matrix. */
+  implEvaluator: "n5air/ling-3.0-flash",
+} as const;
+
 /** Relay models, reachable only over OpenRouter. */
 export const OPENROUTER_MODEL_IDS = {
   planEvaluator: "qwen/qwen3.8-flash",
@@ -80,10 +98,16 @@ export const OPENCODE_MODEL_IDS = {
 } as const;
 
 /**
- * The open models approved to sit in an evaluator seat.
+ * The open models approved to sit in an evaluator seat **over the relay**.
  *
  * A harness invariant, not a convenience list: relay evaluator lanes run OPEN models only. An
- * open model that is not on this list has not been approved to certify anything.
+ * open model that is not on this list has not been approved to certify anything over OpenRouter.
+ *
+ * The two local evaluator seats in `LOCAL_MODEL_IDS` are deliberately absent. They are the fleet's
+ * documented local defaults, but approval is granted per route and no step in `policy.ts` routes to
+ * a local backend yet; `checkPolicy` only consults this list for `transport: "openrouter"` steps.
+ * Adding them before a lane can reach them would widen a certification claim ahead of the routing
+ * that would have to justify it.
  */
 export const OPEN_EVALUATOR_MODEL_IDS = [
   OPENROUTER_MODEL_IDS.planEvaluator,
@@ -109,6 +133,8 @@ const FAMILY_BY_MODEL: ReadonlyMap<string, ModelFamily> = new Map<string, ModelF
   [MODEL_IDS.opus, "anthropic"],
   [MODEL_IDS.sonnet, "anthropic"],
   [MODEL_IDS.agyDocs, "google"],
+  [LOCAL_MODEL_IDS.planEvaluator, "open"],
+  [LOCAL_MODEL_IDS.implEvaluator, "open"],
   [OPENROUTER_MODEL_IDS.planEvaluator, "open"],
   [OPENROUTER_MODEL_IDS.implEvaluator, "open"],
   [OPENROUTER_MODEL_IDS.designGlm, "open"],

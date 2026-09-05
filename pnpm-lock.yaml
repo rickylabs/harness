@@ -90,7 +90,11 @@ importers:
 
   packages/governance: {}
 
-  packages/llm-local: {}
+  packages/llm-local:
+    dependencies:
+      '@rickylabs/routing':
+        specifier: workspace:*
+        version: link:../routing
 
   packages/netscript-bridge: {}
 
