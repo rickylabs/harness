@@ -1,21 +1,27 @@
 # packages/
 
-One pnpm workspace package per Cordis plugin, plus the app that composes them. The layout is
-the target layout from #31; every directory is an **empty, buildable stub** until the epic that
-owns it lands. Do not add behaviour to a stub before that epic has defined its contract.
+One pnpm workspace package per Cordis plugin, plus the app that composes them. The layout is the
+target layout from #31, and it was created all at once so that the dependency shape was decided
+before any of the code was written.
 
-| Package | Owner | Attaches to |
-|---|---|---|
-| `dsh-app` | E2 · #32 | our dsh profile + bundle (`cordis.patch.yml`); depends on every plugin below |
-| `subagents` | E3 · #33 | the `ctx.subagents` contract itself: `DispatchRequest`, its `/swarm` wire format, and `SubagentProvider` |
-| `provider-claude`, `provider-codex`, `provider-acp`, `provider-opencode` | E3 · #33 | `ctx.subagents` / `SubagentProvider` — autonomous vendor CLIs, metered by quota window |
-| `llm-local` | E4 · #34 | `ctx.llm` / `LlmAdapter` — API-key and local models, metered per token |
-| `routing` | E4 · #34 | delegation matrix |
-| `governance` | E5 · #35 | tri-regime admission control |
-| `board`, `coordinator` | E6 · #36 | task DAG, kanban projection, MASTER workflows |
-| `forge`, `netscript-bridge` | E7 · #37 | GitHub bridge, polyglot dispatch |
-| `contracts` | E8 · #38 | **published** to npm as `@rickylabs/harness-contracts`; the only non-private package |
-| `telemetry` | E9 · #39 | `SessionTelemetrySink` |
+**Eight carry real code; seven are stubs waiting on their epic.** A stub is a `package.json`, a
+tsconfig and a placeholder export — enough to hold its place in the project graph, and not enough to
+pretend it works. Every stub README says so in its first lines, names what the package will own, and
+names what is blocking it. Do not add behaviour to a stub before its epic has defined the contract.
+
+| Package | Ships | Owner | Attaches to |
+|---|---|---|---|
+| `dsh-app` | ✅ | E2 · #32 | our dsh profile + bundle (`cordis.patch.yml`); depends on every plugin below |
+| `subagents` | ✅ | E3 · #33 | the `ctx.subagents` contract itself: `DispatchRequest`, its `/swarm` wire format, and `SubagentProvider` |
+| `provider-claude`, `provider-codex`, `provider-acp`, `provider-opencode` | — | E3 · #33 | `ctx.subagents` / `SubagentProvider` — autonomous vendor CLIs, metered by quota window |
+| `llm-local` | — | E4 · #34 | `ctx.llm` / `LlmAdapter` — API-key and local models, metered per token |
+| `routing` | ✅ | E4 · #34 | delegation matrix |
+| `governance` | — | E5 · #35 | tri-regime admission control; blocked behind #62 |
+| `board`, `coordinator` | ✅ | E6 · #36 | task DAG, kanban projection, MASTER workflows |
+| `forge` | ✅ | E7 · #37 | GitHub bridge: taxonomy and process skill, installable into any repository |
+| `netscript-bridge` | — | E7 · #37 | polyglot dispatch — the adapter decision 2 rests on |
+| `contracts` | ✅ | E8 · #38 | **published** to npm as `@rickylabs/harness-contracts`; the only non-private package |
+| `telemetry` | ✅ | E9 · #39 | `SessionTelemetrySink` |
 
 The provider packages and `llm-local` are separate on purpose: vendor CLIs and API/local models
 attach to two *different* dsh seams (#30, "two seams, not one").
