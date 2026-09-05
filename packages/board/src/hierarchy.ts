@@ -164,13 +164,20 @@ export function epicSlugOf(item: BoardItem): string | null {
 }
 
 /**
- * The node key for an epic issue that lost its slug to a lower-numbered one.
+ * The name shown on the node of an epic issue that lost its slug to a lower-numbered one.
  *
- * Qualified by issue number so the loser gets its own node instead of being merged into the
- * winner's or dropped. It reads as `e6#41`, which is the point: a reader sees immediately that
- * two issues are fighting over `e6`.
+ * Qualified by issue number so the loser is drawn as itself rather than merged into the winner's
+ * node. It reads as `e6#41`, which is the point: a reader sees immediately that two issues are
+ * fighting over `e6`.
+ *
+ * This is a label, never a key. It used to be both, and that was a defect: `epic:` label values
+ * are free text, so a task labelled `epic:e6#41` produced exactly this string and collided with
+ * the displaced node for issue 41 under slug `e6` — one of the two then lost to `??` and vanished
+ * from the tree while remaining open on GitHub. Displaced epics are now carried by identity and
+ * never keyed, so nothing a human can type into a label can occupy their slot. Two nodes may
+ * legitimately end up displaying the same name; they are still two nodes.
  */
-const displacedKey = (item: BoardItem): string =>
+const displacedSlug = (item: BoardItem): string =>
   `${epicSlugOf(item) ?? ""}#${item.source.number}`;
 
 /**
@@ -232,14 +239,18 @@ export function buildHierarchy(snapshot: BoardSnapshot): Hierarchy {
     const group = bucket(issue.source.milestone);
     if (!group.has(slug)) group.set(slug, []);
   }
+  // Displaced epics are grouped by milestone and nothing else. They deliberately do not enter the
+  // slug-keyed map: that map's keys come from `epic:` label values, which are free text, and a
+  // shared namespace between a derived key and a value a human can type is a collision waiting to
+  // happen. `bucket(...)` is still called for its side effect, so a milestone containing only a
+  // displaced epic is drawn rather than skipped.
+  const displacedByMilestone = new Map<string | null, BoardItem[]>();
   for (const issue of displaced) {
-    const group = bucket(issue.source.milestone);
-    const key = displacedKey(issue);
-    if (!group.has(key)) group.set(key, []);
+    bucket(issue.source.milestone);
+    const list = displacedByMilestone.get(issue.source.milestone);
+    if (list === undefined) displacedByMilestone.set(issue.source.milestone, [issue]);
+    else list.push(issue);
   }
-  const displacedBySlug = new Map<string, BoardItem>(
-    displaced.map((issue) => [displacedKey(issue), issue]),
-  );
 
   const milestones: MilestoneNode[] = [];
   const names = [...byMilestone.keys()].sort(compareNullableStrings);
@@ -248,11 +259,12 @@ export function buildHierarchy(snapshot: BoardSnapshot): Hierarchy {
     const group = byMilestone.get(name);
     if (group === undefined) continue;
 
+    // Two kinds of node, built from two separate sources. A slug node is keyed and can therefore
+    // be named by a label; a displaced node is held by identity and cannot.
     const epics: EpicNode[] = [];
-    const slugs = [...group.keys()].filter((k): k is string => k !== null).sort(compareStrings);
-    for (const slug of slugs) {
+    for (const slug of [...group.keys()].filter((k): k is string => k !== null)) {
       const tasks = (group.get(slug) ?? []).slice().sort((a, b) => a.source.number - b.source.number);
-      const issue = epicIssues.get(slug) ?? displacedBySlug.get(slug) ?? null;
+      const issue = epicIssues.get(slug) ?? null;
       epics.push({
         slug,
         issue,
@@ -262,6 +274,26 @@ export function buildHierarchy(snapshot: BoardSnapshot): Hierarchy {
         homeMilestone: issue?.source.milestone ?? null,
       });
     }
+    for (const issue of displacedByMilestone.get(name) ?? []) {
+      epics.push({
+        slug: displacedSlug(issue),
+        issue,
+        title: issue.source.title,
+        // A displaced epic never collects tasks: anything labelled with the contested slug belongs
+        // to the winner, which is the whole meaning of losing the slug.
+        tasks: [],
+        progress: progressOf([]),
+        homeMilestone: issue.source.milestone,
+      });
+    }
+    // Sorted once, over both kinds together. The tie-break is the issue number so that two nodes
+    // displaying the same name still have a fixed order — a projection whose output depends on
+    // which node happened to be built first is not one anyone can diff.
+    epics.sort(
+      (a, b) =>
+        compareStrings(a.slug, b.slug) ||
+        (a.issue?.source.number ?? 0) - (b.issue?.source.number ?? 0),
+    );
 
     const looseTasks = (group.get(null) ?? []).slice().sort((a, b) => a.source.number - b.source.number);
     milestones.push({

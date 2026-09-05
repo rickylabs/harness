@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { detectRepoSlug, fetchItems, transportFailure, TransportUnavailable } from "./github.js";
-import type { GhRunner } from "./github.js";
+import type { GhReadArgs, GhRunner } from "./github.js";
 
 /** A runner that answers `issue list` and `pr list` from fixed payloads. */
 const runnerFor = (issues: unknown, prs: unknown): GhRunner => {
@@ -54,6 +54,49 @@ describe("transportFailure", () => {
 
   it("keeps the underlying message rather than swallowing it", () => {
     assert.match(transportFailure(new Error("HTTP 502: Bad gateway")).message, /502/);
+  });
+
+  it("classifies an error that refuses to be read", () => {
+    // `error.message` is a property access, and a property access can run code. This classifier
+    // promises totality, and until now that promise held only for errors that cooperated: a
+    // throwing getter, a Proxy trap, and a toString that throws each made the classifier itself
+    // throw — so the CLI never reached the exit code and the advice this module exists to give,
+    // and the operator saw a stack trace from inside the error handler. Finding F-6 on #101.
+    // The Symbol never broke it — `String(symbol)` is specified to work where `"" + symbol` does
+    // not — and is here because a corpus of hostile values that only contains ones we already know
+    // break things is a corpus that can only confirm what we knew.
+    class Hostile extends Error {
+      override get message(): string {
+        throw new Error("nice try");
+      }
+    }
+    const throwingToString = {
+      toString() {
+        throw new Error("nice try");
+      },
+    };
+    const throwingProxy = new Proxy(new Error("outer"), {
+      get() {
+        throw new Error("nice try");
+      },
+    });
+
+    for (const error of [new Hostile(), throwingToString, throwingProxy, Symbol("nope")]) {
+      const failure = transportFailure(error);
+      assert.ok(failure instanceof TransportUnavailable);
+      assert.match(failure.message, /gh could not read from GitHub/);
+    }
+  });
+
+  it("still says which transport failed when the message is unreadable", () => {
+    // Losing the underlying message is the acceptable price. Losing the classification is not, so
+    // the surviving text must still name the subject rather than degrade to an empty string.
+    class Hostile extends Error {
+      override get message(): string {
+        throw new Error("nice try");
+      }
+    }
+    assert.match(transportFailure(new Hostile()).message, /could not be read/);
   });
 });
 
@@ -203,5 +246,29 @@ describe("detectRepoSlug", () => {
       return "o/r";
     });
     assert.equal(seen, "/somewhere");
+  });
+});
+
+describe("the gh seam, on what it will let this module send", () => {
+  it("does not type-check a write command", () => {
+    // The assertion here is the build, not the run. `@ts-expect-error` fails compilation if the
+    // line below ever stops being an error, so the day someone widens `GhReadArgs` back to
+    // `readonly string[]`, this test is what says no. "Read-only by construction" has to be
+    // construction; as a header comment it was worth exactly nothing to the type system, which is
+    // the regression noted on #101.
+    const send = (args: GhReadArgs): number => args.length;
+
+    // @ts-expect-error `issue edit` is a write, and this seam does not carry writes.
+    send(["issue", "edit", "41", "--add-label", "status:shipped"]);
+    // @ts-expect-error `pr merge` is a write.
+    send(["pr", "merge", "101"]);
+    // @ts-expect-error `gh api` is excluded outright: whether it reads or writes lives in a flag,
+    // and a rule you have to parse arguments to apply is not one a type can keep.
+    send(["api", "-X", "POST", "/repos/o/r/issues"]);
+
+    // The three the module actually issues still type-check, so this is a constraint and not a wall.
+    assert.equal(send(["issue", "list", "--repo", "o/r"]), 4);
+    assert.equal(send(["pr", "list", "--repo", "o/r"]), 4);
+    assert.equal(send(["repo", "view", "--json", "nameWithOwner"]), 4);
   });
 });

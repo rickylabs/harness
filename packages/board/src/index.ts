@@ -72,7 +72,7 @@ export {
 } from "./render.js";
 
 export { detectRepoSlug, fetchItems, transportFailure, TransportUnavailable } from "./github.js";
-export type { FetchResult, GhRunner } from "./github.js";
+export type { FetchResult, GhReadArgs, GhRunner } from "./github.js";
 
 export { main as runBoardCli } from "./cli.js";
 export type { CliDeps } from "./cli.js";

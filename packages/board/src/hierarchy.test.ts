@@ -245,6 +245,69 @@ describe("buildHierarchy, when two epic issues claim one slug", () => {
       JSON.stringify(tree([...conflicting].reverse())),
     );
   });
+
+  it("keeps the loser when another epic claims the loser's qualified name as its slug", () => {
+    // `e6#41` is the name drawn on the loser's node, and for a while it was also the key the loser
+    // was stored under — in the same map that `epic:` label values key. `epic:` values are free
+    // text, so an epic issue can simply be labelled `epic:e6#41`, and then one of the two lost the
+    // lookup and disappeared from the tree while staying open on GitHub. This is finding F-3 from
+    // the re-review of #101. Both must be drawn; a name they happen to share is not an identity.
+    const h = tree([
+      ...conflicting,
+      issue({ number: 50, title: "an epic that named itself after the conflict", labels: ["epic", "epic:e6#41"] }),
+    ]);
+    const named = h.milestones[0]?.epics.filter((e) => e.slug === "e6#41") ?? [];
+    assert.deepEqual(
+      named.map((e) => e.issue?.source.number).sort((a, b) => (a ?? 0) - (b ?? 0)),
+      [41, 50],
+    );
+  });
+
+  it("keeps the loser when a task claims the loser's qualified name as its epic", () => {
+    const h = tree([
+      ...conflicting,
+      issue({ number: 51, labels: ["status:plan", "epic:e6#41"] }),
+    ]);
+    const named = h.milestones[0]?.epics.filter((e) => e.slug === "e6#41") ?? [];
+    assert.equal(named.length, 2, "the displaced epic and the slug the task claims are two nodes");
+    // The displaced epic keeps no tasks; the slug node the task claimed keeps the task and has no
+    // issue of its own, exactly as any other epic slug nobody has filed an issue for.
+    assert.deepEqual(
+      named.map((e) => [e.issue?.source.number ?? null, e.tasks.map((t) => t.source.number)]),
+      [
+        [null, [51]],
+        [41, []],
+      ],
+    );
+  });
+
+  it("still counts every item exactly once when names collide", () => {
+    // The collision dropped issues, so the arithmetic looked fine while the tree was short an item.
+    const items = [
+      ...conflicting,
+      issue({ number: 50, title: "an epic that named itself after the conflict", labels: ["epic", "epic:e6#41"] }),
+      issue({ number: 51, labels: ["status:plan", "epic:e6#41"] }),
+    ];
+    const h = tree(items);
+    const seen = new Set<number>();
+    for (const m of h.milestones) {
+      for (const e of m.epics) {
+        if (e.issue !== null) seen.add(e.issue.source.number);
+        for (const t of e.tasks) seen.add(t.source.number);
+      }
+      for (const t of m.looseTasks) seen.add(t.source.number);
+    }
+    assert.deepEqual([...seen].sort((a, b) => a - b), items.map((i) => i.number).sort((a, b) => a - b));
+  });
+
+  it("is deterministic across fetch order when names collide", () => {
+    const items = [
+      ...conflicting,
+      issue({ number: 50, title: "an epic that named itself after the conflict", labels: ["epic", "epic:e6#41"] }),
+      issue({ number: 51, labels: ["status:plan", "epic:e6#41"] }),
+    ];
+    assert.equal(JSON.stringify(tree(items)), JSON.stringify(tree([...items].reverse())));
+  });
 });
 
 describe("buildHierarchy, across milestone boundaries", () => {

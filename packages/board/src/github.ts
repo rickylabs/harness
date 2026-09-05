@@ -44,16 +44,44 @@ interface GhItem {
 
 const MAX_BUFFER = 32 * 1024 * 1024;
 
+/** What we say when the thrown value will not tell us anything. */
+const UNREADABLE = "the underlying error could not be read";
+
+/**
+ * Read a message out of an unknown thrown value, without trusting the value to cooperate.
+ *
+ * `error.message` looks like a field read and is a method call: an `Error` subclass can define
+ * `message` as a throwing getter, a `Proxy` can trap it, and `String(error)` runs a `toString` this
+ * module did not write. `transportFailure` claims totality in its doc comment, and that claim was
+ * only true for errors that cooperated. A classifier that throws while classifying is the worst of
+ * the failures it exists to prevent: the caller gets no `TransportUnavailable`, so the CLI never
+ * reaches the exit code and advice this whole module is for, and the operator sees a stack trace
+ * from inside the error handler instead.
+ *
+ * Losing the message is an acceptable price; losing the classification is not.
+ */
+function messageOf(error: unknown): string {
+  try {
+    if (error instanceof Error) {
+      const message: unknown = error.message;
+      if (typeof message === "string") return message;
+    }
+    return String(error);
+  } catch {
+    return UNREADABLE;
+  }
+}
+
 /**
  * Classify a failed `gh` invocation.
  *
- * Total by construction: every input returns a `TransportUnavailable`. The recognised cases exist
- * only to give better advice, never to decide *whether* this is a transport failure — that was the
- * defect. A classifier with a fall-through is one that behaves differently on a network nobody
- * tested against.
+ * Total by construction: every input returns a `TransportUnavailable`, including an input that
+ * fights back — see `messageOf`. The recognised cases exist only to give better advice, never to
+ * decide *whether* this is a transport failure; that was the defect. A classifier with a
+ * fall-through is one that behaves differently on a network nobody tested against.
  */
 export function transportFailure(error: unknown): TransportUnavailable {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = messageOf(error);
   if (/ENOENT/.test(message)) {
     return new TransportUnavailable("gh is not installed or not on PATH");
   }
@@ -64,12 +92,35 @@ export function transportFailure(error: unknown): TransportUnavailable {
 }
 
 /**
+ * The `gh` invocations this adapter is permitted to make.
+ *
+ * "Read-only by construction" was, until now, construction by comment. The seam below is exported
+ * from the package root and injectable, so its signature is the contract every caller programs
+ * against — and a signature reading `readonly string[]` says the adapter may issue any `gh`
+ * command at all. Nothing in the type stopped a future edit here from adding `issue edit`, and
+ * nothing told a reader of the public API what the module promises.
+ *
+ * So the promise is written down. These are the three verbs this module issues, spelled out; the
+ * compiler rejects a fourth at the call site rather than in review. `gh api` is deliberately absent
+ * even though it can read: it is the one subcommand whose read-ness lives in a flag, and a rule you
+ * have to check the arguments to apply is not one a type can keep.
+ *
+ * This constrains what this module *sends*, which is the part it owns. An injected runner is the
+ * caller's own code and can do as it likes once called — that is unavoidable in any seam, and the
+ * reason the default runner is the real one.
+ */
+export type GhReadArgs =
+  | readonly ["issue", "list", ...string[]]
+  | readonly ["pr", "list", ...string[]]
+  | readonly ["repo", "view", ...string[]];
+
+/**
  * How this module reaches GitHub.
  *
  * Injectable so that the argv it builds, the payloads it accepts, and the completeness it infers
  * are all testable without a network or a credential. The default is the real one.
  */
-export type GhRunner = (args: readonly string[], cwd?: string) => Promise<string>;
+export type GhRunner = (args: GhReadArgs, cwd?: string) => Promise<string>;
 
 const gh: GhRunner = async (args, cwd) => {
   try {
@@ -91,7 +142,7 @@ function parseItems(json: string, kind: ItemKind): readonly SourceIssue[] {
     // gh returning something that is not JSON is a transport problem too: it means the process
     // wrote a banner, a proxy error page, or nothing at all where a payload was promised.
     throw new TransportUnavailable(
-      `gh returned unparseable output for ${kind}s: ${error instanceof Error ? error.message : String(error)}`,
+      `gh returned unparseable output for ${kind}s: ${messageOf(error)}`,
     );
   }
   if (!Array.isArray(raw)) {
