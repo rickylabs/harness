@@ -137,12 +137,20 @@ It designs this product using this product's own method. See
 doctrine/           doctrine — how to work here (stable, portable)
 packages/           the dsh plugin layer — one package per subsystem
 .llm/runs/          run artifacts — durable, reviewed via PR
+.github/            the label taxonomy and the one CI gate
 AGENTS.md           entry point, agent mode
 CLAUDE.md           entry point, standard mode
+LICENSE             MIT
 ```
+
+## Checks
+
+`ci` runs on every pull request and on `main`: `pnpm run typecheck`, `pnpm run build`, `pnpm test`
+— the same three a contributor runs locally, against the same lockfile. Nothing publishes; the one
+package meant to leave this repository gets its own pipeline in
+[#38](https://github.com/rickylabs/harness/issues/38).
 
 ## Licence
 
 **MIT**, matching dsh, so the plugin packages can carry the `dsh-plugin` topic. Taken in
-[#30](https://github.com/rickylabs/harness/issues/30) as reversible; the `LICENSE` file lands
-with the first package that publishes.
+[#30](https://github.com/rickylabs/harness/issues/30) as reversible. See [`LICENSE`](LICENSE).

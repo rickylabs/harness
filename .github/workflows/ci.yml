@@ -1,0 +1,61 @@
+# The only gate this repository has. It runs what a contributor runs locally, in the order the
+# package scripts compose: `typecheck` emits declarations, `build` emits JS, `test` runs against
+# that emitted JS. Both root scripts also run `scripts/check-*.mjs` first, so the project graph and
+# the board lifecycle are checked here without this file having to know they exist.
+#
+# Deliberately absent: any publish or release step. `contracts` is the only package meant to leave
+# this repository and it gets its own pipeline in #38. A release job wired up before there is
+# anything to release is a credential and a trigger sitting idle.
+name: ci
+
+on:
+  pull_request:
+  # A branch that goes green as a PR and red once merged is exactly the state `status:ci-fail`
+  # exists to name, and nothing would ever notice it if only PR heads were built.
+  push:
+    branches: [main]
+
+# This repository is private, so these minutes are billed. One job, and a push that supersedes an
+# in-flight run cancels it rather than queueing behind it.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Nothing here writes to the repository. Read-only means a compromised action anywhere in the
+# dependency tree cannot push, comment, or cut a release with the workflow's own token.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: typecheck · build · test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # Ahead of setup-node, because `cache: pnpm` needs the pnpm binary to resolve the store path.
+      # No `version:` input on purpose — the action reads `packageManager` from package.json, so CI
+      # and every workstation are pinned by the one line, instead of two that drift apart quietly.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          # `engines.node` is >=24. Anything older still builds, but warns on every single script,
+          # which trains everyone to ignore the warnings that matter.
+          node-version: "24"
+          cache: pnpm
+
+      # `--frozen-lockfile` is most of the reason to run this at all: an install that quietly
+      # resolves a different tree than the lockfile records has reproduced nothing.
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run typecheck
+
+      # `typecheck` is `tsc -b --emitDeclarationOnly`, so it leaves .tsbuildinfo behind claiming the
+      # projects are built. TypeScript compares the recorded options and re-emits anyway — verified,
+      # not assumed: from a clean tree, typecheck emits 74 .d.ts and 0 .js, and this step then emits
+      # all 74 .js. If that ever stopped holding, `test` below would find no files to run and pass.
+      - run: pnpm run build
+
+      - run: pnpm test
