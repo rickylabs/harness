@@ -31,6 +31,18 @@
  * `DispatchCommand.prompt` and never travels back: no snapshot, no event and no outcome carries it.
  * A cockpit that wants to show what it just sent remembers what it sent.
  *
+ * ## The client half is here too, and it is not presentation
+ *
+ * `EventFold`, `ConnectionLoop` and the auth shapes are behaviour rather than types, which looks
+ * like a scope violation until you ask what happens if they are not here. "Discard a frame from a
+ * dead generation", "a gap in `seq` means resync", "an older frame must not overwrite a newer
+ * value", "the bearer token never goes in a URL" are properties of the wire, not of a screen. Two
+ * hand-written implementations would differ precisely where the difference cannot be seen: both
+ * cockpits keep rendering, one of them is wrong, and nothing reports which.
+ *
+ * They pass the scope test on the reading above — both surfaces mean exactly the same thing by
+ * them — and they perform no I/O, so a phone and a browser can each supply their own socket.
+ *
  * ## What lives elsewhere
  *
  * The phase list is not here — it travels on the snapshot as data, so that the two lists which must
@@ -141,3 +153,53 @@ export {
   type ClientFrame,
   type FrameReading,
 } from "./events.js";
+
+export {
+  FOLD_OUTCOMES,
+  emptyFold,
+  foldFromSnapshot,
+  foldFrame,
+  foldValue,
+  resyncFrame,
+  snapshotOf,
+  type FoldCounts,
+  type EventFold,
+  type FoldOutcome,
+  type FoldStep,
+} from "./fold.js";
+
+export {
+  LINK_STATES,
+  LINK_COMMANDS,
+  DEFAULT_BACKOFF,
+  idleLink,
+  acceptsFrom,
+  backoffDelay,
+  stepLink,
+  type LinkState,
+  type LinkCommand,
+  type BackoffPolicy,
+  type ConnectionLoop,
+  type LinkSignal,
+  type LinkStep,
+  type StepOptions,
+} from "./connection.js";
+
+export {
+  AUTH_MODES,
+  BEARER_SUBPROTOCOL_PREFIX,
+  MUX_SUBPROTOCOL,
+  authHeaders,
+  muxAuth,
+  muxUrl,
+  commandUrl,
+  describeEndpoint,
+  endpointProblems,
+  type AuthMode,
+  type SessionCredential,
+  type BearerCredential,
+  type Credential,
+  type CertificatePin,
+  type Endpoint,
+  type MuxAuth,
+} from "./auth.js";
