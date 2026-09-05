@@ -7,19 +7,40 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "dsh-profile": "./dist/cli.js"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./plugins/subagents": {
+      "types": "./dist/plugins/subagents.d.ts",
+      "default": "./dist/plugins/subagents.js"
     },
+    "./plugins/board": {
+      "types": "./dist/plugins/board.d.ts",
+      "default": "./dist/plugins/board.js"
+    },
+    "./plugins/coordinator": {
+      "types": "./dist/plugins/coordinator.d.ts",
+      "default": "./dist/plugins/coordinator.js"
+    },
+    "./plugins/telemetry": {
+      "types": "./dist/plugins/telemetry.d.ts",
+      "default": "./dist/plugins/telemetry.js"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist", "cordis.patch.yml"],
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --emitDeclarationOnly",
+    "test": "tsc -b && node --test \"dist/**/*.test.js\"",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
@@ -35,7 +56,16 @@
     "@rickylabs/provider-codex": "workspace:*",
     "@rickylabs/provider-opencode": "workspace:*",
     "@rickylabs/routing": "workspace:*",
+    "@rickylabs/subagents": "workspace:*",
     "@rickylabs/telemetry": "workspace:*",
-    "@deepseek-ai/dsh": "^0.1.2-rc.1"
+    "@deepseek-ai/dsh": "^0.1.2-rc.1",
+    "@deepseek-ai/dsh-home-paths": "^0.1.2-rc.1",
+    "@deepseek-ai/schemastery": "^3.18.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.2"
   }
 }
