@@ -1,16 +1,23 @@
 {
   "name": "@rickylabs/telemetry",
   "version": "0.0.0",
-  "description": "SessionTelemetrySink \u2014 the \"status ?\" killer",
+  "description": "SessionTelemetrySink — the \"status ?\" killer",
   "license": "MIT",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "dsh-telemetry": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "default": "./dist/cli.js"
     },
     "./package.json": "./package.json"
   },
@@ -20,6 +27,7 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --emitDeclarationOnly",
+    "test": "tsc -b && node --test \"dist/**/*.test.js\"",
     "clean": "rm -rf dist *.tsbuildinfo"
   }
 }
