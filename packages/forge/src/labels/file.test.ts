@@ -20,6 +20,43 @@ describe("labels.yml round trip", () => {
     );
   });
 
+  it("ejects the same bytes the second time, over the file the first one wrote", () => {
+    // The regression in #127. `origin` is a fact about how a spec object was built and the file has
+    // nowhere to record it, so the first render read `derived from this repository` and every one
+    // after it read `portable core` for the same rows. A generated file whose own output is not a
+    // fixed point cannot be diffed: every unrelated change carries this one along with it.
+    const specs = [...CORE_TAXONOMY, areaLabel("forge", "packages/forge")];
+    const first = renderLabelsFile(specs, "owner/repo");
+    const parsed = parseLabelsFile(first);
+    assert.deepEqual(parsed.issues, []);
+
+    const second = renderLabelsFile(parsed.labels, "owner/repo");
+    assert.equal(second, first);
+  });
+
+  it("does not let a parsed `area:` row claim to be portable", () => {
+    // `area:` is derived — that is the whole reason `detect.ts` exists rather than a literal list
+    // in `taxonomy.ts`. A row that says otherwise invites someone to copy it into a repository that
+    // has no such package, which is the dead label the split was drawn to prevent.
+    const parsed = parseLabelsFile(
+      renderLabelsFile([...CORE_TAXONOMY, areaLabel("forge", "packages/forge")], "owner/repo"),
+    );
+    const byName = new Map(parsed.labels.map((l) => [l.name, l]));
+    assert.equal(byName.get("area:forge")?.origin, "detected");
+    assert.equal(byName.get("type:feat")?.origin, "core");
+  });
+
+  it("labels each family header by the family, not by the rows it happens to hold", () => {
+    // A family with one freshly detected member among rows read back from the file used to render
+    // as portable, because `every` was false for exactly one row.
+    const text = renderLabelsFile(
+      [...CORE_TAXONOMY, areaLabel("forge", "packages/forge")],
+      "owner/repo",
+    );
+    assert.match(text, /# ── type: portable core ──/);
+    assert.match(text, /# ── area: derived from this repository ──/);
+  });
+
   it("keeps the rules in the header, where a reviewer will read them", () => {
     const text = renderLabelsFile(CORE_TAXONOMY, "owner/repo");
     assert.match(text, /Exactly ONE `status:` label/);

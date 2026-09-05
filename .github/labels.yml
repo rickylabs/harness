@@ -149,6 +149,9 @@
 - name: "area:telemetry"
   color: "bfdadc"
   description: "packages/telemetry"
+- name: "area:subagents"
+  color: "bfdadc"
+  description: "packages/subagents"
 
 # ── epic: derived from this repository ──
 - name: "epic:e9"
@@ -181,6 +184,20 @@
 - name: "epic:e0"
   color: "5319e7"
   description: "E0 — Roadmap: harness as the deterministic coordinator layer (#30)"
+
+# ── lane: derived from this repository ──
+- name: "topic:docs"
+  color: "1d76db"
+  description: "Owned by the docs lane orchestrator"
+- name: "topic:internals"
+  color: "1d76db"
+  description: "Owned by the internals lane orchestrator"
+- name: "topic:fixes"
+  color: "1d76db"
+  description: "Owned by the fixes lane orchestrator"
+- name: "topic:features"
+  color: "1d76db"
+  description: "Owned by the features lane orchestrator"
 
 # ── retired: kept so the items that carry these still say what happened ──
 # Not stamped on new work. Never delete a row here — deleting the label takes the

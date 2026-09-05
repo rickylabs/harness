@@ -180,6 +180,25 @@ export const CORE_TAXONOMY: readonly LabelSpec[] = [
 ];
 
 /**
+ * The families the portable core defines, and therefore the families that are portable.
+ *
+ * Derived from {@link CORE_TAXONOMY} rather than listed, so it cannot fall out of step with it.
+ *
+ * A family is the right granularity for this question, and a row is not. `origin` on a single spec
+ * says where *that object* was built, which is a fact about a program run; it does not survive a
+ * write to `.github/labels.yml` and back, because the file has nowhere to put it. Whether `area:`
+ * is portable, on the other hand, is a property of the taxonomy itself and is the same answer
+ * every time it is asked. Anything rendered into the file has to be derived from the second kind
+ * of fact or the file disagrees with itself on the next run — see #127.
+ */
+export const CORE_FAMILIES: ReadonlySet<LabelFamily> = new Set(
+  CORE_TAXONOMY.map((label) => label.family),
+);
+
+/** True for a family the portable core defines. Everything else is derived from a repository. */
+export const isCoreFamily = (family: LabelFamily): boolean => CORE_FAMILIES.has(family);
+
+/**
  * Labels this taxonomy used to stamp and has since replaced.
  *
  * Kept as data rather than removed, because "stop proposing it" and "delete it" are different
