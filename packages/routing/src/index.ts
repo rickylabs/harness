@@ -30,6 +30,7 @@ export type PackageName = typeof PACKAGE_NAME;
 
 export {
   EFFORTS,
+  LOCAL_MODEL_IDS,
   MODEL_FAMILIES,
   MODEL_IDS,
   OPENCODE_MODEL_IDS,
