@@ -39,3 +39,8 @@
 - Recorded verdict `FAIL_FIX` with a command/result disposition for every requested checkbox.
 - Restored the missing repository-local Git identity from the prior orchestrated review commit after
   the first commit attempt failed; kept `.divybot-goal.md` ignored and outside the staged paths.
+- Committed and pushed the initial artifact set, then opened draft review-artifact PR
+  [#110](https://github.com/rickylabs/harness/pull/110).
+- Re-verified PR #101 still pointed at `4d5cc07`, then published `adversarial-review.md` verbatim as
+  the sole authorized review:
+  [`pullrequestreview-5119210614`](https://github.com/rickylabs/harness/pull/101#pullrequestreview-5119210614).

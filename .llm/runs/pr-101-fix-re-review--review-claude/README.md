@@ -10,4 +10,5 @@ unconstrained side-effect seam, contrary to the requested no-write property.
 The evidence and every requested checklist disposition are in
 [`adversarial-review.md`](adversarial-review.md). This run reviewed PR head
 [`4d5cc07`](https://github.com/rickylabs/harness/commit/4d5cc071b89d70a8b7895bc78cb669e717c84cf3)
-without modifying or pushing its branch.
+without modifying or pushing its branch. The matching review is
+[`pullrequestreview-5119210614`](https://github.com/rickylabs/harness/pull/101#pullrequestreview-5119210614).

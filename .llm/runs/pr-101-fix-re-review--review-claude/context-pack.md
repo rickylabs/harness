@@ -26,4 +26,8 @@ conservative multi-phase selection, epic self-counting, progress-bar boundaries,
 degenerate inputs, shell-inert repository slugs, leading-dash slug rejection, absence of a forge
 dependency, graph validation, 223 package tests, repository typecheck, and repository build.
 
-The full command and result record is in [`adversarial-review.md`](adversarial-review.md).
+The full command and result record is in [`adversarial-review.md`](adversarial-review.md). It was
+published verbatim on PR #101 as
+[`pullrequestreview-5119210614`](https://github.com/rickylabs/harness/pull/101#pullrequestreview-5119210614).
+The durable artifacts are proposed in PR
+[#110](https://github.com/rickylabs/harness/pull/110).
