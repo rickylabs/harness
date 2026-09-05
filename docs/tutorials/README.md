@@ -6,21 +6,20 @@ A tutorial is a lesson, not a manual. It has one path, no branches, and a defini
 reader has something working. Options, alternatives and edge cases all belong somewhere else — a
 tutorial that pauses to explain a choice has stopped teaching and started documenting.
 
-**This directory is empty today.** [#145](https://github.com/rickylabs/harness/issues/145) writes the
-first one: taking a repository from nothing to a working board, run end to end on a clean clone with
-no N5 host and no credentials beyond a GitHub token. Until it lands, the
-[Quickstart](../../README.md#quickstart) in the root README is the shortest honest path — install,
-build, and four commands that do something real.
+| Page | What you end up with | Needs |
+| --- | --- | --- |
+| [01 — From a clone to a moving board](01-from-clone-to-board.md) | A built workspace, a board process installed in a repository of yours, an item moved a column, and a run recorded and read back | Node 24, pnpm 11, `gh` authenticated, a scratch repository |
+
+Shorter than a tutorial and already runnable: the [Quickstart](../../README.md#quickstart) in the
+root README — install, build, and four commands that do something real.
 
 ## What belongs here
 
 Few pages, each earned. A tutorial is expensive to keep true, because it is the one kind of document
-where a single stale command wastes a stranger's afternoon. Two candidates are worth the cost:
+where a single stale command wastes a stranger's afternoon. One more is worth the cost:
 
-- **From an empty repository to a working board.** Install the taxonomy, file something, move it
-  through a phase, see it appear in a column.
 - **From a board to an agent that moves it.** Point an agent at the generated skill and watch the
-  status labels change as it works.
+  status labels change as it works. That one waits on the dispatch path being runnable off the N5.
 
 ## What does not belong here
 

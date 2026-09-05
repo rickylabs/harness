@@ -54,7 +54,9 @@ reasoning goes in a comment on the item rather than in the label.
 - `priority:` — `p0`, `p1`, `p2`, `p3`. `p0` is a release blocker.
 - `area:` — `board`, `contracts`, `coordinator`, `dsh-app`, `forge`, `governance`, `llm-local`, `netscript-bridge`, `provider-acp`, `provider-claude`, `provider-codex`, `provider-opencode`, `routing`, `telemetry`, `subagents`. Derived from this repository's packages; additive.
 - `topic:` — `docs`, `internals`, `fixes`, `features`. Which lane owns the item.
-- `epic:` — `e9`, `e8`, `e7`, `e6`, `e5`, `e4`, `e3`, `e2`, `e1`, `e0`. Groups everything under one program epic.
+- `gate:` — `release-contracts`. Opt in to an expensive CI gate on this PR.
+- `ci:` — `full`, `skip-release-contracts`. `ci:full` wins over every skip label.
+- `epic:` — `e9`, `e8`, `e7`, `e6`, `e5`, `e4`, `e3`, `e2`, `e1`, `e0`, `e10`. Groups everything under one program epic.
 - `eval:` — `skip`, `third-opinion`. Evaluator routing, as data on the issue rather than prose in a brief.
 - flags — `rfc`, `breaking`, `flag:close-gate-override`. Cross-cutting and additive; never the board column.
 
