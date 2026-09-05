@@ -8,7 +8,9 @@
  *
  * The package deliberately depends on nothing in this workspace. GitHub is board truth and
  * `@rickylabs/board` projects the live view of it; telemetry says what *ran*, and joins to the
- * board on an issue number through the structural `BoardItemRef` shape.
+ * board on an issue number through the structural `BoardItemRef` shape. The join is structural but
+ * it is not free: `items.ts` adapts what the projection actually emits into that shape, at the file
+ * boundary where the data arrives as `unknown` and has to be checked anyway.
  */
 
 export const PACKAGE_NAME = "@rickylabs/telemetry" as const;
@@ -51,6 +53,25 @@ export {
 } from "./diagnostics.js";
 
 export {
+  normaliseItems,
+  parseItems,
+  toRef,
+  type LoadedItems,
+} from "./items.js";
+
+export {
+  classify,
+  liveness,
+  newest,
+  DEFAULT_WINDOWS,
+  type Evidence,
+  type Liveness,
+  type LivenessEvidence,
+  type LivenessState,
+  type LivenessWindows,
+} from "./liveness.js";
+
+export {
   linkedIssuesOf,
   sumUsage,
   type AttributedRun,
@@ -61,6 +82,7 @@ export {
   type IssueLink,
   type LaunchIdentity,
   type QuotaReading,
+  type RefKind,
   type RunOutcome,
   type RunRecord,
   type RunSource,
@@ -71,8 +93,13 @@ export {
 export {
   humanAge,
   humanTokens,
+  renderItemState,
+  renderLiveness,
+  renderNotes,
   renderQuota,
   renderSnapshot,
+  renderTree,
+  RENDER_CAPS,
 } from "./render.js";
 
 export {
@@ -104,12 +131,17 @@ export {
   publicRun,
   publicRuns,
   publicSnapshot,
+  publicTree,
   PUBLIC_RUN_KEYS,
   type PublicAttributedRun,
   type PublicEpic,
+  type PublicEpicNode,
+  type PublicItemNode,
+  type PublicMilestoneNode,
   type PublicRun,
   type PublicRuns,
   type PublicSnapshot,
+  type PublicTree,
 } from "./public.js";
 
 export {
@@ -120,3 +152,14 @@ export {
   latestQuota,
   type SnapshotInput,
 } from "./snapshot.js";
+
+export {
+  buildTree,
+  type ActivityTree,
+  type EpicNode,
+  type ItemNode,
+  type LinkedRef,
+  type LinkOrigin,
+  type MilestoneNode,
+  type TreeInput,
+} from "./tree.js";

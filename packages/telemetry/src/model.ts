@@ -150,13 +150,28 @@ export interface RunRecord {
   readonly quota: readonly QuotaReading[];
 }
 
+/** Whether a number names an issue or a pull request. The same numbering space holds both. */
+export type RefKind = "issue" | "pull-request";
+
 /**
  * The board item a run belongs to, structurally.
  *
  * Telemetry deliberately does not depend on `@rickylabs/board`. GitHub is board truth and the
  * projection is the live view of it; telemetry's job is to say what *ran*, and it joins to the
- * board on an issue number. Keeping the join structural means either package can land first, and
- * a `BoardItem` from the projection satisfies this shape without an adapter.
+ * board on an issue number. Keeping the join structural means either package can land first.
+ *
+ * This comment used to end "and a `BoardItem` from the projection satisfies this shape without an
+ * adapter." That was not true and had never been true: the projection's item nests the GitHub
+ * fields under `source` and carries `phase` as an object, so it has no `number` and no `title` at
+ * this level, and `dsh-board snapshot` emits an envelope rather than an array. The adapter exists;
+ * it lives in `items.ts`, at the file boundary where the data actually arrives as `unknown`. The
+ * join is still structural — it is by issue number, and nothing here imports the other package —
+ * but a reader given a false structural claim writes the pipeline that does not compose.
+ *
+ * The optional fields are optional because the feed may be minimal. Every one of them is a fact
+ * the projection already has, and each is `undefined` only when whoever wrote the file did not
+ * carry it, never as a stand-in for "no". `state === undefined` means unknown; it does not mean
+ * open.
  */
 export interface BoardItemRef {
   readonly number: number;
@@ -164,6 +179,33 @@ export interface BoardItemRef {
   readonly epic: string | null;
   readonly milestone: string | null;
   readonly phase: string | null;
+  /** Issue or pull request. Absent when the feed does not say. */
+  readonly kind?: RefKind;
+  readonly state?: "open" | "closed";
+  /** Pull requests only: whether it landed. A closed-unmerged PR is not a shipped one. */
+  readonly merged?: boolean;
+  /** True for the issue that *is* an epic, so the tree does not file it as a task under itself. */
+  readonly isEpic?: boolean;
+  /**
+   * Pull requests only: the issues this one closes.
+   *
+   * The one fact that attaches a pull request to the task it delivers, and the only way to get it
+   * is to parse closing keywords out of the body — which is board work, not telemetry work, and
+   * which the projection does not emit yet. Absent means "nobody said", so the tree files such a
+   * pull request under its epic rather than under a task. That is a documented seam, not a guess:
+   * inventing the link from a branch name or a shared epic would attach the wrong PR to the wrong
+   * task on exactly the busy epics where it matters.
+   */
+  readonly closes?: readonly number[];
+  readonly url?: string;
+  /**
+   * When GitHub last recorded a change to this item.
+   *
+   * Liveness evidence, and the weaker of the two kinds — see `liveness.ts`. It moves on a commit
+   * pushed to a pull request and equally on a label edit, so it says the artifact changed and not
+   * what changed it.
+   */
+  readonly updatedAt?: string;
 }
 
 /** A run, and the item it was working on, if the join found one. */
