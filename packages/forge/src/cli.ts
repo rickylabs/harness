@@ -41,6 +41,10 @@ import {
 } from "./labels/settle.js";
 import { CORE_TAXONOMY, RETIRED_LABELS, type LabelSpec } from "./labels/taxonomy.js";
 import { installSkill } from "./skill/install.js";
+import { CONFIG_FILE, describeIssue, parseTargetsConfig } from "./targets/config.js";
+import { checkTargets, describeProblem, type TargetTable } from "./targets/model.js";
+import { reconcileBridge, tallyBridge, type BridgeSource } from "./targets/reconcile.js";
+import { renderBridge, renderTable } from "./targets/render.js";
 
 /**
  * The command's contract with whatever called it.
@@ -84,6 +88,9 @@ usage
   dsh-forge labels eject           write ${LABELS_FILE} — the reviewable source of truth
   dsh-forge skill install          write the board-process skill into this repo's skill dirs
   dsh-forge status settle          print the status: label change an ended item calls for
+  dsh-forge targets show           print the dispatch table in resolution order
+  dsh-forge targets check          exit non-zero when the table is wrong (for CI)
+  dsh-forge targets reconcile      which inbox issues the dispatcher claims, and what came back
   dsh-forge init                   eject + apply + skill install, in that order
 
 options
@@ -96,6 +103,9 @@ options
   --ending <how>        status settle only: ${ENDINGS.join(" | ")}
   --labels <a,b>        status settle only: the labels the item carries now (repeatable)
   --event <path>        status settle only: a GitHub event payload to read all of that from
+  --config <path>       targets only: the dispatcher's config (default: ./${CONFIG_FILE})
+  --snapshot <path>     targets reconcile only: a 'dsh-board snapshot' JSON file (repeatable —
+                        one per repository, including the inbox's own)
   --dry-run             report every change without writing a file or touching the repository
   --json                machine-readable output
   -h, --help            this text
@@ -547,6 +557,128 @@ function parseLabelList(values: readonly string[]): readonly string[] {
     .filter((v) => v.length > 0);
 }
 
+// ── targets ──────────────────────────────────────────────────────────────────
+
+/**
+ * Read the dispatcher's config, or say why it could not be read.
+ *
+ * A file the parser could not use is `EXIT.drift` and not `EXIT.usage`: the command line was fine,
+ * the repository's state is not — the same distinction `FileError` draws for `.github/labels.yml`.
+ */
+async function loadTable(root: string, config: string | undefined): Promise<TargetTable> {
+  const path = resolve(root, config ?? CONFIG_FILE);
+  let text: string;
+  try {
+    text = await readFile(path, "utf8");
+  } catch {
+    throw new UsageError(
+      `no dispatcher config at ${path} — pass --config <path> to the file divybot reads`,
+    );
+  }
+  const { table, issues } = parseTargetsConfig(text);
+  if (table === null || issues.length > 0) {
+    const lines = issues.map((issue) => `  ${describeIssue(issue)}`).join("\n");
+    throw new FileError(`${path} has ${String(issues.length)} problem(s):\n${lines}`);
+  }
+  return table;
+}
+
+/**
+ * `targets show` — the table, in the order resolution walks it.
+ *
+ * Printed rather than checked, because the question it answers is "where does this label send work"
+ * and an operator asking it is not asking whether the table is also valid.
+ */
+async function cmdTargetsShow(root: string, config: string | undefined, json: boolean): Promise<number> {
+  const table = await loadTable(root, config);
+  if (json) {
+    out(JSON.stringify({ table, problems: checkTargets(table) }, null, 2));
+    return EXIT.ok;
+  }
+  out(renderTable(table));
+  const problems = checkTargets(table);
+  if (problems.length > 0) out(`\n${String(problems.length)} problem(s) — run 'dsh-forge targets check'`);
+  return EXIT.ok;
+}
+
+/** `targets check` — CI's form. Every problem printed, and drift when there is one. */
+async function cmdTargetsCheck(root: string, config: string | undefined, json: boolean): Promise<number> {
+  const table = await loadTable(root, config);
+  const problems = checkTargets(table);
+  if (json) {
+    out(JSON.stringify({ ok: problems.length === 0, problems }, null, 2));
+  } else if (problems.length === 0) {
+    out(`${table.inbox}: ${String(table.targets.length)} target(s), no problems`);
+  } else {
+    for (const problem of problems) out(describeProblem(problem));
+  }
+  return problems.length === 0 ? EXIT.ok : EXIT.drift;
+}
+
+/**
+ * `targets reconcile` — the bridge, from a config and one or more board projections.
+ *
+ * Offline on purpose. `dsh-board snapshot` already owns talking to GitHub, and composing the two
+ * commands keeps the write path and the read path in the packages that own them: forge never grows
+ * a fetch, and board never grows a table.
+ */
+async function cmdTargetsReconcile(
+  root: string,
+  options: { config: string | undefined; snapshots: readonly string[] },
+  json: boolean,
+): Promise<number> {
+  const table = await loadTable(root, options.config);
+  if (options.snapshots.length === 0) {
+    throw new UsageError(
+      "targets reconcile needs at least one --snapshot: run 'dsh-board snapshot --repo <owner/name> > board.json'",
+    );
+  }
+  const sources: BridgeSource[] = [];
+  for (const path of options.snapshots) sources.push(await readSnapshot(resolve(root, path)));
+
+  const snapshot = reconcileBridge(table, sources);
+  if (json) {
+    out(JSON.stringify({ ...snapshot, tally: tallyBridge(snapshot) }, null, 2));
+  } else {
+    out(renderBridge(snapshot));
+  }
+  // Drift on a bad table, never on the bridge's own contents: an inbox with unclaimed issues is a
+  // day's work, not a misconfiguration, and a check that goes red for it gets muted.
+  return snapshot.problems.length === 0 ? EXIT.ok : EXIT.drift;
+}
+
+/**
+ * Read one `dsh-board snapshot`, which carries the repository it came from.
+ *
+ * Taking the repo from the file rather than from a flag is what keeps a snapshot from being filed
+ * under the wrong repository — which would silently attribute one repo's pull requests to another's
+ * issues, the one error in this whole path that produces a confident wrong answer.
+ */
+async function readSnapshot(path: string): Promise<BridgeSource> {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    throw new UsageError(
+      `could not read the board snapshot at ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (typeof payload !== "object" || payload === null) {
+    throw new UsageError(`${path} is not a board snapshot`);
+  }
+  const { repo, items } = payload as { repo?: unknown; items?: unknown };
+  if (typeof repo !== "string" || repo === "" || !Array.isArray(items)) {
+    throw new UsageError(`${path} is not a board snapshot — expected 'repo' and 'items' from 'dsh-board snapshot'`);
+  }
+  return {
+    repo,
+    items: items.flatMap((item) => {
+      const source = (item as { source?: unknown }).source;
+      return typeof source === "object" && source !== null ? [source as BridgeSource["items"][number]] : [];
+    }),
+  };
+}
+
 // ── entry ────────────────────────────────────────────────────────────────────
 
 /**
@@ -576,6 +708,8 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         ending: { type: "string" },
         event: { type: "string" },
         labels: { type: "string", multiple: true, default: [] },
+        config: { type: "string" },
+        snapshot: { type: "string", multiple: true, default: [] },
         "dry-run": { type: "boolean", default: false },
         json: { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
@@ -615,6 +749,27 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         { labels: parseLabelList(values.labels ?? []), ending: values.ending, event: values.event },
         json,
       );
+    }
+
+    // Also ahead of `resolveContext`, and for the same reason: the whole group is arithmetic on a
+    // config file and a board snapshot. Neither needs a transport, an origin remote, or the network
+    // — that is the property that makes it runnable in CI and quotable in an issue.
+    if (group === "targets") {
+      switch (sub) {
+        case "show":
+        case undefined:
+          return await cmdTargetsShow(repoRoot, values.config, json);
+        case "check":
+          return await cmdTargetsCheck(repoRoot, values.config, json);
+        case "reconcile":
+          return await cmdTargetsReconcile(
+            repoRoot,
+            { config: values.config, snapshots: values.snapshot ?? [] },
+            json,
+          );
+        default:
+          throw new UsageError(`unknown command: targets ${sub}`);
+      }
     }
 
     const ctx = await resolveContext({

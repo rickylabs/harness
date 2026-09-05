@@ -96,6 +96,50 @@ export {
   type ParsedLabelsFile,
 } from "./labels/file.js";
 
+export {
+  DEFAULT_TARGET_AGENT,
+  TARGET_REFUSALS,
+  accountOf,
+  agentsOf,
+  checkTargets,
+  describeProblem,
+  dispatchBranch,
+  issueOfBranch,
+  resolveTarget,
+  type MemoryStore,
+  type Target,
+  type TargetMatch,
+  type TargetProblem,
+  type TargetRefusal,
+  type TargetTable,
+} from "./targets/model.js";
+
+export {
+  CONFIG_FILE,
+  describeIssue,
+  loadTargetsConfig,
+  parseTargetsConfig,
+  type ConfigIssue,
+  type ConfigReader,
+  type LoadedConfig,
+  type ParsedConfig,
+} from "./targets/config.js";
+
+export {
+  BRIDGE_DISPOSITIONS,
+  reconcileBridge,
+  tallyBridge,
+  type BridgeCoverage,
+  type BridgeDisposition,
+  type BridgeItem,
+  type BridgeSnapshot,
+  type BridgeSource,
+  type BridgeTally,
+  type Delivery,
+} from "./targets/reconcile.js";
+
+export { renderBridge, renderProblems, renderTable } from "./targets/render.js";
+
 export { renderSkill, type SkillContext } from "./skill/render.js";
 
 export {
