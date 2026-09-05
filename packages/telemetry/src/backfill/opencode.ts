@@ -20,7 +20,12 @@
 
 import { stat } from "node:fs/promises";
 
-import { linkedIssuesOf, type RunRecord, type RunUsage } from "../model.js";
+import {
+  linkedIssuesOf,
+  type LaunchIdentity,
+  type RunRecord,
+  type RunUsage,
+} from "../model.js";
 import { isoFromMillis } from "./jsonl.js";
 
 /** One row of `session`, reduced to the columns this package reads. */
@@ -122,7 +127,7 @@ export function rowToRun(row: SessionRow, origin: string): RunRecord | null {
     if (value !== undefined) mutable[field] = value;
   }
 
-  const model = row.model;
+  const model = launchIdentity(row.model);
   return {
     id: row.id,
     source: "opencode",
@@ -131,12 +136,10 @@ export function rowToRun(row: SessionRow, origin: string): RunRecord | null {
     updatedAt: millisToIso(row.time_updated) ?? startedAt,
     branch: null,
     identity: {
-      model,
-      // opencode carries an agent profile rather than a reasoning effort. Reporting the profile in
-      // the effort slot would make a routing audit read a lane name as an effort level, so it stays
-      // null and the profile is reported as itself.
-      effort: null,
-      provider: model === null ? null : (model.split("/")[0] ?? null),
+      ...model,
+      // opencode carries an agent profile as well, in its own column. Reporting the profile in the
+      // effort slot would make a routing audit read a lane name as an effort level, so it stays
+      // where it belongs and is reported as itself.
       profile: row.agent,
     },
     usage,
@@ -147,6 +150,51 @@ export function rowToRun(row: SessionRow, origin: string): RunRecord | null {
     origin,
     quota: [],
   };
+}
+
+/**
+ * Read the launch identity out of `session.model`.
+ *
+ * The column holds a JSON object serialised to text — `{"id","providerID","variant"?}` — not the
+ * `provider/model` string this module first assumed. The difference was invisible because the
+ * fixture asserted the invented shape: against the real store every opencode run reported its whole
+ * JSON blob in the model slot and that same blob again as its provider, which is the one field a
+ * routing audit reads to check that a run went to the seam the matrix sent it to.
+ *
+ * `variant` goes into `effort` verbatim, `"default"` included. It is the seam's own word for how
+ * the model was asked to run, and {@link LaunchIdentity} is explicit that a recorded value is
+ * reported as recorded — normalising `"default"` to `null` would be this module deciding that the
+ * provider default is the same as no answer, which is the guess the type exists to forbid.
+ *
+ * Anything that is not such an object is kept as an opaque model string, because a value this
+ * module cannot parse is still what the seam recorded, and `null` would claim the row said nothing.
+ */
+export function launchIdentity(
+  raw: string | null,
+): Pick<LaunchIdentity, "model" | "effort" | "provider"> {
+  const opaque = { model: raw, effort: null, provider: null };
+  if (raw === null) return opaque;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return opaque;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return opaque;
+
+  // A field that is present but not a string is not an identity; reporting it would put a number or
+  // an object back into the slot this function exists to clean out.
+  const field = (key: string): string | null => {
+    const value = (parsed as Record<string, unknown>)[key];
+    return typeof value === "string" && value !== "" ? value : null;
+  };
+
+  const model = field("id");
+  // An object with no usable id says nothing this module can attribute, and falling through to the
+  // raw text at least keeps the evidence intact for whoever reads the run.
+  if (model === null) return opaque;
+  return { model, effort: field("variant"), provider: field("providerID") };
 }
 
 /**

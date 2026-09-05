@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 
 import {
+  launchIdentity,
   openOpencodeDb,
   readSessions,
   rowToRun,
@@ -20,7 +21,7 @@ const row = (over: Partial<SessionRow> = {}): SessionRow => ({
   title: "project the board",
   directory: "/home/agent/projects/harness/worktrees/issue-36",
   agent: "build",
-  model: "z-ai/glm-5.3-flash",
+  model: '{"id":"z-ai/glm-5.3-flash","providerID":"openrouter","variant":"high"}',
   cost: 0.0412,
   tokens_input: 12_000,
   tokens_output: 900,
@@ -74,6 +75,70 @@ describe("sessionQuery", () => {
   });
 });
 
+describe("launchIdentity", () => {
+  it("reads the object the store actually writes", () => {
+    assert.deepEqual(launchIdentity('{"id":"kimi-k2.6","providerID":"opencode","variant":"high"}'), {
+      model: "kimi-k2.6",
+      effort: "high",
+      provider: "opencode",
+    });
+  });
+
+  it("reports a variant of default as default, because that is what the seam recorded", () => {
+    // `LaunchIdentity` forbids guessing. Folding "default" into null would be this module deciding
+    // that the provider default is the same as no answer, and a routing audit reading the result
+    // could no longer tell a run that pinned the default from one that never set an effort.
+    assert.equal(
+      launchIdentity('{"id":"qwen3.8-27b","providerID":"n5air","variant":"default"}').effort,
+      "default",
+    );
+  });
+
+  it("leaves effort null when the row carries no variant", () => {
+    assert.deepEqual(launchIdentity('{"id":"big-pickle","providerID":"opencode"}'), {
+      model: "big-pickle",
+      effort: null,
+      provider: "opencode",
+    });
+  });
+
+  it("says nothing about a row that recorded nothing", () => {
+    assert.deepEqual(launchIdentity(null), { model: null, effort: null, provider: null });
+  });
+
+  it("keeps an unparseable value as an opaque model rather than dropping it", () => {
+    // A value this function cannot read is still what the seam wrote. Returning null would claim
+    // the row said nothing, which is a different — and false — statement about the evidence.
+    for (const raw of ["z-ai/glm-5.3-flash", "", "[1,2]", "null", '"a string"', "{oops"]) {
+      assert.deepEqual(
+        launchIdentity(raw),
+        { model: raw, effort: null, provider: null },
+        `raw: ${JSON.stringify(raw)}`,
+      );
+    }
+  });
+
+  it("does not put a non-string field into an identity slot", () => {
+    // An id that is a number is not a model name, and reporting it would put back exactly the kind
+    // of value this function exists to keep out of the slot.
+    const raw = '{"id":42,"providerID":{"n":1},"variant":[]}';
+    assert.deepEqual(launchIdentity(raw), { model: raw, effort: null, provider: null });
+  });
+
+  it("ignores an empty string the same way, in every slot", () => {
+    assert.deepEqual(launchIdentity('{"id":"","providerID":"n5air"}'), {
+      model: '{"id":"","providerID":"n5air"}',
+      effort: null,
+      provider: null,
+    });
+    assert.deepEqual(launchIdentity('{"id":"m","providerID":"","variant":""}'), {
+      model: "m",
+      effort: null,
+      provider: null,
+    });
+  });
+});
+
 describe("rowToRun", () => {
   it("maps a session row, milliseconds and all", () => {
     const run = rowToRun(row(), "/db/opencode.db");
@@ -98,11 +163,24 @@ describe("rowToRun", () => {
     // Putting `plan` in the effort field would make a routing audit read a lane name as an effort
     // level and pass a run that never set one. It used to travel in the title instead, which was
     // worse: the title is prose and no longer exists on the record at all (finding F-5 on #105).
-    const run = rowToRun(row({ agent: "plan" }), "o");
+    const noVariant = '{"id":"z-ai/glm-5.3-flash","providerID":"openrouter"}';
+    const run = rowToRun(row({ agent: "plan", model: noVariant }), "o");
     assert.equal(run?.identity.profile, "plan");
     assert.equal(run?.identity.effort, null);
     assert.equal(run?.identity.model, "z-ai/glm-5.3-flash");
-    assert.equal(run?.identity.provider, "z-ai");
+    assert.equal(run?.identity.provider, "openrouter");
+  });
+
+  it("reads the whole launch identity out of the column the store actually writes", () => {
+    // `session.model` is a JSON object, not a `provider/model` string. The fixture asserted the
+    // invented shape, so against the real database every opencode run reported its raw JSON blob as
+    // its model and that same blob again as its provider.
+    assert.deepEqual(rowToRun(row(), "o")?.identity, {
+      model: "z-ai/glm-5.3-flash",
+      effort: "high",
+      provider: "openrouter",
+      profile: "build",
+    });
   });
 
   it("puts none of the operator's words on the record it returns", () => {
