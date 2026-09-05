@@ -12,6 +12,10 @@
  * coming in and a telemetry event going out, both of them structural shapes rather than imports.
  * That is what lets the gate run in CI with no credentials and no network, which is exactly when
  * skipping it is most tempting.
+ *
+ * Around the gate sits the journal: every decision written down with the inputs it was made from, so
+ * it can be fed back through the same code and the answers compared. That is the difference between
+ * a system that logs what it did and one that can be asked whether it would do it again.
  */
 
 /** Workspace package identifier. */
@@ -42,6 +46,47 @@ export {
   type RecordedActor,
 } from "./record.js";
 
-export { renderDecision } from "./render.js";
+export { renderComparison, renderDecision, renderReplay } from "./render.js";
 
-export { parseRoster, ROSTER_NOTE_CAP, type ParsedRoster, type Roster } from "./roster.js";
+export {
+  parseRoster,
+  readRoster,
+  ROSTER_NOTE_CAP,
+  type ParsedRoster,
+  type Roster,
+} from "./roster.js";
+
+export {
+  canonicalJson,
+  differences,
+  digest,
+  CircularValueError,
+  DIFF_PATH_CAP,
+  DIGEST_LENGTH,
+} from "./canonical.js";
+
+export {
+  compareJournals,
+  decisionOf,
+  journalLine,
+  parseJournal,
+  planDigest,
+  JOURNAL_NOTE_CAP,
+  type Change,
+  type JournalComparison,
+  type ParsedJournal,
+  type PersistedDecision,
+} from "./journal.js";
+
+export {
+  evaluatorEntry,
+  replayJournal,
+  DECIDERS,
+  EVALUATOR_DECIDER,
+  type Decider,
+  type Divergence,
+  type ReplayResult,
+  type ReplayVerdict,
+  type Rerun,
+  type Unreplayable,
+} from "./replay.js";

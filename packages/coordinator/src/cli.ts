@@ -15,7 +15,7 @@
  * this command only decides.
  */
 
-import { readFile } from "node:fs/promises";
+import { appendFile, readFile } from "node:fs/promises";
 
 import {
   OPPOSITE_FAMILY,
@@ -23,8 +23,15 @@ import {
   selectEvaluator,
   type IndependencePolicy,
 } from "./independence.js";
+import {
+  compareJournals,
+  journalLine,
+  parseJournal,
+  type PersistedDecision,
+} from "./journal.js";
 import { recordOf, telemetryLine } from "./record.js";
-import { renderDecision } from "./render.js";
+import { renderComparison, renderDecision, renderReplay } from "./render.js";
+import { evaluatorEntry, replayJournal } from "./replay.js";
 import { parseRoster } from "./roster.js";
 
 const USAGE = `dsh-coordinator — the deterministic gate between authoring and review
@@ -32,6 +39,8 @@ const USAGE = `dsh-coordinator — the deterministic gate between authoring and 
 usage:
   dsh-coordinator evaluator [options]   choose an evaluator, or refuse to
   dsh-coordinator policies              the independence rules, and what each requires
+  dsh-coordinator replay [options]      re-run a journal's decisions from their own inputs
+  dsh-coordinator diff [options]        compare two journals, and name what changed
 
 options:
   --roster <path>    roster JSON (default: stdin)
@@ -40,6 +49,10 @@ options:
   --at <iso>         timestamp on the record, so a replay is byte-identical
   --json             the record as JSON instead of prose
   --event            one JSONL line for "dsh-telemetry record"
+  --journal <path>   evaluator: append the decision and its inputs here
+                     replay: the journal to re-run
+  --before <path>    diff: the journal to compare from
+  --after <path>     diff: the journal to compare to
   --help
 
 The roster is { "author": {...}, "candidates": [...] }. An actor is
@@ -48,11 +61,17 @@ and family is any token you like — it is compared, never interpreted. A candid
 adds {"openWeights": true|false} (required) and {"blockedBy": "..."} (optional,
 null when it can run).
 
+A journal is JSONL, one decision per line, holding the inputs a decision was made
+from as well as its output. That is what makes "replay" possible: the same inputs
+go back through the same code, and the answers are compared. A decision that comes
+back different from identical inputs is nondeterminism, and is reported as that
+rather than as a change of plan.
+
 exit status:
-  0  an evaluator was selected
-  1  blocked — no independent evaluator. Do not dispatch a review.
+  0  an evaluator was selected · a replay was identical · two journals agree
+  1  blocked, divergent, or the plan changed. Read the reason before proceeding.
   2  the command line was wrong
-  3  the roster could not be read
+  3  the input could not be read, or nothing could be checked
   4  dsh-coordinator itself failed
 `;
 
@@ -84,6 +103,9 @@ interface Flags {
   readonly at: string;
   readonly json: boolean;
   readonly event: boolean;
+  readonly journal: string | null;
+  readonly before: string | null;
+  readonly after: string | null;
   readonly help: boolean;
   readonly rest: readonly string[];
 }
@@ -95,6 +117,9 @@ export function parseFlags(argv: readonly string[]): Flags {
   let at = new Date().toISOString();
   let json = false;
   let event = false;
+  let journal: string | null = null;
+  let before: string | null = null;
+  let after: string | null = null;
   let help = false;
   const rest: string[] = [];
 
@@ -136,6 +161,15 @@ export function parseFlags(argv: readonly string[]): Flags {
       case "--event":
         event = true;
         break;
+      case "--journal":
+        journal = next();
+        break;
+      case "--before":
+        before = next();
+        break;
+      case "--after":
+        after = next();
+        break;
       case "--help":
       case "-h":
         help = true;
@@ -144,7 +178,7 @@ export function parseFlags(argv: readonly string[]): Flags {
         if (arg !== undefined) rest.push(arg);
     }
   }
-  return { roster, policy, run, at, json, event, help, rest };
+  return { roster, policy, run, at, json, event, journal, before, after, help, rest };
 }
 
 async function readStdin(): Promise<string> {
@@ -201,7 +235,20 @@ async function evaluator(flags: Flags): Promise<number> {
   }
 
   const decision = selectEvaluator(parsed.roster.author, parsed.roster.candidates, flags.policy);
-  const record = recordOf(flags.run ?? parsed.roster.author.id, flags.at, decision);
+  const runId = flags.run ?? parsed.roster.author.id;
+  const record = recordOf(runId, flags.at, decision);
+
+  // Recorded before it is announced. A gate whose journal write is best-effort is a gate that
+  // quietly stops being replayable on exactly the days something goes wrong with the disk.
+  let unrecorded: string | null = null;
+  if (flags.journal !== null) {
+    const entry = evaluatorEntry(`evaluator:${runId}`, flags.at, parsed.roster, flags.policy, decision);
+    try {
+      await appendFile(flags.journal, `${journalLine(entry)}\n`, "utf8");
+    } catch (error) {
+      unrecorded = String(error);
+    }
+  }
 
   if (flags.event) {
     process.stdout.write(`${telemetryLine(record)}\n`);
@@ -215,7 +262,67 @@ async function evaluator(flags: Flags): Promise<number> {
   // and still cannot miss that some of its roster was dropped.
   for (const note of parsed.notes) process.stderr.write(`roster: ${note}\n`);
 
+  if (unrecorded !== null) {
+    process.stderr.write(`journal could not be written: ${unrecorded}\n`);
+    process.stderr.write("the decision above stands, but nothing recorded it — it cannot be replayed\n");
+    return EXIT.failed;
+  }
+
   return decision.kind === "selected" ? EXIT.ok : EXIT.blocked;
+}
+
+async function readJournal(path: string, label: string): Promise<readonly PersistedDecision[] | null> {
+  let text: string;
+  try {
+    text = await readFile(path, "utf8");
+  } catch (error) {
+    process.stdout.write(`${label} could not be read: ${String(error)}\n`);
+    return null;
+  }
+  const parsed = parseJournal(text);
+  for (const note of parsed.notes) process.stderr.write(`${label}: ${note}\n`);
+  return parsed.decisions;
+}
+
+/**
+ * The determinism check, as a command.
+ *
+ * `unchecked` exits 3 rather than 0. A replay that re-ran nothing has not shown that anything is
+ * deterministic, and the one thing that must never happen is somebody pasting a green tick from a
+ * journal this build could not read.
+ */
+async function replay(flags: Flags): Promise<number> {
+  if (flags.journal === null) {
+    process.stdout.write("replay needs --journal <path>: there is nothing to re-run without one\n");
+    return EXIT.usage;
+  }
+  const decisions = await readJournal(flags.journal, "journal");
+  if (decisions === null) return EXIT.unreadable;
+
+  const result = replayJournal(decisions);
+  process.stdout.write(
+    flags.json ? `${JSON.stringify(result, null, 2)}\n` : `${renderReplay(result)}\n`,
+  );
+  if (result.verdict === "divergent") return EXIT.blocked;
+  return result.verdict === "unchecked" ? EXIT.unreadable : EXIT.ok;
+}
+
+/** Two journals, and a named reason for every difference between them. */
+async function diff(flags: Flags): Promise<number> {
+  if (flags.before === null || flags.after === null) {
+    process.stdout.write("diff needs --before <path> and --after <path>\n");
+    return EXIT.usage;
+  }
+  const before = await readJournal(flags.before, "before");
+  if (before === null) return EXIT.unreadable;
+  const after = await readJournal(flags.after, "after");
+  if (after === null) return EXIT.unreadable;
+
+  const comparison = compareJournals(before, after);
+  process.stdout.write(
+    flags.json ? `${JSON.stringify(comparison, null, 2)}\n` : `${renderComparison(comparison)}\n`,
+  );
+  return comparison.identical && comparison.changes.length === 0 ? EXIT.ok : EXIT.blocked;
 }
 
 export async function main(argv: readonly string[]): Promise<number> {
@@ -234,6 +341,8 @@ export async function main(argv: readonly string[]): Promise<number> {
   const command = flags.rest[0];
   if (command === "evaluator") return await evaluator(flags);
   if (command === "policies") return policies();
+  if (command === "replay") return await replay(flags);
+  if (command === "diff") return await diff(flags);
 
   process.stdout.write(`unknown command: ${String(command)}\n\n${USAGE}`);
   return EXIT.usage;
