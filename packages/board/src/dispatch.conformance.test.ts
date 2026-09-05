@@ -344,7 +344,8 @@ describe("conformance with divybot's parseOverrides", () => {
       "/swarm\ntimeout: ",
       "/swarm\ntimeout: 99999999999999999999h",
       "/swarm\n```",
-      "/swarm\nharness:  ",
+      "/swarm\nharness:  ",
+      "/swarm\nharness: \u0000",
       `/swarm\nmodel: ${"x".repeat(10_000)}`,
     ]) {
       assert.doesNotThrow(() => parseSwarm(body), `threw on ${JSON.stringify(body.slice(0, 40))}`);
