@@ -99,7 +99,11 @@ importers:
 
   packages/provider-opencode: {}
 
-  packages/routing: {}
+  packages/routing:
+    dependencies:
+      '@rickylabs/subagents':
+        specifier: workspace:*
+        version: link:../subagents
 
   packages/subagents: {}
 
