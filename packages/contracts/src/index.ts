@@ -51,6 +51,17 @@
  * that folding what the hub sent reproduces the board the hub holds, is only assertable where both
  * halves exist. A cockpit imports the fold and ignores the hub; the coordinator does the reverse.
  *
+ * ## And one binding that wires the client half together
+ *
+ * `Cockpit` is the answer to the question the pieces above leave open: how they fit. When `hello`
+ * becomes a binding, whether a late frame is folded or dropped, which repair a gap gets, what a
+ * fetched board may overwrite. Each of those has a wrong answer that keeps rendering — and a board
+ * that has quietly stopped moving looks exactly like a board that has not changed — so the wiring is
+ * written once rather than twice.
+ *
+ * It opens nothing and reads no clock: `stepCockpit` returns `Effect` values and the surface
+ * performs them. That is what makes "no UI framework dependency" checkable rather than asserted.
+ *
  * ## What lives elsewhere
  *
  * The phase list is not here — it travels on the snapshot as data, so that the two lists which must
@@ -231,3 +242,24 @@ export {
   type HubStep,
   type Plan,
 } from "./server.js";
+
+export {
+  openCockpit,
+  stepCockpit,
+  board,
+  waitingOn,
+  cockpitStatus,
+  type Cockpit,
+  type CockpitInput,
+  type CockpitOptions,
+  type CockpitStep,
+  type CommandIntent,
+  type CommandResult,
+  type Effect,
+  type OpenEffect,
+  type CloseEffect,
+  type SendEffect,
+  type PostEffect,
+  type WaitEffect,
+  type InFlight,
+} from "./client.js";
