@@ -21,7 +21,14 @@ export {
 } from "./lifecycle.js";
 export type { Lifecycle, Phase } from "./lifecycle.js";
 
-export { isAbandoned, isDeliveryUnknown, isShipped, labelValue, labelValues } from "./model.js";
+export {
+  isAbandoned,
+  isDeliveryUnknown,
+  isShipped,
+  labelValue,
+  labelValues,
+  sourceSaysDelivered,
+} from "./model.js";
 export type {
   Anomaly,
   AnomalyKind,

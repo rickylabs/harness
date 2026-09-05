@@ -8,7 +8,14 @@ import {
   unknownStatusLabels,
   violatesSingleStatus,
 } from "./lifecycle.js";
-import { isAbandoned, isDeliveryUnknown, isShipped, labelValue, labelValues } from "./model.js";
+import {
+  isAbandoned,
+  isDeliveryUnknown,
+  isShipped,
+  labelValue,
+  labelValues,
+  sourceSaysDelivered,
+} from "./model.js";
 import type { SourceIssue } from "./model.js";
 import { projectBoard, slugOfEpicTitle } from "./project.js";
 
@@ -163,7 +170,10 @@ describe("projectBoard", () => {
     assert.ok(snapshot.anomalies.some((a) => a.kind === "shipped-but-open"));
   });
 
-  it("does not report no-status for closed items, which are allowed to be unlabelled", () => {
+  it("does not report no-status for a closed item, whatever else it reports", () => {
+    // `no-status` is scoped to open work on purpose — the advice it gives ("triage this") is
+    // wrong for anything already closed. What happens to *delivered* closed work instead is
+    // `closed-without-status`, below.
     const snapshot = project([issue({ number: 1, state: "closed", labels: [] })]);
     assert.ok(!snapshot.anomalies.some((a) => a.kind === "no-status"));
   });
@@ -470,6 +480,106 @@ const E9_EPIC = issue({
 const E9_CHILDREN = [83, 84, 85, 86, 87, 88].map((number) =>
   issue({ number, labels: ["epic:e9", "status:triage"] }),
 );
+
+describe("sourceSaysDelivered", () => {
+  it("believes a merged pull request and nothing weaker", () => {
+    const closed = { kind: "pull-request" as const, state: "closed" as const };
+    assert.equal(sourceSaysDelivered(issue({ number: 1, ...closed, merged: true })), true);
+    assert.equal(sourceSaysDelivered(issue({ number: 1, ...closed, merged: false })), false);
+    // Unknown is not merged — the same rule `isDeliveryUnknown` exists to keep.
+    assert.equal(sourceSaysDelivered(issue({ number: 1, ...closed })), false);
+  });
+
+  it("believes an issue closed as completed and nothing weaker", () => {
+    const closed = { state: "closed" as const };
+    assert.equal(
+      sourceSaysDelivered(issue({ number: 1, ...closed, closedBecause: "completed" })),
+      true,
+    );
+    assert.equal(
+      sourceSaysDelivered(issue({ number: 1, ...closed, closedBecause: "not-planned" })),
+      false,
+    );
+    // No reason reported is not a reason. An item GitHub said nothing about must not be accused
+    // of having lost a label it may never have needed.
+    assert.equal(sourceSaysDelivered(issue({ number: 1, ...closed, closedBecause: null })), false);
+    assert.equal(sourceSaysDelivered(issue({ number: 1, ...closed })), false);
+  });
+
+  it("is false for anything still open, however it is labelled", () => {
+    assert.equal(
+      sourceSaysDelivered(issue({ number: 1, kind: "pull-request", merged: true })),
+      false,
+    );
+    assert.equal(sourceSaysDelivered(issue({ number: 1, closedBecause: "completed" })), false);
+  });
+});
+
+describe("closed-without-status", () => {
+  it("reports a merged pull request that carries no status label", () => {
+    // The defect this rule was written for. `no-status` asks for `state === "open"`, so on the
+    // real board fourteen merged pull requests sat in no column while `check` exited 0 — the
+    // board silently failing at the one claim it exists to make.
+    const snapshot = project([
+      issue({ number: 1, kind: "pull-request", state: "closed", merged: true, labels: [] }),
+    ]);
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "closed-without-status");
+    assert.ok(anomaly, "expected a closed-without-status anomaly");
+    assert.equal(anomaly?.item, 1);
+    assert.match(anomaly?.detail ?? "", /merged/);
+  });
+
+  it("reports an issue closed as completed that carries no status label", () => {
+    const snapshot = project([
+      issue({ number: 2, state: "closed", closedBecause: "completed", labels: [] }),
+    ]);
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "closed-without-status");
+    assert.ok(anomaly, "expected a closed-without-status anomaly");
+    assert.match(anomaly?.detail ?? "", /closed as completed/);
+  });
+
+  it("stays silent on every ending that is supposed to carry no status label", () => {
+    // A pull request closed unmerged, an issue closed as not-planned, and an issue GitHub gave
+    // no reason for. Reporting these would make the correct outcome a permanent finding, and a
+    // check that cannot reach zero is one nobody runs — the rule `closed-unmerged` already keeps.
+    for (const source of [
+      issue({ number: 1, kind: "pull-request", state: "closed", merged: false, labels: [] }),
+      issue({ number: 2, state: "closed", closedBecause: "not-planned", labels: [] }),
+      issue({ number: 3, state: "closed", closedBecause: null, labels: [] }),
+      issue({ number: 4, state: "closed", labels: [] }),
+    ]) {
+      const snapshot = project([source]);
+      assert.ok(
+        !snapshot.anomalies.some((a) => a.kind === "closed-without-status"),
+        `#${source.number} was reported, but its shape is the prescribed one`,
+      );
+    }
+  });
+
+  it("stays silent once the label is on, which is what makes it closable", () => {
+    const snapshot = project([
+      issue({
+        number: 1,
+        kind: "pull-request",
+        state: "closed",
+        merged: true,
+        labels: ["status:shipped"],
+      }),
+      issue({ number: 2, state: "closed", closedBecause: "completed", labels: ["status:shipped"] }),
+    ]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "closed-without-status"));
+  });
+
+  it("does not double-report work that is merely open", () => {
+    // `no-status` owns open work. One item must never raise both, or the same repair gets filed
+    // twice and the count stops meaning anything.
+    const snapshot = project([issue({ number: 1, labels: [] })]);
+    assert.deepEqual(
+      snapshot.anomalies.filter((a) => a.item === 1).map((a) => a.kind),
+      ["no-status"],
+    );
+  });
+});
 
 describe("epic-closed-by-child", () => {
   it("fires when an umbrella is closed with children still open", () => {

@@ -29,6 +29,14 @@ export interface SourceIssue {
   /** Pull requests only: whether it landed. A closed-unmerged PR is not a shipped one. */
   readonly merged?: boolean;
   /**
+   * Issues only: why it closed, when GitHub knows. `"completed"` and `"not-planned"` are the two
+   * endings the taxonomy prescribes opposite labels for — shipped, or no status label at all — so
+   * without this field a closed issue's correct shape cannot be told from a forgotten one.
+   *
+   * `null` where GitHub reported no reason, which is not the same as `"not-planned"`.
+   */
+  readonly closedBecause?: "completed" | "not-planned" | null;
+  /**
    * Pull requests only: the description, because closing keywords live in it and nowhere else.
    *
    * Optional and absent for issues on purpose. Bodies are the largest field on the payload by a
@@ -48,6 +56,20 @@ export type AnomalyKind =
   | "shipped-but-open"
   /** A pull request closed without landing. Closed is not the same as done. */
   | "closed-unmerged"
+  /**
+   * Work that finished and never reached a column: a merged pull request, or an issue closed as
+   * completed, carrying no `status:` label at all.
+   *
+   * The counterpart to `no-status`, which only ever fired for open items — so on the board this
+   * rule was written against, fourteen merged pull requests were invisible and `check` said the
+   * board agreed with itself. Delivered work missing from the projection is the exact failure the
+   * board exists to prevent, and it is the one an unmodified `no-status` could not see.
+   *
+   * Deliberately silent on the two endings that are *supposed* to carry no status label: a pull
+   * request closed without merging, and an issue closed as not-planned. Reporting those would flag
+   * the prescribed shape of abandoning work, never stop, and make the check permanently red.
+   */
+  | "closed-without-status"
   /** Two epic issues answer to one slug, so "which epic" has no single answer. */
   | "duplicate-epic-slug"
   /** A task sits in a different milestone from the epic that owns it. */
@@ -135,7 +157,13 @@ export interface BoardSnapshot {
   readonly repo: string;
   readonly generatedAt: string;
   readonly columns: readonly BoardColumn[];
-  /** Items with no status label at all: real work that the board cannot see. */
+  /**
+   * Items with no status label at all.
+   *
+   * Not all of them are a problem: closing without shipping is *supposed* to leave no status
+   * label. Use `sourceSaysDelivered` to tell those from the ones that are genuinely missing — the renderer
+   * and `closed-without-status` both do.
+   */
   readonly unphased: readonly BoardItem[];
   readonly anomalies: readonly Anomaly[];
   /** Every projected item, phased or not, in deterministic order. */
@@ -185,6 +213,29 @@ export function isDeliveryUnknown(item: BoardItem): boolean {
     item.source.kind === "pull-request" &&
     item.source.merged === undefined
   );
+}
+
+/**
+ * Whether the *source* says this work finished — whatever the board says, or fails to say.
+ *
+ * The counterpart to `isShipped`, and deliberately not a variant of it. `isShipped` starts from a
+ * terminal phase and asks whether to believe it; this starts from GitHub and asks what happened,
+ * which is the only question available when there is no phase to start from. That case is exactly
+ * the one worth catching: an item with no status label has no phase, so every predicate keyed on
+ * one answers `false` for a merged pull request, and the board reports nothing wrong.
+ *
+ * It takes a `SourceIssue` rather than a `BoardItem` for the same reason — it has to be answerable
+ * before the projection assigns a column, and it reads nothing the projection derives.
+ *
+ * A pull request must have merged; `undefined` is not merged, per `isDeliveryUnknown`. An issue
+ * must have closed as completed, and `null` is not completion — so an item GitHub gave no reason
+ * for is never accused of having lost its label.
+ */
+export function sourceSaysDelivered(source: SourceIssue): boolean {
+  if (source.state !== "closed") return false;
+  return source.kind === "pull-request"
+    ? source.merged === true
+    : source.closedBecause === "completed";
 }
 
 /** A pull request that reached a terminal column, or closed, without ever landing. */
