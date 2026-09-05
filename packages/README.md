@@ -22,9 +22,14 @@ attach to two *different* dsh seams (#30, "two seams, not one").
 
 `subagents` holds the contract the four provider packages implement, and it is deliberately not
 in `contracts`. That package is E8's, published to npm for the two UIs, and #79's acceptance draws
-the line: a type that only makes sense for one surface does not belong there. A UI reads a board;
-it never dispatches a run. `subagents` depends on nothing in this workspace, so both seams — E6's
-projection and E7's forge — can reach it without either depending on the other.
+the line: a type that only makes sense for one surface does not belong there.
+
+A cockpit does ask for a dispatch — but what it sends is `contracts`' own `DispatchCommand`, which
+names an issue and a **lane**. `subagents`' `DispatchRequest` names a model, a host and a provider,
+and it is what the coordinator builds *after* routing resolves the lane. Keeping them apart is what
+stops a client from routing around the rule that an evaluator may not be the author. `subagents`
+depends on nothing in this workspace, so both seams — E6's projection and E7's forge — can reach it
+without either depending on the other.
 
 ## Conventions every package inherits
 

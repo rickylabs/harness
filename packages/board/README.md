@@ -61,8 +61,14 @@ and for two hours the board reported six unstarted children as delivered work.
 
 `DEFAULT_LIFECYCLE` matches what `dsh-forge` stamps, so the common case needs no configuration.
 It is a default, not a coupling: this package has no dependency on `forge`, and a repository with
-different columns passes its own `Lifecycle`. When `@rickylabs/contracts` is published it should
-own the shape and both packages should import it from there.
+different columns passes its own `Lifecycle`.
+
+`@rickylabs/contracts` (#79) now restates the `Phase` and `Lifecycle` *shape* for the two cockpits,
+and the phase **list** travels to them on the snapshot as data. It restates rather than imports
+because it is the one publishable package and cannot depend on a private one — and it carries no
+list of its own on purpose: `scripts/check-lifecycle.mjs` compares the two lists that must agree,
+and a third copy, versioned and compiled into two clients on their own release cadence, would be the
+one copy nothing can check.
 
 ## One dispatch payload
 

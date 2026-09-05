@@ -17,10 +17,15 @@ writes and the request the seam takes are the same object under two encodings.
 
 ## Why the contract is not in `contracts`
 
-`@rickylabs/contracts` is E8's package, published to npm for the two UIs. Its stub says not to add
-behaviour before that epic defines its contract, and #79's acceptance draws the line from the other
-side: **a type that only makes sense for one surface does not belong there.** A UI reads a board; it
-never implements a provider.
+`@rickylabs/contracts` is E8's package, published to npm for the two UIs, and #79's acceptance draws
+the line from the other side: **a type that only makes sense for one surface does not belong there.**
+A UI reads a board; it never implements a provider.
+
+A cockpit does ask for a dispatch, and that request is `contracts`' `DispatchCommand` — an issue and
+a **lane**. The `DispatchRequest` below names a model, a host and a provider, and the coordinator
+builds it only after routing resolves the lane. That gap is deliberate: a payload a client could
+send that named a model would let a phone route around the rule that an evaluator may not be the
+author.
 
 This package depends on nothing else in the workspace, which is what lets both seams reach it —
 E6's projection (`@rickylabs/board`, which re-exports the dispatch names so its public surface is
