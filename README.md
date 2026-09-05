@@ -13,6 +13,11 @@ without waking an agent to ask.
 > **Status** lives on the board, not in this file: the
 > [E0 roadmap](https://github.com/rickylabs/harness/issues/30) is what is built and what is not.
 
+📋 [**The board**](BOARD.md) — what is moving, what is stuck, and what the board is lying about,
+rendered from GitHub every half hour. That page is the answer to "status ?"; this file never
+answers it, because a hand-maintained status section is a fact that goes stale between two commits
+and nothing goes red when it does.
+
 📖 [**Documentation**](docs/) — concepts, how-to, reference and a
 [glossary](docs/glossary.md). This file is the front door; `docs/` is the house.
 
@@ -66,6 +71,16 @@ node packages/telemetry/dist/cli.js where     # where run evidence is written, a
 `dsh-board` and `dsh-forge` reach GitHub through the [`gh`](https://cli.github.com) CLI or a
 `GITHUB_TOKEN`; both exit **3** and say so when neither is available, rather than printing an empty
 board. `dsh-telemetry` reads local directories and needs no network at all.
+
+The same projection has a second output for people who are not at a terminal:
+
+```bash
+node packages/board/dist/cli.js digest        # the board as a markdown page
+```
+
+That is what [`BOARD.md`](BOARD.md) is. It prints to stdout and writes nothing —
+[`board.yml`](.github/workflows/board.yml) does the writing, every half hour, and commits only when
+the content actually changed.
 
 <details>
 <summary>Why <code>node packages/…/dist/cli.js</code> and not the bare command name</summary>
@@ -132,13 +147,18 @@ Three consequences follow, and they are why this is a design decision rather tha
 
 ### Everything generated is generated
 
-Four artifacts in this repository are produced by code and verified against it, not maintained by
-hand: the `dsh` bundle patch (`cordis.patch.yml`, byte-compared in a test), the board-process skill
-(`.claude/skills/board-process/SKILL.md`, written by `dsh-forge skill install`), the config golden
-snapshot (captured from the real binary, re-blessed with a written reason), and the label taxonomy
-(`.github/labels.yml`, ejected by `dsh-forge labels eject`).
+Six artifacts in this repository are produced by code rather than maintained by hand, and five of
+them are verified against that code on every build: the `dsh` bundle patch (`cordis.patch.yml`,
+byte-compared in a test), the board-process skill (`.claude/skills/board-process/SKILL.md`, written
+by `dsh-forge skill install`), the CLI reference pages (`docs/reference/cli/`, re-derived from each
+binary), the config golden snapshot (captured from the real binary, re-blessed with a written
+reason), and the label taxonomy (`.github/labels.yml`, ejected by `dsh-forge labels eject`).
 
-The rule behind all four:
+[`BOARD.md`](BOARD.md) is the sixth, and the one no check guards — it is rewritten wholesale every
+half hour, so an edit to it is not rejected but reverted. `CONTRIBUTING.md` has the full table and
+the command that regenerates each one.
+
+The rule behind all six:
 
 > **Every artifact either states facts it owns, or is generated from the code that owns them.**
 
@@ -269,8 +289,9 @@ scripts/              the repository-wide checks the root scripts run
 .llm/harness/         the artifact templates a run fills in
 .llm/tools/           milestone and gate tooling (Deno; see the note below)
 .github/labels.yml    the ejected label taxonomy — generated, then reviewed
-.github/workflows/    the CI gate, the release pipeline, and the status-label settler
+.github/workflows/    the CI gate, the release pipeline, the status-label settler, the board
 .claude/skills/       the generated board skill (`pnpm run skill:install`)
+BOARD.md              the published board — generated every half hour, never hand-edited
 AGENTS.md             entry point, agent mode
 CLAUDE.md             entry point, standard mode
 deno.json             see below
@@ -316,7 +337,7 @@ full statement of what follows from that.
 
 | File | What it settles |
 | --- | --- |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The four-command local loop, the branch and pull request conventions, and the five generated files you must not hand-edit |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The four-command local loop, the branch and pull request conventions, and the six generated files you must not hand-edit |
 | [`SECURITY.md`](SECURITY.md) | Three surfaces an ordinary repository does not have: content that instructs an agent, a label that executes, and run artifacts that are committed |
 | [`GOVERNANCE.md`](GOVERNANCE.md) | Where a decision lives, and the owner-fork rule that makes autonomous work safe here |
 | [`SUPPORT.md`](SUPPORT.md) | Where to go for each kind of question, given that there are no Discussions |

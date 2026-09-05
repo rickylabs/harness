@@ -30,6 +30,7 @@ usage:
   dsh-board status [--repo <owner/name>]     the hierarchy: milestone -> epic -> task
   dsh-board columns [--repo <owner/name>]    the kanban view, one section per column
   dsh-board check [--repo <owner/name>]      exit 1 if the board contradicts itself
+  dsh-board digest [--repo <owner/name>]     the board as a markdown page, for committing
   dsh-board snapshot [--repo <owner/name>]   the projection as JSON
   dsh-board doctor                           report transport and detected repository
 

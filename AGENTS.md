@@ -26,7 +26,9 @@ and one profile over published
 harness doctrine they encode. It is a product being designed by its own method — the founding
 architecture run at
 [`.llm/runs/architecture-foundation--seed/`](.llm/runs/architecture-foundation--seed/)
-records that design; the board says what is built.
+records that design; the board says what is built. [`BOARD.md`](BOARD.md) is that board rendered as
+a page — read it before you ask anyone what is in flight, and treat it as a projection: where it and
+an issue disagree, the issue wins and the page is stale by at most half an hour.
 
 Treat that run directory as the working surface. Treat everything else as either doctrine
 (stable, change deliberately), the plugin layer in [`packages/`](packages/), or entry points

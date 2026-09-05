@@ -156,15 +156,30 @@ function renderMilestone(milestone: MilestoneNode): readonly string[] {
   return lines;
 }
 
+/** Knobs on the hierarchy view. Everything defaults to what the terminal has always printed. */
+export interface HierarchyRenderOptions {
+  /**
+   * Whether to print the `generated <iso>` line.
+   *
+   * On by default, and the only caller that turns it off is one whose output is committed: a stamp
+   * that moves on every render makes every scheduled run a change, which buries the runs where the
+   * board actually moved. See `digest.ts`, which states the board's own latest activity instead.
+   */
+  readonly stamp?: boolean;
+}
+
 /**
  * The hierarchy view. This is the answer to "status ?" — the whole tree, with progress rolled up,
  * readable without asking any agent anything.
  */
-export function renderHierarchy(hierarchy: Hierarchy): string {
+export function renderHierarchy(
+  hierarchy: Hierarchy,
+  options: HierarchyRenderOptions = {},
+): string {
   const lines: string[] = [
     `# ${hierarchy.repo}  ${renderBar(hierarchy.progress)}  ${renderProgress(hierarchy.progress)}`,
-    `generated ${hierarchy.generatedAt}`,
   ];
+  if (options.stamp !== false) lines.push(`generated ${hierarchy.generatedAt}`);
   for (const milestone of hierarchy.milestones) {
     lines.push("");
     lines.push(...renderMilestone(milestone));

@@ -18,6 +18,7 @@
 
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { renderDigest } from "./digest.js";
 import { buildHierarchy } from "./hierarchy.js";
 import { fetchItems, TransportUnavailable, detectRepoSlug } from "./github.js";
 import type { FetchResult } from "./github.js";
@@ -58,6 +59,7 @@ usage:
   dsh-board status [--repo <owner/name>]     the hierarchy: milestone -> epic -> task
   dsh-board columns [--repo <owner/name>]    the kanban view, one section per column
   dsh-board check [--repo <owner/name>]      exit 1 if the board contradicts itself
+  dsh-board digest [--repo <owner/name>]     the board as a markdown page, for committing
   dsh-board snapshot [--repo <owner/name>]   the projection as JSON
   dsh-board doctor                           report transport and detected repository
 
@@ -180,7 +182,7 @@ export async function main(argv: readonly string[], deps: CliDeps = defaultDeps(
     }
   }
 
-  if (!["status", "columns", "snapshot", "check"].includes(command)) {
+  if (!["status", "columns", "snapshot", "check", "digest"].includes(command)) {
     deps.stderr(`unknown command ${JSON.stringify(command)}\n\n${USAGE}`);
     return EXIT.usage;
   }
@@ -207,10 +209,15 @@ export async function main(argv: readonly string[], deps: CliDeps = defaultDeps(
 
   // A capped fetch means everything below is a prefix of the real board. It goes above the output
   // and on stderr as well, so it survives a pipe into a file that nobody reads the top of.
+  //
+  // `snapshot` and `digest` are excluded from the stdout copy because both are consumed whole by a
+  // machine — one parsed as JSON, one committed as a file — and a warning line pasted above the
+  // first byte corrupts them. Neither loses the warning: the JSON carries `completeness`, the page
+  // renders it as a blockquote, and both still get it on stderr.
   const banner = renderCompleteness(snapshot.completeness);
   if (banner !== null) {
     deps.stderr(`${banner}\n`);
-    if (command !== "snapshot") deps.stdout(`${banner}\n\n`);
+    if (command !== "snapshot" && command !== "digest") deps.stdout(`${banner}\n\n`);
   }
 
   switch (command) {
@@ -219,6 +226,9 @@ export async function main(argv: readonly string[], deps: CliDeps = defaultDeps(
       return EXIT.ok;
     case "columns":
       deps.stdout(`${renderColumns(snapshot)}\n`);
+      return EXIT.ok;
+    case "digest":
+      deps.stdout(renderDigest(snapshot, buildHierarchy(snapshot)));
       return EXIT.ok;
     case "snapshot":
       deps.stdout(`${JSON.stringify(snapshot, null, 2)}\n`);

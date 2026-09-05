@@ -165,6 +165,24 @@ describe("renderHierarchy", () => {
     assert.ok(!text.includes("null"), "a null milestone must not reach the output");
   });
 
+  it("stamps the generation time by default", () => {
+    const text = renderHierarchy(buildHierarchy(snapshotOf([issue({ number: 1, labels: ["status:plan"] })])));
+    assert.match(text, new RegExp(`generated ${AT}`));
+  });
+
+  it("omits the stamp when the caller's output is committed", () => {
+    // The digest embeds this tree in a file rewritten every half hour. A stamp that moves on every
+    // render would make every scheduled run a commit and bury the runs where the board moved.
+    const hierarchy = buildHierarchy(snapshotOf([issue({ number: 1, labels: ["status:plan"] })]));
+    const text = renderHierarchy(hierarchy, { stamp: false });
+    assert.ok(!text.includes("generated "), text.split("\n").slice(0, 2).join(" / "));
+    // Everything else is unchanged: one line short, same content.
+    assert.equal(
+      text.split("\n").length,
+      renderHierarchy(hierarchy).split("\n").length - 1,
+    );
+  });
+
   it("says so when an epic slug has no issue behind it", () => {
     const text = renderHierarchy(
       buildHierarchy(snapshotOf([issue({ number: 1, labels: ["status:plan", "epic:ghost"] })])),
