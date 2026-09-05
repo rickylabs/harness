@@ -1,15 +1,12 @@
 {
-  "name": "@rickylabs/board",
+  "name": "@rickylabs/subagents",
   "version": "0.0.0",
-  "description": "Task DAG and kanban projection",
+  "description": "The SubagentProvider contract and the one dispatch payload every seam shares",
   "license": "MIT",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": {
-    "dsh-board": "./dist/cli.js"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -20,9 +17,6 @@
   "files": [
     "dist"
   ],
-  "dependencies": {
-    "@rickylabs/subagents": "workspace:*"
-  },
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --emitDeclarationOnly",
