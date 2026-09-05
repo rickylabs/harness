@@ -11,6 +11,7 @@
   },
   "scripts": {
     "check:graph": "node scripts/check-project-graph.mjs",
+    "check:lifecycle": "node scripts/check-lifecycle.mjs",
     "build": "pnpm run check:graph && pnpm -r run build",
     "typecheck": "pnpm run check:graph && pnpm -r run typecheck",
     "test": "pnpm -r run test",

@@ -7,6 +7,9 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "dsh-board": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -20,6 +23,7 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --emitDeclarationOnly",
+    "test": "tsc -b && node --test \"dist/**/*.test.js\"",
     "clean": "rm -rf dist *.tsbuildinfo"
   }
 }
