@@ -85,6 +85,8 @@ export {
   type TelemetryEvent,
 } from "./sink.js";
 
+export { compareNullableStrings, compareStrings } from "./order.js";
+
 export {
   buildSnapshot,
   countRuns,

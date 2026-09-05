@@ -14,6 +14,7 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 
 import type { RunRecord } from "../model.js";
+import { compareStrings } from "../order.js";
 import { parseClaudeTranscript } from "./claude.js";
 import { parseCodexRollout } from "./codex.js";
 import { openOpencodeDb, readSessions } from "./opencode.js";
@@ -49,7 +50,7 @@ async function findJsonl(root: string, limit: number): Promise<string[] | null> 
       return; // An unreadable subdirectory costs its own subtree, not the whole scan.
     }
     // Sorted, so a truncated scan truncates the same way twice and a snapshot stays reproducible.
-    for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    for (const entry of entries.sort((a, b) => compareStrings(a.name, b.name))) {
       if (found.length >= limit) return;
       const path = join(dir, entry.name);
       if (entry.isDirectory()) await walk(path);
@@ -131,7 +132,7 @@ export async function backfillFromDisk(
 
   // Deterministic order: newest activity first, ties broken by id so two runs updated in the same
   // millisecond do not swap places between snapshots.
-  runs.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id));
+  runs.sort((a, b) => compareStrings(b.updatedAt, a.updatedAt) || compareStrings(a.id, b.id));
   return { runs, notes };
 }
 

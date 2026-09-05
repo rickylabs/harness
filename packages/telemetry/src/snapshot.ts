@@ -5,6 +5,11 @@
  * filesystem, no network: the same inputs produce the same snapshot, which is the determinism
  * commitment the board projection makes and the only way two people looking at the board can be
  * sure they are looking at the same thing.
+ *
+ * "The same inputs" includes the environment. Every order below comes from `compareStrings`, never
+ * from `localeCompare`, because the host's default collation is an input nobody passed: the same
+ * two epic keys sorted `["ä", "z"]` under `en_US` and `["z", "ä"]` under `sv_SE`, which changed the
+ * snapshot's bytes without changing an argument. See `order.ts`.
  */
 
 import {
@@ -15,6 +20,7 @@ import {
   type RunRecord,
   type TelemetrySnapshot,
 } from "./model.js";
+import { compareStrings } from "./order.js";
 
 /** Runs keyed by parent, so a tree can be built in one pass rather than by repeated scanning. */
 function childrenByParent(runs: readonly RunRecord[]): Map<string, RunRecord[]> {
@@ -59,7 +65,7 @@ function attribute(
 
   const kids = (children.get(run.id) ?? [])
     .slice()
-    .sort((a, b) => a.startedAt.localeCompare(b.startedAt) || a.id.localeCompare(b.id))
+    .sort((a, b) => compareStrings(a.startedAt, b.startedAt) || compareStrings(a.id, b.id))
     .map((child) => attribute(child, children, items, visited, notes));
 
   return { run, item, children: kids };
@@ -81,7 +87,7 @@ export function latestQuota(runs: readonly RunRecord[]): readonly QuotaReading[]
       if (held === undefined || reading.observedAt > held.observedAt) latest.set(key, reading);
     }
   }
-  return [...latest.values()].sort((a, b) => a.source.localeCompare(b.source));
+  return [...latest.values()].sort((a, b) => compareStrings(a.source, b.source));
 }
 
 export interface SnapshotInput {
@@ -110,7 +116,7 @@ export function buildSnapshot(input: SnapshotInput): TelemetrySnapshot {
   }
 
   const byRecency = (a: RunRecord, b: RunRecord): number =>
-    b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id);
+    compareStrings(b.updatedAt, a.updatedAt) || compareStrings(a.id, b.id);
 
   const visited = new Set<string>();
   const attributed = roots
@@ -142,7 +148,7 @@ export function buildSnapshot(input: SnapshotInput): TelemetrySnapshot {
   }
 
   const epics: EpicActivity[] = [...byEpic.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => compareStrings(a, b))
     .map(([epic, runs]) => ({
       epic,
       milestone: runs[0]?.item?.milestone ?? null,

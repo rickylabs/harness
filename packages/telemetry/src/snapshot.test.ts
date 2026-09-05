@@ -181,3 +181,34 @@ describe("flatten", () => {
     );
   });
 });
+
+describe("buildSnapshot, on the host it happens to run on", () => {
+  it("orders epics by code unit rather than by the host's collation", () => {
+    // Finding F-6 on #105: the reviewer's counterexample was two epic keys and identical runs. The
+    // same call produced ["ä","z"] under en_US.UTF-8 and ["z","ä"] under sv_SE.UTF-8 — different
+    // snapshot bytes from the same arguments, which is exactly the property this package claims.
+    const snapshot = buildSnapshot({
+      generatedAt: "2026-09-04T22:00:00.000Z",
+      runs: [run({ id: "a", linkedIssues: [1] }), run({ id: "b", linkedIssues: [2] })],
+      items: [item(1, "ä"), item(2, "z")],
+    });
+    assert.deepEqual(
+      snapshot.epics.map((e) => e.epic),
+      ["z", "ä"],
+    );
+  });
+
+  it("orders quota readings by code unit too", () => {
+    // Same defect, different sort. Seam names are ASCII today, which is precisely why this one
+    // would never have failed on anyone's machine until a seam arrived that was not.
+    const readings = latestQuota([
+      run({ id: "a", quota: [reading({ source: "opencode", limitId: "x" })] }),
+      run({ id: "b", quota: [reading({ source: "claude", limitId: "y" })] }),
+      run({ id: "c", quota: [reading({ source: "codex", limitId: "z" })] }),
+    ]);
+    assert.deepEqual(
+      readings.map((r) => r.source),
+      ["claude", "codex", "opencode"],
+    );
+  });
+});
