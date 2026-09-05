@@ -2,25 +2,35 @@
 
 # rickylabs/harness
 
-`[###############-----]` **114/152 done · 3 running · 24 queued · 11 abandoned**
+`[##############------]` **114/153 done · 4 running · 24 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-05T21:53:17Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-05T22:23:02Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (3)
+## Moving now (4)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
+| [PR164 feat(telemetry): write run evidence at the subagent seam](https://github.com/rickylabs/harness/pull/164) | `impl` | `e9` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#83 E9.1 — SessionTelemetrySink on every run, on both seams](https://github.com/rickylabs/harness/issues/83) | `impl-eval` | `e9` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
+
+## Anomalies (2)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#164** — closed on GitHub but sits in impl; the issue wins, the column is stale
+- **#83** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[########----]` 85/114 done · 3 running · 24 queued · 2 abandoned
+`[########----]` 85/115 done · 4 running · 24 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -33,7 +43,7 @@ Something could be acting on these right now.
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 17/20 done · 1 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[########----]` 11/16 done · 5 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `triage` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 10/12 done · 2 running | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 10/13 done · 3 running | `impl` |
 
 ### (no milestone)
 
@@ -84,9 +94,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  114/152 done · 3 running · 24 queued · 11 abandoned
+# rickylabs/harness  [##############------]  114/153 done · 4 running · 24 queued · 11 abandoned
 
-## M1 — dsh coordinator foundation  [##############------]  85/114 done · 3 running · 24 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [##############------]  85/115 done · 4 running · 24 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [impl]
     [################] 14/14 done
@@ -218,7 +228,7 @@ Something could be acting on these right now.
     shipped              PR135 feat(contracts): publish as @rickylabs/harness-contracts, with a checked release pipeline
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
-    [#############---] 10/12 done · 2 running
+    [############----] 10/13 done · 3 running
     impl-eval            #83 E9.1 — SessionTelemetrySink on every run, on both seams
     shipped              #84 E9.2 — Push over /api/remote.mux, never poll
     shipped              #85 E9.3 — The hierarchy view: milestone → epic → task → subagent
@@ -231,6 +241,7 @@ Something could be acting on these right now.
     shipped              PR119 feat(telemetry): open the observability sink, and give it a writer (p1)
     shipped              PR129 feat(telemetry): read the observability log back and merge it into the backfill
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
+    impl                 PR164 feat(telemetry): write run evidence at the subagent seam (p1)
 
 ## (no milestone)  [###############-----]  29/38 done · 9 abandoned
 
