@@ -133,3 +133,45 @@ describe("installSkill", () => {
     });
   });
 });
+
+describe("the file that actually lands on disk", () => {
+  // Every test above this block asserted on what `renderSkill` returned or on an outcome string.
+  // None of them opened the installed file and looked at line 1 — which is where the only property
+  // that decides whether the skill loads at all lives.
+  it("starts with the frontmatter fence, so the loader sees a skill", async () => {
+    await withTempRepo(async (root) => {
+      await installSkill({ ...ctx, repoRoot: root, skillDirs: [] });
+      const written = await readFile(skillPath(root, DEFAULT_SKILL_ROOT), "utf8");
+      assert.ok(
+        written.startsWith("---\nname: board-process\n"),
+        `installed file does not open with frontmatter: ${JSON.stringify(written.slice(0, 60))}`,
+      );
+    });
+  });
+
+  it("still carries the provenance marker, just below the frontmatter", async () => {
+    await withTempRepo(async (root) => {
+      await installSkill({ ...ctx, repoRoot: root, skillDirs: [] });
+      const lines = (await readFile(skillPath(root, DEFAULT_SKILL_ROOT), "utf8")).split("\n");
+      const marker = lines.findIndex((l) => l.includes("dsh-forge skill install"));
+      const close = lines.indexOf("---", 1);
+      assert.ok(marker > close, "the marker must sit after the closing fence, not inside or above it");
+      assert.equal(marker, close + 1, "and immediately after it, so it is not mistaken for prose");
+    });
+  });
+
+  it("recognises its own output on a second run, wherever the marker sits", async () => {
+    // The provenance check is a substring search, so moving the marker must not turn our own file
+    // into a foreign one — which would make every reinstall demand --force.
+    await withTempRepo(async (root) => {
+      await installSkill({ ...ctx, repoRoot: root, skillDirs: [] });
+      const again = await installSkill({ ...ctx, repoRoot: root, skillDirs: [] });
+      assert.deepEqual(again.map((r) => r.outcome), ["unchanged"]);
+
+      const path = skillPath(root, DEFAULT_SKILL_ROOT);
+      await writeFile(path, `${await readFile(path, "utf8")}\n<!-- a human added a line -->\n`, "utf8");
+      const stale = await installSkill({ ...ctx, repoRoot: root, skillDirs: [], dryRun: true });
+      assert.deepEqual(stale.map((r) => r.outcome), ["stale"], "ours, edited — not foreign");
+    });
+  });
+});
