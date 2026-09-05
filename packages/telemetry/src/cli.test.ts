@@ -10,10 +10,11 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 
 import { EXIT, main, parseFlags } from "./cli.js";
+import { livePath, resolveObservability } from "./observability.js";
 
 let home: string;
 
@@ -468,5 +469,86 @@ describe("dsh-telemetry tree", () => {
     await seedClaude("ses-a", "orch/divybot-39");
     const { out } = await run(["tree", "--home", home, "--now", "2026-09-04T22:00:00.000Z"]);
     assert.match(out, /no --items given/);
+  });
+});
+
+/**
+ * The live log, read back into the same answer.
+ *
+ * These go through `main` rather than `mergeLiveRuns` because the wiring is the point: the merge had
+ * unit tests before it had a caller, and `record` had a writer for two milestones before anything
+ * read what it wrote. Seeding through `resolveObservability` rather than a hardcoded path keeps the
+ * test honest on a box where `DSH_TELEMETRY_DIR` is set.
+ */
+describe("dsh-telemetry, with the live log", () => {
+  async function seedLog(events: readonly Record<string, unknown>[]): Promise<void> {
+    const path = livePath(resolveObservability(home, process.env));
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, `${events.map((e) => JSON.stringify(e)).join("\n")}\n`, "utf8");
+  }
+
+  it("closes out a Claude run, which the transcript alone can never do", async () => {
+    // The store writes no completion marker, so this run reads `unknown` forever on the strength of
+    // its transcript. Whatever launched it watched it stop, and that is what the log carries.
+    await seedClaude("ses-a", "orch/divybot-39");
+    await seedLog([
+      { runId: "ses-a", kind: "exit", at: "2026-09-04T21:05:00.000Z", detail: { outcome: "complete" } },
+    ]);
+
+    const { code, out } = await run(["runs", "--home", home, "--now", "2026-09-04T22:00:00.000Z"]);
+    assert.equal(code, EXIT.ok);
+    assert.match(out, /ses-a|claude/);
+    assert.match(out, /complete/);
+    assert.ok(!out.includes("unknown"));
+  });
+
+  it("does not let the log overrule an outcome the transcript asserted", async () => {
+    await seedClaude("ses-a", "orch/divybot-39");
+    await seedLog([
+      { runId: "ses-a", kind: "guess", at: "2026-09-04T21:05:00.000Z", detail: { outcome: "failed" } },
+      { runId: "ses-a", kind: "exit", at: "2026-09-04T21:06:00.000Z", detail: { outcome: "complete" } },
+    ]);
+    const { out } = await run(["runs", "--home", home, "--now", "2026-09-04T22:00:00.000Z"]);
+    // The later statement wins between two live events; neither would have beaten a transcript that
+    // said something, and the Claude store never does.
+    assert.match(out, /complete/);
+    assert.ok(!out.includes("failed"));
+  });
+
+  it("hands back the log itself for a run with no transcript on this box", async () => {
+    // The dispatcher timed a run out before the vendor wrote anything. There is no file to open
+    // except the one that recorded it, and `why` exists to name the file to open.
+    await seedLog([
+      {
+        runId: "ses-gone",
+        kind: "timeout",
+        at: "2026-09-04T21:00:00.000Z",
+        detail: { source: "codex", outcome: "failed", branch: "orch/divybot-39" },
+      },
+    ]);
+    const { code, out } = await run(["why", "ses-gone", "--home", home]);
+    assert.equal(code, EXIT.ok);
+    assert.match(out, /ses-gone \(codex, failed\)/);
+    assert.ok(out.includes(livePath(resolveObservability(home, process.env))));
+  });
+
+  it("counts a run that named no seam, and says so rather than guessing", async () => {
+    await seedClaude("ses-a", "orch/divybot-39");
+    await seedLog([{ runId: "ses-nameless", kind: "tick", at: "2026-09-04T21:00:00.000Z" }]);
+
+    const { code, out } = await run(["runs", "--home", home, "--now", "2026-09-04T22:00:00.000Z"]);
+    // Exit 3, not 0: the picture the operator is reading has a run in it that this command could
+    // see and could not place, and treating that as a complete answer is the failure exit 3 exists
+    // to prevent.
+    assert.equal(code, EXIT.incomplete);
+    assert.match(out, /1 run\(s\) named no seam/);
+    assert.ok(!out.includes("ses-nameless"));
+  });
+
+  it("is unbothered by a home with no log in it at all", async () => {
+    await seedClaude("ses-a", "orch/divybot-39");
+    const { code, out } = await run(["runs", "--home", home, "--now", "2026-09-04T22:00:00.000Z"]);
+    assert.equal(code, EXIT.ok);
+    assert.ok(!out.includes("live log:"));
   });
 });

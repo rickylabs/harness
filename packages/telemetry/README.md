@@ -17,7 +17,7 @@ That constraint drives every decision below. **The command reads files, and that
 No token, no socket, no daemon, no agent — because a status command that needs the fleet to be
 healthy is a status command that fails exactly when it is needed.
 
-## Two halves
+## Two halves and the join
 
 **Forward** — `SessionTelemetrySink` is what a run writes to as it works. One method, one record, no
 return worth branching on: a run must never fail because telemetry did, and an orchestrator must
@@ -39,6 +39,37 @@ populated from history the moment this lands rather than from the next run onwar
 
 Vendor formats are not a contract. Each reader is written to survive a half-written last line, an
 unknown record type, and a store that is not there at all — and to say so when it does.
+
+**Joined** — neither half answers the question alone. Look at the table above: only one of the three
+seams records anything about how a run ended. The Claude and opencode stores write no completion
+marker at all, so a run recovered from either of them reads `unknown` forever — the transcript stops,
+and a transcript that stopped looks identical whether the run finished, wedged, or was killed. The
+sink can say, because whatever launched the run watched it stop.
+
+`live.ts` merges the log back over the backfill by run id, and `tree`, `status`, `runs` and `why`
+all answer from the merged view. Keying on the run id is what makes it safe to re-read the whole log
+every time: replaying it over an already-merged view is a no-op, so there is no ingestion cursor to
+keep, and none to lose when the box goes down mid-write.
+
+Three rules decide what the log is allowed to do to a transcript:
+
+1. **A live outcome fills in a transcript that could not say, and never overrules one that could.**
+   `complete` and `failed` on disk are the vendor's own assertion about its own run; `unknown` is an
+   admission, and an admission is what the log is here to answer.
+2. **A run only the log knows about becomes a run** — with the log itself as the file `why` hands
+   over, since on that box there is nothing else to open.
+3. **A live-only run that names no seam is counted and reported, never guessed at.** `RunSource`
+   carries governance meaning — two of its three values are subscription windows that can be
+   exhausted — so attributing a run to the wrong seam is worse than attributing it to none. It
+   raises status 3 like any other gap.
+
+The `detail` keys the merge reads are `source`, `outcome`, `parentId`, `branch`, `model`, `effort`,
+`provider` and `profile`. Anything else in a recorded event is carried and ignored: the sink is a
+pipe, not a schema authority, and a merge that inferred an outcome from an event's `kind` would be
+guessing at a vocabulary nobody has agreed on. `startedAt` takes the earlier of the two and
+`updatedAt` the later; identity fields fill only empty slots, because a transcript saw the model the
+run actually used and a launcher only saw the one it asked for. `usage` and `quota` stay
+transcript-only — those are counted by the vendor, and a launcher is not in a position to count them.
 
 ## Three properties the output holds
 
@@ -67,16 +98,22 @@ node packages/telemetry/dist/cli.js status --items board-items.json
 ```
 
 ```
-dsh-telemetry status [options]     render the current picture
+dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
+dsh-telemetry status [options]     runs grouped by epic
 dsh-telemetry runs [options]       one line per run, newest first
 dsh-telemetry why <run-id>         which log to open first for that run
+dsh-telemetry record [options]     append events to the observability log
+dsh-telemetry where [options]      where that log is, and the layers below a run
 
 --home <path>          home directory the stores live under (default: this user's)
---items <path>         JSON array of board items to attribute runs to
+--items <path>         board items to join runs to: "dsh-board snapshot" output, or a
+                       JSON array of {number, title, epic, milestone, phase} refs
 --limit <n>            runs to read per seam, most recent first (default: 500)
 --since <iso>          only runs with activity at or after this time
 --now <iso>            reference time for ages, so output is reproducible
 --json                 machine-readable output
+--run <id>             with "record": the run one event belongs to
+--kind <name>          with "record": write that one event instead of reading stdin
 ```
 
 Both bounds are pushed into the readers rather than applied to the answer: `--since` skips a
@@ -85,6 +122,11 @@ opencode seam as a `where` clause. A bound on output wearing the costume of a bo
 nothing on the box this is meant to be run on. When `--limit` is what decides which runs you see,
 the scan keeps the *newest* ones — an alphabetical truncation answers "what is running" with
 whichever sessions happen to sort first, which for a fleet is the ones that finished weeks ago.
+
+The live log is the exception, and deliberately so: it is read whole, and `--since` is applied to
+the merged view rather than to the log lines. A run whose transcript fell outside the window but
+whose log line did not is a run that moved, and dropping the line before the merge would hide the
+move. The log is bounded by rotation, so "read it whole" is bounded too.
 
 ### Exit status
 
@@ -193,11 +235,18 @@ dispatcher's log goes first. A relay run goes to the relay log first and to LM S
 carries a load failure. A healthy run returns an empty list, because there is no layer below a run
 that worked.
 
+A run only the live log knows about points at the log. That is not a fallback: on this box the log
+is the one file that has ever mentioned the run, and handing over a transcript path that does not
+exist would be worse than handing over nothing. On a merged run the pointer stays the transcript,
+because `why` exists to hand over the file that *explains* the run, and a transcript explains more
+than a line of JSON does.
+
 ## Tests
 
-199 tests, no mocked seams: the sink tests write to real temp directories, the opencode tests build
+342 tests, no mocked seams: the sink tests write to real temp directories, the opencode tests build
 a real SQLite database, and the CLI tests run `main()` against a seeded home and read what an
-operator would see.
+operator would see. The live-log tests seed a real log through `resolveObservability`, so they stay
+honest on a box where `DSH_TELEMETRY_DIR` is set to somewhere else.
 
 The suite was checked by mutation rather than by coverage. Thirty-five defects — each one a
 behaviour a test claims to guard — were reintroduced into pristine source one at a time, rebuilt,
@@ -244,3 +293,7 @@ and run. All thirty-five were caught, most by the test written for them:
 Two of these were real defects found while writing the tests, not planted afterwards: a parent cycle
 with no member outside it produced no root, so those runs disappeared from the snapshot entirely
 (`snapshot.ts`), and `--limit 1.5` silently became a scan of one (`cli.ts`).
+
+That sweep predates `live.ts` and has not been re-run against it. The merge is instead pinned by
+assertion: idempotence is asserted directly, by merging a log over an already-merged view and
+deep-comparing the runs, which is the property the whole no-cursor design rests on.

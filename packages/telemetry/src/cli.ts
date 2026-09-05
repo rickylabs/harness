@@ -23,6 +23,7 @@ import { homedir } from "node:os";
 import { backfillFromDisk, defaultRoots, type BackfillRoots } from "./backfill/index.js";
 import { diagnosticsFor, ALL_POINTERS } from "./diagnostics.js";
 import { parseItems, type LoadedItems } from "./items.js";
+import { foldLiveEvents, mergeLiveRuns, readLiveLog } from "./live.js";
 import {
   humanBytes,
   livePath,
@@ -63,6 +64,14 @@ options:
 and "detail" optional. A bad line loses that line and is named; an empty batch is not an
 error. The log is bounded and rotated, and it is the same file whether an agent, a shell
 hook or a daemon wrote it.
+
+"tree", "status", "runs" and "why" read that log back and merge it into the transcripts by
+run id. The Claude and opencode stores write no completion marker, so a run recovered from
+either of them reads "unknown" forever unless something says otherwise; a recorded event
+whose detail carries "outcome" is what says otherwise. "detail" keys that mean something
+here: source, outcome, parentId, branch, model, effort, provider, profile. A live outcome
+fills in a transcript that could not say and never overrules one that could, and a run the
+log knows about with no "source" is counted rather than guessed at.
 
 environment:
   DSH_TELEMETRY_DIR          live log directory (default: ~/observability)
@@ -381,11 +390,27 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   const roots: BackfillRoots = defaultRoots(flags.home);
   const scan = await backfillFromDisk(roots, { limit: flags.limit, sinceMs: flags.sinceMs });
+
+  // Then the log this command has been writing since #83 and never reading. The transcript stores
+  // are the record of what a vendor wrote down; the log is the record of what something on this box
+  // observed, and for two of the three seams it is the only thing that can say a run ended at all.
+  // Resolution notes are dropped here on purpose: they are about where telemetry would be *written*,
+  // which is `where`'s question, and repeating them under every `status` would train an operator to
+  // skip the line that matters.
+  const target = resolveObservability(flags.home, process.env);
+  const log = await readLiveLog(logPaths(target), flags.now);
+  const merged = mergeLiveRuns(scan.runs, foldLiveEvents(log.files));
+  const view = {
+    notes: [...scan.notes, ...log.notes, ...merged.notes],
+    degraded: scan.degraded || log.degraded || merged.degraded,
+  };
+
   // The stores are bounded by mtime and by the database's own `where`, which is coarse: a transcript
-  // written after the cutoff can still hold nothing but older activity. This is the exact filter.
+  // written after the cutoff can still hold nothing but older activity. This is the exact filter,
+  // and it runs after the merge so that a run the log moved into the window is inside it.
   const sinceMs = flags.sinceMs;
   const runs =
-    sinceMs === null ? scan.runs : scan.runs.filter((r) => Date.parse(r.updatedAt) >= sinceMs);
+    sinceMs === null ? merged.runs : merged.runs.filter((r) => Date.parse(r.updatedAt) >= sinceMs);
 
   if (command === "why") {
     const id = flags.rest[1];
@@ -396,8 +421,8 @@ export async function main(argv: readonly string[]): Promise<number> {
     const run = runs.find((r) => r.id === id || r.id.startsWith(id));
     if (run === undefined) {
       process.stdout.write(`no run matching ${id} in this scan\n`);
-      if (!scan.degraded) return EXIT.notFound;
-      writeNotes(scan.notes);
+      if (!view.degraded) return EXIT.notFound;
+      writeNotes(view.notes);
       return EXIT.incomplete;
     }
     const pointers = diagnosticsFor(run);
@@ -423,9 +448,9 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   if (command === "runs") {
     if (flags.json) {
-      const envelope = publicRuns(flags.now, runs, scan.notes, !scan.degraded);
+      const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded);
       process.stdout.write(`${JSON.stringify(envelope, null, 2)}\n`);
-      return scan.degraded ? EXIT.incomplete : EXIT.ok;
+      return view.degraded ? EXIT.incomplete : EXIT.ok;
     }
     for (const run of runs) {
       const model = run.identity.model ?? "model unrecorded";
@@ -436,16 +461,16 @@ export async function main(argv: readonly string[]): Promise<number> {
         `${run.updatedAt}  ${run.source.padEnd(9)} ${run.outcome.padEnd(8)} ${model}  ${about}\n`,
       );
     }
-    if (!scan.degraded) return EXIT.ok;
+    if (!view.degraded) return EXIT.ok;
     // An empty list from a truncated scan looks exactly like an empty board. It is not.
-    writeNotes(scan.notes);
+    writeNotes(view.notes);
     return EXIT.incomplete;
   }
 
   if (command === "status" || command === "tree") {
     const loaded = await loadItems(flags.items);
-    const notes = [...scan.notes, ...loaded.notes];
-    const complete = !scan.degraded && loaded.ok;
+    const notes = [...view.notes, ...loaded.notes];
+    const complete = !view.degraded && loaded.ok;
     const snapshot = buildSnapshot({
       generatedAt: flags.now,
       runs,
