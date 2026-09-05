@@ -9,7 +9,7 @@
  * taxonomy installer that refuses to run outside one blessed environment does not get run.
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
@@ -31,6 +31,14 @@ import {
   type TransportProbe,
 } from "./labels/github.js";
 import { formatPlan, isClean, planLabels, type LabelPlan } from "./labels/plan.js";
+import {
+  ENDINGS,
+  isEnding,
+  settleEvent,
+  settleStatus,
+  type EventSettlement,
+  type Settlement,
+} from "./labels/settle.js";
 import { CORE_TAXONOMY, RETIRED_LABELS, type LabelSpec } from "./labels/taxonomy.js";
 import { installSkill } from "./skill/install.js";
 
@@ -75,6 +83,7 @@ usage
   dsh-forge labels check           exit non-zero when the repo has drifted (for CI)
   dsh-forge labels eject           write ${LABELS_FILE} — the reviewable source of truth
   dsh-forge skill install          write the board-process skill into this repo's skill dirs
+  dsh-forge status settle          print the status: label change an ended item calls for
   dsh-forge init                   eject + apply + skill install, in that order
 
 options
@@ -84,6 +93,9 @@ options
   --force               settle conflicts and overwrite files this tool did not generate
   --dispatch-label <n>  the label that starts an agent run here; teaches the skill to be careful
                         with it (default: none — most repositories have no dispatcher)
+  --ending <how>        status settle only: ${ENDINGS.join(" | ")}
+  --labels <a,b>        status settle only: the labels the item carries now (repeatable)
+  --event <path>        status settle only: a GitHub event payload to read all of that from
   --dry-run             report every change without writing a file or touching the repository
   --json                machine-readable output
   -h, --help            this text
@@ -457,6 +469,84 @@ async function cmdInit(
   return Math.max(ejected, applied === EXIT.unavailable ? EXIT.ok : applied, installed);
 }
 
+/**
+ * `status settle` — what the `status:` labels should become now that this item has ended.
+ *
+ * Deliberately offline, and deliberately not a mutation. It reads labels from the command line and
+ * prints the change; something else applies it. That keeps the one caller that matters — a workflow
+ * running on `pull_request: closed` — from needing a checkout with an origin remote, a token with
+ * write scope, or any of `resolveContext`'s detection, none of which the arithmetic depends on.
+ *
+ * It exits `ok` whether or not there is a change to make. A settlement is an answer, not a verdict:
+ * on the close path a change is the expected outcome, so returning `drift` for it would make the
+ * normal case look like a failure and push every caller into `|| true`, which is where a real
+ * failure goes to hide. Callers that need to branch read `changed` from `--json`.
+ */
+async function cmdSettle(
+  options: { labels: readonly string[]; ending: string | undefined; event: string | undefined },
+  json: boolean,
+): Promise<number> {
+  const settlement: Settlement | EventSettlement = options.event
+    ? await settleFromEvent(options.event)
+    : settleFromFlags(options.labels, options.ending);
+
+  if (json) {
+    out(JSON.stringify(settlement, null, 2));
+    return EXIT.ok;
+  }
+  out(settlement.note);
+  for (const name of settlement.remove) out(`  - ${name}`);
+  for (const name of settlement.add) out(`  + ${name}`);
+  return EXIT.ok;
+}
+
+function settleFromFlags(labels: readonly string[], ending: string | undefined): Settlement {
+  if (ending === undefined) {
+    throw new UsageError(`status settle needs --ending or --event: ${ENDINGS.join(", ")}`);
+  }
+  if (!isEnding(ending)) {
+    throw new UsageError(`--ending must be one of: ${ENDINGS.join(", ")} (got '${ending}')`);
+  }
+  return settleStatus(labels, ending);
+}
+
+/**
+ * `--event $GITHUB_EVENT_PATH` — read the item, its labels and its ending straight off the payload.
+ *
+ * The alternative is a workflow that picks those four things apart in `jq` and passes them back in,
+ * which is decision logic living in a YAML string where nothing can test it. Here the same code
+ * runs under `node --test` against the payload shapes GitHub actually sends.
+ */
+async function settleFromEvent(path: string): Promise<EventSettlement> {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    throw new UsageError(
+      `could not read the event payload at ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  const settlement = settleEvent(payload);
+  if (!settlement) {
+    throw new UsageError(
+      `${path} is neither an issue nor a pull request event — check the workflow's 'on:' block`,
+    );
+  }
+  return settlement;
+}
+
+/**
+ * `--labels status:impl,type:fix` and `--labels status:impl --labels type:fix` mean the same thing.
+ * The comma form is what a shell pipeline produces; the repeated form is what a workflow produces
+ * from a JSON array. Rejecting either would make the caller do string work to satisfy a parser.
+ */
+function parseLabelList(values: readonly string[]): readonly string[] {
+  return values
+    .flatMap((v) => v.split(","))
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
+}
+
 // ── entry ────────────────────────────────────────────────────────────────────
 
 /**
@@ -483,6 +573,9 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         "no-detect": { type: "boolean", default: false },
         force: { type: "boolean", default: false },
         "dispatch-label": { type: "string" },
+        ending: { type: "string" },
+        event: { type: "string" },
+        labels: { type: "string", multiple: true, default: [] },
         "dry-run": { type: "boolean", default: false },
         json: { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
@@ -513,6 +606,17 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
   const command = group === "labels" ? `labels:${sub ?? "plan"}` : group;
 
   try {
+    // Ahead of `resolveContext`, because settling a label is arithmetic on the argv. Requiring an
+    // origin remote for it would put the one command a CI runner calls behind the one thing a CI
+    // runner's checkout is least likely to have.
+    if (group === "status") {
+      if (sub !== "settle") throw new UsageError(`unknown command: status ${sub ?? ""}`.trimEnd());
+      return await cmdSettle(
+        { labels: parseLabelList(values.labels ?? []), ending: values.ending, event: values.event },
+        json,
+      );
+    }
+
     const ctx = await resolveContext({
       repoRoot,
       repo: values.repo,

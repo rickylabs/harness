@@ -215,3 +215,168 @@ describe("apply", () => {
     }
   });
 });
+
+/** Run `main` for real and keep what it printed. `run` above throws stdout away; these read it. */
+async function capture(argv: readonly string[]): Promise<{ code: number; text: string }> {
+  const chunks: string[] = [];
+  const previous = process.stdout.write.bind(process.stdout);
+  process.stdout.write = ((chunk: unknown) => {
+    chunks.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+  try {
+    return { code: await main(argv), text: chunks.join("") };
+  } finally {
+    process.stdout.write = previous;
+  }
+}
+
+describe("status settle", () => {
+  // `root` is a bare temp directory with no git repository and no remote — deliberately. The one
+  // caller that matters is a workflow step, and every other command here would exit 2 in it.
+  const at = (): string[] => ["--cwd", root];
+
+  it("answers without a repository, a remote, or a transport", async () => {
+    const { code, text } = await capture([
+      "status",
+      "settle",
+      ...at(),
+      "--ending",
+      "completed",
+      "--labels",
+      "status:impl-eval",
+    ]);
+    assert.equal(code, 0);
+    assert.match(text, /- status:impl-eval/);
+    assert.match(text, /\+ status:shipped/);
+  });
+
+  it("is the control for the claim above — labels check does exit 2 in the same directory", async () => {
+    silence();
+    try {
+      assert.equal(await main(["labels", "check", ...at()]), 2);
+    } finally {
+      restore();
+    }
+  });
+
+  it("prints the settlement as JSON under --json", async () => {
+    const { code, text } = await capture([
+      "status",
+      "settle",
+      ...at(),
+      "--json",
+      "--ending",
+      "not-planned",
+      "--labels",
+      "type:feat,status:impl",
+    ]);
+    assert.equal(code, 0);
+    const parsed = JSON.parse(text) as Record<string, unknown>;
+    assert.deepEqual(parsed["add"], []);
+    assert.deepEqual(parsed["remove"], ["status:impl"]);
+    assert.equal(parsed["changed"], true);
+  });
+
+  it("reads a comma list and a repeated flag as the same thing", async () => {
+    const commas = await capture([
+      "status", "settle", ...at(), "--json", "--ending", "completed",
+      "--labels", "type:fix, status:impl",
+    ]);
+    const repeated = await capture([
+      "status", "settle", ...at(), "--json", "--ending", "completed",
+      "--labels", "type:fix", "--labels", "status:impl",
+    ]);
+    assert.equal(commas.text, repeated.text);
+  });
+
+  it("exits 0 with an empty change rather than reporting drift", async () => {
+    // A settled item is the steady state this command exists to reach. Returning 1 for it would
+    // make the workflow's happy path look like a failure, and `|| true` is where failures hide.
+    const { code, text } = await capture([
+      "status", "settle", ...at(), "--json", "--ending", "completed", "--labels", "status:shipped",
+    ]);
+    assert.equal(code, 0);
+    assert.equal((JSON.parse(text) as { changed: boolean }).changed, false);
+  });
+
+  it("exits 2 on an ending it does not know, naming the ones it does", async () => {
+    const { code, text } = await capture([
+      "status", "settle", ...at(), "--ending", "merged", "--labels", "status:impl",
+    ]);
+    assert.equal(code, 2);
+    assert.match(text, /completed, not-planned, reopened/);
+  });
+
+  it("exits 2 when no ending is given at all", async () => {
+    const { code } = await capture(["status", "settle", ...at(), "--labels", "status:impl"]);
+    assert.equal(code, 2);
+  });
+
+  it("exits 2 on a status subcommand that does not exist", async () => {
+    const { code, text } = await capture(["status", "reset", ...at()]);
+    assert.equal(code, 2);
+    assert.match(text, /unknown command: status reset/);
+  });
+});
+
+describe("status settle --event", () => {
+  /** Write a payload where `$GITHUB_EVENT_PATH` would point, and return that path. */
+  async function payload(body: unknown): Promise<string> {
+    const path = join(root, "event.json");
+    await writeFile(path, JSON.stringify(body), "utf8");
+    return path;
+  }
+
+  it("carries the item's identity through, so the workflow never parses the payload itself", async () => {
+    const path = await payload({
+      action: "closed",
+      pull_request: {
+        number: 158,
+        merged: true,
+        labels: [{ name: "type:fix" }, { name: "status:impl-eval" }],
+      },
+    });
+    const { code, text } = await capture(["status", "settle", "--cwd", root, "--json", "--event", path]);
+    assert.equal(code, 0);
+    // These four fields are exactly what the workflow's `gh ... edit` line reads.
+    assert.deepEqual(JSON.parse(text), {
+      kind: "pr",
+      number: 158,
+      ending: "completed",
+      add: ["status:shipped"],
+      remove: ["status:impl-eval"],
+      changed: true,
+      note: "completed: removing status:impl-eval, adding status:shipped",
+    });
+  });
+
+  it("reports changed:false for an ending it will not classify, so the workflow stops there", async () => {
+    const path = await payload({
+      action: "closed",
+      issue: { number: 42, state_reason: null, labels: [{ name: "status:plan" }] },
+    });
+    const { code, text } = await capture(["status", "settle", "--cwd", root, "--json", "--event", path]);
+    assert.equal(code, 0);
+    const parsed = JSON.parse(text) as { changed: boolean; ending: string | null };
+    assert.equal(parsed.changed, false);
+    assert.equal(parsed.ending, null);
+  });
+
+  it("exits 2 when the payload is missing, rather than settling nothing quietly", async () => {
+    const { code, text } = await capture([
+      "status", "settle", "--cwd", root, "--event", join(root, "no-such-event.json"),
+    ]);
+    assert.equal(code, 2);
+    assert.match(text, /could not read the event payload/);
+  });
+
+  it("exits 2 on a payload that is neither an issue nor a pull request", async () => {
+    // A workflow whose `on:` block grew a third trigger would otherwise log a successful no-op
+    // forever, and nobody would find out the labels had stopped moving.
+    const path = await payload({ action: "closed", discussion: { number: 1 } });
+    const { code, text } = await capture(["status", "settle", "--cwd", root, "--event", path]);
+    assert.equal(code, 2);
+    assert.match(text, /neither an issue nor a pull request/);
+  });
+});

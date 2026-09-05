@@ -269,7 +269,7 @@ scripts/              the repository-wide checks the root scripts run
 .llm/harness/         the artifact templates a run fills in
 .llm/tools/           milestone and gate tooling (Deno; see the note below)
 .github/labels.yml    the ejected label taxonomy — generated, then reviewed
-.github/workflows/    the CI gate and the release pipeline
+.github/workflows/    the CI gate, the release pipeline, and the status-label settler
 .claude/skills/       the generated board skill (`pnpm run skill:install`)
 AGENTS.md             entry point, agent mode
 CLAUDE.md             entry point, standard mode
