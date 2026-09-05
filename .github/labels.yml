@@ -184,6 +184,9 @@
 - name: "epic:e0"
   color: "5319e7"
   description: "E0 — Roadmap: harness as the deterministic coordinator layer (#30)"
+- name: "epic:e10"
+  color: "5319e7"
+  description: "E10 — Docs: the front door, the reference, and the check that keeps them honest (#140)"
 
 # ── lane: derived from this repository ──
 - name: "topic:docs"
@@ -198,6 +201,19 @@
 - name: "topic:features"
   color: "1d76db"
   description: "Owned by the features lane orchestrator"
+
+# ── gate: derived from this repository ──
+- name: "gate:release-contracts"
+  color: "d4c5f9"
+  description: "Run the release-contracts workflow on this PR"
+
+# ── ci: derived from this repository ──
+- name: "ci:full"
+  color: "d4c5f9"
+  description: "Force every expensive job to run; wins over all skip labels"
+- name: "ci:skip-release-contracts"
+  color: "d4c5f9"
+  description: "Skip the release-contracts gate on this PR"
 
 # ── retired: kept so the items that carry these still say what happened ──
 # Not stamped on new work. Never delete a row here — deleting the label takes the
