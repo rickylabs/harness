@@ -43,6 +43,14 @@
  * They pass the scope test on the reading above — both surfaces mean exactly the same thing by
  * them — and they perform no I/O, so a phone and a browser can each supply their own socket.
  *
+ * ## And the server half, so the two cannot drift
+ *
+ * `Hub` produces the frames `EventFold` consumes. They are one argument split in two — "a whole
+ * value is idempotent", "a gap in `seq` means loss", "a snapshot is the truth and deltas are an
+ * optimisation" are claims about a round trip, not about either end — so the property that matters,
+ * that folding what the hub sent reproduces the board the hub holds, is only assertable where both
+ * halves exist. A cockpit imports the fold and ignores the hub; the coordinator does the reverse.
+ *
  * ## What lives elsewhere
  *
  * The phase list is not here — it travels on the snapshot as data, so that the two lists which must
@@ -203,3 +211,23 @@ export {
   type Endpoint,
   type MuxAuth,
 } from "./auth.js";
+
+export {
+  openHub,
+  subscribe,
+  unsubscribe,
+  publish,
+  announce,
+  resync,
+  pollingSuspects,
+  hubReport,
+  planUpdate,
+  unexpressible,
+  changes,
+  type EventBody,
+  type Delivery,
+  type Subscriber,
+  type Hub,
+  type HubStep,
+  type Plan,
+} from "./server.js";
