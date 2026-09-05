@@ -102,6 +102,24 @@ export {
 
 export { emptyRegistry } from "./plugins/subagents.js";
 
+export {
+  captureDump,
+  captureFromScratch,
+  checkReason,
+  countRows,
+  dshPackage,
+  missingFrom,
+  parseGolden,
+  renderGolden,
+  rowIds,
+  GOLDEN_FILE,
+  MARKER,
+  type CaptureOptions,
+  type DshPackage,
+  type Golden,
+  type Provenance,
+} from "./golden.js";
+
 /** Workspace package identifier. */
 export const PACKAGE_NAME = "@rickylabs/dsh-app" as const;
 

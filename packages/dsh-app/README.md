@@ -123,6 +123,53 @@ either side. Loading all four onto one context is the collision test, and it is 
 than reading off four `CONTEXT_KEY` constants: the constants are what we chose, the context is what
 cordis does with them.
 
+## The golden snapshot
+
+`cordis.patch.yml` states the four rows *we* add. It says nothing about the eighty-five rows
+`@deepseek-ai/dsh-base` puts underneath them — and those are the ones an upgrade moves. A release
+that renames `session-log-deepseek`, drops `fs-sandbox`, or reorders the list so a service is claimed
+after its first consumer changes what our plugins boot into, and every symptom of that arrives at
+boot, on the box, at whatever hour the upgrade happened.
+
+So the composed list is committed as [`dump-config.golden.yml`](./dump-config.golden.yml), and
+`golden.test.ts` installs the profile into a throwaway `DSH_HOME`, runs the real binary, and compares
+byte for byte. A dsh release that moves a row now fails a pull request. No new CI step was needed:
+the repository's one workflow already runs `pnpm test` → `pnpm -r run test` → this package's
+`node --test`, and a second place to declare the check is a second place to forget it.
+
+### Why one file can be right on two operating systems
+
+`--dump-config` **composes without booting and without evaluating `!!js`**. dsh-base's
+environment-sensitive rows print as their unevaluated source text, so the output carries no absolute
+path, no platform branch and no clock — it is a function of the lockfile alone. The snapshot contains
+both `!!js process.platform === 'win32'` and `!!js process.platform !== 'win32'`, which is the
+readable proof that neither branch was taken; a test asserts both are still there.
+
+Two things could quietly end that, and both are closed rather than trusted: the capture runs against
+a throwaway `DSH_HOME`, and it runs with **every `DSH_*` variable stripped** from the child
+environment, so a future release cannot make the dump depend on a developer's shell without this
+failing. A third test asserts the capture directory's own path never appears in the output.
+
+### Re-blessing it
+
+```bash
+pnpm run golden:bless -- "what moved in the entry list, and why that is expected"
+```
+
+The reason is required, and it is written into the snapshot's own header — so the diff that changes
+the rows carries the sentence explaining them, rather than leaving it to a commit message someone may
+or may not write. The command prints rows before and after, the ids that appeared and disappeared,
+and the dsh version either side: the paragraph the upgrade's pull request wants.
+
+Regenerating is also the obvious way to launder a bad change, so two assertions survive it. The
+snapshot must still **end with our four rows in bundle order**, and `@deepseek-ai/dsh-base`'s layer
+must still compose **before** ours. A re-bless that reordered the bundles would match byte for byte
+and still be wrong; these are what catch it.
+
+Hand-editing the file is not a supported path and does not work: the row count in the header is
+derived from the body by the renderer, so a header written by hand fails the round-trip assertion
+even when every row in it is correct.
+
 ## Configuration
 
 Each row takes its options from the profile's own patch layer, in the ordinary cordis way:
@@ -145,9 +192,10 @@ Each row takes its options from the profile's own patch layer, in the ordinary c
 
 ## Tests
 
-70 tests. Three of them are the ones that would have caught a real outage: the byte comparison
+88 tests. Four of them are the ones that would have caught a real outage: the byte comparison
 between `cordis.patch.yml` and `renderPatch()`, the check that every row names a published export
-subpath, and the disposal assertion above.
+subpath, the disposal assertion above, and the golden snapshot — the only place in the repository
+that looks at the rows dsh-base contributes.
 
 The CLI tests run `main()` against a fake filesystem with a failure switch, so the exit statuses
 above are asserted rather than described — including the two that only show up when something is

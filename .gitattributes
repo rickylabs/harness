@@ -1,0 +1,13 @@
+# Line endings, pinned — because two committed files in this repository are compared to a freshly
+# generated one byte for byte: `packages/dsh-app/cordis.patch.yml`, which `bundle.test.ts`
+# re-renders, and `packages/dsh-app/dump-config.golden.yml`, which `golden.test.ts` re-captures.
+#
+# Git's Windows default is `core.autocrlf=true`, which stores LF and checks out CRLF. Both files are
+# LF in the index, so without this line a fresh clone on Windows would hand those tests CRLF and
+# fail them — while CI, on Linux, stayed green. That failure mode is worth closing at the source
+# rather than by teaching each test to normalise: a test that ignores line endings also ignores a
+# generator that started emitting the wrong ones.
+#
+# `text=auto` still lets Git detect and leave binary files alone; there are none today, and this
+# keeps that from mattering later. Nothing here needs CRLF: the repository has no `.bat` or `.cmd`.
+* text=auto eol=lf
