@@ -114,7 +114,7 @@ describe("parseCodexRollout", () => {
       profile: null,
     });
     assert.equal(run.id, "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d");
-    assert.deepEqual(run.linkedIssues, [98]);
+    assert.deepEqual(run.linkedIssues, [{ number: 98, from: "path" }]);
   });
 
   it("takes the last token_count as the total, not the sum of them", () => {
@@ -173,7 +173,7 @@ describe("parseCodexRollout", () => {
       "o",
     );
     // 98 is the worktree the rollout was launched in; 77 can only have come from the message.
-    assert.deepEqual(run?.linkedIssues, [77, 98]);
+    assert.deepEqual(run?.linkedIssues, [{ number: 77, from: "prose" }, { number: 98, from: "path" }]);
   });
 
   it("puts none of the operator's words on the record it returns", () => {

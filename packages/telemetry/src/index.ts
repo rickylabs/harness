@@ -53,6 +53,8 @@ export {
   type BoardItemRef,
   type DiagnosticPointer,
   type EpicActivity,
+  type IssueEvidence,
+  type IssueLink,
   type LaunchIdentity,
   type QuotaReading,
   type RunOutcome,
@@ -93,6 +95,7 @@ export {
 export { compareNullableStrings, compareStrings } from "./order.js";
 
 export {
+  attributeTo,
   buildSnapshot,
   countRuns,
   flatten,

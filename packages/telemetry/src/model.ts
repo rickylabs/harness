@@ -93,6 +93,20 @@ export interface DiagnosticPointer {
   readonly why: string;
 }
 
+/** Where an issue number was found, which is what lets one piece of evidence beat another. */
+export type IssueEvidence = "path" | "prose";
+
+/**
+ * One issue number a run points at, together with the evidence that produced it.
+ *
+ * The two classes are not equally good, and collapsing them to a bare number is what made
+ * attribution silently pick the lowest one. See `linkedIssuesOf` and `attributeTo`.
+ */
+export interface IssueLink {
+  readonly number: number;
+  readonly from: IssueEvidence;
+}
+
 /**
  * One recovered run.
  *
@@ -122,8 +136,8 @@ export interface RunRecord {
   readonly identity: LaunchIdentity;
   readonly usage: RunUsage;
   readonly outcome: RunOutcome;
-  /** Issue and PR numbers this run is about, derived from its branch and title. */
-  readonly linkedIssues: readonly number[];
+  /** Issue and PR numbers this run points at, each carrying the evidence that produced it. */
+  readonly linkedIssues: readonly IssueLink[];
   /**
    * The transcript file or database this record was read out of.
    *
@@ -211,21 +225,27 @@ export function sumUsage(usages: readonly RunUsage[]): RunUsage {
   return out as RunUsage;
 }
 
-const BRANCH_ISSUE = /(?:^|[^0-9])(?:issue|orch\/divybot|divybot)[-/]?(\d+)/gi;
-const TITLE_ISSUE = /#(\d+)\b/g;
+const PATH_ISSUE = /(?:^|[^0-9])(?:issue|orch\/divybot|divybot)[-/]?(\d+)/gi;
+const PROSE_ISSUE = /#(\d+)\b/g;
 
 /**
- * Recover the issue numbers a run was about.
+ * Recover the issue numbers a run points at, and where each one came from.
  *
- * The dispatcher names a branch after the inbox issue it came from — `orch/divybot-99` is issue
- * #99 — so the branch is a stronger signal than anything in the prose. Titles are read too, but
- * only for explicit `#NN` references, because a bare number in a title is usually a version.
+ * `path` is a branch name or a working directory — the dispatcher's own naming. It wrote
+ * `orch/divybot-99` because it was dispatching issue #99, so the number is a statement about what
+ * the run *is*. `prose` is a title or a first prompt, read only for explicit `#NN` because a bare
+ * number there is usually a version; a number found in prose is a statement about what someone
+ * *mentioned*, and people mention issues they are not working on.
+ *
+ * The two used to come back as one flat list, which threw away the difference at the one place it
+ * was still known and left attribution guessing (finding F-8 on #105). A number seen in the path is
+ * never downgraded by also appearing in the prose.
  */
-export function linkedIssuesOf(branch: string | null, title: string | null): readonly number[] {
-  const found = new Set<number>();
-  for (const [text, pattern] of [
-    [branch, BRANCH_ISSUE],
-    [title, TITLE_ISSUE],
+export function linkedIssuesOf(path: string | null, prose: string | null): readonly IssueLink[] {
+  const found = new Map<number, IssueEvidence>();
+  for (const [text, pattern, from] of [
+    [path, PATH_ISSUE, "path"],
+    [prose, PROSE_ISSUE, "prose"],
   ] as const) {
     if (text === null) continue;
     pattern.lastIndex = 0;
@@ -233,8 +253,9 @@ export function linkedIssuesOf(branch: string | null, title: string | null): rea
       const raw = m[1];
       if (raw === undefined) continue;
       const n = Number.parseInt(raw, 10);
-      if (Number.isSafeInteger(n) && n > 0) found.add(n);
+      // Path is read first, so `has` is what keeps the stronger evidence for a repeated number.
+      if (Number.isSafeInteger(n) && n > 0 && !found.has(n)) found.set(n, from);
     }
   }
-  return [...found].sort((a, b) => a - b);
+  return [...found].map(([number, from]) => ({ number, from })).sort((a, b) => a.number - b.number);
 }

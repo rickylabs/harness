@@ -71,7 +71,7 @@ describe("rowToRun", () => {
       cacheWriteTokens: 300,
       costUsd: 0.0412,
     });
-    assert.deepEqual(run.linkedIssues, [36]);
+    assert.deepEqual(run.linkedIssues, [{ number: 36, from: "path" }]);
     assert.equal(run.identity.profile, "build");
   });
 
@@ -96,7 +96,7 @@ describe("rowToRun", () => {
     assert.equal(published.includes("hunter2"), false, "the title reached the record");
     assert.equal(published.includes("/home/someone"), false, "the directory reached the record");
     // Both are still read: the issue number in that path is the reason the column is selected.
-    assert.deepEqual(run.linkedIssues, [36]);
+    assert.deepEqual(run.linkedIssues, [{ number: 36, from: "path" }]);
   });
 
   it("carries parent_id, the only seam that records the subagent tree as data", () => {
@@ -188,7 +188,7 @@ describe("openOpencodeDb", () => {
         ["ses_root", "ses_kid"],
       );
       assert.equal(runs[1]?.parentId, "ses_root");
-      assert.deepEqual(runs[0]?.linkedIssues, [39]);
+      assert.deepEqual(runs[0]?.linkedIssues, [{ number: 39, from: "path" }]);
       assert.equal(runs[0]?.usage.costUsd, 0.02);
     } finally {
       await rm(dir, { recursive: true, force: true });

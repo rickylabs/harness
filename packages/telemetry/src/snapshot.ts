@@ -54,21 +54,52 @@ function attribute(
   }
   visited.add(run.id);
 
-  let item: BoardItemRef | null = null;
-  for (const number of run.linkedIssues) {
-    const found = items.get(number);
-    if (found !== undefined) {
-      item = found;
-      break; // Lowest linked number that resolves. Deterministic, because linkedIssues is sorted.
-    }
-  }
+  const chosen = attributeTo(run, items);
+  if (chosen.note !== null) notes.push(chosen.note);
 
   const kids = (children.get(run.id) ?? [])
     .slice()
     .sort((a, b) => compareStrings(a.startedAt, b.startedAt) || compareStrings(a.id, b.id))
     .map((child) => attribute(child, children, items, visited, notes));
 
-  return { run, item, children: kids };
+  return { run, item: chosen.item, children: kids };
+}
+
+/**
+ * Choose the board item a run belongs to, or refuse and say why.
+ *
+ * The contract, in order:
+ *
+ * 1. Only numbers resolving to an item in this scan are candidates. A `#105` the board has never
+ *    heard of is not evidence about the board.
+ * 2. Path evidence beats prose evidence outright, and completely. The dispatcher named the branch
+ *    after the issue it dispatched; a number in a prompt is something a person typed.
+ * 3. If the winning class still holds more than one item, the run stays unattributed and says so.
+ *
+ * Rule 3 is the change. This used to take the first number that resolved, so a run whose prose
+ * named both #39 and #105 landed under #39's epic with nothing on screen to say a choice had been
+ * made — a guess wearing the clothes of a fact (finding F-8 on #105). An operator who sees the run
+ * in `unattributed` with a note can fix the branch name; an operator who sees it under the wrong
+ * epic sees nothing at all.
+ */
+export function attributeTo(
+  run: RunRecord,
+  items: Map<number, BoardItemRef>,
+): { readonly item: BoardItemRef | null; readonly note: string | null } {
+  const resolved = run.linkedIssues.filter((link) => items.has(link.number));
+  const byPath = resolved.filter((link) => link.from === "path");
+  const pool = byPath.length > 0 ? byPath : resolved;
+
+  const only = pool.length === 1 ? pool[0] : undefined;
+  if (only !== undefined) return { item: items.get(only.number) ?? null, note: null };
+  if (pool.length === 0) return { item: null, note: null };
+
+  const numbers = pool.map((link) => `#${link.number}`).join(", ");
+  const where = byPath.length > 0 ? "was launched against" : "mentions";
+  return {
+    item: null,
+    note: `run ${run.id} ${where} ${numbers} — left unattributed, because nothing says which one it is`,
+  };
 }
 
 /**

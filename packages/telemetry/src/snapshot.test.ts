@@ -1,8 +1,16 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import type { BoardItemRef, QuotaReading, RunRecord } from "./model.js";
-import { buildSnapshot, countRuns, flatten, latestQuota } from "./snapshot.js";
+import type { BoardItemRef, IssueLink, QuotaReading, RunRecord } from "./model.js";
+import { attributeTo, buildSnapshot, countRuns, flatten, latestQuota } from "./snapshot.js";
+
+/** Issue links as the dispatcher's own naming produces them — the strong evidence class. */
+const at = (...ns: readonly number[]): readonly IssueLink[] =>
+  ns.map((number) => ({ number, from: "path" as const }));
+
+/** The same numbers as something a person typed, which is the weak class. */
+const said = (...ns: readonly number[]): readonly IssueLink[] =>
+  ns.map((number) => ({ number, from: "prose" as const }));
 
 const run = (over: Partial<RunRecord> & { id: string }): RunRecord => ({
   source: "opencode",
@@ -44,7 +52,7 @@ describe("buildSnapshot", () => {
   it("groups runs under the epic of the item they link to", () => {
     const snapshot = buildSnapshot({
       generatedAt: "2026-09-04T22:00:00.000Z",
-      runs: [run({ id: "a", linkedIssues: [39] }), run({ id: "b", linkedIssues: [36] })],
+      runs: [run({ id: "a", linkedIssues: at(39) }), run({ id: "b", linkedIssues: at(36) })],
       items: [item(39, "E9"), item(36, "E6")],
     });
     assert.deepEqual(
@@ -59,7 +67,7 @@ describe("buildSnapshot", () => {
     // either an unlabelled task or an agent doing something nobody asked for.
     const snapshot = buildSnapshot({
       generatedAt: "2026-09-04T22:00:00.000Z",
-      runs: [run({ id: "a", linkedIssues: [999] })],
+      runs: [run({ id: "a", linkedIssues: at(999) })],
       items: [item(39, "E9")],
     });
     assert.equal(snapshot.epics.length, 0);
@@ -72,7 +80,7 @@ describe("buildSnapshot", () => {
   it("treats an item with no epic as unattributed rather than inventing a bucket", () => {
     const snapshot = buildSnapshot({
       generatedAt: "2026-09-04T22:00:00.000Z",
-      runs: [run({ id: "a", linkedIssues: [7] })],
+      runs: [run({ id: "a", linkedIssues: at(7) })],
       items: [item(7, null)],
     });
     assert.equal(snapshot.unattributed.length, 1);
@@ -83,7 +91,7 @@ describe("buildSnapshot", () => {
     const snapshot = buildSnapshot({
       generatedAt: "2026-09-04T22:00:00.000Z",
       runs: [
-        run({ id: "root", linkedIssues: [39] }),
+        run({ id: "root", linkedIssues: at(39) }),
         run({ id: "kid2", parentId: "root", startedAt: "2026-09-04T20:30:00.000Z" }),
         run({ id: "kid1", parentId: "root", startedAt: "2026-09-04T20:10:00.000Z" }),
       ],
@@ -122,6 +130,22 @@ describe("buildSnapshot", () => {
     assert.match(snapshot.notes.join("\n"), /appears under itself — subagent tree truncated/);
   });
 
+  it("puts an ambiguous run in front of the operator, with the reason on the same screen", () => {
+    // The note has to survive the walk, not just `attributeTo`: an operator who cannot see why a
+    // run went unattributed cannot fix the branch name that would have attributed it.
+    const snapshot = buildSnapshot({
+      generatedAt: "2026-09-04T22:00:00.000Z",
+      runs: [run({ id: "r1", linkedIssues: said(36, 39) })],
+      items: [item(39, "E9"), item(36, "E6")],
+    });
+    assert.equal(snapshot.epics.length, 0);
+    assert.deepEqual(
+      snapshot.unattributed.map((a) => a.run.id),
+      ["r1"],
+    );
+    assert.match(snapshot.notes.join("\n"), /run r1 mentions #36, #39/);
+  });
+
   it("carries backfill notes through, so one screen reports every gap", () => {
     const snapshot = buildSnapshot({
       generatedAt: "2026-09-04T22:00:00.000Z",
@@ -135,9 +159,9 @@ describe("buildSnapshot", () => {
   it("produces the same snapshot from the same inputs in a different order", () => {
     // Determinism is the reason two people reading the board see the same board.
     const runs = [
-      run({ id: "b", linkedIssues: [39], updatedAt: "2026-09-04T21:00:00.000Z" }),
-      run({ id: "a", linkedIssues: [39], updatedAt: "2026-09-04T21:00:00.000Z" }),
-      run({ id: "c", linkedIssues: [36], updatedAt: "2026-09-04T20:00:00.000Z" }),
+      run({ id: "b", linkedIssues: at(39), updatedAt: "2026-09-04T21:00:00.000Z" }),
+      run({ id: "a", linkedIssues: at(39), updatedAt: "2026-09-04T21:00:00.000Z" }),
+      run({ id: "c", linkedIssues: at(36), updatedAt: "2026-09-04T20:00:00.000Z" }),
     ];
     const items = [item(39, "E9"), item(36, "E6")];
     const first = buildSnapshot({ generatedAt: "t", runs, items });
@@ -180,6 +204,58 @@ describe("flatten", () => {
   });
 });
 
+describe("attributeTo", () => {
+  const items = new Map<number, BoardItemRef>([
+    [39, item(39, "E9")],
+    [105, item(105, "E-review")],
+  ]);
+
+  it("takes the one item the run resolves to", () => {
+    const chosen = attributeTo(run({ id: "a", linkedIssues: at(39) }), items);
+    assert.equal(chosen.item?.number, 39);
+    assert.equal(chosen.note, null);
+  });
+
+  it("prefers the branch the dispatcher named over a number someone typed", () => {
+    // This is the precedence contract, and it is why the evidence class travels with the number.
+    const chosen = attributeTo(
+      run({ id: "a", linkedIssues: [...at(39), ...said(105)] }),
+      items,
+    );
+    assert.equal(chosen.item?.number, 39);
+    assert.equal(chosen.note, null);
+  });
+
+  it("refuses to choose between two items of the same evidence class", () => {
+    // It used to take the first number that resolved, so this run landed under E9 with nothing on
+    // screen to say a choice had been made — a guess wearing the clothes of a fact (F-8 on #105).
+    const chosen = attributeTo(run({ id: "r1", linkedIssues: said(39, 105) }), items);
+    assert.equal(chosen.item, null);
+    assert.match(chosen.note ?? "", /run r1 mentions #39, #105/);
+  });
+
+  it("refuses on two branches too, rather than trusting the lower number", () => {
+    const chosen = attributeTo(run({ id: "r2", linkedIssues: at(39, 105) }), items);
+    assert.equal(chosen.item, null);
+    assert.match(chosen.note ?? "", /run r2 was launched against #39, #105/);
+  });
+
+  it("ignores a number this board has never heard of", () => {
+    // Two mentions, one item: that is not ambiguous, it is one candidate and one irrelevance.
+    const chosen = attributeTo(run({ id: "a", linkedIssues: said(39, 999) }), items);
+    assert.equal(chosen.item?.number, 39);
+    assert.equal(chosen.note, null);
+  });
+
+  it("says nothing at all about a run with no board evidence", () => {
+    // Unattributed is the normal state of half the runs on this machine. A note per run would be
+    // noise, and the run is already visible under `unattributed`.
+    const chosen = attributeTo(run({ id: "a" }), items);
+    assert.equal(chosen.item, null);
+    assert.equal(chosen.note, null);
+  });
+});
+
 describe("buildSnapshot, on the host it happens to run on", () => {
   it("orders epics by code unit rather than by the host's collation", () => {
     // Finding F-6 on #105: the reviewer's counterexample was two epic keys and identical runs. The
@@ -187,7 +263,7 @@ describe("buildSnapshot, on the host it happens to run on", () => {
     // snapshot bytes from the same arguments, which is exactly the property this package claims.
     const snapshot = buildSnapshot({
       generatedAt: "2026-09-04T22:00:00.000Z",
-      runs: [run({ id: "a", linkedIssues: [1] }), run({ id: "b", linkedIssues: [2] })],
+      runs: [run({ id: "a", linkedIssues: at(1) }), run({ id: "b", linkedIssues: at(2) })],
       items: [item(1, "ä"), item(2, "z")],
     });
     assert.deepEqual(

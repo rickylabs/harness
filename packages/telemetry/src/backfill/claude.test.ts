@@ -64,7 +64,7 @@ describe("parseClaudeTranscript", () => {
     assert.equal(run.startedAt, "2026-09-04T22:00:00.000Z");
     assert.equal(run.updatedAt, "2026-09-04T22:05:00.000Z");
     assert.equal(run.branch, "orch/divybot-39");
-    assert.deepEqual(run.linkedIssues, [39]);
+    assert.deepEqual(run.linkedIssues, [{ number: 39, from: "path" }]);
     assert.deepEqual(run.identity, {
       model: "claude-opus-5",
       effort: "medium",
@@ -106,12 +106,12 @@ describe("parseClaudeTranscript", () => {
       ),
       "o",
     );
-    assert.deepEqual(run?.linkedIssues, [39, 98]);
+    assert.deepEqual(run?.linkedIssues, [{ number: 39, from: "path" }, { number: 98, from: "prose" }]);
   });
 
   it("falls back to the first prompt when the session was never named", () => {
     const run = parseRun(lines(user("fix the label taxonomy in #42")), "o");
-    assert.deepEqual(run?.linkedIssues, [39, 42]);
+    assert.deepEqual(run?.linkedIssues, [{ number: 39, from: "path" }, { number: 42, from: "prose" }]);
   });
 
   it("puts none of the operator's words on the record it returns", () => {
