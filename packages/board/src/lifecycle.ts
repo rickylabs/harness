@@ -63,9 +63,8 @@ const phase = (name: string, flags: PhaseFlags = {}): Phase => ({
 });
 
 /**
- * The eleven phases stamped by `dsh-forge`. `shipped` is the only terminal phase: `ci-fail` and
- * `close-gate-override` are states work can leave, and collapsing them into "done" is how a
- * board starts lying.
+ * The ten phases stamped by `dsh-forge`. `shipped` is the only terminal one: `ci-fail` is a state
+ * work can leave, and collapsing it into "done" is how a board starts lying.
  */
 export const DEFAULT_LIFECYCLE: Lifecycle = {
   prefix: "status",
@@ -84,11 +83,6 @@ export const DEFAULT_LIFECYCLE: Lifecycle = {
     // kind of waiting from `triage`: someone can act on it now, so the board should keep nagging
     // rather than park it in a column that reads as "not started".
     phase("ready-merge"),
-    // Outside `dsh-forge`'s `STATUS_LIFECYCLE` array, but stamped by it and therefore present on
-    // real boards. A phase the projector does not know is not a smaller column — it is an item
-    // that vanishes, so this list is what the repository has, not what it ought to have. #100
-    // moves this label to the `flag:` family, and it leaves here when it leaves there.
-    phase("close-gate-override"),
     phase("shipped", { terminal: true }),
   ],
 };

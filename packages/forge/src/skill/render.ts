@@ -8,8 +8,8 @@
  */
 
 import {
+  CLOSE_GATE_OVERRIDE,
   STATUS_LIFECYCLE,
-  STATUS_OVERRIDE,
   STATUS_TERMINAL,
   type LabelFamily,
   type LabelSpec,
@@ -29,6 +29,13 @@ export interface SkillContext {
    * repository an agent cannot find out by looking at the labels.
    */
   readonly dispatchLabel?: string | null;
+  /**
+   * Labels this repository still has but no longer stamps.
+   *
+   * Rendered because they remain in the label picker, which is where an agent that has not read
+   * this file looks things up. A retired label named nowhere reads as a live one.
+   */
+  readonly retired?: readonly LabelSpec[];
 }
 
 /** The phase that gates merge. Named so the skill text cannot drift from the lifecycle array. */
@@ -69,6 +76,27 @@ function dispatchSection(label: string | null): readonly string[] {
     "",
     "Then read the brief back with `gh issue view` before you apply the label. What that prints is",
     "the whole prompt only if it is the whole of what you wrote.",
+    "",
+  ];
+}
+
+/**
+ * The labels that are still in the picker but no longer in the taxonomy.
+ *
+ * Rendered only when there are some, because a heading over an empty list reads as a warning about
+ * a hazard this repository does not have. Where there are, naming them here is the point: an agent
+ * that picks a label off the list has no other way to find out one of them is a dead end.
+ */
+function retiredSection(retired: readonly LabelSpec[]): readonly string[] {
+  if (retired.length === 0) return [];
+  return [
+    "## Retired labels",
+    "",
+    "Still on the repository, and still on the items that carried them, so the record those items",
+    "hold stays readable. Do not apply them to new work — they are listed here precisely because",
+    "the label picker cannot say any of this:",
+    "",
+    ...retired.map((s) => `- \`${s.name}\` — use \`${s.supersededBy ?? "nothing"}\` instead.`),
     "",
   ];
 }
@@ -128,8 +156,9 @@ export function renderSkill(ctx: SkillContext): string {
     "  ship, and marking it shipped puts a lie in the one field people trust.",
     "- **Reopened** — restore exactly one non-terminal phase label.",
     "",
-    `\`${STATUS_OVERRIDE}\` sits outside the lifecycle. It is for an audited exception only, and the`,
-    "reasoning goes in a comment on the item, not in the label.",
+    `\`${CLOSE_GATE_OVERRIDE}\` is not a status and does not replace one. It is an audited exception`,
+    "to the close gate, carried *alongside* whichever phase the item is actually in, and the",
+    "reasoning goes in a comment on the item rather than in the label.",
     "",
     "## Families",
     "",
@@ -142,11 +171,12 @@ export function renderSkill(ctx: SkillContext): string {
     ...bullet("ci", "ci:", "`ci:full` wins over every skip label."),
     ...bullet("epic", "epic:", "Groups everything under one program epic."),
     ...bullet("eval", "eval:", "Evaluator routing, as data on the issue rather than prose in a brief."),
-    ...bullet("flag", "", "Cross-cutting; not a namespace."),
+    ...bullet("flag", "", "Cross-cutting and additive; never the board column."),
     "",
     "`eval:skip` is the only label here that turns a gate off. Applying it without saying, in the PR,",
     "what evidence stands in for the evaluation is how a false green reaches the default branch.",
     "",
+    ...retiredSection(ctx.retired ?? []),
     "## Branch naming",
     "",
     "`<type>/<slug>` — lowercase, kebab-case, no trailing dates. The type matches the `type:` label. A",

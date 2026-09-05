@@ -2,12 +2,15 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  CLOSE_GATE_OVERRIDE,
   CORE_TAXONOMY,
+  RETIRED_CLOSE_GATE_STATUS,
+  RETIRED_LABELS,
   STATUS_LABELS,
   STATUS_LIFECYCLE,
-  STATUS_OVERRIDE,
   STATUS_TERMINAL,
   classifyStatus,
+  isRetired,
   isValidColor,
   normalizeColor,
   slugify,
@@ -36,17 +39,61 @@ describe("core taxonomy", () => {
     }
   });
 
-  it("covers the whole lifecycle, plus the terminal and override states", () => {
+  it("covers the whole lifecycle plus the terminal state, and nothing else", () => {
     const declared = new Set(STATUS_LABELS.map((s) => s.name));
     for (const phase of STATUS_LIFECYCLE) assert.ok(declared.has(phase), `${phase} has no label`);
     assert.ok(declared.has(STATUS_TERMINAL));
-    assert.ok(declared.has(STATUS_OVERRIDE));
-    assert.equal(declared.size, STATUS_LIFECYCLE.length + 2);
+    // The exact count, not a lower bound. `dsh-board` mirrors this list as its columns, and a
+    // status label the projector has no column for makes every item carrying it read as "no
+    // status" — invisible, which is the failure `scripts/check-lifecycle.mjs` exists to catch.
+    assert.equal(declared.size, STATUS_LIFECYCLE.length + 1);
   });
 
-  it("keeps the terminal and override states out of the lifecycle", () => {
+  it("keeps the terminal state out of the lifecycle", () => {
     assert.ok(!(STATUS_LIFECYCLE as readonly string[]).includes(STATUS_TERMINAL));
-    assert.ok(!(STATUS_LIFECYCLE as readonly string[]).includes(STATUS_OVERRIDE));
+  });
+
+  it("carries the close-gate override as a flag, so it never occupies the board column", () => {
+    const flag = CORE_TAXONOMY.find((s) => s.name === CLOSE_GATE_OVERRIDE);
+    assert.ok(flag, `${CLOSE_GATE_OVERRIDE} is not in the core taxonomy`);
+    assert.equal(flag.family, "flag");
+    // The point of the move: a flag is additive, so it can sit beside the item's real phase.
+    assert.ok(!CLOSE_GATE_OVERRIDE.startsWith("status:"));
+  });
+});
+
+describe("retired labels", () => {
+  it("retires the old close-gate status instead of deleting it", () => {
+    const spec = RETIRED_LABELS.find((s) => s.name === RETIRED_CLOSE_GATE_STATUS);
+    assert.ok(spec, `${RETIRED_CLOSE_GATE_STATUS} is not retired anywhere`);
+    assert.ok(isRetired(spec));
+    assert.equal(spec.supersededBy, CLOSE_GATE_OVERRIDE);
+    // Deleting it would strip it off every item it ever audited, taking the record with it. The
+    // description is the only notice a person browsing the label list gets, so it names the
+    // successor — and GitHub truncates a label description past 100 characters.
+    assert.ok(spec.description.includes(CLOSE_GATE_OVERRIDE));
+    assert.ok(spec.description.length <= 100, `${spec.description.length} chars`);
+  });
+
+  it("never proposes a retired label for installation", () => {
+    const core = new Set(CORE_TAXONOMY.map((s) => s.name.toLowerCase()));
+    for (const spec of RETIRED_LABELS) {
+      assert.ok(!core.has(spec.name.toLowerCase()), `${spec.name} is both retired and installed`);
+    }
+  });
+
+  it("gives every retired label a successor and a wire-format color", () => {
+    for (const spec of RETIRED_LABELS) {
+      assert.ok(isRetired(spec), `${spec.name} is in RETIRED_LABELS without a successor`);
+      assert.ok(isValidColor(spec.color), `${spec.name} ${spec.color}`);
+      assert.ok(spec.description.length > 0, `${spec.name} has no description`);
+    }
+  });
+
+  it("leaves a live label unretired", () => {
+    // `exactOptionalPropertyTypes` keeps `supersededBy` absent rather than `undefined`; if that
+    // ever slipped, every core label would read as retired and the taxonomy would install nothing.
+    for (const spec of CORE_TAXONOMY) assert.ok(!isRetired(spec), `${spec.name} reads as retired`);
   });
 });
 

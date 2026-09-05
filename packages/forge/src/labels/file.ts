@@ -56,6 +56,14 @@ export interface ParseIssue {
 
 export interface ParsedLabelsFile {
   readonly labels: readonly LabelSpec[];
+  /**
+   * Rows carrying `superseded_by` — labels the file keeps a record of but no longer stamps.
+   *
+   * Separated at the parse rather than filtered later, because every caller of `labels` treats
+   * what it gets as the set to install. A retired row left in that list is a row the next `apply`
+   * puts back onto the repository as live, which is the one outcome retiring exists to prevent.
+   */
+  readonly retired: readonly LabelSpec[];
   /** Rows the parser could not use. Non-empty means the caller should refuse to apply. */
   readonly issues: readonly ParseIssue[];
 }
@@ -66,9 +74,16 @@ export interface ParsedLabelsFile {
  */
 export function parseLabelsFile(text: string, lanePrefix = "lane"): ParsedLabelsFile {
   const labels: LabelSpec[] = [];
+  const retired: LabelSpec[] = [];
   const issues: ParseIssue[] = [];
 
-  let current: { name?: string; color?: string; description?: string; line: number } | null = null;
+  let current: {
+    name?: string;
+    color?: string;
+    description?: string;
+    supersededBy?: string;
+    line: number;
+  } | null = null;
 
   const flush = () => {
     if (!current) return;
@@ -83,13 +98,17 @@ export function parseLabelsFile(text: string, lanePrefix = "lane"): ParsedLabels
         message: `${current.name}: color ${JSON.stringify(color)} is not six hex digits`,
       });
     } else {
-      labels.push({
+      const base = {
         name: current.name,
         color: normalizeColor(color),
         description: current.description ?? "",
         family: familyOf(current.name, lanePrefix),
         origin: "core",
-      });
+      } as const;
+      // `exactOptionalPropertyTypes` is on, so the key is added or it is not — never set to
+      // `undefined`, which would make `isRetired` true for a label nobody retired.
+      if (current.supersededBy === undefined) labels.push(base);
+      else retired.push({ ...base, supersededBy: current.supersededBy });
     }
     current = null;
   };
@@ -132,11 +151,11 @@ export function parseLabelsFile(text: string, lanePrefix = "lane"): ParsedLabels
   }
   flush();
 
-  return { labels, issues };
+  return { labels, retired, issues };
 }
 
 function assign(
-  target: { name?: string; color?: string; description?: string },
+  target: { name?: string; color?: string; description?: string; supersededBy?: string },
   key: string,
   value: string,
   line: number,
@@ -152,6 +171,15 @@ function assign(
       return;
     case "description":
       target.description = parsed;
+      return;
+    case "superseded_by":
+      // The retirement marker. An empty value is not a retirement — it is a half-finished edit,
+      // and reading it as one would silently stop stamping a label the author still wanted.
+      if (parsed.length === 0) {
+        issues.push({ line, message: "`superseded_by` is empty — name the label that replaces it" });
+        return;
+      }
+      target.supersededBy = parsed;
       return;
     default:
       // Extra keys used by other label tools (`aliases`, `from_name`) are not ours to interpret.
@@ -178,7 +206,11 @@ const yamlString = (value: string): string => `"${value.replace(/\\/g, "\\\\").r
  * Emit the file. The rules go in the header because this is the artifact a reviewer sees in a PR,
  * and a rule that lives only in a skill file is a rule the person editing the taxonomy never reads.
  */
-export function renderLabelsFile(specs: readonly LabelSpec[], repo: string): string {
+export function renderLabelsFile(
+  specs: readonly LabelSpec[],
+  repo: string,
+  retired: readonly LabelSpec[] = [],
+): string {
   const header = [
     `# Label taxonomy for ${repo} — the machine-readable source of truth.`,
     "#",
@@ -189,9 +221,18 @@ export function renderLabelsFile(specs: readonly LabelSpec[], repo: string): str
     "# - On a completed close, replace the phase label with `status:shipped`. On a not-planned",
     "#   close, remove the `status:` label entirely — it did not ship.",
     "# - `type:`, `area:` and `priority:` are additive.",
-    "# - Never delete a label: deleting strips it off every issue that carried it. Deprecate it",
-    "#   here and let a human remove it once nothing uses it.",
+    "# - Never delete a label: deleting strips it off every issue that carried it, so an item that",
+    "#   recorded a decision stops saying so. Retire it instead — move the row to the retired",
+    "#   section below and give it `superseded_by:`. It stays on the repository and on its items,",
+    "#   and stops being stamped on new work.",
     "",
+  ];
+
+  const rowsFor = (row: LabelSpec): readonly string[] => [
+    `- name: ${yamlString(row.name)}`,
+    `  color: ${yamlString(row.color)}`,
+    `  description: ${yamlString(row.description)}`,
+    ...(row.supersededBy === undefined ? [] : [`  superseded_by: ${yamlString(row.supersededBy)}`]),
   ];
 
   const body: string[] = [];
@@ -200,11 +241,17 @@ export function renderLabelsFile(specs: readonly LabelSpec[], repo: string): str
     if (rows.length === 0) continue;
     const derived = rows.every((r) => r.origin === "detected");
     body.push(`# ── ${family}: ${derived ? "derived from this repository" : "portable core"} ──`);
-    for (const row of rows) {
-      body.push(`- name: ${yamlString(row.name)}`);
-      body.push(`  color: ${yamlString(row.color)}`);
-      body.push(`  description: ${yamlString(row.description)}`);
-    }
+    for (const row of rows) body.push(...rowsFor(row));
+    body.push("");
+  }
+
+  // Last, and in one block regardless of family: these are not part of any live family any more,
+  // and interleaving them with the labels still in use is how someone copies one by mistake.
+  if (retired.length > 0) {
+    body.push("# ── retired: kept so the items that carry these still say what happened ──");
+    body.push("# Not stamped on new work. Never delete a row here — deleting the label takes the");
+    body.push("# record with it. `dsh-forge labels apply` only rewrites the description.");
+    for (const row of retired) body.push(...rowsFor(row));
     body.push("");
   }
 

@@ -36,6 +36,16 @@ export interface LabelSpec {
   readonly description: string;
   readonly family: LabelFamily;
   readonly origin: LabelOrigin;
+  /**
+   * Set on a label this taxonomy has retired, naming the label that replaced it.
+   *
+   * Retiring is not deleting, and the difference is the whole point. Deleting a label removes it
+   * from every issue that ever carried it, so a label that recorded a decision takes the record
+   * with it — the items it marked stop saying what happened to them, and nothing anywhere reports
+   * that they used to. A retired label stays on the repository and stays on its items; it is only
+   * never proposed for new work and never taught to agents. See {@link RETIRED_LABELS}.
+   */
+  readonly supersededBy?: string;
 }
 
 /**
@@ -57,8 +67,19 @@ export const STATUS_LIFECYCLE = [
 /** Terminal status. Replaces the phase label on a completed close; never coexists with one. */
 export const STATUS_TERMINAL = "status:shipped" as const;
 
-/** Outside the lifecycle: the audited exception path for a red close gate. */
-export const STATUS_OVERRIDE = "status:close-gate-override" as const;
+/**
+ * The audited exception path for a red close gate.
+ *
+ * A flag rather than a status, because a status is the board column and this was never a column.
+ * As `status:close-gate-override` it had to be either the item's only status — hiding whatever
+ * phase the work was actually in — or a second one, which breaks the taxonomy's one hard rule on
+ * exactly the items that most need to be readable. As a flag it is additive: the item keeps its
+ * real phase and carries the exception alongside it.
+ */
+export const CLOSE_GATE_OVERRIDE = "flag:close-gate-override" as const;
+
+/** What {@link CLOSE_GATE_OVERRIDE} was called before #100. Declared only so it can be retired. */
+export const RETIRED_CLOSE_GATE_STATUS = "status:close-gate-override" as const;
 
 const c = {
   type: "c5def5",
@@ -83,6 +104,18 @@ const spec = (
   family: LabelFamily,
   origin: LabelOrigin = "core",
 ): LabelSpec => ({ name, color, description, family, origin });
+
+/**
+ * A label this taxonomy no longer stamps. The description is what the label should say on GitHub
+ * *after* retirement — it is the only notice a person browsing the label list will ever get.
+ */
+const retired = (
+  name: string,
+  color: string,
+  description: string,
+  family: LabelFamily,
+  supersededBy: string,
+): LabelSpec => ({ name, color, description, family, origin: "core", supersededBy });
 
 /** What kind of change this is. Additive, and every open issue and PR should carry one. */
 export const TYPE_LABELS: readonly LabelSpec[] = [
@@ -109,7 +142,6 @@ export const STATUS_LABELS: readonly LabelSpec[] = [
   spec("status:ci-fail", c.phase, "Blocked on a failing CI gate", "status"),
   spec("status:ready-merge", c.ready, "Green and cleared to merge", "status"),
   spec(STATUS_TERMINAL, c.shipped, "Terminal: replaces the phase label when completed work closes", "status"),
-  spec(STATUS_OVERRIDE, c.danger, "Audited exception to the closing-keyword acceptance gate", "status"),
 ];
 
 export const PRIORITY_LABELS: readonly LabelSpec[] = [
@@ -128,10 +160,11 @@ export const EVAL_LABELS: readonly LabelSpec[] = [
   spec("eval:third-opinion", c.control, "Request an extra evaluator beyond the opposite-family default", "eval"),
 ];
 
-/** Cross-cutting flags that are not a namespace. */
+/** Cross-cutting, and additive: a flag never decides which column an item is in. */
 export const FLAG_LABELS: readonly LabelSpec[] = [
   spec("rfc", c.umbrella, "Request for Comments — substantial or breaking design change", "flag"),
   spec("breaking", c.danger, "Introduces a breaking change", "flag"),
+  spec(CLOSE_GATE_OVERRIDE, c.danger, "Audited exception to the closing-keyword acceptance gate", "flag"),
 ];
 
 /**
@@ -145,6 +178,29 @@ export const CORE_TAXONOMY: readonly LabelSpec[] = [
   ...EVAL_LABELS,
   ...FLAG_LABELS,
 ];
+
+/**
+ * Labels this taxonomy used to stamp and has since replaced.
+ *
+ * Kept as data rather than removed, because "stop proposing it" and "delete it" are different
+ * instructions and only one of them is safe. A retired label is never created — installing the
+ * taxonomy into a fresh repository must not seed history that repository does not have — and never
+ * deleted where it already exists. All the planner does with one it finds is correct its
+ * description, so the label list itself carries the redirection to whoever reads it next.
+ */
+export const RETIRED_LABELS: readonly LabelSpec[] = [
+  retired(
+    RETIRED_CLOSE_GATE_STATUS,
+    c.danger,
+    `Retired — use ${CLOSE_GATE_OVERRIDE}. Left in place so the items it audited still say so.`,
+    "status",
+    CLOSE_GATE_OVERRIDE,
+  ),
+];
+
+/** True for a spec this taxonomy has retired. Narrows `supersededBy` to a string for callers. */
+export const isRetired = (label: LabelSpec): label is LabelSpec & { supersededBy: string } =>
+  label.supersededBy !== undefined;
 
 /** Build an `area:` label for a workspace package or top-level source directory. */
 export const areaLabel = (slug: string, description: string): LabelSpec =>
