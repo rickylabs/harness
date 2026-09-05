@@ -43,19 +43,25 @@ export {
 } from "./bundle.js";
 
 export {
+  bundlesFor,
   checkProfileName,
+  isSurfaceName,
   manifest,
   planProfile,
   plannedRowIds,
   BUNDLE_PACKAGE,
+  DEFAULT_SURFACE,
   PATCH_RELOAD,
   PROFILE_BUNDLES,
   PROFILE_NAME,
+  PROFILE_SURFACES,
   PROFILES_DIR,
+  SURFACE_NAMES,
   type PlanOptions,
   type PlannedFile,
   type PlannedLink,
   type ProfilePlan,
+  type SurfaceName,
 } from "./profile.js";
 
 export {

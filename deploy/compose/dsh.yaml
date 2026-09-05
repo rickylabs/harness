@@ -1,0 +1,103 @@
+# The dsh web surface, as the N5 runs it. See deploy/README.md before changing anything here.
+#
+# Shape follows the house convention of the stacks already on that box (ai-agents is the
+# reference): top-level `name`, an explicit `container_name`, long-form `ports`, long-syntax
+# binds with `create_host_path: false`, `networks: [default, ai-shared]`, and a `command` that
+# bootstraps a stock node image rather than baking a private one.
+#
+# Three compose keys are deliberately absent because the MinisCloud Compose UI drops them
+# without saying so -- a stack that needs them looks fine in the editor and boots wrong:
+# `group_add`, top-level `volumes:`, and `network_mode`. Everything this stack needs is
+# expressed with the keys that survive. Top-level `networks:` is fine; ai-agents uses it.
+
+name: dsh
+services:
+  dsh:
+    container_name: dsh
+    image: node:26-bookworm
+    environment:
+      # Its own everything. This container shares no config tree with any *-desktop container:
+      # a dsh session that wrote to /home/agent/.claude would be writing into the very session
+      # store the ai-agents stack bind-shares with claude-desktop.
+      HOME: /data/home
+      DSH_HOME: /data/dsh
+      XDG_CONFIG_HOME: /data/config
+      XDG_DATA_HOME: /data/share
+      XDG_CACHE_HOME: /data/cache
+      npm_config_cache: /data/cache/npm
+      PNPM_HOME: /data/pnpm
+      TZ: Europe/Zurich
+      # /tmp here is a DISK bind, not a tmpfs (see `volumes:` below and the README): the
+      # box's /ephemeral tmpfs is mounted noexec, and dlopen from a noexec mount fails.
+      TMPDIR: /tmp
+      PATH: /data/pnpm:/data/home/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      # Where the checkout lives. Under /workspace, so it is the same tree the agents see.
+      HARNESS_REPO: /workspace/harness/repo
+      # Authority the /api browser-trust fence accepts besides loopback -- `host` or
+      # `host:port`, and it must match the Host header the browser actually sends. Empty by
+      # default, which leaves the surface reachable only over loopback (an SSH port-forward)
+      # even though the port is published. Opening it to the Tailscale address is one edit,
+      # made on purpose, by someone who read the README's security section.
+      DSH_TRUSTED_HOST: ""
+    ports:
+      - mode: ingress
+        target: 3080
+        published: "3080"
+        protocol: tcp
+    working_dir: /workspace
+    networks:
+      - default
+      - ai-shared
+    restart: unless-stopped
+    command:
+      - bash
+      - -c
+      - >-
+        set -e;
+        mkdir -p /data/home /data/dsh /data/config /data/share /data/cache/npm /data/pnpm;
+        chmod 1777 /tmp;
+        apt-get update && apt-get install -y tini;
+        usermod -d /data/home node;
+        npm i -g pnpm@11.25.0;
+        chown -R 1000:1000 /data;
+        if [ ! -d "$$HARNESS_REPO/.git" ]; then
+        echo "dsh: no harness checkout at $$HARNESS_REPO -- clone it there first (deploy/README.md)";
+        exit 1; fi;
+        runuser -u node -- env HOME=/data/home bash -c
+        'cd "$$HARNESS_REPO" && pnpm install --frozen-lockfile && pnpm run build';
+        runuser -u node -- env HOME=/data/home bash -c
+        'node "$$HARNESS_REPO/packages/dsh-app/dist/cli.js" install --name rickylabs-web --surface web';
+        exec tini -- runuser -u node -- env HOME=/data/home bash -c
+        'cd "$$HARNESS_REPO" && exec pnpm --filter @rickylabs/dsh-app exec dsh
+        --profile rickylabs-web
+        --patch "$$HARNESS_REPO/deploy/dsh/web-bind.cordis.patch.yml"
+        --no-open $${DSH_TRUSTED_HOST:+--trusted-host $$DSH_TRUSTED_HOST}'
+    volumes:
+      # Persistent, on the NVMe pool, and dsh's alone: profiles, credentials (the browser
+      # session secret lives here), caches, and the home this container's HOME points at.
+      - type: bind
+        source: /home/rickylabs/main/syspool/AI/dsh/data
+        target: /data
+        bind:
+          create_host_path: false
+      # The shared projects dir the agents work in -- the same tree ai-agents reaches as
+      # /workspace/projects. Never chowned by this stack; it belongs to the agents.
+      - type: bind
+        source: /home/rickylabs/main/syspool/AI/agents/home/projects
+        target: /workspace
+        bind:
+          create_host_path: false
+      # Disk-backed /tmp. This is the one that is easy to get wrong: a `tmpfs:` entry here
+      # would inherit noexec, and the native modules dsh dlopens during a build would fail
+      # to load with an error that names the module, not the mount.
+      - type: bind
+        source: /home/rickylabs/main/syspool/AI/dsh/tmp
+        target: /tmp
+        bind:
+          create_host_path: false
+networks:
+  default:
+    name: dsh_default
+  ai-shared:
+    external: true
+    name: ai-shared

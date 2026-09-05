@@ -27,12 +27,15 @@ import { resolveDshHome } from "@deepseek-ai/dsh-home-paths";
 
 import { BUNDLE_ROWS } from "./bundle.js";
 import {
+  DEFAULT_SURFACE,
+  isSurfaceName,
   planProfile,
   plannedRowIds,
-  PROFILE_BUNDLES,
   PROFILE_NAME,
+  SURFACE_NAMES,
   type PlannedFile,
   type ProfilePlan,
+  type SurfaceName,
 } from "./profile.js";
 
 /** Exit codes, in the house shape: one meaning per code, stated once. */
@@ -57,6 +60,7 @@ usage
 options
   --home <dir>     dsh home (default: $DSH_HOME, else ~/.dsh)
   --name <name>    profile name (default: ${PROFILE_NAME})
+  --surface <s>    ${SURFACE_NAMES.join(" | ")} (default: ${DEFAULT_SURFACE})
   --dry-run        with install: report what would change, write nothing
 
 after installing
@@ -187,16 +191,54 @@ export async function applyPlan(plan: ProfilePlan, fs: ProfileFs): Promise<reado
   return written;
 }
 
-function describe(plan: ProfilePlan, out: CliDeps["out"]): void {
+function describe(plan: ProfilePlan, out: CliDeps["out"], surfaceNote = ""): void {
   out(`profile   ${plan.name}`);
+  out(`surface   ${plan.surface}${surfaceNote}`);
   out(`directory ${plan.dir}`);
-  out(`bundles   ${PROFILE_BUNDLES.join(", ")}`);
+  out(`bundles   ${plan.bundles.join(", ")}`);
   out(`rows      ${plannedRowIds().join(", ")}`);
   out(`link      ${plan.link.path} -> ${plan.link.target}`);
 }
 
 function seeds(plan: ProfilePlan): readonly PlannedFile[] {
   return plan.files.filter((file) => !file.managed);
+}
+
+/** What `check` decided to compare against, and whether the operator had to say so. */
+interface CheckTarget {
+  readonly plan: ProfilePlan;
+  readonly differences: readonly Difference[];
+  /** Suffix for the surface line: empty when the operator named it, ` (inferred)` when we did. */
+  readonly note: string;
+}
+
+/**
+ * Pick the surface `check` reports against.
+ *
+ * With `--surface`, that one: an operator who names a surface is asserting it, and a profile
+ * installed as something else is the drift they asked us to find. Without it, the installed manifest
+ * decides — the first surface that matches exactly. A `check` that reported an intact `web` profile
+ * as drift merely because `tui` is the default would teach the operator to ignore the check, which
+ * is the same as not having one.
+ */
+async function resolveCheck(
+  requested: SurfaceName | undefined,
+  plan: (surface: SurfaceName) => ProfilePlan,
+  fs: ProfileFs,
+): Promise<CheckTarget> {
+  if (requested !== undefined) {
+    const chosen = plan(requested);
+    return { plan: chosen, differences: await diffPlan(chosen, fs), note: "" };
+  }
+  for (const surface of SURFACE_NAMES) {
+    const candidate = plan(surface);
+    const differences = await diffPlan(candidate, fs);
+    if (differences.length === 0) {
+      return { plan: candidate, differences, note: surface === DEFAULT_SURFACE ? "" : " (inferred)" };
+    }
+  }
+  const fallback = plan(DEFAULT_SURFACE);
+  return { plan: fallback, differences: await diffPlan(fallback, fs), note: "" };
 }
 
 export async function main(argv: readonly string[], deps: CliDeps): Promise<number> {
@@ -208,6 +250,7 @@ export async function main(argv: readonly string[], deps: CliDeps): Promise<numb
       options: {
         home: { type: "string" },
         name: { type: "string" },
+        surface: { type: "string" },
         "dry-run": { type: "boolean", default: false },
         help: { type: "boolean", default: false },
       },
@@ -218,11 +261,19 @@ export async function main(argv: readonly string[], deps: CliDeps): Promise<numb
     }
     const command = positionals[0] ?? "";
     const home = resolveDshHome(values.home, { ...env });
-    const planOptions =
-      values.name === undefined
-        ? { home, packageDir }
-        : { home, packageDir, name: values.name };
-    const plan = planProfile(planOptions);
+    const requested = values.surface;
+    if (requested !== undefined && !isSurfaceName(requested)) {
+      throw new UsageError(
+        `unknown surface: ${JSON.stringify(requested)} (known: ${SURFACE_NAMES.join(", ")})`,
+      );
+    }
+    const planFor = (surface: SurfaceName): ProfilePlan =>
+      planProfile(
+        values.name === undefined
+          ? { home, packageDir, surface }
+          : { home, packageDir, name: values.name, surface },
+      );
+    const plan = planFor(requested ?? DEFAULT_SURFACE);
 
     switch (command) {
       case "path":
@@ -230,16 +281,20 @@ export async function main(argv: readonly string[], deps: CliDeps): Promise<numb
         return EXIT.ok;
 
       case "check": {
-        const differences = await diffPlan(plan, fs);
-        describe(plan, out);
+        const target = await resolveCheck(requested, planFor, fs);
+        describe(target.plan, out, target.note);
         out();
-        if (differences.length === 0) {
+        if (target.differences.length === 0) {
           out("installed and matching.");
           return EXIT.ok;
         }
-        for (const difference of differences) out(`drift  ${difference.path}: ${difference.detail}`);
+        for (const difference of target.differences) {
+          out(`drift  ${difference.path}: ${difference.detail}`);
+        }
         out();
-        out("run 'dsh-profile install' to bring it back in line.");
+        out(
+          `run 'dsh-profile install${target.plan.surface === DEFAULT_SURFACE ? "" : ` --surface ${target.plan.surface}`}' to bring it back in line.`,
+        );
         return EXIT.drift;
       }
 

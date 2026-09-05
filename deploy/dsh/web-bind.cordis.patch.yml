@@ -1,0 +1,39 @@
+# Deployment overlay: bind the web surface to every interface in the container.
+#
+# Passed as `dsh --patch <this file>`, so it lands after the bundle layers and after the
+# profile's own cordis.patch.yml. It exists because the bind cannot be set from the command
+# line: `dsh --profile web --host 0.0.0.0` is a deliberate usage error --
+#
+#   error: --host 0.0.0.0 is intentionally not supported yet for safety: it would expose
+#   remote code execution to the network; use 127.0.0.1 instead
+#
+# -- and refusing the flag is right for a laptop. A container is the case the refusal was not
+# written for: the loopback interface it would bind is the container's own, which nothing
+# outside the container can reach, so `ports:` would publish a port with no listener behind it.
+# Overriding the row rather than the flag keeps that decision where it belongs -- in the
+# deployment that owns the network boundary, written down, next to the compose file that
+# publishes the port.
+#
+# What the container's boundary actually is, and why this is not the same as exposing the
+# surface to the network, is in deploy/README.md. The short version: reaching the API from a
+# non-loopback address ALSO requires the operator to name that address in `--trusted-host`,
+# and every request carries a browser-session cookie minted from a per-process launch token.
+#
+# A patch replaces the targeted row's whole `config`, so all five keys are restated. The four
+# after `host` are the web bundle's own values, copied verbatim from
+# node_modules/@deepseek-ai/dsh-web-app/cordis.patch.yml -- if that file changes, this one has
+# to be re-copied, and `deploy.test.ts` is what notices the shape drifting.
+
+- id: webserver
+  config:
+    # The webserver schema's all-interfaces literal (dsh-web-app calls it ALL_INTERFACES_HOST).
+    # Binding it also makes the /api trust fence accept the container's own LAN addresses:
+    # dsh derives them from the live interfaces when, and only when, the bind is 0.0.0.0.
+    host: 0.0.0.0
+    # Literal rather than the bundle's `!!js ctx.webStartup.port ?? 3080`, which would let
+    # `--port` move the listener out from under the published port. In a container the port is
+    # compose's to decide, and `--dump-config` can render a literal without evaluating !!js.
+    port: 3080
+    compression: gzip
+    compressionLevel: 1
+    compressionThresholdBytes: 1024

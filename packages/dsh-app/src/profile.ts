@@ -42,13 +42,70 @@ export const PROFILES_DIR = "profiles";
 export const BUNDLE_PACKAGE = "@rickylabs/dsh-app";
 
 /**
- * Bundles the profile composes, in application order.
+ * The app bundle each surface contributes, between `dsh-base` and ours.
  *
- * `dsh-base` and ours, and deliberately not `dsh-headless`: the headless bundle adds a runner that
- * expects a task, so a profile carrying it cannot be started without one. Choosing the run mode is
- * E2.3's decision, and a profile that presumes it would have to be rewritten to un-presume it.
+ * A dsh profile is `dsh-base` plus *one* app bundle that decides how a person reaches the agent —
+ * a terminal, a browser, an ACP client, a one-shot task. dsh ships templates for its own
+ * (`web`, `acp`, `headless`, `sdk`); ours has to state the same choice, because a profile that
+ * presumed one would have to be rewritten to un-presume it.
+ *
+ * Two are offered, and the omissions are deliberate:
+ *
+ * - **`tui`** — no app bundle at all. `dsh-base` carries the terminal surface itself, which is what
+ *   dsh's own un-templated `tui` profile is: `["@deepseek-ai/dsh-base"]`. This is the default, and
+ *   it is the composition [`dump-config.golden.yml`](../dump-config.golden.yml) records.
+ * - **`web`** — `@deepseek-ai/dsh-web-app`, the browser surface E2.3 (#48) deploys on the N5.
+ *
+ * `headless` is not here because its runner expects a task, so a profile carrying it cannot be
+ * started without one; that is a different shape of command line, not a different surface.
+ *
+ * ### What `web` costs, stated once
+ *
+ * The web bundle **moves the per-agent tool plane behind agent presets** — it disables `tool-bash`,
+ * `tool-fs`, `tool-subagent` and two dozen more at the root and lets each session mount a preset
+ * instead. That is the supported shape of that surface, not a regression: the *registries* those
+ * tools resolve (`subagents`, `jobs`, `skill`, the token meter) stay host-plane, and `subagents` is
+ * exactly the seam `harness-subagents` claims. Our four rows are host-plane services and the web
+ * bundle does not address any of them.
  */
-export const PROFILE_BUNDLES: readonly string[] = ["@deepseek-ai/dsh-base", BUNDLE_PACKAGE];
+export const PROFILE_SURFACES = {
+  tui: [],
+  web: ["@deepseek-ai/dsh-web-app"],
+} as const satisfies Record<string, readonly string[]>;
+
+/** A surface this package can install. */
+export type SurfaceName = keyof typeof PROFILE_SURFACES;
+
+/** The surface a profile gets when nobody says. */
+export const DEFAULT_SURFACE: SurfaceName = "tui";
+
+/** Surface names, in the order `check` tries them when inferring. Default first. */
+export const SURFACE_NAMES: readonly SurfaceName[] = [
+  DEFAULT_SURFACE,
+  ...(Object.keys(PROFILE_SURFACES) as SurfaceName[]).filter((name) => name !== DEFAULT_SURFACE),
+];
+
+/** Narrow an arbitrary string to a surface this package knows. */
+export function isSurfaceName(value: string): value is SurfaceName {
+  return Object.hasOwn(PROFILE_SURFACES, value);
+}
+
+/**
+ * Bundles a surface composes, in application order.
+ *
+ * Ours is always last: a patch layer wins over the layers before it, so a surface bundle that ever
+ * did address one of our rows would be overridden rather than silently in charge.
+ */
+export function bundlesFor(surface: SurfaceName = DEFAULT_SURFACE): readonly string[] {
+  return ["@deepseek-ai/dsh-base", ...PROFILE_SURFACES[surface], BUNDLE_PACKAGE];
+}
+
+/**
+ * Bundles the default (`tui`) profile composes.
+ *
+ * Kept as a named constant because it is the one the golden snapshot pins.
+ */
+export const PROFILE_BUNDLES: readonly string[] = bundlesFor(DEFAULT_SURFACE);
 
 /**
  * `startup`, not `live`.
@@ -86,6 +143,10 @@ export interface PlannedLink {
 /** Everything an install has to put on disk. */
 export interface ProfilePlan {
   readonly name: string;
+  /** The surface this profile boots. */
+  readonly surface: SurfaceName;
+  /** Bundles the manifest names, in application order. */
+  readonly bundles: readonly string[];
   /** Absolute dsh home the profile lives under. */
   readonly home: string;
   /** Absolute profile directory. */
@@ -101,6 +162,8 @@ export interface PlanOptions {
   readonly packageDir: string;
   /** Profile name. Defaults to `rickylabs`. */
   readonly name?: string;
+  /** Surface to install. Defaults to `tui`. */
+  readonly surface?: SurfaceName;
 }
 
 /** Names dsh refuses, restated so the failure arrives before anything is written. */
@@ -122,14 +185,17 @@ export function checkProfileName(name: string): void {
 }
 
 /** The profile manifest, as the object dsh reads. */
-export function manifest(name: string): Record<string, unknown> {
+export function manifest(
+  name: string,
+  surface: SurfaceName = DEFAULT_SURFACE,
+): Record<string, unknown> {
   return {
     name: `dsh-profile-${name}`,
     private: true,
     dependencies: {},
     dsh: {
       profile: {
-        bundles: [...PROFILE_BUNDLES],
+        bundles: [...bundlesFor(surface)],
         patchReload: PATCH_RELOAD,
       },
     },
@@ -165,6 +231,7 @@ const PROFILE_PATCH_SEED = [
  */
 export function planProfile(options: PlanOptions): ProfilePlan {
   const name = options.name ?? PROFILE_NAME;
+  const surface = options.surface ?? DEFAULT_SURFACE;
   checkProfileName(name);
   if (!isAbsolute(options.home)) {
     throw new RangeError(`dsh home ${JSON.stringify(options.home)} is not absolute`);
@@ -176,12 +243,14 @@ export function planProfile(options: PlanOptions): ProfilePlan {
   const dir = join(options.home, PROFILES_DIR, name);
   return {
     name,
+    surface,
+    bundles: bundlesFor(surface),
     home: options.home,
     dir,
     files: [
       {
         path: "package.json",
-        contents: `${JSON.stringify(manifest(name), null, 2)}\n`,
+        contents: `${JSON.stringify(manifest(name, surface), null, 2)}\n`,
         managed: true,
       },
       { path: "pnpm-workspace.yaml", contents: PNPM_WORKSPACE, managed: true },

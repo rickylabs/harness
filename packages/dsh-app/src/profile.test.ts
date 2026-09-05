@@ -14,8 +14,14 @@ import { describe, it } from "node:test";
 import { PATCH_FILE } from "./bundle.js";
 import {
   BUNDLE_PACKAGE,
+  DEFAULT_SURFACE,
+  PROFILE_BUNDLES,
   PROFILE_NAME,
+  PROFILE_SURFACES,
+  SURFACE_NAMES,
+  bundlesFor,
   checkProfileName,
+  isSurfaceName,
   manifest,
   plannedRowIds,
   planProfile,
@@ -99,6 +105,64 @@ describe("the manifest", () => {
     assert.ok(contents.endsWith("}\n"));
     assert.ok(contents.includes('\n  "dsh": {'));
     assert.ok(!contents.includes("\r"));
+  });
+});
+
+describe("surfaces", () => {
+  it("keeps ours last, so a surface bundle can never win over our rows", () => {
+    for (const surface of SURFACE_NAMES) {
+      const bundles = bundlesFor(surface);
+      assert.equal(bundles[0], "@deepseek-ai/dsh-base", `${surface} starts from dsh-base`);
+      assert.equal(bundles[bundles.length - 1], BUNDLE_PACKAGE, `${surface} ends with ours`);
+    }
+  });
+
+  it("defaults to the terminal surface the golden snapshot pins", () => {
+    assert.equal(DEFAULT_SURFACE, "tui");
+    assert.deepEqual(PROFILE_SURFACES.tui, [], "dsh-base carries the terminal surface itself");
+    assert.deepEqual(PROFILE_BUNDLES, ["@deepseek-ai/dsh-base", BUNDLE_PACKAGE]);
+    assert.deepEqual(bundlesFor(), [...PROFILE_BUNDLES]);
+  });
+
+  it("adds the dsh web bundle for the browser surface", () => {
+    assert.deepEqual(bundlesFor("web"), [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-web-app",
+      BUNDLE_PACKAGE,
+    ]);
+  });
+
+  it("names no bundle a profile would have to install, so `dependencies` can stay empty", () => {
+    // Both are dependencies of `@deepseek-ai/dsh` itself, which is why the resolver finds them from
+    // the installation anchor. A surface naming anything else would need a `dependencies` entry and
+    // a `pnpm install` in the profile directory — a different install than the one this plans.
+    for (const bundle of Object.values(PROFILE_SURFACES).flat()) {
+      assert.match(bundle, /^@deepseek-ai\/dsh-/, `${bundle} is not a bundle dsh ships`);
+    }
+  });
+
+  it("writes the chosen surface into the manifest dsh reads", () => {
+    const dsh = manifest(PROFILE_NAME, "web")["dsh"] as { profile: { bundles: string[] } };
+    assert.deepEqual(dsh.profile.bundles, [...bundlesFor("web")]);
+  });
+
+  it("reports the surface and its bundles on the plan", () => {
+    const web = planProfile({ home, packageDir, surface: "web" });
+    assert.equal(web.surface, "web");
+    assert.deepEqual(web.bundles, [...bundlesFor("web")]);
+    assert.equal(plan().surface, DEFAULT_SURFACE);
+  });
+
+  it("tries the default first when inferring, so a plain install stays a plain check", () => {
+    assert.equal(SURFACE_NAMES[0], DEFAULT_SURFACE);
+    assert.deepEqual([...SURFACE_NAMES].sort(), Object.keys(PROFILE_SURFACES).sort());
+  });
+
+  it("narrows only names it knows", () => {
+    assert.equal(isSurfaceName("web"), true);
+    assert.equal(isSurfaceName("tui"), true);
+    assert.equal(isSurfaceName("acp"), false);
+    assert.equal(isSurfaceName("toString"), false, "inherited keys are not surfaces");
   });
 });
 

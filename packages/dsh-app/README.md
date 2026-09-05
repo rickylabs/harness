@@ -66,11 +66,39 @@ dsh-profile path            print the profile directory (for DSH_HOME scripting)
 
 --home <dir>     dsh home (default: $DSH_HOME, else ~/.dsh)
 --name <name>    profile name (default: rickylabs)
+--surface <s>    tui | web (default: tui)
 --dry-run        with install: report what would change, write nothing
 ```
 
 `--name` is there because a box that runs two deployments needs two profiles, not one that the
 second install silently rewrites.
+
+### Surfaces
+
+A surface is *which dsh front end this profile composes*, and it is one line of the bundle list:
+
+| surface | bundles | for |
+| --- | --- | --- |
+| `tui` (default) | `dsh-base`, ours | a terminal — dsh-base carries the TUI itself |
+| `web` | `dsh-base`, `dsh-web-app`, ours | the container on the N5, browser on `:3080` |
+
+Ours is always **last**, on both. Later layers win in cordis, so a surface bundle can never
+reconfigure a row we own — a property worth a test rather than a convention, and it has one.
+
+Neither surface adds a `dependencies` entry. `@deepseek-ai/dsh-web-app` is a direct dependency of
+`@deepseek-ai/dsh`, and dsh resolves a bundle from its own install anchor before the profile's, so
+naming it is enough. A profile that declared it would pin a second copy against the one already
+installed — the same trap as declaring `dsh-base`.
+
+`check` **infers** the surface when you do not name one. A `--surface web` install followed by a
+bare `dsh-profile check` reports matching, not drift, because reporting the default as drift on a
+correctly-installed web profile teaches an operator that the check lies. Naming one asserts it
+instead: `check --surface tui` against a web install is drift, and exit 1 says which install
+repairs it. An unknown name is exit 2 with the known ones listed, never a fallback to the default.
+
+The deployment that uses this is [`deploy/`](../../deploy) — one compose file and one patch
+overlay, with an acceptance test in [`src/deploy.test.ts`](./src/deploy.test.ts) that fails if the
+stack drifts off the constraints that box actually imposes.
 
 ### Managed, and seeded
 
@@ -192,10 +220,16 @@ Each row takes its options from the profile's own patch layer, in the ordinary c
 
 ## Tests
 
-88 tests. Four of them are the ones that would have caught a real outage: the byte comparison
+122 tests. Four of them are the ones that would have caught a real outage: the byte comparison
 between `cordis.patch.yml` and `renderPatch()`, the check that every row names a published export
 subpath, the disposal assertion above, and the golden snapshot — the only place in the repository
 that looks at the rows dsh-base contributes.
+
+`deploy.test.ts` is a fifth kind: it asserts against `deploy/`'s hand-written YAML as text rather
+than generating it, because a compose file is read by an operator at 2am and its comments are half
+of what it is for. Each check is a failure the N5 has actually produced — a `noexec` `TMPDIR`, a
+compose key the MinisCloud editor drops without saying so, a published port with the container's
+own loopback behind it.
 
 The CLI tests run `main()` against a fake filesystem with a failure switch, so the exit statuses
 above are asserted rather than described — including the two that only show up when something is

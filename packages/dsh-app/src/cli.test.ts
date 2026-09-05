@@ -225,6 +225,66 @@ describe("argv", () => {
   });
 });
 
+describe("--surface", () => {
+  const manifestOf = (fs: Fake) => fs.files.get(join(profileDir, "package.json")) ?? "";
+
+  it("installs the terminal surface by default", async () => {
+    const { text, fs } = await run(["install"]);
+    assert.match(text, /^surface {3}tui$/m);
+    assert.ok(!manifestOf(fs).includes("dsh-web-app"), "a plain install pulled in the web bundle");
+  });
+
+  it("puts the web bundle in the manifest when asked", async () => {
+    const { code, text, fs } = await run(["install", "--surface", "web"]);
+    assert.equal(code, EXIT.ok);
+    assert.match(text, /^surface {3}web$/m);
+    const bundles = (
+      JSON.parse(manifestOf(fs)) as { dsh: { profile: { bundles: string[] } } }
+    ).dsh.profile.bundles;
+    assert.deepEqual(bundles, [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-web-app",
+      "@rickylabs/dsh-app",
+    ]);
+  });
+
+  it("check infers the installed surface rather than reporting the default as drift", async () => {
+    const fs = fakeFs();
+    await run(["install", "--surface", "web"], fs);
+    const { code, text } = await run(["check"], fs);
+    assert.equal(code, EXIT.ok);
+    assert.match(text, /^surface {3}web \(inferred\)$/m);
+    assert.match(text, /installed and matching/);
+  });
+
+  it("check --surface asserts one, so the wrong surface is drift", async () => {
+    const fs = fakeFs();
+    await run(["install", "--surface", "web"], fs);
+    const { code, text } = await run(["check", "--surface", "tui"], fs);
+    assert.equal(code, EXIT.drift);
+    assert.match(text, /package\.json: differs from this package/);
+    assert.ok(!text.includes("(inferred)"), "an asserted surface was reported as inferred");
+  });
+
+  it("tells an operator which install would repair a non-default surface", async () => {
+    const { code, text } = await run(["check", "--surface", "web"]);
+    assert.equal(code, EXIT.drift);
+    assert.match(text, /dsh-profile install --surface web/);
+  });
+
+  it("refuses a surface it has not got as usage, not as a crash", async () => {
+    const { code, text } = await run(["install", "--surface", "acp"]);
+    assert.equal(code, EXIT.usage);
+    assert.match(text, /unknown surface: "acp"/);
+    assert.match(text, /known: tui, web/);
+  });
+
+  it("--help names the surfaces", async () => {
+    const { text } = await run(["--help"]);
+    assert.match(text, /^ +--surface <s> +tui \| web \(default: tui\)$/m);
+  });
+});
+
 describe("applyPlan", () => {
   it("reports only what it actually wrote", async () => {
     const fs = fakeFs();
