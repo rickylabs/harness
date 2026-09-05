@@ -21,16 +21,19 @@ export {
 } from "./lifecycle.js";
 export type { Lifecycle, Phase } from "./lifecycle.js";
 
-export { labelValue } from "./model.js";
+export { isAbandoned, isShipped, labelValue, labelValues } from "./model.js";
 export type {
   Anomaly,
   AnomalyKind,
   BoardColumn,
   BoardItem,
   BoardSnapshot,
+  Completeness,
   ItemKind,
   SourceIssue,
 } from "./model.js";
+
+export { compareNullableStrings, compareStrings } from "./order.js";
 
 export { DEFAULT_PRIORITY_ORDER, projectBoard, slugOfEpicTitle } from "./project.js";
 export type { ProjectOptions } from "./project.js";
@@ -38,12 +41,41 @@ export type { ProjectOptions } from "./project.js";
 export { buildHierarchy, epicSlugOf } from "./hierarchy.js";
 export type { EpicNode, Hierarchy, MilestoneNode, Progress } from "./hierarchy.js";
 
-export { HARNESSES, ROUTERS, parseSwarm, renderSwarm, validateDispatch } from "./dispatch.js";
-export type { DispatchRequest, Harness, Router } from "./dispatch.js";
+export {
+  DEFAULT_HARNESS,
+  DispatchEncodingError,
+  HARNESSES,
+  PROMPT_GUARD,
+  ROUTERS,
+  parseGoDuration,
+  parseSwarm,
+  renderSwarm,
+  toDispatchRequest,
+  validateDispatch,
+} from "./dispatch.js";
+export type {
+  DispatchRequest,
+  Harness,
+  ParsedSwarm,
+  Router,
+  SwarmOverrides,
+  SwarmWarning,
+} from "./dispatch.js";
 
-export { renderAnomalies, renderBar, renderColumns, renderHierarchy, renderProgress } from "./render.js";
+export {
+  renderAnomalies,
+  renderBar,
+  renderColumns,
+  renderCompleteness,
+  renderHierarchy,
+  renderProgress,
+} from "./render.js";
 
-export { detectRepoSlug, fetchItems, TransportUnavailable } from "./github.js";
+export { detectRepoSlug, fetchItems, transportFailure, TransportUnavailable } from "./github.js";
+export type { FetchResult, GhRunner } from "./github.js";
+
+export { main as runBoardCli } from "./cli.js";
+export type { CliDeps } from "./cli.js";
 
 /** Workspace package identifier. */
 export const PACKAGE_NAME = "@rickylabs/board" as const;

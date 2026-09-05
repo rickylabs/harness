@@ -8,7 +8,7 @@ import {
   unknownStatusLabels,
   violatesSingleStatus,
 } from "./lifecycle.js";
-import { labelValue } from "./model.js";
+import { isAbandoned, isShipped, labelValue, labelValues } from "./model.js";
 import type { SourceIssue } from "./model.js";
 import { projectBoard, slugOfEpicTitle } from "./project.js";
 
@@ -214,5 +214,201 @@ describe("slugOfEpicTitle", () => {
 
   it("returns null when there is no identifier", () => {
     assert.equal(slugOfEpicTitle("Coordinator work"), null);
+  });
+});
+
+describe("labelValues", () => {
+  it("reads every value of a family, not just the first", () => {
+    assert.deepEqual(labelValues(["epic:e6", "epic:e9", "type:bug"], "epic"), ["e6", "e9"]);
+  });
+
+  it("agrees with labelValue on the value that will be acted on", () => {
+    const labels = ["epic:e6", "epic:e9"];
+    assert.equal(labelValue(labels, "epic"), labelValues(labels, "epic")[0]);
+  });
+
+  it("matches on the family boundary, not on a prefix", () => {
+    assert.deepEqual(labelValues(["epically:no", "epic:yes"], "epic"), ["yes"]);
+  });
+});
+
+describe("isShipped and isAbandoned", () => {
+  const itemOf = (over: Partial<SourceIssue> & { number: number }) =>
+    project([issue(over)]).items[0];
+
+  it("treats a merged pull request in the terminal column as shipped", () => {
+    const item = itemOf({
+      number: 1,
+      kind: "pull-request",
+      state: "closed",
+      merged: true,
+      labels: ["status:shipped"],
+    });
+    assert.ok(item !== undefined && isShipped(item));
+    assert.ok(item !== undefined && !isAbandoned(item));
+  });
+
+  it("does not treat a closed-unmerged pull request as shipped, whatever its column says", () => {
+    const item = itemOf({
+      number: 1,
+      kind: "pull-request",
+      state: "closed",
+      merged: false,
+      labels: ["status:shipped"],
+    });
+    assert.ok(item !== undefined && !isShipped(item));
+    assert.ok(item !== undefined && isAbandoned(item));
+  });
+
+  it("does not demote a pull request whose merge state was never reported", () => {
+    // Absent is not false. Demoting on missing evidence would mark every hand-built snapshot as
+    // abandoned work.
+    const item = itemOf({ number: 1, kind: "pull-request", labels: ["status:shipped"] });
+    assert.ok(item !== undefined && isShipped(item));
+    assert.ok(item !== undefined && !isAbandoned(item));
+  });
+
+  it("never calls an issue abandoned: only a pull request can fail to merge", () => {
+    const item = itemOf({ number: 1, state: "closed", labels: ["status:shipped"] });
+    assert.ok(item !== undefined && isShipped(item));
+    assert.ok(item !== undefined && !isAbandoned(item));
+  });
+
+  it("does not call a non-terminal item shipped", () => {
+    const item = itemOf({ number: 1, labels: ["status:in-progress"] });
+    assert.ok(item !== undefined && !isShipped(item));
+  });
+});
+
+describe("projectBoard, on contradictions it has to resolve", () => {
+  it("reports a pull request closed without merging", () => {
+    const snapshot = project([
+      issue({
+        number: 1,
+        kind: "pull-request",
+        state: "closed",
+        merged: false,
+        labels: ["status:shipped"],
+      }),
+    ]);
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "closed-unmerged");
+    assert.ok(anomaly, "expected a closed-unmerged anomaly");
+    assert.equal(anomaly?.item, 1);
+    assert.match(anomaly?.detail ?? "", /did not ship/);
+  });
+
+  it("does not report closed-unmerged for a merged pull request", () => {
+    const snapshot = project([
+      issue({
+        number: 1,
+        kind: "pull-request",
+        state: "closed",
+        merged: true,
+        labels: ["status:shipped"],
+      }),
+    ]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "closed-unmerged"));
+  });
+
+  it("reports two epic issues claiming one slug, and names the one that wins", () => {
+    const snapshot = project([
+      issue({ number: 41, title: "E6 — the newer one", labels: ["epic", "epic:e6"] }),
+      issue({ number: 36, title: "E6 — Coordinator", labels: ["epic", "epic:e6"] }),
+    ]);
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "duplicate-epic-slug");
+    assert.ok(anomaly, "expected a duplicate-epic-slug anomaly");
+    // Reported against the winner, because that is the issue the board will act as though owns it.
+    assert.equal(anomaly?.item, 36);
+    assert.match(anomaly?.detail ?? "", /#41/);
+  });
+
+  it("does not report a duplicate slug when only one issue claims it", () => {
+    const snapshot = project([issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"] })]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "duplicate-epic-slug"));
+  });
+
+  it("reports a task filed in a different milestone from its epic", () => {
+    const snapshot = project([
+      issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"], milestone: "W1" }),
+      issue({ number: 40, labels: ["status:ready", "epic:e6"], milestone: "W2" }),
+    ]);
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "epic-milestone-conflict");
+    assert.ok(anomaly, "expected an epic-milestone-conflict anomaly");
+    assert.equal(anomaly?.item, 40);
+    assert.match(anomaly?.detail ?? "", /W1/);
+    assert.match(anomaly?.detail ?? "", /W2/);
+  });
+
+  it("does not report a milestone conflict when both are unassigned", () => {
+    const snapshot = project([
+      issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"] }),
+      issue({ number: 40, labels: ["status:ready", "epic:e6"] }),
+    ]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "epic-milestone-conflict"));
+  });
+
+  it("reports two labels of one single-value family", () => {
+    const snapshot = project([issue({ number: 1, labels: ["status:ready", "epic:a", "epic:b"] })]);
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "duplicate-label");
+    assert.ok(anomaly, "expected a duplicate-label anomaly");
+    assert.match(anomaly?.detail ?? "", /epic:a/);
+    assert.match(anomaly?.detail ?? "", /epic:b/);
+    assert.match(anomaly?.detail ?? "", /reads epic:a/);
+  });
+
+  it("reports a duplicated label in the configured lane family too", () => {
+    const snapshot = projectBoard(
+      [issue({ number: 1, labels: ["status:ready", "orchestrator:a", "orchestrator:b"] })],
+      { repo: "o/r", generatedAt: AT, lanePrefix: "orchestrator" },
+    );
+    assert.ok(snapshot.anomalies.some((a) => a.kind === "duplicate-label"));
+  });
+
+  it("does not report the lane family twice when it is one of the defaults", () => {
+    const snapshot = projectBoard([issue({ number: 1, labels: ["status:ready", "type:a", "type:b"] })], {
+      repo: "o/r",
+      generatedAt: AT,
+      lanePrefix: "type",
+    });
+    assert.equal(snapshot.anomalies.filter((a) => a.kind === "duplicate-label").length, 1);
+  });
+});
+
+describe("projectBoard, on how much of the board it actually saw", () => {
+  it("makes no claim when the caller made none", () => {
+    // Not "complete". A hand-assembled list has no fetch behind it to have been capped.
+    assert.equal(project([]).completeness, null);
+    assert.ok(!project([]).anomalies.some((a) => a.kind === "incomplete-fetch"));
+  });
+
+  it("carries an uncapped fetch through without raising anything", () => {
+    const snapshot = projectBoard([issue({ number: 1, labels: ["status:ready"] })], {
+      repo: "o/r",
+      generatedAt: AT,
+      completeness: { limit: 500, capped: [] },
+    });
+    assert.deepEqual(snapshot.completeness, { limit: 500, capped: [] });
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "incomplete-fetch"));
+  });
+
+  it("raises a board-level anomaly when a kind came back at the cap", () => {
+    const snapshot = projectBoard([issue({ number: 1, labels: ["status:ready"] })], {
+      repo: "o/r",
+      generatedAt: AT,
+      completeness: { limit: 1, capped: ["issue"] },
+    });
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "incomplete-fetch");
+    assert.ok(anomaly, "expected an incomplete-fetch anomaly");
+    // No item: the fetch is not any one issue's fault, and blaming one would be a false claim.
+    assert.equal(anomaly?.item, null);
+    assert.match(anomaly?.detail ?? "", /--limit/);
+  });
+
+  it("puts the board-level anomaly first, above the item detail it qualifies", () => {
+    const snapshot = projectBoard(
+      [issue({ number: 1, labels: [] }), issue({ number: 2, labels: [] })],
+      { repo: "o/r", generatedAt: AT, completeness: { limit: 2, capped: ["issue", "pull-request"] } },
+    );
+    assert.equal(snapshot.anomalies[0]?.kind, "incomplete-fetch");
   });
 });

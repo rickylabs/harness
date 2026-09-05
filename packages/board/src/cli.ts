@@ -6,13 +6,30 @@
  * it, and prints the answer. No agent is consulted, so it works when every agent is asleep,
  * wedged, or out of quota — which is when the question actually gets asked.
  *
- * Exit codes: 0 clean, 1 anomalies found (`check` only), 2 usage error, 3 no usable transport.
+ * ## Exit codes
+ *
+ * | code | meaning |
+ * | --- | --- |
+ * | 0 | clean |
+ * | 1 | the board contradicts itself (`check` only) |
+ * | 2 | usage error |
+ * | 3 | no usable transport — `gh` missing, unauthenticated, or unable to reach GitHub |
+ * | 4 | internal error |
+ *
+ * These are the command's contract, and `1` is the one that has to stay honest: it means the
+ * *board* is wrong, and something reading this in CI will treat it that way. A network failure
+ * exiting 1 tells that reader the board is broken when the truth is that nobody looked. So every
+ * failure gets its own code, and nothing falls through to 1 by accident — a defect that only
+ * appears when the network does, which is to say, never on the machine where it was written.
  */
 
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { buildHierarchy } from "./hierarchy.js";
 import { fetchItems, TransportUnavailable, detectRepoSlug } from "./github.js";
+import type { FetchResult } from "./github.js";
 import { projectBoard } from "./project.js";
-import { renderAnomalies, renderColumns, renderHierarchy } from "./render.js";
+import { renderAnomalies, renderColumns, renderHierarchy, renderCompleteness } from "./render.js";
 
 const USAGE = `dsh-board — project a GitHub repository as a board
 
@@ -28,6 +45,9 @@ options:
   --lane-prefix <name>  label family holding the lane (default: lane)
   --limit <n>           maximum items to fetch per kind (default: 500)
   --at <iso8601>        timestamp to record on the snapshot (default: now)
+
+exit codes:
+  0 clean · 1 board anomalies (check only) · 2 usage · 3 transport unavailable · 4 internal error
 `;
 
 interface Options {
@@ -36,6 +56,25 @@ interface Options {
   limit: number;
   at: string | null;
 }
+
+/** Everything the command touches that is not itself. Injected so the exit codes are testable. */
+export interface CliDeps {
+  fetchItems: (repo: string, limit: number) => Promise<FetchResult>;
+  detectRepoSlug: (cwd: string) => Promise<string | null>;
+  cwd: () => string;
+  now: () => string;
+  stdout: (text: string) => void;
+  stderr: (text: string) => void;
+}
+
+const defaultDeps = (): CliDeps => ({
+  fetchItems,
+  detectRepoSlug,
+  cwd: () => process.cwd(),
+  now: () => new Date().toISOString(),
+  stdout: (text) => process.stdout.write(text),
+  stderr: (text) => process.stderr.write(text),
+});
 
 function parseArgs(argv: readonly string[]): { command: string; options: Options } {
   const options: Options = { repo: null, lanePrefix: "lane", limit: 500, at: null };
@@ -79,24 +118,25 @@ function parseArgs(argv: readonly string[]): { command: string; options: Options
   return { command: rest[0] ?? "status", options };
 }
 
-async function main(argv: readonly string[]): Promise<number> {
+/** Run the command. Returns the exit code; never throws for an expected failure. */
+export async function main(argv: readonly string[], deps: CliDeps = defaultDeps()): Promise<number> {
   let command: string;
   let options: Options;
   try {
     ({ command, options } = parseArgs(argv));
   } catch (error) {
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n\n${USAGE}`);
+    deps.stderr(`${error instanceof Error ? error.message : String(error)}\n\n${USAGE}`);
     return 2;
   }
 
   if (command === "help") {
-    process.stdout.write(USAGE);
+    deps.stdout(USAGE);
     return 0;
   }
 
-  const repo = options.repo ?? (await detectRepoSlug(process.cwd()));
+  const repo = options.repo ?? (await deps.detectRepoSlug(deps.cwd()));
   if (repo === null) {
-    process.stderr.write(
+    deps.stderr(
       "could not determine the repository.\n" +
         "Run inside a git repository with a GitHub remote, or pass --repo <owner/name>.\n",
     );
@@ -104,27 +144,32 @@ async function main(argv: readonly string[]): Promise<number> {
   }
 
   if (command === "doctor") {
-    process.stdout.write(`repo:      ${repo}\n`);
-    process.stdout.write(`transport: gh\n`);
+    deps.stdout(`repo:      ${repo}\n`);
+    deps.stdout(`transport: gh\n`);
     try {
-      const items = await fetchItems(repo, 1);
-      process.stdout.write(`reachable: yes (${items.length} item sampled)\n`);
+      const { items } = await deps.fetchItems(repo, 1);
+      deps.stdout(`reachable: yes (${items.length} item sampled)\n`);
       return 0;
     } catch (error) {
       if (error instanceof TransportUnavailable) {
-        process.stdout.write(`reachable: no — ${error.message}\n`);
+        deps.stdout(`reachable: no — ${error.message}\n`);
         return 3;
       }
       throw error;
     }
   }
 
-  let items;
+  if (!["status", "columns", "snapshot", "check"].includes(command)) {
+    deps.stderr(`unknown command ${JSON.stringify(command)}\n\n${USAGE}`);
+    return 2;
+  }
+
+  let fetched: FetchResult;
   try {
-    items = await fetchItems(repo, options.limit);
+    fetched = await deps.fetchItems(repo, options.limit);
   } catch (error) {
     if (error instanceof TransportUnavailable) {
-      process.stderr.write(
+      deps.stderr(
         `${error.message}\n\nInstall the GitHub CLI and run "gh auth login", then retry.\n`,
       );
       return 3;
@@ -132,37 +177,66 @@ async function main(argv: readonly string[]): Promise<number> {
     throw error;
   }
 
-  const snapshot = projectBoard(items, {
+  const snapshot = projectBoard(fetched.items, {
     repo,
-    generatedAt: options.at ?? new Date().toISOString(),
+    generatedAt: options.at ?? deps.now(),
     lanePrefix: options.lanePrefix,
+    completeness: fetched.completeness,
   });
+
+  // A capped fetch means everything below is a prefix of the real board. It goes above the output
+  // and on stderr as well, so it survives a pipe into a file that nobody reads the top of.
+  const banner = renderCompleteness(snapshot.completeness);
+  if (banner !== null) {
+    deps.stderr(`${banner}\n`);
+    if (command !== "snapshot") deps.stdout(`${banner}\n\n`);
+  }
 
   switch (command) {
     case "status":
-      process.stdout.write(`${renderHierarchy(buildHierarchy(snapshot))}\n`);
+      deps.stdout(`${renderHierarchy(buildHierarchy(snapshot))}\n`);
       return 0;
     case "columns":
-      process.stdout.write(`${renderColumns(snapshot)}\n`);
+      deps.stdout(`${renderColumns(snapshot)}\n`);
       return 0;
     case "snapshot":
-      process.stdout.write(`${JSON.stringify(snapshot, null, 2)}\n`);
+      deps.stdout(`${JSON.stringify(snapshot, null, 2)}\n`);
       return 0;
-    case "check":
-      process.stdout.write(`${renderAnomalies(snapshot)}\n`);
-      return snapshot.anomalies.length === 0 ? 0 : 1;
     default:
-      process.stderr.write(`unknown command ${JSON.stringify(command)}\n\n${USAGE}`);
-      return 2;
+      deps.stdout(`${renderAnomalies(snapshot)}\n`);
+      return snapshot.anomalies.length === 0 ? 0 : 1;
   }
 }
 
-main(process.argv.slice(2)).then(
-  (code) => {
-    process.exitCode = code;
-  },
-  (error: unknown) => {
-    process.stderr.write(`${error instanceof Error ? error.stack ?? error.message : String(error)}\n`);
-    process.exitCode = 1;
-  },
-);
+/**
+ * True only when this file is the program, not when a test imported it.
+ *
+ * `realpath` on both sides because the bin is a symlink under `node_modules/.bin`, and comparing
+ * the link to its target would make the binary a no-op.
+ */
+function invokedDirectly(): boolean {
+  const entry = process.argv[1];
+  if (entry === undefined) return false;
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+/* c8 ignore start — the process seam, exercised by running the binary rather than by a test */
+if (invokedDirectly()) {
+  void main(process.argv.slice(2)).then(
+    (code) => {
+      process.exitCode = code;
+    },
+    (error: unknown) => {
+      process.stderr.write(
+        `internal error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`,
+      );
+      // Not 1. Exit 1 means the board contradicts itself, and a crash is not evidence of that.
+      process.exitCode = 4;
+    },
+  );
+}
+/* c8 ignore stop */

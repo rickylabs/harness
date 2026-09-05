@@ -37,13 +37,43 @@ export type AnomalyKind =
   | "no-status"
   | "epic-not-found"
   | "closed-but-unshipped"
-  | "shipped-but-open";
+  | "shipped-but-open"
+  /** A pull request closed without landing. Closed is not the same as done. */
+  | "closed-unmerged"
+  /** Two epic issues answer to one slug, so "which epic" has no single answer. */
+  | "duplicate-epic-slug"
+  /** A task sits in a different milestone from the epic that owns it. */
+  | "epic-milestone-conflict"
+  /** Two labels of one family on one item, so reading that family is a coin toss. */
+  | "duplicate-label"
+  /** The fetch was capped, so the board on screen is a prefix of the real one. */
+  | "incomplete-fetch";
 
-/** One thing wrong with the board, tied to the item that is wrong. */
+/**
+ * One thing wrong with the board.
+ *
+ * `item` is `null` for an anomaly about the projection itself rather than about any one issue —
+ * a truncated fetch is the case that exists today. A board-level problem reported against an
+ * arbitrary issue number would be worse than one reported against none.
+ */
 export interface Anomaly {
   readonly kind: AnomalyKind;
-  readonly item: number;
+  readonly item: number | null;
   readonly detail: string;
+}
+
+/**
+ * How much of the board the fetch actually saw.
+ *
+ * Carried on the snapshot rather than logged, because "103 items" and "the first 30 of 103 items"
+ * render identically otherwise, and a board that silently shows a prefix is worse than one that
+ * fails: the reader has no way to tell that the thing they are looking for was cut off.
+ */
+export interface Completeness {
+  /** Per-kind cap that was applied to the fetch. */
+  readonly limit: number;
+  /** Kinds that came back exactly at the cap, and so may have more behind them. */
+  readonly capped: readonly ItemKind[];
 }
 
 /** A projected item: the source data plus everything the taxonomy lets us derive from it. */
@@ -85,16 +115,59 @@ export interface BoardSnapshot {
   readonly anomalies: readonly Anomaly[];
   /** Every projected item, phased or not, in deterministic order. */
   readonly items: readonly BoardItem[];
+  /**
+   * How much of the board this snapshot covers.
+   *
+   * `null` when the caller did not say — a projection built from a hand-assembled list of issues
+   * makes no claim either way. It is not a stand-in for "complete".
+   */
+  readonly completeness: Completeness | null;
 }
 
-/** Read the value of a `family:value` label, e.g. `epic:e6` under family `epic` gives `e6`. */
-export function labelValue(labels: readonly string[], family: string): string | null {
+/**
+ * Whether an item actually landed.
+ *
+ * A terminal phase is necessary but not sufficient. A pull request closed without merging is
+ * terminal on the board and abandoned in fact, and counting it as shipped is how a board comes to
+ * report work as delivered that nobody delivered. Only a positive `merged: false` demotes an item
+ * — an unknown merge state is not evidence of abandonment.
+ */
+export function isShipped(item: BoardItem): boolean {
+  if (item.phase?.terminal !== true) return false;
+  if (item.source.kind !== "pull-request") return true;
+  return item.source.merged !== false;
+}
+
+/** A pull request that reached a terminal column, or closed, without ever landing. */
+export function isAbandoned(item: BoardItem): boolean {
+  return (
+    item.source.kind === "pull-request" &&
+    item.source.state === "closed" &&
+    item.source.merged === false
+  );
+}
+
+/**
+ * Read every value of a `family:value` label, e.g. `epic:e6` under family `epic` gives `["e6"]`.
+ *
+ * Plural because the taxonomy's own rule — one label per family — is a rule the board can break,
+ * and a reader that returns the first match cannot tell a compliant item from a contradictory one.
+ * The projector reports the contradiction; `labelValue` is the convenience for everywhere that
+ * only needs the value it will act on.
+ */
+export function labelValues(labels: readonly string[], family: string): readonly string[] {
   const marker = `${family}:`;
+  const found: string[] = [];
   for (const label of labels) {
     if (label.startsWith(marker)) {
       const value = label.slice(marker.length);
-      if (value.length > 0) return value;
+      if (value.length > 0) found.push(value);
     }
   }
-  return null;
+  return found;
+}
+
+/** The value of a `family:value` label — the first one, when an item wrongly carries several. */
+export function labelValue(labels: readonly string[], family: string): string | null {
+  return labelValues(labels, family)[0] ?? null;
 }
