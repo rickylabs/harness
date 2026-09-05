@@ -136,8 +136,10 @@ It designs this product using this product's own method. See
 ```
 doctrine/           doctrine — how to work here (stable, portable)
 packages/           the dsh plugin layer — one package per subsystem
+scripts/            the repository-wide checks the root scripts run
 .llm/runs/          run artifacts — durable, reviewed via PR
-.github/            the label taxonomy and the one CI gate
+.github/            the label taxonomy, the CI gate, and the release pipeline
+.claude/skills/     the generated board skill (`pnpm run skill:install`)
 AGENTS.md           entry point, agent mode
 CLAUDE.md           entry point, standard mode
 LICENSE             MIT
@@ -146,9 +148,17 @@ LICENSE             MIT
 ## Checks
 
 `ci` runs on every pull request and on `main`: `pnpm run typecheck`, `pnpm run build`, `pnpm test`
-— the same three a contributor runs locally, against the same lockfile. Nothing publishes; the one
-package meant to leave this repository gets its own pipeline in
-[#38](https://github.com/rickylabs/harness/issues/38).
+— the same three a contributor runs locally, against the same lockfile. Those root scripts carry
+three checks of their own: `check:graph` (workspace dependencies match TypeScript project
+references), `check:lifecycle` (the board's phase list agrees in both files that hold it), and
+`check:publish` (the one publishable package would publish what it claims to).
+
+`ci` itself publishes nothing. `@rickylabs/harness-contracts` has a separate pipeline,
+[`release-contracts.yml`](.github/workflows/release-contracts.yml), triggered by a
+`harness-contracts-v*` tag rather than by a merge, and inert until the repository has an `NPM_TOKEN`.
+Keeping the credential out of the workflow that runs on every pull request is the point of the
+split. See [`packages/contracts/README.md`](packages/contracts/README.md) for the versioning and
+deprecation policy.
 
 ## Licence
 

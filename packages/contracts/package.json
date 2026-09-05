@@ -1,10 +1,27 @@
 {
-  "name": "@rickylabs/contracts",
-  "version": "0.0.0",
-  "description": "Published route and type definitions for the netscript UIs (public npm, no secrets)",
+  "name": "@rickylabs/harness-contracts",
+  "version": "0.1.0",
+  "description": "Types, wire protocol and client bindings shared by the dsh coordinator and its cockpits",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "coordinator",
+    "contracts"
+  ],
+  "homepage": "https://github.com/rickylabs/harness/tree/main/packages/contracts#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rickylabs/harness.git",
+    "directory": "packages/contracts"
+  },
+  "bugs": "https://github.com/rickylabs/harness/issues",
   "license": "MIT",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
+  },
+  "dsh": {
+    "protocol": 1
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -14,10 +31,17 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "src",
+    "!**/*.test.*",
+    "!**/*.tsbuildinfo"
   ],
   "scripts": {
     "build": "tsc -b",

@@ -7,7 +7,7 @@
  * to be pointed at several. `DEFAULT_LIFECYCLE` matches the taxonomy that `dsh-forge` stamps,
  * so the common case needs no configuration — but it is a default, not a coupling.
  *
- * When `@rickylabs/contracts` is published it should own this shape and both packages should
+ * When `@rickylabs/harness-contracts` is published it should own this shape and both packages should
  * import it from there. Until then the duplication is deliberate and is the reason this package
  * has no dependency on `forge`.
  *

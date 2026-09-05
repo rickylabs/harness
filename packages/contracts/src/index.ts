@@ -1,5 +1,5 @@
 /**
- * `@rickylabs/contracts` — the types the coordinator and its cockpits agree on.
+ * `@rickylabs/harness-contracts` — the types the coordinator and its cockpits agree on.
  *
  * Both user interfaces live outside this repository: a phone-sized cockpit for glancing and
  * approving, and a full web workhorse. This package is the only thing they share, and it is
@@ -43,13 +43,18 @@
  * They pass the scope test on the reading above — both surfaces mean exactly the same thing by
  * them — and they perform no I/O, so a phone and a browser can each supply their own socket.
  *
- * ## And the server half, so the two cannot drift
+ * ## And the server half, on its own subpath
  *
  * `Hub` produces the frames `EventFold` consumes. They are one argument split in two — "a whole
  * value is idempotent", "a gap in `seq` means loss", "a snapshot is the truth and deltas are an
  * optimisation" are claims about a round trip, not about either end — so the property that matters,
  * that folding what the hub sent reproduces the board the hub holds, is only assertable where both
- * halves exist. A cockpit imports the fold and ignores the hub; the coordinator does the reverse.
+ * halves exist. Hence one package.
+ *
+ * But only the coordinator runs a hub, and a cockpit that reached it through this entry point would
+ * carry it into a phone bundle for nothing. So it is exported from `@rickylabs/harness-contracts/server`
+ * and not from here — a bundler following the root entry never reaches `server.js`. It is still in
+ * the tarball; a download is not a bundle.
  *
  * ## And one binding that wires the client half together
  *
@@ -70,7 +75,7 @@
  * be the author.
  */
 
-export const PACKAGE_NAME = "@rickylabs/contracts" as const;
+export const PACKAGE_NAME = "@rickylabs/harness-contracts" as const;
 export type PackageName = typeof PACKAGE_NAME;
 
 export {
@@ -223,25 +228,7 @@ export {
   type MuxAuth,
 } from "./auth.js";
 
-export {
-  openHub,
-  subscribe,
-  unsubscribe,
-  publish,
-  announce,
-  resync,
-  pollingSuspects,
-  hubReport,
-  planUpdate,
-  unexpressible,
-  changes,
-  type EventBody,
-  type Delivery,
-  type Subscriber,
-  type Hub,
-  type HubStep,
-  type Plan,
-} from "./server.js";
+// The hub is deliberately absent here. It lives on the `/server` subpath — see the header.
 
 export {
   openCockpit,

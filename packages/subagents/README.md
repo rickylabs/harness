@@ -17,7 +17,7 @@ writes and the request the seam takes are the same object under two encodings.
 
 ## Why the contract is not in `contracts`
 
-`@rickylabs/contracts` is E8's package, published to npm for the two UIs, and #79's acceptance draws
+`@rickylabs/harness-contracts` is E8's package, published to npm for the two UIs, and #79's acceptance draws
 the line from the other side: **a type that only makes sense for one surface does not belong there.**
 A UI reads a board; it never implements a provider.
 

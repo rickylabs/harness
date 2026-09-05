@@ -1,11 +1,13 @@
-# The only gate this repository has. It runs what a contributor runs locally, in the order the
-# package scripts compose: `typecheck` emits declarations, `build` emits JS, `test` runs against
-# that emitted JS. Both root scripts also run `scripts/check-*.mjs` first, so the project graph and
-# the board lifecycle are checked here without this file having to know they exist.
+# The only gate on the way in. It runs what a contributor runs locally, in the order the package
+# scripts compose: `typecheck` emits declarations, `build` emits JS, `test` runs against that
+# emitted JS. The root scripts also run `scripts/check-*.mjs` around them — the project graph and
+# the board lifecycle before, the publishability of `contracts` after — so all three are checked
+# here without this file having to know they exist.
 #
-# Deliberately absent: any publish or release step. `contracts` is the only package meant to leave
-# this repository and it gets its own pipeline in #38. A release job wired up before there is
-# anything to release is a credential and a trigger sitting idle.
+# Still deliberately absent: any publish step. `contracts` is the only package meant to leave this
+# repository and it has its own pipeline in `release-contracts.yml` (#81), triggered by a tag rather
+# than by a merge. Keeping the credential out of the workflow that runs on every pull request is the
+# whole point of the separation.
 name: ci
 
 on:

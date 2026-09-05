@@ -12,7 +12,8 @@
   "scripts": {
     "check:graph": "node scripts/check-project-graph.mjs",
     "check:lifecycle": "node scripts/check-lifecycle.mjs",
-    "build": "pnpm run check:graph && pnpm run check:lifecycle && pnpm -r run build",
+    "check:publish": "node scripts/check-publish.mjs",
+    "build": "pnpm run check:graph && pnpm run check:lifecycle && pnpm -r run build && pnpm run check:publish",
     "typecheck": "pnpm run check:graph && pnpm run check:lifecycle && pnpm -r run typecheck",
     "test": "pnpm -r run test",
     "skill:install": "pnpm --filter @rickylabs/forge run build && node packages/forge/dist/cli.js skill install --dispatch-label harness",

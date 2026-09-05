@@ -63,7 +63,7 @@ and for two hours the board reported six unstarted children as delivered work.
 It is a default, not a coupling: this package has no dependency on `forge`, and a repository with
 different columns passes its own `Lifecycle`.
 
-`@rickylabs/contracts` (#79) now restates the `Phase` and `Lifecycle` *shape* for the two cockpits,
+`@rickylabs/harness-contracts` (#79) now restates the `Phase` and `Lifecycle` *shape* for the two cockpits,
 and the phase **list** travels to them on the snapshot as data. It restates rather than imports
 because it is the one publishable package and cannot depend on a private one — and it carries no
 list of its own on purpose: `scripts/check-lifecycle.mjs` compares the two lists that must agree,
