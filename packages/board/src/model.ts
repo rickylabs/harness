@@ -44,6 +44,16 @@ export interface SourceIssue {
    * multiply the transfer for every projection to serve one check that does not use them.
    */
   readonly body?: string;
+  /**
+   * Pull requests only: the branch the changes are on.
+   *
+   * The board itself derives nothing from it. It is here because a dispatched delivery has no other
+   * link back to the issue that ordered it once the two are in different repositories: GitHub's
+   * closing keywords close nothing across a repository boundary, so a PR in a target repo cannot
+   * reference the inbox issue that way, and the dispatcher's `orch/divybot-<n>` branch name is what
+   * carries the number instead. `@rickylabs/forge` reads it; see `targets/reconcile.ts`.
+   */
+  readonly headRef?: string;
 }
 
 /** Why an item could not be projected cleanly. Anomalies are surfaced, never silently repaired. */

@@ -42,6 +42,7 @@ interface GhItem {
   mergedAt?: string | null;
   stateReason?: string | null;
   body?: string;
+  headRefName?: string;
 }
 
 const MAX_BUFFER = 32 * 1024 * 1024;
@@ -196,6 +197,7 @@ function normalise(raw: GhItem, kind: ItemKind): SourceIssue {
     // `body: undefined` is a different type from an absent `body`, and only the second one means
     // "GitHub told us nothing" — which is what a payload without the field actually says.
     ...(typeof raw.body === "string" ? { body: raw.body } : {}),
+    ...(typeof raw.headRefName === "string" && raw.headRefName !== "" ? { headRef: raw.headRefName } : {}),
   };
 }
 
@@ -229,7 +231,11 @@ export async function fetchItems(
   // `body` on pull requests only. Closing keywords live in a PR description and nowhere else, and
   // bodies dominate the payload size — asking for them on issues too would roughly double the
   // transfer of every projection to fetch text no rule reads.
-  const prFields = `${commonFields},isDraft,mergedAt,body`;
+  // `headRefName` likewise. It is the only link a dispatched delivery has back to the issue that
+  // ordered it when the two live in different repositories: GitHub's closing keywords close nothing
+  // across a repository boundary, so a PR in the target repo cannot reference the inbox issue that
+  // way, and the branch name is what carries the number instead.
+  const prFields = `${commonFields},isDraft,mergedAt,body,headRefName`;
 
   const [issuesJson, prsJson] = await Promise.all([
     runner(["issue", "list", "--repo", repo, "--state", "all", "--limit", String(limit), "--json", issueFields]),

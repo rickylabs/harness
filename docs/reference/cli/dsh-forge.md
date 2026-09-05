@@ -33,6 +33,9 @@ usage
   dsh-forge labels eject           write .github/labels.yml — the reviewable source of truth
   dsh-forge skill install          write the board-process skill into this repo's skill dirs
   dsh-forge status settle          print the status: label change an ended item calls for
+  dsh-forge targets show           print the dispatch table in resolution order
+  dsh-forge targets check          exit non-zero when the table is wrong (for CI)
+  dsh-forge targets reconcile      which inbox issues the dispatcher claims, and what came back
   dsh-forge init                   eject + apply + skill install, in that order
 
 options
@@ -45,6 +48,9 @@ options
   --ending <how>        status settle only: completed | not-planned | reopened
   --labels <a,b>        status settle only: the labels the item carries now (repeatable)
   --event <path>        status settle only: a GitHub event payload to read all of that from
+  --config <path>       targets only: the dispatcher's config (default: ./divybot.json)
+  --snapshot <path>     targets reconcile only: a 'dsh-board snapshot' JSON file (repeatable —
+                        one per repository, including the inbox's own)
   --dry-run             report every change without writing a file or touching the repository
   --json                machine-readable output
   -h, --help            this text
