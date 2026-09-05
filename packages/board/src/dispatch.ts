@@ -46,6 +46,14 @@
  * Parsing attacker-controlled text and acting on the result is the whole vulnerability.
  */
 
+import {
+  forbiddenCharactersIn,
+  goIsFence,
+  goKeyValue,
+  goSplitLines,
+  goTrimSpace,
+} from "./go-grammar.js";
+
 /**
  * The execution seams a run can be dispatched to.
  *
@@ -125,10 +133,10 @@ const FIELD_ORDER = [
  */
 export const PROMPT_GUARD = "--- prompt ---";
 
-/** A line divybot would read as `key: value`. Deliberately identical to `swarmKV` in Go. */
-const KEY_LINE = /^([a-z][a-z_-]*)\s*:\s*(.+?)\s*$/;
-
-const isFence = (trimmed: string): boolean => trimmed.startsWith("```");
+// The line grammar itself lives in `./go-grammar.js`. It used to live here as a JavaScript regex
+// literal copied from Go and described as "deliberately identical to `swarmKV`" — which it was,
+// character for character, and which is exactly why it behaved differently. Two engines, one
+// pattern, three characters where `.` means different things. See that module.
 
 /** Raised by `renderSwarm` for a request the wire format cannot carry without corrupting it. */
 export class DispatchEncodingError extends Error {}
@@ -152,13 +160,17 @@ export function renderSwarm(request: DispatchRequest): string {
     if (value !== undefined && value !== "") lines.push(`${key}: ${value}`);
   }
 
-  const prompt = request.prompt.trim();
+  const prompt = goTrimSpace(request.prompt);
   if (prompt === "") return `${lines.join("\n")}\n`;
 
   // A prompt whose first line parses as a key would be absorbed into the key block — silently
   // overriding a field, or silently disappearing if the key is one divybot ignores. Guard it.
-  const firstLine = (prompt.split("\n")[0] ?? "").trim();
-  const guarded = KEY_LINE.test(firstLine) ? `${PROMPT_GUARD}\n${prompt}` : prompt;
+  //
+  // The predicate has to be Orchid's own, not a JavaScript approximation of it. `model: a\rpayload`
+  // is a key line to Go and prose to a JavaScript regex, and that gap is precisely how a prompt got
+  // past this guard and replaced the matrix-selected model at launch.
+  const firstLine = goTrimSpace(goSplitLines(prompt)[0] ?? "");
+  const guarded = goKeyValue(firstLine) !== null ? `${PROMPT_GUARD}\n${prompt}` : prompt;
 
   return `${lines.join("\n")}\n\n${guarded}\n`;
 }
@@ -279,8 +291,11 @@ export function parseGoDuration(text: string): number | null {
  * Callers must have verified authorship before calling. See the module comment.
  */
 export function parseSwarm(body: string): ParsedSwarm | null {
-  const lines = body.replace(/\r\n/g, "\n").split("\n");
-  const start = lines.findIndex((line) => line.trim() === "/swarm");
+  // No CRLF normalisation. Orchid splits on `\n` alone, so a `\r` stays inside the line it landed
+  // in and reaches the value or the prompt; a reader that quietly strips it reports a run that is
+  // not the one that will happen.
+  const lines = goSplitLines(body);
+  const start = lines.findIndex((line) => goTrimSpace(line) === "/swarm");
   if (start === -1) return null;
 
   const warnings: SwarmWarning[] = [];
@@ -294,12 +309,12 @@ export function parseSwarm(body: string): ParsedSwarm | null {
 
   for (let i = start + 1; i < lines.length; i += 1) {
     const raw = lines[i] ?? "";
-    const trimmed = raw.trim();
+    const trimmed = goTrimSpace(raw);
 
-    if (isFence(trimmed)) {
+    if (goIsFence(trimmed)) {
       // Everything from here on is dropped by the executor — keys, prompt, all of it. A fence with
       // nothing after it is the documented ```/swarm``` wrapper closing, and loses nothing.
-      const dropped = lines.slice(i + 1).filter((line) => line.trim() !== "").length;
+      const dropped = lines.slice(i + 1).filter((line) => goTrimSpace(line) !== "").length;
       if (dropped > 0) {
         warnings.push({
           kind: "truncated-by-fence",
@@ -318,11 +333,12 @@ export function parseSwarm(body: string): ParsedSwarm | null {
         sawBlank = true;
         continue;
       }
-      const match = KEY_LINE.exec(trimmed);
-      if (match !== null) {
-        const key = (match[1] ?? "").replace(/_/g, "-");
-        // The executor splits on the FIRST `#` anywhere in the value, not just a trailing comment.
-        const value = (match[2] ?? "").split("#", 1)[0]?.trim() ?? "";
+      // `_` normalisation and the cut at the first `#` anywhere in the value both happen inside
+      // `goKeyValue`, because they are steps of the same Go function and splitting them across two
+      // modules is how the two halves drift apart.
+      const pair = goKeyValue(trimmed);
+      if (pair !== null) {
+        const { key, value } = pair;
 
         if (sawBlank) {
           warnings.push({
@@ -387,7 +403,7 @@ export function parseSwarm(body: string): ParsedSwarm | null {
     effort: get("effort"),
     maxTokens: get("max-tokens"),
     profile: get("profile"),
-    prompt: promptLines.join("\n").trim(),
+    prompt: goTrimSpace(promptLines.join("\n")),
     timeoutNs: Number(get("timeout-ns") || "0"),
   };
 
@@ -489,10 +505,20 @@ function encodingProblems(request: DispatchRequest): readonly string[] {
     if (value.includes("\n")) {
       problems.push(`${key} contains a newline, which would split it into another key`);
     }
+    // Invisible characters in a field are refused outright, not merely parsed faithfully. A model
+    // id carrying a CR renders identically to one without it, so the launch identity a human
+    // approved in the issue body is not the one that runs — and every character in this class is
+    // also a place where two line grammars have historically disagreed.
+    const forbidden = forbiddenCharactersIn(value);
+    if (forbidden.length > 0) {
+      problems.push(
+        `${key} contains ${forbidden.join(", ")}, which is invisible in a rendered issue body`,
+      );
+    }
     if (value.includes("#")) {
       problems.push(`${key} contains "#", and everything from it on would be stripped as a comment`);
     }
-    if (value.trim() !== value) {
+    if (goTrimSpace(value) !== value) {
       problems.push(`${key} has leading or trailing whitespace, which the executor strips`);
     }
   }
@@ -505,8 +531,8 @@ function encodingProblems(request: DispatchRequest): readonly string[] {
     }
   }
 
-  for (const line of request.prompt.split("\n")) {
-    if (isFence(line.trim())) {
+  for (const line of goSplitLines(request.prompt)) {
+    if (goIsFence(goTrimSpace(line))) {
       problems.push(
         "prompt contains a code fence; the executor stops reading there, so the fence and " +
           "everything after it would never reach the agent",
@@ -530,15 +556,15 @@ function encodingProblems(request: DispatchRequest): readonly string[] {
 export function validateDispatch(request: DispatchRequest): readonly string[] {
   const problems: string[] = [...encodingProblems(request)];
 
-  if (request.model === undefined || request.model.trim() === "") {
+  if (request.model === undefined || goTrimSpace(request.model) === "") {
     problems.push(
       "no model specified — the run would inherit the provider config rather than the matrix selection",
     );
   }
-  if (request.effort === undefined || request.effort.trim() === "") {
+  if (request.effort === undefined || goTrimSpace(request.effort) === "") {
     problems.push("no effort specified — effort is part of the lane pairing, not a provider default");
   }
-  if (request.prompt.trim() === "") {
+  if (goTrimSpace(request.prompt) === "") {
     problems.push("empty prompt — nothing for the dispatched agent to act on");
   }
   if (request.maxTokens !== undefined && !TOKEN_BUDGET.test(request.maxTokens)) {

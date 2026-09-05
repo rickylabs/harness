@@ -351,3 +351,112 @@ describe("conformance with divybot's parseOverrides", () => {
     }
   });
 });
+
+/**
+ * The characters on which the two regex engines disagree.
+ *
+ * Every case above was derived by reading `overrides.go`, and so were these. They get their own
+ * note because they are the cases this package used to get wrong, and because Go cannot be executed
+ * on the machine that runs this suite — so the provenance of the oracle matters more here than
+ * anywhere else in the corpus.
+ *
+ * Three of them — CR, U+2028 and U+2029 — were additionally observed against a real
+ * `parseOverrides` during the re-review of #101, which bound `model` to text this package was
+ * reporting as prompt. The rest are read off the same pinned source under the same four rules:
+ *
+ * - RE2 `.` is any rune except `\n`, so it matches CR, U+2028 and U+2029. JavaScript excludes all
+ *   four. A line that Go reads as a key, JavaScript reads as prose — which is how prompt text
+ *   reached `model:` past a guard that had been written to stop exactly that.
+ * - RE2 Perl `\s` is the ASCII class `[\t\n\f\r ]`. JavaScript adds `\v`, NBSP and the Unicode
+ *   space separators, so JavaScript accepts key lines that Go leaves as prompt.
+ * - `unicode.IsSpace` trims U+0085 and does not trim U+FEFF. `String.prototype.trim` does the
+ *   opposite on both, and trimming decides block discovery, line blankness and where a value ends,
+ *   so the disagreement reaches all three.
+ * - `strings.Split(text, "\n")` leaves a CR on every line of a CRLF body, and prompt lines are
+ *   appended raw. Normalising CRLF before parsing, as this reader used to, silently rewrites the
+ *   prompt the agent receives.
+ *
+ * If any of these ever disagrees with a real divybot, this file is wrong and `go-grammar.ts` is
+ * wrong with it. That is the intended failure mode: one grammar to correct, not two.
+ */
+const CR = String.fromCodePoint(0x0d);
+const LS = String.fromCodePoint(0x2028);
+const PS = String.fromCodePoint(0x2029);
+const VT = String.fromCodePoint(0x0b);
+const NEL = String.fromCodePoint(0x85);
+const BOM = String.fromCodePoint(0xfeff);
+
+const DIVERGENT: readonly Case[] = [
+  {
+    what: "a carriage return leaves the line a key, so prompt text binds model",
+    rule: "(R) RE2 `.` matches CR",
+    body: `/swarm\nharness: codex\n\nmodel: evil${CR}rest of the brief`,
+    overrides: { ...EMPTY, harness: "codex", model: `evil${CR}rest of the brief` },
+    executes: "codex",
+  },
+  {
+    what: "U+2028 does the same, and renders as nothing at all",
+    rule: "(R) RE2 `.` matches U+2028",
+    body: `/swarm\nharness: codex\n\nmodel: evil${LS}rest of the brief`,
+    overrides: { ...EMPTY, harness: "codex", model: `evil${LS}rest of the brief` },
+    executes: "codex",
+  },
+  {
+    what: "U+2029 does the same",
+    rule: "(R) RE2 `.` matches U+2029",
+    body: `/swarm\nharness: codex\n\nmodel: evil${PS}rest of the brief`,
+    overrides: { ...EMPTY, harness: "codex", model: `evil${PS}rest of the brief` },
+    executes: "codex",
+  },
+  {
+    what: "a vertical tab before the colon is prose to Go, not a key",
+    rule: "(R) RE2 `\\s` excludes `\\v`",
+    body: `/swarm\nmodel${VT}: x\n\nbrief`,
+    overrides: { ...EMPTY, prompt: `model${VT}: x\n\nbrief` },
+    executes: "claude",
+  },
+  {
+    what: "a trailing U+0085 is trimmed off a value, because Go counts it as space",
+    rule: "(H) unicode.IsSpace includes U+0085",
+    body: `/swarm\nmodel: m${NEL}\n\nbrief`,
+    overrides: { ...EMPTY, model: "m", prompt: "brief" },
+    executes: "claude",
+  },
+  {
+    what: "a trailing U+FEFF stays in the value, because Go does not count it as space",
+    rule: "(H) unicode.IsSpace excludes U+FEFF",
+    body: `/swarm\nmodel: m${BOM}\n\nbrief`,
+    overrides: { ...EMPTY, model: `m${BOM}`, prompt: "brief" },
+    executes: "claude",
+  },
+  {
+    what: "a CRLF body keeps its carriage returns in the prompt the agent receives",
+    rule: "(P) lines are split on `\\n` and appended untrimmed",
+    body: `/swarm${CR}\nharness: codex${CR}\n${CR}\nbrief${CR}\nmore`,
+    overrides: { ...EMPTY, harness: "codex", prompt: `brief${CR}\nmore` },
+    executes: "codex",
+  },
+];
+
+describe("the characters the two regex engines read differently", () => {
+  for (const testCase of DIVERGENT) {
+    it(`${testCase.rule} — ${testCase.what}`, () => {
+      const parsed = parseSwarm(testCase.body);
+      assert.notEqual(parsed, null, "expected a /swarm block");
+      assert.deepEqual(parsed?.overrides, testCase.overrides);
+      assert.equal(parsed?.executes, testCase.executes);
+    });
+  }
+
+  it("finds the block after a U+0085, which Go trims and JavaScript does not", () => {
+    const parsed = parseSwarm(`${NEL}/swarm\nmodel: m`);
+    assert.notEqual(parsed, null, "divybot trims U+0085, so the block is there");
+    assert.equal(parsed?.overrides.model, "m");
+  });
+
+  it("finds no block after a byte-order mark, which Go does not trim", () => {
+    // The inverse mistake, and the more dangerous direction: a reader that trims U+FEFF reports a
+    // dispatch that divybot will never see, so the issue reads as launched and nothing runs.
+    assert.equal(parseSwarm(`${BOM}/swarm\nmodel: m`), null);
+  });
+});
