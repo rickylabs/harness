@@ -8,7 +8,7 @@ import {
   unknownStatusLabels,
   violatesSingleStatus,
 } from "./lifecycle.js";
-import { isAbandoned, isShipped, labelValue, labelValues } from "./model.js";
+import { isAbandoned, isDeliveryUnknown, isShipped, labelValue, labelValues } from "./model.js";
 import type { SourceIssue } from "./model.js";
 import { projectBoard, slugOfEpicTitle } from "./project.js";
 
@@ -260,12 +260,22 @@ describe("isShipped and isAbandoned", () => {
     assert.ok(item !== undefined && isAbandoned(item));
   });
 
-  it("does not demote a pull request whose merge state was never reported", () => {
-    // Absent is not false. Demoting on missing evidence would mark every hand-built snapshot as
-    // abandoned work.
+  it("neither ships nor abandons a pull request whose merge state was never reported", () => {
+    // Absent is not false, and it is not true. This assertion used to require `isShipped`, which
+    // made a gap in the input indistinguishable from a delivery — the two claims a progress report
+    // exists to keep apart.
     const item = itemOf({ number: 1, kind: "pull-request", labels: ["status:shipped"] });
-    assert.ok(item !== undefined && isShipped(item));
-    assert.ok(item !== undefined && !isAbandoned(item));
+    assert.ok(item !== undefined);
+    assert.ok(!isShipped(item), "no evidence it landed");
+    assert.ok(!isAbandoned(item), "no evidence it did not");
+    assert.ok(isDeliveryUnknown(item), "reported as the gap it is");
+  });
+
+  it("says nothing is unknown when the merge state was reported either way", () => {
+    for (const merged of [true, false]) {
+      const item = itemOf({ number: 1, kind: "pull-request", merged, labels: ["status:shipped"] });
+      assert.ok(item !== undefined && !isDeliveryUnknown(item), `merged: ${merged}`);
+    }
   });
 
   it("never calls an issue abandoned: only a pull request can fail to merge", () => {

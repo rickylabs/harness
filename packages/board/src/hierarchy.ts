@@ -15,20 +15,34 @@
  */
 
 import type { BoardItem, BoardSnapshot } from "./model.js";
-import { isAbandoned, isShipped } from "./model.js";
+import { isAbandoned, isDeliveryUnknown, isShipped } from "./model.js";
 import { compareNullableStrings, compareStrings } from "./order.js";
 import { slugOfEpicTitle } from "./project.js";
 
-/** Aggregate progress over a set of items. */
+/**
+ * Aggregate progress over a set of items.
+ *
+ * Every item lands in exactly one bucket and the buckets sum to `total`. That is an invariant, not
+ * a coincidence: `inFlight` used to be computed as the remainder, which meant every state the
+ * classifier had no bucket for was silently reported as work in progress. On the real board that
+ * read `60 running` while two agents were running, because all 58 freshly triaged issues fell
+ * through to the remainder. A counter that cannot say "waiting" or "unknown" will say "running"
+ * instead, and "running" is the one word this projection exists to make trustworthy.
+ */
 export interface Progress {
   readonly total: number;
   readonly shipped: number;
+  /** Work something could be acting on right now. */
   readonly inFlight: number;
+  /** Filed, but nothing has started. See `Phase.queued`. */
+  readonly queued: number;
   readonly blocked: number;
   /** Items with no status label: work the board cannot see. */
   readonly invisible: number;
   /** Pull requests closed without landing. Finished, but not delivered. */
   readonly abandoned: number;
+  /** Terminal pull requests whose merge state nobody reported. Not a delivery, not a failure. */
+  readonly unknown: number;
 }
 
 /** An epic and the tasks labelled into it. */
@@ -76,35 +90,55 @@ export interface Hierarchy {
  */
 const BLOCKED_PHASES: ReadonlySet<string> = new Set(["ci-fail", "blocked", "changes-requested"]);
 
-const ZERO: Progress = { total: 0, shipped: 0, inFlight: 0, blocked: 0, invisible: 0, abandoned: 0 };
+const ZERO: Progress = {
+  total: 0,
+  shipped: 0,
+  inFlight: 0,
+  queued: 0,
+  blocked: 0,
+  invisible: 0,
+  abandoned: 0,
+  unknown: 0,
+};
+
+/** The one bucket an item belongs in. Exhaustive by construction: there is no fall-through. */
+type Bucket = "shipped" | "inFlight" | "queued" | "blocked" | "invisible" | "abandoned" | "unknown";
+
+/**
+ * Classify one item.
+ *
+ * Order matters and is the argument for each bucket over the ones below it:
+ *
+ * - A closed-unmerged pull request is decided first, because it is the one state that would
+ *   otherwise be read off the terminal column alone and counted as delivered.
+ * - No phase at all is `invisible` — the board cannot see the item, so it cannot claim anything
+ *   else about it.
+ * - A terminal item with no reported merge state is `unknown`, ahead of `shipped`, because the
+ *   whole point of separating them is that the optimistic reading must not win by default.
+ * - `blocked` before `queued` and `inFlight`: a stuck item is not merely unstarted or running.
+ */
+function bucketOf(item: BoardItem): Bucket {
+  if (isAbandoned(item)) return "abandoned";
+  if (item.phase === null) return "invisible";
+  if (isDeliveryUnknown(item)) return "unknown";
+  if (isShipped(item)) return "shipped";
+  if (BLOCKED_PHASES.has(item.phase.name)) return "blocked";
+  if (item.phase.queued) return "queued";
+  return "inFlight";
+}
 
 function progressOf(items: readonly BoardItem[]): Progress {
-  let shipped = 0;
-  let blocked = 0;
-  let invisible = 0;
-  let abandoned = 0;
-  for (const item of items) {
-    // A closed-unmerged pull request is counted before anything else, because it is the one state
-    // that would otherwise be read off the column alone and counted as delivered.
-    if (isAbandoned(item)) {
-      abandoned += 1;
-      continue;
-    }
-    if (item.phase === null) {
-      invisible += 1;
-      continue;
-    }
-    if (isShipped(item)) shipped += 1;
-    else if (BLOCKED_PHASES.has(item.phase.name)) blocked += 1;
-  }
-  return {
-    total: items.length,
-    shipped,
-    blocked,
-    invisible,
-    abandoned,
-    inFlight: items.length - shipped - blocked - invisible - abandoned,
+  const counts: Record<Bucket, number> = {
+    shipped: 0,
+    inFlight: 0,
+    queued: 0,
+    blocked: 0,
+    invisible: 0,
+    abandoned: 0,
+    unknown: 0,
   };
+  for (const item of items) counts[bucketOf(item)] += 1;
+  return { total: items.length, ...counts };
 }
 
 /** Merge several progress records, for rolling a milestone up from its epics. */
@@ -114,9 +148,11 @@ function sumProgress(parts: readonly Progress[]): Progress {
       total: acc.total + p.total,
       shipped: acc.shipped + p.shipped,
       inFlight: acc.inFlight + p.inFlight,
+      queued: acc.queued + p.queued,
       blocked: acc.blocked + p.blocked,
       invisible: acc.invisible + p.invisible,
       abandoned: acc.abandoned + p.abandoned,
+      unknown: acc.unknown + p.unknown,
     }),
     ZERO,
   );

@@ -24,14 +24,26 @@ function label(item: BoardItem): string {
   return `${id} ${item.source.title}${suffix}`;
 }
 
-/** `7/13 done · 3 running · 1 blocked · 1 abandoned · 2 invisible` */
+/**
+ * `7/13 done · 3 running · 12 queued · 1 blocked · 1 abandoned · 2 invisible`
+ *
+ * Every bucket gets its own word. This line is the answer to "status ?", so a count that has to be
+ * inferred from the others is a count the reader will infer wrongly: `queued` in particular used to
+ * be reported as `running`, which turned "nobody has looked at 58 issues" into "58 agents are on
+ * it". Zeroes are omitted, so the line stays short on a board where the distinction is moot.
+ */
 export function renderProgress(progress: Progress): string {
   const parts = [`${progress.shipped}/${progress.total} done`];
   if (progress.inFlight > 0) parts.push(`${progress.inFlight} running`);
+  // Between "done" and "running": filed and untouched. The largest column on a young board.
+  if (progress.queued > 0) parts.push(`${progress.queued} queued`);
   if (progress.blocked > 0) parts.push(`${progress.blocked} blocked`);
   // Named separately from "done" and from "running" because it is neither: the work stopped and
   // nothing came of it. Folding it into either loses the only fact worth acting on.
   if (progress.abandoned > 0) parts.push(`${progress.abandoned} abandoned`);
+  // A gap in the input rather than a state of the work. Reported so it can be chased, never
+  // rounded into "done".
+  if (progress.unknown > 0) parts.push(`${progress.unknown} merge state unknown`);
   if (progress.invisible > 0) parts.push(`${progress.invisible} invisible`);
   return parts.join(" · ");
 }

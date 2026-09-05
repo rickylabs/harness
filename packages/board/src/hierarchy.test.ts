@@ -107,9 +107,11 @@ describe("buildHierarchy", () => {
       total: 4,
       shipped: 1,
       inFlight: 1,
+      queued: 0,
       blocked: 1,
       invisible: 1,
       abandoned: 0,
+      unknown: 0,
     });
   });
 
@@ -165,11 +167,26 @@ describe("buildHierarchy, on work that stopped without landing", () => {
     assert.equal(h.progress.abandoned, 0);
   });
 
-  it("does not demote a pull request whose merge state is unknown", () => {
-    // `merged` absent is missing evidence, not evidence of abandonment.
+  it("counts a pull request whose merge state is unknown as neither", () => {
+    // `merged` absent is missing evidence. It is not evidence of abandonment, and it is not
+    // evidence of delivery either — which is what this assertion used to say, by counting it
+    // shipped. A bucket of its own is the only reading that does not invent a fact.
     const h = tree([issue({ number: 9, kind: "pull-request", labels: ["status:shipped"] })]);
-    assert.equal(h.progress.shipped, 1);
+    assert.equal(h.progress.unknown, 1);
+    assert.equal(h.progress.shipped, 0);
     assert.equal(h.progress.abandoned, 0);
+    assert.equal(h.progress.inFlight, 0, "nor is it work in progress");
+  });
+
+  it("counts a freshly triaged issue as queued rather than running", () => {
+    // The board once reported `60 running` with two agents alive, because everything the counter
+    // had no bucket for became the in-flight remainder.
+    const h = tree([
+      issue({ number: 1, labels: ["status:triage"] }),
+      issue({ number: 2, labels: ["status:impl"] }),
+    ]);
+    assert.equal(h.progress.queued, 1);
+    assert.equal(h.progress.inFlight, 1);
   });
 
   it("keeps the categories disjoint and summing to the total", () => {
@@ -179,10 +196,21 @@ describe("buildHierarchy, on work that stopped without landing", () => {
       issue({ number: 3, labels: ["status:impl"] }),
       issue({ number: 4, labels: [] }),
       issue({ number: 5, kind: "pull-request", state: "closed", merged: false, labels: ["status:shipped"] }),
+      issue({ number: 6, labels: ["status:triage"] }),
+      issue({ number: 7, kind: "pull-request", labels: ["status:shipped"] }),
     ]);
     const p = h.progress;
-    assert.equal(p.shipped + p.blocked + p.inFlight + p.invisible + p.abandoned, p.total);
-    assert.equal(p.total, 5);
+    assert.equal(
+      p.shipped + p.blocked + p.inFlight + p.queued + p.invisible + p.abandoned + p.unknown,
+      p.total,
+      "every item belongs to exactly one bucket",
+    );
+    assert.equal(p.total, 7);
+    // Named individually as well as summed: a sum can be right while two buckets are swapped.
+    assert.deepEqual(
+      { s: p.shipped, b: p.blocked, f: p.inFlight, q: p.queued, i: p.invisible, a: p.abandoned, u: p.unknown },
+      { s: 1, b: 1, f: 1, q: 1, i: 1, a: 1, u: 1 },
+    );
   });
 });
 

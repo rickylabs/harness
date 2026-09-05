@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { buildHierarchy } from "./hierarchy.js";
+import type { Progress } from "./hierarchy.js";
 import type { SourceIssue } from "./model.js";
 import { projectBoard } from "./project.js";
 import {
@@ -12,6 +13,26 @@ import {
   renderHierarchy,
   renderProgress,
 } from "./render.js";
+
+
+/**
+ * A `Progress` with every bucket at zero, overridden by `over`.
+ *
+ * These fixtures used to spell out all six buckets each time, so adding a seventh broke eight
+ * assertions that had no opinion about it. A new bucket should force a decision in the counter,
+ * not in every test that ever mentioned one.
+ */
+const progress = (over: Partial<Progress> = {}): Progress => ({
+  total: 0,
+  shipped: 0,
+  inFlight: 0,
+  queued: 0,
+  blocked: 0,
+  invisible: 0,
+  abandoned: 0,
+  unknown: 0,
+  ...over,
+});
 
 const AT = "2026-09-05T00:00:00.000Z";
 
@@ -35,35 +56,35 @@ const snapshotOf = (issues: readonly SourceIssue[]) =>
 
 describe("renderBar", () => {
   it("is empty at zero", () => {
-    assert.equal(renderBar({ total: 4, shipped: 0, inFlight: 4, blocked: 0, invisible: 0, abandoned: 0 }, 4), "[----]");
+    assert.equal(renderBar(progress({ total: 4, inFlight: 4 }), 4), "[----]");
   });
 
   it("is full only when everything is shipped", () => {
-    assert.equal(renderBar({ total: 4, shipped: 4, inFlight: 0, blocked: 0, invisible: 0, abandoned: 0 }, 4), "[####]");
+    assert.equal(renderBar(progress({ total: 4, shipped: 4 }), 4), "[####]");
   });
 
   it("never rounds an incomplete set up to full", () => {
     // 19/20 must not draw as done. A bar that reaches the end while work remains is a lie the
     // eye believes faster than the number next to it.
-    const bar = renderBar({ total: 20, shipped: 19, inFlight: 1, blocked: 0, invisible: 0, abandoned: 0 }, 20);
+    const bar = renderBar(progress({ total: 20, shipped: 19, inFlight: 1 }), 20);
     assert.ok(bar.includes("-"), `expected an unfilled cell, got ${bar}`);
   });
 
   it("renders an empty set as an empty bar rather than dividing by zero", () => {
-    assert.equal(renderBar({ total: 0, shipped: 0, inFlight: 0, blocked: 0, invisible: 0, abandoned: 0 }, 4), "[    ]");
+    assert.equal(renderBar(progress(), 4), "[    ]");
   });
 });
 
 describe("renderProgress", () => {
   it("always states the ratio, and omits zero categories", () => {
     assert.equal(
-      renderProgress({ total: 3, shipped: 1, inFlight: 2, blocked: 0, invisible: 0, abandoned: 0 }),
+      renderProgress(progress({ total: 3, shipped: 1, inFlight: 2 })),
       "1/3 done · 2 running",
     );
   });
 
   it("names blocked and invisible work when there is any", () => {
-    const text = renderProgress({ total: 4, shipped: 1, inFlight: 1, blocked: 1, invisible: 1, abandoned: 0 });
+    const text = renderProgress(progress({ total: 4, shipped: 1, inFlight: 1, blocked: 1, invisible: 1 }));
     assert.match(text, /1 blocked/);
     assert.match(text, /1 invisible/);
   });
@@ -141,27 +162,13 @@ describe("renderAnomalies", () => {
 
 describe("renderProgress, on work that stopped without landing", () => {
   it("names abandoned work separately from done and from running", () => {
-    const text = renderProgress({
-      total: 3,
-      shipped: 1,
-      inFlight: 1,
-      blocked: 0,
-      invisible: 0,
-      abandoned: 1,
-    });
+    const text = renderProgress(progress({ total: 3, shipped: 1, inFlight: 1, abandoned: 1 }));
     assert.equal(text, "1/3 done · 1 running · 1 abandoned");
   });
 
   it("still omits the category when there is none", () => {
     assert.ok(
-      !renderProgress({
-        total: 1,
-        shipped: 1,
-        inFlight: 0,
-        blocked: 0,
-        invisible: 0,
-        abandoned: 0,
-      }).includes("abandoned"),
+      !renderProgress(progress({ total: 1, shipped: 1 })).includes("abandoned"),
     );
   });
 });

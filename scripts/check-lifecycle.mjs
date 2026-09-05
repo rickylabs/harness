@@ -76,8 +76,12 @@ function readBoardLifecycle() {
   if (prefix === null) throw new Error("DEFAULT_LIFECYCLE declares no `prefix`");
 
   const phases = [];
-  for (const m of block[1].matchAll(/phase\(\s*"([^"]+)"\s*(?:,\s*(true|false)\s*)?\)/g)) {
-    phases.push({ name: m[1], label: `${prefix[1]}:${m[1]}`, terminal: m[2] === "true" });
+  // `phase("name")` or `phase("name", { terminal: true, queued: true })`. Only `terminal` is
+  // compared against the taxonomy — `queued` is the board's own reading of a phase and forge makes
+  // no claim about it.
+  for (const m of block[1].matchAll(/phase\(\s*"([^"]+)"\s*(?:,\s*\{([^}]*)\}\s*)?\)/g)) {
+    const flags = m[2] ?? "";
+    phases.push({ name: m[1], label: `${prefix[1]}:${m[1]}`, terminal: /terminal:\s*true/.test(flags) });
   }
   if (phases.length === 0) throw new Error("DEFAULT_LIFECYCLE parsed to zero phases");
   return { prefix: prefix[1], phases };

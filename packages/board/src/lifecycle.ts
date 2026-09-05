@@ -29,6 +29,18 @@ export interface Phase {
   readonly name: string;
   /** True for phases that mean the work is finished and should stop drawing attention. */
   readonly terminal: boolean;
+  /**
+   * True for phases that mean nothing is acting on the item and nothing has started.
+   *
+   * A property of the phase rather than a list of names held by the counter, because the counter
+   * is meant to work on lifecycles it has never seen. A repository whose first column is called
+   * `inbox` gets a truthful count by saying so here; it should not have to be recognised by name
+   * somewhere else.
+   *
+   * Distinct from `terminal`, and distinct from being merely unfinished. Work waiting on a human
+   * decision is not queued — someone could act on it right now, and the board should say so.
+   */
+  readonly queued: boolean;
 }
 
 /** An ordered lifecycle. Order is column order, left to right. */
@@ -37,21 +49,30 @@ export interface Lifecycle {
   readonly phases: readonly Phase[];
 }
 
-const phase = (name: string, terminal = false): Phase => ({
+/** What a phase means, beyond its position in the order. Both default to false. */
+interface PhaseFlags {
+  readonly terminal?: boolean;
+  readonly queued?: boolean;
+}
+
+const phase = (name: string, flags: PhaseFlags = {}): Phase => ({
   label: `status:${name}`,
   name,
-  terminal,
+  terminal: flags.terminal === true,
+  queued: flags.queued === true,
 });
 
 /**
- * The nine phases stamped by `dsh-forge`. `shipped` is the only terminal phase: `blocked` and
+ * The eleven phases stamped by `dsh-forge`. `shipped` is the only terminal phase: `ci-fail` and
  * `close-gate-override` are states work can leave, and collapsing them into "done" is how a
  * board starts lying.
  */
 export const DEFAULT_LIFECYCLE: Lifecycle = {
   prefix: "status",
   phases: [
-    phase("triage"),
+    // Filed and nothing more. The board's largest column by far, and counting it as work in
+    // progress is what produced "60 running" on a board with two agents actually running.
+    phase("triage", { queued: true }),
     phase("research"),
     phase("plan"),
     phase("plan-eval"),
@@ -59,13 +80,16 @@ export const DEFAULT_LIFECYCLE: Lifecycle = {
     phase("impl-eval"),
     phase("augment-review"),
     phase("ci-fail"),
+    // Deliberately not queued. The work is finished and waiting on a human, which is a different
+    // kind of waiting from `triage`: someone can act on it now, so the board should keep nagging
+    // rather than park it in a column that reads as "not started".
     phase("ready-merge"),
     // Outside `dsh-forge`'s `STATUS_LIFECYCLE` array, but stamped by it and therefore present on
     // real boards. A phase the projector does not know is not a smaller column — it is an item
     // that vanishes, so this list is what the repository has, not what it ought to have. #100
     // moves this label to the `flag:` family, and it leaves here when it leaves there.
     phase("close-gate-override"),
-    phase("shipped", true),
+    phase("shipped", { terminal: true }),
   ],
 };
 

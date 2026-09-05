@@ -129,13 +129,37 @@ export interface BoardSnapshot {
  *
  * A terminal phase is necessary but not sufficient. A pull request closed without merging is
  * terminal on the board and abandoned in fact, and counting it as shipped is how a board comes to
- * report work as delivered that nobody delivered. Only a positive `merged: false` demotes an item
- * — an unknown merge state is not evidence of abandonment.
+ * report work as delivered that nobody delivered.
+ *
+ * `merged` is three-valued and all three values mean different things. This function used to read
+ * `merged !== false`, on the argument that an unknown merge state is not evidence of abandonment —
+ * which is true, and is an argument for not calling it abandoned. It is not an argument for calling
+ * it shipped. "We do not know whether this landed" and "this landed" are the two claims a delivery
+ * report exists to keep apart, so shipped now requires positive evidence and the third case is
+ * reported as itself by `isDeliveryUnknown`.
+ *
+ * The adapter in `github.ts` always resolves `merged` for a pull request, so on a board fetched
+ * from GitHub the unknown case does not arise. It arises from any other producer of `SourceIssue`,
+ * and the type has always permitted it.
  */
 export function isShipped(item: BoardItem): boolean {
   if (item.phase?.terminal !== true) return false;
   if (item.source.kind !== "pull-request") return true;
-  return item.source.merged !== false;
+  return item.source.merged === true;
+}
+
+/**
+ * A terminal pull request whose merge state nobody reported.
+ *
+ * Neither shipped nor abandoned. Counted apart from both so that a gap in the input shows up as a
+ * gap rather than as a delivery.
+ */
+export function isDeliveryUnknown(item: BoardItem): boolean {
+  return (
+    item.phase?.terminal === true &&
+    item.source.kind === "pull-request" &&
+    item.source.merged === undefined
+  );
 }
 
 /** A pull request that reached a terminal column, or closed, without ever landing. */
