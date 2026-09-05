@@ -14,7 +14,7 @@ owns it lands. Do not add behaviour to a stub before that epic has defined its c
 | `governance` | E5 · #35 | tri-regime admission control |
 | `board`, `coordinator` | E6 · #36 | task DAG, kanban projection, MASTER workflows |
 | `forge`, `netscript-bridge` | E7 · #37 | GitHub bridge, polyglot dispatch |
-| `contracts` | E8 · #38 | **published** to npm as `@rickylabs/contracts`; the only non-private package |
+| `contracts` | E8 · #38 | **published** to npm as `@rickylabs/harness-contracts`; the only non-private package |
 | `telemetry` | E9 · #39 | `SessionTelemetrySink` |
 
 The provider packages and `llm-local` are separate on purpose: vendor CLIs and API/local models
@@ -34,7 +34,14 @@ without either depending on the other.
 ## Conventions every package inherits
 
 - **Name** `@rickylabs/<dir>`; `private: true` for everything except `contracts`.
-- **ESM only.** `"type": "module"`, `exports` map pointing at `dist/`, `files: ["dist"]`.
+  - **The one exception is `contracts` itself**, published as `@rickylabs/harness-contracts` (#81).
+    The other fourteen names are internal and only ever read inside this repository, where `contracts`
+    is unambiguous. That one is a public npm name that has to say which project it belongs to when it
+    appears in someone else's `package.json`. The directory keeps its short name because the name a
+    contributor types is a different audience from the name a consumer installs.
+- **ESM only.** `"type": "module"`, `exports` map pointing at `dist/`, `files: ["dist"]`. The
+  published package additionally ships `src/` so its declaration maps resolve, and excludes every
+  test artefact; `pnpm run check:publish` enforces both.
 - **One TypeScript base.** `tsconfig.json` is `{ extends: "../../tsconfig.base.json", rootDir: src, outDir: dist }`
   plus a `references` entry for every workspace dependency. The base turns on `composite`,
   `strict`, `NodeNext`, `verbatimModuleSyntax` and `noUncheckedIndexedAccess`; override per

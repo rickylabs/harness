@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@rickylabs/board": "workspace:*",
-    "@rickylabs/contracts": "workspace:*",
+    "@rickylabs/harness-contracts": "workspace:*",
     "@rickylabs/coordinator": "workspace:*",
     "@rickylabs/forge": "workspace:*",
     "@rickylabs/governance": "workspace:*",

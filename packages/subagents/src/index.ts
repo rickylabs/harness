@@ -13,7 +13,7 @@
  * depending on the kanban projection to find out what a dispatch looks like. Inverting that
  * dependency would make board a leaf that half the tree reaches through.
  *
- * It is also not in `@rickylabs/contracts`. That package is E8's, published to npm for the two UIs,
+ * It is also not in `@rickylabs/harness-contracts`. That package is E8's, published to npm for the two UIs,
  * and its own stub says not to add behaviour before that epic defines its contract. #79's scope
  * discipline settles it from the other side: a type that only makes sense for one surface does not
  * belong there, and the UIs never implement a provider — they read a board.

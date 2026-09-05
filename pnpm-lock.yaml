@@ -33,9 +33,6 @@ importers:
       '@rickylabs/board':
         specifier: workspace:*
         version: link:../board
-      '@rickylabs/contracts':
-        specifier: workspace:*
-        version: link:../contracts
       '@rickylabs/coordinator':
         specifier: workspace:*
         version: link:../coordinator
@@ -45,6 +42,9 @@ importers:
       '@rickylabs/governance':
         specifier: workspace:*
         version: link:../governance
+      '@rickylabs/harness-contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@rickylabs/llm-local':
         specifier: workspace:*
         version: link:../llm-local

@@ -1,7 +1,11 @@
-# @rickylabs/contracts
+# @rickylabs/harness-contracts
 
 The types the coordinator and its cockpits agree on: what work exists, what is running, what may be
 spent, and what is waiting on a person.
+
+```bash
+npm install @rickylabs/harness-contracts
+```
 
 Owned by epic E8 · #38. See [`packages/README.md`](../README.md) for workspace conventions.
 
@@ -154,11 +158,11 @@ on something nobody was shown.
 ## Using it
 
 ```bash
-pnpm --filter @rickylabs/contracts test
+pnpm --filter @rickylabs/harness-contracts test
 ```
 
 ```ts
-import { commandPath, readServerEvent, MUX_PATH, type RemoteSnapshot } from "@rickylabs/contracts";
+import { commandPath, readServerEvent, MUX_PATH, type RemoteSnapshot } from "@rickylabs/harness-contracts";
 
 const res = await fetch(commandPath("snapshot"), { method: "POST", body: "{}" });
 const snapshot: RemoteSnapshot = await res.json();
@@ -170,12 +174,99 @@ socket.addEventListener("message", (e) => {
 });
 ```
 
+## Two entry points
+
+```ts
+import { openCockpit, stepCockpit } from "@rickylabs/harness-contracts";        // both cockpits
+import { openHub, publish } from "@rickylabs/harness-contracts/server";         // the coordinator
+```
+
+`Hub` produces the frames `EventFold` consumes, so both halves live in one package — the property
+that matters, that folding what the hub sent reproduces the board the hub holds, is only assertable
+where both exist. But only the coordinator runs a hub, and a phone bundle should not carry one. So
+the hub is reachable **only** from `/server`, and nothing on the root entry imports it. That is not a
+convention; `pnpm run check:publish` fails the build if `dist/index.js` ever names `server.js`.
+
+## Versioning, and the window a deployed cockpit gets
+
+The cockpits ship on a cadence this repository does not control. A phone build can sit on a device
+for weeks after it is superseded, and an npm version is immutable — there is no revert. So the rules
+here are stricter than semver alone.
+
+**The protocol pins the major.** `PROTOCOL_VERSION` is the wire contract, and it is mirrored in the
+manifest as `dsh.protocol`. Those two must agree, and `check:publish` fails the build when they do
+not. The rule they enforce: **a `PROTOCOL_VERSION` bump is always a package major.** The converse
+does not hold — removing an export or narrowing a type is a major with the protocol unchanged.
+
+**While 0.x, the minor plays the role of the major.** Semver permits 0.x minors to break; this
+package uses that permission and nothing more. A breaking change goes `0.1 → 0.2` and still gets the
+full deprecation courtesy below. `1.0.0` is cut when the first cockpit reaches a device the owner
+cannot redeploy at will — that is the event the version number exists to mark, not a maturity
+judgement.
+
+**The window.** A cockpit built against protocol *N* must keep working until its replacement has
+actually rolled out. Today the hub serves exactly one protocol and answers anything else with
+`protocol-mismatch`, which is correct for a single deployment and is *not* a window. So the rule is
+written for the change that will need it: **the release that introduces protocol 2 must, in the same
+change, teach the hub to accept protocol 1 on `hello` and serve it a protocol-1 view.** Introducing
+the new protocol first and the tolerance afterwards is the ordering that bricks a deployed build,
+and it is the one thing this section exists to forbid.
+
+## The deprecation path
+
+Written before the first breaking change, because a deprecation policy authored after one is a
+description of what already happened.
+
+1. **Add before removing.** The replacement lands as an optional field or a new export, and the old
+   one keeps being populated. This is a minor. Both cockpits keep compiling untouched.
+2. **Say so in the types.** The superseded export gets a `@deprecated` JSDoc line naming its
+   replacement in the *same* release that adds it. This is the notice that actually reaches people:
+   it shows up struck through in both UIs' editors on the next `pnpm update`, without anyone reading
+   a changelog.
+3. **Let a release pass.** At least one published minor carries both the old and the new. A
+   deprecation and its removal in the same version is a removal with a comment attached.
+4. **Then remove, in a major.** With the protocol rule above, and the window if the wire moved.
+5. **Mark the old range on npm.** `npm deprecate '@rickylabs/harness-contracts@<1.0.0'` with a
+   message naming the successor, so an install of the superseded range says what to do next.
+6. **Never unpublish, never reuse a version.** A version that shipped, shipped. If it was wrong,
+   the answer is a new version and a deprecation notice on the old one.
+
+## Releasing
+
+```bash
+pnpm run check:publish     # what the release pipeline asserts, runnable locally
+```
+
+Releases are cut by tag, never by merge:
+
+```bash
+git tag harness-contracts-v0.1.0 && git push origin harness-contracts-v0.1.0
+```
+
+That tag triggers [`release-contracts.yml`](../../.github/workflows/release-contracts.yml), which
+trusts the tag with nothing. It re-runs the whole workspace against the tagged tree — a green CI run
+on the merge commit does not license a publish from a tag, because the tag may not be that commit —
+then checks that the commit is an ancestor of `main`, so a tag pushed to a branch that never opened a
+pull request cannot ship, and that the tag and the manifest name the same version. Only then does it
+publish, with npm provenance: signed with an OIDC token minted per run, so the tarball is traceable
+to that workflow at that commit rather than to whoever held a token.
+
+**It is inert until two things exist that only the owner can supply:** an `NPM_TOKEN` repository
+secret, and a pushed tag. Until then the workflow can be read and reviewed but cannot publish. To
+exercise it without releasing, dispatch it manually — the manual path defaults to a dry run and
+prints the tarball contents instead of uploading them.
+
+`check:publish` runs as the last step of `pnpm run build`, so the things that have no undo are caught
+in the ordinary loop: the manifest name against the compiled `PACKAGE_NAME`, the protocol against
+`dsh.protocol`, the export map against what the build actually emitted, the hub against the root
+entry, and the tarball against itself — no test artefacts, and no source map naming a file the
+tarball omits. That last one is why `src/` is published: the declaration maps point there, and a map
+that dangles is worse than no map at all.
+
 ## What is not here yet
 
-- `EventFold` and the `ConnectionLoop` generation binding, the auth shapes, and the reconnect test
-  that proves convergence after dropped deltas — #80.
-- npm publication, semver and the stated compatibility window, including the rename to
-  `@rickylabs/harness-contracts` — #81. The workspace package is still `@rickylabs/contracts`, and
-  `name` *is* the published name, so that rename is #81's to make.
-- The reference bindings for connect, snapshot, dispatch and approve, and the grouping helpers that
-  turn a normalized snapshot into columns and trees — #82.
+- Agent chat — see the scope section above for why its absence is a decision rather than a backlog
+  item.
+- `run.removed`. The union has `task.removed` and no counterpart for runs, so a run that vanishes
+  from the coordinator's view can only be communicated by a snapshot. That is a protocol gap, not an
+  export gap: closing it is a `PROTOCOL_VERSION` bump, and therefore a major here.
