@@ -10,7 +10,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { parseClaudeTranscript } from "./claude.js";
+import { KNOWN_TYPES, parseClaudeTranscript, unknownTypeNote } from "./claude.js";
+import { NOT_AN_OBJECT, NOT_JSON } from "./jsonl.js";
+
+/** The record alone. Notes are asserted on directly in the degradation suite below. */
+const parseRun = (text: string, origin = "o") => parseClaudeTranscript(text, origin).run;
 
 const lines = (...records: readonly unknown[]): string =>
   records.map((r) => JSON.stringify(r)).join("\n");
@@ -46,7 +50,7 @@ const assistant = (usage: Record<string, number>, over: Record<string, unknown> 
 
 describe("parseClaudeTranscript", () => {
   it("recovers identity, window and usage from a plain session", () => {
-    const run = parseClaudeTranscript(
+    const run = parseRun(
       lines(
         user("build the telemetry sink"),
         assistant({ input_tokens: 10, output_tokens: 4, cache_read_input_tokens: 900, cache_creation_input_tokens: 7 }),
@@ -74,7 +78,7 @@ describe("parseClaudeTranscript", () => {
   it("sums usage across turns, because this seam reports a delta per turn", () => {
     // The opposite of Codex, which reports a running total. Getting the two the same way round is
     // the only reason the numbers on the two seams can be compared at all.
-    const run = parseClaudeTranscript(
+    const run = parseRun(
       lines(
         user("go"),
         assistant({ input_tokens: 10, output_tokens: 1 }),
@@ -87,7 +91,7 @@ describe("parseClaudeTranscript", () => {
   });
 
   it("prefers the session's own name over the first prompt", () => {
-    const run = parseClaudeTranscript(
+    const run = parseRun(
       lines(
         user("some very long opening prompt"),
         { type: "custom-title", customTitle: "telemetry sink", sessionId: "s1" },
@@ -98,7 +102,7 @@ describe("parseClaudeTranscript", () => {
   });
 
   it("falls back to the first prompt when the session was never named", () => {
-    const run = parseClaudeTranscript(lines(user("fix the label taxonomy")), "o");
+    const run = parseRun(lines(user("fix the label taxonomy")), "o");
     assert.equal(run?.title, "fix the label taxonomy");
   });
 
@@ -106,7 +110,7 @@ describe("parseClaudeTranscript", () => {
     // Refusing the whole session to protest a truncated tail would lose the running work — the one
     // run an operator is most likely to be asking about.
     const text = `${lines(user("go"), assistant({ input_tokens: 5 }))}\n{"type":"assis`;
-    const run = parseClaudeTranscript(text, "o");
+    const run = parseRun(text, "o");
     assert.ok(run);
     assert.equal(run.usage.inputTokens, 5);
   });
@@ -114,18 +118,86 @@ describe("parseClaudeTranscript", () => {
   it("reports an unknown outcome, because the store has no completion marker", () => {
     // A finished session and a session whose process was killed mid-turn produce the same file.
     // Claiming "complete" from the presence of an assistant turn would be inventing evidence.
-    const run = parseClaudeTranscript(lines(user("go"), assistant({ input_tokens: 1 })), "o");
+    const run = parseRun(lines(user("go"), assistant({ input_tokens: 1 })), "o");
     assert.equal(run?.outcome, "unknown");
   });
 
   it("returns null for a file with no session identity rather than a half-empty record", () => {
-    assert.equal(parseClaudeTranscript('{"type":"queue-operation"}', "o"), null);
-    assert.equal(parseClaudeTranscript("", "o"), null);
+    assert.equal(parseRun('{"type":"queue-operation"}', "o"), null);
+    assert.equal(parseRun("", "o"), null);
   });
 
   it("leaves the model null when no assistant turn ever ran", () => {
     // A queued-but-never-dispatched session must not be reported as having run a model.
-    const run = parseClaudeTranscript(lines(user("go")), "o");
+    const run = parseRun(lines(user("go")), "o");
     assert.deepEqual(run?.identity, { model: null, effort: null, provider: null });
+  });
+});
+
+describe("parseClaudeTranscript, on a transcript it cannot fully read", () => {
+  it("survives a line that is JSON but not a record", () => {
+    // Finding F-4 on #105. `JSON.parse("null")` returns null, the old parser cast it to Line and
+    // read `.sessionId` off it, and the TypeError escaped the whole scan.
+    const text = `${lines(user("go"))}\nnull\n${lines(assistant({ input_tokens: 1 }))}`;
+    const { run, notes } = parseClaudeTranscript(text, "o");
+    assert.equal(run?.id, "5dc200b1-b629-4b56-b487-6990b69ef498");
+    assert.deepEqual(notes, [{ reason: NOT_AN_OBJECT, lines: 1 }]);
+  });
+
+  it("survives a record whose message is null rather than absent", () => {
+    // `message !== undefined` is true for a JSON null, and the field read behind it threw.
+    const text = lines(user("go"), assistant({ input_tokens: 1 }, { message: null }));
+    const { run } = parseClaudeTranscript(text, "o");
+    assert.equal(run?.identity.model, null);
+    assert.deepEqual(run?.usage, {});
+  });
+
+  it("counts a truncated tail instead of passing it over in silence", () => {
+    const text = `${lines(user("go"))}\n{"type":"assistant","timestamp":`;
+    const { run, notes } = parseClaudeTranscript(text, "o");
+    assert.equal(run?.updatedAt, "2026-09-04T22:00:00.000Z");
+    assert.deepEqual(notes, [{ reason: NOT_JSON, lines: 1 }]);
+  });
+
+  it("reports a record type it does not understand", () => {
+    // Finding F-9. The note is the signal to extend KNOWN_TYPES; until someone does, the unread
+    // record is visibly unread rather than quietly absent.
+    const text = lines(user("go"), { type: "warp-drive", timestamp: "2026-09-05T09:00:00.000Z" });
+    const { notes } = parseClaudeTranscript(text, "o");
+    assert.deepEqual(notes, [{ reason: unknownTypeNote("warp-drive"), lines: 1 }]);
+  });
+
+  it("does not let a record it could not read say when the run was last active", () => {
+    // An unread record is not evidence that an agent did something, and `updatedAt` is exactly
+    // that claim. Reporting activity at 09:00 on the strength of a record nobody parsed is how a
+    // dead run looks alive on the board.
+    const text = lines(user("go"), { type: "warp-drive", timestamp: "2026-09-05T09:00:00.000Z" });
+    const { run } = parseClaudeTranscript(text, "o");
+    assert.equal(run?.updatedAt, "2026-09-04T22:00:00.000Z");
+  });
+
+  it("says nothing when it read everything", () => {
+    const { notes } = parseClaudeTranscript(lines(user("go"), assistant({})), "o");
+    assert.deepEqual(notes, []);
+  });
+
+  it("reports every type the local store was observed to contain as known", () => {
+    // The census this list came from. A type dropping out of KNOWN_TYPES would start producing
+    // notes for ordinary traffic, which is the fastest way to teach an operator to ignore them.
+    for (const type of [
+      "assistant",
+      "attachment",
+      "atis-latch",
+      "bridge-session",
+      "custom-title",
+      "last-prompt",
+      "mode",
+      "pr-link",
+      "queue-operation",
+      "system",
+      "user",
+    ]) {
+      assert.equal(KNOWN_TYPES.has(type), true, `${type} is not in KNOWN_TYPES`);
+    }
   });
 });

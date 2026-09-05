@@ -15,6 +15,7 @@
  */
 
 import { linkedIssuesOf, type RunRecord, type RunUsage } from "../model.js";
+import { isoFromMillis } from "./jsonl.js";
 
 /** One row of `session`, reduced to the columns this package reads. */
 export interface SessionRow {
@@ -49,12 +50,10 @@ export const SESSION_QUERY = `
    order by time_created asc
 ` as const;
 
-const millisToIso = (value: number | null): string | null => {
-  if (value === null || !Number.isFinite(value) || value <= 0) return null;
-  // opencode stores milliseconds. A value small enough to be a second would land in 1970, so it is
-  // rejected rather than silently rescaled into a plausible-looking lie.
-  return new Date(value).toISOString();
-};
+// opencode stores milliseconds. A value small enough to be a second would land in 1970, so it is
+// rejected rather than silently rescaled into a plausible-looking lie, and one too large to be a
+// date is rejected rather than thrown from (finding F-4 on #105).
+const millisToIso = (value: number | null): string | null => isoFromMillis(value);
 
 const count = (value: number | null): number | undefined =>
   value === null || !Number.isFinite(value) ? undefined : value;

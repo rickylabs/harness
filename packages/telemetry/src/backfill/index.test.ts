@@ -151,3 +151,39 @@ describe("defaultRoots", () => {
     assert.equal(roots.opencodeDb, join("/home/agent", ".local", "share", "opencode", "opencode.db"));
   });
 });
+
+describe("backfillFromDisk, on stores it cannot fully read", () => {
+  it("keeps one malformed line from ending the whole scan", async () => {
+    // Finding F-4 on #105, end to end: a single `null` line used to throw out of the parser, past
+    // the seam loop, and out of `backfillFromDisk` — so one bad file in the Claude store meant no
+    // Codex runs, no opencode runs, and `status` exiting 1 with nothing on screen.
+    const claudeProjects = await claudeStore([["a.jsonl", "ses-a"]]);
+    await writeFile(join(claudeProjects, "slug", "bad.jsonl"), `null\n${claudeLine("ses-b", "2026-09-04T21:00:00.000Z")}`);
+    const { runs, notes } = await backfillFromDisk({ claudeProjects });
+    assert.deepEqual(runs.map((r) => r.id).sort(), ["ses-a", "ses-b"]);
+    assert.match(notes.join("\n"), /claude: not a JSON object — 1 line\(s\) across 1 transcript\(s\)/);
+  });
+
+  it("aggregates degradation per seam rather than per file", async () => {
+    // Five hundred transcripts with a truncated tail each is one fact about the store, not five
+    // hundred lines of output. The count is what tells an operator whether to care.
+    const claudeProjects = await claudeStore([["a.jsonl", "ses-a"]]);
+    for (const [name, id] of [["b.jsonl", "ses-b"], ["c.jsonl", "ses-c"]] as const) {
+      await writeFile(join(claudeProjects, "slug", name), `${claudeLine(id, "2026-09-04T21:00:00.000Z")}{"half":`);
+    }
+    const { runs, notes } = await backfillFromDisk({ claudeProjects });
+    assert.equal(runs.length, 3);
+    const degraded = notes.filter((n) => n.includes("not valid JSON"));
+    assert.deepEqual(degraded, ["claude: not valid JSON — 2 line(s) across 2 transcript(s)"]);
+  });
+
+  it("says nothing about degradation when there was none", async () => {
+    const claudeProjects = await claudeStore([["a.jsonl", "ses-a"]]);
+    const { notes } = await backfillFromDisk({ claudeProjects });
+    assert.equal(
+      notes.some((n) => n.includes("line(s) across")),
+      false,
+      notes.join("\n"),
+    );
+  });
+});

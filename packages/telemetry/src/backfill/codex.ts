@@ -12,12 +12,40 @@
  */
 
 import { linkedIssuesOf, type QuotaReading, type RunRecord, type RunUsage } from "../model.js";
+import {
+  isoFromMillis,
+  NoteTally,
+  type JsonObject,
+  type ParsedTranscript,
+  parseLineWithReason,
+  typeLabel,
+} from "./jsonl.js";
 
 interface Envelope {
   readonly timestamp?: unknown;
   readonly type?: unknown;
-  readonly payload?: Readonly<Record<string, unknown>>;
+  readonly payload?: unknown;
 }
+
+/**
+ * The envelope types this store was observed to contain.
+ *
+ * Only the envelope is treated as a closed set. `payload.type` is an open union — one member per
+ * item kind the model can emit, and a new tool adds one — so an unrecognised payload kind is
+ * expected traffic rather than a gap in this reader. An unrecognised *envelope* is not: it means a
+ * whole class of record is going unread, and the note is how that reaches an operator.
+ */
+export const KNOWN_TYPES: ReadonlySet<string> = new Set([
+  "compacted",
+  "event_msg",
+  "response_item",
+  "session_meta",
+  "turn_context",
+]);
+
+/** An unrecognised envelope type, as it appears in a note. */
+export const unknownTypeNote = (type: unknown): string =>
+  `unrecognised record type "${typeLabel(type)}"`;
 
 const str = (value: unknown): string | null =>
   typeof value === "string" && value.length > 0 ? value : null;
@@ -25,26 +53,26 @@ const str = (value: unknown): string | null =>
 const num = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
 
-const obj = (value: unknown): Readonly<Record<string, unknown>> | null =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as Readonly<Record<string, unknown>>)
-    : null;
+const obj = (value: unknown): JsonObject | null =>
+  typeof value === "object" && value !== null && !Array.isArray(value) ? (value as JsonObject) : null;
 
 /**
  * Convert the vendor's Unix second to ISO 8601.
  *
  * Returns `null` rather than an epoch string for a missing value: `1970-01-01` presented as a quota
- * reset time is worse than admitting the transcript did not say.
+ * reset time is worse than admitting the transcript did not say. It also returns `null` rather than
+ * throwing for a value too large to be a date — `resets_at` is a number in a file this package does
+ * not write, and one absurd value must not end a scan (finding F-4 on #105).
  */
 export function isoFromUnixSeconds(seconds: unknown): string | null {
   const value = num(seconds);
-  if (value === null || value <= 0) return null;
-  return new Date(value * 1000).toISOString();
+  if (value === null) return null;
+  return isoFromMillis(value * 1000);
 }
 
 /** Pull the account's window position out of a `token_count` event's `rate_limits` block. */
 export function quotaFromRateLimits(
-  rateLimits: Readonly<Record<string, unknown>>,
+  rateLimits: JsonObject,
   observedAt: string,
 ): QuotaReading | null {
   const primary = obj(rateLimits["primary"]);
@@ -63,7 +91,8 @@ export function quotaFromRateLimits(
 }
 
 /** Reduce one rollout file to a run record. `origin` is the path it came from. */
-export function parseCodexRollout(text: string, origin: string): RunRecord | null {
+export function parseCodexRollout(text: string, origin: string): ParsedTranscript<RunRecord> {
+  const tally = new NoteTally();
   let id: string | null = null;
   let firstAt: string | null = null;
   let lastAt: string | null = null;
@@ -81,15 +110,19 @@ export function parseCodexRollout(text: string, origin: string): RunRecord | nul
 
   for (const raw of text.split("\n")) {
     if (raw.trim().length === 0) continue;
-    let line: Envelope;
-    try {
-      line = JSON.parse(raw) as Envelope;
-    } catch {
-      continue; // A live rollout's last line is routinely half-written.
+    const parsed = parseLineWithReason(raw);
+    if (parsed.line === null) {
+      tally.bump(parsed.reason ?? "line(s) this parser could not read");
+      continue;
     }
+    const line = parsed.line as Envelope;
+
+    // An unread record does not get to say when this run was last active. Finding F-9 on #105.
+    const known = typeof line.type === "string" && KNOWN_TYPES.has(line.type);
+    if (!known) tally.bump(unknownTypeNote(line.type));
 
     const at = str(line.timestamp);
-    if (at !== null) {
+    if (at !== null && known) {
       firstAt ??= at;
       lastAt = at;
     }
@@ -146,24 +179,28 @@ export function parseCodexRollout(text: string, origin: string): RunRecord | nul
     if (kind === "error" || kind === "stream_error" || kind === "turn_aborted") outcome = "failed";
   }
 
-  if (id === null || firstAt === null || lastAt === null) return null;
+  const notes = tally.notes();
+  if (id === null || firstAt === null || lastAt === null) return { run: null, notes };
 
   return {
-    id,
-    source: "codex",
-    parentId: null,
-    startedAt: firstAt,
-    updatedAt: lastAt,
-    title,
-    cwd,
-    // A rollout does not record the branch; attribution on this seam comes from the working
-    // directory the operator launched in, which the worktree layout makes meaningful.
-    branch: null,
-    identity: { model, effort, provider },
-    usage: usage as RunUsage,
-    outcome,
-    linkedIssues: linkedIssuesOf(cwd, title),
-    origin,
-    quota,
+    run: {
+      id,
+      source: "codex",
+      parentId: null,
+      startedAt: firstAt,
+      updatedAt: lastAt,
+      title,
+      cwd,
+      // A rollout does not record the branch; attribution on this seam comes from the working
+      // directory the operator launched in, which the worktree layout makes meaningful.
+      branch: null,
+      identity: { model, effort, provider },
+      usage: usage as RunUsage,
+      outcome,
+      linkedIssues: linkedIssuesOf(cwd, title),
+      origin,
+      quota,
+    },
+    notes,
   };
 }

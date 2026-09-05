@@ -17,6 +17,7 @@ import type { RunRecord } from "../model.js";
 import { compareStrings } from "../order.js";
 import { parseClaudeTranscript } from "./claude.js";
 import { parseCodexRollout } from "./codex.js";
+import type { ParsedTranscript } from "./jsonl.js";
 import { openOpencodeDb, readSessions } from "./opencode.js";
 
 export interface BackfillRoots {
@@ -77,11 +78,11 @@ export async function backfillFromDisk(
   const runs: RunRecord[] = [];
   const notes: string[] = [];
 
-  const seams: readonly [string | undefined, string, (t: string, o: string) => RunRecord | null][] =
-    [
-      [roots.claudeProjects, "claude", parseClaudeTranscript],
-      [roots.codexSessions, "codex", parseCodexRollout],
-    ];
+  type Parser = (text: string, origin: string) => ParsedTranscript<RunRecord>;
+  const seams: readonly [string | undefined, string, Parser][] = [
+    [roots.claudeProjects, "claude", parseClaudeTranscript],
+    [roots.codexSessions, "codex", parseCodexRollout],
+  ];
 
   for (const [root, seam, parse] of seams) {
     if (root === undefined) {
@@ -98,6 +99,10 @@ export async function backfillFromDisk(
     }
     let unreadable = 0;
     let empty = 0;
+    let crashed = 0;
+    // Degradation is counted across the whole seam rather than reported per file: one operator-
+    // readable line beats five hundred, and the count is what says whether to care.
+    const degraded = new Map<string, { files: number; lines: number }>();
     for (const file of files.slice(0, limit)) {
       let text: string;
       try {
@@ -106,12 +111,31 @@ export async function backfillFromDisk(
         unreadable += 1;
         continue;
       }
-      const run = parse(text, file);
-      if (run === null) empty += 1;
-      else runs.push(run);
+      let parsed: ParsedTranscript<RunRecord>;
+      try {
+        parsed = parse(text, file);
+      } catch {
+        // A parser that throws is this package's bug, not the store's — but a bug in one seam must
+        // not take the other two down with it, and `status` has to answer while it is being fixed.
+        // Finding F-4 on #105, where one `null` line reached a field access and ended the scan.
+        crashed += 1;
+        continue;
+      }
+      for (const note of parsed.notes) {
+        const seen = degraded.get(note.reason) ?? { files: 0, lines: 0 };
+        degraded.set(note.reason, { files: seen.files + 1, lines: seen.lines + note.lines });
+      }
+      if (parsed.run === null) empty += 1;
+      else runs.push(parsed.run);
     }
     if (unreadable > 0) notes.push(`${seam}: ${unreadable} transcript(s) could not be read`);
     if (empty > 0) notes.push(`${seam}: ${empty} transcript(s) carried no session identity`);
+    if (crashed > 0) notes.push(`${seam}: ${crashed} transcript(s) crashed the parser — please report`);
+    for (const [reason, seen] of [...degraded].sort(([a], [b]) => compareStrings(a, b))) {
+      notes.push(
+        `${seam}: ${reason} — ${seen.lines} line(s) across ${seen.files} transcript(s)`,
+      );
+    }
   }
 
   if (roots.opencodeDb === undefined) {
@@ -147,6 +171,19 @@ export function defaultRoots(home: string): BackfillRoots {
 
 export { parseClaudeTranscript } from "./claude.js";
 export { isoFromUnixSeconds, parseCodexRollout, quotaFromRateLimits } from "./codex.js";
+export {
+  isoFromMillis,
+  MAX_TIME_MS,
+  NoteTally,
+  NOT_AN_OBJECT,
+  NOT_JSON,
+  parseLine,
+  parseLineWithReason,
+  type JsonObject,
+  type ParsedTranscript,
+  type ParseNote,
+  typeLabel,
+} from "./jsonl.js";
 export {
   openOpencodeDb,
   readSessions,

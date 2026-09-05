@@ -7,7 +7,17 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { isoFromUnixSeconds, parseCodexRollout, quotaFromRateLimits } from "./codex.js";
+import {
+  isoFromUnixSeconds,
+  KNOWN_TYPES,
+  parseCodexRollout,
+  quotaFromRateLimits,
+  unknownTypeNote,
+} from "./codex.js";
+import { NOT_AN_OBJECT } from "./jsonl.js";
+
+/** The record alone. Notes are asserted on directly in the degradation suite below. */
+const parseRun = (text: string, origin = "o") => parseCodexRollout(text, origin).run;
 
 const lines = (...records: readonly unknown[]): string =>
   records.map((r) => JSON.stringify(r)).join("\n");
@@ -95,7 +105,7 @@ describe("parseCodexRollout", () => {
   it("recovers the launch identity from turn_context, not from prose", () => {
     // The harness invariant is that launch identity is data. This is where a run that claims one
     // model in its brief and ran another becomes visible.
-    const run = parseCodexRollout(lines(meta, turn), "/store/r.jsonl");
+    const run = parseRun(lines(meta, turn), "/store/r.jsonl");
     assert.ok(run);
     assert.deepEqual(run.identity, { model: "gpt-5.6-sol", effort: "xhigh", provider: "openai" });
     assert.equal(run.id, "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d");
@@ -105,7 +115,7 @@ describe("parseCodexRollout", () => {
   it("takes the last token_count as the total, not the sum of them", () => {
     // Codex reports a running total. Summing would multiply the last turn by the number of turns —
     // a number that looks plausible and is wrong by an order of magnitude on a long run.
-    const run = parseCodexRollout(
+    const run = parseRun(
       lines(
         meta,
         turn,
@@ -123,7 +133,7 @@ describe("parseCodexRollout", () => {
   });
 
   it("collects a quota reading per token_count, stamped with when it was observed", () => {
-    const run = parseCodexRollout(
+    const run = parseRun(
       lines(
         meta,
         turn,
@@ -139,21 +149,21 @@ describe("parseCodexRollout", () => {
 
   it("tracks the last state-bearing event as the outcome", () => {
     const started = lines(meta, turn, { timestamp: "2026-09-04T21:02:00.000Z", type: "event_msg", payload: { type: "task_started" } });
-    assert.equal(parseCodexRollout(started, "o")?.outcome, "running");
+    assert.equal(parseRun(started, "o")?.outcome, "running");
 
     const finished = `${started}\n${JSON.stringify({ timestamp: "2026-09-04T21:20:00.000Z", type: "event_msg", payload: { type: "task_complete", turn_id: "t1", duration_ms: 1080000 } })}`;
-    assert.equal(parseCodexRollout(finished, "o")?.outcome, "complete");
+    assert.equal(parseRun(finished, "o")?.outcome, "complete");
 
     const errored = `${started}\n${JSON.stringify({ timestamp: "2026-09-04T21:03:00.000Z", type: "event_msg", payload: { type: "stream_error", message: "upstream reset" } })}`;
-    assert.equal(parseCodexRollout(errored, "o")?.outcome, "failed");
+    assert.equal(parseRun(errored, "o")?.outcome, "failed");
   });
 
   it("says unknown when nothing in the file speaks to the outcome", () => {
-    assert.equal(parseCodexRollout(lines(meta, turn), "o")?.outcome, "unknown");
+    assert.equal(parseRun(lines(meta, turn), "o")?.outcome, "unknown");
   });
 
   it("takes the first user message as the title", () => {
-    const run = parseCodexRollout(
+    const run = parseRun(
       lines(meta, turn, { timestamp: "2026-09-04T21:01:00.000Z", type: "event_msg", payload: { type: "user_message", message: "review PR #98" } }),
       "o",
     );
@@ -161,11 +171,66 @@ describe("parseCodexRollout", () => {
   });
 
   it("returns null when the rollout never identified its session", () => {
-    assert.equal(parseCodexRollout(lines(turn), "o"), null);
+    assert.equal(parseRun(lines(turn), "o"), null);
   });
 
   it("survives a half-written last line", () => {
-    const run = parseCodexRollout(`${lines(meta, turn)}\n{"timestamp":"2026`, "o");
+    const run = parseRun(`${lines(meta, turn)}\n{"timestamp":"2026`, "o");
     assert.equal(run?.id, "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d");
+  });
+});
+
+describe("parseCodexRollout, on a rollout it cannot fully read", () => {
+  it("survives a line that is JSON but not a record", () => {
+    const text = `${lines(meta, turn)}\nnull`;
+    const { run, notes } = parseCodexRollout(text, "o");
+    assert.equal(run?.id, "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d");
+    assert.deepEqual(notes, [{ reason: NOT_AN_OBJECT, lines: 1 }]);
+  });
+
+  it("reports an envelope type it does not understand, and refuses it the clock", () => {
+    const text = lines(meta, turn, {
+      type: "warp-drive",
+      timestamp: "2026-09-05T09:00:00.000Z",
+      payload: {},
+    });
+    const { run, notes } = parseCodexRollout(text, "o");
+    assert.equal(run?.updatedAt, "2026-09-04T21:00:01.000Z");
+    assert.deepEqual(notes, [{ reason: unknownTypeNote("warp-drive"), lines: 1 }]);
+  });
+
+  it("says nothing about an unfamiliar payload kind, which is expected traffic", () => {
+    // `payload.type` is an open union — one member per item kind, and a new tool adds one. Noting
+    // those would bury the envelope note that actually means something is going unread.
+    const text = lines(meta, turn, {
+      type: "response_item",
+      timestamp: "2026-09-04T21:00:02.000Z",
+      payload: { type: "some_new_tool_call" },
+    });
+    const { run, notes } = parseCodexRollout(text, "o");
+    assert.deepEqual(notes, []);
+    assert.equal(run?.updatedAt, "2026-09-04T21:00:02.000Z");
+  });
+
+  it("returns null rather than throwing on a reset time too large to be a date", () => {
+    // Finding F-4. `new Date(1e20 * 1000).toISOString()` throws, and the throw escaped the seam.
+    const text = lines(
+      meta,
+      turn,
+      tokenCount({ input_tokens: 1 }, "2026-09-04T21:05:00.000Z", {
+        limit_id: "primary-5h",
+        primary: { used_percent: 20, window_minutes: 300, resets_at: 1e20 },
+      }),
+    );
+    const { run, notes } = parseCodexRollout(text, "o");
+    assert.equal(run?.quota[0]?.resetsAt, null);
+    assert.equal(run?.quota[0]?.usedPercent, 20);
+    assert.deepEqual(notes, []);
+  });
+
+  it("reports every envelope type the local store was observed to contain as known", () => {
+    for (const type of ["compacted", "event_msg", "response_item", "session_meta", "turn_context"]) {
+      assert.equal(KNOWN_TYPES.has(type), true, `${type} is not in KNOWN_TYPES`);
+    }
   });
 });
