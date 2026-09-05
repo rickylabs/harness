@@ -25,13 +25,20 @@ export function humanTokens(value: number | undefined): string {
   return `${(value / 1_000_000).toFixed(1)}M`;
 }
 
-/** A duration in whole units, oldest-first reading: `3h 12m`, `4m`, `just now`. */
+/**
+ * A duration in whole units: `3h 12m`, `4m`, `under a minute`.
+ *
+ * Every caller puts the result in a slot that already supplies the direction — `updated … ago`,
+ * `resets in …` — so this returns a length of time and never a moment. "just now" was a moment, and
+ * against a live run it printed `updated just now ago`, which is both wrong English and ambiguous
+ * about which end of the interval is being described.
+ */
 export function humanAge(fromIso: string, toIso: string): string {
   const from = Date.parse(fromIso);
   const to = Date.parse(toIso);
   if (!Number.isFinite(from) || !Number.isFinite(to)) return "?";
   const seconds = Math.max(0, Math.round((to - from) / 1000));
-  if (seconds < 60) return "just now";
+  if (seconds < 60) return "under a minute";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.floor(minutes / 60);

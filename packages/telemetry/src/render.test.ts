@@ -45,7 +45,7 @@ describe("humanTokens", () => {
 
 describe("humanAge", () => {
   it("reads in whole units an operator can act on", () => {
-    assert.equal(humanAge("2026-09-04T21:59:30.000Z", NOW), "just now");
+    assert.equal(humanAge("2026-09-04T21:59:30.000Z", NOW), "under a minute");
     assert.equal(humanAge("2026-09-04T21:36:00.000Z", NOW), "24m");
     assert.equal(humanAge("2026-09-04T18:48:00.000Z", NOW), "3h 12m");
     assert.equal(humanAge("2026-09-02T20:00:00.000Z", NOW), "2d 2h");
@@ -53,6 +53,16 @@ describe("humanAge", () => {
 
   it("says it does not know rather than printing NaN", () => {
     assert.equal(humanAge("not a date", NOW), "?");
+  });
+
+  it("reads as a length of time in every slot that uses it", () => {
+    // The bug this pins: the callers supply the direction, so a value that names a moment lands as
+    // "updated just now ago". Whatever the interval, the phrase has to survive being wrapped.
+    for (const from of ["2026-09-04T21:59:30.000Z", "2026-09-04T18:48:00.000Z"]) {
+      const age = humanAge(from, NOW);
+      assert.doesNotMatch(`updated ${age} ago`, /\bnow ago\b/, age);
+      assert.doesNotMatch(`resets in ${age}`, /\bin just\b/, age);
+    }
   });
 });
 
