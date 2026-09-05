@@ -87,8 +87,10 @@ export {
   defaultArchiveDir,
   defaultObservabilityDir,
   DEFAULT_POLICY,
+  DEFAULT_TEE_TIMEOUT_MS,
   type FileSinkOptions,
   type SessionTelemetrySink,
+  type TeeOptions,
   type TelemetryEvent,
 } from "./sink.js";
 

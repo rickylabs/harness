@@ -56,8 +56,16 @@ export function generationName(name: string, generation: number): string {
 /**
  * Decide what must happen before `recordBytes` are appended to a live file of `currentBytes`.
  *
- * Rotation happens *before* the write that would breach the bound, not after one that already did,
- * so the live file never exceeds `maxBytes` — a bound enforced after the fact is not a bound.
+ * Rotation happens *before* the write that would breach the bound, not after one that already did:
+ * a bound enforced after the fact is not a bound.
+ *
+ * The claim this supports is therefore narrower than "the live file never exceeds `maxBytes`", and
+ * it is worth stating exactly, because the review found the wider version false in three ways
+ * (finding F-3 on #105). What holds is: **the live file never exceeds `maxBytes` except by a single
+ * record that is itself larger than `maxBytes`, which is written whole and announced in a note.**
+ * Even that needs the sink to do its part — rotation cannot be decided by a pure function alone
+ * when several processes append to one path, so `createFileSink` serializes read-size, decide,
+ * rotate and append under a lock, and notes the breach when it cannot take one.
  */
 export function planRotation(
   policy: RotationPolicy,
