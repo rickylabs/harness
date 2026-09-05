@@ -1,16 +1,23 @@
 {
   "name": "@rickylabs/forge",
   "version": "0.0.0",
-  "description": "GitHub bridge \u2014 absorbs the Orchid pipeline",
+  "description": "GitHub bridge — absorbs the Orchid pipeline",
   "license": "MIT",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "dsh-forge": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "default": "./dist/cli.js"
     },
     "./package.json": "./package.json"
   },
@@ -20,6 +27,7 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --emitDeclarationOnly",
+    "test": "tsc -b && node --test \"dist/**/*.test.js\"",
     "clean": "rm -rf dist *.tsbuildinfo"
   }
 }

@@ -13,6 +13,8 @@
     "check:graph": "node scripts/check-project-graph.mjs",
     "build": "pnpm run check:graph && pnpm -r run build",
     "typecheck": "pnpm run check:graph && pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "skill:install": "pnpm --filter @rickylabs/forge run build && node packages/forge/dist/cli.js skill install --dispatch-label harness",
     "clean": "pnpm -r run clean"
   },
   "devDependencies": {
