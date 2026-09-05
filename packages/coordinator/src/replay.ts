@@ -22,7 +22,9 @@ import {
   type IndependencePolicy,
 } from "./independence.js";
 import { decisionOf, type PersistedDecision } from "./journal.js";
+import { planOf, readStates, type Plan, type StepState } from "./plan.js";
 import { readRoster, type Roster } from "./roster.js";
+import { WORKFLOWS, type Workflow } from "./workflow.js";
 
 /** What a decider hands back: the output it recomputed, or why it could not. */
 export type Rerun = { readonly output: unknown } | { readonly unreadable: string };
@@ -62,7 +64,31 @@ export const EVALUATOR_DECIDER: Decider = {
   },
 };
 
-export const DECIDERS: readonly Decider[] = [EVALUATOR_DECIDER];
+/**
+ * The plan, replayed.
+ *
+ * The inputs are the workflow's *name* and the state document, not the workflow itself. That is a
+ * deliberate trade and it cuts both ways: it keeps entries small and readable, and it means a build
+ * whose definition of `milestone` has changed will replay the old states against the new definition
+ * and report the difference. That is the behaviour worth having — a workflow edit that changes what
+ * may run is exactly the kind of change that should show up in a determinism check rather than being
+ * absorbed by it. A build that no longer has the workflow at all says so instead of guessing.
+ */
+export const PLAN_DECIDER: Decider = {
+  kind: "plan",
+  rerun: (inputs) => {
+    const name = inputs["workflow"];
+    const workflow = WORKFLOWS.find((w) => w.name === name);
+    if (workflow === undefined) return { unreadable: `unknown workflow ${JSON.stringify(name)}` };
+    const parsed = readStates(inputs["states"]);
+    if (parsed.states.length === 0 && parsed.notes.length > 0) {
+      return { unreadable: parsed.notes[0] ?? "the states in this entry could not be read" };
+    }
+    return { output: planOf(workflow, parsed.states) };
+  },
+};
+
+export const DECIDERS: readonly Decider[] = [EVALUATOR_DECIDER, PLAN_DECIDER];
 
 /**
  * The writer for the entry `EVALUATOR_DECIDER` reads, kept next to it on purpose.
@@ -90,6 +116,23 @@ export function evaluatorEntry(
     { policy: policy.name, roster: { author: roster.author, candidates: roster.candidates } },
     decision,
   );
+}
+
+/**
+ * The writer for the entry `PLAN_DECIDER` reads, kept next to it for the same reason as above.
+ *
+ * The states written down are the **parsed** ones. A state file may hold an entry for a step that no
+ * longer exists or an outcome nobody recognises; those were dropped before the plan was computed, so
+ * persisting the file would mean replaying against states the plan never saw.
+ */
+export function planEntry(
+  id: string,
+  at: string,
+  workflow: Workflow,
+  states: readonly StepState[],
+  plan: Plan,
+): PersistedDecision {
+  return decisionOf(id, PLAN_DECIDER.kind, at, { states: { steps: states }, workflow: workflow.name }, plan);
 }
 
 export interface Divergence {
