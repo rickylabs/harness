@@ -14,6 +14,9 @@
  * - `family.ts` is the invariant — generator is not evaluator, no implementation lane
  *   self-certifies — checked against the two-seam topology from #33.
  * - `resolve.ts` is the only sanctioned way to ask the table a question.
+ * - `admit.ts` is the gate a dispatch passes on its way out: it composes `validateDispatch` from
+ *   `@rickylabs/subagents` with everything only the matrix can answer, so a wrong model id is
+ *   refused for the price of a table walk instead of a subscription window.
  *
  * ## What this package does not do
  *
@@ -23,6 +26,9 @@
  * of it there would create a second answer to a question that must only have one. `toDispatch` is
  * the hand-off, and it carries routing fields only — the prompt, the timeout and the token budget
  * belong to whoever is launching the run.
+ *
+ * That direction is also why admission lives here rather than beside the validator it wraps:
+ * `routing` depends on `subagents`, and an import the other way would close the edge into a cycle.
  */
 
 export const PACKAGE_NAME = "@rickylabs/routing" as const;
@@ -93,3 +99,15 @@ export type {
   RoutedDispatch,
   TierPlan,
 } from "./resolve.js";
+
+export {
+  ADMISSION_REFUSALS,
+  admitDispatch,
+  describeAdmission,
+  laneModels,
+  relayProfiles,
+  routableModels,
+  routedModels,
+  transportsFor,
+} from "./admit.js";
+export type { Admission, AdmissionContext, AdmissionProblem, AdmissionRefusal } from "./admit.js";

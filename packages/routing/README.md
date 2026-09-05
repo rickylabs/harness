@@ -13,6 +13,7 @@ Owned by **E4 · #34**, defined by **#58**.
 | `policy.ts` | The matrix: one entry per lane, each an ordered fallback chain |
 | `family.ts` | Generator is not evaluator, checked against the two-seam topology |
 | `resolve.ts` | The only sanctioned way to ask the table a question |
+| `admit.ts` | The gate a dispatch passes before anything is spent on it |
 
 ## Family is a property of the model, not of the harness
 
@@ -85,6 +86,61 @@ declaring what it certifies, opencode routes naming their router, relay routes n
 that binds their credential, escalations that actually raise effort, lane constraints holding on
 every step. The suite asserts it returns nothing.
 
+## Admission: the last place a dispatch is free
+
+`validateDispatch` in `@rickylabs/subagents` refuses a request that leaves a choice implicit — no
+model, no effort, an empty prompt, a timeout the executor would silently drop. It cannot refuse a
+*wrong* model, and says so itself: it "does not choose models". `admitDispatch` is the other half,
+and it lives here because the matrix does. An import the other way would close the dependency edge
+into a cycle that `check:graph` refuses.
+
+The failure it prevents is not a crash. A provider handed an id it does not recognise usually does
+not fail at all — it falls back to whatever its own config says, runs to completion, and reports
+success. The receipt then names a model that never ran. Every refusal below is decidable from two
+tables and the request itself; nothing opens a socket, reads a file, or looks at a quota. A refused
+dispatch has cost a table walk, and a launched one has cost a subscription window or real money.
+
+**Three ways a model id is wrong, and they want different fixes:**
+
+| Refusal | Means |
+| --- | --- |
+| `unknown-model` | Not pinned at all — a typo, or an id from some other system |
+| `unrouted-model` | Pinned, but no lane names it. The two `n5air/` seats are here today |
+| `unroutable-model` | Pinned and routed, but never to this harness |
+
+Pinning an id is not routing it: `@rickylabs/llm-local` knows where the local seats can physically
+run, and no route sends work to them yet.
+
+**And the rest of what only the matrix can answer:** `wrong-router` and `unbound-credential` for a
+relay model addressed at the wrong box or with nothing naming the profile that binds its credential;
+`unknown-effort` for a rung off the ladder; and, when the coordinator names the lane it is launching,
+`unknown-lane`, `lane-model-mismatch` and `undeclared-effort`.
+
+Every refusal names what *would* have been admitted, derived from the table on the spot — the ids
+that harness takes, the lane's own chain, the efforts a step declares, the profiles that exist. A
+suite case walks every step of every lane and asserts the gate admits it: if a route the matrix
+declares cannot pass the gate that guards it, one of the two is wrong.
+
+### Credential material is refused first, and alone
+
+A dispatch is written into an issue body, a receipt and a run log, so a credential in the payload is
+a credential in all three. The relay key is bound by **profile name** and read from its mode-600
+file at launch; nothing in a `/swarm` block ever carries a value — which is why `relayProfiles()`
+can tell an operator exactly what to write without anything having read a key.
+
+Two details make that a property of the module rather than of each caller that logs a refusal:
+
+- **A payload carrying credential material is refused on that ground alone.** Every other message
+  names the offending field's value, and one of those fields is the one holding the secret.
+- **No message echoes a value longer than the longest name this package knows.** A value longer than
+  that is not a mistyped id — there is nothing it could be a typo *of*. Its length is reported
+  instead, which is enough to diagnose a typo, and `expected` still names what was wanted.
+
+The scan is structural — `sk-`, `ghp_`, `AKIA`, a `PRIVATE KEY` block, a `name = value` assignment in
+the key block — because a generic "long random string" test would refuse legitimate briefs, and a
+gate operators learn to route around is worse than no gate. A brief that merely says the key is read
+from `openrouter.env` is admitted.
+
 ## What this package does not do
 
 It does not launch anything, and it does not translate a pinned model id into a vendor CLI's command
@@ -99,4 +155,8 @@ launching the run.
 The pinned ids are the ones the matrix names and telemetry records. A vendor CLI may accept a
 different spelling for the same model on its command line; the fleet carries a separate
 `NATIVE_CANARY_MODEL_ARGS` table for exactly that reason. Translating a pin into a launch argument
-is the provider packages' boundary (**E3 · #33**), and #34 owns making a wrong id fail loudly there.
+is the provider packages' boundary (**E3 · #33**); `admitDispatch` is where a wrong id fails loudly
+before it gets that far.
+
+Nothing in the repo calls it outside the suite yet, because nothing launches a dispatch yet — the
+execution channel is **E5 · #62**, and it is the one call site that must go through this gate.
