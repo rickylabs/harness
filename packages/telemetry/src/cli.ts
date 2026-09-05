@@ -11,7 +11,7 @@
  * package and a status command that needs a GitHub token is a status command that fails exactly
  * when the token is the problem.
  *
- * The exit statuses are disjoint and documented in `USAGE`, because this command is going to be run
+ * The exit statuses are disjoint and documented in `EXIT_MEANINGS`, because this command gets run
  * from scripts and cron. The one that matters is 3: the answer printed above it is real but partial,
  * and a caller that treats it as complete will conclude the board is quiet when in fact the scan
  * could not see. Every other status collapses into "it worked", "you asked wrong", or "I broke".
@@ -37,6 +37,41 @@ import { renderSnapshot, renderTree } from "./render.js";
 import type { TelemetryEvent } from "./sink.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
+
+/**
+ * What the command exited with, and what a caller should do about it.
+ *
+ * Exit 1 used to cover both a `why` that found nothing and an internal crash, and exit 0 covered
+ * three unreadable stores (finding F-7 on #105) — so a script could not tell success from missing
+ * evidence from a bug. These are disjoint, and 3 outranks 4: "I did not find it" and "I could not
+ * see everywhere" are different answers, and when both are true the second is the one to act on.
+ */
+export const EXIT = {
+  ok: 0,
+  failed: 1,
+  usage: 2,
+  incomplete: 3,
+  notFound: 4,
+} as const;
+
+/**
+ * One sentence per code, keyed on `EXIT` — so a code added without a meaning is a type error
+ * rather than an undocumented number a script discovers at 2am.
+ *
+ * This is the only statement of these meanings. The `exit codes` block in `USAGE` renders from it,
+ * and so does `docs/reference/cli/dsh-telemetry.md`, which `pnpm run check:docs` byte-compares.
+ */
+export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
+  ok: "the picture is complete",
+  failed: "dsh-telemetry itself failed",
+  usage: "the command line was wrong",
+  incomplete: "the picture is incomplete: a store could not be read, or a scan hit --limit",
+  notFound: "nothing matched, on a scan that could see everything",
+};
+
+const EXIT_BLOCK = Object.entries(EXIT)
+  .map(([name, code]) => `  ${code}  ${EXIT_MEANINGS[name as keyof typeof EXIT]}`)
+  .join("\n");
 
 const USAGE = `dsh-telemetry — board activity, read from disk, with no agent awake
 
@@ -80,29 +115,9 @@ environment:
   DSH_TELEMETRY_MAX_BYTES    bound per generation, e.g. 33554432 or 32M
   DSH_TELEMETRY_GENERATIONS  generations kept behind the live file
 
-exit status:
-  0  the picture is complete
-  1  dsh-telemetry itself failed
-  2  the command line was wrong
-  3  the picture is incomplete: a store could not be read, or a scan hit --limit
-  4  nothing matched, on a scan that could see everything
+exit codes:
+${EXIT_BLOCK}
 `;
-
-/**
- * What the command exited with, and what a caller should do about it.
- *
- * Exit 1 used to cover both a `why` that found nothing and an internal crash, and exit 0 covered
- * three unreadable stores (finding F-7 on #105) — so a script could not tell success from missing
- * evidence from a bug. These are disjoint, and 3 outranks 4: "I did not find it" and "I could not
- * see everywhere" are different answers, and when both are true the second is the one to act on.
- */
-export const EXIT = {
-  ok: 0,
-  failed: 1,
-  usage: 2,
-  incomplete: 3,
-  notFound: 4,
-} as const;
 
 interface Flags {
   readonly home: string;

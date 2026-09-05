@@ -6,30 +6,32 @@
 a separate kind of page: a flag list maintained by hand is a flag list that is wrong within a month,
 and wrong quietly — nothing turns red when a document falls behind the code it describes.
 
-**It is empty today.** [#143](https://github.com/rickylabs/harness/issues/143) fills it: the CLI
-reference is rendered from the binaries' own usage text and byte-compared in CI, so a flag that
-changes without the page changing is a failing build rather than a stale page.
+## What is here
 
-Until then, each binary is its own reference. Run it with no arguments:
+- **[CLI reference](cli/README.md)** — one page per binary, rendered from the binary.
+  [`scripts/cli-reference.mjs`](../../scripts/cli-reference.mjs) runs each built command with
+  `--help` and captures what it actually prints, and imports `EXIT` and `EXIT_MEANINGS` from the
+  same module for the exit table. `pnpm run check:docs` re-renders and byte-compares; it runs at the
+  end of `pnpm run build`, which is what CI runs. Editing a page by hand fails the build instead of
+  reaching a reader.
 
-```bash
-node packages/coordinator/dist/cli.js
-```
+Two more generated surfaces live next to the things they configure rather than here, because that is
+where the tools that read them look:
 
-Every one of them prints its subcommands, its options, and its exit codes.
+- [`.github/labels.yml`](../../.github/labels.yml) — the label taxonomy, ejected by
+  `dsh-forge labels eject`, and the reviewable source of truth for what `dsh-forge labels apply`
+  will do.
+- [`.claude/skills/board-process/SKILL.md`](../../.claude/skills/board-process/SKILL.md) — the same
+  taxonomy in the form an agent reads, written by `dsh-forge skill install`.
 
-## What belongs here, once it is generated
+## Reading an exit code
 
-- Every subcommand and option of `dsh-board`, `dsh-coordinator`, `dsh-forge`, `dsh-profile` and
-  `dsh-telemetry`.
-- The exit-code map for each binary. These are a contract callers branch on. `2` means a usage error
-  in all five; beyond that each binary's codes are its own. `3` is a missing GitHub transport for
-  `dsh-board` and `dsh-forge`, an unreadable input for `dsh-coordinator`, an unwritable destination
-  for `dsh-profile`, and an incomplete picture for `dsh-telemetry` — four related meanings that are
-  not one meaning, which is exactly why this page is generated rather than remembered.
-- The label taxonomy as installed, which already has a generated home in
-  [`.github/labels.yml`](../../.github/labels.yml) and a generated agent-facing form in
-  [`.claude/skills/board-process/SKILL.md`](../../.claude/skills/board-process/SKILL.md).
+The exit maps are a contract callers branch on, and they are the part of a CLI most likely to be
+guessed at. `2` means a usage error in all five binaries. Beyond that each binary's codes are its
+own: `3` is a missing GitHub transport for `dsh-board` and `dsh-forge`, an unreadable input for
+`dsh-coordinator`, an unwritable destination for `dsh-profile`, and an incomplete picture for
+`dsh-telemetry` — four related meanings that are not one meaning, which is exactly why these pages
+are generated rather than remembered.
 
 ## What does not belong here
 

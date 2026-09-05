@@ -34,6 +34,38 @@ import { formatPlan, isClean, planLabels, type LabelPlan } from "./labels/plan.j
 import { CORE_TAXONOMY, RETIRED_LABELS, type LabelSpec } from "./labels/taxonomy.js";
 import { installSkill } from "./skill/install.js";
 
+/**
+ * The command's contract with whatever called it.
+ *
+ * There is no code for "I crashed" on purpose: this tool is progressive, so the conditions another
+ * binary would crash on — no transport, no skill directory, a label it cannot see — are answers it
+ * gives rather than failures it suffers.
+ */
+export const EXIT = {
+  ok: 0,
+  drift: 1,
+  usage: 2,
+  unavailable: 3,
+} as const;
+
+/**
+ * One sentence per code, keyed on `EXIT` — so a code added without a meaning is a type error
+ * rather than an undocumented number a CI step has to reverse-engineer.
+ *
+ * This is the only statement of these meanings. The `exit codes` block in `USAGE` renders from it,
+ * and so does `docs/reference/cli/dsh-forge.md`, which `pnpm run check:docs` byte-compares.
+ */
+export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
+  ok: "everything asked for is in place",
+  drift: "the repository has drifted from the taxonomy, or a label already means something else",
+  usage: "the command line was wrong",
+  unavailable: "no usable GitHub transport: gh missing, unauthenticated, or unable to reach GitHub",
+};
+
+const EXIT_BLOCK = Object.entries(EXIT)
+  .map(([name, code]) => `  ${code}  ${EXIT_MEANINGS[name as keyof typeof EXIT]}`)
+  .join("\n");
+
 const USAGE = `dsh-forge — board taxonomy and process skill, installable into any repository
 
 usage
@@ -57,7 +89,7 @@ options
   -h, --help            this text
 
 exit codes
-  0 ok   1 drift or conflict   2 usage   3 no usable GitHub transport`;
+${EXIT_BLOCK}`;
 
 interface Context {
   readonly repoRoot: string;
@@ -200,7 +232,7 @@ function cmdDoctor(ctx: Context, json: boolean): number {
         2,
       ),
     );
-    return 0;
+    return EXIT.ok;
   }
 
   out(`repository       ${ctx.repo}`);
@@ -216,7 +248,7 @@ function cmdDoctor(ctx: Context, json: boolean): number {
   out();
   out("notes");
   for (const note of ctx.detectionNotes) out(`  ${note}`);
-  return 0;
+  return EXIT.ok;
 }
 
 function reportPlan(plan: LabelPlan, json: boolean): void {
@@ -248,7 +280,7 @@ function cmdPlan(ctx: Context, force: boolean, json: boolean): number {
   requireParsableFile(ctx);
   requireTransport(ctx);
   reportPlan(buildPlan(ctx, force), json);
-  return 0;
+  return EXIT.ok;
 }
 
 function cmdCheck(ctx: Context, json: boolean): number {
@@ -256,7 +288,7 @@ function cmdCheck(ctx: Context, json: boolean): number {
   requireTransport(ctx);
   const plan = buildPlan(ctx, false);
   reportPlan(plan, json);
-  if (isClean(plan)) return 0;
+  if (isClean(plan)) return EXIT.ok;
   if (!json) {
     out();
     out(
@@ -264,7 +296,7 @@ function cmdCheck(ctx: Context, json: boolean): number {
         `${plan.counts.retire} to retire, ${plan.counts.conflict} conflict(s)`,
     );
   }
-  return 1;
+  return EXIT.drift;
 }
 
 async function cmdApply(
@@ -280,7 +312,7 @@ async function cmdApply(
   if (dryRun) {
     reportPlan(plan, json);
     if (!json) out("dry run — nothing was created or updated");
-    return plan.counts.conflict > 0 ? 1 : 0;
+    return plan.counts.conflict > 0 ? EXIT.drift : EXIT.ok;
   }
 
   const result = await applyPlan(transport, ctx.repo, plan);
@@ -318,8 +350,8 @@ async function cmdApply(
     }
   }
 
-  if (result.failed) return 1;
-  return plan.counts.conflict > 0 ? 1 : 0;
+  if (result.failed) return EXIT.drift;
+  return plan.counts.conflict > 0 ? EXIT.drift : EXIT.ok;
 }
 
 async function cmdEject(ctx: Context, dryRun: boolean, json: boolean): Promise<number> {
@@ -356,7 +388,7 @@ async function cmdEject(ctx: Context, dryRun: boolean, json: boolean): Promise<n
     const note = retired.length > 0 ? ` plus ${retired.length} retired` : "";
     out(`${dryRun ? "would write" : "wrote"} ${LABELS_FILE} — ${specs.length} label(s)${note}`);
   }
-  return 0;
+  return EXIT.ok;
 }
 
 async function cmdSkillInstall(
@@ -394,7 +426,7 @@ async function cmdSkillInstall(
   } else {
     for (const r of reports) out(`${r.outcome.padEnd(10)} ${r.path}${r.note ? ` — ${r.note}` : ""}`);
   }
-  return reports.some((r) => r.outcome === "foreign") ? 1 : 0;
+  return reports.some((r) => r.outcome === "foreign") ? EXIT.drift : EXIT.ok;
 }
 
 async function cmdInit(
@@ -406,7 +438,9 @@ async function cmdInit(
   // Every leg gets the flag. `init --dry-run` that ejects a file and sends 28 label mutations is
   // not a partial implementation of dry-run, it is the opposite of the promise the flag makes.
   const ejected = await cmdEject(ctx, flags.dryRun, json);
-  const applied = ctx.transport ? await cmdApply(ctx, flags.force, flags.dryRun, json) : 3;
+  const applied = ctx.transport
+    ? await cmdApply(ctx, flags.force, flags.dryRun, json)
+    : EXIT.unavailable;
   if (!ctx.transport && !json) {
     out(`skipped apply — ${ctx.transportNote}`);
   }
@@ -415,7 +449,7 @@ async function cmdInit(
     out("== skill ==");
   }
   const installed = await cmdSkillInstall(ctx, flags, json);
-  return Math.max(ejected, applied === 3 ? 0 : applied, installed);
+  return Math.max(ejected, applied === EXIT.unavailable ? EXIT.ok : applied, installed);
 }
 
 // ── entry ────────────────────────────────────────────────────────────────────
@@ -453,13 +487,13 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
     out(USAGE);
     out();
     out(error instanceof Error ? error.message : String(error));
-    return 2;
+    return EXIT.usage;
   }
 
   const { values, positionals } = parsed;
   if (values.help || positionals.length === 0) {
     out(USAGE);
-    return values.help ? 0 : 2;
+    return values.help ? EXIT.ok : EXIT.usage;
   }
 
   const json = values.json ?? false;
@@ -507,20 +541,20 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
       out(USAGE);
       out();
       out(error.message);
-      return 2;
+      return EXIT.usage;
     }
     if (error instanceof TransportError) {
       out(error.message);
-      return 3;
+      return EXIT.unavailable;
     }
     if (error instanceof FileError) {
       out(error.message);
       out();
       out(`fix the row(s) above, or delete ${LABELS_FILE} and re-run 'dsh-forge labels eject'.`);
-      return 1;
+      return EXIT.drift;
     }
     out(error instanceof Error ? error.message : String(error));
-    return 1;
+    return EXIT.drift;
   }
 }
 
