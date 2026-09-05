@@ -147,14 +147,19 @@ async function resolveContext(options: {
     }
   }
 
-  const lanePrefix = detectLanePrefix(existing);
+  // Read twice, deliberately. `familyOf` needs the lane prefix to classify a row, and the prefix is
+  // itself read off the rows — so the first pass exists only to learn the names. The alternative is
+  // asking GitHub, which makes the answer depend on whether the caller had a network.
+  const labelsPath = join(options.repoRoot, LABELS_FILE);
+  const declared = await loadLabelsFile(labelsPath);
+  const lanePrefix = detectLanePrefix(existing, declared?.labels ?? []);
 
   // `.github/labels.yml` wins where it overlaps: it is the file a human edits and reviews, so a
   // description changed there must survive the next run. Core fills the gaps, and detection adds
   // only what this repository provides evidence for.
-  const fromFile = await loadLabelsFile(join(options.repoRoot, LABELS_FILE), lanePrefix);
+  const fromFile = await loadLabelsFile(labelsPath, lanePrefix);
   const detected = options.detect
-    ? await detectRepoLabels({ repoRoot: options.repoRoot, repo, transport, existing })
+    ? await detectRepoLabels({ repoRoot: options.repoRoot, repo, transport, existing, lanePrefix })
     : { labels: [], evidence: [], notes: ["detection disabled with --no-detect"] };
 
   const notes = [...detected.notes];

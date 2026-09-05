@@ -228,6 +228,25 @@ describe("detectLanePrefix", () => {
     assert.equal(detectLanePrefix([label("type:feat")]), "lane");
     assert.equal(detectLanePrefix([]), "lane");
   });
+
+  it("lets the ejected file outvote the live repository", () => {
+    // The file is the reviewed record and it wins on overlap everywhere else, so it wins here even
+    // when GitHub currently carries more of the other prefix.
+    const live = [label("lane:a"), label("lane:b"), label("lane:c")];
+    assert.equal(detectLanePrefix(live, [label("topic:docs")]), "topic");
+  });
+
+  it("answers the same with and without a network", () => {
+    // The whole point: `existing` is reachable only online, `declared` is committed. If these two
+    // calls could disagree, every artifact generated from the taxonomy would depend on who ran the
+    // generator, and no CI job could check one for drift.
+    const declared = [label("topic:docs"), label("topic:fixes")];
+    assert.equal(detectLanePrefix([label("topic:docs")], declared), detectLanePrefix([], declared));
+  });
+
+  it("still reads the live repository when nothing has been ejected", () => {
+    assert.equal(detectLanePrefix([label("orchestrator:w0")], []), "orchestrator");
+  });
 });
 
 describe("epicSlug", () => {

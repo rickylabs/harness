@@ -14,8 +14,12 @@
     "check:lifecycle": "node scripts/check-lifecycle.mjs",
     "check:publish": "node scripts/check-publish.mjs",
     "check:docs": "node scripts/cli-reference.mjs",
+    "check:skill": "node scripts/check-skill.mjs",
+    "check:links": "node scripts/check-links.mjs",
+    "check:forms": "node scripts/check-forms.mjs",
+    "check:metadata": "node scripts/check-metadata.mjs",
     "docs:cli": "pnpm -r run build && node scripts/cli-reference.mjs --write",
-    "build": "pnpm run check:graph && pnpm run check:lifecycle && pnpm -r run build && pnpm run check:publish && pnpm run check:docs",
+    "build": "pnpm run check:graph && pnpm run check:lifecycle && pnpm run check:links && pnpm run check:forms && pnpm -r run build && pnpm run check:publish && pnpm run check:docs && pnpm run check:skill",
     "typecheck": "pnpm run check:graph && pnpm run check:lifecycle && pnpm -r run typecheck",
     "test": "pnpm -r run test",
     "skill:install": "pnpm --filter @rickylabs/forge run build && node packages/forge/dist/cli.js skill install --dispatch-label harness",
@@ -24,6 +28,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
+    "js-yaml": "^4.3.2",
     "typescript": "~5.9.3"
   }
 }
