@@ -7,6 +7,7 @@ owns it lands. Do not add behaviour to a stub before that epic has defined its c
 | Package | Owner | Attaches to |
 |---|---|---|
 | `dsh-app` | E2 · #32 | our dsh profile + bundle (`cordis.patch.yml`); depends on every plugin below |
+| `subagents` | E3 · #33 | the `ctx.subagents` contract itself: `DispatchRequest`, its `/swarm` wire format, and `SubagentProvider` |
 | `provider-claude`, `provider-codex`, `provider-acp`, `provider-opencode` | E3 · #33 | `ctx.subagents` / `SubagentProvider` — autonomous vendor CLIs, metered by quota window |
 | `llm-local` | E4 · #34 | `ctx.llm` / `LlmAdapter` — API-key and local models, metered per token |
 | `routing` | E4 · #34 | delegation matrix |
@@ -18,6 +19,12 @@ owns it lands. Do not add behaviour to a stub before that epic has defined its c
 
 The provider packages and `llm-local` are separate on purpose: vendor CLIs and API/local models
 attach to two *different* dsh seams (#30, "two seams, not one").
+
+`subagents` holds the contract the four provider packages implement, and it is deliberately not
+in `contracts`. That package is E8's, published to npm for the two UIs, and #79's acceptance draws
+the line: a type that only makes sense for one surface does not belong there. A UI reads a board;
+it never dispatches a run. `subagents` depends on nothing in this workspace, so both seams — E6's
+projection and E7's forge — can reach it without either depending on the other.
 
 ## Conventions every package inherits
 
