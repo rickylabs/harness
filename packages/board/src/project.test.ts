@@ -36,7 +36,7 @@ describe("statusLabelsOf", () => {
   it("matches only on the prefix boundary", () => {
     // `status-quo` and `statusline` are not status labels. Treating them as one would move an
     // item into a column nobody asked for.
-    assert.deepEqual(statusLabelsOf(["status-quo", "statusline", "status:ready"]), ["status:ready"]);
+    assert.deepEqual(statusLabelsOf(["status-quo", "statusline", "status:plan"]), ["status:plan"]);
   });
 
   it("returns an empty list when there are none", () => {
@@ -46,7 +46,7 @@ describe("statusLabelsOf", () => {
 
 describe("phaseOf", () => {
   it("reads the phase from the label", () => {
-    assert.equal(phaseOf(["status:in-progress"])?.name, "in-progress");
+    assert.equal(phaseOf(["status:impl"])?.name, "impl");
   });
 
   it("returns null with no status label", () => {
@@ -58,8 +58,8 @@ describe("phaseOf", () => {
   });
 
   it("takes the earliest phase when an item claims several, under-stating rather than flattering", () => {
-    const phase = phaseOf(["status:shipped", "status:in-progress"]);
-    assert.equal(phase?.name, "in-progress");
+    const phase = phaseOf(["status:shipped", "status:impl"]);
+    assert.equal(phase?.name, "impl");
   });
 
   it("marks only shipped as terminal", () => {
@@ -72,21 +72,21 @@ describe("phaseOf", () => {
 describe("violatesSingleStatus", () => {
   it("is false for zero and one", () => {
     assert.equal(violatesSingleStatus([]), false);
-    assert.equal(violatesSingleStatus(["status:ready"]), false);
+    assert.equal(violatesSingleStatus(["status:plan"]), false);
   });
 
   it("is true for two", () => {
-    assert.equal(violatesSingleStatus(["status:ready", "status:shipped"]), true);
+    assert.equal(violatesSingleStatus(["status:plan", "status:shipped"]), true);
   });
 
   it("is not fooled by a near-miss label", () => {
-    assert.equal(violatesSingleStatus(["status:ready", "status-quo"]), false);
+    assert.equal(violatesSingleStatus(["status:plan", "status-quo"]), false);
   });
 });
 
 describe("unknownStatusLabels", () => {
   it("reports status labels the lifecycle does not define", () => {
-    assert.deepEqual(unknownStatusLabels(["status:ready", "status:invented"]), ["status:invented"]);
+    assert.deepEqual(unknownStatusLabels(["status:plan", "status:invented"]), ["status:invented"]);
   });
 });
 
@@ -107,35 +107,35 @@ describe("labelValue", () => {
 describe("projectBoard", () => {
   it("places items in the column their label names", () => {
     const snapshot = project([
-      issue({ number: 1, labels: ["status:ready"] }),
-      issue({ number: 2, labels: ["status:in-progress"] }),
+      issue({ number: 1, labels: ["status:plan"] }),
+      issue({ number: 2, labels: ["status:impl"] }),
     ]);
-    const ready = snapshot.columns.find((c) => c.phase.name === "ready");
+    const ready = snapshot.columns.find((c) => c.phase.name === "plan");
     assert.deepEqual(ready?.items.map((i) => i.source.number), [1]);
   });
 
   it("is deterministic: the same input projects to an identical snapshot", () => {
     const issues = [
-      issue({ number: 3, labels: ["status:ready", "priority:p2"] }),
-      issue({ number: 1, labels: ["status:ready", "priority:p0"] }),
-      issue({ number: 2, labels: ["status:ready"] }),
+      issue({ number: 3, labels: ["status:plan", "priority:p2"] }),
+      issue({ number: 1, labels: ["status:plan", "priority:p0"] }),
+      issue({ number: 2, labels: ["status:plan"] }),
     ];
     assert.deepEqual(project(issues), project(issues));
     assert.equal(JSON.stringify(project(issues)), JSON.stringify(project(issues)));
   });
 
   it("does not depend on input order", () => {
-    const a = [issue({ number: 1, labels: ["status:ready"] }), issue({ number: 2, labels: ["status:ready"] })];
+    const a = [issue({ number: 1, labels: ["status:plan"] }), issue({ number: 2, labels: ["status:plan"] })];
     const b = [...a].reverse();
     assert.equal(JSON.stringify(project(a).items), JSON.stringify(project(b).items));
   });
 
   it("orders by priority, then by number", () => {
     const snapshot = project([
-      issue({ number: 5, labels: ["status:ready", "priority:p3"] }),
-      issue({ number: 4, labels: ["status:ready", "priority:p0"] }),
-      issue({ number: 9, labels: ["status:ready", "priority:p0"] }),
-      issue({ number: 1, labels: ["status:ready"] }),
+      issue({ number: 5, labels: ["status:plan", "priority:p3"] }),
+      issue({ number: 4, labels: ["status:plan", "priority:p0"] }),
+      issue({ number: 9, labels: ["status:plan", "priority:p0"] }),
+      issue({ number: 1, labels: ["status:plan"] }),
     ]);
     assert.deepEqual(snapshot.items.map((i) => i.source.number), [4, 9, 5, 1]);
   });
@@ -147,14 +147,14 @@ describe("projectBoard", () => {
   });
 
   it("reports an item carrying two status labels", () => {
-    const snapshot = project([issue({ number: 1, labels: ["status:ready", "status:shipped"] })]);
+    const snapshot = project([issue({ number: 1, labels: ["status:plan", "status:shipped"] })]);
     const anomaly = snapshot.anomalies.find((a) => a.kind === "multiple-status");
     assert.ok(anomaly, "expected a multiple-status anomaly");
     assert.equal(anomaly?.item, 1);
   });
 
   it("reports a closed item still sitting in a non-terminal column", () => {
-    const snapshot = project([issue({ number: 1, state: "closed", labels: ["status:in-progress"] })]);
+    const snapshot = project([issue({ number: 1, state: "closed", labels: ["status:impl"] })]);
     assert.ok(snapshot.anomalies.some((a) => a.kind === "closed-but-unshipped"));
   });
 
@@ -169,14 +169,14 @@ describe("projectBoard", () => {
   });
 
   it("reports an epic label that no epic issue claims", () => {
-    const snapshot = project([issue({ number: 1, labels: ["status:ready", "epic:ghost"] })]);
+    const snapshot = project([issue({ number: 1, labels: ["status:plan", "epic:ghost"] })]);
     assert.ok(snapshot.anomalies.some((a) => a.kind === "epic-not-found"));
   });
 
   it("does not report an epic label that an epic issue does claim", () => {
     const snapshot = project([
       issue({ number: 30, title: "E6 — Coordinator", labels: ["epic"] }),
-      issue({ number: 1, labels: ["status:ready", "epic:e6"] }),
+      issue({ number: 1, labels: ["status:plan", "epic:e6"] }),
     ]);
     assert.ok(!snapshot.anomalies.some((a) => a.kind === "epic-not-found"));
   });
@@ -275,7 +275,7 @@ describe("isShipped and isAbandoned", () => {
   });
 
   it("does not call a non-terminal item shipped", () => {
-    const item = itemOf({ number: 1, labels: ["status:in-progress"] });
+    const item = itemOf({ number: 1, labels: ["status:impl"] });
     assert.ok(item !== undefined && !isShipped(item));
   });
 });
@@ -330,7 +330,7 @@ describe("projectBoard, on contradictions it has to resolve", () => {
   it("reports a task filed in a different milestone from its epic", () => {
     const snapshot = project([
       issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"], milestone: "W1" }),
-      issue({ number: 40, labels: ["status:ready", "epic:e6"], milestone: "W2" }),
+      issue({ number: 40, labels: ["status:plan", "epic:e6"], milestone: "W2" }),
     ]);
     const anomaly = snapshot.anomalies.find((a) => a.kind === "epic-milestone-conflict");
     assert.ok(anomaly, "expected an epic-milestone-conflict anomaly");
@@ -342,13 +342,13 @@ describe("projectBoard, on contradictions it has to resolve", () => {
   it("does not report a milestone conflict when both are unassigned", () => {
     const snapshot = project([
       issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"] }),
-      issue({ number: 40, labels: ["status:ready", "epic:e6"] }),
+      issue({ number: 40, labels: ["status:plan", "epic:e6"] }),
     ]);
     assert.ok(!snapshot.anomalies.some((a) => a.kind === "epic-milestone-conflict"));
   });
 
   it("reports two labels of one single-value family", () => {
-    const snapshot = project([issue({ number: 1, labels: ["status:ready", "epic:a", "epic:b"] })]);
+    const snapshot = project([issue({ number: 1, labels: ["status:plan", "epic:a", "epic:b"] })]);
     const anomaly = snapshot.anomalies.find((a) => a.kind === "duplicate-label");
     assert.ok(anomaly, "expected a duplicate-label anomaly");
     assert.match(anomaly?.detail ?? "", /epic:a/);
@@ -358,14 +358,14 @@ describe("projectBoard, on contradictions it has to resolve", () => {
 
   it("reports a duplicated label in the configured lane family too", () => {
     const snapshot = projectBoard(
-      [issue({ number: 1, labels: ["status:ready", "orchestrator:a", "orchestrator:b"] })],
+      [issue({ number: 1, labels: ["status:plan", "orchestrator:a", "orchestrator:b"] })],
       { repo: "o/r", generatedAt: AT, lanePrefix: "orchestrator" },
     );
     assert.ok(snapshot.anomalies.some((a) => a.kind === "duplicate-label"));
   });
 
   it("does not report the lane family twice when it is one of the defaults", () => {
-    const snapshot = projectBoard([issue({ number: 1, labels: ["status:ready", "type:a", "type:b"] })], {
+    const snapshot = projectBoard([issue({ number: 1, labels: ["status:plan", "type:a", "type:b"] })], {
       repo: "o/r",
       generatedAt: AT,
       lanePrefix: "type",
@@ -382,7 +382,7 @@ describe("projectBoard, on how much of the board it actually saw", () => {
   });
 
   it("carries an uncapped fetch through without raising anything", () => {
-    const snapshot = projectBoard([issue({ number: 1, labels: ["status:ready"] })], {
+    const snapshot = projectBoard([issue({ number: 1, labels: ["status:plan"] })], {
       repo: "o/r",
       generatedAt: AT,
       completeness: { limit: 500, capped: [] },
@@ -392,7 +392,7 @@ describe("projectBoard, on how much of the board it actually saw", () => {
   });
 
   it("raises a board-level anomaly when a kind came back at the cap", () => {
-    const snapshot = projectBoard([issue({ number: 1, labels: ["status:ready"] })], {
+    const snapshot = projectBoard([issue({ number: 1, labels: ["status:plan"] })], {
       repo: "o/r",
       generatedAt: AT,
       completeness: { limit: 1, capped: ["issue"] },

@@ -29,7 +29,7 @@ describe("buildHierarchy", () => {
   it("groups tasks under the epic they are labelled into", () => {
     const h = tree([
       issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"] }),
-      issue({ number: 1, labels: ["status:ready", "epic:e6"] }),
+      issue({ number: 1, labels: ["status:plan", "epic:e6"] }),
       issue({ number: 2, labels: ["status:shipped", "epic:e6"] }),
     ]);
     const epic = h.milestones[0]?.epics[0];
@@ -40,7 +40,7 @@ describe("buildHierarchy", () => {
   it("does not count an epic issue among its own tasks", () => {
     // Otherwise every epic inflates its own denominator and every board looks busier than it is.
     const h = tree([
-      issue({ number: 36, title: "E6 — Coordinator", labels: ["epic", "status:in-progress"] }),
+      issue({ number: 36, title: "E6 — Coordinator", labels: ["epic", "status:impl"] }),
       issue({ number: 1, labels: ["status:shipped", "epic:e6"] }),
     ]);
     const epic = h.milestones[0]?.epics[0];
@@ -56,7 +56,7 @@ describe("buildHierarchy", () => {
   });
 
   it("keeps a task whose epic issue does not exist, under the slug it claims", () => {
-    const h = tree([issue({ number: 1, labels: ["status:ready", "epic:ghost"] })]);
+    const h = tree([issue({ number: 1, labels: ["status:plan", "epic:ghost"] })]);
     const epic = h.milestones[0]?.epics[0];
     assert.equal(epic?.slug, "ghost");
     assert.equal(epic?.issue, null);
@@ -64,7 +64,7 @@ describe("buildHierarchy", () => {
   });
 
   it("puts tasks with no epic in looseTasks, not in a fabricated one", () => {
-    const h = tree([issue({ number: 1, labels: ["status:ready"] })]);
+    const h = tree([issue({ number: 1, labels: ["status:plan"] })]);
     assert.deepEqual(h.milestones[0]?.looseTasks.map((t) => t.source.number), [1]);
     assert.deepEqual(h.milestones[0]?.epics, []);
   });
@@ -72,9 +72,9 @@ describe("buildHierarchy", () => {
   it("counts every item exactly once across the tree", () => {
     const h = tree([
       issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"] }),
-      issue({ number: 1, labels: ["status:ready", "epic:e6"] }),
-      issue({ number: 2, labels: ["status:ready"] }),
-      issue({ number: 3, labels: ["status:ready"], milestone: "M1" }),
+      issue({ number: 1, labels: ["status:plan", "epic:e6"] }),
+      issue({ number: 2, labels: ["status:plan"] }),
+      issue({ number: 3, labels: ["status:plan"], milestone: "M1" }),
     ]);
     const seen = new Set<number>();
     let count = 0;
@@ -88,9 +88,9 @@ describe("buildHierarchy", () => {
 
   it("sorts the unassigned milestone last", () => {
     const h = tree([
-      issue({ number: 1, labels: ["status:ready"] }),
-      issue({ number: 2, labels: ["status:ready"], milestone: "M2" }),
-      issue({ number: 3, labels: ["status:ready"], milestone: "M1" }),
+      issue({ number: 1, labels: ["status:plan"] }),
+      issue({ number: 2, labels: ["status:plan"], milestone: "M2" }),
+      issue({ number: 3, labels: ["status:plan"], milestone: "M1" }),
     ]);
     assert.deepEqual(h.milestones.map((m) => m.name), ["M1", "M2", null]);
   });
@@ -99,8 +99,8 @@ describe("buildHierarchy", () => {
     const h = tree([
       issue({ number: 36, title: "E6 — X", labels: ["epic"] }),
       issue({ number: 1, labels: ["status:shipped", "epic:e6"] }),
-      issue({ number: 2, labels: ["status:blocked", "epic:e6"] }),
-      issue({ number: 3, labels: ["status:in-progress"] }),
+      issue({ number: 2, labels: ["status:ci-fail", "epic:e6"] }),
+      issue({ number: 3, labels: ["status:impl"] }),
       issue({ number: 4, labels: [] }),
     ]);
     assert.deepEqual(h.progress, {
@@ -113,17 +113,17 @@ describe("buildHierarchy", () => {
     });
   });
 
-  it("counts changes-requested as blocked, not as in flight", () => {
-    const h = tree([issue({ number: 1, labels: ["status:changes-requested"] })]);
+  it("counts ci-fail as blocked, not as in flight", () => {
+    const h = tree([issue({ number: 1, labels: ["status:ci-fail"] })]);
     assert.equal(h.progress.blocked, 1);
     assert.equal(h.progress.inFlight, 0);
   });
 
   it("is deterministic", () => {
     const issues = [
-      issue({ number: 2, labels: ["status:ready", "epic:e6"] }),
+      issue({ number: 2, labels: ["status:plan", "epic:e6"] }),
       issue({ number: 36, title: "E6 — X", labels: ["epic"] }),
-      issue({ number: 1, labels: ["status:ready", "epic:e6"] }),
+      issue({ number: 1, labels: ["status:plan", "epic:e6"] }),
     ];
     assert.equal(JSON.stringify(tree(issues)), JSON.stringify(tree([...issues].reverse())));
   });
@@ -175,8 +175,8 @@ describe("buildHierarchy, on work that stopped without landing", () => {
   it("keeps the categories disjoint and summing to the total", () => {
     const h = tree([
       issue({ number: 1, labels: ["status:shipped"] }),
-      issue({ number: 2, labels: ["status:blocked"] }),
-      issue({ number: 3, labels: ["status:in-progress"] }),
+      issue({ number: 2, labels: ["status:ci-fail"] }),
+      issue({ number: 3, labels: ["status:impl"] }),
       issue({ number: 4, labels: [] }),
       issue({ number: 5, kind: "pull-request", state: "closed", merged: false, labels: ["status:shipped"] }),
     ]);
@@ -190,7 +190,7 @@ describe("buildHierarchy, when two epic issues claim one slug", () => {
   const conflicting = [
     issue({ number: 41, title: "E6 — the newer one", labels: ["epic", "epic:e6"] }),
     issue({ number: 36, title: "E6 — Coordinator", labels: ["epic", "epic:e6"] }),
-    issue({ number: 1, labels: ["status:ready", "epic:e6"] }),
+    issue({ number: 1, labels: ["status:plan", "epic:e6"] }),
   ];
 
   it("gives the slug to the lowest issue number, whatever the fetch order", () => {
@@ -223,7 +223,7 @@ describe("buildHierarchy, across milestone boundaries", () => {
   it("records where an epic really lives when a task pulls it into another milestone", () => {
     const h = tree([
       issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"], milestone: "W1" }),
-      issue({ number: 40, labels: ["status:ready", "epic:e6"], milestone: "W2" }),
+      issue({ number: 40, labels: ["status:plan", "epic:e6"], milestone: "W2" }),
     ]);
     const w2 = h.milestones.find((m) => m.name === "W2");
     const borrowed = w2?.epics.find((e) => e.slug === "e6");
@@ -242,7 +242,7 @@ describe("buildHierarchy, across milestone boundaries", () => {
   it("counts the task once, in the milestone it is filed in", () => {
     const h = tree([
       issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"], milestone: "W1" }),
-      issue({ number: 40, labels: ["status:ready", "epic:e6"], milestone: "W2" }),
+      issue({ number: 40, labels: ["status:plan", "epic:e6"], milestone: "W2" }),
     ]);
     assert.equal(h.progress.total, 1);
     assert.equal(h.milestones.find((m) => m.name === "W1")?.progress.total, 0);
@@ -255,9 +255,9 @@ describe("buildHierarchy ordering does not depend on the host", () => {
   // sv-SE after it. A projection whose bytes depend on LANG is not the deterministic artefact #36
   // asks for, and the difference never shows up on the machine that wrote the test.
   const accented = [
-    issue({ number: 1, labels: ["status:ready"], milestone: "zebra" }),
-    issue({ number: 2, labels: ["status:ready"], milestone: "ärger" }),
-    issue({ number: 3, labels: ["status:ready"], milestone: "Zebra" }),
+    issue({ number: 1, labels: ["status:plan"], milestone: "zebra" }),
+    issue({ number: 2, labels: ["status:plan"], milestone: "ärger" }),
+    issue({ number: 3, labels: ["status:plan"], milestone: "Zebra" }),
   ];
 
   it("orders milestones by code unit, so uppercase sorts before lowercase", () => {
@@ -267,7 +267,7 @@ describe("buildHierarchy ordering does not depend on the host", () => {
   });
 
   it("still sorts the unassigned milestone last, after every named one", () => {
-    const withUnassigned = [...accented, issue({ number: 4, labels: ["status:ready"] })];
+    const withUnassigned = [...accented, issue({ number: 4, labels: ["status:plan"] })];
     assert.deepEqual(tree(withUnassigned).milestones.map((m) => m.name), [
       "Zebra",
       "zebra",
@@ -278,9 +278,9 @@ describe("buildHierarchy ordering does not depend on the host", () => {
 
   it("orders epic slugs by code unit too", () => {
     const h = tree([
-      issue({ number: 1, labels: ["status:ready", "epic:zeta"] }),
-      issue({ number: 2, labels: ["status:ready", "epic:ärger"] }),
-      issue({ number: 3, labels: ["status:ready", "epic:Alpha"] }),
+      issue({ number: 1, labels: ["status:plan", "epic:zeta"] }),
+      issue({ number: 2, labels: ["status:plan", "epic:ärger"] }),
+      issue({ number: 3, labels: ["status:plan", "epic:Alpha"] }),
     ]);
     assert.deepEqual(h.milestones[0]?.epics.map((e) => e.slug), ["Alpha", "zeta", "ärger"]);
   });

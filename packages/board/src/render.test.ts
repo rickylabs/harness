@@ -72,26 +72,26 @@ describe("renderProgress", () => {
 describe("renderColumns", () => {
   it("omits empty columns but never omits unphased work", () => {
     const text = renderColumns(snapshotOf([issue({ number: 1, labels: [] })]));
-    assert.ok(!text.includes("## ready"), "empty column should be omitted");
+    assert.ok(!text.includes("## plan"), "empty column should be omitted");
     assert.match(text, /no status label \(1\)/);
     assert.match(text, /The board cannot see them/);
   });
 
   it("lists an item under the column its label names", () => {
-    const text = renderColumns(snapshotOf([issue({ number: 42, labels: ["status:in-progress"] })]));
-    assert.match(text, /## in-progress \(1\)/);
+    const text = renderColumns(snapshotOf([issue({ number: 42, labels: ["status:impl"] })]));
+    assert.match(text, /## impl \(1\)/);
     assert.match(text, /#42 item 42/);
   });
 
   it("marks draft pull requests", () => {
     const text = renderColumns(
-      snapshotOf([issue({ number: 7, kind: "pull-request", draft: true, labels: ["status:in-review"] })]),
+      snapshotOf([issue({ number: 7, kind: "pull-request", draft: true, labels: ["status:impl-eval"] })]),
     );
     assert.match(text, /\(draft\)/);
   });
 
   it("is deterministic", () => {
-    const issues = [issue({ number: 2, labels: ["status:ready"] }), issue({ number: 1, labels: ["status:ready"] })];
+    const issues = [issue({ number: 2, labels: ["status:plan"] }), issue({ number: 1, labels: ["status:plan"] })];
     assert.equal(renderColumns(snapshotOf(issues)), renderColumns(snapshotOf([...issues].reverse())));
   });
 });
@@ -101,7 +101,7 @@ describe("renderHierarchy", () => {
     const text = renderHierarchy(
       buildHierarchy(
         snapshotOf([
-          issue({ number: 36, title: "E6 — Coordinator", labels: ["epic", "status:in-progress"] }),
+          issue({ number: 36, title: "E6 — Coordinator", labels: ["epic", "status:impl"] }),
           issue({ number: 1, labels: ["status:shipped", "epic:e6"] }),
         ]),
       ),
@@ -112,14 +112,14 @@ describe("renderHierarchy", () => {
   });
 
   it("names the unassigned milestone rather than printing null", () => {
-    const text = renderHierarchy(buildHierarchy(snapshotOf([issue({ number: 1, labels: ["status:ready"] })])));
+    const text = renderHierarchy(buildHierarchy(snapshotOf([issue({ number: 1, labels: ["status:plan"] })])));
     assert.match(text, /\(no milestone\)/);
     assert.ok(!text.includes("null"), "a null milestone must not reach the output");
   });
 
   it("says so when an epic slug has no issue behind it", () => {
     const text = renderHierarchy(
-      buildHierarchy(snapshotOf([issue({ number: 1, labels: ["status:ready", "epic:ghost"] })])),
+      buildHierarchy(snapshotOf([issue({ number: 1, labels: ["status:plan", "epic:ghost"] })])),
     );
     assert.match(text, /no epic issue claims the slug ghost/);
   });
@@ -132,7 +132,7 @@ describe("renderAnomalies", () => {
 
   it("groups by kind and names the offending item", () => {
     const text = renderAnomalies(
-      snapshotOf([issue({ number: 5, labels: ["status:ready", "status:shipped"] })]),
+      snapshotOf([issue({ number: 5, labels: ["status:plan", "status:shipped"] })]),
     );
     assert.match(text, /## multiple-status/);
     assert.match(text, /#5:/);
@@ -213,7 +213,7 @@ describe("renderHierarchy, on a board that contradicts itself", () => {
       buildHierarchy(
         snapshotOf([
           issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"], milestone: "W1" }),
-          issue({ number: 40, labels: ["status:ready", "epic:e6"], milestone: "W2" }),
+          issue({ number: 40, labels: ["status:plan", "epic:e6"], milestone: "W2" }),
         ]),
       ),
     );
@@ -225,7 +225,7 @@ describe("renderHierarchy, on a board that contradicts itself", () => {
       buildHierarchy(
         snapshotOf([
           issue({ number: 36, title: "E6 — Coordinator", labels: ["epic"], milestone: "W1" }),
-          issue({ number: 40, labels: ["status:ready", "epic:e6"], milestone: "W1" }),
+          issue({ number: 40, labels: ["status:plan", "epic:e6"], milestone: "W1" }),
         ]),
       ),
     );
@@ -235,7 +235,7 @@ describe("renderHierarchy, on a board that contradicts itself", () => {
 
 describe("renderAnomalies, on anomalies that belong to no item", () => {
   it("omits the issue prefix rather than blaming an arbitrary issue", () => {
-    const snapshot = projectBoard([issue({ number: 5, labels: ["status:ready"] })], {
+    const snapshot = projectBoard([issue({ number: 5, labels: ["status:plan"] })], {
       repo: "o/r",
       generatedAt: AT,
       completeness: { limit: 1, capped: ["issue"] },
@@ -248,7 +248,7 @@ describe("renderAnomalies, on anomalies that belong to no item", () => {
 
   it("orders kinds identically whatever the host locale", () => {
     const snapshot = snapshotOf([
-      issue({ number: 5, labels: ["status:ready", "status:shipped"] }),
+      issue({ number: 5, labels: ["status:plan", "status:shipped"] }),
       issue({ number: 6, labels: ["status:nonsense"] }),
     ]);
     const kinds = renderAnomalies(snapshot)

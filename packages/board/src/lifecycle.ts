@@ -10,13 +10,22 @@
  * When `@rickylabs/contracts` is published it should own this shape and both packages should
  * import it from there. Until then the duplication is deliberate and is the reason this package
  * has no dependency on `forge`.
+ *
+ * Deliberate duplication is still duplication, and it drifted: this list once read `backlog`,
+ * `in-progress`, `in-review`, `changes-requested` — a plausible lifecycle that `dsh-forge` has
+ * never stamped. The failure was silent in exactly the way that matters. Every item labelled with
+ * a real phase came back `no status` and was counted *invisible*, so a board that had just been
+ * filled in reported itself empty, and no test caught it because every test that exercised a phase
+ * supplied its own lifecycle. `scripts/check-lifecycle.mjs` now compares the two lists at the
+ * repository level, which is the only place that can see both without making this package depend
+ * on `forge`.
  */
 
 /** A single column of the board, and the label that puts an item in it. */
 export interface Phase {
-  /** The label that assigns this phase, e.g. `status:in-progress`. */
+  /** The label that assigns this phase, e.g. `status:impl`. */
   readonly label: string;
-  /** Short human name for the column header, e.g. `in-progress`. */
+  /** Short human name for the column header, e.g. `impl`. */
   readonly name: string;
   /** True for phases that mean the work is finished and should stop drawing attention. */
   readonly terminal: boolean;
@@ -42,13 +51,19 @@ const phase = (name: string, terminal = false): Phase => ({
 export const DEFAULT_LIFECYCLE: Lifecycle = {
   prefix: "status",
   phases: [
-    phase("backlog"),
-    phase("ready"),
-    phase("in-progress"),
-    phase("blocked"),
-    phase("in-review"),
-    phase("changes-requested"),
+    phase("triage"),
+    phase("research"),
+    phase("plan"),
+    phase("plan-eval"),
+    phase("impl"),
+    phase("impl-eval"),
+    phase("augment-review"),
+    phase("ci-fail"),
     phase("ready-merge"),
+    // Outside `dsh-forge`'s `STATUS_LIFECYCLE` array, but stamped by it and therefore present on
+    // real boards. A phase the projector does not know is not a smaller column — it is an item
+    // that vanishes, so this list is what the repository has, not what it ought to have. #100
+    // moves this label to the `flag:` family, and it leaves here when it leaves there.
     phase("close-gate-override"),
     phase("shipped", true),
   ],

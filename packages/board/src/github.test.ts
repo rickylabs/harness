@@ -91,7 +91,7 @@ describe("fetchItems", () => {
           ghIssue({
             number: 36,
             title: "E6 — Coordinator",
-            labels: [{ name: "epic" }, { name: "status:in-progress" }],
+            labels: [{ name: "epic" }, { name: "status:impl" }],
             assignees: [{ login: "someone" }],
             milestone: { title: "W1" },
           }),
@@ -103,7 +103,7 @@ describe("fetchItems", () => {
       number: 36,
       title: "E6 — Coordinator",
       state: "open",
-      labels: ["epic", "status:in-progress"],
+      labels: ["epic", "status:impl"],
       url: "https://github.invalid/o/r/issues/36",
       assignees: ["someone"],
       milestone: "W1",

@@ -75,7 +75,7 @@ const returning = (items: readonly SourceIssue[], capped: FetchResult["completen
 
 describe("exit 0 — the command answered", () => {
   it("prints the hierarchy by default", async () => {
-    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:ready"] })]) });
+    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:plan"] })]) });
     assert.equal(await main([], h.deps), 0);
     assert.match(h.out(), /o\/r/);
   });
@@ -86,13 +86,13 @@ describe("exit 0 — the command answered", () => {
   });
 
   it("prints columns", async () => {
-    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:ready"] })]) });
+    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:plan"] })]) });
     assert.equal(await main(["columns"], h.deps), 0);
-    assert.match(h.out(), /## ready \(1\)/);
+    assert.match(h.out(), /## plan \(1\)/);
   });
 
   it("prints a snapshot that parses as JSON", async () => {
-    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:ready"] })]) });
+    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:plan"] })]) });
     assert.equal(await main(["snapshot"], h.deps), 0);
     const parsed: unknown = JSON.parse(h.out());
     assert.equal((parsed as { repo: string }).repo, "o/r");
@@ -106,7 +106,7 @@ describe("exit 0 — the command answered", () => {
   });
 
   it("reports a clean board from check", async () => {
-    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:ready"] })]) });
+    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:plan"] })]) });
     assert.equal(await main(["check"], h.deps), 0);
     assert.match(h.out(), /no anomalies/);
   });
@@ -236,19 +236,19 @@ describe("exit 4 — the program itself failed", () => {
 
 describe("the incompleteness banner", () => {
   it("goes to stderr, so it survives a pipe into a file nobody reads the top of", async () => {
-    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:ready"] })], ["issue"]) });
+    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:plan"] })], ["issue"]) });
     assert.equal(await main(["status"], h.deps), 0);
     assert.match(h.err(), /INCOMPLETE/);
   });
 
   it("also goes above the human-readable output", async () => {
-    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:ready"] })], ["issue"]) });
+    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:plan"] })], ["issue"]) });
     await main(["status"], h.deps);
     assert.ok(h.out().startsWith("!! INCOMPLETE"), h.out().slice(0, 40));
   });
 
   it("stays out of the snapshot, which has to remain parseable JSON", async () => {
-    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:ready"] })], ["issue"]) });
+    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:plan"] })], ["issue"]) });
     await main(["snapshot"], h.deps);
     const parsed = JSON.parse(h.out()) as { completeness: unknown };
     assert.deepEqual(parsed.completeness, { limit: 500, capped: ["issue"] });
@@ -256,14 +256,14 @@ describe("the incompleteness banner", () => {
   });
 
   it("is absent when the fetch was complete", async () => {
-    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:ready"] })]) });
+    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:plan"] })]) });
     await main(["status"], h.deps);
     assert.ok(!h.out().includes("INCOMPLETE"));
     assert.ok(!h.err().includes("INCOMPLETE"));
   });
 
   it("makes check fail on a truncated board, which is not a board it can clear", async () => {
-    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:ready"] })], ["issue"]) });
+    const h = harness({ fetchItems: returning([issue({ number: 1, labels: ["status:plan"] })], ["issue"]) });
     assert.equal(await main(["check"], h.deps), 1);
     assert.match(h.out(), /incomplete-fetch/);
   });
@@ -284,7 +284,7 @@ describe("options reach the projection", () => {
 
   it("passes --lane-prefix through to the projection", async () => {
     const h = harness({
-      fetchItems: returning([issue({ number: 1, labels: ["status:ready", "orchestrator:arch"] })]),
+      fetchItems: returning([issue({ number: 1, labels: ["status:plan", "orchestrator:arch"] })]),
     });
     await main(["snapshot", "--lane-prefix", "orchestrator"], h.deps);
     const parsed = JSON.parse(h.out()) as { items: { lane: string | null }[] };

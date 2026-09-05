@@ -67,7 +67,14 @@ export interface Hierarchy {
   readonly progress: Progress;
 }
 
-const BLOCKED_PHASES: ReadonlySet<string> = new Set(["blocked", "changes-requested"]);
+/**
+ * Phase names that mean "this is stuck", counted apart from work that is merely in flight.
+ *
+ * Matched by name across every lifecycle, not just the default one, so a repository with its own
+ * columns still gets a truthful blocked count. `ci-fail` is the default taxonomy's stuck column;
+ * `blocked` and `changes-requested` are here for the lifecycles that use those names instead.
+ */
+const BLOCKED_PHASES: ReadonlySet<string> = new Set(["ci-fail", "blocked", "changes-requested"]);
 
 const ZERO: Progress = { total: 0, shipped: 0, inFlight: 0, blocked: 0, invisible: 0, abandoned: 0 };
 
