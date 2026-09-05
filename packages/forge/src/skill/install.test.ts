@@ -50,6 +50,32 @@ describe("renderSkill", () => {
     assert.ok(text.startsWith("---\nname: board-process\n"));
     assert.match(text, /^description: >-$/m);
   });
+
+  it("says nothing about dispatch in a repository that does not dispatch", () => {
+    // The default. Warning about a trigger that does not exist teaches an agent to be careful of
+    // nothing, and every sentence in a skill is one an agent has to read before it can start.
+    for (const over of [{}, { dispatchLabel: null }]) {
+      const text = renderSkill({ ...ctx, ...over });
+      assert.ok(!text.includes("Dispatching a run"), JSON.stringify(over));
+    }
+  });
+
+  it("warns about the label that starts a run, by its real name", () => {
+    const text = renderSkill({ ...ctx, dispatchLabel: "harness" });
+    assert.match(text, /## Dispatching a run/);
+    assert.match(text, /`harness` is not a tag, it is a trigger/);
+    assert.match(text, /No fenced code blocks/);
+  });
+
+  it("puts the dispatch rules where they are read before the label goes on", () => {
+    // Ordering is the whole point of the section: an agent that meets it after the instructions for
+    // advancing a phase has already written the body it was supposed to write differently.
+    const text = renderSkill({ ...ctx, dispatchLabel: "harness" });
+    assert.ok(
+      text.indexOf("## Dispatching a run") < text.indexOf("## When you advance a phase"),
+      "dispatch guidance came after the phase instructions",
+    );
+  });
 });
 
 describe("installSkill", () => {

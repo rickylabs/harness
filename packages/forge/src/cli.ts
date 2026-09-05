@@ -50,6 +50,8 @@ options
   --cwd <path>          repository root (default: the working directory)
   --no-detect           portable core only; derive nothing from this repository
   --force               settle conflicts and overwrite files this tool did not generate
+  --dispatch-label <n>  the label that starts an agent run here; teaches the skill to be careful
+                        with it (default: none — most repositories have no dispatcher)
   --dry-run             report every change without writing a file or touching the repository
   --json                machine-readable output
   -h, --help            this text
@@ -333,7 +335,7 @@ async function cmdEject(ctx: Context, dryRun: boolean, json: boolean): Promise<n
 
 async function cmdSkillInstall(
   ctx: Context,
-  flags: { force: boolean; dryRun: boolean },
+  flags: { force: boolean; dryRun: boolean; dispatchLabel: string | null },
   json: boolean,
 ): Promise<number> {
   const seen = new Set<string>();
@@ -349,6 +351,7 @@ async function cmdSkillInstall(
     repo: ctx.repo,
     specs,
     lanePrefix: ctx.lanePrefix,
+    dispatchLabel: flags.dispatchLabel,
     skillDirs: ctx.skillDirs,
     force: flags.force,
     dryRun: flags.dryRun,
@@ -364,7 +367,7 @@ async function cmdSkillInstall(
 
 async function cmdInit(
   ctx: Context,
-  flags: { force: boolean; dryRun: boolean },
+  flags: { force: boolean; dryRun: boolean; dispatchLabel: string | null },
   json: boolean,
 ): Promise<number> {
   if (!json) out("== labels ==");
@@ -408,6 +411,7 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         // parseArgs has no `--no-<flag>` negation, so the negative form is its own option.
         "no-detect": { type: "boolean", default: false },
         force: { type: "boolean", default: false },
+        "dispatch-label": { type: "string" },
         "dry-run": { type: "boolean", default: false },
         json: { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
@@ -429,6 +433,9 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
   const json = values.json ?? false;
   const force = values.force ?? false;
   const dryRun = values["dry-run"] ?? false;
+  // Absent means no dispatcher, which is the honest default: inventing one would put a warning
+  // about a trigger that does not exist into every skill this tool installs.
+  const dispatchLabel = values["dispatch-label"] ?? null;
   const repoRoot = resolve(values.cwd ?? process.cwd());
 
   const [group, sub] = positionals;
@@ -457,9 +464,9 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         if (sub !== undefined && sub !== "install") {
           throw new UsageError(`unknown command: skill ${sub}`);
         }
-        return await cmdSkillInstall(ctx, { force, dryRun }, json);
+        return await cmdSkillInstall(ctx, { force, dryRun, dispatchLabel }, json);
       case "init":
-        return await cmdInit(ctx, { force, dryRun }, json);
+        return await cmdInit(ctx, { force, dryRun, dispatchLabel }, json);
       default:
         throw new UsageError(`unknown command: ${positionals.join(" ")}`);
     }
