@@ -36,6 +36,11 @@ you are standing in — and a tool that fails should fail for one reason you can
 
 ## Quickstart
 
+Four commands that prove the build works. If you would rather be walked through the whole thing once
+— installing the board into a repository of your own, moving an item, reading a run —
+[From a clone to a moving board](docs/tutorials/01-from-clone-to-board.md) is fifteen minutes and
+needs no server.
+
 Node 24 or newer, and [pnpm](https://pnpm.io) 11.
 
 ```bash
