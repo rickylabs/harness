@@ -77,6 +77,16 @@ export {
 export { applyPlan, type ApplyResult } from "./labels/apply.js";
 
 export {
+  ENDINGS,
+  isEnding,
+  settleEvent,
+  settleStatus,
+  type Ending,
+  type EventSettlement,
+  type Settlement,
+} from "./labels/settle.js";
+
+export {
   LABELS_FILE,
   familyOf,
   loadLabelsFile,

@@ -32,6 +32,7 @@ usage
   dsh-forge labels check           exit non-zero when the repo has drifted (for CI)
   dsh-forge labels eject           write .github/labels.yml — the reviewable source of truth
   dsh-forge skill install          write the board-process skill into this repo's skill dirs
+  dsh-forge status settle          print the status: label change an ended item calls for
   dsh-forge init                   eject + apply + skill install, in that order
 
 options
@@ -41,6 +42,9 @@ options
   --force               settle conflicts and overwrite files this tool did not generate
   --dispatch-label <n>  the label that starts an agent run here; teaches the skill to be careful
                         with it (default: none — most repositories have no dispatcher)
+  --ending <how>        status settle only: completed | not-planned | reopened
+  --labels <a,b>        status settle only: the labels the item carries now (repeatable)
+  --event <path>        status settle only: a GitHub event payload to read all of that from
   --dry-run             report every change without writing a file or touching the repository
   --json                machine-readable output
   -h, --help            this text

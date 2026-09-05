@@ -1,0 +1,86 @@
+# The board's one hard rule, applied instead of merely stated.
+#
+# `status:` is the board column, and the taxonomy has always said what it becomes when an item ends:
+# `status:shipped` on completed work, no status label at all on work that was dropped. The generated
+# skill narrates that rule to agents and `dsh-board check` reports every item that breaks it —
+# neither of them applies it. On this repository that gap ran to fourteen merged pull requests
+# sitting in no column, each closed correctly by a human who then had no reason to think about a
+# label again. A rule that depends on remembering is a rule that decays; this is the remembering.
+#
+# The rule itself is not written here. `dsh-forge status settle` computes the change from the same
+# constants the skill and the board read, and this file only reads the event and applies the answer.
+# Spelling `status:shipped` into this YAML would be a second copy of a fact the code already owns,
+# and the second copy is the one that goes stale.
+name: settle-status
+
+on:
+  # `pull_request_target`, not `pull_request`: the token on a fork's `pull_request` run is read-only,
+  # so the labelling would fail on exactly the contributions nobody on the team is watching. The
+  # usual danger of this trigger is checking out and running the head branch's code — this job never
+  # does; it builds the default branch, which is the code review already passed.
+  pull_request_target:
+    types: [closed, reopened]
+  issues:
+    types: [closed, reopened]
+
+# Per item, and never cancelling: a close followed quickly by a reopen has to settle in that order,
+# and a cancelled first run would leave `status:shipped` on a reopened issue permanently.
+concurrency:
+  group: settle-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+# `contents: read` builds the tool; the two write scopes edit labels on the item that fired the
+# event. Nothing here pushes a commit, and nothing needs a secret — `github.token` is the whole
+# credential surface, and it cannot reach another repository.
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  settle:
+    name: settle the status label
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Only the one package. The rest of the workspace has no bearing on a label, and a close
+      # event should not wait on the full build.
+      - run: pnpm --filter @rickylabs/forge run build
+
+      # Every decision — which item, which labels, which ending, what changes — is made by the CLI
+      # reading the payload, and covered by unit tests against the payload shapes GitHub sends. The
+      # shell below only moves the answer to `gh`. Deciding anything here would put logic in a YAML
+      # string where nothing can run it until an item closes in anger.
+      - name: settle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          settlement=$(node packages/forge/dist/cli.js status settle --json --event "$GITHUB_EVENT_PATH")
+          echo "$settlement"
+          jq -r .note <<<"$settlement"
+
+          if [ "$(jq -r .changed <<<"$settlement")" != "true" ]; then
+            exit 0
+          fi
+
+          add=$(jq -r '.add | join(",")' <<<"$settlement")
+          remove=$(jq -r '.remove | join(",")' <<<"$settlement")
+
+          args=()
+          if [ -n "$add" ]; then args+=(--add-label "$add"); fi
+          if [ -n "$remove" ]; then args+=(--remove-label "$remove"); fi
+
+          gh "$(jq -r .kind <<<"$settlement")" edit "$(jq -r .number <<<"$settlement")" "${args[@]}"
