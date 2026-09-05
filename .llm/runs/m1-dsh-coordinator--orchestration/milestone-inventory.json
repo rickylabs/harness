@@ -1,0 +1,354 @@
+{
+  "schemaVersion": 1,
+  "repo": "rickylabs/harness",
+  "milestone": "M1 — dsh coordinator foundation",
+  "capturedAt": "2026-09-04T18:32:29.156Z",
+  "baselineMainSha": "b7d5e586e32f31ef44cab7b1327ab890f8e23794",
+  "ownerRatifiedAt": "2026-09-04T18:32:29.156Z",
+  "targetIssueCount": 49,
+  "issues": [
+    {
+      "number": 40,
+      "title": "E1.1 — pnpm workspace skeleton and shared TypeScript base",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 31
+    },
+    {
+      "number": 41,
+      "title": "E1.2 — Pin the toolchain with mise, outside the git checkout",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 31
+    },
+    {
+      "number": 42,
+      "title": "E1.3 — Port .llm/harness → doctrine/ with a commitment→epic map",
+      "disposition": "active",
+      "lane": "docs",
+      "epic": 31
+    },
+    {
+      "number": 43,
+      "title": "E1.4 — Root agent entry points: README, AGENTS.md, CLAUDE.md",
+      "disposition": "active",
+      "lane": "docs",
+      "epic": 31
+    },
+    {
+      "number": 44,
+      "title": "E1.5 — LICENSE MIT, repo topics, and CI (typecheck + build only)",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 31
+    },
+    {
+      "number": 45,
+      "title": "E1.6 — Decide the doctrine/ ↔ Orchid memory/ relationship",
+      "disposition": "active",
+      "lane": "docs",
+      "epic": 31
+    },
+    {
+      "number": 46,
+      "title": "E2.1 — packages/dsh-app: the `rickylabs` profile and bundle",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 32
+    },
+    {
+      "number": 47,
+      "title": "E2.2 — Fork deepseek-harness-docker, keeping the upstream remote",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 32
+    },
+    {
+      "number": 48,
+      "title": "E2.3 — deploy/compose/dsh.yaml for the N5",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 32
+    },
+    {
+      "number": 49,
+      "title": "E2.4 — Register the stack on the N5 and verify it comes up",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 32
+    },
+    {
+      "number": 50,
+      "title": "E2.5 — Golden --dump-config snapshot test",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 32
+    },
+    {
+      "number": 51,
+      "title": "E3.1 — DispatchRequest and the SubagentProvider contract",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 33
+    },
+    {
+      "number": 52,
+      "title": "E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 33
+    },
+    {
+      "number": 53,
+      "title": "E3.3 — provider-codex against the running app-server daemon",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 33
+    },
+    {
+      "number": 54,
+      "title": "E3.4 — provider-acp: agy on dsh's in-tree ACP driver",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 33
+    },
+    {
+      "number": 55,
+      "title": "E3.5 — provider-opencode on @opencode-ai/sdk/v2",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 33
+    },
+    {
+      "number": 56,
+      "title": "E3.6 — Single-writer session lease and run-id keying",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 33
+    },
+    {
+      "number": 57,
+      "title": "E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 34
+    },
+    {
+      "number": 58,
+      "title": "E4.2 — routing: tiers, the family rule, and fallback chains",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 34
+    },
+    {
+      "number": 59,
+      "title": "E4.3 — Capability probes instead of committed constants",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 34
+    },
+    {
+      "number": 60,
+      "title": "E4.4 — The local capability matrix, as data",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 34
+    },
+    {
+      "number": 61,
+      "title": "E4.5 — Model-id validation at the dispatch boundary",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 34
+    },
+    {
+      "number": 62,
+      "title": "E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 35
+    },
+    {
+      "number": 63,
+      "title": "E5.2 — Port the Orchid subscription-quota governor",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 35
+    },
+    {
+      "number": 64,
+      "title": "E5.3 — Metered-spend regime",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 35
+    },
+    {
+      "number": 65,
+      "title": "E5.4 — Local-capacity regime: the third regime, which has no owner today",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 35
+    },
+    {
+      "number": 66,
+      "title": "E5.5 — Wire the gate at the sandbox boundary",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 35
+    },
+    {
+      "number": 67,
+      "title": "E5.6 — Boot-parameter verification after every kernel update",
+      "disposition": "active",
+      "lane": "fixes",
+      "epic": 35
+    },
+    {
+      "number": 68,
+      "title": "E6.1 — board: task DAG, kanban projection, issue↔card reconciliation",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 36
+    },
+    {
+      "number": 69,
+      "title": "E6.2 — coordinator: the workflow definitions",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 36
+    },
+    {
+      "number": 70,
+      "title": "E6.3 — Emit one dispatch payload in the /swarm wire format",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 36
+    },
+    {
+      "number": 71,
+      "title": "E6.4 — Determinism: persist decisions, not just outcomes",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 36
+    },
+    {
+      "number": 72,
+      "title": "E6.5 — Structural evaluator independence",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 36
+    },
+    {
+      "number": 73,
+      "title": "E6.6 — Worktree lifecycle and the auto-archiver hazard",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 36
+    },
+    {
+      "number": 74,
+      "title": "E7.1 — forge: the issue/PR bridge and label→target mapping",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 37
+    },
+    {
+      "number": 75,
+      "title": "E7.2 — PR supervision loop",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 37
+    },
+    {
+      "number": 76,
+      "title": "E7.3 — Dispatch selector: provider or divybot, per target",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 37
+    },
+    {
+      "number": 77,
+      "title": "E7.4 — Port timeout: semantics",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 37
+    },
+    {
+      "number": 78,
+      "title": "E7.5 — Preserve the /swarm comment-authority security property",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 37
+    },
+    {
+      "number": 79,
+      "title": "E8.1 — contracts: route, payload and event types",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 38
+    },
+    {
+      "number": 80,
+      "title": "E8.2 — Snapshot and delta shapes designed for replay",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 38
+    },
+    {
+      "number": 81,
+      "title": "E8.3 — Publish @rickylabs/harness-contracts to npm",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 38
+    },
+    {
+      "number": 82,
+      "title": "E8.4 — Reference client bindings shared by both cockpits",
+      "disposition": "active",
+      "lane": "internals",
+      "epic": 38
+    },
+    {
+      "number": 83,
+      "title": "E9.1 — SessionTelemetrySink on every run, on both seams",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 39
+    },
+    {
+      "number": 84,
+      "title": "E9.2 — Push over /api/remote.mux, never poll",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 39
+    },
+    {
+      "number": 85,
+      "title": "E9.3 — The hierarchy view: milestone → epic → task → subagent",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 39
+    },
+    {
+      "number": 86,
+      "title": "E9.4 — Backfill from disk, so a coordinator crash loses nothing",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 39
+    },
+    {
+      "number": 87,
+      "title": "E9.5 — Surface governance state alongside progress",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 39
+    },
+    {
+      "number": 88,
+      "title": "E9.6 — Observability sink with rotation and failure deep-links",
+      "disposition": "active",
+      "lane": "features",
+      "epic": 39
+    }
+  ]
+}

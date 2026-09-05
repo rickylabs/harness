@@ -1,0 +1,495 @@
+{
+  "schemaVersion": 2,
+  "milestone": "M1 — dsh coordinator foundation",
+  "baselineMainSha": "b7d5e586e32f31ef44cab7b1327ab890f8e23794",
+  "currentMainSha": "b7d5e586e32f31ef44cab7b1327ab890f8e23794",
+  "coordinator": {
+    "agentId": "claude-opus-5/desktop/5dc200b1"
+  },
+  "limits": {
+    "activeImplementationSlicesPerLane": 2,
+    "activeEvaluatorsPerLane": 1,
+    "globalExpensiveGates": 1,
+    "releaseWriters": 1
+  },
+  "lanes": [
+    {
+      "id": "docs",
+      "orchestratorAgentId": "harness-m1/docs/claude-opus-5-desktop-5dc200b1",
+      "issueNumbers": [
+        42,
+        43,
+        45
+      ]
+    },
+    {
+      "id": "internals",
+      "orchestratorAgentId": "harness-m1/internals/claude-opus-5-desktop-5dc200b1",
+      "issueNumbers": [
+        40,
+        41,
+        44,
+        46,
+        47,
+        48,
+        49,
+        50,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        79,
+        80,
+        81,
+        82
+      ]
+    },
+    {
+      "id": "fixes",
+      "orchestratorAgentId": "harness-m1/fixes/claude-opus-5-desktop-5dc200b1",
+      "issueNumbers": [
+        67
+      ]
+    },
+    {
+      "id": "features",
+      "orchestratorAgentId": "harness-m1/features/claude-opus-5-desktop-5dc200b1",
+      "issueNumbers": [
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88
+      ]
+    }
+  ],
+  "watchers": [],
+  "committedIssues": [
+    {
+      "number": 40,
+      "state": "open"
+    },
+    {
+      "number": 41,
+      "state": "open"
+    },
+    {
+      "number": 42,
+      "state": "open"
+    },
+    {
+      "number": 43,
+      "state": "open"
+    },
+    {
+      "number": 44,
+      "state": "open"
+    },
+    {
+      "number": 45,
+      "state": "open"
+    },
+    {
+      "number": 46,
+      "state": "open"
+    },
+    {
+      "number": 47,
+      "state": "open"
+    },
+    {
+      "number": 48,
+      "state": "open"
+    },
+    {
+      "number": 49,
+      "state": "open"
+    },
+    {
+      "number": 50,
+      "state": "open"
+    },
+    {
+      "number": 51,
+      "state": "open"
+    },
+    {
+      "number": 52,
+      "state": "open"
+    },
+    {
+      "number": 53,
+      "state": "open"
+    },
+    {
+      "number": 54,
+      "state": "open"
+    },
+    {
+      "number": 55,
+      "state": "open"
+    },
+    {
+      "number": 56,
+      "state": "open"
+    },
+    {
+      "number": 57,
+      "state": "open"
+    },
+    {
+      "number": 58,
+      "state": "open"
+    },
+    {
+      "number": 59,
+      "state": "open"
+    },
+    {
+      "number": 60,
+      "state": "open"
+    },
+    {
+      "number": 61,
+      "state": "open"
+    },
+    {
+      "number": 62,
+      "state": "open"
+    },
+    {
+      "number": 63,
+      "state": "open"
+    },
+    {
+      "number": 64,
+      "state": "open"
+    },
+    {
+      "number": 65,
+      "state": "open"
+    },
+    {
+      "number": 66,
+      "state": "open"
+    },
+    {
+      "number": 67,
+      "state": "open"
+    },
+    {
+      "number": 68,
+      "state": "open"
+    },
+    {
+      "number": 69,
+      "state": "open"
+    },
+    {
+      "number": 70,
+      "state": "open"
+    },
+    {
+      "number": 71,
+      "state": "open"
+    },
+    {
+      "number": 72,
+      "state": "open"
+    },
+    {
+      "number": 73,
+      "state": "open"
+    },
+    {
+      "number": 74,
+      "state": "open"
+    },
+    {
+      "number": 75,
+      "state": "open"
+    },
+    {
+      "number": 76,
+      "state": "open"
+    },
+    {
+      "number": 77,
+      "state": "open"
+    },
+    {
+      "number": 78,
+      "state": "open"
+    },
+    {
+      "number": 79,
+      "state": "open"
+    },
+    {
+      "number": 80,
+      "state": "open"
+    },
+    {
+      "number": 81,
+      "state": "open"
+    },
+    {
+      "number": 82,
+      "state": "open"
+    },
+    {
+      "number": 83,
+      "state": "open"
+    },
+    {
+      "number": 84,
+      "state": "open"
+    },
+    {
+      "number": 85,
+      "state": "open"
+    },
+    {
+      "number": 86,
+      "state": "open"
+    },
+    {
+      "number": 87,
+      "state": "open"
+    },
+    {
+      "number": 88,
+      "state": "open"
+    }
+  ],
+  "leaves": [
+    {
+      "id": "w0-internals-40",
+      "lane": "internals",
+      "phase": "evaluating",
+      "baseBranch": "main",
+      "prNumber": 91,
+      "headSha": "6f348ba17cf761176633e9f7859c40670c6cfd18",
+      "issueNumbers": [
+        40
+      ],
+      "implementerAgentId": "divybot/n5-agents/claude-40",
+      "receiptRefs": [],
+      "evaluatorAgentId": "divybot/n5-agents/codex-92"
+    },
+    {
+      "id": "w0-docs-42",
+      "lane": "docs",
+      "phase": "evaluating",
+      "baseBranch": "main",
+      "prNumber": 90,
+      "headSha": "800b05cb3887f1edb3e4b13cea90b261b14b814f",
+      "issueNumbers": [
+        42
+      ],
+      "implementerAgentId": "divybot/n5-agents/codex-42",
+      "receiptRefs": [],
+      "evaluatorAgentId": "divybot/n5-agents/claude-93"
+    }
+  ],
+  "expensiveGates": [],
+  "canaryCheckpoints": [],
+  "reporting": {
+    "cadenceMinutes": 60,
+    "lastReportAt": "2026-09-04T21:17:34.266Z",
+    "nextReportDueAt": "2026-09-04T22:17:34.266Z",
+    "lastReportRef": "worklog.md#stage-d--w0-reviews-dispatched-and-what-the-dispatch-proved",
+    "headline": "W0 is complete: #40 -> PR #91 (internals) and #42 -> PR #90 (docs), both open against main and awaiting review. The run's substantive finding is a dispatch defect: divybot binds label -> agent but never a model, #40 declared no model: key, so the launch inherited claude-fable-5-1 from the host default and ran into a rate limit. The matrix was correct and non-binding at the same time. Host default is now claude-opus-5/medium, every /swarm block from here declares model and effort, and the Fable-blocked lanes fall back per the matrix's own token-limit column until midnight.",
+    "currentMainSha": "b7d5e586e32f31ef44cab7b1327ab890f8e23794",
+    "canary": {
+      "target": "harness@0.1.0-next",
+      "state": "not-planned",
+      "eta": {
+        "window": "not scheduled",
+        "confidence": "high",
+        "basis": "This repository publishes nothing yet. The first meaningful canary is the wave-1 boundary, when a dsh instance boots the rickylabs profile on the N5 (#49) — there is no artifact to canary before that."
+      },
+      "criticalPath": []
+    },
+    "progress": {
+      "mergedPullRequests": [],
+      "closedIssues": [],
+      "newIssues": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88
+      ],
+      "queueDeltaExplanation": "Cluster bootstrap. 49 leaf issues filed under epics #31-#39 and frozen into M1; epics and the #30 roadmap deliberately left unmilestoned so the burn-down counts leaves once."
+    },
+    "scope": {
+      "openIssueCount": 49,
+      "ownedIssueCount": 49,
+      "scheduledIssueCount": 49,
+      "unscheduledIssueNumbers": [],
+      "openPullRequestCount": 2
+    },
+    "mergeQueue": [],
+    "orchestratorMatrix": [
+      {
+        "lane": "docs",
+        "state": "active",
+        "activeItems": [
+          42
+        ],
+        "lastConcreteProgressAt": "2026-09-04T20:30:26.349Z",
+        "blocker": null,
+        "nextAction": "PR #90 is open and unreviewed. Generator was Codex Sol high, so review_codex_complex applies: Fable 5 medium is blocked until midnight, fallback Opus 5 medium. #43 is gated on this PR because #42 touched README/AGENTS/CLAUDE at the repo root."
+      },
+      {
+        "lane": "internals",
+        "state": "active",
+        "activeItems": [
+          40
+        ],
+        "lastConcreteProgressAt": "2026-09-04T20:30:26.349Z",
+        "blocker": null,
+        "nextAction": "PR #91 is open and unreviewed. Route it to review_claude -> Codex Sol xhigh (generator was Claude, so the reviewer must be Codex). Set evaluatorAgentId on w0-internals-40 only when that reviewer actually launches."
+      },
+      {
+        "lane": "fixes",
+        "state": "queued",
+        "activeItems": [],
+        "lastConcreteProgressAt": "2026-09-04T18:32:29.156Z",
+        "blocker": null,
+        "nextAction": "One issue, and nothing to fix yet in a greenfield repo. Fills as the other lanes produce code."
+      },
+      {
+        "lane": "features",
+        "state": "queued",
+        "activeItems": [],
+        "lastConcreteProgressAt": "2026-09-04T18:32:29.156Z",
+        "blocker": "Waits on #51 (DispatchRequest) in wave 1 — dispatching earlier would fork the contract.",
+        "nextAction": "Idle by design until #51 lands the dispatch contract in wave 1. Dispatching a provider earlier forks that contract four ways."
+      }
+    ],
+    "blockers": [
+      {
+        "id": "sandboxctl-execution-channel",
+        "category": "infrastructure",
+        "summary": "sandboxctl runs on the N5 host and the coordinator has no execution channel to it. Now established rather than assumed: ai-agents runs with DOCKER_HOST=tcp://netscript-dind:2375 and cannot see the host daemon at all (docker inspect lm-studio -> No such object), and no host socket is mounted into it.",
+        "impact": "Wave 3 governance work (#63-#67) cannot start, and the gate that replaces per-tool approval for vendor CLI children has nowhere to live. Everything else proceeds.",
+        "owner": "owner (chautems-eric)",
+        "nextAction": "Decide #62: an ssh executor held by the coordinator, or a narrow privileged sidecar exposing sandboxctl over HTTP on ai-shared. The evidence removes any middle option that would have run from inside ai-agents.",
+        "ownerDecisionRequired": true
+      }
+    ],
+    "environment": {
+      "checkedAt": "2026-09-04T18:32:29.156Z",
+      "aspireApplications": 0,
+      "dockerContainers": 0,
+      "dockerCustomNetworks": 0
+    },
+    "ownerDecisions": [
+      {
+        "id": "sandboxctl-execution-channel",
+        "question": "ssh executor or privileged sidecar for sandboxctl? The sidecar is narrower and auditable; the ssh executor is zero new code and broad authority.",
+        "whyOwnerOnly": "It grants the coordinator host-level authority on the N5. That is a security posture decision, not an implementation detail.",
+        "blockedItems": [
+          62,
+          63,
+          64,
+          65,
+          66,
+          67
+        ]
+      },
+      {
+        "id": "canary-shape-for-a-greenfield-repo",
+        "question": "Does a wave boundary with no published artifact still declare a canary point, or does the first canary wait for a booting dsh instance at the wave-1 boundary?",
+        "whyOwnerOnly": "canary-cadence.md records the every-boundary vs surface-gated question as owner-undecided. The skill forbids resolving it by habit inside a run.",
+        "blockedItems": []
+      }
+    ]
+  },
+  "exactMainEvidence": {
+    "gitHead": "b7d5e586e32f31ef44cab7b1327ab890f8e23794",
+    "surface": "repository",
+    "expectedGateIds": [],
+    "receipts": []
+  },
+  "existingReleaseLease": false,
+  "releaseWriters": [],
+  "releaseCaptain": {
+    "state": "inactive",
+    "agentId": null,
+    "leaseId": null,
+    "contentSha": null,
+    "evidence": []
+  },
+  "updatedAt": "2026-09-04T21:17:34.266Z"
+}

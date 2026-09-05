@@ -1,0 +1,15 @@
+{
+  "imports": {
+    "@std/path": "jsr:@std/path@^1.0.8"
+  },
+  "tasks": {
+    "harness:milestone:render": "deno run --allow-read --allow-write .llm/tools/harness/render-milestone-status.ts",
+    "harness:milestone:validate": "deno run --allow-read .llm/tools/harness/validate-milestone-cluster.ts"
+  },
+  "fmt": {
+    "exclude": [".llm/runs"]
+  },
+  "lint": {
+    "exclude": [".llm/runs"]
+  }
+}

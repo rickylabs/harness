@@ -1,0 +1,728 @@
+{
+  "schemaVersion": 1,
+  "repo": "rickylabs/harness",
+  "milestone": "M1 — dsh coordinator foundation",
+  "capturedAt": "2026-09-04T18:32:29.156Z",
+  "baselineMainSha": "b7d5e586e32f31ef44cab7b1327ab890f8e23794",
+  "ownerRatifiedAt": "2026-09-04T18:32:29.156Z",
+  "ownerRatification": {
+    "ratifiedBy": "owner (chautems-eric)",
+    "instrument": "Owner instruction in session 5dc200b1: \"once the epic and sub issues are created enable orchestrator profile mode using the updated harness and AGENTIC toolchain we just merged\", following owner ratification of the four structural decisions recorded on #30.",
+    "note": "The board this intake freezes was itself filed under that instruction; the epics and their sub-issues are the owner-approved scope, not external candidates pulled in by the coordinator."
+  },
+  "sources": {
+    "targetMilestone": true,
+    "unmilestoned": true,
+    "backlog": true,
+    "laterMilestones": true
+  },
+  "candidates": [
+    {
+      "number": 40,
+      "title": "E1.1 — pnpm workspace skeleton and shared TypeScript base",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/40",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 41,
+      "title": "E1.2 — Pin the toolchain with mise, outside the git checkout",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/41",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 42,
+      "title": "E1.3 — Port .llm/harness → doctrine/ with a commitment→epic map",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/42",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 43,
+      "title": "E1.4 — Root agent entry points: README, AGENTS.md, CLAUDE.md",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/43",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 44,
+      "title": "E1.5 — LICENSE MIT, repo topics, and CI (typecheck + build only)",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/44",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 45,
+      "title": "E1.6 — Decide the doctrine/ ↔ Orchid memory/ relationship",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/45",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 46,
+      "title": "E2.1 — packages/dsh-app: the `rickylabs` profile and bundle",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/46",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 47,
+      "title": "E2.2 — Fork deepseek-harness-docker, keeping the upstream remote",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/47",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 48,
+      "title": "E2.3 — deploy/compose/dsh.yaml for the N5",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/48",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 49,
+      "title": "E2.4 — Register the stack on the N5 and verify it comes up",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/49",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 50,
+      "title": "E2.5 — Golden --dump-config snapshot test",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/50",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 51,
+      "title": "E3.1 — DispatchRequest and the SubagentProvider contract",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/51",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 52,
+      "title": "E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/52",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 53,
+      "title": "E3.3 — provider-codex against the running app-server daemon",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/53",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 54,
+      "title": "E3.4 — provider-acp: agy on dsh's in-tree ACP driver",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/54",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 55,
+      "title": "E3.5 — provider-opencode on @opencode-ai/sdk/v2",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/55",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 56,
+      "title": "E3.6 — Single-writer session lease and run-id keying",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/56",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 57,
+      "title": "E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/57",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 58,
+      "title": "E4.2 — routing: tiers, the family rule, and fallback chains",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/58",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 59,
+      "title": "E4.3 — Capability probes instead of committed constants",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/59",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 60,
+      "title": "E4.4 — The local capability matrix, as data",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/60",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 61,
+      "title": "E4.5 — Model-id validation at the dispatch boundary",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/61",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 62,
+      "title": "E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/62",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 63,
+      "title": "E5.2 — Port the Orchid subscription-quota governor",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/63",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 64,
+      "title": "E5.3 — Metered-spend regime",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/64",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 65,
+      "title": "E5.4 — Local-capacity regime: the third regime, which has no owner today",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/65",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 66,
+      "title": "E5.5 — Wire the gate at the sandbox boundary",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/66",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 67,
+      "title": "E5.6 — Boot-parameter verification after every kernel update",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/67",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 68,
+      "title": "E6.1 — board: task DAG, kanban projection, issue↔card reconciliation",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/68",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 69,
+      "title": "E6.2 — coordinator: the workflow definitions",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/69",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 70,
+      "title": "E6.3 — Emit one dispatch payload in the /swarm wire format",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/70",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 71,
+      "title": "E6.4 — Determinism: persist decisions, not just outcomes",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/71",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 72,
+      "title": "E6.5 — Structural evaluator independence",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/72",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 73,
+      "title": "E6.6 — Worktree lifecycle and the auto-archiver hazard",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/73",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 74,
+      "title": "E7.1 — forge: the issue/PR bridge and label→target mapping",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/74",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 75,
+      "title": "E7.2 — PR supervision loop",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/75",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 76,
+      "title": "E7.3 — Dispatch selector: provider or divybot, per target",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/76",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 77,
+      "title": "E7.4 — Port timeout: semantics",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/77",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 78,
+      "title": "E7.5 — Preserve the /swarm comment-authority security property",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/78",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 79,
+      "title": "E8.1 — contracts: route, payload and event types",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/79",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 80,
+      "title": "E8.2 — Snapshot and delta shapes designed for replay",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/80",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 81,
+      "title": "E8.3 — Publish @rickylabs/harness-contracts to npm",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/81",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 82,
+      "title": "E8.4 — Reference client bindings shared by both cockpits",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/82",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 83,
+      "title": "E9.1 — SessionTelemetrySink on every run, on both seams",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/83",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 84,
+      "title": "E9.2 — Push over /api/remote.mux, never poll",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/84",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 85,
+      "title": "E9.3 — The hierarchy view: milestone → epic → task → subagent",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/85",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 86,
+      "title": "E9.4 — Backfill from disk, so a coordinator crash loses nothing",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/86",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 87,
+      "title": "E9.5 — Surface governance state alongside progress",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/87",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 88,
+      "title": "E9.6 — Observability sink with rotation and failure deep-links",
+      "source": "targetMilestone",
+      "decision": "include",
+      "reason": "PR-sized leaf filed under its epic from the owner-ratified roadmap in #30; acceptance is stated on the issue.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/88",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 31,
+      "title": "E1 epic container",
+      "source": "unmilestoned",
+      "decision": "exclude",
+      "reason": "Epic container, deliberately unmilestoned. Its scope enters M1 through its sub-issues, which are all included above; milestoning the epic as well would double-count the burn-down.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/31",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 32,
+      "title": "E2 epic container",
+      "source": "unmilestoned",
+      "decision": "exclude",
+      "reason": "Epic container, deliberately unmilestoned. Its scope enters M1 through its sub-issues, which are all included above; milestoning the epic as well would double-count the burn-down.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/32",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 33,
+      "title": "E3 epic container",
+      "source": "unmilestoned",
+      "decision": "exclude",
+      "reason": "Epic container, deliberately unmilestoned. Its scope enters M1 through its sub-issues, which are all included above; milestoning the epic as well would double-count the burn-down.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/33",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 34,
+      "title": "E4 epic container",
+      "source": "unmilestoned",
+      "decision": "exclude",
+      "reason": "Epic container, deliberately unmilestoned. Its scope enters M1 through its sub-issues, which are all included above; milestoning the epic as well would double-count the burn-down.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/34",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 35,
+      "title": "E5 epic container",
+      "source": "unmilestoned",
+      "decision": "exclude",
+      "reason": "Epic container, deliberately unmilestoned. Its scope enters M1 through its sub-issues, which are all included above; milestoning the epic as well would double-count the burn-down.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/35",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 36,
+      "title": "E6 epic container",
+      "source": "unmilestoned",
+      "decision": "exclude",
+      "reason": "Epic container, deliberately unmilestoned. Its scope enters M1 through its sub-issues, which are all included above; milestoning the epic as well would double-count the burn-down.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/36",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 37,
+      "title": "E7 epic container",
+      "source": "unmilestoned",
+      "decision": "exclude",
+      "reason": "Epic container, deliberately unmilestoned. Its scope enters M1 through its sub-issues, which are all included above; milestoning the epic as well would double-count the burn-down.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/37",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 38,
+      "title": "E8 epic container",
+      "source": "unmilestoned",
+      "decision": "exclude",
+      "reason": "Epic container, deliberately unmilestoned. Its scope enters M1 through its sub-issues, which are all included above; milestoning the epic as well would double-count the burn-down.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/38",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 39,
+      "title": "E9 epic container",
+      "source": "unmilestoned",
+      "decision": "exclude",
+      "reason": "Epic container, deliberately unmilestoned. Its scope enters M1 through its sub-issues, which are all included above; milestoning the epic as well would double-count the burn-down.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/39",
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    },
+    {
+      "number": 30,
+      "title": "E0 — Roadmap",
+      "source": "unmilestoned",
+      "decision": "exclude",
+      "reason": "The architecture record and decision log for the whole programme. It outlives M1 and closes when the roadmap does, not when this milestone cuts.",
+      "evidence": [
+        "https://github.com/rickylabs/harness/issues/30"
+      ],
+      "ownerRatified": true
+    }
+  ]
+}
