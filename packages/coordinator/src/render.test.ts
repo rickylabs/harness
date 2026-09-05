@@ -3,8 +3,9 @@ import { describe, it } from "node:test";
 
 import { selectEvaluator, type Actor, type Candidate } from "./independence.js";
 import { planOf, type StepState } from "./plan.js";
-import { renderDecision, renderPlan, renderWorkflow } from "./render.js";
+import { renderDecision, renderPlan, renderWorkflow, renderWorktrees } from "./render.js";
 import { checkWorkflow, MILESTONE_WORKFLOW, type Workflow } from "./workflow.js";
+import { hazards, judge, IDLE_LIMIT_HOURS, type Census } from "./worktree.js";
 
 const author: Actor = {
   id: "run-author",
@@ -151,5 +152,65 @@ describe("renderPlan", () => {
 
   it("ends without a trailing newline", () => {
     assert.equal(renderPlan(planOf(MILESTONE_WORKFLOW, [])).endsWith("\n"), false);
+  });
+});
+
+describe("renderWorktrees", () => {
+  const wt = "/home/agent/projects/harness/worktrees/feat-73";
+  const censusOf = (census: Partial<Census>): Census => ({
+    runs: [],
+    worktrees: [],
+    sessions: [],
+    idleLimitHours: IDLE_LIMIT_HOURS,
+    ...census,
+  });
+  const text = (census: Census): string => {
+    const judged = judge(census);
+    return renderWorktrees(judged, hazards(census, judged));
+  };
+
+  it("leads with the risk, not with the count", () => {
+    const out = text(
+      censusOf({
+        worktrees: [{ path: wt, keepFile: false, idleHours: 200 }],
+        runs: [{ id: "run-a", cwd: wt }],
+      }),
+    );
+    assert.match(out.split("\n")[0] ?? "", /^AT RISK — 1 hazard\(s\) across 1 worktree\(s\)$/);
+    assert.match(out, /unprotected {2}\/home\/agent\/projects\/harness\/worktrees\/feat-73/);
+  });
+
+  it("counts the dispositions when there is nothing at risk", () => {
+    const out = text(
+      censusOf({
+        worktrees: [
+          { path: `${wt}-live`, keepFile: true, idleHours: 200 },
+          { path: `${wt}-fresh`, keepFile: false, idleHours: 1 },
+          { path: `${wt}-gone`, keepFile: false, idleHours: 200 },
+        ],
+      }),
+    );
+    assert.match(out.split("\n")[0] ?? "", /^worktrees: 3 judged — 1 protected, 1 left, 1 sweepable$/);
+  });
+
+  it("prints every row, because a summary is where a swept live worktree hides", () => {
+    const out = text(
+      censusOf({
+        worktrees: [
+          { path: `${wt}-a`, keepFile: false, idleHours: 200 },
+          { path: `${wt}-b`, keepFile: false, idleHours: 200 },
+        ],
+      }),
+    );
+    assert.match(out, new RegExp(`${wt}-a {2}sweep`));
+    assert.match(out, new RegExp(`${wt}-b {2}sweep`));
+  });
+
+  it("says something sensible when there is nothing on disk at all", () => {
+    assert.equal(text(censusOf({})), "worktrees: 0 judged — 0 protected, 0 left, 0 sweepable");
+  });
+
+  it("ends without a trailing newline", () => {
+    assert.equal(text(censusOf({})).endsWith("\n"), false);
   });
 });
