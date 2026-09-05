@@ -1,0 +1,70 @@
+# No `render:` on any textarea — see `bug_report.yml` for why a fence is dangerous in a body that
+# may be dispatched.
+#
+# The first question is which of the four kinds the page is, because the most common documentation
+# defect here is not a wrong sentence — it is a page answering a question it was not written for, or
+# a hand-written page restating a fact that a generator owns.
+
+name: Documentation
+description: A page is wrong, missing, or answering the wrong question.
+labels: ["type:docs", "topic:docs", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not apply the `harness` label** unless you mean to dispatch a run now.
+        **No fenced code blocks** — indent by four spaces.
+
+        The rule every page here is held to: *every artifact either states facts it owns, or is
+        generated from the code that owns them.* A page that restates a fact owned elsewhere is a
+        page that will eventually disagree with itself, silently.
+
+  - type: input
+    id: page
+    attributes:
+      label: Which page
+      description: A repository path, or "does not exist yet".
+      placeholder: docs/concepts/03-the-board.md
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of page is this, or should it be
+      description: |
+        Tutorial — never done this, walk me through it once, one path, no alternatives.
+        How-to — I know what I want, give me the steps.
+        Reference — what does this flag do, what does exit 3 mean. **Generated, never hand-edited.**
+        Concept — why is it built this way.
+      options:
+        - Tutorial
+        - How-to
+        - Reference
+        - Concept
+        - Package README, or another document that owns its own facts
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: defect
+    attributes:
+      label: What is wrong with it
+      options:
+        - It says something untrue
+        - It restates a fact another file owns, and they now disagree
+        - It mixes two of the four kinds, so it serves neither
+        - It is missing entirely
+        - A link or an anchor is broken
+        - It is generated and has drifted from its source
+    validations:
+      required: true
+
+  - type: textarea
+    id: detail
+    attributes:
+      label: What it says, and what would be true instead
+      description: Quote the line. If it is a generated page, name the command that regenerates it rather than proposing an edit — `pnpm run docs:cli`, `pnpm run skill:install`, `pnpm run golden:bless`.
+    validations:
+      required: true

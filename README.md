@@ -307,11 +307,20 @@ versioning and deprecation policy.
 file, the patch overlay that binds it, and — importantly — what actually gates that surface, since
 the upstream Docker image's warning about it is out of date.
 
-## A note for anyone filing work here
+## Contributing, and a note for anyone filing work here
 
 This repository **is** an agent inbox. An issue labelled `harness` is polled and dispatched to a
 real agent. That is a feature, not a hazard, but it means the label starts something. Label
-deliberately.
+deliberately — [`AGENTS.md`](AGENTS.md#operational-hazard-this-repository-is-a-live-inbox) owns the
+full statement of what follows from that.
+
+| File | What it settles |
+| --- | --- |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The four-command local loop, the branch and pull request conventions, and the five generated files you must not hand-edit |
+| [`SECURITY.md`](SECURITY.md) | Three surfaces an ordinary repository does not have: content that instructs an agent, a label that executes, and run artifacts that are committed |
+| [`GOVERNANCE.md`](GOVERNANCE.md) | Where a decision lives, and the owner-fork rule that makes autonomous work safe here |
+| [`SUPPORT.md`](SUPPORT.md) | Where to go for each kind of question, given that there are no Discussions |
+| [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | Short. An agent's output is its operator's responsibility. |
 
 ## Licence
 

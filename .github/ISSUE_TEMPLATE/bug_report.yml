@@ -1,0 +1,106 @@
+# Not one textarea here carries `render:`.
+#
+# A textarea with `render: shell` wraps the submitted value in a fenced code block. In this
+# repository an issue body is a prompt — applying the `harness` label hands it to a dispatcher that
+# stops reading at a fence and runs the truncated brief without reporting that it did. So a form
+# field that helpfully adds fences is a form field that can silently halve a brief, and none of
+# these do. The same reason is why the reproduction field asks for four-space indentation.
+#
+# `labels:` below is the only place a form can set a label. Dropdown answers are not labels —
+# GitHub has no mechanism for that — so `area:`, `priority:` and `epic:` are asked as questions and
+# applied by whoever triages. That is stated in the form rather than hidden here.
+
+name: Bug report
+description: Something in this repository does not do what it says it does.
+labels: ["type:fix", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Two things before you write.
+
+        **Do not apply the `harness` label.** It dispatches a real agent on a real host against this
+        issue's body, within about thirty seconds, with no confirmation step. It is not a priority
+        flag.
+
+        **Do not use fenced code blocks anywhere in this issue.** Indent code and output by four
+        spaces instead, and use single backticks inline. A dispatcher reading this body stops at the
+        first fence. See [AGENTS.md](https://github.com/rickylabs/harness/blob/main/AGENTS.md#operational-hazard-this-repository-is-a-live-inbox).
+
+  - type: input
+    id: summary
+    attributes:
+      label: What is wrong, in one line
+      placeholder: dsh-board check exits 0 on a board with two status labels on one issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+      description: Name the exit code if there was one. This repository treats exit codes as part of the interface.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: |
+        Every command, in order, from a clean clone. **Indent by four spaces — no fences.**
+      value: |
+        Steps:
+
+            pnpm install
+            pnpm run build
+            node packages/board/dist/cli.js check
+
+        Output:
+
+            paste it here, indented by four spaces
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Commit, Node version, platform
+      placeholder: 31c5fe0, Node 24.4.0, ubuntu-24.04
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which package
+      description: Asked, not labelled — a form cannot set a label from a dropdown. Whoever triages applies the matching `area:` label.
+      options:
+        - board
+        - contracts
+        - coordinator
+        - dsh-app
+        - forge
+        - governance
+        - llm-local
+        - netscript-bridge
+        - routing
+        - subagents
+        - telemetry
+        - a provider package
+        - repository tooling, CI, or scripts
+        - not sure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before filing
+      options:
+        - label: I ran `pnpm install && pnpm run build` first — the four checks in `build` catch a lot of this.
+          required: true
+        - label: I looked at the board (`node packages/board/dist/cli.js columns`) and this is not already open.
+          required: true
+        - label: This is not a security problem. Those go through [SECURITY.md](https://github.com/rickylabs/harness/blob/main/SECURITY.md), never a public issue.
+          required: true
