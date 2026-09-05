@@ -14,9 +14,12 @@
  */
 
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, it } from "node:test";
 
 import { Context } from "@deepseek-ai/cordis";
+import { createMemorySink } from "@rickylabs/telemetry";
 
 import board, { CONTEXT_KEY as BOARD_KEY, createService as createBoard } from "./plugins/board.js";
 import coordinator, {
@@ -25,7 +28,11 @@ import coordinator, {
   createService as createCoordinator,
   resolvePolicy,
 } from "./plugins/coordinator.js";
-import subagents, { CONTEXT_KEY as SUBAGENTS_KEY } from "./plugins/subagents.js";
+import subagents, {
+  CONTEXT_KEY as SUBAGENTS_KEY,
+  createRegistry,
+  emptyRegistry,
+} from "./plugins/subagents.js";
 import telemetry, {
   CONTEXT_KEY as TELEMETRY_KEY,
   createService as createTelemetry,
@@ -33,14 +40,31 @@ import telemetry, {
 } from "./plugins/telemetry.js";
 
 describe("each plugin claims its service and gives it back", () => {
-  it("harness-subagents", async () => {
+  it("harness-subagents, once its telemetry dependency is on the context", async () => {
     const ctx = new Context();
+    const host = await ctx.plugin(telemetry);
     const fiber = await ctx.plugin(subagents);
     const registry = ctx.get(SUBAGENTS_KEY);
     if (registry === undefined) throw new Error("ctx.subagents was not claimed");
     assert.deepEqual(registry.providers, []);
     await fiber.dispose();
     assert.equal(ctx.get(SUBAGENTS_KEY), undefined);
+    await host.dispose();
+  });
+
+  it("harness-subagents does not claim the seam without telemetry", async () => {
+    // The point of `inject`. A seam that could load unwatched would load unwatched exactly once,
+    // on the box where it mattered — and the evidence for that run would simply not exist.
+    const ctx = new Context();
+    const fiber = await ctx.plugin(subagents);
+    assert.equal(ctx.get(SUBAGENTS_KEY), undefined, "the seam loaded with no sink behind it");
+
+    // And it is not a permanent refusal: supplying the dependency activates the waiting fiber.
+    const host = await ctx.plugin(telemetry);
+    assert.notEqual(ctx.get(SUBAGENTS_KEY), undefined, "the seam did not activate");
+
+    await fiber.dispose();
+    await host.dispose();
   });
 
   it("harness-board", async () => {
@@ -77,12 +101,15 @@ describe("each plugin claims its service and gives it back", () => {
 
 describe("the bundle as a whole", () => {
   it("loads all four onto one context without a name collision", async () => {
+    // Telemetry first, because `harness-subagents` now injects it. Row order in the patch still
+    // carries no load semantics — cordis activates on service availability — but a test that loads
+    // by hand has to sequence what the runtime would have sequenced for it.
     const ctx = new Context();
     const fibers = [
+      await ctx.plugin(telemetry),
       await ctx.plugin(subagents),
       await ctx.plugin(board),
       await ctx.plugin(coordinator),
-      await ctx.plugin(telemetry),
     ];
     for (const key of [SUBAGENTS_KEY, BOARD_KEY, COORDINATOR_KEY, TELEMETRY_KEY] as const) {
       assert.notEqual(ctx.get(key), undefined, `${key} is not on the context`);
@@ -133,6 +160,24 @@ describe("the configured half, without a context", () => {
 
   it("telemetry records the home it resolved against", () => {
     assert.equal(createTelemetry({ home: "/srv/harness" }, {}).home, "/srv/harness");
+  });
+
+  it("telemetry opens its sink without creating anything on disk", () => {
+    // Building the service at boot is only safe because of this. Asking where telemetry would go
+    // must never itself create a directory — a `--dump-config` on a fresh box would otherwise
+    // leave one behind, and a receipt would then name a path that exists because it was asked for.
+    const home = join(process.cwd(), "no-such-home-for-a-test");
+    const service = createTelemetry({ home }, {});
+    assert.equal(service.sink.notes.length, 0);
+    assert.equal(existsSync(service.observability.directory), false);
+  });
+
+  it("the subagent seam wraps whatever it hands out, empty or not", () => {
+    const sink = createMemorySink();
+    assert.deepEqual(createRegistry(sink).providers, []);
+    assert.deepEqual(emptyRegistry().providers, []);
+    // Nothing is written by building the registry: the decorator writes on a verb, not on a boot.
+    assert.deepEqual(sink.events, []);
   });
 
   it("telemetry honours the environment override, and does so at construction", () => {

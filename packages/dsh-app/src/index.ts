@@ -31,6 +31,14 @@
  * `ctx.llm` is the other half of the subagent seam and is deliberately not claimed here: it takes
  * an API key and meters per token, and collapsing the two into one abstraction is the design error
  * the split exists to prevent. E4 · #34 owns it.
+ *
+ * ## Where the two seams are allowed to meet
+ *
+ * `instrument.ts` is the exception to "this package only binds". It holds the decorator that writes
+ * a telemetry event for every subagent verb, and it is here because this is the only package that
+ * may depend on both `@rickylabs/subagents` and `@rickylabs/telemetry` — each of which has zero
+ * workspace dependencies, deliberately. `harness-subagents` therefore `inject`s
+ * `harnessTelemetry`: the seam hands out an instrumented registry or it does not load at all.
  */
 
 export {
@@ -106,7 +114,18 @@ export {
   type TelemetryService,
 } from "./plugins/telemetry.js";
 
-export { emptyRegistry } from "./plugins/subagents.js";
+export { createRegistry as createSubagentRegistry, emptyRegistry } from "./plugins/subagents.js";
+
+export {
+  clipDetail,
+  instrumentProvider,
+  instrumentRegistry,
+  sourceOfHarness,
+  DETAIL_CAP,
+  EVENT_KIND,
+  type EventKind,
+  type InstrumentOptions,
+} from "./instrument.js";
 
 export {
   captureDump,

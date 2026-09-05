@@ -18,11 +18,30 @@
  *
  * The key is not spelled here. It comes from `CONTEXT_KEY` in `@rickylabs/subagents`, next to the
  * interface it names, so the string exists once in the repository.
+ *
+ * ## Why it depends on telemetry
+ *
+ * Empty is not the same as unwatched. Whatever E3 · #33 eventually registers, it goes through
+ * `instrumentRegistry` before it reaches the context, so an uninstrumented provider is not
+ * something a provider package can produce by forgetting — it is something this seam cannot hand
+ * out. That is why the dependency is declared with `inject` rather than resolved with an optional
+ * read: a plugin that could load without telemetry would load without telemetry exactly once, on
+ * the box where it mattered, and the evidence for that run would simply not exist.
+ *
+ * The cost is that this row sits `PENDING` until `harness-telemetry` is on the context. That is the
+ * intended failure: a coordinator that can dispatch but cannot record is worse than one that
+ * refuses to dispatch, because the first kind loses runs silently.
  */
 
 import type { Context } from "@deepseek-ai/cordis";
 import z from "@deepseek-ai/schemastery";
 import { CONTEXT_KEY, type SubagentRegistry } from "@rickylabs/subagents";
+import type { SessionTelemetrySink } from "@rickylabs/telemetry";
+
+import { instrumentRegistry } from "../instrument.js";
+// Type-only, and empty on purpose: it pulls in the `harnessTelemetry` declaration on `Context`
+// without creating a runtime edge between two sibling plugins.
+import type {} from "./telemetry.js";
 
 declare module "@deepseek-ai/cordis" {
   interface Context {
@@ -50,13 +69,31 @@ export const name = "harness-subagents";
  */
 export const Config = z.object({});
 
+/**
+ * Services this row requires. It stays `PENDING` while any of them is missing.
+ *
+ * Typed as `string[]` rather than a `const` tuple because cordis's `Inject` is `(keyof Dict)[]`,
+ * and a readonly tuple does not satisfy it.
+ */
+export const inject: string[] = ["harnessTelemetry"];
+
 /** What `ctx.subagents` holds before any provider package attaches. */
 export function emptyRegistry(): SubagentRegistry {
   return { providers: [] };
 }
 
-export function apply(ctx: Context): void {
-  ctx.provide(CONTEXT_KEY, emptyRegistry());
+/**
+ * Build the registry without a context, so the wrapping is testable without booting cordis.
+ *
+ * The sink is a parameter for the same reason `createService` takes an `env`: a test that cannot
+ * supply one can only assert that nothing was written.
+ */
+export function createRegistry(sink: SessionTelemetrySink): SubagentRegistry {
+  return instrumentRegistry(emptyRegistry(), { sink });
 }
 
-export default { name, Config, apply };
+export function apply(ctx: Context): void {
+  ctx.provide(CONTEXT_KEY, createRegistry(ctx.harnessTelemetry.sink));
+}
+
+export default { name, Config, inject, apply };

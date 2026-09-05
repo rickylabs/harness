@@ -14,6 +14,17 @@
  *
  * Rotation is `planRotation`'s job and stays there. When a deployment rotates, the fiber is
  * reloaded, which is the point at which a new resolution is correct.
+ *
+ * ## Why the sink is opened here, once
+ *
+ * The service carries the sink as well as the snapshot, for the same reason it carries the resolved
+ * paths: a writer and a reader that disagree about the directory produce a confident, empty board.
+ * Opening it at construction is safe because `createFileSink` touches no filesystem at
+ * construction — it computes two paths and an empty queue, and the directory is created on the
+ * first append. Asking where telemetry *would* go must never itself create a directory.
+ *
+ * One sink rather than one per caller is also deliberate. The sink serialises its appends through
+ * its own queue; two sinks over one file would each hold that guarantee only for their own writes.
  */
 
 import { homedir } from "node:os";
@@ -22,8 +33,10 @@ import type { Context } from "@deepseek-ai/cordis";
 import z from "@deepseek-ai/schemastery";
 import {
   buildSnapshot,
+  openObservabilitySink,
   resolveObservability,
   type Observability,
+  type SessionTelemetrySink,
   type SnapshotInput,
   type TelemetrySnapshot,
 } from "@rickylabs/telemetry";
@@ -59,6 +72,13 @@ export interface TelemetryService {
   readonly home: string;
   /** Directories, log paths and any notes the resolution produced. Fixed for this fiber. */
   readonly observability: Observability;
+  /**
+   * Where run evidence is appended, opened against the paths above.
+   *
+   * Never throws: a failed write is a note on the sink, not an exception, so a caller may await it
+   * on a hot path without turning a telemetry problem into a work failure.
+   */
+  readonly sink: SessionTelemetrySink;
   /** Build a snapshot. Pure; here so callers reach the sink and the snapshot through one service. */
   snapshot(input: SnapshotInput): TelemetrySnapshot;
 }
@@ -84,6 +104,7 @@ export function createService(
   return {
     home,
     observability,
+    sink: openObservabilitySink(observability),
     snapshot(input) {
       return buildSnapshot(input);
     },
