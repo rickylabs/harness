@@ -30,10 +30,18 @@ concurrency:
   group: board
   cancel-in-progress: true
 
-# `contents: write` is for the one commit this makes, to one path, on the default branch. It reads
-# issues and pull requests through `gh` with the same token, which needs no separate scope.
+# A `permissions:` block is a whitelist, not a set of additions: naming one scope drops every scope
+# not named to `none`. So the two the projection reads have to be named even though the same token
+# carries them by default elsewhere — the first run of this workflow failed on exactly that, with
+# `Resource not accessible by integration (repository.issues)` and a `dsh-board` exit 3.
+#
+# `contents: write` is for the one commit this makes, to one path, on the default branch. The other
+# two are read-only, and there is no third: a projector that could write an issue would stop being a
+# projector.
 permissions:
   contents: write
+  issues: read
+  pull-requests: read
 
 jobs:
   publish:
