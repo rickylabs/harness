@@ -307,6 +307,38 @@ describe("projectBoard, on contradictions it has to resolve", () => {
     assert.match(anomaly?.detail ?? "", /did not ship/);
   });
 
+  it("says nothing about a pull request that was abandoned the way the process asks", () => {
+    // Closed, unmerged, no phase label is the ending the board-process skill prescribes for a
+    // wontfix. If that reads as an anomaly, the correct outcome is a permanent finding and the
+    // check can never go green — so nobody runs it, and the anomalies that do matter go unread.
+    for (const labels of [[], ["type:docs"], ["status:impl-eval"]]) {
+      const snapshot = project([
+        issue({ number: 1, kind: "pull-request", state: "closed", merged: false, labels }),
+      ]);
+      assert.ok(
+        !snapshot.anomalies.some((a) => a.kind === "closed-unmerged"),
+        `labels: ${JSON.stringify(labels)}`,
+      );
+    }
+  });
+
+  it("still reports a closed-unmerged pull request that a non-terminal column left behind", () => {
+    // The one rule that does fire here is the stale-column one, and it fires once, not twice.
+    const snapshot = project([
+      issue({
+        number: 1,
+        kind: "pull-request",
+        state: "closed",
+        merged: false,
+        labels: ["status:impl-eval"],
+      }),
+    ]);
+    assert.deepEqual(
+      snapshot.anomalies.filter((a) => a.item === 1).map((a) => a.kind),
+      ["closed-but-unshipped"],
+    );
+  });
+
   it("does not report closed-unmerged for a merged pull request", () => {
     const snapshot = project([
       issue({

@@ -175,18 +175,23 @@ function anomaliesFor(item: BoardItem, lifecycle: Lifecycle, epics: EpicIndex, l
   // Closed is not merged. A pull request that was abandoned reads exactly like one that landed if
   // nobody looks at `mergedAt`, and "shipped" is the single word this whole board exists to get
   // right.
+  //
+  // Only when the item *claims* to have shipped, though. Abandoning a pull request is a legitimate
+  // ending, and the process prescribes exactly this shape for it: closed, unmerged, no `status:`
+  // label at all. Reporting that as an anomaly flags the correct outcome, never stops flagging it,
+  // and grows by one every time someone closes a pull request properly — which is how a check ends
+  // up permanently red and therefore unread. There is nothing to contradict until a terminal phase
+  // asserts delivery; `closed-but-unshipped` already covers a stale non-terminal column.
   if (
     item.source.kind === "pull-request" &&
     item.source.state === "closed" &&
-    item.source.merged === false
+    item.source.merged === false &&
+    item.phase?.terminal === true
   ) {
     found.push({
       kind: "closed-unmerged",
       item: n,
-      detail:
-        item.phase?.terminal === true
-          ? `sits in ${item.phase.name} but was closed without merging; it did not ship`
-          : "was closed without merging; it did not ship",
+      detail: `sits in ${item.phase.name} but was closed without merging; it did not ship`,
     });
   }
 
