@@ -21,10 +21,19 @@ import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 
 import { backfillFromDisk, defaultRoots, type BackfillRoots } from "./backfill/index.js";
-import { diagnosticsFor } from "./diagnostics.js";
+import { diagnosticsFor, ALL_POINTERS } from "./diagnostics.js";
 import { parseItems, type LoadedItems } from "./items.js";
+import {
+  humanBytes,
+  livePath,
+  logPaths,
+  openObservabilitySink,
+  parseEvents,
+  resolveObservability,
+} from "./observability.js";
 import { publicRuns, publicSnapshot, publicTree } from "./public.js";
 import { renderSnapshot, renderTree } from "./render.js";
+import type { TelemetryEvent } from "./sink.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
 
@@ -35,6 +44,8 @@ usage:
   dsh-telemetry status [options]     runs grouped by epic
   dsh-telemetry runs [options]       one line per run, newest first
   dsh-telemetry why <run-id>         which log to open first for that run
+  dsh-telemetry record [options]     append events to the observability log
+  dsh-telemetry where [options]      where that log is, and the layers below a run
 
 options:
   --home <path>          home directory the stores live under (default: this user's)
@@ -44,7 +55,21 @@ options:
   --since <iso>          only runs with activity at or after this time
   --now <iso>            reference time for ages, so output is reproducible
   --json                 machine-readable output
+  --run <id>             with "record": the run one event belongs to
+  --kind <name>          with "record": write that one event instead of reading stdin
   --help
+
+"record" reads JSONL on stdin — one {"runId","kind","at","detail"} object per line, "at"
+and "detail" optional. A bad line loses that line and is named; an empty batch is not an
+error. The log is bounded and rotated, and it is the same file whether an agent, a shell
+hook or a daemon wrote it.
+
+environment:
+  DSH_TELEMETRY_DIR          live log directory (default: ~/observability)
+  DSH_TELEMETRY_ARCHIVE      cold tier for rotated generations, or "none" to delete them
+                             (default: ~/archives)
+  DSH_TELEMETRY_MAX_BYTES    bound per generation, e.g. 33554432 or 32M
+  DSH_TELEMETRY_GENERATIONS  generations kept behind the live file
 
 exit status:
   0  the picture is complete
@@ -80,6 +105,10 @@ interface Flags {
   readonly now: string;
   readonly json: boolean;
   readonly help: boolean;
+  /** `record` only: the run one event belongs to. */
+  readonly run: string | null;
+  /** `record` only: the kind of that one event. Present means "do not read stdin". */
+  readonly kind: string | null;
   readonly rest: readonly string[];
 }
 
@@ -104,6 +133,8 @@ export function parseFlags(argv: readonly string[]): Flags {
   let now = new Date().toISOString();
   let json = false;
   let help = false;
+  let run: string | null = null;
+  let kind: string | null = null;
   const rest: string[] = [];
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -147,6 +178,12 @@ export function parseFlags(argv: readonly string[]): Flags {
       case "--json":
         json = true;
         break;
+      case "--run":
+        run = next();
+        break;
+      case "--kind":
+        kind = next();
+        break;
       case "--help":
       case "-h":
         help = true;
@@ -155,7 +192,7 @@ export function parseFlags(argv: readonly string[]): Flags {
         if (arg !== undefined) rest.push(arg);
     }
   }
-  return { home, items, limit, since, sinceMs, now, json, help, rest };
+  return { home, items, limit, since, sinceMs, now, json, help, run, kind, rest };
 }
 
 /**
@@ -190,6 +227,137 @@ function writeNotes(notes: readonly string[]): void {
   for (const note of notes) process.stdout.write(`  ${note}\n`);
 }
 
+/** Everything on stdin, as text. Read only when `record` was not given a whole event in flags. */
+async function readStdin(): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk, "utf8") : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+/**
+ * Append events to the observability log.
+ *
+ * This is the command that makes `~/observability` real. Everything under it already existed — the
+ * bounded file sink, the rotation policy, the cold tier, the default paths — and nothing opened any
+ * of it, so the package could write a rotated log and never had.
+ *
+ * JSONL on stdin rather than an import, because the callers are a Go dispatcher, shell hooks and
+ * tmux wrappers. A caller that can emit one line of JSON can now write into the same log an agent
+ * writes into, which is the only way `~/observability/dsh-telemetry.jsonl` ends up holding the whole
+ * story rather than the part that happened to be in Node.
+ */
+async function recordEvents(flags: Flags): Promise<number> {
+  const target = resolveObservability(flags.home, process.env);
+  const notes = [...target.notes];
+  const live = livePath(target);
+
+  let events: readonly TelemetryEvent[];
+  if (flags.kind !== null) {
+    if (flags.run === null) {
+      process.stdout.write("dsh-telemetry record --kind <name> also needs --run <id>\n");
+      return EXIT.usage;
+    }
+    events = [{ at: flags.now, runId: flags.run, kind: flags.kind }];
+  } else {
+    // Refused rather than blocked: a `record` with no pipe and no flags would otherwise sit on a
+    // terminal waiting for an EOF the operator has no reason to expect it wants.
+    if (process.stdin.isTTY === true) {
+      process.stdout.write(
+        'dsh-telemetry record reads JSONL on stdin, or takes --run <id> --kind <name>\n\n  echo \'{"runId":"r1","kind":"turn"}\' | dsh-telemetry record\n',
+      );
+      return EXIT.usage;
+    }
+    const parsed = parseEvents(await readStdin(), flags.now);
+    events = parsed.events;
+    notes.push(...parsed.notes);
+  }
+
+  if (events.length > 0) {
+    const sink = openObservabilitySink(target);
+    // Sequential on purpose. The sink serializes internally anyway, and awaiting each one keeps the
+    // ordering in the file the ordering on the wire, which is what makes the log readable by eye.
+    for (const event of events) await sink.write(event);
+    notes.push(...sink.notes);
+  } else if (notes.length === 0) {
+    // Not an error, and not silent either: a producer that has stopped emitting looks exactly like a
+    // pipeline that legitimately had nothing in it, and only this sentence tells them apart.
+    process.stdout.write(`no events to record — ${live} unchanged\n`);
+    return EXIT.ok;
+  }
+
+  if (flags.json) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          recorded: events.length,
+          live,
+          archive: target.archiveDirectory,
+          notes,
+          complete: notes.length === 0,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  } else {
+    process.stdout.write(`recorded ${events.length} event(s) to ${live}\n`);
+    for (const note of notes) process.stdout.write(`  ${note}\n`);
+  }
+  // A note here means a line was dropped, a bound was defaulted, or a write did not land. The
+  // records that did land are real, which is exactly what 3 means everywhere else in this command.
+  return notes.length === 0 ? EXIT.ok : EXIT.incomplete;
+}
+
+/**
+ * Say where the log is, and what sits below a run that failed.
+ *
+ * Two questions with one answer, because they are asked in the same minute. An operator who has just
+ * been handed "something is wrong" needs the file to tail and the layer to look at next, and the
+ * second half of this output is the same table `why` uses — printed without a run id, for the case
+ * where there is not one yet.
+ */
+function whereItWrites(flags: Flags): number {
+  const target = resolveObservability(flags.home, process.env);
+  const paths = logPaths(target);
+  const complete = target.notes.length === 0;
+
+  if (flags.json) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          directory: target.directory,
+          archive: target.archiveDirectory,
+          policy: target.policy,
+          files: paths,
+          pointers: ALL_POINTERS,
+          notes: target.notes,
+          complete,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return complete ? EXIT.ok : EXIT.incomplete;
+  }
+
+  process.stdout.write("telemetry is written here:\n\n");
+  process.stdout.write(`  live       ${livePath(target)}\n`);
+  process.stdout.write(
+    `  rotated    ${target.policy.maxGenerations} generation(s) behind it, ${humanBytes(target.policy.maxBytes)} each\n`,
+  );
+  process.stdout.write(
+    `  cold tier  ${target.archiveDirectory ?? "none — an evicted generation is deleted"}\n\n`,
+  );
+  process.stdout.write("a failing run is usually a layer below itself — look here, in this order:\n\n");
+  for (const p of ALL_POINTERS) {
+    process.stdout.write(`  ${p.what}\n    ${p.where}\n    grep: ${p.grep}\n\n`);
+  }
+  for (const note of target.notes) process.stdout.write(`  ${note}\n`);
+  return complete ? EXIT.ok : EXIT.incomplete;
+}
+
 export async function main(argv: readonly string[]): Promise<number> {
   let flags: Flags;
   try {
@@ -204,6 +372,13 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 
   const command = flags.rest[0];
+
+  // Dispatched before the scan, and deliberately. `record` and `why` answer different questions, but
+  // `record` must land a line when every transcript store on the box is unreadable — reading three
+  // of them to append one event would make the writer as fragile as the thing it exists to explain.
+  if (command === "record") return await recordEvents(flags);
+  if (command === "where") return whereItWrites(flags);
+
   const roots: BackfillRoots = defaultRoots(flags.home);
   const scan = await backfillFromDisk(roots, { limit: flags.limit, sinceMs: flags.sinceMs });
   // The stores are bounded by mtime and by the database's own `where`, which is coarse: a transcript

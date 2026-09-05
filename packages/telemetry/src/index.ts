@@ -125,6 +125,21 @@ export {
   type TelemetryEvent,
 } from "./sink.js";
 
+export {
+  humanBytes,
+  livePath,
+  logPaths,
+  openObservabilitySink,
+  parseBytes,
+  parseEvents,
+  resolveObservability,
+  ENV,
+  EVENT_NOTE_CAP,
+  NO_ARCHIVE,
+  type Observability,
+  type ParsedEvents,
+} from "./observability.js";
+
 export { compareNullableStrings, compareStrings } from "./order.js";
 
 export {
