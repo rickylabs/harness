@@ -104,6 +104,24 @@ Closes #<issue>          <!-- or: Part of #<umbrella> -->
 Keep `Validation` honest: paste real results, and if a gate was skipped say which and why. A
 ticked box is not evidence of the thing it claims.
 
+## Dispatching a run
+
+`harness` is not a tag, it is a trigger: applying it to an issue starts an agent on that
+issue's body. Label deliberately — there is no draft state, and tidying up the board is enough
+to spend a run.
+
+The body is a prompt, so write it for a reader that is looking for one:
+
+- **No fenced code blocks.** Use four-space indented blocks and single-backtick inline code. A
+  dispatcher that stops at a fence takes everything above it and runs, so the failure is a brief
+  that is quietly half as long as the one you wrote — no error, and nothing on the issue to say
+  the agent read less than what is there.
+- **No `#` inside a value** on any `key: value` line the dispatcher reads as an option, where
+  it is likely to mean the start of a comment.
+
+Then read the brief back with `gh issue view` before you apply the label. What that prints is
+the whole prompt only if it is the whole of what you wrote.
+
 ## When you advance a phase
 
 One action, three parts, in this order: post the phase comment with its evidence, move the
