@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **120/155 done · 2 running · 22 queued · 11 abandoned**
+`[###############-----]` **121/156 done · 2 running · 22 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-05T23:04:47Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-05T23:39:14Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (2)
 
@@ -15,11 +15,19 @@ Something could be acting on these right now.
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
 
+## Anomalies (1)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#74** — closed on GitHub but sits in triage; the issue wins, the column is stale
+
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 91/117 done · 2 running · 22 queued · 2 abandoned
+`[#########---]` 92/118 done · 2 running · 22 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -30,7 +38,7 @@ Something could be acting on these right now.
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[########----]` 6/9 done · 3 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[------------]` 0/6 done · 6 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 17/20 done · 1 running · 2 abandoned | `impl` |
-| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[########----]` 11/16 done · 5 queued | `impl` |
+| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[########----]` 12/17 done · 5 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `triage` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[###########-]` 12/13 done · 1 running | `impl` |
 
@@ -81,9 +89,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  120/155 done · 2 running · 22 queued · 11 abandoned
+# rickylabs/harness  [###############-----]  121/156 done · 2 running · 22 queued · 11 abandoned
 
-## M1 — dsh coordinator foundation  [###############-----]  91/117 done · 2 running · 22 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [###############-----]  92/118 done · 2 running · 22 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [impl]
     [################] 14/14 done
@@ -187,7 +195,7 @@ Something could be acting on these right now.
     shipped              PR163 fix(board): grant the board workflow the scopes it actually reads (p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
-    [###########-----] 11/16 done · 5 queued
+    [###########-----] 12/17 done · 5 queued
     triage               #74 E7.1 — forge: the issue/PR bridge and label→target mapping
     triage               #75 E7.2 — PR supervision loop
     triage               #76 E7.3 — Dispatch selector: provider or divybot, per target
@@ -204,6 +212,7 @@ Something could be acting on these right now.
     shipped              PR128 fix(forge): make the ejected labels file a fixed point of its own generator (p2)
     shipped              #159 feat(forge): apply the close rule instead of only stating it (p1)
     shipped              PR160 feat(forge): apply the close rule instead of only stating it (p1)
+    shipped              PR167 feat(forge): read divybot's dispatch table and reconcile it with the board (p1)
 
   E8 — Contracts: published package for the netscript UIs #38  [triage]
     [################] 8/8 done
