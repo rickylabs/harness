@@ -47,8 +47,10 @@ export { closingKeywordTargets } from "./closing.js";
 export { DEFAULT_PRIORITY_ORDER, epicSlugOf, projectBoard, slugOfEpicTitle } from "./project.js";
 export type { ProjectOptions } from "./project.js";
 
-export { buildHierarchy } from "./hierarchy.js";
-export type { EpicNode, Hierarchy, MilestoneNode, Progress } from "./hierarchy.js";
+export { bucketOf, buildHierarchy, progressOf } from "./hierarchy.js";
+export type { Bucket, EpicNode, Hierarchy, MilestoneNode, Progress } from "./hierarchy.js";
+
+export { latestActivity, renderDigest } from "./digest.js";
 
 export {
   DEFAULT_HARNESS,
@@ -79,6 +81,7 @@ export {
   renderHierarchy,
   renderProgress,
 } from "./render.js";
+export type { HierarchyRenderOptions } from "./render.js";
 
 export { detectRepoSlug, fetchItems, transportFailure, TransportUnavailable } from "./github.js";
 export type { FetchResult, GhReadArgs, GhRunner } from "./github.js";

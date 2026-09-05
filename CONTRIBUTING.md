@@ -74,8 +74,8 @@ tests the previous build. When in doubt, run the full four.
 
 ## Generated files are generated
 
-Five artifacts here are produced by code and verified against it. Editing one by hand is the most
-common way a contribution fails, and it fails loudly — which is the point.
+Six artifacts here are produced by code. Editing one by hand is the most common way a contribution
+fails, and for five of them it fails loudly — which is the point.
 
 | File | Changed by |
 | --- | --- |
@@ -84,6 +84,12 @@ common way a contribution fails, and it fails loudly — which is the point.
 | `packages/dsh-app/dump-config.golden.yml` | `pnpm run golden:bless -- "the reason it changed"` |
 | `packages/dsh-app/cordis.patch.yml` | editing `packages/dsh-app/src/bundle.ts` — never the file |
 | `.github/labels.yml` | `node packages/forge/dist/cli.js labels eject` |
+| `BOARD.md` | nothing you can run — move the issue, and the next scheduled render follows |
+
+`BOARD.md` is the sixth and the exception, so it gets its own warning. No check guards it; the
+[`board`](.github/workflows/board.yml) workflow simply overwrites it every half hour. An edit there
+is not rejected, it is *reverted*, silently, by a run nobody was watching — and in the meantime the
+page says something GitHub does not. The board is repaired on the issue. Always.
 
 The golden snapshot takes a required reason and writes it into the file's own header, because a
 snapshot updated by whoever was annoyed by the failing test has stopped being evidence. Put that
@@ -93,7 +99,7 @@ same reason in the pull request.
 page from its binary, and `check:skill` re-runs the skill generator and compares. Both are in
 `build`, so a hand-edited copy of either fails before review rather than after.
 
-The rule these five serve is stated in full in [`docs/README.md`](docs/README.md#the-rule-these-docs-are-held-to):
+The rule these six serve is stated in full in [`docs/README.md`](docs/README.md#the-rule-these-docs-are-held-to):
 every artifact either states facts it owns, or is generated from the code that owns them.
 
 ## Branches, commits, pull requests

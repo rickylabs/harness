@@ -104,8 +104,22 @@ const ZERO: Progress = {
   unknown: 0,
 };
 
-/** The one bucket an item belongs in. Exhaustive by construction: there is no fall-through. */
-type Bucket = "shipped" | "inFlight" | "queued" | "blocked" | "invisible" | "abandoned" | "unknown";
+/**
+ * The one bucket an item belongs in. Exhaustive by construction: there is no fall-through.
+ *
+ * Exported because every renderer needs the same answer, and a renderer that decides for itself
+ * which items are "moving" is a second definition of the word the board exists to make trustworthy.
+ * The keys are `Progress`'s own, so a section headed by a count cannot be filled from a different
+ * rule than the count came from.
+ */
+export type Bucket =
+  | "shipped"
+  | "inFlight"
+  | "queued"
+  | "blocked"
+  | "invisible"
+  | "abandoned"
+  | "unknown";
 
 /**
  * Classify one item.
@@ -120,7 +134,7 @@ type Bucket = "shipped" | "inFlight" | "queued" | "blocked" | "invisible" | "aba
  *   whole point of separating them is that the optimistic reading must not win by default.
  * - `blocked` before `queued` and `inFlight`: a stuck item is not merely unstarted or running.
  */
-function bucketOf(item: BoardItem): Bucket {
+export function bucketOf(item: BoardItem): Bucket {
   if (isAbandoned(item)) return "abandoned";
   if (item.phase === null) return "invisible";
   if (isDeliveryUnknown(item)) return "unknown";
@@ -130,7 +144,14 @@ function bucketOf(item: BoardItem): Bucket {
   return "inFlight";
 }
 
-function progressOf(items: readonly BoardItem[]): Progress {
+/**
+ * Count a set of items into buckets.
+ *
+ * Exported for the same reason as `bucketOf`: a renderer that needs the progress of a group the
+ * tree does not already carry — a milestone's tasks that claim no epic, say — must reach the answer
+ * through this and not by subtracting one published total from another.
+ */
+export function progressOf(items: readonly BoardItem[]): Progress {
   const counts: Record<Bucket, number> = {
     shipped: 0,
     inFlight: 0,

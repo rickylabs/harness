@@ -1,0 +1,87 @@
+# The board, published where the question actually gets asked.
+#
+# `dsh-board status` has been able to answer "status ?" for a while, and answering it still cost a
+# checkout, an authenticated `gh`, and remembering the command exists. That cost is why the question
+# kept being asked of an agent instead. This run pays it every half hour and commits the answer, so
+# the price of the answer drops to opening BOARD.md.
+#
+# Nothing here decides anything about the board. `dsh-board digest` renders it, from the same
+# projection `status` and `check` read, and the shell below only moves bytes into a file and a
+# commit. The one rule this file does enforce is the last line of it: commit only when the content
+# changed, because a page that commits on every run buries the runs where the board moved.
+name: board
+
+on:
+  schedule:
+    # Every half hour. GitHub runs scheduled workflows late under load, and that is fine — the page
+    # states the board's own latest activity, so a reader can always see how fresh it really is.
+    - cron: "*/30 * * * *"
+  # A merge closes issues and settles labels, and right after a merge is exactly when someone looks.
+  # The digest can land a second before `settle-status` finishes, in which case this page shows the
+  # pre-settle column until the next scheduled run corrects it — a half hour of a slightly stale
+  # label, against half an hour of a stale board after every merge.
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# One render at a time, and a superseded one is simply worse: it describes an older board. Cancelling
+# it costs nothing, and leaves the newest run to write the file.
+concurrency:
+  group: board
+  cancel-in-progress: true
+
+# `contents: write` is for the one commit this makes, to one path, on the default branch. It reads
+# issues and pull requests through `gh` with the same token, which needs no separate scope.
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: render and commit the board
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @rickylabs/board run build
+
+      # Rendered to a temporary file first. A redirect straight into BOARD.md truncates it before
+      # the command runs, so a failed fetch would leave an empty page behind in the workspace.
+      - name: render
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node packages/board/dist/cli.js digest --repo "$GITHUB_REPOSITORY" > "$RUNNER_TEMP/BOARD.md"
+
+      - name: commit when the board moved
+        run: |
+          set -euo pipefail
+
+          mv "$RUNNER_TEMP/BOARD.md" BOARD.md
+          git add BOARD.md
+
+          # Staged rather than working-tree, so this is also correct on the run that creates the
+          # file for the first time: an untracked path is invisible to `git diff`.
+          if git diff --cached --quiet; then
+            echo "board unchanged — nothing to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(board): publish"
+
+          # A push can lose a race with a human merging in the same minute. Rebasing and retrying
+          # once turns that into a second of delay instead of a red X on a job nobody broke.
+          git push || {
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push
+          }
