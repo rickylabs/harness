@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **116/153 done · 2 running · 24 queued · 11 abandoned**
+`[###############-----]` **118/154 done · 2 running · 23 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-05T22:23:29Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-05T22:43:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (2)
 
@@ -19,7 +19,7 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 87/115 done · 2 running · 24 queued · 2 abandoned
+`[#########---]` 89/116 done · 2 running · 23 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ Something could be acting on these right now.
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[###########-]` 15/16 done · 1 queued | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[#########---]` 6/8 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[###---------]` 2/7 done · 5 queued | `triage` |
-| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###---------]` 2/7 done · 5 queued | `triage` |
+| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[######------]` 4/8 done · 4 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[------------]` 0/6 done · 6 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 17/20 done · 1 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[########----]` 11/16 done · 5 queued | `impl` |
@@ -46,7 +46,7 @@ Something could be acting on these right now.
 ## Waiting to start
 
 <details>
-<summary>24 filed, nothing started</summary>
+<summary>23 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -60,7 +60,6 @@ Something could be acting on these right now.
 | [#56 E3.6 — Single-writer session lease and run-id keying](https://github.com/rickylabs/harness/issues/56) | `triage` | `e3` |
 | [#57 E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters](https://github.com/rickylabs/harness/issues/57) | `triage` | `e4` |
 | [#59 E4.3 — Capability probes instead of committed constants](https://github.com/rickylabs/harness/issues/59) | `triage` | `e4` |
-| [#60 E4.4 — The local capability matrix, as data](https://github.com/rickylabs/harness/issues/60) | `triage` | `e4` |
 | [#61 E4.5 — Model-id validation at the dispatch boundary](https://github.com/rickylabs/harness/issues/61) | `triage` | `e4` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `triage` | `e5` |
 | [#63 E5.2 — Port the Orchid subscription-quota governor](https://github.com/rickylabs/harness/issues/63) | `triage` | `e5` |
@@ -83,9 +82,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  116/153 done · 2 running · 24 queued · 11 abandoned
+# rickylabs/harness  [###############-----]  118/154 done · 2 running · 23 queued · 11 abandoned
 
-## M1 — dsh coordinator foundation  [###############-----]  87/115 done · 2 running · 24 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [###############-----]  89/116 done · 2 running · 23 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [impl]
     [################] 14/14 done
@@ -145,14 +144,15 @@ Something could be acting on these right now.
     shipped              PR124 feat(subagents): the ctx.subagents contract, where both seams can reach it (p1)
 
   E4 — Model gateway and routing matrix #34  [triage]
-    [####------------] 2/7 done · 5 queued
+    [########--------] 4/8 done · 4 queued
     triage               #57 E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters
     shipped              #58 E4.2 — routing: tiers, the family rule, and fallback chains
     triage               #59 E4.3 — Capability probes instead of committed constants
-    triage               #60 E4.4 — The local capability matrix, as data
+    shipped              #60 E4.4 — The local capability matrix, as data
     triage               #61 E4.5 — Model-id validation at the dispatch boundary
     shipped              PR130 feat(routing): the delegation matrix as data, with the family rule enforced structurally
     triage               #138 routing: does GPT Astra enter the delegation matrix? (owner decision)
+    shipped              PR165 feat(llm-local): the local capability matrix, as data (p1)
 
   E5 — Governance: tri-regime admission control #35  [triage]
     [----------------] 0/6 done · 6 queued
