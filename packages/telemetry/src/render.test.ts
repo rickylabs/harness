@@ -12,10 +12,8 @@ const run = (over: Partial<RunRecord> & { id: string }): RunRecord => ({
   parentId: null,
   startedAt: "2026-09-04T20:00:00.000Z",
   updatedAt: "2026-09-04T21:00:00.000Z",
-  title: "review PR #98",
-  cwd: null,
   branch: null,
-  identity: { model: "gpt-5.6-sol", effort: "xhigh", provider: "openai" },
+  identity: { model: "gpt-5.6-sol", effort: "xhigh", provider: "openai", profile: null },
   usage: { inputTokens: 12_000, outputTokens: 900 },
   outcome: "running",
   linkedIssues: [],
@@ -114,10 +112,23 @@ describe("renderSnapshot", () => {
     assert.match(text, /gpt-5\.6-sol\/xhigh/);
   });
 
+  it("names an unattributed run by its session id, which is what `why` takes", () => {
+    // It used to be named by its title — the operator's first prompt. The id is both safe to print
+    // and more useful: the line a reader is looking at now tells them what to type next.
+    const snapshot = buildSnapshot({ generatedAt: NOW, runs: [run({ id: "01997e0c-2f4a" })], items: [] });
+    assert.match(renderSnapshot(snapshot, NOW), /01997e0c/);
+  });
+
   it("marks the outcome and the launch identity on every run line", () => {
     const snapshot = buildSnapshot({
       generatedAt: NOW,
-      runs: [run({ id: "a", outcome: "failed", identity: { model: null, effort: null, provider: null } })],
+      runs: [
+        run({
+          id: "a",
+          outcome: "failed",
+          identity: { model: null, effort: null, provider: null, profile: null },
+        }),
+      ],
       items: [],
     });
     const text = renderSnapshot(snapshot, NOW);

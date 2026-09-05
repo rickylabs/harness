@@ -72,15 +72,31 @@ describe("rowToRun", () => {
       costUsd: 0.0412,
     });
     assert.deepEqual(run.linkedIssues, [36]);
+    assert.equal(run.identity.profile, "build");
   });
 
-  it("keeps the effort slot empty, because an agent profile is not a reasoning effort", () => {
-    // Putting `build` in the effort field would make a routing audit read a lane name as an effort
-    // level and pass a run that never set one.
+  it("reports the agent profile as a profile and not as an effort", () => {
+    // Putting `plan` in the effort field would make a routing audit read a lane name as an effort
+    // level and pass a run that never set one. It used to travel in the title instead, which was
+    // worse: the title is prose and no longer exists on the record at all (finding F-5 on #105).
     const run = rowToRun(row({ agent: "plan" }), "o");
+    assert.equal(run?.identity.profile, "plan");
     assert.equal(run?.identity.effort, null);
     assert.equal(run?.identity.model, "z-ai/glm-5.3-flash");
     assert.equal(run?.identity.provider, "z-ai");
+  });
+
+  it("puts none of the operator's words on the record it returns", () => {
+    const run = rowToRun(
+      row({ title: "the passphrase is hunter2", directory: "/home/someone/private/issue-36" }),
+      "o",
+    );
+    assert.ok(run);
+    const published = JSON.stringify(run);
+    assert.equal(published.includes("hunter2"), false, "the title reached the record");
+    assert.equal(published.includes("/home/someone"), false, "the directory reached the record");
+    // Both are still read: the issue number in that path is the reason the column is selected.
+    assert.deepEqual(run.linkedIssues, [36]);
   });
 
   it("carries parent_id, the only seam that records the subagent tree as data", () => {
@@ -181,8 +197,12 @@ describe("openOpencodeDb", () => {
 
   it("reports an unreadable database as a note rather than throwing", async () => {
     // The rest of the backfill must still produce a snapshot. A degraded answer beats no answer.
-    const { reader, note } = await openOpencodeDb(join(tmpdir(), "definitely-not-here.db"));
+    const path = join(tmpdir(), "definitely-not-here.db");
+    const { reader, note } = await openOpencodeDb(path);
     assert.equal(reader, null);
-    assert.match(note ?? "", /opencode\.db unreadable/);
+    assert.match(note ?? "", /opencode: store unreadable \(/);
+    // The note is printed and may be published, and this path names a home directory. The error
+    // code is what an operator acts on; the path is not theirs to hand out (finding F-5 on #105).
+    assert.equal((note ?? "").includes(path), false, "the note carries the store path");
   });
 });

@@ -65,7 +65,13 @@ describe("parseClaudeTranscript", () => {
     assert.equal(run.updatedAt, "2026-09-04T22:05:00.000Z");
     assert.equal(run.branch, "orch/divybot-39");
     assert.deepEqual(run.linkedIssues, [39]);
-    assert.deepEqual(run.identity, { model: "claude-opus-5", effort: "medium", provider: "anthropic" });
+    assert.deepEqual(run.identity, {
+      model: "claude-opus-5",
+      effort: "medium",
+      provider: "anthropic",
+      // This seam records no lane. Reading one out of the title would be treating prose as data.
+      profile: null,
+    });
     assert.deepEqual(run.usage, {
       inputTokens: 10,
       outputTokens: 4,
@@ -91,19 +97,36 @@ describe("parseClaudeTranscript", () => {
   });
 
   it("prefers the session's own name over the first prompt", () => {
+    // Both are prose and neither survives onto the record, so the issue numbers are what makes the
+    // precedence observable: #98 comes from the session name and #7 from the prompt it replaced.
     const run = parseRun(
       lines(
-        user("some very long opening prompt"),
-        { type: "custom-title", customTitle: "telemetry sink", sessionId: "s1" },
+        user("some very long opening prompt about #7"),
+        { type: "custom-title", customTitle: "telemetry sink #98", sessionId: "s1" },
       ),
       "o",
     );
-    assert.equal(run?.title, "telemetry sink");
+    assert.deepEqual(run?.linkedIssues, [39, 98]);
   });
 
   it("falls back to the first prompt when the session was never named", () => {
-    const run = parseRun(lines(user("fix the label taxonomy")), "o");
-    assert.equal(run?.title, "fix the label taxonomy");
+    const run = parseRun(lines(user("fix the label taxonomy in #42")), "o");
+    assert.deepEqual(run?.linkedIssues, [39, 42]);
+  });
+
+  it("puts none of the operator's words on the record it returns", () => {
+    // The title and the working directory used to be fields on `RunRecord`. A run record is
+    // printed, piped, pasted into issues and published by the board projection, so a field that can
+    // hold a prompt eventually publishes one — finding F-5 on #105. Both are still read, and both
+    // are dropped in the same function that read them.
+    const run = parseRun(
+      lines(user("the passphrase is hunter2", { cwd: "/home/someone/private/client-work" })),
+      "o",
+    );
+    assert.ok(run);
+    const published = JSON.stringify(run);
+    assert.equal(published.includes("hunter2"), false, "the prompt reached the record");
+    assert.equal(published.includes("client-work"), false, "the working directory reached the record");
   });
 
   it("survives a half-written last line, which is the normal state of a live transcript", () => {
@@ -130,7 +153,7 @@ describe("parseClaudeTranscript", () => {
   it("leaves the model null when no assistant turn ever ran", () => {
     // A queued-but-never-dispatched session must not be reported as having run a model.
     const run = parseRun(lines(user("go")), "o");
-    assert.deepEqual(run?.identity, { model: null, effort: null, provider: null });
+    assert.deepEqual(run?.identity, { model: null, effort: null, provider: null, profile: null });
   });
 });
 

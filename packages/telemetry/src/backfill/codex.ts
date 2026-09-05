@@ -96,6 +96,8 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
   let id: string | null = null;
   let firstAt: string | null = null;
   let lastAt: string | null = null;
+  // Read, used, and dropped — see the note on `RunRecord`. On this seam the working directory is
+  // the only attribution signal there is, since a rollout does not record a branch.
   let cwd: string | null = null;
   let provider: string | null = null;
   let model: string | null = null;
@@ -189,12 +191,10 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
       parentId: null,
       startedAt: firstAt,
       updatedAt: lastAt,
-      title,
-      cwd,
       // A rollout does not record the branch; attribution on this seam comes from the working
       // directory the operator launched in, which the worktree layout makes meaningful.
       branch: null,
-      identity: { model, effort, provider },
+      identity: { model, effort, provider, profile: null },
       usage: usage as RunUsage,
       outcome,
       linkedIssues: linkedIssuesOf(cwd, title),

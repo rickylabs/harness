@@ -107,7 +107,12 @@ describe("parseCodexRollout", () => {
     // model in its brief and ran another becomes visible.
     const run = parseRun(lines(meta, turn), "/store/r.jsonl");
     assert.ok(run);
-    assert.deepEqual(run.identity, { model: "gpt-5.6-sol", effort: "xhigh", provider: "openai" });
+    assert.deepEqual(run.identity, {
+      model: "gpt-5.6-sol",
+      effort: "xhigh",
+      provider: "openai",
+      profile: null,
+    });
     assert.equal(run.id, "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d");
     assert.deepEqual(run.linkedIssues, [98]);
   });
@@ -162,12 +167,26 @@ describe("parseCodexRollout", () => {
     assert.equal(parseRun(lines(meta, turn), "o")?.outcome, "unknown");
   });
 
-  it("takes the first user message as the title", () => {
+  it("reads the first user message for the issues in it", () => {
     const run = parseRun(
-      lines(meta, turn, { timestamp: "2026-09-04T21:01:00.000Z", type: "event_msg", payload: { type: "user_message", message: "review PR #98" } }),
+      lines(meta, turn, { timestamp: "2026-09-04T21:01:00.000Z", type: "event_msg", payload: { type: "user_message", message: "review PR #77" } }),
       "o",
     );
-    assert.equal(run?.title, "review PR #98");
+    // 98 is the worktree the rollout was launched in; 77 can only have come from the message.
+    assert.deepEqual(run?.linkedIssues, [77, 98]);
+  });
+
+  it("puts none of the operator's words on the record it returns", () => {
+    // See the matching test on the Claude seam: prose is read for issue numbers and dropped there,
+    // because a run record is published (finding F-5 on #105).
+    const run = parseRun(
+      lines(meta, turn, { timestamp: "2026-09-04T21:01:00.000Z", type: "event_msg", payload: { type: "user_message", message: "the passphrase is hunter2" } }),
+      "o",
+    );
+    assert.ok(run);
+    const published = JSON.stringify(run);
+    assert.equal(published.includes("hunter2"), false, "the prompt reached the record");
+    assert.equal(published.includes("/home/agent"), false, "the working directory reached the record");
   });
 
   it("returns null when the rollout never identified its session", () => {

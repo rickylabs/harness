@@ -45,6 +45,15 @@ export interface LaunchIdentity {
   readonly model: string | null;
   readonly effort: string | null;
   readonly provider: string | null;
+  /**
+   * The agent profile a run was launched under, where the seam records one as data.
+   *
+   * opencode has a lane concept and stores it in a column; the other two seams do not, and report
+   * `null` rather than a guess. This exists because the lane information used to travel inside the
+   * run title, which is prose from the operator's own prompt — reading a lane out of prose is both
+   * a privacy problem and a bad audit, since prose can say anything.
+   */
+  readonly profile: string | null;
 }
 
 /**
@@ -90,6 +99,17 @@ export interface DiagnosticPointer {
  * `id` is the vendor's own session identifier, so a record can always be traced back to the file it
  * came from. `parentId` is what makes the subagent tree recoverable: opencode records it directly,
  * and the Claude transcript's sidechain flag stands in for it.
+ *
+ * There is deliberately no `title` and no `cwd`. Both used to be here, and both carried the
+ * operator's own words: a Claude or Codex title was the first 120 characters of the first user
+ * message, and `cwd` was an absolute path naming a person's home directory and every repository
+ * they work on. A snapshot is printed, piped, pasted into issues and published by the projection,
+ * so a field that can hold a prompt will eventually publish one (finding F-5 on #105).
+ *
+ * Prose is still *read* — that is where issue references live — but it is read inside the parser
+ * and dropped in the same function. Reading is not retention. What survives is `linkedIssues`,
+ * which is a set of numbers, and the board item's own title is what a reader sees instead: it is
+ * the better label anyway, since it says what the work is rather than how someone asked for it.
  */
 export interface RunRecord {
   readonly id: string;
@@ -98,16 +118,19 @@ export interface RunRecord {
   readonly parentId: string | null;
   readonly startedAt: string;
   readonly updatedAt: string;
-  readonly title: string | null;
-  /** Working directory, which is how a run is attributed to a repository. */
-  readonly cwd: string | null;
   readonly branch: string | null;
   readonly identity: LaunchIdentity;
   readonly usage: RunUsage;
   readonly outcome: RunOutcome;
   /** Issue and PR numbers this run is about, derived from its branch and title. */
   readonly linkedIssues: readonly number[];
-  /** The transcript file or database this record was read out of. */
+  /**
+   * The transcript file or database this record was read out of.
+   *
+   * A path, and therefore local operator detail rather than something to publish. It stays on the
+   * record because `why` exists to hand an operator the file to open; it is excluded from every
+   * projection meant to leave this machine.
+   */
   readonly origin: string;
   /** Quota readings this run observed, oldest first. */
   readonly quota: readonly QuotaReading[];

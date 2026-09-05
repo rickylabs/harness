@@ -102,7 +102,8 @@ export function parseClaudeTranscript(
   let sessionId: string | null = null;
   let firstAt: string | null = null;
   let lastAt: string | null = null;
-  let cwd: string | null = null;
+  // Read, used, and dropped: the title is the operator's own words, and all this function wants
+  // from it is the issue numbers in it. See the note on `RunRecord`.
   let branch: string | null = null;
   let title: string | null = null;
   let model: string | null = null;
@@ -119,7 +120,6 @@ export function parseClaudeTranscript(
     const line = parsed.line as Line;
 
     sessionId ??= str(line.sessionId);
-    cwd = str(line.cwd) ?? cwd;
     branch = str(line.gitBranch) ?? branch;
 
     // A record whose type this parser does not understand must not move the session's clock. It is
@@ -162,7 +162,13 @@ export function parseClaudeTranscript(
   const notes = tally.notes();
   if (sessionId === null || firstAt === null || lastAt === null) return { run: null, notes };
 
-  const identity: LaunchIdentity = { model, effort, provider: model === null ? null : "anthropic" };
+  const identity: LaunchIdentity = {
+    model,
+    effort,
+    provider: model === null ? null : "anthropic",
+    // This seam records no lane, and inferring one from the title would be reading prose as data.
+    profile: null,
+  };
   return {
     run: {
       id: sessionId,
@@ -173,8 +179,6 @@ export function parseClaudeTranscript(
       parentId: null,
       startedAt: firstAt,
       updatedAt: lastAt,
-      title,
-      cwd,
       branch,
       identity,
       usage: usage as RunUsage,

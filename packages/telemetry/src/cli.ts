@@ -177,8 +177,11 @@ export async function main(argv: readonly string[]): Promise<number> {
     }
     for (const run of runs) {
       const model = run.identity.model ?? "model unrecorded";
+      // Issue numbers rather than a title: a run record carries no prose, by design. What a reader
+      // wants here is which board item this was, and the number is the join to it.
+      const about = run.linkedIssues.map((n) => `#${n}`).join(" ");
       process.stdout.write(
-        `${run.updatedAt}  ${run.source.padEnd(9)} ${run.outcome.padEnd(8)} ${model}  ${run.title ?? ""}\n`,
+        `${run.updatedAt}  ${run.source.padEnd(9)} ${run.outcome.padEnd(8)} ${model}  ${about}\n`,
       );
     }
     return 0;

@@ -91,11 +91,12 @@ export async function backfillFromDisk(
     }
     const files = await findJsonl(root, limit + 1);
     if (files === null) {
-      notes.push(`${seam}: ${root} is not a readable directory`);
+      // No path in the note: it names a home directory, and notes are printed and published.
+      notes.push(`${seam}: store is not a readable directory`);
       continue;
     }
     if (files.length > limit) {
-      notes.push(`${seam}: more than ${limit} transcripts under ${root} — scan truncated`);
+      notes.push(`${seam}: more than ${limit} transcripts in the store — scan truncated`);
     }
     let unreadable = 0;
     let empty = 0;

@@ -68,10 +68,12 @@ function renderRun(node: AttributedRun, now: string, depth: number): string[] {
       : `${run.identity.model}${run.identity.effort === null ? "" : `/${run.identity.effort}`}`;
   const item = node.item === null ? "" : ` #${node.item.number} ${node.item.title}`;
   const tokens = `${humanTokens(run.usage.inputTokens)}in/${humanTokens(run.usage.outputTokens)}out`;
-  const title = run.title === null ? "(untitled)" : run.title.replace(/\s+/g, " ").slice(0, 64);
+  // A run that joined to no item is named by its session id, not by its prompt. The id is what
+  // `why` takes, so the line an operator is reading is also the line telling them what to type.
+  const label = item === "" ? ` ${run.id.slice(0, 8)}` : item;
 
   const lines = [
-    `${indent}${mark} ${pad(run.source, 9)}${item || ` ${title}`}`,
+    `${indent}${mark} ${pad(run.source, 9)}${label}`,
     `${indent}    ${identity} · ${tokens} · updated ${humanAge(run.updatedAt, now)} ago`,
   ];
   for (const child of node.children) lines.push(...renderRun(child, now, depth + 1));

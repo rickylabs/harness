@@ -16,10 +16,8 @@ const run = (over: Partial<RunRecord> = {}): RunRecord => ({
   parentId: null,
   startedAt: "2026-09-04T20:00:00.000Z",
   updatedAt: "2026-09-04T21:00:00.000Z",
-  title: null,
-  cwd: null,
   branch: null,
-  identity: { model: "claude-opus-5", effort: "medium", provider: "anthropic" },
+  identity: { model: "claude-opus-5", effort: "medium", provider: "anthropic", profile: null },
   usage: { inputTokens: 10, outputTokens: 2 },
   outcome: "complete",
   linkedIssues: [],
@@ -49,7 +47,7 @@ describe("diagnosticsFor", () => {
   });
 
   it("routes an OpenRouter run through the relay log even on another seam", () => {
-    const pointers = diagnosticsFor(run({ identity: { model: "z-ai/glm-5.3-flash", effort: "max", provider: "openrouter" } }));
+    const pointers = diagnosticsFor(run({ identity: { model: "z-ai/glm-5.3-flash", effort: "max", provider: "openrouter", profile: null } }));
     assert.ok(pointers.includes(OPENCODE_LOG));
   });
 

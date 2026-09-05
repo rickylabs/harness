@@ -9,7 +9,9 @@
  *
  * 1. It reads the `session` table and nothing else. The same database holds `credential` and the
  *    directory holds `auth.json`; neither is touched, and the query is a fixed literal so no future
- *    caller can widen it through a parameter.
+ *    caller can widen it through a parameter. `title` and `directory` are selected but not kept:
+ *    they are read for the issue numbers in them and dropped in `rowToRun`, because a run record
+ *    is published and those two columns hold the operator's prose and their disk layout.
  * 2. It opens the database **read-only**, against a live writer holding a WAL. Anything that could
  *    checkpoint or lock that file would degrade the agents this tool exists to observe.
  */
@@ -85,16 +87,15 @@ export function rowToRun(row: SessionRow, origin: string): RunRecord | null {
     parentId: row.parent_id,
     startedAt,
     updatedAt: millisToIso(row.time_updated) ?? startedAt,
-    title: row.title,
-    cwd: row.directory,
     branch: null,
     identity: {
       model,
-      // opencode carries the agent profile rather than a reasoning effort. Reporting the profile in
+      // opencode carries an agent profile rather than a reasoning effort. Reporting the profile in
       // the effort slot would make a routing audit read a lane name as an effort level, so it stays
-      // null and the profile travels in the title.
+      // null and the profile is reported as itself.
       effort: null,
       provider: model === null ? null : (model.split("/")[0] ?? null),
+      profile: row.agent,
     },
     usage,
     // The store records no terminal state; a session row looks the same whether its agent finished
@@ -104,6 +105,18 @@ export function rowToRun(row: SessionRow, origin: string): RunRecord | null {
     origin,
     quota: [],
   };
+}
+
+/**
+ * The machine-readable part of a thrown error, with no message and therefore no path in it.
+ *
+ * `ERR_SQLITE_ERROR` for a database that will not open, `ENOENT` for one that is not there, and the
+ * constructor name when a runtime offers neither.
+ */
+function errorCode(error: unknown): string {
+  const code = (error as { readonly code?: unknown } | null)?.code;
+  if (typeof code === "string" && code.length > 0) return code;
+  return error instanceof Error ? error.name : "unknown error";
 }
 
 /** What a SQLite driver has to provide. Kept minimal so `node:sqlite` is not a hard dependency. */
@@ -141,7 +154,9 @@ export async function openOpencodeDb(
       note: null,
     };
   } catch (error) {
-    return { reader: null, note: `opencode.db unreadable at ${path}: ${String(error)}` };
+    // The path is not in the note. It names a home directory, and a note is printed, piped and
+    // published. The error code says which failure this was, which is what an operator acts on.
+    return { reader: null, note: `opencode: store unreadable (${errorCode(error)})` };
   }
 }
 

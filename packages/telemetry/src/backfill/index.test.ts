@@ -59,7 +59,7 @@ describe("backfillFromDisk", () => {
   it("says a configured store is unreadable, rather than reporting it as empty", async () => {
     const { runs, notes } = await backfillFromDisk({ claudeProjects: join(root, "nope") });
     assert.deepEqual(runs, []);
-    assert.match(notes.join("\n"), /claude: .*nope is not a readable directory/);
+    assert.match(notes.join("\n"), /claude: store is not a readable directory/);
   });
 
   it("recovers runs from a nested transcript tree", async () => {
@@ -99,7 +99,7 @@ describe("backfillFromDisk", () => {
     ]);
     const { runs, notes } = await backfillFromDisk({ claudeProjects }, 2);
     assert.equal(runs.length, 2);
-    assert.match(notes.join("\n"), /claude: more than 2 transcripts under .* — scan truncated/);
+    assert.match(notes.join("\n"), /claude: more than 2 transcripts in the store — scan truncated/);
   });
 
   it("truncates the same way twice, so a bounded scan is still reproducible", async () => {
@@ -138,8 +138,8 @@ describe("backfillFromDisk", () => {
       opencodeDb: join(root, "missing.db"),
     });
     assert.equal(runs.length, 1);
-    assert.match(notes.join("\n"), /codex: .* is not a readable directory/);
-    assert.match(notes.join("\n"), /opencode\.db unreadable/);
+    assert.match(notes.join("\n"), /codex: store is not a readable directory/);
+    assert.match(notes.join("\n"), /opencode: store unreadable/);
   });
 });
 
