@@ -1,10 +1,14 @@
 # harness
 
-**An agentic harness and toolchain for TypeScript projects, built on [NetScript](https://github.com/rickylabs/netscript).**
+**The deterministic coordinator layer for an agent fleet: a monorepo of
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugins, and the
+portable doctrine those plugins encode.**
 
 > Status lives on the board, not in this file — see the
 > [E0 roadmap](https://github.com/rickylabs/harness/issues/30) for what is built and what is not.
-> This repository holds the harness doctrine, the run artifacts, and the dsh plugin layer.
+> This repository is scoped to the harness doctrine, the run artifacts, and the `dsh` plugin
+> layer — nothing else: the cockpits that consume it live in `rickylabs/netscript`
+> (decision 4 below).
 
 ---
 
@@ -45,24 +49,55 @@ all for domain knowledge**. That asymmetry is not a defect — it is the product
 
 > **Mechanics are portable. Knowledge is specific. Ship the mechanics; scaffold the knowledge.**
 
+## Ratified decisions
+
+Four decisions are **ratified** in the *Decisions taken* table of the
+[E0 roadmap](https://github.com/rickylabs/harness/issues/30). They are restated here because
+root documents are what an agent reads first, and a root document that contradicts a ratified
+decision propagates the contradiction silently. They are not re-opened in a run, a PR, or a
+prompt; reversing one is a change to #30 first.
+
+1. **Plugin-only, no core fork.** Depend on published
+   [`@deepseek-ai/dsh`](https://github.com/deepseek-ai/deepseek-harness). We ship our Cordis
+   plugin packages and one profile. Only
+   [`runzhliu/deepseek-harness-docker`](https://github.com/runzhliu/deepseek-harness-docker)
+   is forked, upstream remote kept for updates.
+2. **Node + pnpm.** netscript stays a service behind an adapter, not a build-time dependency.
+3. **GitHub is the source of truth for the board**; dsh projects the live view.
+4. **This repo is the dsh layer only.** The Expo cockpit and the web cockpit both live in
+   netscript. Consequence: `contracts` must be a *published* package, not a workspace import.
+
+Two further decisions — the MIT licence, and the divybot/herdr strangler-fig — are recorded in
+#30 as **taken, reversible**. They are not restated as settled here; read them on the board.
+
 ## What this becomes
 
-Three layers, deliberately separable:
+Three layers, deliberately separable — and only the first two are built here:
 
 **1. Doctrine** — portable, plain markdown, zero runtime.
 Run lifecycle, artifact templates, profiles, principles, gates. Works in any repository in any
 language today, with no daemon installed. This is what already ported at 7/10.
 
-**2. Runtime** — NetScript as foundation.
-Tasks, jobs, workers, sagas, triggers, streams; KV-backed with optimistic concurrency;
-multi-runtime execution (`deno | python | shell | powershell | dotnet | executable`) with
-explicit permission sets; OS-service deployment (systemd, Windows Service) so a supervised
-daemon never needs an agent to rescue it.
+**2. Coordinator** — dsh plugins on Node and pnpm. *This repository.*
+Everything-is-a-plugin over Cordis: a `Context` is a service repository, a plugin claims
+`ctx.<key>`, and composition is declarative. What ships here is plugin packages and one
+profile — no fork of dsh itself (decision 1); see [`packages/`](packages/) for the layout.
+NetScript is **not** a build-time dependency of this layer (decision 2). Its runtime
+primitives — tasks, jobs, workers, sagas, triggers, streams; KV-backed with optimistic
+concurrency; multi-runtime execution
+(`deno | python | shell | powershell | dotnet | executable`) with explicit permission sets;
+OS-service deployment (systemd, Windows Service) so a supervised daemon never needs an agent to
+rescue it — are reached **as a service, behind an adapter**, so nothing here has to build
+NetScript to use them.
 
-**3. Control plane** — the missing piece.
+**3. Control plane** — the missing piece, and *not a layer of this repository.*
 A mobile-first dashboard bound to one or more local agents (in the OTLP sense — a supervised
 process on your machine, not an LLM). Projects, runs, and the full agent tree from orchestrator
-down to leaf. Steer from a phone; review on a desktop.
+down to leaf. Steer from a phone; review on a desktop. Both cockpits — the Expo app and the web
+app — live in `rickylabs/netscript`, not here (decision 4). What this repository owes them is
+`contracts`: a **published** package of route and type definitions, consumed over npm and never
+as a workspace import. The board they render is projected, not owned — GitHub holds board truth
+and dsh projects the live view (decision 3).
 
 ## Design commitments
 
@@ -108,4 +143,6 @@ CLAUDE.md           entry point, standard mode
 
 ## Licence
 
-Not yet chosen. Tracked as an open owner fork in the seed run.
+**MIT**, matching dsh, so the plugin packages can carry the `dsh-plugin` topic. Taken in
+[#30](https://github.com/rickylabs/harness/issues/30) as reversible; the `LICENSE` file lands
+with the first package that publishes.
