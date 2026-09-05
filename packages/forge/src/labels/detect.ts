@@ -170,22 +170,46 @@ async function detectGates(repoRoot: string): Promise<DetectionResult> {
 
 const LANE_PREFIXES = ["orchestrator", "topic", "lane"] as const;
 
+const bestPrefix = (names: readonly { readonly name: string }[]): string | null => {
+  let best: { prefix: string; count: number } | null = null;
+  for (const prefix of LANE_PREFIXES) {
+    const count = names.filter((l) => l.name.startsWith(`${prefix}:`)).length;
+    if (count > 0 && (best === null || count > best.count)) best = { prefix, count };
+  }
+  return best?.prefix ?? null;
+};
+
 /**
  * Adopt the lane prefix the repository already uses rather than introducing a rival one. Two
- * prefixes for the same concept is how a taxonomy stops meaning anything, and the existing labels
- * are the only evidence of which one the humans picked.
+ * prefixes for the same concept is how a taxonomy stops meaning anything.
  *
  * A repository can end up with more than one — `rickylabs/harness` carries both `topic:` and
  * `lane:` — so the winner is whichever has more labels, not whichever comes first in this file.
  * Ties fall back to the declared order, which is the only tiebreak that is stable across runs.
+ *
+ * `declared` is `.github/labels.yml`, and it is consulted *first* when it has any lane rows at all.
+ * Two reasons, and the second is the one that matters.
+ *
+ * The doctrinal one: the ejected file is the record a human edited and a reviewer approved, and it
+ * already wins over the live repository everywhere else the two overlap. A prefix is a taxonomy
+ * decision like any other.
+ *
+ * The mechanical one: the live labels are reachable only over the network, and the file is not. Read
+ * from GitHub alone, this function answered `topic` on a workstation with an authenticated `gh` and
+ * `lane` in CI, which made every artifact generated from the taxonomy — the board-process skill
+ * above all — depend on who ran the generator. `dsh-forge labels apply` was worse than inconsistent
+ * offline: with no live labels to see, it proposed creating four `lane:*` labels duplicating the
+ * `topic:*` rows the file itself declares. Reading the committed file first makes the answer the
+ * same everywhere, which is what lets CI check the generated skill for drift at all.
+ *
+ * A repository that has not ejected a file yet still learns the prefix from its live labels, and one
+ * with neither gets `lane`.
  */
-export function detectLanePrefix(existing: readonly ExistingLabel[]): string {
-  let best: { prefix: string; count: number } | null = null;
-  for (const prefix of LANE_PREFIXES) {
-    const count = existing.filter((l) => l.name.startsWith(`${prefix}:`)).length;
-    if (count > 0 && (best === null || count > best.count)) best = { prefix, count };
-  }
-  return best?.prefix ?? "lane";
+export function detectLanePrefix(
+  existing: readonly ExistingLabel[],
+  declared: readonly { readonly name: string }[] = [],
+): string {
+  return bestPrefix(declared) ?? bestPrefix(existing) ?? "lane";
 }
 
 /** Lane ids from a harness milestone cluster state, when the repo runs one. */
@@ -285,13 +309,20 @@ export interface DetectOptions {
   readonly existing: readonly ExistingLabel[];
   /** Families to derive. Anything omitted is simply not proposed. */
   readonly families?: readonly ("area" | "gate" | "lane" | "epic")[];
+  /**
+   * The prefix to give derived lane labels. Passed by a caller that has already resolved it against
+   * `.github/labels.yml` — which this function cannot see — so that detection and the taxonomy it
+   * feeds cannot disagree about which prefix this repository uses. Omitted, it is read from
+   * `existing`, which is right for a caller that has no ejected file to consult.
+   */
+  readonly lanePrefix?: string;
 }
 
 const ALL_FAMILIES = ["area", "gate", "lane", "epic"] as const;
 
 export async function detectRepoLabels(options: DetectOptions): Promise<DetectionResult> {
   const wanted = new Set<string>(options.families ?? ALL_FAMILIES);
-  const prefix = detectLanePrefix(options.existing);
+  const prefix = options.lanePrefix ?? detectLanePrefix(options.existing);
 
   const parts: DetectionResult[] = [];
   if (wanted.has("area")) parts.push(await detectAreas(options.repoRoot));

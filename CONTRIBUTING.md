@@ -32,17 +32,42 @@ Node 24 or newer and [pnpm](https://pnpm.io) 11. The pnpm version is pinned by `
 the root `package.json`, and CI reads that same line rather than pinning a second one — so upgrading
 pnpm is a one-line change, not a two-file dance.
 
-`build` is not only a compile. It runs four repository-wide checks around the per-package builds:
+`build` is not only a compile. It runs seven repository-wide checks around the per-package builds,
+in this order:
 
 | Check | What it refuses to let through |
 | --- | --- |
 | `check:graph` | workspace dependencies that disagree with the TypeScript project references |
 | `check:lifecycle` | the board's phase list differing between the two files that hold it |
+| `check:links` | a relative link or heading anchor in any markdown file that does not resolve |
+| `check:forms` | an issue form that does not parse, or that applies a label the taxonomy does not declare |
 | `check:publish` | the publishable package not publishing what it claims to |
 | `check:docs` | a generated CLI reference page that no longer matches its binary |
+| `check:skill` | a committed `SKILL.md` that is not what the generator would write today |
 
 Each one exists because the failure it catches is silent. None of them are optional, and running
-`pnpm -r run build` directly skips all four.
+`pnpm -r run build` directly skips all seven.
+
+The first four need nothing but the tree, so they run before the compile and a docs-only change
+fails in seconds. The last three read `dist/`, so they run after it.
+
+Two notes on what these checks deliberately do *not* do. `check:links` never fetches an external
+URL — a link check that goes over the network fails when someone else's server is down, and a gate
+that fails for a reason unrelated to the change under review teaches people to skip the gate.
+`check:forms` reads `.github/labels.yml` rather than asking GitHub, so it needs no token and runs in
+the same CI job as everything else.
+
+### One check that is not a gate
+
+```bash
+pnpm run check:metadata
+```
+
+It compares GitHub's own description of this repository against the `description` in the root
+`package.json`, which is the side that is in the tree and reviewed. It is deliberately outside
+`build`: only an admin can change the GitHub string, so gating pull requests on it would paint
+unrelated work red until the owner acted. It prints the exact `gh repo edit` command that fixes what
+it found. Exit 3 means it found no GitHub transport and compared nothing — which is not a pass.
 
 Tests run against emitted JavaScript, not sources, so `pnpm test` on a tree that has not been built
 tests the previous build. When in doubt, run the full four.
@@ -63,6 +88,10 @@ common way a contribution fails, and it fails loudly — which is the point.
 The golden snapshot takes a required reason and writes it into the file's own header, because a
 snapshot updated by whoever was annoyed by the failing test has stopped being evidence. Put that
 same reason in the pull request.
+
+"Verified against it" is now literal for the first two: `check:docs` re-derives every CLI reference
+page from its binary, and `check:skill` re-runs the skill generator and compares. Both are in
+`build`, so a hand-edited copy of either fails before review rather than after.
 
 The rule these five serve is stated in full in [`docs/README.md`](docs/README.md#the-rule-these-docs-are-held-to):
 every artifact either states facts it owns, or is generated from the code that owns them.
