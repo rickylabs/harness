@@ -13,6 +13,9 @@ without waking an agent to ask.
 > **Status** lives on the board, not in this file: the
 > [E0 roadmap](https://github.com/rickylabs/harness/issues/30) is what is built and what is not.
 
+📖 [**Documentation**](docs/) — concepts, how-to, reference and a
+[glossary](docs/glossary.md). This file is the front door; `docs/` is the house.
+
 ---
 
 ## What runs today
@@ -86,6 +89,9 @@ and the live repository disagree, it reports drift and exits **1** instead of gu
 
 ## The idea, in one page
 
+Compressed. [`docs/concepts/`](docs/concepts/) has the long form — five pages on what this is, the
+two seams, the board, the two meanings of *run*, and why determinism is the point.
+
 ### GitHub is the board; `dsh` projects it
 
 There is no second database of task state. Issues, labels, milestones and pull requests *are* the
@@ -102,13 +108,13 @@ one at a time. `dsh-board check` exits non-zero when that is violated.
 The central architectural finding of this project, and the thing most easily collapsed by accident:
 **subscription agent CLIs and API-key models attach to different `dsh` services.**
 
-| | `ctx.subagents` | `ctx.llm` |
-| --- | --- | --- |
-| who | Claude Code, Codex, opencode, agy | OpenRouter, LM Studio, local llama |
-| what they are | autonomous workers with their own loop, tools and context | a model behind a token stream |
-| what we hand them | a goal | a prompt |
-| whose loop runs | theirs | `dsh`'s — so gates, sandbox and approval policy apply |
-| metered by | a **quota window** | **USD per token** |
+`ctx.subagents` takes autonomous workers — Claude Code, Codex, opencode, agy — that run their own
+loop and are metered by a **quota window**. `ctx.llm` takes models behind a token stream —
+OpenRouter, LM Studio, local llama — metered **per token**, inside `dsh`'s loop.
+
+[`docs/concepts/02-the-two-seams.md`](docs/concepts/02-the-two-seams.md) owns this argument in full:
+what each seam is metered by, what running out of one means, where a gate can and cannot stand, and
+the three places the coordinator reads it.
 
 Three consequences follow, and they are why this is a design decision rather than a taxonomy:
 
@@ -250,6 +256,7 @@ The plugins in `packages/` are the other half: the parts of that doctrine a mach
 
 ```
 packages/             the dsh plugin layer — one package per subsystem
+docs/                 concepts, how-to, reference, tutorials, glossary
 doctrine/             how to work here: portable, stable, no runtime
 deploy/               the N5 compose stack and the patch overlays it applies
 scripts/              the repository-wide checks the root scripts run

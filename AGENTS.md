@@ -76,15 +76,13 @@ repository in any language. It is the layer that already ported; treat it as sta
 it deliberately. Run artifacts under `.llm/runs/` are durable evidence, not scratch space.
 
 The plugin split is not arbitrary. Two subsystems that both look like "call a model" attach to
-two *different* dsh seams, and the packages are separated to match (#30, "two seams, not one"):
+two *different* dsh seams — `ctx.subagents` for autonomous vendor CLIs, `ctx.llm` for API-key and
+local models — and the packages are separated to match (#30, "two seams, not one"). Collapsing
+them into one abstraction is the design error the split exists to prevent.
 
-| Seam | What attaches | Metered by | Packages |
-|---|---|---|---|
-| `ctx.subagents` / `SubagentProvider` | autonomous vendor CLIs — Claude Code, Codex, opencode, ACP | quota window | `provider-claude`, `provider-codex`, `provider-acp`, `provider-opencode` (E3 · #33) |
-| `ctx.llm` / `LlmAdapter` | API-key and local models — LM Studio, llama-rocm, OpenRouter | per token | `llm-local` (E4 · #34) |
-
-Collapsing the two into one abstraction is the design error this split exists to prevent: they
-differ in what they are, what they cost, and what running out of them means.
+**Read [`docs/concepts/02-the-two-seams.md`](docs/concepts/02-the-two-seams.md) before touching
+either side.** It owns that distinction — what each seam is metered by, what running out of one
+means, and the three places the coordinator reads it — so this file does not restate it.
 
 ## Ratified decisions you inherit
 
