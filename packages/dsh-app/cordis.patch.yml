@@ -1,0 +1,37 @@
+# The rickylabs bundle patch: the coordinator layer, applied as ONE insert over whatever
+# the base bundles already put on the profile root.
+#
+# GENERATED FROM packages/dsh-app/src/bundle.ts. Edit that file and re-render; a hand edit
+# here is reverted by the next `pnpm run build`, and `bundle.test.ts` fails in the meantime.
+#
+# The insert carries no `id`, so cordis appends these rows at the root of the entry list
+# rather than nesting them into a group. Nothing here addresses a base row: this bundle adds
+# services, it does not reconfigure dsh's own.
+#
+# Row order carries no load semantics; activation is service-availability driven.
+
+- insert:
+    # The `ctx.subagents` seam (E3 · #33). Claimed empty here on purpose: this row exists so
+    # that a provider package has something to attach to, and so that the failure mode of a
+    # deployment with no providers is `no-providers` from `selectProvider` rather than a
+    # missing-service crash at the first dispatch.
+    - id: harness-subagents
+      name: '@rickylabs/dsh-app/plugins/subagents'
+
+    # The board projector (E6 · #36), configured. GitHub holds board truth and dsh projects
+    # the live view (decision 3), so what this service owns is the taxonomy — the lane prefix
+    # and the priority order — while the caller owns the issues and the clock.
+    - id: harness-board
+      name: '@rickylabs/dsh-app/plugins/board'
+
+    # Workflow definitions and the evaluator independence policy (E6 · #36). The policy is
+    # configuration because #72 named two, not because both are equally good: the default is
+    # the stronger one, and choosing the weaker is a decision a deployment has to write down.
+    - id: harness-coordinator
+      name: '@rickylabs/dsh-app/plugins/coordinator'
+
+    # The run sink and snapshot builder (E9 · #39) — the `status ?` killer. Resolving the
+    # observability paths at boot rather than per call is the point: a snapshot taken after a
+    # log rotation must read the same directory the sink was writing to.
+    - id: harness-telemetry
+      name: '@rickylabs/dsh-app/plugins/telemetry'
