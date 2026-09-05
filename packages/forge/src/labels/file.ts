@@ -13,7 +13,7 @@
 import { readFile } from "node:fs/promises";
 
 import type { LabelFamily, LabelSpec } from "./taxonomy.js";
-import { isValidColor, normalizeColor } from "./taxonomy.js";
+import { isCoreFamily, isValidColor, normalizeColor } from "./taxonomy.js";
 
 export const LABELS_FILE = ".github/labels.yml";
 
@@ -98,12 +98,16 @@ export function parseLabelsFile(text: string, lanePrefix = "lane"): ParsedLabels
         message: `${current.name}: color ${JSON.stringify(color)} is not six hex digits`,
       });
     } else {
+      const family = familyOf(current.name, lanePrefix);
       const base = {
         name: current.name,
         color: normalizeColor(color),
         description: current.description ?? "",
-        family: familyOf(current.name, lanePrefix),
-        origin: "core",
+        family,
+        // The file records no origin, so this is inferred from the family rather than asserted.
+        // It used to be a flat `"core"`, which made a parsed `area:` row claim to be portable and
+        // is what made a second eject rewrite its own header — #127.
+        origin: isCoreFamily(family) ? ("core" as const) : ("detected" as const),
       } as const;
       // `exactOptionalPropertyTypes` is on, so the key is added or it is not — never set to
       // `undefined`, which would make `isRetired` true for a label nobody retired.
@@ -239,7 +243,10 @@ export function renderLabelsFile(
   for (const family of [...new Set(specs.map((s) => s.family))]) {
     const rows = specs.filter((s) => s.family === family);
     if (rows.length === 0) continue;
-    const derived = rows.every((r) => r.origin === "detected");
+    // Asked of the family, not of the rows. Row `origin` cannot survive a write to this file and
+    // a read back out of it, so a header derived from it says one thing on the first eject and the
+    // opposite on the second — #127.
+    const derived = !isCoreFamily(family);
     body.push(`# ── ${family}: ${derived ? "derived from this repository" : "portable core"} ──`);
     for (const row of rows) body.push(...rowsFor(row));
     body.push("");

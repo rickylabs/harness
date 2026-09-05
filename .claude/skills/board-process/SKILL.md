@@ -52,7 +52,7 @@ reasoning goes in a comment on the item rather than in the label.
 
 - `type:` — `feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`, `umbrella`, `sub-pr`. Every open issue and PR carries exactly one.
 - `priority:` — `p0`, `p1`, `p2`, `p3`. `p0` is a release blocker.
-- `area:` — `board`, `contracts`, `coordinator`, `dsh-app`, `forge`, `governance`, `llm-local`, `netscript-bridge`, `provider-acp`, `provider-claude`, `provider-codex`, `provider-opencode`, `routing`, `telemetry`. Derived from this repository's packages; additive.
+- `area:` — `board`, `contracts`, `coordinator`, `dsh-app`, `forge`, `governance`, `llm-local`, `netscript-bridge`, `provider-acp`, `provider-claude`, `provider-codex`, `provider-opencode`, `routing`, `telemetry`, `subagents`. Derived from this repository's packages; additive.
 - `topic:` — `docs`, `internals`, `fixes`, `features`. Which lane owns the item.
 - `epic:` — `e9`, `e8`, `e7`, `e6`, `e5`, `e4`, `e3`, `e2`, `e1`, `e0`. Groups everything under one program epic.
 - `eval:` — `skip`, `third-opinion`. Evaluator routing, as data on the issue rather than prose in a brief.

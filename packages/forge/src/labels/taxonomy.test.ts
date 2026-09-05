@@ -3,17 +3,25 @@ import { describe, it } from "node:test";
 
 import {
   CLOSE_GATE_OVERRIDE,
+  CORE_FAMILIES,
   CORE_TAXONOMY,
   RETIRED_CLOSE_GATE_STATUS,
   RETIRED_LABELS,
   STATUS_LABELS,
   STATUS_LIFECYCLE,
   STATUS_TERMINAL,
+  areaLabel,
+  ciLabel,
   classifyStatus,
+  epicLabel,
+  gateLabel,
+  isCoreFamily,
   isRetired,
   isValidColor,
+  laneLabel,
   normalizeColor,
   slugify,
+  waveLabel,
 } from "./taxonomy.js";
 
 describe("core taxonomy", () => {
@@ -176,5 +184,36 @@ describe("normalizeColor / isValidColor", () => {
 
   it("holds for every color this package ships", () => {
     for (const spec of CORE_TAXONOMY) assert.ok(isValidColor(spec.color), `${spec.name} ${spec.color}`);
+  });
+});
+
+describe("CORE_FAMILIES", () => {
+  it("covers exactly the families the portable core ships", () => {
+    assert.deepEqual([...CORE_FAMILIES].sort(), ["eval", "flag", "priority", "status", "type"]);
+  });
+
+  it("excludes every family built from repository evidence", () => {
+    // The split this set encodes: a family the core defines is safe to install anywhere; a family
+    // `detect.ts` produces names something only this repository has. Each constructor below exists
+    // precisely because its family is the second kind.
+    const derived = [
+      areaLabel("forge", "packages/forge"),
+      gateLabel("e2e", ".github/workflows/e2e.yml"),
+      ciLabel("nightly", ".github/workflows/nightly.yml"),
+      laneLabel("docs", "topic", "Owned by the docs lane orchestrator"),
+      waveLabel("v1", "First wave"),
+      epicLabel("e1", "E1 — Foundations"),
+    ];
+    for (const label of derived) {
+      assert.ok(!isCoreFamily(label.family), `${label.name} is in a core family`);
+      assert.equal(label.origin, "detected", label.name);
+    }
+  });
+
+  it("agrees with the origin every core spec was built with", () => {
+    // Two ways of saying the same thing, and #127 was what happened when they drifted apart.
+    for (const spec of CORE_TAXONOMY) {
+      assert.equal(isCoreFamily(spec.family), spec.origin === "core", spec.name);
+    }
   });
 });
