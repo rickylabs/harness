@@ -1,5 +1,52 @@
 # @rickylabs/governance
 
-Tri-regime admission control.
+Tri-regime admission control: whether the system may spend, right now, on this.
 
-Owned by epic E5 · #35. Empty stub until that epic lands — see [`packages/README.md`](../README.md) for workspace conventions.
+**Status: stub.** Owned by **E5 · [#35](https://github.com/rickylabs/harness/issues/35)**. The only
+export is `PACKAGE_NAME`. Nothing here reads a budget or refuses anything.
+
+## What it will own
+
+Reading the three regimes and turning them into a verdict. Not the vocabulary — that is already
+published — but the part that costs: getting a real reading, and deciding.
+
+There are two gates in this system and they are not the same gate.
+[`coordinator`](../coordinator/README.md) decides *who may evaluate* — a rule about independence,
+answerable offline from a roster. This package decides *whether the system may spend* — a rule about
+capacity, answerable only by looking at the world. That is why they are separate packages: one is
+pure and the other is not.
+
+## Why there are three of them
+
+Not a taxonomy — a consequence. The two seams plus the local models admit work on incomparable
+grounds, so there is no one number to compare them on, and any package that produced one would be
+inventing it. [`docs/concepts/02`](../../docs/concepts/02-the-two-seams.md) is where that split is
+argued; this package is where it gets read.
+
+## What already constrains it
+
+[`contracts`](../contracts/README.md) ships the shape, because the cockpits render it:
+
+- `REGIMES` is `subscription | metered | capacity` — a quota window, a token balance, a GPU.
+  `RegimeStatus` is a discriminated union rather than three numbers, because those three have
+  different units and fail in different ways; a client that only knows how to draw a percentage
+  draws the one that has one and says so, instead of inventing a percentage for a GPU.
+- `REGIME_STATES` is `allow | throttle | pause`.
+- Every regime carries `observedAt`, an unread regime reports `allow` with `observedAt: null` and a
+  note, and **no regime is ever omitted**. A green bar with no reading behind it is the most
+  expensive kind of wrong, and a missing regime is indistinguishable from one that does not exist.
+
+So the honest half of this package's job is already specified: whatever it cannot read, it must say
+it could not read, rather than passing.
+
+## Why it is empty
+
+E5 is blocked behind a decision, not behind effort:
+**[#62 — the sandboxctl execution channel](https://github.com/rickylabs/harness/issues/62)**.
+Admission control that cannot reach the thing it is admitting to is a ledger, not a gate, and which
+channel it reaches over changes what "capacity" can even be measured against. Building against a
+guess would mean building the readings twice.
+
+---
+
+Workspace conventions: [`packages/README.md`](../README.md).
