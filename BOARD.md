@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[##############------]` **111/150 done · 4 running · 24 queued · 11 abandoned**
+`[##############------]` **113/152 done · 4 running · 24 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-05T21:27:15Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-05T21:52:48Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (4)
 
@@ -12,16 +12,24 @@ Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
-| [#161 E6.7 — Publish the board where a person will actually look](https://github.com/rickylabs/harness/issues/161) | `impl` | `e6` |
+| [PR163 fix(board): grant the board workflow the scopes it actually reads](https://github.com/rickylabs/harness/pull/163) | `impl` | `e6` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#83 E9.1 — SessionTelemetrySink on every run, on both seams](https://github.com/rickylabs/harness/issues/83) | `impl-eval` | `e9` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
+
+## Anomalies (1)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#163** — closed on GitHub but sits in impl; the issue wins, the column is stale
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[########----]` 82/112 done · 4 running · 24 queued · 2 abandoned
+`[########----]` 84/114 done · 4 running · 24 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -31,7 +39,7 @@ Something could be acting on these right now.
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[###---------]` 2/7 done · 5 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###---------]` 2/7 done · 5 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[------------]` 0/6 done · 6 queued | `triage` |
-| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 14/18 done · 2 running · 2 abandoned | `impl` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 16/20 done · 2 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[########----]` 11/16 done · 5 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `triage` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 10/12 done · 2 running | `impl` |
@@ -85,9 +93,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [##############------]  111/150 done · 4 running · 24 queued · 11 abandoned
+# rickylabs/harness  [##############------]  113/152 done · 4 running · 24 queued · 11 abandoned
 
-## M1 — dsh coordinator foundation  [##############------]  82/112 done · 4 running · 24 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [##############------]  84/114 done · 4 running · 24 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [impl]
     [################] 14/14 done
@@ -166,7 +174,7 @@ Something could be acting on these right now.
     triage               #67 E5.6 — Boot-parameter verification after every kernel update
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
-    [############----] 14/18 done · 2 running · 2 abandoned
+    [############----] 16/20 done · 2 running · 2 abandoned
     impl-eval            #68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation
     shipped              #69 E6.2 — coordinator: the workflow definitions
     shipped              #70 E6.3 — Emit one dispatch payload in the /swarm wire format
@@ -184,7 +192,9 @@ Something could be acting on these right now.
     shipped              PR126 feat(coordinator): worktree ownership, decided by cwd and nothing else (p1)
     shipped              #157 fix(board): delivered work with no status label is invisible to check (p1)
     shipped              PR158 fix(board): report delivered work that reached no column (p1)
-    impl                 #161 E6.7 — Publish the board where a person will actually look (p1)
+    shipped              #161 E6.7 — Publish the board where a person will actually look (p1)
+    shipped              PR162 feat(board): publish the board as a page, on a schedule (p1)
+    impl                 PR163 fix(board): grant the board workflow the scopes it actually reads (p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
     [###########-----] 11/16 done · 5 queued
