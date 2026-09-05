@@ -6,6 +6,12 @@
  * vendors already write. The sink is what makes status cheap; the backfill is what makes it
  * survive a coordinator crash.
  *
+ * `live.ts` is the join between the two, and it is what makes either of them answer a question. The
+ * Claude and opencode stores write no completion marker, so a backfill alone can never say whether
+ * a run finished; the sink's log can, because whatever launched the run watched it stop. The merge
+ * is keyed by run id, so replaying the whole log over an already-merged view is a no-op and there
+ * is no ingestion cursor to lose.
+ *
  * The package deliberately depends on nothing in this workspace. GitHub is board truth and
  * `@rickylabs/board` projects the live view of it; telemetry says what *ran*, and joins to the
  * board on an issue number through the structural `BoardItemRef` shape. The join is structural but
@@ -58,6 +64,16 @@ export {
   toRef,
   type LoadedItems,
 } from "./items.js";
+
+export {
+  foldLiveEvents,
+  mergeLiveRuns,
+  readLiveLog,
+  type LiveFile,
+  type LiveLog,
+  type LiveMerge,
+  type LiveRun,
+} from "./live.js";
 
 export {
   classify,
