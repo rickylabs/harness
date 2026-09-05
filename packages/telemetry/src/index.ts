@@ -28,11 +28,15 @@ export {
   isoFromMillis,
   parseLine,
   parseLineWithReason,
-  SESSION_QUERY,
+  SESSION_COLUMNS,
+  sessionQuery,
+  type BackfillOptions,
   type BackfillResult,
+  type BoundQuery,
   type ParsedTranscript,
   type ParseNote,
   type BackfillRoots,
+  type SessionBounds,
   type SessionRow,
   type SqliteReader,
 } from "./backfill/index.js";
@@ -95,6 +99,18 @@ export {
 } from "./sink.js";
 
 export { compareNullableStrings, compareStrings } from "./order.js";
+
+export {
+  publicRun,
+  publicRuns,
+  publicSnapshot,
+  PUBLIC_RUN_KEYS,
+  type PublicAttributedRun,
+  type PublicEpic,
+  type PublicRun,
+  type PublicRuns,
+  type PublicSnapshot,
+} from "./public.js";
 
 export {
   attributeTo,

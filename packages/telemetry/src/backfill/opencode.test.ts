@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -8,7 +8,8 @@ import {
   openOpencodeDb,
   readSessions,
   rowToRun,
-  SESSION_QUERY,
+  SESSION_COLUMNS,
+  sessionQuery,
   type SessionRow,
   type SqliteReader,
 } from "./opencode.js";
@@ -31,27 +32,45 @@ const row = (over: Partial<SessionRow> = {}): SessionRow => ({
   ...over,
 });
 
-describe("SESSION_QUERY", () => {
+describe("sessionQuery", () => {
   it("reads the session table and nothing else", () => {
     // The containment claim in the module header, made checkable. The same database holds
-    // `credential`; a future edit that widens this query has to fail a test to do it.
-    const tables = [...SESSION_QUERY.matchAll(/\bfrom\s+(\w+)/gi)].map((m) => m[1]);
+    // `credential`; a future edit that widens this query has to fail a test to do it. The built
+    // statement is checked rather than the literal, so a bound cannot smuggle a table in either.
+    const { text } = sessionQuery({ limit: 10, sinceMs: 1_772_000_000_000 });
+    const tables = [...text.matchAll(/\bfrom\s+(\w+)/gi)].map((m) => m[1]);
     assert.deepEqual(tables, ["session"]);
-    assert.equal(/\bjoin\b/i.test(SESSION_QUERY), false);
+    assert.equal(/\bjoin\b/i.test(text), false);
     // Word-bounded on purpose: the column `time_updated` is not the statement `update`, and a naive
     // substring check that confused the two would have to be loosened to pass, defeating itself.
     for (const forbidden of ["credential", "account", "auth", "insert", "update", "delete", "attach", "pragma"]) {
       assert.equal(
-        new RegExp(`\\b${forbidden}\\b`, "i").test(SESSION_QUERY),
+        new RegExp(`\\b${forbidden}\\b`, "i").test(text),
         false,
         `query mentions ${forbidden}`,
       );
     }
   });
 
-  it("has no interpolation point a caller could widen it through", () => {
-    assert.equal(SESSION_QUERY.includes("${"), false);
-    assert.equal(SESSION_QUERY.includes("?"), false);
+  it("puts every caller-supplied value in a parameter and none of it in the text", () => {
+    // The statement now takes bounds, so "fixed literal" is no longer the containment argument.
+    // This is: what the caller supplies reaches SQLite as data, and the text it lands in is the
+    // same text for every caller.
+    const bounded = sessionQuery({ limit: 7, sinceMs: 1_772_000_000_000 });
+    assert.equal(bounded.text.includes("7"), false, "the limit was interpolated into the query");
+    assert.equal(bounded.text.includes("1772000000000"), false, "the cutoff was interpolated");
+    assert.deepEqual(bounded.params, [1_772_000_000_000, 7]);
+    assert.equal(SESSION_COLUMNS.includes("?"), false);
+    assert.equal(SESSION_COLUMNS.includes("${"), false);
+  });
+
+  it("bounds and orders in the database, so --limit means the newest rows", () => {
+    const { text, params } = sessionQuery({ limit: 3 });
+    assert.match(text, /order by coalesce\(time_updated, time_created\) desc/);
+    assert.match(text, /limit \?/);
+    // No cutoff given, so no `where` clause and one parameter rather than two.
+    assert.equal(/\bwhere\b/i.test(text), false);
+    assert.deepEqual(params, [3]);
   });
 });
 
@@ -128,21 +147,36 @@ describe("rowToRun", () => {
 });
 
 describe("readSessions", () => {
-  it("runs exactly the fixed query and drops rows it cannot date", () => {
-    const asked: string[] = [];
+  it("runs exactly the built query and drops rows it cannot date", () => {
+    const asked: [string, readonly number[]][] = [];
     const reader: SqliteReader = {
-      all: (query) => {
-        asked.push(query);
+      all: (query, params) => {
+        asked.push([query, params]);
         return [row(), row({ id: "ses_bad", time_created: null })] as unknown as Readonly<Record<string, unknown>>[];
       },
       close: () => {},
     };
-    const runs = readSessions(reader, "/db/opencode.db");
-    assert.deepEqual(asked, [SESSION_QUERY]);
+    const runs = readSessions(reader, "/db/opencode.db", { limit: 25 });
+    assert.deepEqual(asked, [[sessionQuery({ limit: 25 }).text, [25]]]);
     assert.deepEqual(
       runs.map((r) => r.id),
       ["ses_7f2"],
     );
+  });
+
+  it("hands the cutoff to the database rather than filtering what it read", () => {
+    // `--limit 1` used to bound the two JSONL seams and return every opencode row, so one flag meant
+    // two things depending on which store answered (finding F-7 on #105).
+    let bound: readonly number[] = [];
+    const reader: SqliteReader = {
+      all: (_query, params) => {
+        bound = params;
+        return [];
+      },
+      close: () => {},
+    };
+    readSessions(reader, "o", { limit: 4, sinceMs: 1_772_000_000_000 });
+    assert.deepEqual(bound, [1_772_000_000_000, 4]);
   });
 });
 
@@ -177,10 +211,11 @@ describe("openOpencodeDb", () => {
       writer.exec("insert into credential values ('k', 'redacted')");
       writer.close();
 
-      const { reader, note } = await openOpencodeDb(path);
+      const { reader, note, absent } = await openOpencodeDb(path);
       assert.equal(note, null);
+      assert.equal(absent, false);
       assert.ok(reader);
-      const runs = readSessions(reader, path);
+      const runs = readSessions(reader, path, { limit: 100 });
       reader.close();
 
       assert.deepEqual(
@@ -195,14 +230,31 @@ describe("openOpencodeDb", () => {
     }
   });
 
-  it("reports an unreadable database as a note rather than throwing", async () => {
-    // The rest of the backfill must still produce a snapshot. A degraded answer beats no answer.
+  it("separates a box with no opencode from a store that will not open", async () => {
+    // `node:sqlite` reports both as ERR_SQLITE_ERROR, so the code cannot tell them apart — and
+    // reporting both as "unreadable" made a caller unable to say whether its answer was complete.
     const path = join(tmpdir(), "definitely-not-here.db");
-    const { reader, note } = await openOpencodeDb(path);
-    assert.equal(reader, null);
-    assert.match(note ?? "", /opencode: store unreadable \(/);
-    // The note is printed and may be published, and this path names a home directory. The error
-    // code is what an operator acts on; the path is not theirs to hand out (finding F-5 on #105).
-    assert.equal((note ?? "").includes(path), false, "the note carries the store path");
+    const missing = await openOpencodeDb(path);
+    assert.equal(missing.reader, null);
+    assert.equal(missing.absent, true);
+    assert.equal(missing.note, "opencode: no store on this box");
+
+    const dir = await mkdtemp(join(tmpdir(), "dsh-opencode-bad-"));
+    try {
+      // A directory where the store belongs, because it is the failure `node:sqlite` reports at open
+      // time. A file of the wrong content opens fine and only fails when a statement runs, which the
+      // backfill catches separately as a failed query.
+      const broken = join(dir, "opencode.db");
+      await mkdir(broken, { recursive: true });
+      const found = await openOpencodeDb(broken);
+      assert.equal(found.reader, null);
+      assert.equal(found.absent, false, "a corrupt store was reported as a store that is not there");
+      assert.match(found.note ?? "", /opencode: store unreadable \(/);
+      // The note is printed and may be published, and this path names a home directory. The error
+      // code is what an operator acts on; the path is not theirs to hand out (finding F-5 on #105).
+      assert.equal((found.note ?? "").includes(broken), false, "the note carries the store path");
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

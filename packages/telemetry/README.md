@@ -46,9 +46,11 @@ unknown record type, and a store that is not there at all — and to say so when
    the work, not in a footer, and it carries its own age — a stale reading is worse than none,
    because it is the shape of an answer, so nobody re-checks it. When no seam reported a window, the
    snapshot says so out loud rather than rendering an empty section that reads as "all clear".
-2. **Notes are never dropped.** Every store that could not be read becomes a note on the same screen
-   as the work that was found. An unreadable seam is never an exception and never a silent absence,
-   because a run that is missing looks exactly like a run that never happened.
+2. **Notes are never dropped, and a gap is machine-readable.** Every store that could not be read
+   becomes a note on the same screen as the work that was found. An unreadable seam is never an
+   exception and never a silent absence, because a run that is missing looks exactly like a run that
+   never happened. Prose is not something a script can branch on, so the same fact is also carried as
+   an exit status (3) and as `complete: false` in every `--json` envelope.
 3. **An absent count is not a zero.** `sumUsage` reports a field only if some seam reported it.
    Rendering `0 tokens` for a seam that does not report cost is a lie about the seam, not about the
    run.
@@ -71,11 +73,60 @@ dsh-telemetry why <run-id>         which log to open first for that run
 
 --home <path>          home directory the stores live under (default: this user's)
 --items <path>         JSON array of board items to attribute runs to
---limit <n>            transcripts to scan per seam (default: 500)
---since <iso>          drop runs whose last activity is older than this
+--limit <n>            runs to read per seam, most recent first (default: 500)
+--since <iso>          only runs with activity at or after this time
 --now <iso>            reference time for ages, so output is reproducible
 --json                 machine-readable output
 ```
+
+Both bounds are pushed into the readers rather than applied to the answer: `--since` skips a
+transcript whose modification time is older than the cutoff without opening it, and reaches the
+opencode seam as a `where` clause. A bound on output wearing the costume of a bound on work is worth
+nothing on the box this is meant to be run on. When `--limit` is what decides which runs you see,
+the scan keeps the *newest* ones — an alphabetical truncation answers "what is running" with
+whichever sessions happen to sort first, which for a fleet is the ones that finished weeks ago.
+
+### Exit status
+
+This command is going to be run from scripts and from cron, so the statuses are disjoint and each
+one is a different thing to do about it:
+
+| status | meaning |
+| --- | --- |
+| 0 | the picture is complete |
+| 1 | `dsh-telemetry` itself failed |
+| 2 | the command line was wrong |
+| 3 | the picture is incomplete: a store could not be read, or a scan hit `--limit` |
+| 4 | nothing matched, on a scan that could see everything |
+
+3 is the one that matters. The answer printed above it is real but partial, and a caller that treats
+it as complete concludes the board is quiet when in fact the scan could not see. 3 outranks 4 for the
+same reason: "I did not find it" and "I could not see everywhere" are different answers, and when
+both are true the second is the one to act on.
+
+A store that is simply not on this box is *not* status 3. A machine that does not run Codex has no
+Codex store, and saying so is a complete answer — if that were a gap, every laptop in the fleet would
+report a permanent fault.
+
+### What leaves the machine
+
+`--json` output is piped into other tools, pasted into issues and read by the board projection, so
+it is a published surface rather than a debug dump. Both `status --json` and `runs --json` return an
+envelope that states its own completeness:
+
+```json
+{ "generatedAt": "...", "complete": false, "runs": [], "notes": ["claude: 900 transcript(s) match — only the 500 most recent were read"] }
+```
+
+Every published field is listed by hand in `public.ts`. `JSON.stringify(record)` publishes whatever
+the record happens to carry, which means the next field added to `RunRecord` would be published the
+moment it exists, by nobody's decision. The standing example is `origin`, the transcript a run was
+read out of: a path naming a person's home directory and every repository they work on. It is
+excluded from both envelopes and from every note, and it leaves through exactly one command —
+`why`, which an operator runs on the box the file is on, and whose entire job is to hand it back.
+
+For the same reason a run record carries no title and no `cwd`. Both used to: a Claude or Codex
+title was the first 120 characters of the operator's first message.
 
 Board items come from a JSON file rather than a fetch. The fetch belongs to `@rickylabs/board`
 (E6 · #36); wiring it in here would give the status command a GitHub token dependency, and the day
@@ -127,6 +178,9 @@ four layers failed. The ordering is the point — the first pointer is the one t
 ```
 ses-stuck (claude, unknown) — look here, in this order:
 
+  the run's own transcript
+    ~/.claude/projects/<slug>/ses-stuck.jsonl
+
   dispatcher capacity decisions
     the dispatcher's own log on the orchestrator host
     grep: no host with free capacity|operator timeout|deferring
@@ -141,13 +195,13 @@ that worked.
 
 ## Tests
 
-116 tests, no mocked seams: the sink tests write to real temp directories, the opencode tests build
+199 tests, no mocked seams: the sink tests write to real temp directories, the opencode tests build
 a real SQLite database, and the CLI tests run `main()` against a seeded home and read what an
 operator would see.
 
-The suite was checked by mutation rather than by coverage. Twenty-four defects — each one a
+The suite was checked by mutation rather than by coverage. Thirty-five defects — each one a
 behaviour a test claims to guard — were reintroduced into pristine source one at a time, rebuilt,
-and run. All twenty-four were caught, most by the test written for them:
+and run. All thirty-five were caught, most by the test written for them:
 
 | mutation | reintroduced defect | tests failed |
 | --- | --- | --- |
@@ -175,6 +229,17 @@ and run. All twenty-four were caught, most by the test written for them:
 | `cli-limit` | accept `--limit 1.5` as `1` | 1 |
 | `cli-items-note` | show an empty board instead of saying why | 1 |
 | `diagnostics-dispatch` | stop blaming the dispatcher first | 1 |
+| `since-after-read` | filter `--since` after reading, so the bound is on output not work | 1 |
+| `truncate-oldest` | keep the oldest transcripts when `--limit` has to choose | 1 |
+| `absent-is-a-gap` | report a vendor this box does not run as a hole in the scan | 9 |
+| `unreadable-is-not` | report a store that will not open as an ordinary empty result | 2 |
+| `opencode-unbounded` | let `--limit` mean nothing on the opencode seam | 4 |
+| `since-interpolated` | build the cutoff into the SQL text instead of binding it | 2 |
+| `miss-is-failure` | exit 1 for a run that is not there, the same status as a crash | 1 |
+| `loose-time-flag` | accept an unparseable `--since` and compare it as a string | 1 |
+| `runs-bare-array` | emit `runs --json` as a bare array, dropping every note | 3 |
+| `incomplete-exits-ok` | exit 0 from a status whose scan could not see everything | 2 |
+| `publish-origin` | publish the transcript path on every projected run | 5 |
 
 Two of these were real defects found while writing the tests, not planted afterwards: a parent cycle
 with no member outside it produced no root, so those runs disappeared from the snapshot entirely
