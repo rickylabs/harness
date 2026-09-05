@@ -40,6 +40,7 @@ interface GhItem {
   milestone?: { title: string } | null;
   isDraft?: boolean;
   mergedAt?: string | null;
+  stateReason?: string | null;
   body?: string;
 }
 
@@ -152,6 +153,25 @@ function parseItems(json: string, kind: ItemKind): readonly SourceIssue[] {
   return raw.map((item) => normalise(item as GhItem, kind));
 }
 
+/**
+ * GitHub's `stateReason` for an issue, narrowed to the two endings the taxonomy cares about.
+ *
+ * Anything else — including an open issue, which reports no reason at all — becomes `null` rather
+ * than being folded into `"not-planned"`. The difference matters: `not-planned` is a statement that
+ * the work will not happen, and `closed-without-status` stays silent on it, so guessing it for an
+ * unrecognised value would silence the rule for exactly the rows nobody has classified.
+ */
+function closureReason(raw: string | null | undefined): "completed" | "not-planned" | null {
+  switch ((raw ?? "").toUpperCase()) {
+    case "COMPLETED":
+      return "completed";
+    case "NOT_PLANNED":
+      return "not-planned";
+    default:
+      return null;
+  }
+}
+
 function normalise(raw: GhItem, kind: ItemKind): SourceIssue {
   const base = {
     number: raw.number,
@@ -165,7 +185,7 @@ function normalise(raw: GhItem, kind: ItemKind): SourceIssue {
     updatedAt: raw.updatedAt,
     kind,
   };
-  if (kind !== "pull-request") return base;
+  if (kind !== "pull-request") return { ...base, closedBecause: closureReason(raw.stateReason) };
   return {
     ...base,
     draft: raw.isDraft === true,
@@ -200,11 +220,16 @@ export async function fetchItems(
   limit = 500,
   runner: GhRunner = gh,
 ): Promise<FetchResult> {
-  const issueFields = "number,title,state,url,createdAt,updatedAt,labels,assignees,milestone";
+  // `stateReason` on issues only. It is how "closed as completed" is told apart from "closed as
+  // not-planned", which the taxonomy gives opposite labels — shipped, or no status label at all —
+  // and `gh pr list` does not offer the field at all.
+  const issueFields =
+    "number,title,state,url,createdAt,updatedAt,labels,assignees,milestone,stateReason";
+  const commonFields = "number,title,state,url,createdAt,updatedAt,labels,assignees,milestone";
   // `body` on pull requests only. Closing keywords live in a PR description and nowhere else, and
   // bodies dominate the payload size — asking for them on issues too would roughly double the
   // transfer of every projection to fetch text no rule reads.
-  const prFields = `${issueFields},isDraft,mergedAt,body`;
+  const prFields = `${commonFields},isDraft,mergedAt,body`;
 
   const [issuesJson, prsJson] = await Promise.all([
     runner(["issue", "list", "--repo", repo, "--state", "all", "--limit", String(limit), "--json", issueFields]),

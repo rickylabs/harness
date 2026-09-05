@@ -153,7 +153,58 @@ describe("fetchItems", () => {
       createdAt: "2026-09-05T00:00:00Z",
       updatedAt: "2026-09-05T00:00:00Z",
       kind: "issue",
+      // Present and null on an open issue, the same way `merged` is present and false on an open
+      // pull request: the field says what the source reported, and the source reported nothing.
+      closedBecause: null,
     });
+  });
+
+  it("reads why an issue closed, and refuses to guess when it cannot tell", async () => {
+    // `completed` and `not-planned` are the two endings the taxonomy gives opposite shapes —
+    // `status:shipped`, or no status label at all — so folding an unrecognised value into either
+    // one silences `closed-without-status` for exactly the rows nobody has classified.
+    const { items } = await fetchItems(
+      "o/r",
+      500,
+      runnerFor(
+        [
+          ghIssue({ number: 1, state: "CLOSED", stateReason: "COMPLETED" }),
+          ghIssue({ number: 2, state: "CLOSED", stateReason: "NOT_PLANNED" }),
+          ghIssue({ number: 3, state: "CLOSED", stateReason: null }),
+          ghIssue({ number: 4, state: "CLOSED", stateReason: "REOPENED_SOMEDAY_MAYBE" }),
+          ghIssue({ number: 5, state: "CLOSED" }),
+        ],
+        [],
+      ),
+    );
+    assert.deepEqual(
+      items.map((i) => i.closedBecause),
+      ["completed", "not-planned", null, null, null],
+    );
+  });
+
+  it("does not put a closure reason on pull requests, which report none", async () => {
+    // `gh pr list` does not offer `stateReason` at all. A field that is always null would read as
+    // "GitHub said this did not complete", which for a merged pull request is the opposite of true.
+    const { items } = await fetchItems(
+      "o/r",
+      500,
+      runnerFor([], [ghIssue({ number: 1, state: "CLOSED", mergedAt: "2026-09-01T12:00:00Z" })]),
+    );
+    assert.ok(!("closedBecause" in (items[0] ?? {})));
+  });
+
+  it("asks for stateReason on issues and not on pull requests", async () => {
+    const fields = new Map<string, string>();
+    await fetchItems("o/r", 500, async (args) => {
+      fields.set(String(args[0]), String(args[args.indexOf("--json") + 1]));
+      return "[]";
+    });
+    assert.match(fields.get("issue") ?? "", /stateReason/);
+    assert.ok(!(fields.get("pr") ?? "").includes("stateReason"), "gh pr list rejects the field");
+    // And the split did not cost the pull request side anything it already had.
+    assert.match(fields.get("pr") ?? "", /mergedAt/);
+    assert.match(fields.get("pr") ?? "", /body/);
   });
 
   it("reads merged from mergedAt, which is the only place it exists", async () => {

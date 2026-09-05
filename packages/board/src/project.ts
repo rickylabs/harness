@@ -15,7 +15,7 @@
 import { closingKeywordTargets } from "./closing.js";
 import { DEFAULT_LIFECYCLE, phaseOf, statusLabelsOf, unknownStatusLabels } from "./lifecycle.js";
 import type { Lifecycle } from "./lifecycle.js";
-import { labelValue, labelValues } from "./model.js";
+import { labelValue, labelValues, sourceSaysDelivered } from "./model.js";
 import { compareStrings } from "./order.js";
 import type {
   Anomaly,
@@ -179,6 +179,27 @@ function anomaliesFor(
       kind: "no-status",
       item: n,
       detail: "open item has no status label, so it appears in no column",
+    });
+  }
+
+  // The same hole on the other side of the close. `no-status` above asks for `state === "open"`,
+  // which meant work that *finished* without a label was reported by nothing at all: on the board
+  // this rule was written against, fourteen merged pull requests sat in no column and `check`
+  // exited 0. The board's whole claim is that it shows what shipped, so shipped work it cannot see
+  // is the most expensive thing it can be wrong about, and it stayed wrong quietly.
+  //
+  // Only the two endings that assert completion, and both are closable for good: label it once and
+  // the row never returns. Abandonment — a pull request closed unmerged, an issue closed as
+  // not-planned — is *prescribed* to carry no status label, so it stays unreported here for the
+  // reason spelled out at `closed-unmerged` below: a rule that fires on the correct outcome grows
+  // by one every time someone does the right thing, and a check that cannot reach zero is a check
+  // nobody runs.
+  if (statuses.length === 0 && sourceSaysDelivered(item.source)) {
+    const how = item.source.kind === "pull-request" ? "merged" : "closed as completed";
+    found.push({
+      kind: "closed-without-status",
+      item: n,
+      detail: `${how}, but carries no status label; delivered work the board cannot see`,
     });
   }
 

@@ -94,8 +94,35 @@ describe("renderColumns", () => {
   it("omits empty columns but never omits unphased work", () => {
     const text = renderColumns(snapshotOf([issue({ number: 1, labels: [] })]));
     assert.ok(!text.includes("## plan"), "empty column should be omitted");
-    assert.match(text, /no status label \(1\)/);
-    assert.match(text, /The board cannot see them/);
+    assert.match(text, /in no column \(1\)/);
+    assert.match(text, /Real work the board cannot see/);
+  });
+
+  it("separates work the board lost from work that was correctly dropped", () => {
+    // One heading used to cover both, reading "the board cannot see them" over rows where
+    // nothing was wrong. That is how fourteen merged pull requests hid in plain sight: the
+    // section was mostly noise, so it was read as entirely noise.
+    const text = renderColumns(
+      snapshotOf([
+        issue({ number: 1, kind: "pull-request", state: "closed", merged: true, labels: [] }),
+        issue({ number: 2, kind: "pull-request", state: "closed", merged: false, labels: [] }),
+      ]),
+    );
+    assert.match(text, /## in no column \(1\)/);
+    assert.match(text, /## closed without shipping \(1\)/);
+    // The merged one is the one that needs a label; the abandoned one needs nothing.
+    const lost = text.slice(text.indexOf("## in no column"), text.indexOf("## closed without"));
+    assert.match(lost, /PR1 /);
+    assert.ok(!lost.includes("PR2 "), "an abandoned pull request is not lost work");
+  });
+
+  it("files an open untriaged item as lost, not as dropped", () => {
+    // The first draft of the split tested `sourceSaysDelivered` alone, which put every open,
+    // unlabelled issue under "closed without shipping — nothing to do". The largest group on a
+    // young board, filed under the heading that says to ignore it.
+    const text = renderColumns(snapshotOf([issue({ number: 3, labels: [] })]));
+    assert.match(text, /## in no column \(1\)/);
+    assert.ok(!text.includes("closed without shipping"), "an open item has not closed");
   });
 
   it("lists an item under the column its label names", () => {

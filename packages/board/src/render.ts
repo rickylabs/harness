@@ -7,6 +7,7 @@
  */
 
 import type { Hierarchy, MilestoneNode, Progress } from "./hierarchy.js";
+import { sourceSaysDelivered } from "./model.js";
 import type { BoardItem, BoardSnapshot, Completeness } from "./model.js";
 import { compareStrings } from "./order.js";
 
@@ -86,10 +87,30 @@ export function renderColumns(snapshot: BoardSnapshot): string {
     lines.push("");
   }
 
-  if (snapshot.unphased.length > 0) {
-    lines.push(`## no status label (${snapshot.unphased.length})`);
-    lines.push("  These are in no column. The board cannot see them.");
-    for (const item of snapshot.unphased) lines.push(`  ${label(item)}`);
+  // Two very different things end up unphased, and one blanket caption used to call both of them
+  // lost. Work that was abandoned is *supposed* to sit here with no label; work that was delivered
+  // and never labelled is a hole in the board. Printing them under one heading that reads "the
+  // board cannot see them" trains the reader to skim the whole section, which is how the fourteen
+  // merged pull requests in it went unnoticed.
+  // An unphased item is only *correct* when it was closed without shipping. Open work still needs
+  // triage, and delivered work still needs its label — different repairs, but both are the board
+  // failing to show something real, so they share a heading.
+  const isDropped = (i: BoardItem): boolean =>
+    i.source.state === "closed" && !sourceSaysDelivered(i.source);
+  const invisible = snapshot.unphased.filter((i) => !isDropped(i));
+  const dropped = snapshot.unphased.filter(isDropped);
+
+  if (invisible.length > 0) {
+    lines.push(`## in no column (${invisible.length})`);
+    lines.push("  Real work the board cannot see: open and untriaged, or delivered and unlabelled.");
+    for (const item of invisible) lines.push(`  ${label(item)}`);
+    lines.push("");
+  }
+
+  if (dropped.length > 0) {
+    lines.push(`## closed without shipping (${dropped.length})`);
+    lines.push("  No status label is the correct shape for these. Nothing to do.");
+    for (const item of dropped) lines.push(`  ${label(item)}`);
     lines.push("");
   }
 
