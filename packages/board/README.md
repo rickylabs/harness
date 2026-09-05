@@ -30,7 +30,7 @@ says; nothing is repaired, reordered into plausibility, or hidden.
 ## Anomalies are the point, not an error path
 
 A board that renders cleanly by ignoring what it cannot explain is worse than no board. `check`
-reports six kinds of contradiction:
+reports every contradiction it can name, in `AnomalyKind` order:
 
 | kind | meaning |
 |---|---|
@@ -40,9 +40,22 @@ reports six kinds of contradiction:
 | `epic-not-found` | an `epic:` label no epic issue claims |
 | `closed-but-unshipped` | closed on GitHub, still sitting in a live column |
 | `shipped-but-open` | in the terminal column, still open |
+| `closed-unmerged` | a pull request that claims delivery and never landed |
+| `duplicate-epic-slug` | two epic issues answer to one slug, so "which epic" has no answer |
+| `epic-milestone-conflict` | a task filed under a different milestone from its own epic |
+| `epic-closed-by-child` | an umbrella closed while its children are still open |
+| `closing-keyword-targets-epic` | an open PR whose keyword will close an umbrella on merge |
+| `duplicate-label` | two labels of one family, so reading that family is a coin toss |
+| `incomplete-fetch` | the fetch was capped; this board is a prefix of the real one |
+
+This table used to open with "six kinds" and list six, while the type had carried eleven for some
+time — a generated view of a hand-counted list, which is the same class of drift the last two rows
+exist to catch. There is no count in the sentence any more.
 
 The first run against this repository reported 87 items with no status label at all, which is an
-accurate measurement of a real problem rather than a defect in the projection.
+accurate measurement of a real problem rather than a defect in the projection. The two epic rows
+come from a later one: PR #105 implemented one task of six, its closing keyword named the *epic*,
+and for two hours the board reported six unstarted children as delivered work.
 
 ## The lifecycle is configuration
 

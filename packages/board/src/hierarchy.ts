@@ -17,7 +17,10 @@
 import type { BoardItem, BoardSnapshot } from "./model.js";
 import { isAbandoned, isDeliveryUnknown, isShipped } from "./model.js";
 import { compareNullableStrings, compareStrings } from "./order.js";
-import { slugOfEpicTitle } from "./project.js";
+// `epicSlugOf` moved to `project.ts`, where it is defined once. The projector has to answer "which
+// epic is this?" before this module ever runs, and two definitions of it would be two answers —
+// the pair that disagreed would draw a tree under one slug and report an anomaly against another.
+import { epicSlugOf } from "./project.js";
 
 /**
  * Aggregate progress over a set of items.
@@ -156,11 +159,6 @@ function sumProgress(parts: readonly Progress[]): Progress {
     }),
     ZERO,
   );
-}
-
-/** The slug an epic issue answers to: its explicit `epic:` label, else one derived from its title. */
-export function epicSlugOf(item: BoardItem): string | null {
-  return item.epic ?? slugOfEpicTitle(item.source.title);
 }
 
 /**

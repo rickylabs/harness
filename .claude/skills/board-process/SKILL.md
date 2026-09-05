@@ -52,6 +52,7 @@ reasoning goes in a comment on the item, not in the label.
 - `type:` — `feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`, `umbrella`, `sub-pr`. Every open issue and PR carries exactly one.
 - `priority:` — `p0`, `p1`, `p2`, `p3`. `p0` is a release blocker.
 - `area:` — `board`, `contracts`, `coordinator`, `dsh-app`, `forge`, `governance`, `llm-local`, `netscript-bridge`, `provider-acp`, `provider-claude`, `provider-codex`, `provider-opencode`, `routing`, `telemetry`. Derived from this repository's packages; additive.
+- `topic:` — `docs`, `internals`, `fixes`, `features`. Which lane owns the item.
 - `epic:` — `e9`, `e8`, `e7`, `e6`, `e5`, `e4`, `e3`, `e2`, `e1`, `e0`. Groups everything under one program epic.
 - `eval:` — `skip`, `third-opinion`. Evaluator routing, as data on the issue rather than prose in a brief.
 - flags — `rfc`, `breaking`. Cross-cutting; not a namespace.
@@ -81,6 +82,13 @@ and nobody has to sweep the board by hand. Use `Part of #<n>` for a slice that a
 without finishing it. A merged PR with no closing keyword leaves a finished change and an open
 item asserting the opposite — which is exactly the drift this taxonomy exists to prevent.
 
+**Aim it at the sub-issue you implemented, never at the umbrella.** An umbrella is a container:
+it closes when its last child does, and never because one of them did. GitHub does not know the
+difference and will honour whatever number you wrote, so a keyword pointing at an epic closes it
+over its open children and every board projection after that reports unstarted work as delivered.
+The epic number is the one you have in context while working a sub-task, which is exactly why
+this is easy to get wrong. `Closes #<task>`, `Part of #<epic>` — both lines, every time.
+
 ## PR body
 
 ```markdown
@@ -90,7 +98,8 @@ item asserting the opposite — which is exactly the drift this taxonomy exists 
 
 ## Scope
 
-Closes #<issue>          <!-- or: Part of #<umbrella> -->
+Closes #<task>           <!-- the issue this PR finishes -->
+Part of #<umbrella>      <!-- the epic it sits under; never Closes -->
 
 ## Validation
 

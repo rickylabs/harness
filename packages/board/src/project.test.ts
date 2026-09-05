@@ -454,3 +454,158 @@ describe("projectBoard, on how much of the board it actually saw", () => {
     assert.equal(snapshot.anomalies[0]?.kind, "incomplete-fetch");
   });
 });
+
+/**
+ * The shape of a real incident, kept as a test because that is the case the check got wrong.
+ *
+ * PR #105 implemented E9.1 (#83) and its body's closing keyword named #39, the E9 *epic*. GitHub
+ * honoured it. Six children were open, four unstarted, and the board reported the epic as done.
+ */
+const E9_EPIC = issue({
+  number: 39,
+  title: 'E9 — Telemetry: the "status ?" killer',
+  state: "closed",
+  labels: ["epic", "epic:e9", "status:impl"],
+});
+const E9_CHILDREN = [83, 84, 85, 86, 87, 88].map((number) =>
+  issue({ number, labels: ["epic:e9", "status:triage"] }),
+);
+
+describe("epic-closed-by-child", () => {
+  it("fires when an umbrella is closed with children still open", () => {
+    const snapshot = project([E9_EPIC, ...E9_CHILDREN]);
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "epic-closed-by-child");
+    assert.ok(anomaly, "expected an epic-closed-by-child anomaly");
+    assert.equal(anomaly?.item, 39);
+    assert.match(anomaly?.detail ?? "", /6 open children/);
+  });
+
+  it("names the open children, so the reader can tell which side is stale", () => {
+    const snapshot = project([E9_EPIC, ...E9_CHILDREN]);
+    const detail = snapshot.anomalies.find((a) => a.kind === "epic-closed-by-child")?.detail ?? "";
+    for (const number of [83, 84, 85, 86, 87, 88]) assert.match(detail, new RegExp(`#${number}\\b`));
+  });
+
+  it("prescribes reopening, not relabelling", () => {
+    const snapshot = project([E9_EPIC, ...E9_CHILDREN]);
+    const detail = snapshot.anomalies.find((a) => a.kind === "epic-closed-by-child")?.detail ?? "";
+    assert.match(detail, /reopen it, do not relabel it/);
+  });
+
+  it("suppresses closed-but-unshipped on the same item", () => {
+    // Both would otherwise fire — the epic is closed and sits in a non-terminal column. Offering
+    // two contradictory repairs means the reader takes the cheap one, and the cheap one moves an
+    // epic with unstarted children into a terminal column.
+    const snapshot = project([E9_EPIC, ...E9_CHILDREN]);
+    assert.deepEqual(
+      snapshot.anomalies.filter((a) => a.item === 39).map((a) => a.kind),
+      ["epic-closed-by-child"],
+    );
+  });
+
+  it("still fires when the epic sits in a terminal column, where nothing else would", () => {
+    // The worst version: the board asserts delivery, every other check agrees, and only the
+    // children know otherwise.
+    const shipped = { ...E9_EPIC, labels: ["epic", "epic:e9", "status:shipped"] };
+    const snapshot = project([shipped, ...E9_CHILDREN]);
+    assert.deepEqual(
+      snapshot.anomalies.filter((a) => a.item === 39).map((a) => a.kind),
+      ["epic-closed-by-child"],
+    );
+  });
+
+  it("does not fire when every child is closed", () => {
+    const closed = E9_CHILDREN.map((c) => ({
+      ...c,
+      state: "closed" as const,
+      labels: ["epic:e9", "status:shipped"],
+    }));
+    const snapshot = project([{ ...E9_EPIC, labels: ["epic", "epic:e9", "status:shipped"] }, ...closed]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "epic-closed-by-child"));
+  });
+
+  it("does not fire for an open umbrella", () => {
+    const snapshot = project([{ ...E9_EPIC, state: "open" as const }, ...E9_CHILDREN]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "epic-closed-by-child"));
+  });
+
+  it("ignores an open pull request under the epic", () => {
+    // A PR in flight has its own ending — merge it or close it. Reopening the epic is not the
+    // repair, so it must not be the report either.
+    const pr = issue({
+      number: 111,
+      kind: "pull-request",
+      merged: false,
+      labels: ["epic:e9", "status:impl-eval"],
+    });
+    const closedChildren = E9_CHILDREN.map((c) => ({ ...c, state: "closed" as const, labels: ["epic:e9", "status:shipped"] }));
+    const snapshot = project([{ ...E9_EPIC, labels: ["epic", "epic:e9", "status:shipped"] }, ...closedChildren, pr]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "epic-closed-by-child"));
+  });
+
+  it("does not count an epic as its own child", () => {
+    // The epic carries `epic:e9` to declare its slug. Read naively that makes it a child of
+    // itself, and a closed epic would hold itself open forever.
+    const snapshot = project([{ ...E9_EPIC, state: "open" as const }]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "epic-closed-by-child"));
+    const closedAlone = project([E9_EPIC]);
+    assert.ok(!closedAlone.anomalies.some((a) => a.kind === "epic-closed-by-child"));
+  });
+
+  it("caps the listed children and says how many it withheld", () => {
+    const many = Array.from({ length: 13 }, (_, i) =>
+      issue({ number: 200 + i, labels: ["epic:e9", "status:triage"] }),
+    );
+    const snapshot = project([E9_EPIC, ...many]);
+    const detail = snapshot.anomalies.find((a) => a.kind === "epic-closed-by-child")?.detail ?? "";
+    assert.match(detail, /13 open children/);
+    assert.match(detail, /\+3 more/);
+  });
+});
+
+describe("closing-keyword-targets-epic", () => {
+  const OPEN_EPIC = issue({ number: 39, title: "E9 — Telemetry", labels: ["epic", "epic:e9"] });
+
+  const pr = (body: string, over: Partial<SourceIssue> = {}) =>
+    issue({ number: 105, kind: "pull-request", body, labels: ["epic:e9"], ...over });
+
+  it("catches the keyword before the merge that would honour it", () => {
+    const snapshot = project([OPEN_EPIC, pr("## Scope\n\nCloses #39\n")]);
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "closing-keyword-targets-epic");
+    assert.ok(anomaly, "expected a closing-keyword-targets-epic anomaly");
+    assert.equal(anomaly?.item, 105);
+    assert.match(anomaly?.detail ?? "", /Part of #39/);
+  });
+
+  it("accepts a keyword aimed at an ordinary task", () => {
+    const task = issue({ number: 83, labels: ["epic:e9", "status:impl"] });
+    const snapshot = project([OPEN_EPIC, task, pr("Closes #83\nPart of #39\n")]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "closing-keyword-targets-epic"));
+  });
+
+  it("does not fire on a merged pull request", () => {
+    // #105's body still says what it said. Reporting merged PRs would put a permanent row in the
+    // check for every historical mistake, and a check that cannot reach zero is one nobody runs.
+    const merged = pr("Closes #39\n", { state: "closed", merged: true, labels: ["epic:e9", "status:shipped"] });
+    const snapshot = project([OPEN_EPIC, merged]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "closing-keyword-targets-epic"));
+  });
+
+  it("does not fire when the target is not on this board", () => {
+    const snapshot = project([pr("Closes #999\n")]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "closing-keyword-targets-epic"));
+  });
+
+  it("says nothing about a pull request with no body", () => {
+    const snapshot = project([OPEN_EPIC, issue({ number: 106, kind: "pull-request", labels: [] })]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "closing-keyword-targets-epic"));
+  });
+
+  it("reports once per targeted epic, not once per mention", () => {
+    const snapshot = project([OPEN_EPIC, pr("Closes #39\n\nAlso closes #39.\n")]);
+    assert.equal(
+      snapshot.anomalies.filter((a) => a.kind === "closing-keyword-targets-epic").length,
+      1,
+    );
+  });
+});

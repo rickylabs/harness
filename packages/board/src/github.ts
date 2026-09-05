@@ -40,6 +40,7 @@ interface GhItem {
   milestone?: { title: string } | null;
   isDraft?: boolean;
   mergedAt?: string | null;
+  body?: string;
 }
 
 const MAX_BUFFER = 32 * 1024 * 1024;
@@ -171,6 +172,10 @@ function normalise(raw: GhItem, kind: ItemKind): SourceIssue {
     // A closed-unmerged PR is not a shipped one, and conflating the two is how a board reports
     // work as landed that was actually abandoned.
     merged: typeof raw.mergedAt === "string" && raw.mergedAt !== "",
+    // Spread conditionally rather than assigned: under `exactOptionalPropertyTypes` an explicit
+    // `body: undefined` is a different type from an absent `body`, and only the second one means
+    // "GitHub told us nothing" — which is what a payload without the field actually says.
+    ...(typeof raw.body === "string" ? { body: raw.body } : {}),
   };
 }
 
@@ -196,7 +201,10 @@ export async function fetchItems(
   runner: GhRunner = gh,
 ): Promise<FetchResult> {
   const issueFields = "number,title,state,url,createdAt,updatedAt,labels,assignees,milestone";
-  const prFields = `${issueFields},isDraft,mergedAt`;
+  // `body` on pull requests only. Closing keywords live in a PR description and nowhere else, and
+  // bodies dominate the payload size — asking for them on issues too would roughly double the
+  // transfer of every projection to fetch text no rule reads.
+  const prFields = `${issueFields},isDraft,mergedAt,body`;
 
   const [issuesJson, prsJson] = await Promise.all([
     runner(["issue", "list", "--repo", repo, "--state", "all", "--limit", String(limit), "--json", issueFields]),
