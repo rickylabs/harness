@@ -2,37 +2,36 @@
 
 # rickylabs/harness
 
-`[################----]` **134/163 done · 3 running · 15 queued · 11 abandoned**
+`[################----]` **137/165 done · 4 running · 13 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T02:14:50Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T02:32:09Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (3)
+## Moving now (4)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
+| [#176 E2.5 — claim the ctx.llm seam in the app shell](https://github.com/rickylabs/harness/issues/176) | `plan` | `e2` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
 
-## Anomalies (2)
+## Anomalies (3)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#59** — closed on GitHub but sits in triage; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
 - **#174** — is in milestone (none) but its epic #34 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#175** — is in milestone (none) but its epic #34 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#176** — is in milestone (none) but its epic #32 is in M1 — dsh coordinator foundation; the epic appears under both
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 104/124 done · 3 running · 15 queued · 2 abandoned
+`[##########--]` 106/124 done · 3 running · 13 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -40,7 +39,7 @@ Something could be acting on these right now.
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[###########-]` 15/16 done · 1 queued | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[#########---]` 6/8 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[######------]` 4/8 done · 4 queued | `triage` |
-| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[########----]` 6/9 done · 3 queued | `triage` |
+| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 8/9 done · 1 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 17/20 done · 1 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[############]` 21/21 done | `shipped` |
@@ -49,18 +48,19 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 30/39 done · 9 abandoned
+`[#########---]` 31/41 done · 1 running · 9 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[############]` 1/1 done | `impl` |
-| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[############]` 1/1 done | `triage` |
+| [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[------------]` 0/1 done · 1 running | `triage` |
+| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[############]` 2/2 done | `triage` |
 | _(no epic)_ | `[#########---]` 28/37 done · 9 abandoned | — |
 
 ## Waiting to start
 
 <details>
-<summary>15 filed, nothing started</summary>
+<summary>13 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -71,8 +71,6 @@ Something could be acting on these right now.
 | [#53 E3.3 — provider-codex against the running app-server daemon](https://github.com/rickylabs/harness/issues/53) | `triage` | `e3` |
 | [#54 E3.4 — provider-acp: agy on dsh's in-tree ACP driver](https://github.com/rickylabs/harness/issues/54) | `triage` | `e3` |
 | [#55 E3.5 — provider-opencode on @opencode-ai/sdk/v2](https://github.com/rickylabs/harness/issues/55) | `triage` | `e3` |
-| [#57 E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters](https://github.com/rickylabs/harness/issues/57) | `triage` | `e4` |
-| [#59 E4.3 — Capability probes instead of committed constants](https://github.com/rickylabs/harness/issues/59) | `triage` | `e4` |
 | [#63 E5.2 — Port the Orchid subscription-quota governor](https://github.com/rickylabs/harness/issues/63) | `triage` | `e5` |
 | [#64 E5.3 — Metered-spend regime](https://github.com/rickylabs/harness/issues/64) | `triage` | `e5` |
 | [#65 E5.4 — Local-capacity regime: the third regime, which has no owner today](https://github.com/rickylabs/harness/issues/65) | `triage` | `e5` |
@@ -88,9 +86,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  134/163 done · 3 running · 15 queued · 11 abandoned
+# rickylabs/harness  [################----]  137/165 done · 4 running · 13 queued · 11 abandoned
 
-## M1 — dsh coordinator foundation  [################----]  104/124 done · 3 running · 15 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [#################---]  106/124 done · 3 running · 13 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 14/14 done
@@ -151,10 +149,10 @@ Something could be acting on these right now.
     shipped              PR172 feat(subagents): single-writer session leases, keyed on our run id (p1)
 
   E4 — Model gateway and routing matrix #34  [triage]
-    [##########------] 6/9 done · 3 queued
-    triage               #57 E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters
+    [##############--] 8/9 done · 1 queued
+    shipped              #57 E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters
     shipped              #58 E4.2 — routing: tiers, the family rule, and fallback chains
-    triage               #59 E4.3 — Capability probes instead of committed constants
+    shipped              #59 E4.3 — Capability probes instead of committed constants
     shipped              #60 E4.4 — The local capability matrix, as data
     shipped              #61 E4.5 — Model-id validation at the dispatch boundary
     shipped              PR130 feat(routing): the delegation matrix as data, with the family rule enforced structurally
@@ -246,15 +244,20 @@ Something could be acting on these right now.
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
 
-## (no milestone)  [###############-----]  30/39 done · 9 abandoned
+## (no milestone)  [###############-----]  31/41 done · 1 running · 9 abandoned
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [################] 1/1 done
     shipped              PR97 docs(root): state the four ratified decisions from #30 in README/AGENTS
 
+  E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]  (epic is in M1 — dsh coordinator foundation)
+    [----------------] 0/1 done · 1 running
+    plan                 #176 E2.5 — claim the ctx.llm seam in the app shell (p2)
+
   E4 — Model gateway and routing matrix #34  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [################] 1/1 done
+    [################] 2/2 done
     shipped              PR174 feat(routing): availability is probed, and a constant may never permit (p1)
+    shipped              PR175 feat(llm-local): resolve endpoints and read readiness (#57) (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
