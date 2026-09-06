@@ -323,3 +323,12 @@ requested, which is what launch identity being data rather than prose is for.
 is the better default here — a review that silently runs a tier low is worse than one that does not
 start, because it produces a verdict that looks routed and is not. Until then, every dispatch's
 effort must be verified after launch rather than assumed, and this run does that.
+
+## 2026-09-06 — seat 3 routing authority correction
+
+The sibling netscript checkout carried retired named routes. A Sol xhigh review was started
+from that stale source, then interrupted when the current remote lane-policy identified the
+2026-09-04 workload matrix as authority. No review from that route is accepted as a gate.
+An attempted fable-5 plan evaluator returned model unavailable and no verdict. Current
+matrix must be rendered from a fresh read-only source pin before further delegation.
+Source: https://github.com/rickylabs/netscript/blob/main/.llm/harness/workflow/lane-policy.md

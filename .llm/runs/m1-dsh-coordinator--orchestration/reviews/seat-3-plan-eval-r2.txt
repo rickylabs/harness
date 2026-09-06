@@ -1,0 +1,21 @@
+## Verdict: **PASS**
+
+All seven prior findings are addressed. I verified each disposition against the repository at `db3f91c`; no new blocking defect.
+
+### What I checked
+
+| # | Disposition | Verification |
+|---|---|---|
+| 1–2 | Matrix pinned at netscript `8ba53bc5`, rendered via `deno task agentic:matrix --tier straightforward --json`; `provider_default` current, `max` retired | Pin + render + both evaluator routes now recorded in `worklog.md:412-414` and the plan. The stale-route hazard in `drift.md:327-334` (which cited only unpinned `main`) is closed. GLM 5.3 Flash via OpenCode Go, not the OpenRouter relay — internally consistent across plan, worklog and drift |
+| 3 | Relay brief = code diff only, never `.llm/` evidence or credentials; GLM verdict is a gate report with cited checks, never reasoning-trace evidence | Both halves of the `drift.md` 2026-09-04 standing condition are now stated in the gate rather than inferred |
+| 4 | Citation corrected to `request.ts:131` | Confirmed — `return parts.join("")` is line 131, inside `flattenText` (declared 120) |
+| 5 | "Nested tool result" restated as text content inside tool-result blocks; `adapter.ts`/`stream.ts` fenced out of the mutation surface | Matches `request.ts:128-129` ("not a shape dsh produces"). Upstream evidence is now named and, correctly, declared non-normative: installed `dsh-llm-pi-ai` and `dsh-llm-deepseek` also join with `""`, which does not make `""` a vendor requirement |
+| 6 | Correct three-dot diff has no `BOARD.md` change | Confirmed: `git diff origin/main...origin/docs/189-public-repo-truth-and-polish` is 10 docs files, 97+/47-, no `BOARD.md`. My prior finding compared tips, not the merge base — it was wrong, and the ordering hazard it predicted does not exist. The added pre-merge head/CI/mergeability re-check is still the right gate |
+| 7 | Exact membership-set comparison (original ∪ the 13), state verification (12 closed/shipped, #181 open/triage), labels unchanged, defined stop/undo with attribution constraint | Supersedes the burn-down projection ambiguity — a set comparison distinguishes a correct repair from a double-count where `109/124` cannot. Target list still matches `BOARD.md:26-38` exactly. The de-milestoning provenance question is answered honestly rather than papered over: current GitHub truth governs, with no claim to ratify a new burn-down policy |
+
+Scope holds: read-only evaluation, bounded milestone repair on 13 child memberships, no epic identity or label mutation, no package publication, no fleet activation, E6/E9 explicitly draft.
+
+### Two advisory notes, neither blocking
+
+- **No saved render artifact.** The pin SHA and CLI invocation are recorded, which is what finding 1 asked for, but the rendered matrix output itself isn't in `receipts/`. Dropping the JSON there would make the routing cell independently checkable by the next seat without re-fetching.
+- **Diff-only brief is scoped to the relay.** Disposition 3 binds the data rule to the OpenRouter fallback and distinguishes OpenCode Go as a different transport. That's defensible — the owner's training-data toggle is the transport-specific hazard — but applying the same diff-only discipline to the OpenCode Go primary costs nothing and removes the need to re-argue the distinction later. Exposure on PR 190 is nil regardless; it's docs-only.

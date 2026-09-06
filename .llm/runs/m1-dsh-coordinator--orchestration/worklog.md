@@ -399,3 +399,35 @@ streaming, no reasoning trace", never as reasoning evidence for a gate.
   `#30` is retracted — see the drift entry. No epic in M1 is owned by another thread, and no scope
   is being held open for one. `#30` still carries the superseded split in a comment; treat this
   file and the drift log as the current record until that comment is corrected on the board.
+
+## 2026-09-06 — seat 3 continuation
+
+Read both owner briefs in order, doctrine and board-process skill. Confirmed the live board
+check exits 1 with 13 milestone conflicts. PR 190 remains at implementation evaluation,
+head faebcda72b2418456e9365825020f459356b3b28, with successful CI. Retrieved issue 30 and
+its amendments: four ratified decisions; Atelier products own separate repositories.
+Draft bounded repair/continuation plan in seat-3-plan.md. Routing correction is recorded in
+drift.md; no stale-route review will certify a gate. No board or product change yet.
+
+Current routing authority pinned at netscript 8ba53bc50ca02aab29e99ba5362728839b8f1713;
+rendered straightforward matrix with its official CLI. Plan evaluator: Opus 5 medium via native
+claude-opus-5. Implementation evaluator: GLM 5.3 Flash provider-default via OpenCode Go.
+Draft durable-loop-plan.md records source evidence, six slices, crash/reconnect gates and
+production-only owner forks. Prior autocorner repository retrieval returned not found.
+
+## 2026-09-06 — continuation gates and delivery
+
+- Opus 5 medium plan review initially FAIL_FIX; all dispositions recorded, second evaluation PASS.
+- Corrected exactly 13 child milestone memberships: 134 → 147 total live members, 12 closed and
+  one open added; labels/states unchanged. Live board check returned 0 with no anomalies.
+- GLM 5.3 Flash implementation evaluation of PR 190 returned FAIL_FIX for two private-repository
+  claims inside scope. Corrected CONTRIBUTING.md and provider-claude README in 585ea00, then
+  independent re-evaluation PASS and CI passed in 43 seconds. Squash merged PR 190; issue 189
+  and PR 190 moved to shipped with readback. No workflow files changed.
+- gh pr edit tried to read org/project fields outside repo token scope; used REST issue labels
+  with exact-one-status readback instead. A commit initially refused for missing git identity;
+  configured this checkout with the authenticated user's public GitHub noreply identity.
+- Durable-loop draft posted on issues 36 and 39 and tracked as issue 191, status plan. It names
+  six slices, crash and reconnect gates, and production-only owner forks. No runtime activated.
+- Issue 192 owns sibling-block correctness, with Opus plan evaluation PASS after making empty
+  siblings explicit. Sol medium implements the bounded slice; remaining 182 findings stay open.
