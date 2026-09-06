@@ -110,7 +110,11 @@ importers:
 
   packages/provider-acp: {}
 
-  packages/provider-claude: {}
+  packages/provider-claude:
+    dependencies:
+      '@rickylabs/subagents':
+        specifier: workspace:*
+        version: link:../subagents
 
   packages/provider-codex: {}
 
