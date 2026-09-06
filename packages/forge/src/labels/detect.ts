@@ -34,6 +34,30 @@ export interface DetectionResult {
   readonly notes: readonly string[];
 }
 
+/**
+ * What a whole detection pass found, split by whether a checkout alone could have found it.
+ *
+ * Three of the four families read the working tree: `area:` from the workspace manifest, `gate:`
+ * from the workflows, lane ids from `.llm/runs`. Give two people the same commit and they get the
+ * same answer. The fourth asks GitHub which issues are open, and two people on the same commit get
+ * different answers depending on the hour, the token, and whether either of them had a network.
+ *
+ * That difference is invisible in `labels` — an `epic:` spec looks like every other spec — and it
+ * has to be visible somewhere, because it decides what may reach a *committed* artifact. A plan may
+ * propose a live epic; a generated file that CI then checks for drift may not, or the check goes red
+ * on a workstation and green on the runner for the same commit, which is a gate people learn to
+ * route around. See {@link https://github.com/rickylabs/harness/issues/187}.
+ */
+export interface RepoDetection extends DetectionResult {
+  /**
+   * The subset of {@link DetectionResult.labels} that only a live query could have produced —
+   * identity-comparable against it, not name-comparable. A repository that has already ejected
+   * `epic:e6` has a spec of that name from the labels file too, and that one is committed and must
+   * survive; only these instances are the ones a reproducible render drops.
+   */
+  readonly live: readonly LabelSpec[];
+}
+
 const exists = async (path: string): Promise<boolean> => {
   try {
     await stat(path);
@@ -320,7 +344,7 @@ export interface DetectOptions {
 
 const ALL_FAMILIES = ["area", "gate", "lane", "epic"] as const;
 
-export async function detectRepoLabels(options: DetectOptions): Promise<DetectionResult> {
+export async function detectRepoLabels(options: DetectOptions): Promise<RepoDetection> {
   const wanted = new Set<string>(options.families ?? ALL_FAMILIES);
   const prefix = options.lanePrefix ?? detectLanePrefix(options.existing);
 
@@ -328,10 +352,17 @@ export async function detectRepoLabels(options: DetectOptions): Promise<Detectio
   if (wanted.has("area")) parts.push(await detectAreas(options.repoRoot));
   if (wanted.has("gate")) parts.push(await detectGates(options.repoRoot));
   if (wanted.has("lane")) parts.push(await detectLanes(options.repoRoot, prefix));
-  if (wanted.has("epic")) parts.push(await detectEpics(options.repo, options.transport));
+
+  // Kept separate rather than filtered back out of the flattened list afterwards: the split is a
+  // fact about where the specs came from, and re-deriving it from the specs themselves would mean
+  // guessing at the family — which is exactly the guess that cannot be made, because the labels
+  // file produces `epic:` rows of its own that are committed and must not be dropped.
+  const epics = wanted.has("epic") ? await detectEpics(options.repo, options.transport) : null;
+  if (epics) parts.push(epics);
 
   return {
     labels: parts.flatMap((p) => p.labels),
+    live: epics?.labels ?? [],
     evidence: parts.flatMap((p) => p.evidence),
     notes: [
       `lane prefix in use: ${prefix}:`,

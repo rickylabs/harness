@@ -16,7 +16,7 @@ import { after, before, beforeEach, describe, it } from "node:test";
 
 import { main } from "./cli.js";
 import { LABELS_FILE } from "./labels/file.js";
-import type { ExistingLabel, TransportProbe } from "./labels/github.js";
+import type { ExistingLabel, IssueRef, TransportProbe } from "./labels/github.js";
 
 interface Recorder {
   readonly mutations: { kind: "create" | "update"; name: string }[];
@@ -24,7 +24,10 @@ interface Recorder {
   probe(): Promise<TransportProbe>;
 }
 
-function recorder(initial: readonly ExistingLabel[] = []): Recorder {
+function recorder(
+  initial: readonly ExistingLabel[] = [],
+  issues: readonly IssueRef[] = [],
+): Recorder {
   const rec: Recorder = {
     mutations: [],
     labels: [...initial],
@@ -41,7 +44,7 @@ function recorder(initial: readonly ExistingLabel[] = []): Recorder {
         rec.labels = rec.labels.map((l) => (l.name === name ? label : l));
       },
       listMilestones: async () => [],
-      searchIssues: async () => [],
+      searchIssues: async () => issues,
     }),
   };
   return rec;
@@ -118,6 +121,63 @@ describe("--dry-run", () => {
     assert.ok(rec.mutations.length > 0, "the real run sent nothing, so the dry-run control proves nothing");
     assert.equal(await exists(join(root, LABELS_FILE)), true);
     assert.equal(code, 0);
+  });
+});
+
+describe("the rendered skill is a function of the checkout", () => {
+  // Detection is on for every test here — `base()` disables it, and with it the whole subject.
+  const detecting = (): readonly string[] => ["--repo", "owner/repo", "--cwd", root, "--json"];
+  const skillPath = (): string => join(root, ".claude", "skills", "board-process", "SKILL.md");
+
+  /** One open umbrella issue, of the shape that produced the real defect: no `E<n>` identifier. */
+  const openUmbrella: readonly IssueRef[] = [
+    { number: 182, title: "Consolidation pass", labels: ["type:umbrella"] },
+  ];
+
+  it("writes the same bytes whether or not the search found a live epic", async () => {
+    // The property, not an example of it: two runs on the same checkout differing only in what
+    // GitHub said. CI has no transport and finds nothing; a workstation with an authenticated `gh`
+    // finds whatever is open that hour. If those two renders differ, `check:skill` is red locally
+    // for a reason no diff can fix and unable to fail in the one place it runs. See #187.
+    const blind = recorder();
+    assert.equal(await run(["skill", "install", ...detecting()], blind), 0);
+    const withoutEpics = await readFile(skillPath(), "utf8");
+
+    await rm(join(root, ".claude"), { recursive: true, force: true });
+
+    const seeing = recorder([], openUmbrella);
+    assert.equal(await run(["skill", "install", ...detecting()], seeing), 0);
+    const withEpics = await readFile(skillPath(), "utf8");
+
+    assert.equal(withEpics, withoutEpics);
+  });
+
+  it("still teaches an epic the same init just ejected, because eject runs first", async () => {
+    // The other half. Dropping live epics from the render is only correct if the operator's loop
+    // still converges: `init` ejects the detected epic into `.github/labels.yml` and the skill picks
+    // it up from the file on the same run. Without that, the next `skill install` reports drift
+    // immediately and the fix has traded one unfixable gate for another.
+    const rec = recorder([], openUmbrella);
+    assert.equal(await run(["init", ...detecting()], rec), 0);
+
+    const ejected = await readFile(join(root, LABELS_FILE), "utf8");
+    assert.match(ejected, /epic:consolidation-pass/);
+    assert.match(await readFile(skillPath(), "utf8"), /consolidation-pass/);
+  });
+
+  it("reports no drift on a second install, which is what CI checks", async () => {
+    const rec = recorder([], openUmbrella);
+    await run(["init", ...detecting()], rec);
+    const afterInit = await readFile(skillPath(), "utf8");
+
+    // A different hour, a different set of open issues, the same committed file.
+    const later = recorder([], [
+      ...openUmbrella,
+      { number: 199, title: "Something opened since", labels: ["epic"] },
+    ]);
+    assert.equal(await run(["skill", "install", ...detecting()], later), 0);
+
+    assert.equal(await readFile(skillPath(), "utf8"), afterInit);
   });
 });
 
