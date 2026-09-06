@@ -4,7 +4,7 @@
 
 `[###############-----]` **159/203 done · 18 running · 14 queued · 11 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-06T22:41:33Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T22:44:22Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (18)
 
@@ -17,7 +17,7 @@ Something could be acting on these right now.
 | [#204 fix(board): connect the task projection to stable dsh surfaces](https://github.com/rickylabs/harness/issues/204) | `impl-eval` | `e6` |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
 | [#208 the `ctx.subagents` telemetry guarantee is prose, not construction: the only way to register a provider bypasses it](https://github.com/rickylabs/harness/issues/208) | `plan` | `e3` |
-| [#209 E10 — Relaunch the public README and docs from the rewritten product](https://github.com/rickylabs/harness/issues/209) | `plan` | `e10` |
+| [#209 E10 — Relaunch the public README and docs from the rewritten product](https://github.com/rickylabs/harness/issues/209) | `impl` | `e10` |
 | [#203 the coordinator's citation gate checks that a citation exists, not that it refers to anything](https://github.com/rickylabs/harness/issues/203) | `research` | `e6` |
 | [#206 two public types are named `Liveness`, and #198 is planning a third vocabulary for the same concept](https://github.com/rickylabs/harness/issues/206) | `plan` | `e3` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
@@ -29,7 +29,17 @@ Something could be acting on these right now.
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
-| [PR214 fix(board): publish the hierarchy through dsh projections and todos](https://github.com/rickylabs/harness/pull/214) | `impl-eval` | `e6` |
+| [PR214 fix(board): publish the hierarchy through dsh projections and todos](https://github.com/rickylabs/harness/pull/214) | `ready-merge` | `e6` |
+
+## Anomalies (3)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#204** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+- **#68** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+- **#214** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 ## Epics
 
@@ -131,7 +141,7 @@ Something could be acting on these right now.
     shipped              PR155 docs: the five community files, and templates that know what a label does (p2)
     shipped              PR156 chore(docs): check links, forms, and the generated skill in CI (p2)
     shipped              PR188 fix(forge): render the skill from the checkout, not from live issues (p1)
-    plan                 #209 E10 — Relaunch the public README and docs from the rewritten product (p1)
+    impl                 #209 E10 — Relaunch the public README and docs from the rewritten product (p1)
     shipped              PR211 docs: establish the public relaunch lane and E3 triage
     triage               #212 the tutorial's pasted output is stale at step 4, and no gate in the repo can catch that (p2)
     shipped              PR213 docs(tutorial): step 4 inserts five profile rows, not four
@@ -228,7 +238,7 @@ Something could be acting on these right now.
     research             #203 the coordinator's citation gate checks that a citation exists, not that it refers to anything (p2)
     impl-eval            #204 fix(board): connect the task projection to stable dsh surfaces (p1)
     shipped              PR207 docs: record MVP verdicts and executable CLI preview
-    impl-eval            PR214 fix(board): publish the hierarchy through dsh projections and todos
+    ready-merge          PR214 fix(board): publish the hierarchy through dsh projections and todos
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [shipped]
     [################] 21/21 done
