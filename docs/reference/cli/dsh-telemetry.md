@@ -38,6 +38,7 @@ options:
   --home <path>          home directory the stores live under (default: this user's)
   --items <path>         board items to join runs to: "dsh-board snapshot" output, or a
                          JSON array of {number, title, epic, milestone, phase} refs
+  --observations <path>  governance observation JSON for tree/status
   --limit <n>            runs to read per seam, most recent first (default: 500)
   --since <iso>          only runs with activity at or after this time
   --now <iso>            reference time for ages, so output is reproducible
@@ -45,6 +46,12 @@ options:
   --run <id>             with "record": the run one event belongs to
   --kind <name>          with "record": write that one event instead of reading stdin
   --help
+
+"--observations" is optional and applies to "tree" and "status". It reads one typed governance
+snapshot: account subscription windows, provider spend, host RAM/VRAM, and item-scoped refused
+admissions. The file is read again on every invocation. No flag is explicit UNKNOWN/UNAVAILABLE;
+a requested unreadable or invalid file is incomplete (exit 3). Stale values stay visible as STALE,
+and missing measurements stay unknown rather than becoming zero.
 
 "record" reads JSONL on stdin — one {"runId","kind","at","detail"} object per line, "at"
 and "detail" optional. A bad line loses that line and is named; an empty batch is not an

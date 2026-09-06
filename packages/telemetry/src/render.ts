@@ -20,6 +20,8 @@ import {
   type QuotaReading,
   type TelemetrySnapshot,
 } from "./model.js";
+import { humanBytes } from "./observability.js";
+import type { GovernanceView } from "./observations.js";
 import { flatten } from "./snapshot.js";
 import type { ActivityTree, EpicNode, ItemNode, LinkedRef, MilestoneNode } from "./tree.js";
 
@@ -69,6 +71,81 @@ export function renderQuota(reading: QuotaReading, now: string): string {
   const credits =
     reading.creditBalance === null ? "" : `, credits ${reading.creditBalance}`;
   return `  ${pad(reading.source, 9)} ${used} used${window}${resets}${plan}${credits}  (read ${humanAge(reading.observedAt, now)} ago)`;
+}
+
+function readingAge(observedAt: string | null, now: string): string {
+  return observedAt === null ? "never read" : `read ${humanAge(observedAt, now)} ago`;
+}
+
+function headroom(used: number | null, total: number | null): string {
+  if (used === null || total === null) return "used/total/headroom unknown";
+  return `${humanBytes(used)} used / ${humanBytes(total)} total · ${humanBytes(total - used)} headroom`;
+}
+
+/** Render the same leading governance block for both status and tree. */
+export function renderGovernance(
+  governance: GovernanceView,
+  legacyQuota: readonly QuotaReading[],
+  now: string,
+): string[] {
+  if (governance.availability === "unavailable") {
+    const lines = [`governance: UNKNOWN/UNAVAILABLE — ${governance.unavailableReason}`];
+    if (legacyQuota.length > 0) {
+      lines.push("  transcript quota (account unknown):");
+      for (const reading of legacyQuota) lines.push(`  ${renderQuota(reading, now)}`);
+    }
+    return lines;
+  }
+
+  const marker = governance.availability === "stale" ? "STALE" : "FRESH";
+  const lines = [
+    `governance: ${marker} · ${governance.provenance} · observed ${humanAge(governance.observedAt, now)} ago`,
+  ];
+  for (const regime of governance.state.regimes) {
+    lines.push(`  ${regime.regime} [${regime.state}]${regime.note === null ? "" : ` — ${regime.note}`}`);
+    if (regime.regime === "subscription") {
+      if (regime.accounts.length === 0) lines.push("    no accounts reported");
+      for (const account of regime.accounts) {
+        lines.push(
+          `    ${account.seam}/${account.account} [${account.state}] · ${readingAge(account.observedAt, now)}`,
+        );
+        if (account.windows.length === 0) lines.push("      no windows reported");
+        for (const window of account.windows) {
+          const reset = window.resetsAt === null ? "reset unknown" : `resets in ${humanAge(now, window.resetsAt)}`;
+          lines.push(
+            `      ${window.binding ? "binding " : ""}${window.label}: ${window.usedPercent}% used · ${reset}`,
+          );
+        }
+      }
+    } else if (regime.regime === "metered") {
+      if (regime.providers.length === 0) lines.push("    no providers reported");
+      for (const provider of regime.providers) {
+        const ceiling = provider.ceilingUsd === null ? "ceiling unknown" : `$${provider.ceilingUsd.toFixed(2)} ceiling`;
+        lines.push(
+          `    ${provider.provider}: $${provider.spentUsd.toFixed(2)} spent / ${ceiling} (${provider.windowLabel}) · ${readingAge(provider.observedAt, now)}`,
+        );
+      }
+    } else {
+      if (regime.hosts.length === 0) lines.push("    no hosts reported");
+      for (const host of regime.hosts) {
+        lines.push(`    ${host.host} · ${readingAge(host.observedAt, now)}`);
+        lines.push(`      VRAM ${headroom(host.vramUsedBytes, host.vramTotalBytes)}`);
+        lines.push(`      RAM  ${headroom(host.ramUsedBytes, host.ramTotalBytes)}`);
+      }
+    }
+  }
+
+  for (const admission of governance.admissions) {
+    const freshness = admission.availability === "stale" ? "STALE " : "";
+    lines.push(
+      `  #${admission.item.number} ${freshness}${admission.state} [${admission.regime}] — ${admission.outcome.reason}: ${admission.outcome.detail} · ${admission.provenance} · read ${humanAge(admission.observedAt, now)} ago`,
+    );
+  }
+  for (const approval of governance.state.pending) {
+    lines.push(`  approval ${approval.id}${approval.item === null ? "" : ` for #${approval.item}`} — ${approval.summary}`);
+  }
+  for (const message of governance.state.notes) lines.push(`  note: ${message}`);
+  return lines;
 }
 
 /** Distinct notes shown before the block is summarised, and runs shown in a flat list. */
@@ -151,14 +228,7 @@ export function renderSnapshot(snapshot: TelemetrySnapshot, now: string = snapsh
   lines.push(`board activity as of ${snapshot.generatedAt}`);
 
   lines.push("");
-  if (snapshot.quota.length === 0) {
-    // Said out loud. A missing governance section reads as "all clear", which is the one thing it
-    // does not mean: no seam reported a window, so capacity is simply unknown.
-    lines.push("governance: no seam reported a quota window in this scan");
-  } else {
-    lines.push("governance:");
-    for (const reading of snapshot.quota) lines.push(renderQuota(reading, now));
-  }
+  lines.push(...renderGovernance(snapshot.governance, snapshot.quota, now));
 
   const totals = [...snapshot.epics.flatMap((e) => e.runs), ...snapshot.unattributed];
   const all = flatten(totals);
@@ -299,12 +369,7 @@ export function renderTree(tree: ActivityTree, now: string = tree.now): string {
   const lines: string[] = [`board activity as of ${tree.generatedAt}`];
 
   lines.push("");
-  if (tree.quota.length === 0) {
-    lines.push("governance: no seam reported a quota window in this scan");
-  } else {
-    lines.push("governance:");
-    for (const reading of tree.quota) lines.push(renderQuota(reading, now));
-  }
+  lines.push(...renderGovernance(tree.governance, tree.quota, now));
 
   const nodes = tree.milestones.flatMap((m) => m.epics.flatMap((e) => [...e.tasks, ...e.pulls]));
   const runs = flatten([...nodes.flatMap((n) => n.runs), ...tree.unattributed]);

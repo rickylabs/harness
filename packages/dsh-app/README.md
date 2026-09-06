@@ -240,6 +240,11 @@ child-run tree, and appends two adjacent whole-value events: `todo/write`, follo
 `harness/board-write`. GitHub remains authoritative. A model may replace its local todo list during
 a turn, and the next refresh replaces that list from the next board snapshot.
 
+`BoardRefreshInput.observations` optionally carries telemetry's typed governance view from the same
+caller-owned evidence cut. The strict projection keeps its account windows, provider spend, local
+capacity, and item-scoped refused admissions. Omitting it publishes explicit unavailable governance
+rather than dropping the field or implying that every regime allows dispatch.
+
 Refresh fails before either append when the projection registry or published `todos` projection is
 absent, board-item normalization fails, or the strict public DTO rejects the result. The board
 service itself still loads without either optional dsh capability, so profiles that only use the
@@ -253,8 +258,9 @@ pnpm --filter @rickylabs/dsh-app run smoke:board-projection
 
 It composes the published `SessionStore`, `SessionProjectionRegistry`, `ToolRuntime`, and
 `dsh-tool-todo` plugin with `allowParallelInProgress: true`, loads `harness-board`, refreshes a live
-session twice, checks todo authority and a parent/child run attachment, then verifies projection
-removal on plugin disposal.
+session twice, checks todo authority, a parent/child run attachment, and explicit unavailable
+governance, then verifies projection removal on plugin disposal. The focused composition test also
+passes a fresh synthetic refusal through `refresh` and checks the published admission fields.
 
 ## Tests
 

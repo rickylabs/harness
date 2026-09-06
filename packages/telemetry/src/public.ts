@@ -20,6 +20,12 @@
  * entire job is to hand back the path to open.
  */
 
+import type {
+  GovernanceState,
+  PendingApproval,
+  RegimeStatus,
+} from "@rickylabs/harness-contracts";
+
 import type { Liveness } from "./liveness.js";
 import type {
   AttributedRun,
@@ -35,6 +41,7 @@ import type {
   TelemetrySnapshot,
 } from "./model.js";
 import type { ActivityTree, EpicNode, ItemNode, LinkedRef, MilestoneNode } from "./tree.js";
+import type { AdmissionView, GovernanceView, ObservationAvailability } from "./observations.js";
 
 /** A run as published: `RunRecord` minus `origin`. */
 export interface PublicRun {
@@ -92,7 +99,149 @@ export interface PublicSnapshot {
   readonly epics: readonly PublicEpic[];
   readonly unattributed: readonly PublicAttributedRun[];
   readonly quota: readonly QuotaReading[];
+  readonly governance: PublicGovernance;
   readonly notes: readonly string[];
+}
+
+export interface PublicAdmission {
+  readonly item: { readonly number: number };
+  readonly regime: AdmissionView["regime"];
+  readonly state: AdmissionView["state"];
+  readonly availability: AdmissionView["availability"];
+  readonly observedAt: string;
+  readonly validUntil: string;
+  readonly provenance: string;
+  readonly outcome: {
+    readonly accepted: false;
+    readonly reason: string;
+    readonly detail: string;
+    readonly approval?: PendingApproval;
+  };
+}
+
+export interface PublicGovernance {
+  readonly availability: ObservationAvailability;
+  readonly observedAt: string | null;
+  readonly validUntil: string | null;
+  readonly provenance: string | null;
+  readonly state: GovernanceState | null;
+  readonly admissions: readonly PublicAdmission[];
+  readonly unavailableReason: string | null;
+}
+
+function publicApproval(approval: PendingApproval): PendingApproval {
+  return {
+    id: approval.id,
+    kind: approval.kind,
+    summary: approval.summary,
+    item: approval.item,
+    runId: approval.runId,
+    regime: approval.regime,
+    requestedAt: approval.requestedAt,
+    expiresAt: approval.expiresAt,
+  };
+}
+
+function publicRegime(value: RegimeStatus): RegimeStatus {
+  if (value.regime === "subscription") {
+    return {
+      regime: value.regime,
+      state: value.state,
+      accounts: value.accounts.map((account) => ({
+        seam: account.seam,
+        account: account.account,
+        state: account.state,
+        windows: account.windows.map((window) => ({
+          label: window.label,
+          windowMinutes: window.windowMinutes,
+          usedPercent: window.usedPercent,
+          resetsAt: window.resetsAt,
+          binding: window.binding,
+        })),
+        observedAt: account.observedAt,
+      })),
+      note: value.note,
+    };
+  }
+  if (value.regime === "metered") {
+    return {
+      regime: value.regime,
+      state: value.state,
+      providers: value.providers.map((provider) => ({
+        provider: provider.provider,
+        spentUsd: provider.spentUsd,
+        ceilingUsd: provider.ceilingUsd,
+        windowLabel: provider.windowLabel,
+        observedAt: provider.observedAt,
+      })),
+      note: value.note,
+    };
+  }
+  return {
+    regime: value.regime,
+    state: value.state,
+    hosts: value.hosts.map((host) => ({
+      host: host.host,
+      vramUsedBytes: host.vramUsedBytes,
+      vramTotalBytes: host.vramTotalBytes,
+      ramUsedBytes: host.ramUsedBytes,
+      ramTotalBytes: host.ramTotalBytes,
+      observedAt: host.observedAt,
+    })),
+    note: value.note,
+  };
+}
+
+function publicState(value: GovernanceState): GovernanceState {
+  return {
+    generatedAt: value.generatedAt,
+    regimes: value.regimes.map(publicRegime),
+    pending: value.pending.map(publicApproval),
+    notes: [...value.notes],
+  };
+}
+
+function publicAdmission(value: AdmissionView): PublicAdmission {
+  const approval = value.outcome.approval;
+  return {
+    item: { number: value.item.number },
+    regime: value.regime,
+    state: value.state,
+    availability: value.availability,
+    observedAt: value.observedAt,
+    validUntil: value.validUntil,
+    provenance: value.provenance,
+    outcome: {
+      accepted: false,
+      reason: value.outcome.reason,
+      detail: value.outcome.detail,
+      ...(approval === undefined ? {} : { approval: publicApproval(approval) }),
+    },
+  };
+}
+
+/** Project governance field by field; file paths and loader details have no route into this shape. */
+export function publicGovernance(value: GovernanceView): PublicGovernance {
+  if (value.availability === "unavailable") {
+    return {
+      availability: value.availability,
+      observedAt: null,
+      validUntil: null,
+      provenance: null,
+      state: null,
+      admissions: [],
+      unavailableReason: value.unavailableReason,
+    };
+  }
+  return {
+    availability: value.availability,
+    observedAt: value.observedAt,
+    validUntil: value.validUntil,
+    provenance: value.provenance,
+    state: publicState(value.state),
+    admissions: value.admissions.map(publicAdmission),
+    unavailableReason: null,
+  };
 }
 
 /** What `runs --json` returns: the same envelope, flat. */
@@ -140,6 +289,7 @@ export function publicSnapshot(snapshot: TelemetrySnapshot, complete: boolean): 
     epics: snapshot.epics.map(publicEpic),
     unattributed: snapshot.unattributed.map(publicAttributed),
     quota: snapshot.quota,
+    governance: publicGovernance(snapshot.governance),
     notes: snapshot.notes,
   };
 }
@@ -180,6 +330,7 @@ export interface PublicTree {
   readonly milestones: readonly PublicMilestoneNode[];
   readonly unattributed: readonly PublicAttributedRun[];
   readonly quota: readonly QuotaReading[];
+  readonly governance: PublicGovernance;
   readonly notes: readonly string[];
 }
 
@@ -219,6 +370,7 @@ export function publicTree(tree: ActivityTree, complete: boolean): PublicTree {
     milestones: tree.milestones.map(publicMilestoneNode),
     unattributed: tree.unattributed.map(publicAttributed),
     quota: tree.quota,
+    governance: publicGovernance(tree.governance),
     notes: tree.notes,
   };
 }

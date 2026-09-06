@@ -109,6 +109,7 @@ export {
 export {
   humanAge,
   humanTokens,
+  renderGovernance,
   renderItemState,
   renderLiveness,
   renderNotes,
@@ -117,6 +118,22 @@ export {
   renderTree,
   RENDER_CAPS,
 } from "./render.js";
+
+export {
+  parseGovernanceObservation,
+  parseGovernanceText,
+  unavailableGovernance,
+  type AdmissionItemRef,
+  type AdmissionObservation,
+  type AdmissionView,
+  type AvailableGovernanceView,
+  type GovernanceObservation,
+  type GovernanceView,
+  type ObservationAvailability,
+  type ParsedGovernance,
+  type RefusedDispatch,
+  type UnavailableGovernanceView,
+} from "./observations.js";
 
 export {
   generationName,
@@ -161,12 +178,15 @@ export { compareNullableStrings, compareStrings } from "./order.js";
 export {
   publicRun,
   publicRuns,
+  publicGovernance,
   publicSnapshot,
   publicTree,
   PUBLIC_RUN_KEYS,
   type PublicAttributedRun,
+  type PublicAdmission,
   type PublicEpic,
   type PublicEpicNode,
+  type PublicGovernance,
   type PublicItemNode,
   type PublicMilestoneNode,
   type PublicRun,
