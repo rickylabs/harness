@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **157/196 done · 14 running · 13 queued · 11 abandoned · 1 invisible**
+`[###############-----]` **157/197 done · 14 running · 14 queued · 11 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-06T21:57:58Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T22:06:19Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (14)
 
@@ -27,6 +27,14 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
+## Anomalies (1)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`epic-milestone-conflict`**
+
+- **#208** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
+
 ## Epics
 
 ### M1 — dsh coordinator foundation
@@ -48,21 +56,23 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 32/45 done · 1 running · 2 queued · 9 abandoned · 1 invisible
+`[########----]` 32/46 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[####--------]` 2/5 done · 1 running · 2 queued | `impl` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[------------]` 0/1 done · 1 queued | `triage` |
 | _(no epic)_ | `[#########---]` 30/40 done · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>13 filed, nothing started</summary>
+<summary>14 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#202 board and forge disagree on what an epic is, and one of the labels does not exist](https://github.com/rickylabs/harness/issues/202) | `triage` | `e0` |
+| [#208 the `ctx.subagents` telemetry guarantee is prose, not construction: the only way to register a provider bypasses it](https://github.com/rickylabs/harness/issues/208) | `triage` | `e3` |
 | [#206 two public types are named `Liveness`, and #198 is planning a third vocabulary for the same concept](https://github.com/rickylabs/harness/issues/206) | `triage` | `e0` |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#47 E2.2 — Fork deepseek-harness-docker, keeping the upstream remote](https://github.com/rickylabs/harness/issues/47) | `triage` | `e2` |
@@ -84,7 +94,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  157/196 done · 14 running · 13 queued · 11 abandoned · 1 invisible
+# rickylabs/harness  [###############-----]  157/197 done · 14 running · 14 queued · 11 abandoned · 1 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  125/151 done · 13 running · 11 queued · 2 abandoned
 
@@ -269,7 +279,7 @@ Something could be acting on these right now.
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
     research             #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
 
-## (no milestone)  [##############------]  32/45 done · 1 running · 2 queued · 9 abandoned · 1 invisible
+## (no milestone)  [#############-------]  32/46 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [######----------] 2/5 done · 1 running · 2 queued
@@ -278,6 +288,10 @@ Something could be acting on these right now.
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     triage               #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     triage               #206 two public types are named `Liveness`, and #198 is planning a third vocabulary for the same concept (p2)
+
+  E3 — Subagent providers over structured protocols #33  [triage]  (epic is in M1 — dsh coordinator foundation)
+    [----------------] 0/1 done · 1 queued
+    triage               #208 the `ctx.subagents` telemetry guarantee is prose, not construction: the only way to register a provider bypasses it (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
