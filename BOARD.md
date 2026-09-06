@@ -4,7 +4,7 @@
 
 `[###############-----]` **124/158 done · 4 running · 19 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T00:27:56Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T00:29:39Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (4)
 
@@ -16,6 +16,15 @@ Something could be acting on these right now.
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#76 E7.3 — Dispatch selector: provider or divybot, per target](https://github.com/rickylabs/harness/issues/76) | `impl` | `e7` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
+
+## Anomalies (2)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#169** — closed on GitHub but sits in impl; the issue wins, the column is stale
+- **#76** — closed on GitHub but sits in impl; the issue wins, the column is stale
 
 ## Epics
 
