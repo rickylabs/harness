@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **137/165 done · 4 running · 13 queued · 11 abandoned**
+`[################----]` **138/166 done · 4 running · 13 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T02:38:25Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T03:43:57Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (4)
 
@@ -17,15 +17,20 @@ Something could be acting on these right now.
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
 
-## Anomalies (3)
+## Anomalies (5)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#176** — closed on GitHub but sits in plan; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
 - **#174** — is in milestone (none) but its epic #34 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#175** — is in milestone (none) but its epic #34 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#176** — is in milestone (none) but its epic #32 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#177** — is in milestone (none) but its epic #32 is in M1 — dsh coordinator foundation; the epic appears under both
 
 ## Epics
 
@@ -48,12 +53,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 31/41 done · 1 running · 9 abandoned
+`[#########---]` 32/42 done · 1 running · 9 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[############]` 1/1 done | `impl` |
-| [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[------------]` 0/1 done · 1 running | `triage` |
+| [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[######------]` 1/2 done · 1 running | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[############]` 2/2 done | `triage` |
 | _(no epic)_ | `[#########---]` 28/37 done · 9 abandoned | — |
 
@@ -86,7 +91,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  137/165 done · 4 running · 13 queued · 11 abandoned
+# rickylabs/harness  [################----]  138/166 done · 4 running · 13 queued · 11 abandoned
 
 ## M1 — dsh coordinator foundation  [#################---]  106/124 done · 3 running · 13 queued · 2 abandoned
 
@@ -244,15 +249,16 @@ Something could be acting on these right now.
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
 
-## (no milestone)  [###############-----]  31/41 done · 1 running · 9 abandoned
+## (no milestone)  [###############-----]  32/42 done · 1 running · 9 abandoned
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [################] 1/1 done
     shipped              PR97 docs(root): state the four ratified decisions from #30 in README/AGENTS
 
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [----------------] 0/1 done · 1 running
+    [########--------] 1/2 done · 1 running
     plan                 #176 E2.5 — claim the ctx.llm seam in the app shell (p2)
+    shipped              PR177 feat(dsh-app): register the three token-metered backends on ctx.llm (#176)
 
   E4 — Model gateway and routing matrix #34  [triage]  (epic is in M1 — dsh coordinator foundation)
     [################] 2/2 done
