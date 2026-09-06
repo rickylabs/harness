@@ -2,28 +2,23 @@
 
 # rickylabs/harness
 
-`[################----]` **138/166 done · 4 running · 13 queued · 11 abandoned**
+`[################----]` **139/166 done · 3 running · 13 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T03:43:57Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T03:56:58Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (4)
+## Moving now (3)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
-| [#176 E2.5 — claim the ctx.llm seam in the app shell](https://github.com/rickylabs/harness/issues/176) | `plan` | `e2` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
 
-## Anomalies (5)
+## Anomalies (4)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#176** — closed on GitHub but sits in plan; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
@@ -53,12 +48,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 32/42 done · 1 running · 9 abandoned
+`[#########---]` 33/42 done · 9 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[############]` 1/1 done | `impl` |
-| [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[######------]` 1/2 done · 1 running | `triage` |
+| [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[############]` 2/2 done | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[############]` 2/2 done | `triage` |
 | _(no epic)_ | `[#########---]` 28/37 done · 9 abandoned | — |
 
@@ -91,7 +86,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  138/166 done · 4 running · 13 queued · 11 abandoned
+# rickylabs/harness  [################----]  139/166 done · 3 running · 13 queued · 11 abandoned
 
 ## M1 — dsh coordinator foundation  [#################---]  106/124 done · 3 running · 13 queued · 2 abandoned
 
@@ -249,15 +244,15 @@ Something could be acting on these right now.
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
 
-## (no milestone)  [###############-----]  32/42 done · 1 running · 9 abandoned
+## (no milestone)  [###############-----]  33/42 done · 9 abandoned
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [################] 1/1 done
     shipped              PR97 docs(root): state the four ratified decisions from #30 in README/AGENTS
 
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [########--------] 1/2 done · 1 running
-    plan                 #176 E2.5 — claim the ctx.llm seam in the app shell (p2)
+    [################] 2/2 done
+    shipped              #176 E2.5 — claim the ctx.llm seam in the app shell (p2)
     shipped              PR177 feat(dsh-app): register the three token-metered backends on ctx.llm (#176)
 
   E4 — Model gateway and routing matrix #34  [triage]  (epic is in M1 — dsh coordinator foundation)
