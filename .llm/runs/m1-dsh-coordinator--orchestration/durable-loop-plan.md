@@ -118,3 +118,12 @@ transport mismatch is a required spike; a process-spawning reference is not perm
 or restart this host's daemon. The Node/pnpm and service-adapter decisions remain unchanged.
 [observed - netscript .llm/tools/agentic/codex/app-server-message.ts threadStartRequest]
 [observed - harness issue 53 attach-only acceptance]
+
+## E3 critical path — second owner steering
+
+The P slice is now decomposed into #195/#197 → #196/#198 → #199 → #200 → #53 integration.
+See [e3-hardening-plan.md](e3-hardening-plan.md) for ordering, shared brief constraints and the
+new identity/liveness regression contracts. Ownership recovery and liveness are co-designed:
+launcher death cannot reap a still-live thread, and unattributable process matches remain unknown.
+[observed - harness issue 196 comment 5562228621, recency is not identity]
+[observed - harness issue 198 comment 5562278245, process probe matched its own ancestor]

@@ -349,3 +349,9 @@ EIS RFCs/actual composition and Ledgerline's construction patterns. DAG slice C 
 P (#53 Codex port). Explicit integration gap: reference helper spawns a child while #53 requires
 existing-daemon attachment; source inspection is not a live transport proof. Several source
 wrappers are deprecated, so successor parity is also required before implementation.
+
+## 2026-09-06 — readiness correction and E3 observed failures
+
+The owner corrected the decision to leave PR193 draft. Green CI and explicitly deferred
+production forks permit review now. Added observed #196/#198 constraints and ordered the
+six E3 leaves on the #53/live-driver critical path; no historical plan or completed slice reset.

@@ -43,8 +43,8 @@ real allowance/session snapshots in artifacts. gh token is repo-only: PR label e
 attempt org/project reads fail; REST issue-label updates with exact-one-status readback work.
 Do not modify workflows with this token. Never apply harness as a taxonomy label.
 
-Draft PR 193 publishes these continuation artifacts. Keep it draft until the durable-loop
-plan receives its own review; the maintenance-plan PASS does not certify that new design.
+Draft PR 193 publishes these continuation artifacts. It is ready for independent plan review per the owner correction; the maintenance-plan PASS
+does not certify that new design.
 
 ## Owner correction in force
 
@@ -54,3 +54,6 @@ contract on Node/pnpm. Slice C now requires this P slice. Resolve the existing-d
 transport and deprecated wrapper successors first. Structural decisions in issues/PRs carry
 an observed source tag and rationale. Framework docs, EIS RFCs/contracts/plugins and Ledgerline
 construction patterns are read-only sources; their Deno toolchain is not a dependency.
+
+Next priority is e3-hardening-plan.md: #195/#197 research, #196/#198 ownership/liveness planning,
+then #199 waits and #200 supervision. Read the observed #196/#198 comment links before design.

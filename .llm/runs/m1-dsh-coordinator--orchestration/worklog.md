@@ -455,3 +455,13 @@ framework/product reference sections; source revisions and inspected scope are r
 reference-port-addendum.md. Added source-tagged structural decisions and concrete fixtures for
 #53; kept attach-versus-spawn and deprecated-successor parity as integration gates. Updated the
 existing E6/E9 draft and DAG rather than restarting it. No provider stub or sibling source changed.
+
+## 2026-09-06 — second owner steering
+
+Read steer-harness-2.md and both full observation comments on 196/198. PR193 CI was green at
+5e8f40f; owner explicitly requested readiness, so production-only forks no longer keep the
+plan in draft. The next gate is independent review, not another permission request.
+Added e3-hardening-plan.md: 195/197 pre-send checks, 196/198 identity and attributable liveness,
+199 distinct wakeups, 200 supervision. Seat3 owns their coordination; each retains separate
+implementation gates. New fixtures reject recency addressing and supervisor/ancestor false
+liveness. No provider code or host process changed.
