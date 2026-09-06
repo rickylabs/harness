@@ -203,3 +203,11 @@ F2. **First live mutation canary.** Which repository/task is authorized and what
 policy applies? Recommendation: one explicitly opted-in harness task with manual merge.
 Cost if wrong: duplicate agents or unauthorized repository changes. Blocks live activation;
 no existing release or governance owner decision is inferred from this proposal.
+
+## Seat 3 MVP acceptance forks — owner steer 3
+
+F3. **E6.1 acceptance wording.** Issue 68 requires stable dsh session-projection/todo integration; the prior evaluation proposed amending it to separate the pure board and dsh-app adapter (https://github.com/rickylabs/harness/issues/68#issuecomment-5552309136). Options: retain literal acceptance and implement the adapter; or ratify the split wording, still requiring the adapter before calling the integrated MVP complete. Recommendation: retain the existing requirement and implement at the dsh-app boundary without coupling pure board code to dsh. Cost if wrong: adapter redesign. No acceptance amendment is inferred and no issue is closed on a proposed amendment.
+
+F4. **Governance host authority.** Issue 62 requires an ADR choosing SSH executor versus privileged sidecar and enumerating allowed verbs (https://github.com/rickylabs/harness/issues/62). Recommendation: narrow auditable sidecar subject to host feasibility and owner authority approval. Cost if wrong: sidecar deployment and adapter rework. No host access or live local-capacity claim is authorized by telemetry tests. Typed governance display with fake observations can be designed before the decision; live host wiring remains blocked on the ADR.
+
+F1 production storage and F2 live canary remain open. The synthetic CLI preview in `mvp-smoke.md` needs neither decision and does not settle either.
