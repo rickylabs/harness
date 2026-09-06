@@ -52,6 +52,14 @@ export type Effort = (typeof EFFORTS)[number];
 export const MODEL_IDS = {
   codexSol: "gpt-5.6-sol",
   codexLuna: "gpt-5.6-luna",
+  /**
+   * OpenAI's frontier implementation model, and the primary of `complex_implementation`.
+   *
+   * Reachable only from a recent Codex CLI: 0.144.3 refuses it with an HTTP 400 reading "requires
+   * a newer version of Codex", and 0.153.4 accepts it. That is a client-side refusal, not a plan
+   * limit, which is why `model-unavailable` exists as a trigger distinct from `native-quota-limit`.
+   */
+  astra: "gpt-6-astra",
   fable: "fable-5",
   opus: "opus-5",
   sonnet: "sonnet-5",
@@ -128,6 +136,7 @@ export const OPEN_EVALUATOR_MODEL_IDS = [
  */
 const FAMILY_BY_MODEL: ReadonlyMap<string, ModelFamily> = new Map<string, ModelFamily>([
   [MODEL_IDS.codexSol, "openai"],
+  [MODEL_IDS.astra, "openai"],
   [MODEL_IDS.codexLuna, "openai"],
   [MODEL_IDS.fable, "anthropic"],
   [MODEL_IDS.opus, "anthropic"],

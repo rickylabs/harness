@@ -29,7 +29,61 @@ import {
   TIER_LANES,
   lanePolicy,
 } from "./policy.js";
-import type { FallbackTrigger, Lane, Route, RouteStep, Tier } from "./policy.js";
+import type { Certifies, FallbackTrigger, Lane, Route, RouteStep, Tier } from "./policy.js";
+
+/**
+ * The one author family a step certifies, or `null` when it does not name one.
+ *
+ * `"any"` and `"none"` are not families and must not be compared against one: `"any"` certifies
+ * whoever authored, and `"none"` certifies nothing at all.
+ */
+function certifiedFamily(certifies: Certifies | undefined): ModelFamily | null {
+  if (certifies === undefined || certifies === "any" || certifies === "none") return null;
+  return certifies;
+}
+
+/**
+ * Whether a step certifies work authored by its own family.
+ *
+ * Generator is not evaluator, asked of the table rather than only of a pairing. `checkEvaluator`
+ * refuses such a seat at dispatch, but by then the matrix has already promised a reviewer it
+ * cannot supply and the work is done. Exported so `checkPolicy` is a caller rather than the only
+ * place the rule lives — a chain nobody has committed yet can be asked the same question.
+ */
+export function selfCertifies(step: RouteStep): boolean {
+  const certified = certifiedFamily(step.certifies);
+  return certified !== null && familyOf(step.route.model) === certified;
+}
+
+/**
+ * The indexes in `implement` whose author family no step in `review` will certify.
+ *
+ * Every step of an implementation lane needs a reviewer, not just its primary. `tierPlan` resolves
+ * a review lane against `openai` on the stated grounds that every implementation tier is
+ * Codex-authored; that was prose, and prose does not fail a build. Add one cross-family fallback to
+ * an implementation lane and the tier still resolves, still dispatches, and only refuses at
+ * `checkEvaluator` — after the work is done, with no reviewer left to fall back to.
+ *
+ * A step whose model is not pinned is skipped rather than reported: `checkPolicy` already calls that
+ * out as an unpinned model, and an unknown family is not evidence of a missing reviewer.
+ */
+export function unreviewedSteps(
+  implement: readonly RouteStep[],
+  review: readonly RouteStep[],
+): readonly number[] {
+  const unreviewed: number[] = [];
+  for (let index = 0; index < implement.length; index += 1) {
+    const step = implement[index];
+    if (step === undefined) continue;
+    const family = familyOf(step.route.model);
+    if (family === null) continue;
+    const reviewed = review.some(
+      (candidate) => candidate.certifies === "any" || certifiedFamily(candidate.certifies) === family,
+    );
+    if (!reviewed) unreviewed.push(index);
+  }
+  return unreviewed;
+}
 
 /** The lane's ordered chain, or `null` for a lane the matrix does not route. */
 export function laneChain(lane: string): readonly RouteStep[] | null {
@@ -201,7 +255,9 @@ export interface TierPlan {
  *
  * Returns `null` only if the tables disagree, which `checkPolicy` makes a test failure. The
  * review lane is resolved against `openai` because every implementation tier is Codex-authored;
- * that is not an assumption, it is what the four implementation lanes say.
+ * that is not an assumption, it is what the four implementation lanes say — and `checkPolicy` now
+ * holds them to it, step by step, so the day one of them stops being Codex-authored the table
+ * fails rather than this line quietly becoming wrong.
  */
 export function tierPlan(tier: Tier): TierPlan | null {
   const lanes = TIER_LANES[tier];
@@ -287,6 +343,10 @@ export function checkPolicy(): readonly PolicyProblem[] {
         problems.push({ ...at, message: `relay evaluator ${route.model} is not an approved open evaluator` });
       }
 
+      if (selfCertifies(step)) {
+        problems.push({ ...at, message: `${route.model} certifies its own family (${step.certifies})` });
+      }
+
       if (index === 0 && step.when.length > 0) {
         problems.push({ ...at, message: "the first step of a chain must be a primary" });
       }
@@ -343,8 +403,21 @@ export function checkPolicy(): readonly PolicyProblem[] {
   }
 
   for (const tier of Object.keys(TIER_LANES) as readonly Tier[]) {
+    const lanes = TIER_LANES[tier];
     if (tierPlan(tier) === null) {
-      problems.push({ lane: TIER_LANES[tier].implement, message: `tier ${tier} does not resolve` });
+      problems.push({ lane: lanes.implement, message: `tier ${tier} does not resolve` });
+    }
+
+    // Every step of an implementation lane must have a reviewer, not just its primary, so the
+    // table breaks at edit time rather than at `checkEvaluator` after the work is done.
+    const implementChain = laneChain(lanes.implement) ?? [];
+    for (const index of unreviewedSteps(implementChain, laneChain(lanes.review) ?? [])) {
+      const family = familyOf(implementChain[index]?.route.model ?? "");
+      problems.push({
+        lane: lanes.implement,
+        index,
+        message: `no step in ${lanes.review} certifies ${family ?? "unknown"}-authored work`,
+      });
     }
   }
 

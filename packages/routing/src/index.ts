@@ -89,8 +89,10 @@ export {
   resolveEffort,
   resolveFallback,
   resolveRoute,
+  selfCertifies,
   tierPlan,
   toDispatch,
+  unreviewedSteps,
 } from "./resolve.js";
 export type {
   EffortResolution,
