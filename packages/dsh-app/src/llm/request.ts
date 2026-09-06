@@ -116,7 +116,7 @@ type WireMessage =
  */
 const TOOL_ERROR_PREFIX = "[tool error] ";
 
-/** Text of a block list, with reasoning dropped. Returns null when an image is present. */
+/** LF-separated text siblings, with reasoning dropped. Returns null when an image is present. */
 function flattenText(content: readonly ContentBlock[]): string | null {
   const parts: string[] = [];
   for (const block of content) {
@@ -128,7 +128,7 @@ function flattenText(content: readonly ContentBlock[]): string | null {
     // `reasoning` is dropped; `tool-call` and `tool-result` are handled by the caller, which walks
     // the same list. Nesting a tool result inside a tool result is not a shape dsh produces.
   }
-  return parts.join("");
+  return parts.join("\n");
 }
 
 /** The `tool` messages a user turn's tool results become. Null when one carried an image. */
