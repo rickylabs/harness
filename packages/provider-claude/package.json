@@ -17,9 +17,13 @@
   "files": [
     "dist"
   ],
+  "dependencies": {
+    "@rickylabs/subagents": "workspace:*"
+  },
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --emitDeclarationOnly",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "test": "tsc -b && node --test \"dist/**/*.test.js\""
   }
 }
