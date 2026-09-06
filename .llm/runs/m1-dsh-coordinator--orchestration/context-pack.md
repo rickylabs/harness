@@ -57,3 +57,7 @@ construction patterns are read-only sources; their Deno toolchain is not a depen
 
 Next priority is e3-hardening-plan.md: #195/#197 research, #196/#198 ownership/liveness planning,
 then #199 waits and #200 supervision. Read the observed #196/#198 comment links before design.
+
+## Latest checkpoint — owner steer 3
+
+Source audited:66af5123411eda8a9598e3f1bcfcff6a28c8b358. Evaluations complete:68 and87 FAIL_FIX, now impl; E6/E9 remain impl. Next MVP work:204 dsh stable projection adapter;205 governance observation/display (live host authority blocked62). 203 E6 research/M1.196 corrected cwd filtering/explicit reference/worktree lock requirements. E3 durable-loop plan remains accepted, implementation pending. See mvp-smoke.md for runnable partial preview; no-agent synthetic status change verified. Forks F1/F2/F3/F4 in plan.md remain explicit. No production activation performed.

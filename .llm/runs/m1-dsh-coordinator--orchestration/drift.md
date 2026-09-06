@@ -355,3 +355,7 @@ wrappers are deprecated, so successor parity is also required before implementat
 The owner corrected the decision to leave PR193 draft. Green CI and explicitly deferred
 production forks permit review now. Added observed #196/#198 constraints and ordered the
 six E3 leaves on the #53/live-driver critical path; no historical plan or completed slice reset.
+
+### Owner steer 3: MVP completeness differs from child counts
+
+Owner prioritized 68/87 evaluations over E3. Both fail literal acceptance at source66af512 despite passing current tests. Independent receipts are impl-eval-68.md and impl-eval-87.md; fix204/fix205 preserve unmet requirements. No false close and no silent acceptance amendment. The 68 evaluator treated no committed live facts as partially satisfied for87; the dedicated87 evaluator correctly judged the full conjunction unsatisfied because missing producers cannot be live. Dedicated87 verdict governs. Board mutations in this batch directly execute the owner's explicit triage/evaluate/file-fix instructions under the accepted coordination scope.

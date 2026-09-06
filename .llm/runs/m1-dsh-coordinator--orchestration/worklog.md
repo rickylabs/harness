@@ -465,3 +465,9 @@ Added e3-hardening-plan.md: 195/197 pre-send checks, 196/198 identity and attrib
 199 distinct wakeups, 200 supervision. Seat3 owns their coordination; each retains separate
 implementation gates. New fixtures reject recency addressing and supervisor/ancestor false
 liveness. No provider code or host process changed.
+
+### Owner steer 3 — MVP evaluations
+
+Independent GLM5.3Flash sessions evaluated exact source 66af5123411eda8a9598e3f1bcfcff6a28c8b358. Issue 68 FAIL_FIX: stable dsh projection/todo adapter absent (fix204). Issue87 FAIL_FIX: account-aware quota, capacity and admission reasons absent (fix205). Verdicts posted to each issue and parent epic; 68/87 returned to impl, epics remain open. Suites: board230, telemetry342, dsh-app251, contracts121 passing; no live host wiring tested. Synthetic running-to-complete telemetry join and live issue203 projection passed. Forge init dry-run exited0; fresh target install not claimed tested.
+
+203 moved from E0 triage/no milestone into E6 research/M1 and assigned rickylabs. 196 now asserts explicit RunRef, canonical cwd and recorded worktree ownership, including failed cd and same-cwd between-turn recency cases. Board checks before/after: zero anomalies. No production authority, release tag, storage or canary decision inferred.
