@@ -21,7 +21,10 @@
  * ## What "before any spend" means
  *
  * Every refusal below is decidable from two tables and the request itself. Nothing here opens a
- * socket, reads a file, or looks at a quota. A dispatch that fails admission has cost a table walk;
+ * socket, reads a file, or looks at a quota — whether a destination can serve the model *right now*
+ * is `probe.ts`, and admission never consults it. A permitted pairing that is momentarily
+ * unavailable is a scheduling fact, not a routing one, and the two answers must stay separable so a
+ * receipt can say which of them stopped a run. A dispatch that fails admission has cost a table walk;
  * the same dispatch launched has cost a subscription window, or real money on the relay, and has
  * left a run in the record that nobody selected.
  *

@@ -17,6 +17,9 @@
  * - `admit.ts` is the gate a dispatch passes on its way out: it composes `validateDispatch` from
  *   `@rickylabs/subagents` with everything only the matrix can answer, so a wrong model id is
  *   refused for the price of a table walk instead of a subscription window.
+ * - `probe.ts` is the one fact here with an expiry date. Admission asks whether a pairing is
+ *   permitted; availability asks whether it is possible right now, and that can only be answered by
+ *   something that went and looked. A committed constant may refuse and may never permit (#59).
  *
  * ## What this package does not do
  *
@@ -111,3 +114,30 @@ export {
   transportsFor,
 } from "./admit.js";
 export type { Admission, AdmissionContext, AdmissionProblem, AdmissionRefusal } from "./admit.js";
+
+export {
+  AVAILABILITIES,
+  DEFAULT_FRESHNESS,
+  FALLBACK_METADATA_MARKER,
+  PROBE_REFUSALS,
+  SOURCES,
+  availabilityOf,
+  checkObservation,
+  describeAvailability,
+  describeProbeProblem,
+  describeProbeRefusal,
+  describeVerdict,
+  fallbackMetadataModels,
+  isFresh,
+  mayDispatch,
+  readsFallbackMetadata,
+} from "./probe.js";
+export type {
+  Availability,
+  AvailabilityRequest,
+  Observation,
+  ProbeProblem,
+  ProbeRefusal,
+  Source,
+  Verdict,
+} from "./probe.js";

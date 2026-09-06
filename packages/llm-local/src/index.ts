@@ -23,7 +23,8 @@
  *
  * Quota, spend and load are absent for a stronger reason — all three change while you read them, so
  * a committed copy is wrong by the time it ships. This package answers *could this ever work here*.
- * Whether it works right now is a probe.
+ * Whether it works right now is a probe: taking one is #57's, and what its result is worth is
+ * `@rickylabs/routing`'s `probe.ts` (#59).
  */
 
 export const PACKAGE_NAME = "@rickylabs/llm-local" as const;
