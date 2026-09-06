@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **163/206 done · 15 running · 16 queued · 11 abandoned · 1 invisible**
+`[###############-----]` **163/207 done · 15 running · 17 queued · 11 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-06T22:58:31Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T23:05:56Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (15)
 
@@ -28,6 +28,14 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
+## Anomalies (1)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`epic-milestone-conflict`**
+
+- **#218** — is in milestone (none) but its epic #36 is in M1 — dsh coordinator foundation; the epic appears under both
+
 ## Epics
 
 ### M1 — dsh coordinator foundation
@@ -49,23 +57,25 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 32/44 done · 1 running · 1 queued · 9 abandoned · 1 invisible
+`[########----]` 32/45 done · 1 running · 2 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[######------]` 2/4 done · 1 running · 1 queued | `impl` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[------------]` 0/1 done · 1 queued | `impl` |
 | _(no epic)_ | `[#########---]` 30/40 done · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>16 filed, nothing started</summary>
+<summary>17 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#202 board and forge disagree on what an epic is, and one of the labels does not exist](https://github.com/rickylabs/harness/issues/202) | `triage` | `e0` |
 | [#210 `release` is the one lease door that does not check the fence: an evicted holder can delete the live holder's lease](https://github.com/rickylabs/harness/issues/210) | `triage` | `e3` |
 | [#217 the tutorial's `init` writes the scratch repo's taxonomy into your harness clone, clobbering two tracked files](https://github.com/rickylabs/harness/issues/217) | `triage` | `e10` |
+| [#218 `columns` and `status` hide the anomalies that `digest` renders — the two views a human actually runs](https://github.com/rickylabs/harness/issues/218) | `triage` | `e6` |
 | [#212 the tutorial's pasted output is stale at step 4, and no gate in the repo can catch that](https://github.com/rickylabs/harness/issues/212) | `triage` | `e10` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
@@ -88,7 +98,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  163/206 done · 15 running · 16 queued · 11 abandoned · 1 invisible
+# rickylabs/harness  [###############-----]  163/207 done · 15 running · 17 queued · 11 abandoned · 1 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  131/162 done · 14 running · 15 queued · 2 abandoned
 
@@ -284,7 +294,7 @@ Something could be acting on these right now.
     impl                 #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
     shipped              PR216 feat(telemetry): display governance observations beside progress
 
-## (no milestone)  [##############------]  32/44 done · 1 running · 1 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  32/45 done · 1 running · 2 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [########--------] 2/4 done · 1 running · 1 queued
@@ -292,6 +302,10 @@ Something could be acting on these right now.
     impl                 #182 Consolidation pass — the Astra medium review of the shipped ground work (p1)
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     triage               #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
+
+  E6 — Coordinator: workflows, task DAG, board projection #36  [impl]  (epic is in M1 — dsh coordinator foundation)
+    [----------------] 0/1 done · 1 queued
+    triage               #218 `columns` and `status` hide the anomalies that `digest` renders — the two views a human actually runs (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
