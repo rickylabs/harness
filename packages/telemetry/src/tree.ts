@@ -35,6 +35,7 @@ import {
   type LivenessWindows,
 } from "./liveness.js";
 import type { AttributedRun, BoardItemRef, QuotaReading, TelemetrySnapshot } from "./model.js";
+import type { GovernanceView } from "./observations.js";
 import { compareNullableStrings } from "./order.js";
 import { flatten } from "./snapshot.js";
 
@@ -104,6 +105,7 @@ export interface ActivityTree {
   /** Runs that joined to no board item at all: real work the board cannot see. */
   readonly unattributed: readonly AttributedRun[];
   readonly quota: readonly QuotaReading[];
+  readonly governance: GovernanceView;
   readonly notes: readonly string[];
 }
 
@@ -284,6 +286,7 @@ export function buildTree(input: TreeInput): ActivityTree {
     milestones,
     unattributed: orphaned,
     quota: input.snapshot.quota,
+    governance: input.snapshot.governance,
     notes,
   };
 }

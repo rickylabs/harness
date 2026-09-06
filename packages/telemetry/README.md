@@ -73,10 +73,11 @@ transcript-only — those are counted by the vendor, and a launcher is not in a 
 
 ## Three properties the output holds
 
-1. **Governance goes first.** "Why is nothing running" is a status question. The quota line is above
-   the work, not in a footer, and it carries its own age — a stale reading is worse than none,
-   because it is the shape of an answer, so nobody re-checks it. When no seam reported a window, the
-   snapshot says so out loud rather than rendering an empty section that reads as "all clear".
+1. **Governance goes first.** "Why is nothing running" is a status question. Typed account windows,
+   provider spend, local RAM/VRAM capacity, and item-scoped admission refusals appear above the work.
+   Each observation carries its own age and availability: stale values stay visible as stale, null
+   measurements read "unknown / never read", and absent input is explicit rather than looking like
+   "all clear".
 2. **Notes are never dropped, and a gap is machine-readable.** Every store that could not be read
    becomes a note on the same screen as the work that was found. An unreadable seam is never an
    exception and never a silent absence, because a run that is missing looks exactly like a run that
@@ -108,6 +109,7 @@ dsh-telemetry where [options]      where that log is, and the layers below a run
 --home <path>          home directory the stores live under (default: this user's)
 --items <path>         board items to join runs to: "dsh-board snapshot" output, or a
                        JSON array of {number, title, epic, milestone, phase} refs
+--observations <path>  governance observation JSON for tree/status
 --limit <n>            runs to read per seam, most recent first (default: 500)
 --since <iso>          only runs with activity at or after this time
 --now <iso>            reference time for ages, so output is reproducible
@@ -115,6 +117,66 @@ dsh-telemetry where [options]      where that log is, and the layers below a run
 --run <id>             with "record": the run one event belongs to
 --kind <name>          with "record": write that one event instead of reading stdin
 ```
+
+### Synthetic governance fixture
+
+[`testdata/governance/fresh.json`](testdata/governance/fresh.json) is a synthetic display fixture.
+It is not telemetry from this host and it is not a production authority. Use an isolated temporary
+home and remove any telemetry location overrides when exercising it:
+
+```bash
+fixture_home="$(mktemp -d)"
+env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
+  -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js status \
+  --home "$fixture_home" \
+  --observations packages/telemetry/testdata/governance/fresh.json \
+  --now 2026-09-07T12:00:00.000Z
+
+env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
+  -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js tree --json \
+  --home "$fixture_home" \
+  --observations packages/telemetry/testdata/governance/fresh.json \
+  --now 2026-09-07T12:00:00.000Z
+```
+
+To exercise a changed decision, copy the fixture into the temporary home, edit the copy, and point
+`--observations` at it. Change `admissions[0].outcome.reason` or `.detail` to see the actual refusal
+beside item `#205`; change `vramUsedBytes`, `vramTotalBytes`, `ramUsedBytes`, or `ramTotalBytes`
+under the capacity entry in `state.regimes`; then run the same command again. The CLI reads the file
+on every invocation, so the next result reflects the edited admission and capacity without a daemon
+or cache.
+
+This complete example changes both the admission and local capacity, then re-reads the copy:
+
+```bash
+cp packages/telemetry/testdata/governance/fresh.json "$fixture_home/governance.json"
+node - "$fixture_home/governance.json" <<'NODE'
+const fs = require("node:fs");
+const path = process.argv[2];
+const observation = JSON.parse(fs.readFileSync(path, "utf8"));
+observation.admissions[0].outcome.reason = "capacity-held";
+observation.admissions[0].outcome.detail = "fixture VRAM headroom reserved";
+const capacity = observation.state.regimes.find((entry) => entry.regime === "capacity");
+capacity.hosts[0].vramUsedBytes = 20 * 1024 ** 3;
+fs.writeFileSync(path, `${JSON.stringify(observation, null, 2)}\n`);
+NODE
+
+env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
+  -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js status \
+  --home "$fixture_home" \
+  --observations "$fixture_home/governance.json" \
+  --now 2026-09-07T12:00:00.000Z
+```
+
+With no `--observations`, governance is `UNKNOWN / UNAVAILABLE`. A requested file that cannot be
+read or validated also renders unavailable, sets `complete: false` in JSON, and exits 3. A valid but
+expired observation remains visible as `STALE`. Producer-authored `reason`, `detail`, pending
+`summary`, and `notes` are intentionally public display text; a future producer must supply text
+safe for that surface. This fixture meets that obligation and contains no credentials or real host
+measurements.
 
 Both bounds are pushed into the readers rather than applied to the answer: `--since` skips a
 transcript whose modification time is older than the cutoff without opening it, and reaches the
@@ -177,8 +239,18 @@ the token is the problem is a day you need status to work.
 ```
 board activity as of 2026-09-05T00:45:00.000Z
 
-governance:
-  codex     63% used of a 5h window, resets in 27m [pro]  (read 33m ago)
+governance: FRESH · synthetic:test · observed 5m ago
+  subscription [throttle] — paced against the binding window
+    codex/primary [throttle] · read 5m ago
+      binding 5h: 63% used · resets in 1h 0m
+  metered [allow]
+    openrouter: $12.50 spent / $50.00 ceiling (monthly) · read 5m ago
+  capacity [allow]
+    n5-fixture · read 5m ago
+      VRAM 8.0 GiB used / 24.0 GiB total · 16.0 GiB headroom
+      RAM  32.0 GiB used / 128.0 GiB total · 96.0 GiB headroom
+  #205 throttle [subscription] — quota-paced: waiting for the next subscription slot
+    · synthetic:dispatcher · read 6m ago
 
 3 run(s) across 3 epic(s) · 1.1Min/65.2kout · $0.04
 

@@ -147,7 +147,11 @@ importers:
 
   packages/subagents: {}
 
-  packages/telemetry: {}
+  packages/telemetry:
+    dependencies:
+      '@rickylabs/harness-contracts':
+        specifier: workspace:*
+        version: link:../contracts
 
 packages:
 

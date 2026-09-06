@@ -32,6 +32,11 @@ import {
   parseEvents,
   resolveObservability,
 } from "./observability.js";
+import {
+  parseGovernanceText,
+  unavailableGovernance,
+  type ParsedGovernance,
+} from "./observations.js";
 import { publicRuns, publicSnapshot, publicTree } from "./public.js";
 import { renderSnapshot, renderTree } from "./render.js";
 import type { TelemetryEvent } from "./sink.js";
@@ -87,6 +92,7 @@ options:
   --home <path>          home directory the stores live under (default: this user's)
   --items <path>         board items to join runs to: "dsh-board snapshot" output, or a
                          JSON array of {number, title, epic, milestone, phase} refs
+  --observations <path>  governance observation JSON for tree/status
   --limit <n>            runs to read per seam, most recent first (default: 500)
   --since <iso>          only runs with activity at or after this time
   --now <iso>            reference time for ages, so output is reproducible
@@ -94,6 +100,12 @@ options:
   --run <id>             with "record": the run one event belongs to
   --kind <name>          with "record": write that one event instead of reading stdin
   --help
+
+"--observations" is optional and applies to "tree" and "status". It reads one typed governance
+snapshot: account subscription windows, provider spend, host RAM/VRAM, and item-scoped refused
+admissions. The file is read again on every invocation. No flag is explicit UNKNOWN/UNAVAILABLE;
+a requested unreadable or invalid file is incomplete (exit 3). Stale values stay visible as STALE,
+and missing measurements stay unknown rather than becoming zero.
 
 "record" reads JSONL on stdin — one {"runId","kind","at","detail"} object per line, "at"
 and "detail" optional. A bad line loses that line and is named; an empty batch is not an
@@ -122,6 +134,7 @@ ${EXIT_BLOCK}
 interface Flags {
   readonly home: string;
   readonly items: string | null;
+  readonly observations: string | null;
   readonly limit: number;
   readonly since: string | null;
   /** `--since` as an epoch millisecond, which is what actually bounds the readers. */
@@ -151,6 +164,7 @@ function timeFlag(raw: string, flag: string): number {
 export function parseFlags(argv: readonly string[]): Flags {
   let home = homedir();
   let items: string | null = null;
+  let observations: string | null = null;
   let limit = 500;
   let since: string | null = null;
   let sinceMs: number | null = null;
@@ -175,6 +189,9 @@ export function parseFlags(argv: readonly string[]): Flags {
         break;
       case "--items":
         items = next();
+        break;
+      case "--observations":
+        observations = next();
         break;
       case "--limit": {
         // Parsed strictly rather than leniently: `--limit 1.5` under parseInt becomes 1, which is a
@@ -216,7 +233,7 @@ export function parseFlags(argv: readonly string[]): Flags {
         if (arg !== undefined) rest.push(arg);
     }
   }
-  return { home, items, limit, since, sinceMs, now, json, help, run, kind, rest };
+  return { home, items, observations, limit, since, sinceMs, now, json, help, run, kind, rest };
 }
 
 /**
@@ -243,6 +260,23 @@ async function loadItems(path: string | null): Promise<LoadedItems> {
     return { items: [], notes: [`${path} could not be read: ${String(error)}`], ok: false };
   }
   return parseItems(text, path);
+}
+
+/** Read typed governance input without allowing its local path into public notes. */
+async function loadGovernance(path: string | null, now: string): Promise<ParsedGovernance> {
+  if (path === null) {
+    return {
+      governance: unavailableGovernance("no --observations supplied"),
+      notes: [],
+      ok: true,
+    };
+  }
+  try {
+    return parseGovernanceText(await readFile(path, "utf8"), now);
+  } catch {
+    const reason = "governance observations could not be read";
+    return { governance: unavailableGovernance(reason), notes: [reason], ok: false };
+  }
 }
 
 /** Print the notes under a heading. Used when a command's own output would otherwise be silent. */
@@ -483,14 +517,18 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 
   if (command === "status" || command === "tree") {
-    const loaded = await loadItems(flags.items);
-    const notes = [...view.notes, ...loaded.notes];
-    const complete = !view.degraded && loaded.ok;
+    const [loaded, observed] = await Promise.all([
+      loadItems(flags.items),
+      loadGovernance(flags.observations, flags.now),
+    ]);
+    const notes = [...view.notes, ...loaded.notes, ...observed.notes];
+    const complete = !view.degraded && loaded.ok && observed.ok;
     const snapshot = buildSnapshot({
       generatedAt: flags.now,
       runs,
       items: loaded.items,
       notes,
+      governance: observed.governance,
     });
     if (command === "tree") {
       // The same snapshot, so attribution is decided once and both commands agree about which run
