@@ -110,8 +110,8 @@ once there is one real observation per model to calibrate against.
 Measured against `@anthropic-ai/claude-agent-sdk@0.3.263`: the main package unpacks to 5,028,300
 bytes, its `linux-x64` platform binary to **215,662,653**, and it declares three peers that pnpm
 installs on its behalf. CI runs `pnpm install --frozen-lockfile` on every job inside a fifteen-minute
-budget, on a private repository whose minutes are billed. Paying ~216 MB per job for *types* to a
-module whose tests never call the real thing is the wrong trade.
+budget. Downloading ~216 MB per job for *types* from a module whose tests never call the real
+thing adds installation work without exercising the SDK.
 
 The honesty that buys is stated once, in `sdk.ts`: nothing in that file has been checked against the
 vendor's own declarations. Two habits follow, and they are why the module exists at all — nothing is
