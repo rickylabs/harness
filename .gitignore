@@ -4,3 +4,8 @@ node_modules/
 *.log
 dist/
 *.tsbuildinfo
+
+# Agent working space. Drafts, briefs and analysis notes land here, and some of them quote internal
+# paths and operational detail that must not be published. Untracked is not enough — one `git add -A`
+# commits the lot.
+scratchpad/
