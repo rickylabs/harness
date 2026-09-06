@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **155/189 done · 6 running · 17 queued · 11 abandoned**
+`[################----]` **156/191 done · 11 running · 12 queued · 11 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-06T20:50:27Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T21:33:08Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (6)
+## Moving now (11)
 
 Something could be acting on these right now.
 
@@ -17,43 +17,49 @@ Something could be acting on these right now.
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
-| [PR193 docs: record milestone continuation and draft E6/E9 durable loop](https://github.com/rickylabs/harness/pull/193) | `plan` | `e6` |
+| [#195 E3.5 - Route identity: fail closed when the observed route differs from the requested one](https://github.com/rickylabs/harness/issues/195) | `research` | `e3` |
+| [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
+| [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
+| [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
+| [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
+| [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 123/147 done · 5 running · 17 queued · 2 abandoned
+`[##########--]` 124/147 done · 10 running · 11 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[###########-]` 16/17 done · 1 queued | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 10/12 done · 2 queued | `triage` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[######------]` 10/18 done · 8 queued | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[######------]` 10/18 done · 6 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
-| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 17/22 done · 3 running · 2 abandoned | `impl` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 18/22 done · 2 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[############]` 21/21 done | `shipped` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[###########-]` 12/13 done · 1 running | `impl` |
 
 ### (no milestone)
 
-`[#########---]` 32/42 done · 1 running · 9 abandoned
+`[########----]` 32/44 done · 1 running · 1 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
-| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[########----]` 2/3 done · 1 running | `impl` |
-| _(no epic)_ | `[#########---]` 30/39 done · 9 abandoned | — |
+| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[######------]` 2/4 done · 1 running · 1 queued | `impl` |
+| _(no epic)_ | `[#########---]` 30/40 done · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>17 filed, nothing started</summary>
+<summary>12 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
+| [#202 board and forge disagree on what an epic is, and one of the labels does not exist](https://github.com/rickylabs/harness/issues/202) | `triage` | `e0` |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#47 E2.2 — Fork deepseek-harness-docker, keeping the upstream remote](https://github.com/rickylabs/harness/issues/47) | `triage` | `e2` |
 | [#49 E2.4 — Register the stack on the N5 and verify it comes up](https://github.com/rickylabs/harness/issues/49) | `triage` | `e2` |
@@ -65,12 +71,6 @@ Something could be acting on these right now.
 | [#66 E5.5 — Wire the gate at the sandbox boundary](https://github.com/rickylabs/harness/issues/66) | `triage` | `e5` |
 | [#67 E5.6 — Boot-parameter verification after every kernel update](https://github.com/rickylabs/harness/issues/67) | `triage` | `e5` |
 | [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
-| [#195 E3.5 - Route identity: fail closed when the observed route differs from the requested one](https://github.com/rickylabs/harness/issues/195) | `triage` | `e3` |
-| [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `triage` | `e3` |
-| [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `triage` | `e3` |
-| [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `triage` | `e3` |
-| [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `triage` | `e3` |
-| [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `triage` | `e3` |
 
 </details>
 
@@ -80,9 +80,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  155/189 done · 6 running · 17 queued · 11 abandoned
+# rickylabs/harness  [################----]  156/191 done · 11 running · 12 queued · 11 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  123/147 done · 5 running · 17 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [################----]  124/147 done · 10 running · 11 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -139,7 +139,7 @@ Something could be acting on these right now.
     shipped              PR194 fix(dsh-app): preserve sibling text-block boundaries in LLM requests (p1)
 
   E3 — Subagent providers over structured protocols #33  [triage]
-    [########--------] 10/18 done · 8 queued
+    [########--------] 10/18 done · 6 running · 2 queued
     shipped              #51 E3.1 — DispatchRequest and the SubagentProvider contract
     shipped              #52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk
     triage               #53 E3.3 — provider-codex against the running app-server daemon
@@ -152,12 +152,12 @@ Something could be acting on these right now.
     shipped              PR179 feat(provider-opencode): dispatch, watch and stop a run on a server we do not own
     shipped              #183 provider-opencode: `unknown` is not `refused` — four ways a live run is reported wrong (p0)
     shipped              PR186 fix(provider-opencode): refuse only what the server actually refused (p0)
-    triage               #195 E3.5 - Route identity: fail closed when the observed route differs from the requested one
-    triage               #196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume
-    triage               #197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt
-    triage               #198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused
-    triage               #199 E3.9 - Two wake signals: progress and idle are not interchangeable
-    triage               #200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats
+    research             #195 E3.5 - Route identity: fail closed when the observed route differs from the requested one
+    plan                 #196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume
+    research             #197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt
+    plan                 #198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused
+    plan                 #199 E3.9 - Two wake signals: progress and idle are not interchangeable
+    plan                 #200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats
 
   E4 — Model gateway and routing matrix #34  [triage]
     [##############--] 12/13 done · 1 queued
@@ -186,7 +186,7 @@ Something could be acting on these right now.
     shipped              PR173 docs(doctrine): ADR 0002 - the sandboxctl execution channel (proposed) (p1)
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
-    [############----] 17/22 done · 3 running · 2 abandoned
+    [#############---] 18/22 done · 2 running · 2 abandoned
     impl-eval            #68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation
     shipped              #69 E6.2 — coordinator: the workflow definitions
     shipped              #70 E6.3 — Emit one dispatch payload in the /swarm wire format
@@ -208,7 +208,7 @@ Something could be acting on these right now.
     shipped              PR162 feat(board): publish the board as a page, on a schedule (p1)
     shipped              PR163 fix(board): grant the board workflow the scopes it actually reads (p1)
     plan                 #191 E6/E9 — Plan the durable orchestration loop and restart visibility proof (p1)
-    plan                 PR193 docs: record milestone continuation and draft E6/E9 durable loop (draft)
+    shipped              PR193 docs: record milestone continuation and draft E6/E9 durable loop
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [shipped]
     [################] 21/21 done
@@ -261,13 +261,14 @@ Something could be acting on these right now.
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
 
-## (no milestone)  [###############-----]  32/42 done · 1 running · 9 abandoned
+## (no milestone)  [##############------]  32/44 done · 1 running · 1 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
-    [##########------] 2/3 done · 1 running
+    [########--------] 2/4 done · 1 running · 1 queued
     shipped              PR97 docs(root): state the four ratified decisions from #30 in README/AGENTS
     impl                 #182 Consolidation pass — the Astra medium review of the shipped ground work (p1)
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
+    triage               #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
@@ -309,6 +310,7 @@ Something could be acting on these right now.
     shipped              #107 review: PR #101 re-review after FAIL_FIX (review_claude · Codex · Sol · xhigh)
     shipped              #189 docs: the repository is public — correct every false claim, then polish (p0)
     shipped              PR190 docs: correct every claim the repository going public made false (p0)
+    no status            #201 E10 - Documentation and the public front door
 ```
 
 </details>
