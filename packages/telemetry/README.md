@@ -120,24 +120,64 @@ dsh-telemetry where [options]      where that log is, and the layers below a run
 
 ### Synthetic governance fixture
 
-[`testdata/governance/fresh.json`](testdata/governance/fresh.json) is a synthetic display fixture.
-It is not telemetry from this host and it is not a production authority. Use an isolated temporary
-home and remove any telemetry location overrides when exercising it:
+The commands below create a synthetic display fixture entirely from the literal values shown. It is
+not telemetry from this host and it is not a production authority. The repository deliberately does
+not commit the generated JSON because `check:snapshots` forbids time-sliding allowance data. Use an
+isolated temporary home and remove any telemetry location overrides when exercising it:
 
 ```bash
 fixture_home="$(mktemp -d)"
+node - "$fixture_home/governance.json" <<'NODE'
+const fs = require("node:fs");
+const path = process.argv[2];
+const observedAt = "2026-09-07T11:55:00.000Z";
+const observation = {
+  observedAt,
+  validUntil: "2026-09-07T12:05:00.000Z",
+  provenance: "synthetic:test",
+  state: {
+    generatedAt: observedAt,
+    regimes: [
+      { regime: "subscription", state: "throttle", accounts: [{
+        seam: "codex", account: "primary", state: "throttle", observedAt,
+        windows: [{ label: "5h", windowMinutes: 300, usedPercent: 63,
+          resetsAt: "2026-09-07T13:00:00.000Z", binding: true }],
+      }], note: "paced against the binding window" },
+      { regime: "metered", state: "allow", providers: [{
+        provider: "openrouter", spentUsd: 12.5, ceilingUsd: 50,
+        windowLabel: "monthly", observedAt,
+      }], note: null },
+      { regime: "capacity", state: "allow", hosts: [{
+        host: "n5-fixture", vramUsedBytes: 8 * 1024 ** 3, vramTotalBytes: 24 * 1024 ** 3,
+        ramUsedBytes: 32 * 1024 ** 3, ramTotalBytes: 128 * 1024 ** 3, observedAt,
+      }], note: null },
+    ],
+    pending: [],
+    notes: [],
+  },
+  admissions: [{
+    item: { number: 205 }, regime: "subscription", state: "throttle",
+    observedAt: "2026-09-07T11:54:00.000Z", validUntil: "2026-09-07T12:01:00.000Z",
+    provenance: "synthetic:dispatcher",
+    outcome: { accepted: false, reason: "quota-paced",
+      detail: "waiting for the next subscription slot" },
+  }],
+};
+fs.writeFileSync(path, `${JSON.stringify(observation, null, 2)}\n`);
+NODE
+
 env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
   -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
   node packages/telemetry/dist/cli.js status \
   --home "$fixture_home" \
-  --observations packages/telemetry/testdata/governance/fresh.json \
+  --observations "$fixture_home/governance.json" \
   --now 2026-09-07T12:00:00.000Z
 
 env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
   -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
   node packages/telemetry/dist/cli.js tree --json \
   --home "$fixture_home" \
-  --observations packages/telemetry/testdata/governance/fresh.json \
+  --observations "$fixture_home/governance.json" \
   --now 2026-09-07T12:00:00.000Z
 ```
 
@@ -148,10 +188,9 @@ under the capacity entry in `state.regimes`; then run the same command again. Th
 on every invocation, so the next result reflects the edited admission and capacity without a daemon
 or cache.
 
-This complete example changes both the admission and local capacity, then re-reads the copy:
+This continuation changes both the admission and local capacity, then re-reads the fixture:
 
 ```bash
-cp packages/telemetry/testdata/governance/fresh.json "$fixture_home/governance.json"
 node - "$fixture_home/governance.json" <<'NODE'
 const fs = require("node:fs");
 const path = process.argv[2];

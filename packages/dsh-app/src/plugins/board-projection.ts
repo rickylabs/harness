@@ -6,6 +6,7 @@ import type {
   BoardItemRef,
   PublicAttributedRun,
   PublicEpicNode,
+  PublicGovernance,
   PublicItemNode,
   PublicMilestoneNode,
   PublicRun,
@@ -49,6 +50,133 @@ const quotaSchema = z
     creditBalance: z.string().nullable(),
   })
   .strict();
+
+const approvalSchema = z
+  .object({
+    id: z.string(),
+    kind: z.string(),
+    summary: z.string(),
+    item: z.number().nullable(),
+    runId: z.string().nullable(),
+    regime: z.enum(["subscription", "metered", "capacity"]).nullable(),
+    requestedAt: z.string(),
+    expiresAt: z.string().nullable(),
+  })
+  .strict();
+
+const regimeStateSchema = z.enum(["allow", "throttle", "pause"]);
+
+const subscriptionRegimeSchema = z
+  .object({
+    regime: z.literal("subscription"),
+    state: regimeStateSchema,
+    accounts: z.array(z.object({
+      seam: z.string(),
+      account: z.string(),
+      state: regimeStateSchema,
+      windows: z.array(z.object({
+        label: z.string(),
+        windowMinutes: z.number(),
+        usedPercent: z.number(),
+        resetsAt: z.string().nullable(),
+        binding: z.boolean(),
+      }).strict()),
+      observedAt: z.string().nullable(),
+    }).strict()),
+    note: z.string().nullable(),
+  })
+  .strict();
+
+const meteredRegimeSchema = z
+  .object({
+    regime: z.literal("metered"),
+    state: regimeStateSchema,
+    providers: z.array(z.object({
+      provider: z.string(),
+      spentUsd: z.number(),
+      ceilingUsd: z.number().nullable(),
+      windowLabel: z.string(),
+      observedAt: z.string().nullable(),
+    }).strict()),
+    note: z.string().nullable(),
+  })
+  .strict();
+
+const capacityRegimeSchema = z
+  .object({
+    regime: z.literal("capacity"),
+    state: regimeStateSchema,
+    hosts: z.array(z.object({
+      host: z.string(),
+      vramUsedBytes: z.number().nullable(),
+      vramTotalBytes: z.number().nullable(),
+      ramUsedBytes: z.number().nullable(),
+      ramTotalBytes: z.number().nullable(),
+      observedAt: z.string().nullable(),
+    }).strict()),
+    note: z.string().nullable(),
+  })
+  .strict();
+
+const governanceStateSchema = z
+  .object({
+    generatedAt: z.string(),
+    regimes: z.array(z.discriminatedUnion("regime", [
+      subscriptionRegimeSchema,
+      meteredRegimeSchema,
+      capacityRegimeSchema,
+    ])),
+    pending: z.array(approvalSchema),
+    notes: z.array(z.string()),
+  })
+  .strict();
+
+const admissionSchema = z
+  .object({
+    item: z.object({ number: z.number() }).strict(),
+    regime: z.enum(["subscription", "metered", "capacity"]),
+    state: z.enum(["throttle", "pause"]),
+    availability: z.enum(["fresh", "stale"]),
+    observedAt: z.string(),
+    validUntil: z.string(),
+    provenance: z.string(),
+    outcome: z.object({
+      accepted: z.literal(false),
+      reason: z.string(),
+      detail: z.string(),
+      approval: approvalSchema.optional(),
+    }).strict(),
+  })
+  .strict();
+
+const availableGovernanceSchema = z
+  .object({
+    availability: z.enum(["fresh", "stale"]),
+    observedAt: z.string(),
+    validUntil: z.string(),
+    provenance: z.string(),
+    state: governanceStateSchema,
+    admissions: z.array(admissionSchema),
+    unavailableReason: z.null(),
+  })
+  .strict();
+
+const unavailableGovernanceSchema = z
+  .object({
+    availability: z.literal("unavailable"),
+    observedAt: z.null(),
+    validUntil: z.null(),
+    provenance: z.null(),
+    state: z.null(),
+    admissions: z.array(admissionSchema).max(0),
+    unavailableReason: z.string(),
+  })
+  .strict();
+
+const governanceSchema = z.discriminatedUnion("availability", [
+  availableGovernanceSchema,
+  unavailableGovernanceSchema,
+]);
 
 const itemSchema = z
   .object({
@@ -146,6 +274,7 @@ export const boardProjectionSchema = z
     milestones: z.array(milestoneNodeSchema),
     unattributed: z.array(attributedSchema),
     quota: z.array(quotaSchema),
+    governance: governanceSchema,
     notes: z.array(z.string()),
   })
   .strict();
@@ -195,6 +324,120 @@ function adaptQuota(quota: QuotaReading): z.output<typeof quotaSchema> {
     resetsAt: quota.resetsAt,
     planType: quota.planType,
     creditBalance: quota.creditBalance,
+  };
+}
+
+function adaptApproval(
+  approval: NonNullable<PublicGovernance["state"]>["pending"][number],
+): z.output<typeof approvalSchema> {
+  return {
+    id: approval.id,
+    kind: approval.kind,
+    summary: approval.summary,
+    item: approval.item,
+    runId: approval.runId,
+    regime: approval.regime,
+    requestedAt: approval.requestedAt,
+    expiresAt: approval.expiresAt,
+  };
+}
+
+function adaptGovernance(governance: PublicGovernance): z.output<typeof governanceSchema> {
+  if (governance.availability === "unavailable") {
+    if (governance.unavailableReason === null) {
+      throw new Error("unavailable governance requires a reason");
+    }
+    return {
+      availability: governance.availability,
+      observedAt: null,
+      validUntil: null,
+      provenance: null,
+      state: null,
+      admissions: [],
+      unavailableReason: governance.unavailableReason,
+    };
+  }
+  const { observedAt, validUntil, provenance, state } = governance;
+  if (observedAt === null || validUntil === null || provenance === null || state === null) {
+    throw new Error("available governance requires observation metadata and state");
+  }
+  return {
+    availability: governance.availability,
+    observedAt,
+    validUntil,
+    provenance,
+    state: {
+      generatedAt: state.generatedAt,
+      regimes: state.regimes.map((regime) => {
+        if (regime.regime === "subscription") {
+          return {
+            regime: regime.regime,
+            state: regime.state,
+            accounts: regime.accounts.map((account) => ({
+              seam: account.seam,
+              account: account.account,
+              state: account.state,
+              windows: account.windows.map((window) => ({
+                label: window.label,
+                windowMinutes: window.windowMinutes,
+                usedPercent: window.usedPercent,
+                resetsAt: window.resetsAt,
+                binding: window.binding,
+              })),
+              observedAt: account.observedAt,
+            })),
+            note: regime.note,
+          };
+        }
+        if (regime.regime === "metered") {
+          return {
+            regime: regime.regime,
+            state: regime.state,
+            providers: regime.providers.map((provider) => ({
+              provider: provider.provider,
+              spentUsd: provider.spentUsd,
+              ceilingUsd: provider.ceilingUsd,
+              windowLabel: provider.windowLabel,
+              observedAt: provider.observedAt,
+            })),
+            note: regime.note,
+          };
+        }
+        return {
+          regime: regime.regime,
+          state: regime.state,
+          hosts: regime.hosts.map((host) => ({
+            host: host.host,
+            vramUsedBytes: host.vramUsedBytes,
+            vramTotalBytes: host.vramTotalBytes,
+            ramUsedBytes: host.ramUsedBytes,
+            ramTotalBytes: host.ramTotalBytes,
+            observedAt: host.observedAt,
+          })),
+          note: regime.note,
+        };
+      }),
+      pending: state.pending.map(adaptApproval),
+      notes: [...state.notes],
+    },
+    admissions: governance.admissions.map((admission) => ({
+      item: { number: admission.item.number },
+      regime: admission.regime,
+      state: admission.state,
+      availability: admission.availability,
+      observedAt: admission.observedAt,
+      validUntil: admission.validUntil,
+      provenance: admission.provenance,
+      outcome: {
+        accepted: false,
+        reason: admission.outcome.reason,
+        detail: admission.outcome.detail,
+        ...(admission.outcome.approval === undefined
+          ? {}
+          : { approval: adaptApproval(admission.outcome.approval) }),
+      },
+    })),
+    unavailableReason: null,
   };
 }
 
@@ -271,6 +514,7 @@ export function toBoardProjection(tree: PublicTree): BoardProjection {
     milestones: tree.milestones.map(adaptMilestoneNode),
     unattributed: tree.unattributed.map(adaptAttributed),
     quota: tree.quota.map(adaptQuota),
+    governance: adaptGovernance(tree.governance),
     notes: [...tree.notes],
   });
 }

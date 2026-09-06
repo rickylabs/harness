@@ -46,6 +46,7 @@ import {
   buildTree,
   normaliseItems,
   publicTree,
+  type GovernanceView,
   type RunRecord,
 } from "@rickylabs/telemetry";
 import {
@@ -116,6 +117,8 @@ export interface BoardRefreshInput {
   readonly runs: readonly RunRecord[];
   readonly notes?: readonly string[];
   readonly telemetryComplete: boolean;
+  /** Optional typed governance cut captured with these board inputs. */
+  readonly observations?: GovernanceView;
 }
 
 declare module "@deepseek-ai/cordis" {
@@ -176,6 +179,7 @@ export function createService(
         runs: input.runs,
         items: loaded.items,
         notes: [...(input.notes ?? []), ...loaded.notes],
+        ...(input.observations === undefined ? {} : { governance: input.observations }),
       });
       const tree = buildTree({
         snapshot: telemetry,

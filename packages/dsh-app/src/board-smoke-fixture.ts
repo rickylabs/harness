@@ -109,6 +109,15 @@ export async function runBoardProjectionSmoke(): Promise<void> {
   const tree = first.values.harnessBoard;
   assert.notEqual(tree, null);
   assert.equal(tree?.complete, true);
+  assert.deepEqual(tree?.governance, {
+    availability: "unavailable",
+    observedAt: null,
+    validUntil: null,
+    provenance: null,
+    state: null,
+    admissions: [],
+    unavailableReason: "no --observations supplied",
+  });
   const task = tree?.milestones[0]?.epics[0]?.tasks.find((node) => node.item.number === 204);
   assert.equal(task?.runs[0]?.run.id, "parent");
   assert.equal(task?.runs[0]?.children[0]?.run.id, "child");

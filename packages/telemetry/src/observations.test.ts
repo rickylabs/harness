@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 
 import type { GovernanceState, PendingApproval } from "@rickylabs/harness-contracts";
@@ -113,14 +112,6 @@ function refusal(over: Partial<GovernanceObservation["admissions"][number]> = {}
 }
 
 describe("governance observation parser", () => {
-  it("keeps the shipped synthetic fixture parseable at its documented reference time", async () => {
-    const text = await readFile(new URL("../testdata/governance/fresh.json", import.meta.url), "utf8");
-    const parsed = parseGovernanceText(text, NOW);
-    assert.equal(parsed.ok, true);
-    assert.equal(parsed.governance.availability, "fresh");
-    assert.equal(parsed.governance.admissions[0]?.item.number, 205);
-  });
-
   it("reuses the complete governance state and normalizes every ordered collection", () => {
     const first = parseGovernanceObservation(
       observation({
