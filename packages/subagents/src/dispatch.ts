@@ -280,6 +280,39 @@ export function parseGoDuration(text: string): number | null {
 }
 
 /**
+ * The longest delay `setTimeout` actually honours.
+ *
+ * Past `2^31 - 1` milliseconds Node wraps the delay to `1` and fires on the next tick, which turns
+ * "stop this run in a month" into "stop this run immediately". Clamping is the lesser wrong of the
+ * two, and a provider that clamps should say so out loud on any request that hits it.
+ */
+export const TIMER_CEILING_MS = 2_147_483_647;
+
+/**
+ * A request's deadline, in milliseconds a provider can arm a timer with.
+ *
+ * `parseGoDuration` returns **nanoseconds** — it exists to reproduce Go's `time.ParseDuration` for
+ * the executor's own `timeoutNs` field. Handing its result to `setTimeout` is a units bug that reads
+ * as correct code and fails in the most expensive direction available: a `30m` deadline becomes
+ * `1.8e12`, overflows the timer, fires on the next tick, and every bounded run is stopped the moment
+ * it starts, while the dispatch reports `accepted`.
+ *
+ * It was written once, in `provider-claude`, with a comment saying the conversion lived in a named
+ * function "so that the next caller has one to reach for instead of the raw parser". `#55` was the
+ * next caller. A conversion every provider needs, next to the parser whose units cause the bug, is
+ * the shape that keeps the second provider from reintroducing the first one's fix.
+ *
+ * `null` means the request names no honourable deadline — absent, unparseable, or non-positive.
+ */
+export function timeoutMs(request: DispatchRequest): number | null {
+  const timeout = request.timeout;
+  if (timeout === undefined || timeout === "") return null;
+  const ns = parseGoDuration(timeout);
+  if (ns === null || ns <= 0) return null;
+  return Math.min(Math.ceil(ns / 1e6), TIMER_CEILING_MS);
+}
+
+/**
  * Parse a `/swarm` block out of an issue or comment body.
  *
  * Returns `null` when the text contains no `/swarm` line, which is the common case and is not an

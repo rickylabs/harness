@@ -118,7 +118,11 @@ importers:
 
   packages/provider-codex: {}
 
-  packages/provider-opencode: {}
+  packages/provider-opencode:
+    dependencies:
+      '@rickylabs/subagents':
+        specifier: workspace:*
+        version: link:../subagents
 
   packages/routing:
     dependencies:

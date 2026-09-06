@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/provider-opencode",
   "version": "0.0.0",
-  "description": "SubagentProvider over @opencode-ai/sdk (ctx.subagents seam)",
+  "description": "SubagentProvider over a long-lived opencode serve (ctx.subagents seam)",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -20,6 +20,10 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --emitDeclarationOnly",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "test": "tsc -b && node --test \"dist/**/*.test.js\""
+  },
+  "dependencies": {
+    "@rickylabs/subagents": "workspace:*"
   }
 }

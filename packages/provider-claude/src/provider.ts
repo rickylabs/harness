@@ -35,7 +35,8 @@
  */
 
 import {
-  parseGoDuration,
+  TIMER_CEILING_MS,
+  timeoutMs,
   validateDispatch,
   type DispatchRequest,
   type DispatchResult,
@@ -99,31 +100,15 @@ export const CAPABILITIES: ProviderCapabilities = {
 const READERS: MessageReaders = { readInit, readResult, isTurn };
 
 /**
- * The longest delay `setTimeout` actually honours.
+ * The nanosecond-to-millisecond conversion, and the timer ceiling it clamps to.
  *
- * Past `2^31 - 1` milliseconds Node wraps the delay to `1` and fires on the next tick, which turns
- * "stop this run in a month" into "stop this run immediately". Clamping is the lesser wrong of the
- * two, and `untranslated` says so out loud on any request that hits it.
+ * Both were written here, for the units bug found while writing #52's suite. #55 was the next caller
+ * — the same deadline has to be armed against a remote session — so they now live in
+ * `@rickylabs/subagents`, beside the parser whose units cause the bug. Re-exported rather than moved
+ * out of sight, because this package's own suite and its `untranslated()` both read them, and a
+ * caller that already knew where to find them should keep finding them.
  */
-export const TIMER_CEILING_MS = 2_147_483_647;
-
-/**
- * A request's deadline, in milliseconds this provider can arm a timer with.
- *
- * `parseGoDuration` returns **nanoseconds** — it exists to reproduce Go's `time.ParseDuration` for
- * the executor's own `timeoutNs` field. Handing its result to `setTimeout` is a units bug that reads
- * as correct code and fails in the most expensive direction available: a `30m` deadline becomes
- * `1.8e12`, overflows the timer, fires on the next tick, and every bounded run is stopped the moment
- * it starts. The conversion lives in a named, exported function so that the next caller has one to
- * reach for instead of the raw parser.
- */
-export function timeoutMs(request: DispatchRequest): number | null {
-  const timeout = request.timeout;
-  if (timeout === undefined || timeout === "") return null;
-  const ns = parseGoDuration(timeout);
-  if (ns === null || ns <= 0) return null;
-  return Math.min(Math.ceil(ns / 1e6), TIMER_CEILING_MS);
-}
+export { TIMER_CEILING_MS, timeoutMs };
 
 export interface ClaudeProviderOptions {
   /** The SDK's `query`. Injected — see `sdk.ts` for why this package does not depend on it. */
