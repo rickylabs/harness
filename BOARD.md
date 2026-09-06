@@ -2,41 +2,34 @@
 
 # rickylabs/harness
 
-`[################----]` **131/161 done · 2 running · 17 queued · 11 abandoned**
+`[################----]` **133/162 done · 3 running · 15 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T01:47:37Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T01:53:46Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (2)
+## Moving now (3)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
+| [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
-
-## Anomalies (1)
-
-`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#56** — closed on GitHub but sits in triage; the issue wins, the column is stale
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 102/123 done · 2 running · 17 queued · 2 abandoned
+`[##########--]` 104/124 done · 3 running · 15 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 14/14 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[###########-]` 15/16 done · 1 queued | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[#########---]` 6/8 done · 2 queued | `triage` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[####--------]` 3/8 done · 5 queued | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[######------]` 4/8 done · 4 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[########----]` 6/9 done · 3 queued | `triage` |
-| [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[------------]` 0/6 done · 6 queued | `triage` |
+| [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 17/20 done · 1 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[############]` 21/21 done | `shipped` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
@@ -54,7 +47,7 @@ Something could be acting on these right now.
 ## Waiting to start
 
 <details>
-<summary>17 filed, nothing started</summary>
+<summary>15 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -65,10 +58,8 @@ Something could be acting on these right now.
 | [#53 E3.3 — provider-codex against the running app-server daemon](https://github.com/rickylabs/harness/issues/53) | `triage` | `e3` |
 | [#54 E3.4 — provider-acp: agy on dsh's in-tree ACP driver](https://github.com/rickylabs/harness/issues/54) | `triage` | `e3` |
 | [#55 E3.5 — provider-opencode on @opencode-ai/sdk/v2](https://github.com/rickylabs/harness/issues/55) | `triage` | `e3` |
-| [#56 E3.6 — Single-writer session lease and run-id keying](https://github.com/rickylabs/harness/issues/56) | `triage` | `e3` |
 | [#57 E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters](https://github.com/rickylabs/harness/issues/57) | `triage` | `e4` |
 | [#59 E4.3 — Capability probes instead of committed constants](https://github.com/rickylabs/harness/issues/59) | `triage` | `e4` |
-| [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `triage` | `e5` |
 | [#63 E5.2 — Port the Orchid subscription-quota governor](https://github.com/rickylabs/harness/issues/63) | `triage` | `e5` |
 | [#64 E5.3 — Metered-spend regime](https://github.com/rickylabs/harness/issues/64) | `triage` | `e5` |
 | [#65 E5.4 — Local-capacity regime: the third regime, which has no owner today](https://github.com/rickylabs/harness/issues/65) | `triage` | `e5` |
@@ -84,9 +75,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  131/161 done · 2 running · 17 queued · 11 abandoned
+# rickylabs/harness  [################----]  133/162 done · 3 running · 15 queued · 11 abandoned
 
-## M1 — dsh coordinator foundation  [################----]  102/123 done · 2 running · 17 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [################----]  104/124 done · 3 running · 15 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 14/14 done
@@ -136,13 +127,13 @@ Something could be acting on these right now.
     shipped              PR139 feat(deploy): run the dsh web surface on the N5 (E2.3, #48)
 
   E3 — Subagent providers over structured protocols #33  [triage]
-    [######----------] 3/8 done · 5 queued
+    [########--------] 4/8 done · 4 queued
     shipped              #51 E3.1 — DispatchRequest and the SubagentProvider contract
     triage               #52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk
     triage               #53 E3.3 — provider-codex against the running app-server daemon
     triage               #54 E3.4 — provider-acp: agy on dsh's in-tree ACP driver
     triage               #55 E3.5 — provider-opencode on @opencode-ai/sdk/v2
-    triage               #56 E3.6 — Single-writer session lease and run-id keying
+    shipped              #56 E3.6 — Single-writer session lease and run-id keying
     shipped              PR124 feat(subagents): the ctx.subagents contract, where both seams can reach it (p1)
     shipped              PR172 feat(subagents): single-writer session leases, keyed on our run id (p1)
 
@@ -159,13 +150,14 @@ Something could be acting on these right now.
     shipped              PR166 feat(routing): refuse a wrong model id before it can spend anything (p1)
 
   E5 — Governance: tri-regime admission control #35  [triage]
-    [----------------] 0/6 done · 6 queued
-    triage               #62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)
+    [##--------------] 1/7 done · 1 running · 5 queued
+    plan-eval            #62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)
     triage               #63 E5.2 — Port the Orchid subscription-quota governor
     triage               #64 E5.3 — Metered-spend regime
     triage               #65 E5.4 — Local-capacity regime: the third regime, which has no owner today
     triage               #66 E5.5 — Wire the gate at the sandbox boundary
     triage               #67 E5.6 — Boot-parameter verification after every kernel update
+    shipped              PR173 docs(doctrine): ADR 0002 - the sandboxctl execution channel (proposed) (p1)
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
     [#############---] 17/20 done · 1 running · 2 abandoned
