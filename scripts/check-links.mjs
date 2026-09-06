@@ -44,8 +44,16 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-/** Never descended into. `dist` and `node_modules` are build output; `.llm/runs` is evidence. */
-const SKIP_DIRS = new Set(["node_modules", "dist", ".git"]);
+/**
+ * Never descended into. `dist` and `node_modules` are build output; `.llm/runs` is evidence.
+ *
+ * `scratchpad` is neither, and is skipped for a third reason: it is not in the repository. Every
+ * agent working here writes drafts, briefs and half-finished notes into a repo-root `scratchpad/`,
+ * and a draft that links to a file it has not written yet is a draft doing its job. Checking those
+ * links reports failures nobody can act on, in files that will never be committed — which is how a
+ * checker gets ignored, and a checker that is ignored is worse than no checker at all.
+ */
+const SKIP_DIRS = new Set(["node_modules", "dist", ".git", "scratchpad"]);
 const EXCLUDED = [".llm/runs/"];
 
 // ── discovery ────────────────────────────────────────────────────────────────
