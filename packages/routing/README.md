@@ -87,6 +87,34 @@ declaring what it certifies, opencode routes naming their router, relay routes n
 that binds their credential, escalations that actually raise effort, lane constraints holding on
 every step. The suite asserts it returns nothing.
 
+Two of those invariants are also exported on their own, because `checkPolicy` reads the live table
+and takes no arguments — driving it can only show that today's matrix passes, never that a violation
+would be caught:
+
+- `selfCertifies(step)` — whether a seat certifies the family that authored it. `checkEvaluator`
+  refuses such a pairing at dispatch, but by then the matrix has already promised a reviewer it
+  cannot supply, and the work is done.
+- `unreviewedSteps(implement, review)` — the indexes in an implementation chain whose author family
+  no step in the review chain will certify. **Every step needs a reviewer, not just the primary.**
+  `tierPlan` resolves a review lane against `openai` on the grounds that every implementation tier
+  is Codex-authored; that was prose, and prose does not fail a build. Add one cross-family fallback
+  and the tier still resolves, still dispatches, and only refuses at `checkEvaluator`.
+
+## A model the CLI cannot reach is not a model the plan cannot afford
+
+`complex_implementation` leads with `gpt-6-astra` and falls back to `gpt-5.6-sol` on
+`model-unavailable` — a trigger that exists precisely so it is *not* spelled `native-quota-limit`.
+
+    complex_implementation
+      0  codex · native · gpt-6-astra  · medium      (primary)
+      1  codex · native · gpt-5.6-sol · high         when model-unavailable
+
+A quota trigger means the subscription is spent, so falling back to a second model on that same
+subscription would be a fallback in name only. `model-unavailable` means this binary cannot dispatch
+that id — which a sibling model on the same plan does satisfy. It is a real distinction and not a
+hypothetical one: Codex CLI 0.144.3 refuses `gpt-6-astra` with an HTTP 400 reading "requires a newer
+version of Codex", and 0.153.4 accepts it, on the same account and the same plan.
+
 ## Admission: the last place a dispatch is free
 
 `validateDispatch` in `@rickylabs/subagents` refuses a request that leaves a choice implicit — no

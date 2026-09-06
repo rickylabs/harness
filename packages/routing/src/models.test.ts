@@ -16,6 +16,7 @@ describe("model pins", () => {
   it("places every native model in its vendor's family", () => {
     assert.equal(familyOf(MODEL_IDS.codexSol), "openai");
     assert.equal(familyOf(MODEL_IDS.codexLuna), "openai");
+    assert.equal(familyOf(MODEL_IDS.astra), "openai");
     assert.equal(familyOf(MODEL_IDS.fable), "anthropic");
     assert.equal(familyOf(MODEL_IDS.opus), "anthropic");
     assert.equal(familyOf(MODEL_IDS.sonnet), "anthropic");

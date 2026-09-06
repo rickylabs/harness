@@ -91,6 +91,17 @@ export const FALLBACK_TRIGGERS = [
   "native-quota-limit",
   /** The relay itself is limited. The last step before a lane has nowhere to go. */
   "openrouter-limit",
+  /**
+   * The client cannot reach the model at all — it is not in this CLI's catalog, or the endpoint
+   * refuses it outright.
+   *
+   * Deliberately not `native-quota-limit`. A quota trigger means "this subscription is spent", so
+   * a fallback to a second model on the *same* subscription would be a fallback in name only. This
+   * one means "this binary cannot dispatch that id", which a sibling model on the same plan does
+   * satisfy. Observed: `gpt-6-astra` is refused by codex-cli 0.144.3 with an HTTP 400 reading
+   * "requires a newer version of Codex", and accepted by 0.153.4 — same account, same plan.
+   */
+  "model-unavailable",
 ] as const;
 export type FallbackTrigger = (typeof FALLBACK_TRIGGERS)[number];
 
@@ -192,9 +203,14 @@ export const ROUTE_POLICY: readonly LanePolicy[] = [
     purpose: "implementation",
     chain: [
       {
-        route: { harness: "codex", transport: "native", model: MODEL_IDS.codexSol, effort: "high" },
+        route: { harness: "codex", transport: "native", model: MODEL_IDS.astra, effort: "medium" },
         when: [],
         note: "large_or_cross_cutting_slices",
+      },
+      {
+        route: { harness: "codex", transport: "native", model: MODEL_IDS.codexSol, effort: "high" },
+        when: ["model-unavailable"],
+        note: "astra_is_gated_on_codex_cli_version",
       },
     ],
   },

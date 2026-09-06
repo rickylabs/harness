@@ -3,16 +3,27 @@ import { describe, it } from "node:test";
 
 import { checkEvaluator, type RunIdentity } from "./family.js";
 import { MODEL_IDS, OPENCODE_MODEL_IDS, OPENROUTER_MODEL_IDS } from "./models.js";
-import { DEEP_RESEARCH_LANES, LANES, LANE_CONSTRAINTS, TIERS, TIER_LANES, lanePolicy } from "./policy.js";
-import type { Route, RouteStep } from "./policy.js";
+import {
+  DEEP_RESEARCH_LANES,
+  FALLBACK_TRIGGERS,
+  LANES,
+  LANE_CONSTRAINTS,
+  ROUTE_POLICY,
+  TIERS,
+  TIER_LANES,
+  lanePolicy,
+} from "./policy.js";
+import type { Certifies, Route, RouteStep } from "./policy.js";
 import {
   checkPolicy,
   laneChain,
   resolveEffort,
   resolveFallback,
   resolveRoute,
+  selfCertifies,
   tierPlan,
   toDispatch,
+  unreviewedSteps,
   type FallbackOutcome,
   type RouteResolution,
 } from "./resolve.js";
@@ -292,5 +303,103 @@ describe("toDispatch", () => {
     assert.equal(escalated.ok, true);
     if (!escalated.ok) return;
     assert.equal(toDispatch(step.route, escalated.effort).effort, "high");
+  });
+});
+
+/**
+ * A step on a chain nobody has committed.
+ *
+ * `checkPolicy` reads the live table and takes no arguments, so driving it alone can only ever show
+ * that today's matrix passes — never that a violation would be caught. These build the broken tables
+ * the repo must never contain, so the two invariants are proven to fire rather than merely present.
+ */
+function stepOf(model: string, certifies?: Certifies): RouteStep {
+  const route: Route = { harness: "claude", transport: "native", model, effort: "medium" };
+  return certifies === undefined ? { route, when: [] } : { route, when: [], certifies };
+}
+
+describe("selfCertifies", () => {
+  it("catches a seat that certifies the family that authored it", () => {
+    assert.equal(selfCertifies(stepOf(MODEL_IDS.opus, "anthropic")), true);
+    assert.equal(selfCertifies(stepOf(MODEL_IDS.astra, "openai")), true);
+  });
+
+  it("accepts a seat that certifies somebody else", () => {
+    assert.equal(selfCertifies(stepOf(MODEL_IDS.opus, "openai")), false);
+    assert.equal(selfCertifies(stepOf(MODEL_IDS.astra, "anthropic")), false);
+  });
+
+  it("does not read `any` or `none` as a family", () => {
+    // `familyOf` never answers either string, so a naive equality would call both of these clean
+    // for the wrong reason. They are clean because neither names a family at all.
+    assert.equal(selfCertifies(stepOf(MODEL_IDS.opus, "any")), false);
+    assert.equal(selfCertifies(stepOf(MODEL_IDS.opus, "none")), false);
+    assert.equal(selfCertifies(stepOf(MODEL_IDS.opus)), false);
+  });
+
+  it("stays quiet about a model it cannot place", () => {
+    // Reported once, as an unpinned model. An unknown family is not evidence of self-certification.
+    assert.equal(selfCertifies(stepOf("not-a-pinned-model", "anthropic")), false);
+  });
+
+  it("holds across the live matrix", () => {
+    for (const policy of ROUTE_POLICY) {
+      for (const step of policy.chain) {
+        assert.equal(selfCertifies(step), false, `${policy.lane} routes ${step.route.model}`);
+      }
+    }
+  });
+});
+
+describe("unreviewedSteps", () => {
+  const astra = stepOf(MODEL_IDS.astra);
+  const opus = stepOf(MODEL_IDS.opus);
+
+  it("names the fallback no reviewer covers, not just the primary", () => {
+    // The shape the check exists for: a lane whose primary is Codex-authored and whose fallback is
+    // not. `tierPlan` resolves against the primary's family and reports the tier as healthy.
+    assert.deepEqual(unreviewedSteps([astra, opus], [stepOf(MODEL_IDS.opus, "openai")]), [1]);
+  });
+
+  it("accepts a reviewer that certifies whoever authored", () => {
+    assert.deepEqual(unreviewedSteps([astra, opus], [stepOf(MODEL_IDS.opus, "any")]), []);
+  });
+
+  it("accepts one reviewer per author family", () => {
+    const review = [stepOf(MODEL_IDS.opus, "openai"), stepOf(MODEL_IDS.codexSol, "anthropic")];
+    assert.deepEqual(unreviewedSteps([astra, opus], review), []);
+  });
+
+  it("does not count a seat that certifies nothing", () => {
+    assert.deepEqual(unreviewedSteps([astra, opus], [stepOf(MODEL_IDS.opus, "none")]), [0, 1]);
+    assert.deepEqual(unreviewedSteps([astra, opus], []), [0, 1]);
+  });
+
+  it("skips a step whose model it cannot place", () => {
+    assert.deepEqual(unreviewedSteps([stepOf("not-a-pinned-model")], []), []);
+  });
+});
+
+describe("the Astra row", () => {
+  it("leads complex implementation, and falls back on a CLI that cannot reach it", () => {
+    const chain = laneChain("complex_implementation") ?? [];
+    assert.equal(chain.length, 2);
+    assert.deepEqual(toDispatch(chain[0]?.route ?? ({} as Route)), {
+      harness: "codex",
+      model: MODEL_IDS.astra,
+      effort: "medium",
+    });
+    assert.deepEqual(chain[0]?.when, []);
+
+    // Not `native-quota-limit`. A quota trigger would mean the subscription is spent, and falling
+    // back to a second model on that same subscription would be a fallback in name only.
+    assert.deepEqual(chain[1]?.when, ["model-unavailable"]);
+    assert.equal(chain[1]?.route.model, MODEL_IDS.codexSol);
+    assert.ok(FALLBACK_TRIGGERS.includes("model-unavailable"));
+  });
+
+  it("keeps a reviewer for every step of the complex tier, not only its primary", () => {
+    const lanes = TIER_LANES.complex;
+    assert.deepEqual(unreviewedSteps(laneChain(lanes.implement) ?? [], laneChain(lanes.review) ?? []), []);
   });
 });
