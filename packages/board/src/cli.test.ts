@@ -146,6 +146,21 @@ describe("exit 1 — the board contradicts itself, and nothing else", () => {
       assert.equal(await main([command], harness({ fetchItems: anomalous }).deps), 0, command);
     }
   });
+
+  it("does not let exiting 0 mean the views said nothing about it", async () => {
+    // The other half of the rule above, and the half that was missing: a view is allowed to pass a
+    // broken board without failing, and is not allowed to pass it without saying so. An item with
+    // two `status:` labels resolves to whichever came first, so `columns` printed a column with the
+    // confidence of a settled fact while `check` called the same board broken — and the person
+    // typing `columns` is by definition not the person reading `check`. See #218.
+    const contested = returning([issue({ number: 1, labels: ["status:plan", "status:shipped"] })]);
+    for (const command of ["status", "columns"]) {
+      const h = harness({ fetchItems: contested });
+      assert.equal(await main([command], h.deps), 0, command);
+      assert.match(h.out(), /!! ANOMALIES \(1\)/, command);
+      assert.match(h.out(), /^ *! /m, command);
+    }
+  });
 });
 
 describe("exit 2 — the command line was wrong", () => {

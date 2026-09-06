@@ -285,6 +285,79 @@ describe("renderHierarchy, on a board that contradicts itself", () => {
   });
 });
 
+/**
+ * The rule these pin: a view that prints a phase must also print that the phase is disputed.
+ *
+ * An item carrying two `status:` labels resolves to whichever came first, silently. `columns` and
+ * `status` used to render that pick as a settled column and exit 0, while `digest` showed the same
+ * board as broken — so the two surfaces a person types to ask "status ?" were the two that answered
+ * wrongly without saying so. See #218.
+ */
+describe("the views a person types, on a board that contradicts itself", () => {
+  const contested = () =>
+    snapshotOf([
+      issue({ number: 5, labels: ["status:plan", "status:shipped"] }),
+      issue({ number: 6, labels: ["status:plan"] }),
+    ]);
+
+  it("warns above the columns, and marks the row that is disputed", () => {
+    const text = renderColumns(contested());
+    assert.match(text, /^!! ANOMALIES \(1\)/m);
+    assert.match(text, /^! #5 item 5$/m);
+    // The clean item in the same column stays unmarked, or the mark means nothing.
+    assert.match(text, /^ {2}#6 item 6$/m);
+  });
+
+  it("warns above the tree, and marks the task that is disputed", () => {
+    const text = renderHierarchy(buildHierarchy(contested()));
+    assert.match(text, /^!! ANOMALIES \(1\)/m);
+    assert.match(text, /^ {2}! plan +#5 item 5$/m);
+    assert.match(text, /^ {4}plan +#6 item 6$/m);
+  });
+
+  it("keeps the gutter two characters wide, so a mark never shifts the row beside it", () => {
+    const lines = renderColumns(contested()).split("\n");
+    const marked = lines.find((l) => l.startsWith("! ")) ?? "";
+    const clean = lines.find((l) => /^ {2}#6/.test(l)) ?? "";
+    assert.equal(marked.indexOf("#"), clean.indexOf("#"), `${marked} / ${clean}`);
+  });
+
+  it("says nothing at all when the board agrees with itself", () => {
+    // The warning has to be absent on a clean board, not merely quiet. A banner that is always
+    // there is a banner nobody reads, which is the state this whole change is trying to leave.
+    for (const text of [
+      renderColumns(snapshotOf([issue({ number: 1, labels: ["status:plan"] })])),
+      renderHierarchy(buildHierarchy(snapshotOf([issue({ number: 1, labels: ["status:plan"] })]))),
+    ]) {
+      assert.ok(!text.includes("ANOMALIES"), text);
+      assert.ok(!text.includes("!"), text);
+    }
+  });
+
+  it("counts a board-level anomaly without promising a mark that is not there", () => {
+    // A truncated fetch is a statement about the projection, not about any one issue. Sending the
+    // reader to look for `!` would send them hunting for something no row carries.
+    const snapshot = projectBoard([issue({ number: 5, labels: ["status:plan"] })], {
+      repo: "o/r",
+      generatedAt: AT,
+      completeness: { limit: 1, capped: ["issue"] },
+    });
+    const text = renderColumns(snapshot);
+    assert.match(text, /^!! ANOMALIES \(1\)/m);
+    assert.ok(!text.includes("! marks an affected item"), text);
+    assert.ok(!/^! /m.test(text), text);
+  });
+
+  it("counts one anomaly as an anomaly", () => {
+    assert.match(renderColumns(contested()), /ANOMALIES \(1\)/);
+    assert.match(renderAnomalies(contested()), /^1 anomaly$/m);
+    assert.match(
+      renderAnomalies(snapshotOf([issue({ number: 5, labels: ["status:plan", "status:shipped"] }), issue({ number: 6, labels: [] })])),
+      /^2 anomalies$/m,
+    );
+  });
+});
+
 describe("renderAnomalies, on anomalies that belong to no item", () => {
   it("omits the issue prefix rather than blaming an arbitrary issue", () => {
     const snapshot = projectBoard([issue({ number: 5, labels: ["status:plan"] })], {
