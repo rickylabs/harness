@@ -21,12 +21,20 @@
  *
  * ## Why it depends on telemetry
  *
- * Empty is not the same as unwatched. Whatever E3 · #33 eventually registers, it goes through
- * `instrumentRegistry` before it reaches the context, so an uninstrumented provider is not
- * something a provider package can produce by forgetting — it is something this seam cannot hand
- * out. That is why the dependency is declared with `inject` rather than resolved with an optional
- * read: a plugin that could load without telemetry would load without telemetry exactly once, on
- * the box where it mattered, and the evidence for that run would simply not exist.
+ * Empty is not the same as unwatched. The registry this row provides goes through
+ * `instrumentRegistry`, so every provider on it is wrapped and carries a `markInstrumented` mark,
+ * and `selectProvider` refuses to dispatch through a registry holding anything unmarked.
+ *
+ * That refusal is doing the work, not this call. `SubagentRegistry.providers` is readonly, so E3 ·
+ * #33 adds a provider by handing over a **new registry** — a path that never comes through here.
+ * This comment used to claim that wrapping at the seam made an uninstrumented provider something
+ * the seam could not hand out; it did not, and the guarantee was true only of the empty registry
+ * built two lines below. See #208: the property is now checked where a dispatch is decided, which is
+ * the one place every provider has to pass through no matter who registered it.
+ *
+ * The dependency is still declared with `inject` rather than resolved with an optional read, for the
+ * reason it always was: a plugin that could load without telemetry would load without telemetry
+ * exactly once, on the box where it mattered, and the evidence for that run would simply not exist.
  *
  * The cost is that this row sits `PENDING` until `harness-telemetry` is on the context. That is the
  * intended failure: a coordinator that can dispatch but cannot record is worse than one that
