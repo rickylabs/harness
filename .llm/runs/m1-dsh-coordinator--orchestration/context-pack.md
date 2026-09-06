@@ -45,3 +45,12 @@ Do not modify workflows with this token. Never apply harness as a taxonomy label
 
 Draft PR 193 publishes these continuation artifacts. Keep it draft until the durable-loop
 plan receives its own review; the maintenance-plan PASS does not certify that new design.
+
+## Owner correction in force
+
+Before further port implementation, read reference-port-addendum.md. The dispatch gap is #53:
+port netscript's working Codex protocol/ownership/resume patterns into the existing subagents
+contract on Node/pnpm. Slice C now requires this P slice. Resolve the existing-daemon attachment
+transport and deprecated wrapper successors first. Structural decisions in issues/PRs carry
+an observed source tag and rationale. Framework docs, EIS RFCs/contracts/plugins and Ledgerline
+construction patterns are read-only sources; their Deno toolchain is not a dependency.

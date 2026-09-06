@@ -340,3 +340,12 @@ forks F1/F2 appended to plan.md rather than silently deciding storage or a live 
 The original dispatch schedule remains intact. context-pack.md is refreshed as the canonical
 cold-resume surface; the historical wave-zero state remains in Git history and the worklog.
 PR 193 is explicitly draft; these artifacts do not certify an implemented orchestration loop.
+
+## 2026-09-06 — owner addendum: references before porting
+
+Folded the owner correction into the current draft, without restarting delivered work. The new
+reference-port-addendum.md ties structural choices to netscript Codex sources, framework docs,
+EIS RFCs/actual composition and Ledgerline's construction patterns. DAG slice C now depends on
+P (#53 Codex port). Explicit integration gap: reference helper spawns a child while #53 requires
+existing-daemon attachment; source inspection is not a live transport proof. Several source
+wrappers are deprecated, so successor parity is also required before implementation.

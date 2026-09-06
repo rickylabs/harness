@@ -447,3 +447,11 @@ shipped; written E6/E9 plan filed on issues 36 and 39, tracked in 191 and draft 
 13 inherited contradictions repaired with exact membership and label/state readback.
 The draft loop is not implemented. Its production store/canary forks are appended in plan.md.
 No release tag, workflow modification, stub behavior or unrelated host action was performed.
+
+## 2026-09-06 — owner correction applied
+
+Read the owner addendum in full. Consulted all six named Codex implementation sources plus
+framework/product reference sections; source revisions and inspected scope are recorded in
+reference-port-addendum.md. Added source-tagged structural decisions and concrete fixtures for
+#53; kept attach-versus-spawn and deprecated-successor parity as integration gates. Updated the
+existing E6/E9 draft and DAG rather than restarting it. No provider stub or sibling source changed.

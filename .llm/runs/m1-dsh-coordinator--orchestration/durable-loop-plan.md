@@ -107,3 +107,14 @@ Spikes before locking C/E: verify stable dsh lifecycle and remote.mux transport 
 installed published version; prove provider recovery/readback capabilities; specify durable
 storage flush/lock semantics on the actual target filesystem; retrieve unavailable prior art.
 These are unverified integration facts, not claims of already-working behavior.
+
+## Owner reference correction — 2026-09-06
+
+The draft now includes the source-to-contract mapping and integration gates in
+[reference-port-addendum.md](reference-port-addendum.md). Add P (#53, E3 Codex port) before
+C's live driver. It ports thread-start identity, exclusive sender ownership, same-thread resume
+and distinct progress/turn signals from the existing netscript implementation. The attach-only
+transport mismatch is a required spike; a process-spawning reference is not permission to spawn
+or restart this host's daemon. The Node/pnpm and service-adapter decisions remain unchanged.
+[observed - netscript .llm/tools/agentic/codex/app-server-message.ts threadStartRequest]
+[observed - harness issue 53 attach-only acceptance]
