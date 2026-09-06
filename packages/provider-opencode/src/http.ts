@@ -7,16 +7,29 @@
  * decided here rather than in the verbs. A rejected `fetch` and a `409` are the same JavaScript
  * event — an exception, or a value nobody looked at — and they are opposite facts:
  *
- * - **The server answered.** Whatever it said, it said. Nothing launched that we did not see launch,
- *   so a caller may act on the answer, including by trying again.
- * - **The server did not answer.** The request may have been received, executed, and its response
- *   lost. `isSafeToRetry` licenses a retry only for `refused`, precisely so that this case cannot
- *   put a second agent on the branch the first one is already holding.
+ * - **The server read the request and declined it.** Nothing launched that we did not see launch, so
+ *   a caller may act on that, including by trying again.
+ * - **Anything else.** The request may have been received, executed, and its response lost.
+ *   `isSafeToRetry` licenses a retry only for `refused`, precisely so that this case cannot put a
+ *   second agent on the branch the first one is already holding.
  *
- * `answered()` is that split as a callable predicate, so the verbs read it instead of re-deriving it
- * from an error message. A `malformed` reply counts as *not* answered on purpose: the server did
+ * `refutes()` is that split as a callable predicate, so the verbs read it instead of re-deriving it
+ * from an error message. A `malformed` reply is on the ambiguous side on purpose: the server did
  * respond, but we could not read what it said, and "it did something and we do not know what" is
  * exactly what `unknown` is for.
+ *
+ * ## Why a `5xx` does not refute anything
+ *
+ * The distinction is not "did bytes come back". `502`, `503` and `504` are what an intermediary says
+ * when it could not get an answer out of the thing behind it — a statement about the proxy's
+ * patience, not about whether the origin ran the request. A `504` on `prompt_async` is the precise
+ * shape of *the agent started and the gateway stopped waiting*. A `500` is the origin saying it
+ * failed, with no promise about how far it got first.
+ *
+ * Only the `4xx` class is the server having read the request, evaluated it, and said no, and only
+ * that class proves nothing is executing. Reading every status as a definite answer is how a live
+ * run gets reported `refused`, and `refused` is the one verdict `isSafeToRetry` licenses — so the
+ * coordinator would dispatch a second agent onto a branch the first is still holding.
  *
  * ## Why `fetch` is injected
  *
@@ -60,13 +73,17 @@ export type HttpOutcome =
 export type HttpFn = (request: HttpRequest) => Promise<HttpOutcome>;
 
 /**
- * Whether the server answered this request.
+ * Whether this outcome proves the request had no effect.
  *
- * The predicate the verbs branch on. `true` licenses a definite verdict — `accepted` or `refused`.
- * `false` means the only honest verdict is `unknown`, whatever the detail says.
+ * The predicate the verbs branch on. `true` licenses `refused` — and only `refused`, because
+ * `isSafeToRetry` licenses a retry on exactly that word. `false` means the only honest verdict is
+ * `unknown`, whatever the detail says.
+ *
+ * A `4xx` is a refutation: the server read the request, evaluated it, and declined. A `5xx` is not,
+ * for the reason argued in this module's header — see "Why a `5xx` does not refute anything".
  */
-export function answered(outcome: HttpOutcome): boolean {
-  return outcome.kind === "ok" || outcome.kind === "http";
+export function refutes(outcome: HttpOutcome): boolean {
+  return outcome.kind === "http" && outcome.status < 500;
 }
 
 /** A one-line description of an outcome, for a detail string. Never includes a response body verbatim. */

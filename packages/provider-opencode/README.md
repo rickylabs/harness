@@ -39,6 +39,35 @@ branch. A failed *prompt* is **unknown**, which `isSafeToRetry` deliberately doe
 prompt the server read and rejected is **refused** *and* releases the run id and deletes the session,
 so the retry the contract licenses is not then blocked here as a duplicate.
 
+## `unknown` is not `refused`, and a status code is not proof
+
+`isSafeToRetry` licenses a retry on exactly one word — `refused` — so `refused` is a claim that
+*nothing is executing*, not a summary of how the request went. Four places in this package have to
+decide it, and `refutes()` is that decision written once:
+
+| Outcome | Refutes? | Because |
+| --- | --- | --- |
+| `4xx` | yes | the server read the request, evaluated it, and declined |
+| `5xx` | **no** | `502`/`503`/`504` describe an intermediary's patience, not the origin's work |
+| malformed | no | it answered; we could not read what it said |
+| unreachable | no | the request may have been received, run, and its reply lost |
+
+The `5xx` row is the one that costs money to get wrong. A `504` on `prompt_async` is the exact shape
+of *the agent started and the gateway stopped waiting*; reading it as `refused` licenses a retry, and
+the retry puts a second agent on a branch the first one is still holding.
+
+Two more rules keep the same word honest under concurrency:
+
+- **The run id is reserved before the first `await`.** `dispatch` suspends twice before it has a
+  session id to store, and a store that only gains its entry at the end of that is one two callers
+  can both pass the duplicate check on. The reservation is what the second caller collides with; an
+  early refusal releases it, so a refused dispatch does not burn the id.
+- **The bus outranks a reply that is older than it.** A `204` still in flight can land on a record the
+  bus has already carried to `finished`; writing `queued` over that reports an ended run as one that
+  has not begun. So the post-`await` writes are guarded, and a *lost* reply for a session the bus has
+  since seen working is `accepted` — a launch that has been observed is a launch, however badly the
+  request that caused it ended.
+
 ## Using it
 
 `fetch` is **injected**, not imported. A composition root binds the real transport; the suite binds a
@@ -107,6 +136,15 @@ nothing says it still is. So `observe` reconnects on demand and, if it still can
 *live* run to `unknown` with the time the photograph was taken. Terminal states are exempt, and that
 is not an inconsistency — `finished` and `failed` are facts about something that already happened and
 they do not expire.
+
+**A reconnect returns a connection, not the news.** `GET /event` is live-only: it replays nothing, so
+every event that arrived while there was no socket is simply gone, and the run may have finished
+inside the gap. Treating a fresh socket as evidence about a record written before it is the stale
+snapshot failure wearing a green light. So each connection carries a generation number, and a live
+run last spoken for on an earlier one is `unknown` until the current connection says otherwise — at
+which point `observe` speaks plainly again. A counter rather than a timestamp because a reconnect is
+a *discontinuity*, not a point in time, and because a check against clock values is unfailable under
+the frozen clock the suite injects.
 
 ## Never printing `auth.json`
 

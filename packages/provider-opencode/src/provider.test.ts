@@ -95,6 +95,15 @@ interface Server {
   /** `null` mints an incrementing session id; an outcome overrides every `POST /session`. */
   session: HttpOutcome | null;
   prompt: HttpOutcome;
+  /**
+   * Run while a `prompt_async` request is in flight, before its outcome is returned.
+   *
+   * The one thing a fake that answers instantly cannot produce: a reply that is *late*. A real
+   * server starts the agent and then answers, so the bus can carry a session all the way to idle
+   * while the request that started it is still on the wire — and the provider has to decide which of
+   * the two it believes.
+   */
+  onPrompt: (() => Promise<void>) | null;
   abort: HttpOutcome;
   remove: HttpOutcome;
   /** `null` opens the channel; an outcome makes `GET /event` fail instead. */
@@ -119,6 +128,7 @@ function server(options: { readonly logDir?: string; readonly agent?: string } =
     streamCalls,
     session: null as HttpOutcome | null,
     prompt: ok(204, null),
+    onPrompt: null as (() => Promise<void>) | null,
     abort: ok(200, true),
     remove: ok(200, true),
     stream: null as StreamOutcome | null,
@@ -138,7 +148,10 @@ function server(options: { readonly logDir?: string; readonly agent?: string } =
     calls.push(request);
     if (request.method === "DELETE") return state.remove;
     if (request.path.endsWith("/abort")) return state.abort;
-    if (request.path.endsWith("/prompt_async")) return state.prompt;
+    if (request.path.endsWith("/prompt_async")) {
+      if (state.onPrompt !== null) await state.onPrompt();
+      return state.prompt;
+    }
     if (state.session !== null) return state.session;
     minted += 1;
     return ok(200, { id: `ses_${minted}` });
@@ -276,6 +289,29 @@ describe("dispatch", () => {
     assert.match(again.detail, /already dispatched here/);
   });
 
+  it("refuses the second of two dispatches racing on one run id", async () => {
+    // What the reservation is for. The duplicate check asks whether the id is taken; if the answer is
+    // only written after `POST /session` has returned, two callers that both asked during that gap
+    // are both told the id is free — and two agents launch under one id, which is precisely what
+    // refusing a duplicate exists to prevent. Sequentially the check already worked; the failure only
+    // appears when the second caller arrives inside the first one's awaits.
+    const fake = server();
+
+    const results = await Promise.all([
+      fake.provider.dispatch(request(), "r1"),
+      fake.provider.dispatch(request(), "r1"),
+    ]);
+
+    assert.deepEqual(
+      results.map((result) => result.verdict).sort(),
+      ["accepted", "refused"],
+    );
+    const refusal = results.find((result) => result.verdict === "refused");
+    assert.match(refusal?.detail ?? "", /already dispatched here/);
+    assert.equal(fake.paths().filter((path) => path === "POST /session").length, 1);
+    assert.equal(fake.provider.records().length, 1);
+  });
+
   it("refuses an empty run id and a harness it does not launch", async () => {
     const fake = server();
     assert.match((await fake.provider.dispatch(request(), "")).detail, /run id is empty/);
@@ -356,6 +392,24 @@ describe("dispatch", () => {
     assert.equal((await fake.provider.dispatch(request(), "r1")).verdict, "accepted");
   });
 
+  it("does not read a 504 on the prompt as a refusal, because the agent may be running", async () => {
+    // The counterpart to the test above, and the more expensive of the two to get wrong. A `504` is
+    // an intermediary saying it stopped waiting — the exact shape of *the agent started and the
+    // gateway gave up on it*. Calling that `refused` licenses `isSafeToRetry`, and the retry puts a
+    // second agent on a branch the first one is still holding. So the verdict is `unknown`, the run
+    // is kept, and the session is left alone rather than deleted out from under live work.
+    const fake = server();
+    fake.prompt = { kind: "http", status: 504, detail: "gateway timeout" };
+
+    const result = await fake.provider.dispatch(request(), "r1");
+
+    assert.equal(result.verdict, "unknown");
+    assert.match(result.detail, /may or may not have started/);
+    assert.match(result.detail, /watchable as session ses_1/);
+    assert.deepEqual(fake.paths(), ["POST /session", "POST /session/ses_1/prompt_async"]);
+    assert.equal(at(fake.provider.records(), 0).liveness, "unknown");
+  });
+
   it("reports a lost prompt reply as unknown, with a session to go and look at", async () => {
     // The whole argument for this provider. `provider-claude`'s `unknown` has nothing to name; this
     // one hands back a session id that observe, steer and stop all work on.
@@ -369,6 +423,40 @@ describe("dispatch", () => {
     assert.match(result.detail, /may or may not have started/);
     assert.match(result.detail, /watchable as session ses_1/);
     assert.equal(at(fake.provider.records(), 0).liveness, "unknown");
+  });
+
+  it("does not let a late prompt reply reset a run the bus has already finished", async () => {
+    // The two sources disagree and the bus wins. A real server starts the agent and *then* answers,
+    // so a `204` can still be on the wire after the session has run and gone idle. Writing `queued`
+    // on top of that reports an ended run as one that has not begun — a coordinator polling for a
+    // free slot would never see it end.
+    const fake = server();
+    fake.onPrompt = async (): Promise<void> => {
+      await fake.emit({ type: "session.idle", properties: { sessionID: "ses_1" } });
+    };
+
+    const result = await fake.provider.dispatch(request(), "r1");
+
+    assert.equal(result.verdict, "accepted");
+    assert.match(result.detail, /the bus already reports it finished/);
+    assert.equal(at(fake.provider.records(), 0).liveness, "finished");
+  });
+
+  it("accepts a run whose prompt reply was lost but whose session has been seen working", async () => {
+    // `unknown` is for a launch nobody watched. This one was watched: the reply died on the way back,
+    // and in the meantime the bus reported the session doing the work. A launch that has been *seen*
+    // is `accepted`, however badly the request that caused it ended.
+    const fake = server();
+    fake.prompt = { kind: "unreachable", detail: "socket hang up" };
+    fake.onPrompt = async (): Promise<void> => {
+      await fake.emit({ type: "message.updated", properties: { sessionID: "ses_1" } });
+    };
+
+    const result = await fake.provider.dispatch(request(), "r1");
+
+    assert.equal(result.verdict, "accepted");
+    assert.match(result.detail, /has since reported activity/);
+    assert.equal(at(fake.provider.records(), 0).liveness, "running");
   });
 
   it("names the fields the prompt body could not carry", async () => {
@@ -480,7 +568,12 @@ describe("observe", () => {
     assert.equal(fake.provider.busState().connected, false);
   });
 
-  it("reconnects on demand, and reports plainly once it has", async () => {
+  it("reconnects on demand, but does not treat the new socket as news about the run", async () => {
+    // The subtler half of the stale-snapshot failure. A reconnect returns a connection, not the
+    // events that were missed while there was none: `GET /event` is live-only and replays nothing.
+    // The run may have gone idle inside the gap, so a record last written before it is still a
+    // photograph — and reporting it as `queued` because a socket is up again would be the same lie
+    // as reporting it while the socket was down, with better cover.
     const fake = server();
     await fake.provider.dispatch(request(), "r1");
     await fake.drop();
@@ -488,9 +581,26 @@ describe("observe", () => {
 
     const observation = await fake.provider.observe(ref("r1"));
 
-    assert.equal(observation.liveness, "queued");
+    assert.equal(observation.liveness, "unknown");
+    assert.match(observation.detail, /reconnected and replays nothing/);
+    assert.match(observation.detail, /it was queued/);
     assert.equal(fake.streamCalls.length, 2);
     assert.equal(fake.provider.busState().connected, true);
+  });
+
+  it("speaks plainly again once the new connection has said something about the run", async () => {
+    // And the gap closes on evidence, not on time. One event on the current connection is the run
+    // accounted for again, which is what keeps the downgrade above from being permanent.
+    const fake = server();
+    await fake.provider.dispatch(request(), "r1");
+    await fake.drop();
+    await fake.provider.observe(ref("r1"));
+
+    await fake.emit({ type: "message.updated", properties: { sessionID: "ses_1" } });
+    const observation = await fake.provider.observe(ref("r1"));
+
+    assert.equal(observation.liveness, "running");
+    assert.match(observation.detail, /working \(1 events\)/);
   });
 
   it("does not downgrade a finished run, because a fact about the past does not expire", async () => {
