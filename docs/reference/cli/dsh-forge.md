@@ -39,6 +39,7 @@ usage
   dsh-forge targets backend        which backend dispatches each target, and why
   dsh-forge swarm admit            decide every /swarm comment the way the dispatcher would
   dsh-forge swarm mirror           the inbox issue each honoured trigger would open
+  dsh-forge swarm teardown         which runs are past their deadline, and which actually stopped
   dsh-forge supervise              what is new on each agent's PR, and what it has already been told
   dsh-forge init                   eject + apply + skill install, in that order
 
@@ -61,6 +62,16 @@ options
                         (repeatable — one per target repository)
   --seen <path>         swarm only: the dispatcher's state.json, whose seen_swarm keys name the
                         comments it has already decided
+  --runs <path>         swarm teardown only: a JSON array of observed runs (repeatable), each
+                        {"ref":"owner/name#1","harness":"claude","startedAt":"<iso>","timeout":"2h",
+                        "exited":false,"artefacts":[{"path":"…","at":"<iso>","bytes":0}]}
+  --at <iso>            swarm teardown only: the moment to judge against (default: now)
+  --settle <duration>   swarm teardown only: how long an artefact must be quiet before a run counts
+                        as verified down (default: 5m)
+  --stuck <duration>    swarm teardown only: how long past its deadline a run may write before it is
+                        called stuck (default: 1h)
+  --deadline <duration> swarm teardown only: the timeout a run with none of its own gets (default:
+                        4h)
   --pulls <path>        supervise only: a 'gh pr list --json' dump (repeatable — one per repository)
   --panes <path>        supervise only: 'herdr pane read' output as JSON, one entry per pull:
                         {"pull":"owner/name#1","busy":true,"text":"…"} — redacted on the way in

@@ -183,6 +183,7 @@ export {
   findSourceIssue,
   isSkippedRefusal,
   issueOfUrl,
+  refOfInboxTitle,
   renderMirror,
   repoOfIssueUrl,
   tallySwarm,
@@ -198,6 +199,38 @@ export {
 } from "./swarm/trigger.js";
 
 export { renderMirrorPreview, renderTriggers } from "./swarm/render.js";
+
+export {
+  DEFAULT_SETTLE,
+  DEFAULT_STUCK,
+  DEFAULT_TIMEOUT,
+  TEARDOWN_EVIDENCE,
+  TEARDOWN_REFUSALS,
+  TEARDOWN_STATES,
+  TEARDOWN_STEPS,
+  checkTeardown,
+  describeTeardownEvidence,
+  describeTeardownProblem,
+  describeTeardownState,
+  inboxIssues,
+  planTeardown,
+  span,
+  tallyTeardown,
+  type Artefact,
+  type InboxIssue,
+  type RunObservation,
+  type Teardown,
+  type TeardownEvidence,
+  type TeardownInput,
+  type TeardownProblem,
+  type TeardownRefusal,
+  type TeardownState,
+  type TeardownStep,
+  type TeardownTally,
+  type TeardownVerdict,
+} from "./swarm/teardown.js";
+
+export { renderTeardown } from "./swarm/teardown-render.js";
 
 export {
   CONFLICT_STATES,
