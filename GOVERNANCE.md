@@ -72,12 +72,18 @@ Two consequences of GitHub being the source of truth
 `@rickylabs/harness-contracts` is the only package that leaves this repository. It is published by
 [`release-contracts.yml`](.github/workflows/release-contracts.yml), triggered by a
 `harness-contracts-v*` tag — never from a local machine, never by a merge, and never by `ci`, which
-holds read-only permissions and publishes nothing. The pipeline is inert until the owner adds an
-`NPM_TOKEN`. Contributors do not publish.
+holds read-only permissions and publishes nothing. The `NPM_TOKEN` secret is in place; what remains
+is the tag, and only the owner pushes one. Contributors do not publish.
 
 ## If this changes
 
-This model fits a private repository with one owner and a fleet of agents. If the repository opens
-up or gains maintainers, the model should change — toward a maintainers' group, a contribution
-agreement, and branch protection that does not depend on one person's discipline. Any such change is
-proposed and documented here before it takes effect.
+This repository became public on 2026-09-06. That changed who can read it; it did not change who
+decides. One owner still holds merge, still pushes the release tag, and still applies the dispatch
+label — and being public makes that concentration more consequential rather than less, because the
+label starts a real agent on a real host
+([`SECURITY.md`](SECURITY.md#2-the-dispatch-label-is-an-execution-primitive)).
+
+If this repository gains maintainers, the model should change — toward a maintainers' group, a
+contribution agreement, and branch protection that does not depend on one person's discipline. It
+has not gained any, and the model above is written for the repository as it is rather than as it may
+become. Any such change is proposed and documented here before it takes effect.

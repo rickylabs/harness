@@ -251,10 +251,11 @@ pull request cannot ship, and that the tag and the manifest name the same versio
 publish, with npm provenance: signed with an OIDC token minted per run, so the tarball is traceable
 to that workflow at that commit rather than to whoever held a token.
 
-**It is inert until two things exist that only the owner can supply:** an `NPM_TOKEN` repository
-secret, and a pushed tag. Until then the workflow can be read and reviewed but cannot publish. To
-exercise it without releasing, dispatch it manually — the manual path defaults to a dry run and
-prints the tarball contents instead of uploading them.
+**One thing still gates the first publish, and only the owner can supply it: the tag.** The
+`NPM_TOKEN` repository secret was added on 2026-09-06; until a `harness-contracts-v*` tag exists the
+workflow can be read and reviewed but cannot publish. To exercise it without releasing, dispatch it
+manually — the manual path defaults to a dry run and prints the tarball contents instead of
+uploading them.
 
 `check:publish` runs as the last step of `pnpm run build`, so the things that have no undo are caught
 in the ordinary loop: the manifest name against the compiled `PACKAGE_NAME`, the protocol against

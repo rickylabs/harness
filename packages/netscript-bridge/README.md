@@ -23,7 +23,8 @@ would have caught it does not exist because the import compiled fine on the mach
 
 ## The other direction is already solved, differently
 
-The cockpits are the inbound half and they do not come through here. They live in netscript and
+The cockpits are the inbound half and they do not come through here. They are separate products —
+`rickylabs/atelier-cockpit` and `rickylabs/atelier-mobile` — and they
 reach this layer over [`contracts`](../contracts/README.md), published to npm as
 `@rickylabs/harness-contracts` — which is *why* that package is published at all, and the only one
 that is. Two directions, two mechanisms, and neither is a workspace import.

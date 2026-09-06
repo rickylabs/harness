@@ -98,8 +98,13 @@ one, raise it as a change to #30 rather than resolving it inside a run.
    upstream remote kept for updates.
 2. **Node + pnpm.** netscript stays a service behind an adapter, not a build-time dependency.
 3. **GitHub is the source of truth for the board**; dsh projects the live view.
-4. **This repo is the dsh layer only.** The Expo cockpit and the web cockpit both live in
-   netscript. Consequence: `contracts` must be a *published* package, not a workspace import.
+4. **This repo is the dsh layer only.** No cockpit is built here. The two that consume this
+   layer are separate products in their own repositories — `rickylabs/atelier-cockpit`, the
+   engineering cockpit, and `rickylabs/atelier-mobile`, the Expo companion. Consequence:
+   `contracts` must be a *published* package, not a workspace import. Decision 4 originally placed
+   both cockpits in netscript and was
+   [amended](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579) once they
+   became products in their own right; the consequence is the half the amendment left standing.
 
 Decisions 2 and 4 are load-bearing for [E2](https://github.com/rickylabs/harness/issues/32) and
 [E8](https://github.com/rickylabs/harness/issues/38). A design that adds NetScript as a

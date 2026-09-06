@@ -11,17 +11,19 @@ and they are the reason this file is not a template.
 repository that is worse than the usual mistake: see [the dispatch label](#2-the-dispatch-label-is-an-execution-primitive)
 below.
 
-`rickylabs/harness` is **private**, so GitHub private vulnerability reporting — which requires a
-public repository — is not available here. The channel is direct: contact the maintainer
-([@rickylabs](https://github.com/rickylabs)) privately and ask for a secure channel before sending
-anything sensitive.
+Use **[GitHub private vulnerability reporting](https://github.com/rickylabs/harness/security/advisories/new)**.
+It is enabled on this repository. The report is visible only to you and the maintainers, it never
+becomes an issue, and it therefore never reaches the dispatch path described below. If you cannot
+use it, contact the maintainer ([@rickylabs](https://github.com/rickylabs)) privately and ask for a
+secure channel before sending anything sensitive.
 
 Include what you would send anywhere else: what the vulnerability is, its impact, how to reproduce
 it, the affected version or commit, and any mitigation you know of. If a reproduction requires a
 credential, describe the credential — do not send one.
 
-If this repository is ever made public, private vulnerability reporting becomes the correct channel
-and this section changes. Until then, an advisory URL here would be a link that does not work.
+This repository was private until 2026-09-06, and the reporting channel above is the one thing that
+changed with it. Nothing else in this file is softened by the repository being readable: the
+dispatch label was always the sharp edge, and a wider audience does not blunt it.
 
 ---
 

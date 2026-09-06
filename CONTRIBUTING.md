@@ -178,10 +178,8 @@ author.
 
 ## Legal
 
-MIT ([`LICENSE`](LICENSE)), matching `dsh`. There is no CLA and no DCO sign-off requirement: this is
-a private repository with a single owner, and a sign-off ceremony with no one to certify anything to
-would be process theatre. If the repository is ever opened up, that changes and this section changes
-with it.
+MIT ([`LICENSE`](LICENSE)), matching `dsh`. This repository is public. There is currently no CLA
+and no DCO sign-off requirement; the owner maintains the contribution policy described here.
 
 Never open a public issue for a security problem — [`SECURITY.md`](SECURITY.md) says why the usual
 advice is doubly true here.
