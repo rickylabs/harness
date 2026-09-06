@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **151/179 done · 6 running · 11 queued · 11 abandoned**
+`[################----]` **153/181 done · 6 running · 11 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T20:33:09Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T20:36:42Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (6)
 
@@ -12,9 +12,9 @@ Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
-| [#189 docs: the repository is public — correct every false claim, then polish](https://github.com/rickylabs/harness/issues/189) | `impl` | — |
-| [PR190 docs: correct every claim the repository going public made false](https://github.com/rickylabs/harness/pull/190) | `impl-eval` | — |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
+| [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
+| [#192 fix(dsh-app): preserve sibling text-block boundaries in LLM requests](https://github.com/rickylabs/harness/issues/192) | `impl` | `e2` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
@@ -23,29 +23,29 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 121/137 done · 3 running · 11 queued · 2 abandoned
+`[##########--]` 121/139 done · 5 running · 11 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[###########-]` 16/17 done · 1 queued | `impl` |
-| [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[#########---]` 8/10 done · 2 queued | `triage` |
+| [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[########----]` 8/11 done · 1 running · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[##########--]` 10/12 done · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
-| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 17/20 done · 1 running · 2 abandoned | `impl` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 17/21 done · 2 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[############]` 21/21 done | `shipped` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[###########-]` 12/13 done · 1 running | `impl` |
 
 ### (no milestone)
 
-`[########----]` 30/42 done · 3 running · 9 abandoned
+`[#########---]` 32/42 done · 1 running · 9 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[########----]` 2/3 done · 1 running | `impl` |
-| _(no epic)_ | `[########----]` 28/39 done · 2 running · 9 abandoned | — |
+| _(no epic)_ | `[#########---]` 30/39 done · 9 abandoned | — |
 
 ## Waiting to start
 
@@ -74,9 +74,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  151/179 done · 6 running · 11 queued · 11 abandoned
+# rickylabs/harness  [################----]  153/181 done · 6 running · 11 queued · 11 abandoned
 
-## M1 — dsh coordinator foundation  [#################---]  121/137 done · 3 running · 11 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [#################---]  121/139 done · 5 running · 11 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -118,7 +118,7 @@ Something could be acting on these right now.
     shipped              PR188 fix(forge): render the skill from the checkout, not from live issues (p1)
 
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]
-    [############----] 8/10 done · 2 queued
+    [###########-----] 8/11 done · 1 running · 2 queued
     shipped              #46 E2.1 — packages/dsh-app: the `rickylabs` profile and bundle
     triage               #47 E2.2 — Fork deepseek-harness-docker, keeping the upstream remote
     shipped              #48 E2.3 — deploy/compose/dsh.yaml for the N5
@@ -129,6 +129,7 @@ Something could be acting on these right now.
     shipped              PR139 feat(deploy): run the dsh web surface on the N5 (E2.3, #48)
     shipped              #176 E2.5 — claim the ctx.llm seam in the app shell (p2)
     shipped              PR177 feat(dsh-app): register the three token-metered backends on ctx.llm (#176)
+    impl                 #192 fix(dsh-app): preserve sibling text-block boundaries in LLM requests (p1)
 
   E3 — Subagent providers over structured protocols #33  [triage]
     [#############---] 10/12 done · 2 queued
@@ -172,7 +173,7 @@ Something could be acting on these right now.
     shipped              PR173 docs(doctrine): ADR 0002 - the sandboxctl execution channel (proposed) (p1)
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
-    [#############---] 17/20 done · 1 running · 2 abandoned
+    [############----] 17/21 done · 2 running · 2 abandoned
     impl-eval            #68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation
     shipped              #69 E6.2 — coordinator: the workflow definitions
     shipped              #70 E6.3 — Emit one dispatch payload in the /swarm wire format
@@ -193,6 +194,7 @@ Something could be acting on these right now.
     shipped              #161 E6.7 — Publish the board where a person will actually look (p1)
     shipped              PR162 feat(board): publish the board as a page, on a schedule (p1)
     shipped              PR163 fix(board): grant the board workflow the scopes it actually reads (p1)
+    plan                 #191 E6/E9 — Plan the durable orchestration loop and restart visibility proof (p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [shipped]
     [################] 21/21 done
@@ -245,7 +247,7 @@ Something could be acting on these right now.
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
 
-## (no milestone)  [##############------]  30/42 done · 3 running · 9 abandoned
+## (no milestone)  [###############-----]  32/42 done · 1 running · 9 abandoned
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [##########------] 2/3 done · 1 running
@@ -291,8 +293,8 @@ Something could be acting on these right now.
     shipped              #103 review: PR #101 (review_claude · Codex · Sol · xhigh)
     shipped              #106 review: PR #105 (review_claude · Codex · Sol · xhigh)
     shipped              #107 review: PR #101 re-review after FAIL_FIX (review_claude · Codex · Sol · xhigh)
-    impl                 #189 docs: the repository is public — correct every false claim, then polish (p0)
-    impl-eval            PR190 docs: correct every claim the repository going public made false (p0)
+    shipped              #189 docs: the repository is public — correct every false claim, then polish (p0)
+    shipped              PR190 docs: correct every claim the repository going public made false (p0)
 ```
 
 </details>
