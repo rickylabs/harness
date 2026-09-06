@@ -36,7 +36,9 @@
  *
  * It does not choose models — the routing matrix is the only answer to that question, and #61
  * validates model ids at the dispatch boundary. It does not hold a lease; single-writer session
- * ownership is #56, and `RunRef` carries the run id it will key on. It does not implement any
+ * ownership lives in `lease.ts` (#56), which keys on the run id `RunRef` carries and which nothing
+ * on this interface consults on its behalf — a caller resumes a run only after `admitResume` says
+ * it may, and a provider has no way to check that for itself. It does not implement any
  * provider. It does no I/O at all, which is what lets `selectProvider` and `conformanceProblems`
  * run in CI against a table of declarations with nothing installed.
  */
