@@ -4,7 +4,7 @@
 
 `[################----]` **145/174 done · 6 running · 11 queued · 11 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-06T17:33:24Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T17:35:09Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (6)
 
@@ -19,21 +19,17 @@ Something could be acting on these right now.
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
 
-## Not on the board (1)
-
-Open, and carrying no `status:` label — real work no column can see.
-
-| item | column | epic |
-| --- | --- | --- |
-| [PR185 chore(scripts): keep the scratchpad out of the link check and out of git](https://github.com/rickylabs/harness/pull/185) | — | `e1` |
-
 ## Anomalies (13)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
-**`epic-closed-by-child`**
+**`closed-but-unshipped`**
 
-- **#31** — is closed with 1 open child (#184); an umbrella closes when its last child does — reopen it, do not relabel it
+- **#184** — closed on GitHub but sits in impl; the issue wins, the column is stale
+
+**`closed-without-status`**
+
+- **#185** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-milestone-conflict`**
 
@@ -48,10 +44,6 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#179** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#180** — is in milestone (none) but its epic #34 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#181** — is in milestone (none) but its epic #34 is in M1 — dsh coordinator foundation; the epic appears under both
-
-**`no-status`**
-
-- **#185** — open item has no status label, so it appears in no column
 
 ## Epics
 
