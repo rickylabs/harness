@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[#################---]` **143/168 done · 3 running · 11 queued · 11 abandoned**
+`[################----]` **143/169 done · 4 running · 11 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T05:19:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T16:58:52Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (3)
+## Moving now (4)
 
 Something could be acting on these right now.
 
@@ -15,10 +15,15 @@ Something could be acting on these right now.
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
+| [PR180 feat(routing): seat Astra on complex implementation, and check the row holds](https://github.com/rickylabs/harness/pull/180) | `impl` | `e4` |
 
-## Anomalies (6)
+## Anomalies (8)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#180** — closed on GitHub but sits in impl; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
@@ -28,6 +33,7 @@ Something could be acting on these right now.
 - **#177** — is in milestone (none) but its epic #32 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#178** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#179** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#180** — is in milestone (none) but its epic #34 is in M1 — dsh coordinator foundation; the epic appears under both
 
 ## Epics
 
@@ -50,14 +56,14 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 35/44 done · 9 abandoned
+`[#########---]` 35/45 done · 1 running · 9 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[############]` 1/1 done | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[############]` 2/2 done | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[############]` 2/2 done | `triage` |
-| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[############]` 2/2 done | `triage` |
+| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[########----]` 2/3 done · 1 running | `triage` |
 | _(no epic)_ | `[#########---]` 28/37 done · 9 abandoned | — |
 
 ## Waiting to start
@@ -87,7 +93,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [#################---]  143/168 done · 3 running · 11 queued · 11 abandoned
+# rickylabs/harness  [################----]  143/169 done · 4 running · 11 queued · 11 abandoned
 
 ## M1 — dsh coordinator foundation  [#################---]  108/124 done · 3 running · 11 queued · 2 abandoned
 
@@ -245,7 +251,7 @@ Something could be acting on these right now.
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
 
-## (no milestone)  [###############-----]  35/44 done · 9 abandoned
+## (no milestone)  [###############-----]  35/45 done · 1 running · 9 abandoned
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [################] 1/1 done
@@ -262,9 +268,10 @@ Something could be acting on these right now.
     shipped              PR179 feat(provider-opencode): dispatch, watch and stop a run on a server we do not own
 
   E4 — Model gateway and routing matrix #34  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [################] 2/2 done
+    [##########------] 2/3 done · 1 running
     shipped              PR174 feat(routing): availability is probed, and a constant may never permit (p1)
     shipped              PR175 feat(llm-local): resolve endpoints and read readiness (#57) (p1)
+    impl                 PR180 feat(routing): seat Astra on complex implementation, and check the row holds
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
