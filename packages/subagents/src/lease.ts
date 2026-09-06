@@ -272,6 +272,14 @@ export interface Release {
   readonly ledger: LeaseLedger;
   readonly previous: Lease | null;
   readonly detail: string;
+  /**
+   * Why it was refused, in the same vocabulary as every other door, or `null` on success.
+   *
+   * `detail` is a sentence for a person; this is the reason a caller can branch on. A store that
+   * has to tell "nothing to release" from "you were evicted" — the first is idempotent tidying, the
+   * second means a live writer is still out there — cannot do it by matching on prose.
+   */
+  readonly problem: LeaseProblem | null;
 }
 
 /**
@@ -280,25 +288,68 @@ export interface Release {
  * The fence stays where it is. A released token is not returned to the pool: the holder that just
  * let go may still be mid-shutdown, and a later grant reusing its number would be indistinguishable
  * from it.
+ *
+ * ## Why this takes a fence
+ *
+ * Because it is the only function here that *deletes* a row, and the holder alone does not identify
+ * a writer. Holder strings are reusable by design — the doc on `Lease.holder` names a tmux session,
+ * and a tmux session name survives the restart of everything inside it. So `coord-harness` that
+ * stalled and `coord-harness` that replaced it are two writers wearing one name, and the fence is
+ * the only thing that tells them apart. Without it the stalled one wakes, tidies up, and deletes
+ * the live one's lease: the ledger then reads `unheld` while a process is still in the worktree,
+ * which is quieter than the two-writer bug this module exists for, not louder. `checkLedger` sees
+ * nothing wrong with an empty ledger.
+ *
+ * The store's compare-and-set cannot cover this. A release does not move the fence, so the evicted
+ * caller reads the ledger at the current fence, computes a delete, and writes back the same fence —
+ * the CAS compares equal and succeeds. It is a well-formed write issued from a stale belief about
+ * ownership, which is not the shape a CAS catches.
+ *
+ * Note what this deliberately still allows: releasing a lease that has *expired*, when the fence
+ * still matches. An expired lease that nobody took over is exactly the case a holder should be able
+ * to tidy up, and the fence having not moved is the proof that nobody did. Expiry is not the test;
+ * eviction is.
  */
-export function release(ledger: LeaseLedger, runId: string, holder: string): Release {
+export function release(
+  ledger: LeaseLedger,
+  runId: string,
+  holder: string,
+  fence: number,
+): Release {
+  const refuse = (reason: LeaseRefusal, previous: Lease | null, message: string): Release => ({
+    released: false,
+    ledger,
+    previous,
+    detail: message,
+    problem: { reason, message, runId },
+  });
+
   const previous = leaseOf(ledger, runId);
   if (previous === null) {
-    return { released: false, ledger, previous: null, detail: "no lease on record" };
+    return refuse("no-lease", null, "no lease on record");
   }
   if (previous.holder !== holder) {
-    return {
-      released: false,
-      ledger,
+    return refuse(
+      "held-by-another",
       previous,
-      detail: `held by ${previous.holder}, not ${holder} — nothing was written`,
-    };
+      `held by ${previous.holder}, not ${holder} — nothing was written`,
+    );
+  }
+  if (previous.fence !== fence) {
+    return refuse(
+      "stale-fence",
+      previous,
+      `${holder} presents fence ${String(fence)}, but the lease on record is at ` +
+        `${String(previous.fence)} — this caller was evicted and something else holds it now; ` +
+        "nothing was written",
+    );
   }
   return {
     released: true,
     ledger: { leases: ledger.leases.filter((lease) => lease.runId !== runId), fence: ledger.fence },
     previous,
     detail: `${holder} released it; fence stays at ${String(ledger.fence)}`,
+    problem: null,
   };
 }
 
