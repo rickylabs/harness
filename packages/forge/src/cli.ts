@@ -16,7 +16,12 @@ import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 
 import { applyPlan } from "./labels/apply.js";
-import { detectRepoLabels, detectLanePrefix, detectSkillDirs } from "./labels/detect.js";
+import {
+  detectRepoLabels,
+  detectLanePrefix,
+  detectSkillDirs,
+  type RepoDetection,
+} from "./labels/detect.js";
 import {
   LABELS_FILE,
   loadLabelsFile,
@@ -196,6 +201,14 @@ interface Context {
   readonly existing: readonly ExistingLabel[];
   readonly lanePrefix: string;
   readonly desired: readonly LabelSpec[];
+  /**
+   * The detected labels a checkout alone could have produced — everything in {@link desired} that
+   * came from detection, minus the epics read out of live GitHub issues.
+   *
+   * Held separately so that a command writing a file the repository *commits* can render from a
+   * reproducible set. See {@link cmdSkillInstall}.
+   */
+  readonly fromTree: readonly LabelSpec[];
   /** Labels the taxonomy has retired. Never installed; corrected where the repo still has one. */
   readonly retired: readonly LabelSpec[];
   readonly detectionNotes: readonly string[];
@@ -273,15 +286,20 @@ async function resolveContext(options: {
   // description changed there must survive the next run. Core fills the gaps, and detection adds
   // only what this repository provides evidence for.
   const fromFile = await loadLabelsFile(labelsPath, lanePrefix);
-  const detected = options.detect
+  const detected: RepoDetection = options.detect
     ? await detectRepoLabels({ repoRoot: options.repoRoot, repo, transport, existing, lanePrefix })
-    : { labels: [], evidence: [], notes: ["detection disabled with --no-detect"] };
+    : { labels: [], live: [], evidence: [], notes: ["detection disabled with --no-detect"] };
 
   const notes = [...detected.notes];
   if (listNote) notes.unshift(listNote);
   if (fromFile) {
     notes.unshift(`${LABELS_FILE}: ${fromFile.labels.length} label(s) — this file wins on overlap`);
   }
+
+  // Identity, not name and not family. A repository that has already ejected `epic:e6` has a spec of
+  // that name from the labels file as well, and that one is committed and must survive; these are the
+  // particular instances the live issue search produced on this run.
+  const live = new Set<LabelSpec>(detected.live);
 
   return {
     fileIssues: fromFile?.issues ?? [],
@@ -292,6 +310,7 @@ async function resolveContext(options: {
     existing,
     lanePrefix,
     desired: [...(fromFile?.labels ?? []), ...CORE_TAXONOMY, ...detected.labels],
+    fromTree: detected.labels.filter((spec) => !live.has(spec)),
     // The file first here too. A repository that retired a label of its own keeps that record,
     // and the built-in retirements are appended rather than allowed to overwrite it.
     retired: [...(fromFile?.retired ?? []), ...RETIRED_LABELS],
@@ -517,6 +536,12 @@ async function cmdSkillInstall(
   flags: { force: boolean; dryRun: boolean; dispatchLabel: string | null },
   json: boolean,
 ): Promise<number> {
+  // Re-read the file rather than use the snapshot `resolveContext` took, because `init` writes it
+  // between the two: eject runs first and puts the run's newly detected epics *into* the file, so
+  // reading from disk here is what lets one `init` still teach an epic it just learned. A snapshot
+  // taken before eject would teach the old set and leave the next `skill install` reporting drift.
+  const fromFile = await loadLabelsFile(join(ctx.repoRoot, LABELS_FILE), ctx.lanePrefix);
+
   // Retired first, then desired, on one shared `seen` — the planner's precedence again, so the
   // skill cannot teach as live a label the same run is retiring.
   const seen = new Set<string>();
@@ -527,8 +552,13 @@ async function cmdSkillInstall(
       seen.add(key);
       return true;
     });
-  const retired = dedupe(ctx.retired);
-  const specs = dedupe(ctx.desired);
+  const retired = dedupe([...(fromFile?.retired ?? []), ...RETIRED_LABELS]);
+  // `ctx.fromTree` and not `ctx.desired`: this command writes a file the repository commits and CI
+  // then checks for drift, so it must render from what a checkout can reproduce. `ctx.desired` also
+  // carries the epics read out of live GitHub issues, which makes the bytes depend on whether the
+  // caller had a network — green in CI, red on an authenticated workstation, same commit. See
+  // {@link https://github.com/rickylabs/harness/issues/187}.
+  const specs = dedupe([...(fromFile?.labels ?? []), ...CORE_TAXONOMY, ...ctx.fromTree]);
 
   const reports = await installSkill({
     repoRoot: ctx.repoRoot,

@@ -136,6 +136,44 @@ describe("detectRepoLabels", () => {
     assert.deepEqual(names(result.labels), ["epic:board-projection", "epic:github-bridge"]);
   });
 
+  it("marks the epics as live, by identity, so a render can drop exactly those", async () => {
+    // `live` is the only place the split between "a checkout found this" and "GitHub said this"
+    // survives. It cannot be re-derived downstream: a `.github/labels.yml` that has already ejected
+    // `epic:board-projection` yields a spec of the same name and the same family, and that one is
+    // committed and must be rendered. So the comparison has to be by instance. See #187.
+    const result = await detectRepoLabels({
+      repoRoot: root,
+      repo: "owner/repo",
+      transport: fakeTransport([{ number: 36, title: "Epic: Board projection", labels: [] }]),
+      existing: [],
+    });
+
+    assert.deepEqual(names(result.live), ["epic:board-projection"]);
+    const live = new Set(result.live);
+    const reproducible = result.labels.filter((spec) => !live.has(spec));
+
+    assert.ok(reproducible.length > 0, "detection found nothing but epics; the filter proves nothing");
+    assert.equal(
+      names(reproducible).some((name) => name.startsWith("epic:")),
+      false,
+    );
+    assert.equal(reproducible.length + result.live.length, result.labels.length);
+  });
+
+  it("has an empty live set when nothing asked GitHub", async () => {
+    // The control. Without a transport the whole result is reproducible from the checkout, and a
+    // caller filtering on `live` must get back everything it was given.
+    const result = await detectRepoLabels({
+      repoRoot: root,
+      repo: "owner/repo",
+      transport: null,
+      existing: [],
+    });
+
+    assert.deepEqual(result.live, []);
+    assert.ok(result.labels.length > 0);
+  });
+
   it("names the epic it dropped to a collision instead of letting it vanish", async () => {
     // First-wins de-duplication is right; doing it silently is not. The dropped epic's tasks end
     // up under another epic's label, and the only signal was an absence in a list nobody diffs.

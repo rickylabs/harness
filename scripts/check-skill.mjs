@@ -25,6 +25,17 @@
  * every pull request for a reason no diff could fix. `detectLanePrefix` now reads
  * `.github/labels.yml` first, and `packages/forge/src/labels/detect.test.ts` holds that property.
  *
+ * It did it a second time, one field over, and that one is worse. `epic:` labels are derived from a
+ * live search for open umbrella issues, so the render named whatever was open that hour: green here,
+ * red on an authenticated workstation, same commit — and the fix a red build invites is to commit a
+ * label that exists in nobody's repository. Worse, because CI is the only place this gate is
+ * enforced and CI has no transport: for that whole family the check could not fail where it runs.
+ * `skill install` now renders from what a checkout can reproduce — the ejected file plus the
+ * tree-derived families — and `packages/forge/src/cli.test.ts` holds *that* property, by running the
+ * command twice against two different answers from GitHub and comparing the bytes. `labels plan` and
+ * `labels apply` still propose epics from live issues; detection was never what was wrong. Letting
+ * it reach a committed artifact was. See https://github.com/rickylabs/harness/issues/187.
+ *
  * Exit codes: 0 the committed skill matches, 1 it does not, 2 the check could not run — a broken
  * check, which must never be able to look like a passing one.
  */

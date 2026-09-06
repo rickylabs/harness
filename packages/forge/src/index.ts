@@ -62,6 +62,7 @@ export {
   type DetectOptions,
   type DetectionResult,
   type Evidence,
+  type RepoDetection,
 } from "./labels/detect.js";
 
 export {
