@@ -32,6 +32,10 @@
  * `provider.ts` is the interface, and the word it is built around is `unknown` — see its own
  * header. A provider that cannot reach its executor does not know whether the run is alive, and
  * reporting that as a failure is a specific, wrong claim with a destructive action attached.
+ *
+ * `lease.ts` is the third: single-writer ownership of a session, keyed on our run id rather than the
+ * vendor's session id, because the vendor's changes under `--resume`. It is what stands between the
+ * board and two live processes on one transcript.
  */
 
 export {
@@ -97,6 +101,47 @@ export type {
   SubagentProvider,
   SubagentRegistry,
 } from "./provider.js";
+
+export {
+  DEFAULT_STALE,
+  DEFAULT_TTL,
+  EMPTY_LEDGER,
+  GRANT_OUTCOMES,
+  LEASE_REFUSALS,
+  LEASE_STATES,
+  RESOLUTIONS,
+  acquire,
+  admitResume,
+  checkLedger,
+  describeGrant,
+  describeLeaseProblem,
+  describeLeaseState,
+  describeResolution,
+  holds,
+  isAdvisory,
+  leaseOf,
+  leaseStatus,
+  release,
+  resolveSession,
+} from "./lease.js";
+export type {
+  Grant,
+  GrantOutcome,
+  Lease,
+  LeaseLedger,
+  LeaseProblem,
+  LeaseRefusal,
+  LeaseRequest,
+  LeaseState,
+  LeaseStatus,
+  Release,
+  ResolveRequest,
+  Resolution,
+  ResumeAttempt,
+  ResumeDecision,
+  SessionResolution,
+  TranscriptFile,
+} from "./lease.js";
 
 /** Workspace package identifier. */
 export const PACKAGE_NAME = "@rickylabs/subagents" as const;

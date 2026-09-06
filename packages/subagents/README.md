@@ -3,7 +3,8 @@
 The `ctx.subagents` seam. Owned by **E3 · #33**, defined by **#51**.
 
 Two things live here, and they are one thing: the payload that describes a run to be launched, and
-the interface anything capable of launching one implements.
+the interface anything capable of launching one implements. A third joined them once the seam had a
+second caller — the lease that keeps one writer on a session.
 
     DispatchRequest  ──renderSwarm──▶  /swarm block  ──divybot──▶  an agent on a host
            │                                 │
@@ -77,6 +78,50 @@ journal (#71) and checked in CI against a table of declarations with nothing ins
 asked to do anything — composition-time validation for `dsh-app`. Blind and unstoppable are reported
 without being failed, because divybot is genuinely both and saying so is the contract working.
 
+## Holding a session
+
+`lease.ts`, defined by **#56**. The failure it exists for has a message: *"Remote Control
+disconnected — another connection took over this session (code 4090)."* Two `claude --resume
+<same-id>` processes ran at once. Nothing broke loudly; one agent simply stopped being heard from
+and carried on writing into a transcript nobody was reading.
+
+**A run is keyed on our id, never the vendor's.** `claude --resume` is version-dependent: it has
+both appended to an existing transcript and minted a fresh session id for the same logical run. An
+identifier that changes underneath you is not a key. `runId` is ours and exists before the run does.
+`admitResume` refuses `keyed-on-vendor-id` when the id it was handed is also one of the observed
+transcripts' session ids — the shape the bug takes before it becomes two live processes.
+
+**The vendor session is resolved, not remembered.** `resolveSession` takes the newest modification
+time among the transcripts whose tail carries the marker, which defaults to the run id itself. Both
+halves are load-bearing: mtime alone picks whichever agent wrote last, and the marker alone cannot
+tell an abandoned transcript from the live one after a resume minted a second id. A tie on
+modification time is `ambiguous`, never a tiebreak — choosing one would be a coin toss wearing a
+rule's clothes.
+
+**The lease carries a fence.** An expired lease is not a dead holder; it is a holder that stopped
+renewing, and it may still be running. So every grant that changes hands takes a fence one higher
+than any issued before it, a renewal keeps its fence, and a release never lowers the ledger's. A
+holder that wakes after being taken over presents an old fence and is refused `stale-fence`.
+
+    acquire ─▶ granted | renewed | taken-over | refused
+    admitResume ─▶ admitted, or every reason it was not
+
+`admitResume` collects every reason rather than returning the first. A caller told only "no lease"
+fixes that, retries, and is told "session ambiguous" — two round trips to learn what one answer
+could have carried, and in between, an operator who has started guessing. Two refusals are advisory
+and do not block: `transcript-stale` and `mtime-unreadable`, neither of which is evidence that a
+second writer exists.
+
+### Where the atomicity is
+
+Not in this module. Every function is pure — it reads a ledger and returns the one that should
+replace it. Two callers reading the same ledger both compute a grant, and both compute the **same**
+fence. The store has to apply the replacement under a compare-and-set on `ledger.fence`, and `holds`
+is the check it performs before acting on a lease it read earlier. This is stated rather than
+implied because the alternative is a module that looks like it provides mutual exclusion and does
+not. `lease.test.ts` demonstrates exactly that: two acquires from one snapshot both mint fence 1,
+and whichever ledger lands, the other holder's resume is refused.
+
 ## The Go grammar
 
 `dispatch.ts` and `go-grammar.ts` are a port of Orchid's `parseOverrides`, pinned at commit
@@ -89,7 +134,8 @@ the original.
 ## Not here
 
 - **Model selection.** The routing matrix answers that; #61 validates model ids at the boundary.
-- **Session ownership.** Single-writer leases are #56. `RunRef` carries the id they key on.
+- **Storing the ledger.** `lease.ts` decides; nothing here writes. The compare-and-set that makes
+  the decision binding belongs to whatever holds the file, and no such store exists yet.
 - **Any provider.** The four implementations are `provider-claude`, `provider-codex`,
   `provider-acp`, `provider-opencode`.
 - **Any I/O.** Nothing in this package touches a network, a clock or a filesystem.
