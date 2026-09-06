@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **166/210 done · 15 running · 16 queued · 11 abandoned · 2 invisible**
+`[###############-----]` **167/210 done · 15 running · 16 queued · 11 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-06T23:25:51Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T23:25:52Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (15)
 
@@ -28,14 +28,6 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (1)
-
-`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-without-status`**
-
-- **#221** — merged, but carries no status label; delivered work the board cannot see
-
 ## Epics
 
 ### M1 — dsh coordinator foundation
@@ -57,12 +49,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 33/46 done · 1 running · 1 queued · 9 abandoned · 2 invisible
+`[########----]` 34/46 done · 1 running · 1 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[######------]` 2/4 done · 1 running · 1 queued | `impl` |
-| _(no epic)_ | `[########----]` 31/42 done · 9 abandoned · 2 invisible | — |
+| _(no epic)_ | `[#########---]` 32/42 done · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
@@ -96,7 +88,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  166/210 done · 15 running · 16 queued · 11 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  167/210 done · 15 running · 16 queued · 11 abandoned · 1 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  133/164 done · 14 running · 15 queued · 2 abandoned
 
@@ -294,7 +286,7 @@ Something could be acting on these right now.
     impl                 #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
     shipped              PR216 feat(telemetry): display governance observations beside progress
 
-## (no milestone)  [##############------]  33/46 done · 1 running · 1 queued · 9 abandoned · 2 invisible
+## (no milestone)  [##############------]  34/46 done · 1 running · 1 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [########--------] 2/4 done · 1 running · 1 queued
@@ -345,7 +337,7 @@ Something could be acting on these right now.
     shipped              PR190 docs: correct every claim the repository going public made false (p0)
     no status            #201 E10 - Documentation and the public front door
     shipped              PR219 fix(board): say so when a column is a lie
-    no status            PR221 fix(subagents): close the fourth lease door
+    shipped              PR221 fix(subagents): close the fourth lease door
 ```
 
 </details>
