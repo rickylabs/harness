@@ -21,7 +21,7 @@ Prerequisites: Node 24+, pnpm 11.25.0 (`package.json:8`), authenticated GitHub C
     node "$HARNESS_DIR/packages/board/dist/cli.js" check --repo "$TARGET" --lane-prefix topic
     node "$HARNESS_DIR/packages/board/dist/cli.js" columns --repo "$TARGET" --lane-prefix topic
 
-The item moves from triage to research on the next read. No model is called. The installed taxonomy is real; this sequence does not provision a dispatcher. CLI implementation: `packages/forge/src/cli.ts:135`, `packages/board/src/cli.ts:65`.
+The item moves from triage to research on the next read. No model is called. The installed taxonomy is real; this sequence does not provision a dispatcher. CLI implementation: `packages/forge/src/cli.ts:135`, `packages/board/src/cli.ts:57`.
 
 Read that same board through telemetry, with explicitly synthetic run events in an isolated temporary store:
 

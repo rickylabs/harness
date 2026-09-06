@@ -18,7 +18,7 @@ Independent evaluator: OpenCode Go `glm-5.3-flash`, provider-default effort; net
 
 **Integration check (not just interfaces):** the `harness-telemetry` row is genuinely shipped in the composed bundle (packages/dsh-app/src/bundle.ts:108-116; rendered packages/dsh-app/cordis.patch.yml:40-41, pinned by bundle.test) and the plugin provides sink + snapshot builder at boot (packages/dsh-app/src/plugins/telemetry.ts:98-112). But no dsh surface exposes governance state; the two cockpits that would render it are separate repos (decision 4), and nothing here emits `governance.changed` for them. The telemetry `QuotaReading` shape is not the contracts `RegimeStatus` shape — the two were never joined.
 
-## Tests run (against committed `dist/`; `tsc -b --dry` confirmed dist current at HEAD)
+## Tests run (against locally built `dist/` (gitignored); `tsc -b --dry` confirmed dist current at HEAD)
 
 - `@rickylabs/telemetry`: **342/342 pass** — includes render.test.ts:102-119 (governance above work + absence message) and snapshot.test.ts:214+ (latestQuota) pinning the *partial* behavior that ships.
 - `@rickylabs/dsh-app`: **251/251 pass** (bundle/profile/plugins golden pins).
