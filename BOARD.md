@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **163/209 done · 15 running · 18 queued · 11 abandoned · 2 invisible**
+`[###############-----]` **166/210 done · 15 running · 16 queued · 11 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-06T23:19:06Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T23:25:51Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (15)
 
@@ -28,57 +28,51 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (2)
+## Anomalies (1)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
-**`closed-but-unshipped`**
-
-- **#218** — closed on GitHub but sits in triage; the issue wins, the column is stale
-
 **`closed-without-status`**
 
-- **#219** — merged, but carries no status label; delivered work the board cannot see
+- **#221** — merged, but carries no status label; delivered work the board cannot see
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 131/164 done · 14 running · 17 queued · 2 abandoned
+`[#########---]` 133/164 done · 14 running · 15 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[#########---]` 18/22 done · 1 running · 3 queued | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[#########---]` 10/13 done · 3 queued | `triage` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#####-------]` 10/21 done · 8 running · 3 queued | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[######------]` 11/21 done · 8 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
-| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 22/27 done · 2 running · 1 queued · 2 abandoned | `impl` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 23/27 done · 2 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[###########-]` 21/22 done · 1 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 13/15 done · 2 running | `impl` |
 
 ### (no milestone)
 
-`[########----]` 32/45 done · 1 running · 1 queued · 9 abandoned · 2 invisible
+`[########----]` 33/46 done · 1 running · 1 queued · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[######------]` 2/4 done · 1 running · 1 queued | `impl` |
-| _(no epic)_ | `[########----]` 30/41 done · 9 abandoned · 2 invisible | — |
+| _(no epic)_ | `[########----]` 31/42 done · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>18 filed, nothing started</summary>
+<summary>16 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#202 board and forge disagree on what an epic is, and one of the labels does not exist](https://github.com/rickylabs/harness/issues/202) | `triage` | `e0` |
-| [#210 `release` is the one lease door that does not check the fence: an evicted holder can delete the live holder's lease](https://github.com/rickylabs/harness/issues/210) | `triage` | `e3` |
 | [#217 the tutorial's `init` writes the scratch repo's taxonomy into your harness clone, clobbering two tracked files](https://github.com/rickylabs/harness/issues/217) | `triage` | `e10` |
-| [#218 `columns` and `status` hide the anomalies that `digest` renders — the two views a human actually runs](https://github.com/rickylabs/harness/issues/218) | `triage` | `e6` |
 | [#220 The cockpit projection carries phase and drops anomalies](https://github.com/rickylabs/harness/issues/220) | `triage` | `e2` |
 | [#212 the tutorial's pasted output is stale at step 4, and no gate in the repo can catch that](https://github.com/rickylabs/harness/issues/212) | `triage` | `e10` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
@@ -102,9 +96,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  163/209 done · 15 running · 18 queued · 11 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  166/210 done · 15 running · 16 queued · 11 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [###############-----]  131/164 done · 14 running · 17 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [################----]  133/164 done · 14 running · 15 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -167,7 +161,7 @@ Something could be acting on these right now.
     triage               #220 The cockpit projection carries phase and drops anomalies (p1)
 
   E3 — Subagent providers over structured protocols #33  [triage]
-    [#######---------] 10/21 done · 8 running · 3 queued
+    [########--------] 11/21 done · 8 running · 2 queued
     shipped              #51 E3.1 — DispatchRequest and the SubagentProvider contract
     shipped              #52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk
     triage               #53 E3.3 — provider-codex against the running app-server daemon
@@ -188,7 +182,7 @@ Something could be acting on these right now.
     plan                 #200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats
     plan                 #206 two public types are named `Liveness`, and #198 is planning a third vocabulary for the same concept (p2)
     plan                 #208 the `ctx.subagents` telemetry guarantee is prose, not construction: the only way to register a provider bypasses it (p1)
-    triage               #210 `release` is the one lease door that does not check the fence: an evicted holder can delete the live holder's lease (p1)
+    shipped              #210 `release` is the one lease door that does not check the fence: an evicted holder can delete the live holder's lease (p1)
 
   E4 — Model gateway and routing matrix #34  [triage]
     [##############--] 12/13 done · 1 queued
@@ -217,7 +211,7 @@ Something could be acting on these right now.
     shipped              PR173 docs(doctrine): ADR 0002 - the sandboxctl execution channel (proposed) (p1)
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
-    [#############---] 22/27 done · 2 running · 1 queued · 2 abandoned
+    [#############---] 23/27 done · 2 running · 2 abandoned
     shipped              #68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation
     shipped              #69 E6.2 — coordinator: the workflow definitions
     shipped              #70 E6.3 — Emit one dispatch payload in the /swarm wire format
@@ -244,7 +238,7 @@ Something could be acting on these right now.
     shipped              #204 fix(board): connect the task projection to stable dsh surfaces (p1)
     shipped              PR207 docs: record MVP verdicts and executable CLI preview
     shipped              PR214 fix(board): publish the hierarchy through dsh projections and todos
-    triage               #218 `columns` and `status` hide the anomalies that `digest` renders — the two views a human actually runs (p1)
+    shipped              #218 `columns` and `status` hide the anomalies that `digest` renders — the two views a human actually runs (p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
     [###############-] 21/22 done · 1 queued
@@ -300,7 +294,7 @@ Something could be acting on these right now.
     impl                 #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
     shipped              PR216 feat(telemetry): display governance observations beside progress
 
-## (no milestone)  [##############------]  32/45 done · 1 running · 1 queued · 9 abandoned · 2 invisible
+## (no milestone)  [##############------]  33/46 done · 1 running · 1 queued · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [########--------] 2/4 done · 1 running · 1 queued
@@ -350,7 +344,8 @@ Something could be acting on these right now.
     shipped              #189 docs: the repository is public — correct every false claim, then polish (p0)
     shipped              PR190 docs: correct every claim the repository going public made false (p0)
     no status            #201 E10 - Documentation and the public front door
-    no status            PR219 fix(board): say so when a column is a lie
+    shipped              PR219 fix(board): say so when a column is a lie
+    no status            PR221 fix(subagents): close the fourth lease door
 ```
 
 </details>
