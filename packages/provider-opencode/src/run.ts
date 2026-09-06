@@ -91,8 +91,55 @@ export function newRun(options: NewRun): RunRecord {
   };
 }
 
+/**
+ * A run id that is spoken for, before there is anything to speak for it.
+ *
+ * `dispatch` awaits twice — the bus, then `POST /session` — before it has a session id to store, and
+ * a store that only gains its entry at the end of that is a store two concurrent dispatches can both
+ * pass the duplicate check on. So the id is claimed first and the session id filled in after, which
+ * makes the reservation itself the thing a second caller collides with.
+ *
+ * `external` is `null` and the liveness is `queued`, both truthfully: the id is taken, and nothing
+ * has been asked of anyone yet.
+ */
+export function reservedRun(options: Omit<NewRun, "external">): RunRecord {
+  return {
+    ...newRun({ ...options, external: null }),
+    detail: "the run id is claimed; the session is being created",
+  };
+}
+
+/**
+ * Whether the bus has said anything about this run.
+ *
+ * The provider learns a run's state two ways, and only one of them is reliable. A reply to an HTTP
+ * request describes what the server had decided by the time it wrote the reply; a bus event
+ * describes what the session actually did. When the two disagree the bus is right, because it is
+ * later and because it is the session speaking rather than a request handler.
+ *
+ * So this guards the two writes that happen *after* an await on a prompt reply. Without it, a `204`
+ * that spent six seconds in transit lands on a record the bus has already carried to `finished` and
+ * resets it to `queued` — an ended run reported as one that has not started.
+ */
+export function busSpoke(record: RunRecord): boolean {
+  return record.lastEventAt !== null;
+}
+
 function advance(record: RunRecord, at: string, patch: Partial<RunRecord>): RunRecord {
   return { ...record, ...patch, updatedAt: at };
+}
+
+/**
+ * The session exists. The reservation becomes a run with a handle on it.
+ *
+ * Still `queued`, and for the same reason `newRun` starts there: a session is a place for an agent,
+ * not an agent. What changes is that there is now something to observe, steer and stop.
+ */
+export function markSessionCreated(record: RunRecord, external: string, at: string): RunRecord {
+  return advance(record, at, {
+    external,
+    detail: "session created; the prompt has not been accepted yet",
+  });
 }
 
 /** The server has the prompt. Still `queued`: accepted is not started. */
@@ -189,12 +236,18 @@ export function describe(record: RunRecord): string {
 }
 
 /**
- * What `observe` may honestly say while the event stream is **not** connected.
+ * What `observe` may honestly say when the record is not backed by a live view of the session.
  *
  * The failure this exists to prevent has already been paid for once in this repository: a stale
  * snapshot rendered as confident, current-looking output with no freshness stamp. Everything this
- * provider knows about a live run arrives on the bus. With the bus down, the record is a photograph
- * — it was true, and nothing says it still is.
+ * provider knows about a live run arrives on the bus. Without a bus carrying this run's events, the
+ * record is a photograph — it was true, and nothing says it still is.
+ *
+ * There are two ways to be in that position and they are equally disqualifying. The bus can be
+ * *down*, which is obvious. The bus can also be *up but new*: a reconnect gives back a socket, not
+ * the events that went missing while there was none, and the run may have finished inside the gap.
+ * `reason` is the whole head clause rather than a parenthetical so each caller can say which of the
+ * two it is in its own words.
  *
  * A terminal record is exempt, and that is not an inconsistency: `finished` and `failed` are facts
  * about something that already happened and they do not expire. Only a claim about the present is
@@ -209,7 +262,7 @@ export function unverified(
   return {
     liveness: "unknown",
     detail:
-      `the event stream is not connected (${reason}), so this run's state cannot be confirmed; ` +
+      `${reason}, so this run's state cannot be confirmed; ` +
       `as of ${seen} it was ${record.liveness}: ${record.detail}`,
   };
 }

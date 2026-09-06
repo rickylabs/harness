@@ -1,22 +1,23 @@
 /**
  * The transport, and the four outcomes it has to keep apart.
  *
- * The split these tests exist for is `answered`. A `409` and a dropped connection are the same
+ * The split these tests exist for is `refutes`. A `409` and a dropped connection are the same
  * JavaScript event and opposite facts, and everything downstream — whether a dispatch is `refused`
  * or `unknown`, and therefore whether `isSafeToRetry` licenses a second agent onto a branch — is
- * decided by which of the two this file produces.
+ * decided by which of the two this file produces. A `504` is a third thing that looks like the
+ * first and behaves like the second, and it has its own case below.
  */
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
-  answered,
   baseUrlProblems,
   createTransport,
   describeOutcome,
   excerpt,
   joinUrl,
+  refutes,
   EXCERPT_LIMIT,
   type FetchFn,
   type FetchInit,
@@ -96,14 +97,29 @@ describe("excerpt", () => {
   });
 });
 
-describe("answered", () => {
-  it("is true only when the server said something we could read", () => {
-    assert.equal(answered({ kind: "ok", status: 200, body: null }), true);
-    assert.equal(answered({ kind: "http", status: 409, detail: "busy" }), true);
+describe("refutes", () => {
+  it("is true only for a 4xx, the one class that proves nothing ran", () => {
+    assert.equal(refutes({ kind: "http", status: 400, detail: "bad model" }), true);
+    assert.equal(refutes({ kind: "http", status: 409, detail: "busy" }), true);
+    assert.equal(refutes({ kind: "http", status: 499, detail: "client closed" }), true);
     // Deliberate: the server responded, but what it said is unreadable, and "it did something and we
     // do not know what" is exactly what `unknown` is for.
-    assert.equal(answered({ kind: "malformed", detail: "not json" }), false);
-    assert.equal(answered({ kind: "unreachable", detail: "ECONNREFUSED" }), false);
+    assert.equal(refutes({ kind: "malformed", detail: "not json" }), false);
+    assert.equal(refutes({ kind: "unreachable", detail: "ECONNREFUSED" }), false);
+    // Nor does success refute anything. `ok` is the caller's own branch; asking this predicate about
+    // it would be asking whether a thing that happened did not happen.
+    assert.equal(refutes({ kind: "ok", status: 200, body: null }), false);
+  });
+
+  it("does not treat a 5xx as a refusal, which is the whole point", () => {
+    // The failure this predicate was rewritten to prevent. A gateway timeout on `prompt_async` is
+    // the exact shape of *the agent started and the proxy stopped waiting*: bytes came back, and
+    // they say nothing about whether the origin ran the request. Reading it as `refused` would let
+    // `isSafeToRetry` put a second agent on a branch the first one is still holding.
+    assert.equal(refutes({ kind: "http", status: 500, detail: "internal" }), false);
+    assert.equal(refutes({ kind: "http", status: 502, detail: "bad gateway" }), false);
+    assert.equal(refutes({ kind: "http", status: 503, detail: "unavailable" }), false);
+    assert.equal(refutes({ kind: "http", status: 504, detail: "gateway timeout" }), false);
   });
 });
 
@@ -169,17 +185,29 @@ describe("createTransport http", () => {
     assert.equal(fake.calls[0]?.init.headers?.["x-proxy"], "yes");
   });
 
-  it("reports a 4xx as answered, with an excerpt rather than the body", async () => {
+  it("reports a 4xx as a refutation, with an excerpt rather than the body", async () => {
     const fake = fakeFetch(async () => replying(422, `{"error":"${"y".repeat(500)}"}`));
     const { http } = createTransport({ baseUrl: "http://h:1", fetch: fake.fetch });
 
     const outcome = await http({ method: "POST", path: "/p", body: {} });
 
     assert.equal(outcome.kind, "http");
-    assert.equal(answered(outcome), true);
+    assert.equal(refutes(outcome), true);
     if (outcome.kind !== "http") throw new Error("expected http");
     assert.equal(outcome.status, 422);
     assert.ok(outcome.detail.length <= EXCERPT_LIMIT + 1);
+  });
+
+  it("carries a 504 through as an http outcome that refutes nothing", async () => {
+    const fake = fakeFetch(async () => replying(504, "upstream took too long"));
+    const { http } = createTransport({ baseUrl: "http://h:1", fetch: fake.fetch });
+
+    const outcome = await http({ method: "POST", path: "/p", body: {} });
+
+    // Both halves matter. It is an `http` outcome, so the status survives into the detail a human
+    // reads; and it refutes nothing, so no verb downstream may call it `refused`.
+    assert.equal(outcome.kind, "http");
+    assert.equal(refutes(outcome), false);
   });
 
   it("reports a thrown fetch as unreachable", async () => {
@@ -191,7 +219,7 @@ describe("createTransport http", () => {
     const outcome = await http({ method: "POST", path: "/p" });
 
     assert.deepEqual(outcome, { kind: "unreachable", detail: "ECONNREFUSED" });
-    assert.equal(answered(outcome), false);
+    assert.equal(refutes(outcome), false);
   });
 
   it("reports an unreadable body as malformed, not as a failure to reach", async () => {
@@ -208,7 +236,7 @@ describe("createTransport http", () => {
     const outcome = await http({ method: "GET", path: "/x" });
 
     assert.equal(outcome.kind, "malformed");
-    assert.equal(answered(outcome), false);
+    assert.equal(refutes(outcome), false);
   });
 
   it("reports a non-json 200 as malformed", async () => {

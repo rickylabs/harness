@@ -53,12 +53,12 @@ export {
 } from "./events.js";
 
 export {
-  answered,
   baseUrlProblems,
   createTransport,
   describeOutcome,
   excerpt,
   joinUrl,
+  refutes,
   EXCERPT_LIMIT,
   type FetchFn,
   type FetchInit,
@@ -77,14 +77,17 @@ export { translateModel, untranslated, type Translation } from "./model.js";
 
 export {
   applySignal,
+  busSpoke,
   describe,
   isOver,
   markFinished,
   markQueued,
+  markSessionCreated,
   markStopped,
   markStopping,
   markUnknown,
   newRun,
+  reservedRun,
   unverified,
   type NewRun,
   type RunRecord,

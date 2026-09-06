@@ -12,14 +12,17 @@ import { describe, it } from "node:test";
 
 import {
   applySignal,
+  busSpoke,
   describe as describeRun,
   isOver,
   markFinished,
   markQueued,
+  markSessionCreated,
   markStopped,
   markStopping,
   markUnknown,
   newRun,
+  reservedRun,
   unverified,
   type RunRecord,
 } from "./run.js";
@@ -32,6 +35,17 @@ function record(): RunRecord {
   return newRun({
     runId: "55-opencode",
     external: "ses_1",
+    askedModel: "z-ai/glm-5.2",
+    router: "openrouter",
+    at: T0,
+    artifacts: ["/var/log/opencode/55.log"],
+  });
+}
+
+/** The same run, at the moment its id was claimed and before `POST /session` had answered. */
+function reserved(): RunRecord {
+  return reservedRun({
+    runId: "55-opencode",
     askedModel: "z-ai/glm-5.2",
     router: "openrouter",
     at: T0,
@@ -177,25 +191,71 @@ describe("describe", () => {
 describe("unverified", () => {
   it("downgrades a live run to unknown and stamps when the photograph was taken", () => {
     const run = applySignal(markQueued(record(), T1), { kind: "activity", detail: "m" }, T2);
-    const said = unverified(run, "ECONNREFUSED");
+    const said = unverified(run, "the event stream is not connected (ECONNREFUSED)");
     assert.equal(said.liveness, "unknown");
     assert.match(said.detail, /the event stream is not connected \(ECONNREFUSED\)/);
     assert.match(said.detail, /cannot be confirmed/);
     assert.match(said.detail, new RegExp(`as of ${T2} it was running: working \\(1 events\\)`));
   });
 
+  it("lets the caller say which way it is blind, because there is more than one way", () => {
+    // A down bus and a *replaced* one are equally disqualifying and read nothing alike. `GET /event`
+    // replays nothing, so a reconnect hands back a socket and not the events missed while there was
+    // none — which is why `reason` is the whole head clause and not a parenthetical.
+    const run = applySignal(markQueued(record(), T1), { kind: "activity", detail: "m" }, T2);
+
+    const said = unverified(run, "the event stream was reconnected and replays nothing");
+
+    assert.equal(said.liveness, "unknown");
+    assert.match(said.detail, /^the event stream was reconnected and replays nothing, so /);
+    assert.match(said.detail, new RegExp(`as of ${T2} it was running`));
+  });
+
   it("falls back to the start time when no event has ever arrived", () => {
-    const said = unverified(record(), "stream closed");
+    const said = unverified(record(), "the event stream is not connected (stream closed)");
     assert.match(said.detail, new RegExp(`as of ${T0}`));
   });
 
   it("leaves a finished run alone, because a fact about the past does not expire", () => {
     const done = applySignal(record(), { kind: "idle" }, T1);
-    assert.deepEqual(unverified(done, "ECONNREFUSED"), {
+    assert.deepEqual(unverified(done, "the event stream is not connected (ECONNREFUSED)"), {
       liveness: "finished",
       detail: done.detail,
     });
     const failed = applySignal(record(), { kind: "error", detail: "boom" }, T1);
-    assert.equal(unverified(failed, "ECONNREFUSED").liveness, "failed");
+    assert.equal(
+      unverified(failed, "the event stream is not connected (ECONNREFUSED)").liveness,
+      "failed",
+    );
+  });
+});
+
+describe("reservedRun, busSpoke and markSessionCreated", () => {
+  it("claims an id before there is a session to attach to it", () => {
+    // The store gains its entry before the first `await`, so a second dispatch for the same id
+    // collides with the reservation instead of sailing past a check nothing had answered yet.
+    const held = reserved();
+
+    assert.equal(held.external, null);
+    assert.equal(held.liveness, "queued");
+    assert.match(held.detail, /run id is claimed/);
+    assert.equal(busSpoke(held), false);
+  });
+
+  it("fills in the handle without pretending the agent has started", () => {
+    const created = markSessionCreated(reserved(), "ses_1", T1);
+
+    assert.equal(created.external, "ses_1");
+    assert.equal(created.liveness, "queued");
+    assert.equal(created.updatedAt, T1);
+    // Indistinguishable from a run that was born with its session, which is the point: the
+    // reservation is a step in getting here, not a state anything downstream has to know about.
+    assert.equal(created.detail, record().detail);
+  });
+
+  it("says whether the bus has spoken, which is what outranks a stale reply", () => {
+    assert.equal(busSpoke(record()), false);
+    assert.equal(busSpoke(markQueued(record(), T1)), false);
+    assert.equal(busSpoke(applySignal(record(), { kind: "activity", detail: "m" }, T1)), true);
   });
 });

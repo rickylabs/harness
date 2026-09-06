@@ -56,20 +56,22 @@ import { timeoutMs } from "@rickylabs/subagents";
 
 import { PATHS, promptBody, readBoolean, readSessionId, sessionBody, type WireModel } from "./api.js";
 import { NO_FRAMES, type FrameState, classify, feed, readEvent, sessionOf } from "./events.js";
-import { answered, describeOutcome, type HttpFn, type StreamFn } from "./http.js";
+import { describeOutcome, type HttpFn, type StreamFn, refutes } from "./http.js";
 import { translateModel, untranslated } from "./model.js";
 import { pathIsCredentialFile, scrub } from "./secrets.js";
 import {
   type RunRecord,
   applySignal,
+  busSpoke,
   describe,
   isOver,
   markFinished,
   markQueued,
+  markSessionCreated,
   markStopped,
   markStopping,
   markUnknown,
-  newRun,
+  reservedRun,
   unverified,
 } from "./run.js";
 
@@ -118,6 +120,13 @@ export interface OpencodeProviderOptions {
 interface Live {
   record: RunRecord;
   timer: ReturnType<typeof setTimeout> | null;
+  /**
+   * Which bus connection this record was last confirmed against.
+   *
+   * Behind `Bus.generation` means a socket was lost and replaced since anything was heard about this
+   * run, so the record predates a gap of unknown length and nothing has spoken for it since.
+   */
+  generation: number;
 }
 
 /** Where the one event connection has got to. */
@@ -127,6 +136,15 @@ interface Bus {
   /** Why it is not connected, in a sentence `observe` can quote. */
   detail: string;
   frames: FrameState;
+  /**
+   * How many times a connection has been opened. Incremented per successful open, never reset.
+   *
+   * The reason it is a counter and not a timestamp: a reconnect is not a point in time to compare
+   * against, it is a *discontinuity*, and what matters is which side of it a record was last written
+   * on. Comparing timestamps would also make the check depend on clock resolution — under the frozen
+   * clock the suite injects, every stamp is equal and no timestamp comparison can ever be true.
+   */
+  generation: number;
 }
 
 function unref(timer: ReturnType<typeof setTimeout>): void {
@@ -158,6 +176,7 @@ export class OpencodeProvider implements SubagentProvider {
     connected: false,
     detail: "the event stream has not been opened yet",
     frames: NO_FRAMES,
+    generation: 0,
   };
   /** In-flight `#ensureStream`, so concurrent dispatches open one connection between them. */
   #opening: Promise<string | null> | null = null;
@@ -180,15 +199,34 @@ export class OpencodeProvider implements SubagentProvider {
     if (!translation.ok) return this.#refused(translation.detail);
     const model = translation.model;
 
+    // The id is claimed here, synchronously, before the first `await`. `#refuseDispatch` asks whether
+    // the id is already taken, and two dispatches for the same id that both reached that question
+    // before either had a session to store would both have been told no. Reserving between the check
+    // and the first suspension is what makes the answer mean something.
+    const live: Live = {
+      record: reservedRun({
+        runId,
+        askedModel: model.modelID,
+        router: model.providerID,
+        at: this.#stamp(),
+        artifacts: this.#artifacts(),
+      }),
+      timer: null,
+      generation: this.#bus.generation,
+    };
+    this.#runs.set(runId, live);
+
     // Before anything is created. A run this provider cannot watch is the failure it exists to
     // prevent, and refusing here is the only point at which refusing is still free.
     const busProblem = await this.#ensureStream();
     if (busProblem !== null) {
+      this.#forget(runId, null);
       return this.#refused(
         `the event stream could not be opened (${busProblem}), so this run could not be watched; ` +
           "nothing was launched",
       );
     }
+    live.generation = this.#bus.generation;
 
     const created = await this.#http({
       method: "POST",
@@ -200,33 +238,23 @@ export class OpencodeProvider implements SubagentProvider {
       // prompted, and no prompt was sent. The worst case is an unprompted session nobody uses, which
       // is litter rather than a second agent on the branch. That distinction is the whole reason
       // `isSafeToRetry` exists, and this is the side of it a retry is safe on.
+      this.#forget(runId, null);
       return this.#refused(
         `the session could not be created (${describeOutcome(created)}); nothing was prompted, ` +
-          (answered(created) ? "so nothing was launched" : "though an unused session may now exist"),
+          (refutes(created) ? "so nothing was launched" : "though an unused session may now exist"),
       );
     }
 
     const sessionId = readSessionId(created.body);
     if (sessionId === null) {
+      this.#forget(runId, null);
       return this.#refused(
         "the server accepted the session but its reply carried no id, so there was nothing to " +
           "prompt and nothing was launched",
       );
     }
 
-    const at = this.#stamp();
-    const live: Live = {
-      record: newRun({
-        runId,
-        external: sessionId,
-        askedModel: model.modelID,
-        router: model.providerID,
-        at,
-        artifacts: this.#artifacts(),
-      }),
-      timer: null,
-    };
-    this.#runs.set(runId, live);
+    live.record = markSessionCreated(live.record, sessionId, this.#stamp());
     this.#bySession.set(sessionId, runId);
 
     const prompted = await this.#http({
@@ -236,24 +264,43 @@ export class OpencodeProvider implements SubagentProvider {
     });
 
     if (prompted.kind === "ok") {
-      live.record = markQueued(live.record, this.#stamp());
+      // Guarded, because this reply is now the *older* of two sources. While it was in flight the bus
+      // may have carried this session all the way to idle, and writing `queued` over that would
+      // report a finished run as one that has not begun.
+      if (!busSpoke(live.record)) live.record = markQueued(live.record, this.#stamp());
       this.#armTimeout(live, request);
       const lost = untranslated(request);
       const parts = [
         `session ${sessionId} on ${model.providerID}/${model.modelID}`,
-        "queued; the first bus event will promote it to running",
+        busSpoke(live.record)
+          ? `accepted; the bus already reports it ${live.record.liveness}`
+          : "queued; the first bus event will promote it to running",
       ];
       if (lost.length > 0) parts.push(`not translated: ${lost.join(", ")}`);
       return { verdict: "accepted", run: this.#ref(live.record), detail: this.#say(parts.join("; ")) };
     }
 
-    if (answered(prompted)) {
+    if (refutes(prompted)) {
       // The server read the prompt and said no. Nothing is executing, so the run id is handed back
       // rather than held: a retry licensed by `isSafeToRetry` must not then be refused here as a
       // duplicate, and the session it would have used is dropped on the way out.
+      //
+      // Only a `4xx` reaches this. A `5xx` is the gateway's patience running out, which says nothing
+      // about whether the agent behind it started — and `refused` is the one verdict `isSafeToRetry`
+      // licenses, so reading a `504` as one is how a second agent lands on a live branch.
       this.#forget(runId, sessionId);
       await this.#discard(sessionId);
       return this.#refused(`the server rejected the prompt (${describeOutcome(prompted)})`);
+    }
+
+    if (busSpoke(live.record)) {
+      // The reply is lost and it does not matter: the bus watched this session start. A launch that
+      // has been *seen* is `accepted` however badly the request that caused it ended.
+      const detail =
+        `the prompt's reply was lost (${describeOutcome(prompted)}), but session ${sessionId} has ` +
+        `since reported activity, so the run did start; it is ${live.record.liveness}`;
+      this.#armTimeout(live, request);
+      return { verdict: "accepted", run: this.#ref(live.record), detail: this.#say(detail) };
     }
 
     // The one case this provider handles better than any other in the repository. The reply is lost,
@@ -287,10 +334,7 @@ export class OpencodeProvider implements SubagentProvider {
     // warm for runs that finished hours ago; this one runs when somebody asks a question the socket
     // is needed to answer.
     const busProblem = isOver(live.record) ? null : await this.#ensureStream();
-    const view =
-      busProblem === null
-        ? { liveness: live.record.liveness, detail: describe(live.record) }
-        : unverified(live.record, busProblem);
+    const view = this.#view(live, busProblem);
 
     return {
       run: this.#ref(live.record),
@@ -327,7 +371,7 @@ export class OpencodeProvider implements SubagentProvider {
     if (sent.kind === "ok") {
       return { verdict: "delivered", detail: this.#say(`queued into session ${sessionId}`) };
     }
-    if (answered(sent)) {
+    if (refutes(sent)) {
       return { verdict: "refused", detail: this.#say(describeOutcome(sent)) };
     }
     return {
@@ -355,7 +399,7 @@ export class OpencodeProvider implements SubagentProvider {
     const aborted = await this.#http({ method: "POST", path: PATHS.abort(sessionId) });
     if (aborted.kind !== "ok") {
       const detail = `${describeOutcome(aborted)}; the run may still be alive`;
-      if (answered(aborted)) return { verdict: "refused", detail: this.#say(detail) };
+      if (refutes(aborted)) return { verdict: "refused", detail: this.#say(detail) };
       return { verdict: "unknown", detail: this.#say(detail) };
     }
 
@@ -459,6 +503,9 @@ export class OpencodeProvider implements SubagentProvider {
       this.#bus.connected = true;
       this.#bus.detail = "connected";
       this.#bus.frames = NO_FRAMES;
+      // A new socket is a new generation. `GET /event` is live-only — it replays nothing — so every
+      // record last written on an earlier generation now sits behind a gap of unknown length.
+      this.#bus.generation += 1;
       this.#consume(outcome.chunks, controller);
       return null;
     })();
@@ -514,6 +561,9 @@ export class OpencodeProvider implements SubagentProvider {
     const live = this.#runs.get(runId);
     if (live === undefined) return;
     live.record = applySignal(live.record, signal, this.#stamp());
+    // This record has now been spoken for on the current connection, so it is no longer behind a
+    // reconnect gap however many sockets came before this one.
+    live.generation = this.#bus.generation;
     if (isOver(live.record)) this.#clearTimer(live);
   }
 
@@ -551,12 +601,18 @@ export class OpencodeProvider implements SubagentProvider {
     if (controller !== null) controller.abort();
   }
 
-  /** Drop a run this provider is no longer holding, so its id and session are reusable. */
-  #forget(runId: string, sessionId: string): void {
+  /**
+   * Drop a run this provider is no longer holding, so its id and session are reusable.
+   *
+   * `sessionId` is `null` on the paths that release a reservation made before any session existed.
+   * Those must release the id too: it was claimed to close a race, and a claim that outlives the
+   * refusal it was taken for would turn every refused dispatch into a permanently burnt run id.
+   */
+  #forget(runId: string, sessionId: string | null): void {
     const live = this.#runs.get(runId);
     if (live !== undefined) this.#clearTimer(live);
     this.#runs.delete(runId);
-    this.#bySession.delete(sessionId);
+    if (sessionId !== null) this.#bySession.delete(sessionId);
   }
 
   /** Best effort: drop a session that was created and never prompted. Its failure changes nothing. */
@@ -573,9 +629,47 @@ export class OpencodeProvider implements SubagentProvider {
     return { verdict: "refused", run: null, detail: this.#say(detail) };
   }
 
+  /**
+   * The run this ref names, or nothing.
+   *
+   * A `RunRef` carries two identifiers and both have to agree. The run id finds the record; the
+   * external id, when the caller supplies one, has to be the session this provider is actually
+   * holding under it. A ref built from an older dispatch of the same id — the shape a refused
+   * dispatch and its licensed retry produce — would otherwise steer or stop a session it does not
+   * name, which is the failure the `external` field exists to make impossible.
+   */
   #known(run: RunRef): Live | null {
     if (run.provider !== this.id) return null;
-    return this.#runs.get(run.runId) ?? null;
+    const live = this.#runs.get(run.runId);
+    if (live === undefined) return null;
+    if (run.external !== null && live.record.external !== null && run.external !== live.record.external) {
+      return null;
+    }
+    return live;
+  }
+
+  /**
+   * What may honestly be said about a record right now.
+   *
+   * Two ways to be unable to speak for a live run, and the second is the one that reads as fine.
+   * `busProblem` is the socket being down. `live.generation` behind the bus is the socket being *up
+   * and new*: `GET /event` replays nothing, so a reconnect hands back a connection, not the events
+   * that were missed while there was none. Treating the reconnect itself as evidence would report a
+   * stale `running` as current — the run may have gone idle inside the gap, and nothing would say so
+   * until an event that is never coming.
+   */
+  #view(live: Live, busProblem: string | null): { liveness: Observation["liveness"]; detail: string } {
+    if (busProblem !== null) {
+      return unverified(live.record, `the event stream is not connected (${busProblem})`);
+    }
+    if (!isOver(live.record) && live.generation < this.#bus.generation) {
+      return unverified(
+        live.record,
+        "the event stream was reconnected and replays nothing, so any event for this run during the " +
+          "gap was missed",
+      );
+    }
+    return { liveness: live.record.liveness, detail: describe(live.record) };
   }
 
   #ref(record: RunRecord): RunRef {
