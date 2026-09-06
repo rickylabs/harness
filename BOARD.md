@@ -2,33 +2,24 @@
 
 # rickylabs/harness
 
-`[###############-----]` **127/159 done · 3 running · 18 queued · 11 abandoned**
+`[################----]` **128/159 done · 2 running · 18 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T00:58:30Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T00:58:38Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (3)
+## Moving now (2)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
-| [PR170 feat(forge): supervise agent PRs by difference, not by state](https://github.com/rickylabs/harness/pull/170) | `impl` | `e7` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
-
-## Anomalies (1)
-
-`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#170** — closed on GitHub but sits in impl; the issue wins, the column is stale
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 98/121 done · 3 running · 18 queued · 2 abandoned
+`[#########---]` 99/121 done · 2 running · 18 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -39,7 +30,7 @@ Something could be acting on these right now.
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[########----]` 6/9 done · 3 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[------------]` 0/6 done · 6 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 17/20 done · 1 running · 2 abandoned | `impl` |
-| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 18/20 done · 1 running · 1 queued | `impl` |
+| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[###########-]` 19/20 done · 1 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `triage` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[###########-]` 12/13 done · 1 running | `impl` |
 
@@ -86,9 +77,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  127/159 done · 3 running · 18 queued · 11 abandoned
+# rickylabs/harness  [################----]  128/159 done · 2 running · 18 queued · 11 abandoned
 
-## M1 — dsh coordinator foundation  [################----]  98/121 done · 3 running · 18 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [################----]  99/121 done · 2 running · 18 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [impl]
     [################] 14/14 done
@@ -192,7 +183,7 @@ Something could be acting on these right now.
     shipped              PR163 fix(board): grant the board workflow the scopes it actually reads (p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
-    [##############--] 18/20 done · 1 running · 1 queued
+    [###############-] 19/20 done · 1 queued
     shipped              #74 E7.1 — forge: the issue/PR bridge and label→target mapping
     shipped              #75 E7.2 — PR supervision loop
     shipped              #76 E7.3 — Dispatch selector: provider or divybot, per target
@@ -212,7 +203,7 @@ Something could be acting on these right now.
     shipped              PR167 feat(forge): read divybot's dispatch table and reconcile it with the board (p1)
     shipped              PR168 feat(forge): /swarm comment authority, offline and gate-for-gate (p1)
     shipped              PR169 feat(forge): pick a target's backend from recorded parity, not from intent (p1)
-    impl                 PR170 feat(forge): supervise agent PRs by difference, not by state (p1)
+    shipped              PR170 feat(forge): supervise agent PRs by difference, not by state (p1)
 
   E8 — Contracts: published package for the netscript UIs #38  [triage]
     [################] 8/8 done
