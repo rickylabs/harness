@@ -199,6 +199,68 @@ export {
 
 export { renderMirrorPreview, renderTriggers } from "./swarm/render.js";
 
+export {
+  CONFLICT_STATES,
+  EMPTY_SEEN,
+  EMPTY_STATE,
+  FAILING_CONCLUSIONS,
+  PULL_SIGNALS,
+  STEERING_REVIEW_STATES,
+  SUPERVISION_REASONS,
+  SUPERVISION_REFUSALS,
+  advanceState,
+  checkSupervision,
+  describeSupervisionProblem,
+  describeSupervisionReason,
+  pullKey,
+  supervisePulls,
+  tallySupervision,
+  type ConflictState,
+  type PaneRead,
+  type PullCheck,
+  type PullReview,
+  type PullSignal,
+  type SeenPull,
+  type SteeringNote,
+  type Supervision,
+  type SupervisedPull,
+  type SupervisionInput,
+  type SupervisionProblem,
+  type SupervisionReason,
+  type SupervisionRefusal,
+  type SupervisionState,
+  type SupervisionTally,
+  type SupervisionVerdict,
+} from "./supervise/steer.js";
+
+export {
+  NOTHING_REDACTED,
+  REDACTION,
+  SECRET_KINDS,
+  countSecrets,
+  describeSecretKind,
+  leaked,
+  redact,
+  type Redacted,
+  type SecretHit,
+  type SecretKind,
+} from "./supervise/redact.js";
+
+export {
+  SUPERVISION_FILE,
+  describeStateIssue,
+  loadSupervisionState,
+  parseSupervisionState,
+  serializeSupervisionState,
+  supervisionStateDocument,
+  type LoadedState,
+  type ParsedState,
+  type StateIssue,
+  type StateReader,
+} from "./supervise/state.js";
+
+export { renderSupervision } from "./supervise/render.js";
+
 export { renderSkill, type SkillContext } from "./skill/render.js";
 
 export {

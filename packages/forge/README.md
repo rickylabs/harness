@@ -25,11 +25,13 @@ dsh-forge targets reconcile   # which inbox issues get dispatched, and what came
 dsh-forge targets backend # which backend dispatches each target, and why
 dsh-forge swarm admit     # decide every /swarm comment the way the dispatcher would
 dsh-forge swarm mirror    # the inbox issue each honoured trigger would open
+dsh-forge supervise       # what is new on each agent's PR, and what it has already been told
 ```
 
 Options: `--repo owner/name`, `--cwd <path>`, `--no-detect`, `--force`, `--dry-run`, `--json`,
 `--config <path>`, `--handover <path>`, `--snapshot <path>` (repeatable), `--comments <path>`
-(repeatable), `--seen <path>`.
+(repeatable), `--seen <path>`, `--pulls <path>` (repeatable), `--panes <path>` (repeatable),
+`--supervision <path>`.
 Exit codes: `0` ok, `1` drift or conflict, `2` usage, `3` no usable GitHub transport.
 
 ## What it installs
@@ -261,6 +263,69 @@ those reach the agent's goal preamble and end up in its commits.
 One caveat on `mirror`: `SourceIssue.body` is fetched for pull requests and deliberately not for
 issues, so a mirror rendered from a board snapshot has a blank source section. It is a correct
 preview of what would be filed, not the exact bytes a spawn would read.
+
+## Supervising an agent's pull request
+
+A dispatched run opens a PR and then keeps going. Reviews land, CI turns red, `main` moves under it —
+and the agent cannot see any of it. Somebody has to carry that back into its context. divybot does
+that by re-reading the PR each tick and forwarding what it finds, which means the same review arrives
+on every tick until the PR closes. A turn spent re-reading a review the agent already acted on is a
+turn it does not spend on the next one, and an agent told the same thing four times starts arguing
+with it.
+
+So `dsh-forge supervise` computes one thing: **the difference, not the state.**
+
+```bash
+gh pr list --repo rickylabs/harness --state open \
+  --json number,url,headRefOid,mergeable,isDraft,reviews,statusCheckRollup > pulls.json
+dsh-forge supervise --config ../divybot.json --pulls pulls.json --panes panes.json
+```
+
+`--panes` is optional and carries what `herdr pane read` returned, one row per pull:
+`{"pull":"owner/name#169","busy":true,"text":"…"}`.
+
+### The mark is a receipt, not a decision
+
+`swarm admit` marks a comment seen the moment it *decides* about it, because there the mark is an
+authority record — an unauthorised `/swarm` is refused once and never looked at again. Here the mark
+means the opposite thing: **the agent has been told.** So it is taken on delivery. A note computed
+while the agent is mid-turn is held, not marked, and is still waiting on the next tick.
+
+The two look alike and are inverses. Getting it backwards produces the failure hardest to see from
+outside — steering that was computed, recorded, and never sent.
+
+Which is also why **nothing here writes `supervision.json`.** This command decides; the execution
+channel (E5 · #62) delivers; whoever delivered owns the write. `--json` carries the state it *would*
+write under `next`, so the two cannot drift.
+
+### Merging is not ours
+
+#75 states it plainly: **PRs are merged by humans.** There is no `merge` signal and no reason that
+leads to one, and a target row with `automerge: true` is not supervised at all. That is reported as
+the reason `automerge-on` and *not* re-refused here — `targets check` already refuses the row as
+`automerge-enabled`, and a second refusal would print one misconfigured row as two unrelated red
+lines.
+
+### Three judgements that are ours rather than the dispatcher's
+
+- **A cancelled check is not a failure.** `failure`, `timed_out`, `action_required` and
+  `startup_failure` steer; `cancelled` does not. Nearly every cancelled run on an agent's PR was
+  superseded by that agent's own next push.
+- **An absent pane read is not a busy signal.** Holding on silence would mean the command does
+  nothing at all on a fleet with no `herdr` wired in, and a supervisor whose default is to do nothing
+  is one nobody notices has stopped working. Only a pane that says `busy` holds.
+- **A disabled row is still supervised.** `Target.disabled` pauses new spawns and says so in its own
+  doc: live jobs keep running and keep being supervised.
+
+### Pane output is redacted on ingest
+
+`herdr pane read` can echo the GitHub token. Redaction therefore happens at the one entrance rather
+than at each exit — the terminal, `--json`, a steering line, a test diff — because redacting per exit
+means the exit added last is the one that leaks. It is idempotent, so a second pass over already
+`sed`-redacted text reports nothing and the `secret-in-transcript` refusal keeps meaning *rotate it*.
+
+A denylist cannot be complete. The rule that actually keeps a token out of the repository is that
+pane output is evidence and is never committed.
 
 ## Ports from
 

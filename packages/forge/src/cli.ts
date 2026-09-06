@@ -53,6 +53,23 @@ import { describeLedgerIssue, loadHandoverLedger } from "./targets/ledger.js";
 import { checkTargets, describeProblem, type TargetTable } from "./targets/model.js";
 import { reconcileBridge, tallyBridge, type BridgeSource } from "./targets/reconcile.js";
 import { renderBridge, renderHandover, renderTable } from "./targets/render.js";
+import { renderSupervision } from "./supervise/render.js";
+import {
+  SUPERVISION_FILE,
+  describeStateIssue,
+  loadSupervisionState,
+  supervisionStateDocument,
+} from "./supervise/state.js";
+import {
+  advanceState,
+  checkSupervision,
+  supervisePulls,
+  tallySupervision,
+  type PaneRead,
+  type PullCheck,
+  type PullReview,
+  type SupervisedPull,
+} from "./supervise/steer.js";
 import { renderMirrorPreview, renderTriggers } from "./swarm/render.js";
 import {
   admitSwarmComments,
@@ -113,6 +130,7 @@ usage
   dsh-forge targets backend        which backend dispatches each target, and why
   dsh-forge swarm admit            decide every /swarm comment the way the dispatcher would
   dsh-forge swarm mirror           the inbox issue each honoured trigger would open
+  dsh-forge supervise              what is new on each agent's PR, and what it has already been told
   dsh-forge init                   eject + apply + skill install, in that order
 
 options
@@ -134,6 +152,11 @@ options
                         (repeatable — one per target repository)
   --seen <path>         swarm only: the dispatcher's state.json, whose seen_swarm keys name the
                         comments it has already decided
+  --pulls <path>        supervise only: a 'gh pr list --json' dump (repeatable — one per repository)
+  --panes <path>        supervise only: 'herdr pane read' output as JSON, one entry per pull:
+                        {"pull":"owner/name#1","busy":true,"text":"…"} — redacted on the way in
+  --supervision <path>  supervise only: what each pull has already been told (default:
+                        ./${SUPERVISION_FILE}; absent means a first tick)
   --dry-run             report every change without writing a file or touching the repository
   --json                machine-readable output
   -h, --help            this text
@@ -979,6 +1002,227 @@ async function readSeen(path: string): Promise<readonly string[]> {
   return Object.entries(seen).flatMap(([key, value]) => (value === true ? [key] : []));
 }
 
+// ── supervise ────────────────────────────────────────────────────────────────
+
+/**
+ * `dsh-forge supervise` — the difference between what an agent's PR says now and what it was told.
+ *
+ * Offline like the two groups above, and for a third reason on top of theirs: this command decides
+ * what goes into an agent's context, and a decision about that should be reviewable by someone who
+ * cannot reach the network. `gh` fetches, `herdr` reads the pane, this composes.
+ *
+ * **Nothing here writes the state file.** The mark {@link advanceState} computes is a receipt for a
+ * delivery this command does not perform — the execution channel is E5 · #62 — and writing it before
+ * anything was sent would record an agent as told when it was not. `--json` carries the next state as
+ * the exact document that should be written once the steering actually lands.
+ *
+ * Drift on a problem, never on a quiet fleet: a tick where every PR is up to date is the fleet
+ * working, and a check that goes red for it is one somebody mutes.
+ */
+async function cmdSupervise(
+  root: string,
+  options: {
+    config: string | undefined;
+    pulls: readonly string[];
+    panes: readonly string[];
+    supervision: string | undefined;
+  },
+  json: boolean,
+): Promise<number> {
+  const table = await loadTable(root, options.config);
+  if (options.pulls.length === 0) {
+    throw new UsageError(
+      "supervise needs at least one --pulls: run 'gh pr list --repo <owner>/<name> --state open " +
+        "--json number,url,headRefOid,mergeable,isDraft,reviews,statusCheckRollup > pulls.json'",
+    );
+  }
+
+  const pulls: SupervisedPull[] = [];
+  let dropped = 0;
+  for (const path of options.pulls) {
+    const read = await readPulls(resolve(root, path));
+    dropped += read.dropped;
+    pulls.push(...read.pulls);
+  }
+  const panes: PaneRead[] = [];
+  for (const path of options.panes) panes.push(...(await readPanes(resolve(root, path))));
+
+  const statePath = resolve(root, options.supervision ?? SUPERVISION_FILE);
+  const loaded = loadSupervisionState(statePath, (file) => readFileSync(file, "utf8"));
+  if (loaded.issues.length > 0) {
+    const lines = loaded.issues.map((issue) => `  ${describeStateIssue(issue)}`).join("\n");
+    throw new FileError(
+      `${statePath} has ${String(loaded.issues.length)} problem(s):\n${lines}`,
+      `fix the entries above, or delete ${SUPERVISION_FILE} — an absent file means a first tick, ` +
+        `in which case every open review and every red check is forwarded again.`,
+    );
+  }
+
+  const supervision = supervisePulls(table, { pulls, panes, state: loaded.state });
+  const problems = checkSupervision(supervision);
+  if (json) {
+    out(
+      JSON.stringify(
+        {
+          path: statePath,
+          found: loaded.found,
+          dropped,
+          supervision,
+          tally: tallySupervision(supervision),
+          problems,
+          next: supervisionStateDocument(advanceState(loaded.state, supervision)),
+        },
+        null,
+        2,
+      ),
+    );
+  } else {
+    out(renderSupervision(supervision, { path: statePath, found: loaded.found, pulls: loaded.state.pulls.size }, problems));
+    if (dropped > 0) out(`\n${String(dropped)} row(s) in the pull dumps had no usable url and were dropped`);
+  }
+  return problems.length === 0 ? EXIT.ok : EXIT.drift;
+}
+
+/** `owner/name` out of a pull request's web or API url, or `""`. */
+function repoOfPullUrl(url: string): string {
+  const web = /^https?:\/\/[^/]+\/([^/]+)\/([^/]+)\/pull\/\d+/.exec(url);
+  if (web !== null) return `${web[1] ?? ""}/${web[2] ?? ""}`;
+  const api = /\/repos\/([^/]+)\/([^/]+)\/pulls\/\d+/.exec(url);
+  return api === null ? "" : `${api[1] ?? ""}/${api[2] ?? ""}`;
+}
+
+const asString = (value: unknown): string => (typeof value === "string" ? value : "");
+
+/**
+ * Read one `gh pr list --json` dump.
+ *
+ * The repository is taken from each row's `url` rather than from a flag, the same rule
+ * `readSnapshot` follows: a dump filed under the wrong repository would resolve against another
+ * repo's target row and steer the wrong agent, which is the one error in this path that produces a
+ * confident wrong answer instead of a visible one. A row with no usable url is dropped and counted.
+ *
+ * Field spellings are accepted in both `gh`'s and this package's form, because the whole point of
+ * the flag is that the operator can pipe `gh` straight into it. `headRefOid` is `gh`'s name for the
+ * head sha; `isDraft` for `draft`; `statusCheckRollup` for the checks.
+ */
+async function readPulls(path: string): Promise<{ pulls: readonly SupervisedPull[]; dropped: number }> {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    throw new UsageError(
+      `could not read the pull dump at ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (!Array.isArray(payload)) {
+    throw new UsageError(`${path} is not a pull dump — expected the JSON array 'gh pr list --json' returns`);
+  }
+
+  const pulls: SupervisedPull[] = [];
+  let dropped = 0;
+  for (const row of payload) {
+    if (typeof row !== "object" || row === null) {
+      dropped += 1;
+      continue;
+    }
+    const raw = row as Record<string, unknown>;
+    const url = asString(raw["url"]);
+    const repo = repoOfPullUrl(url);
+    if (typeof raw["number"] !== "number" || repo === "") {
+      dropped += 1;
+      continue;
+    }
+    pulls.push({
+      repo,
+      number: raw["number"],
+      url,
+      headSha: asString(raw["headSha"]) || asString(raw["headRefOid"]),
+      // Absent reads as UNKNOWN rather than MERGEABLE: a dump fetched without the field has not
+      // observed the absence of a conflict, and `checkSupervision` says so rather than assuming it.
+      mergeable: asString(raw["mergeable"]),
+      draft: raw["draft"] === true || raw["isDraft"] === true,
+      reviews: readReviews(raw["reviews"]),
+      checks: readChecks(raw["checks"] ?? raw["statusCheckRollup"]),
+    });
+  }
+  return { pulls, dropped };
+}
+
+function readReviews(value: unknown): readonly PullReview[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((row) => {
+    if (typeof row !== "object" || row === null) return [];
+    const raw = row as Record<string, unknown>;
+    const author = raw["author"];
+    const id = asString(raw["id"]) || asString(raw["nodeId"]) || asString(raw["submittedAt"]);
+    if (id === "") return [];
+    return [
+      {
+        id,
+        author:
+          typeof author === "string"
+            ? author
+            : asString((author as { login?: unknown } | null)?.login),
+        state: asString(raw["state"]),
+        submittedAt: asString(raw["submittedAt"]),
+        body: asString(raw["body"]),
+      },
+    ];
+  });
+}
+
+/**
+ * The checks, with `detailsUrl` standing in for an id when there is none.
+ *
+ * `statusCheckRollup` carries no identifier, and the seen key has to change when a check is re-run —
+ * otherwise a re-run that fails again is silently counted as already forwarded. `detailsUrl` embeds
+ * the run and job ids, so it changes on exactly the events that should make the failure new again.
+ */
+function readChecks(value: unknown): readonly PullCheck[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((row) => {
+    if (typeof row !== "object" || row === null) return [];
+    const raw = row as Record<string, unknown>;
+    const url = asString(raw["url"]) || asString(raw["detailsUrl"]);
+    const id = asString(raw["id"]) || url;
+    if (id === "") return [];
+    return [{ id, name: asString(raw["name"]), conclusion: asString(raw["conclusion"]), url }];
+  });
+}
+
+/**
+ * Read a pane dump.
+ *
+ * Nothing emits this shape today, so it is spelled to be writable by hand or by a one-line shell
+ * loop over `herdr pane read`. Both `{"pull":"owner/name#1"}` and `{"repo":…,"number":…}` are
+ * accepted; the text is redacted downstream, on ingest into `superviseOne`, and never here — one
+ * entrance, per `redact.ts`.
+ */
+async function readPanes(path: string): Promise<readonly PaneRead[]> {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    throw new UsageError(
+      `could not read the pane dump at ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (!Array.isArray(payload)) {
+    throw new UsageError(`${path} is not a pane dump — expected a JSON array of {pull, busy, text} entries`);
+  }
+  return payload.flatMap((row) => {
+    if (typeof row !== "object" || row === null) return [];
+    const raw = row as Record<string, unknown>;
+    const ref = /^(.+)#(\d+)$/.exec(asString(raw["pull"]));
+    const repo = ref === null ? asString(raw["repo"]) : (ref[1] ?? "");
+    const number = ref === null ? raw["number"] : Number(ref[2]);
+    if (repo === "" || typeof number !== "number" || !Number.isFinite(number)) return [];
+    // Absent `busy` is false, not true: an entry that forgot the field should not silently hold
+    // every note on that pull forever with nothing in the output saying why.
+    return [{ repo, number, busy: raw["busy"] === true, text: asString(raw["text"]) }];
+  });
+}
+
 // ── entry ────────────────────────────────────────────────────────────────────
 
 /**
@@ -1013,6 +1257,9 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         snapshot: { type: "string", multiple: true, default: [] },
         comments: { type: "string", multiple: true, default: [] },
         seen: { type: "string" },
+        pulls: { type: "string", multiple: true, default: [] },
+        panes: { type: "string", multiple: true, default: [] },
+        supervision: { type: "string" },
         "dry-run": { type: "boolean", default: false },
         json: { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
@@ -1099,6 +1346,22 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         default:
           throw new UsageError(`unknown command: swarm ${sub}`);
       }
+    }
+
+    // Offline for the third time, and here it decides what reaches an agent's context — see the
+    // note on `cmdSupervise`.
+    if (group === "supervise") {
+      if (sub !== undefined) throw new UsageError(`unknown command: supervise ${sub}`);
+      return await cmdSupervise(
+        repoRoot,
+        {
+          config: values.config,
+          pulls: values.pulls ?? [],
+          panes: values.panes ?? [],
+          supervision: values.supervision,
+        },
+        json,
+      );
     }
 
     const ctx = await resolveContext({

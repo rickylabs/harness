@@ -39,6 +39,7 @@ usage
   dsh-forge targets backend        which backend dispatches each target, and why
   dsh-forge swarm admit            decide every /swarm comment the way the dispatcher would
   dsh-forge swarm mirror           the inbox issue each honoured trigger would open
+  dsh-forge supervise              what is new on each agent's PR, and what it has already been told
   dsh-forge init                   eject + apply + skill install, in that order
 
 options
@@ -60,6 +61,11 @@ options
                         (repeatable — one per target repository)
   --seen <path>         swarm only: the dispatcher's state.json, whose seen_swarm keys name the
                         comments it has already decided
+  --pulls <path>        supervise only: a 'gh pr list --json' dump (repeatable — one per repository)
+  --panes <path>        supervise only: 'herdr pane read' output as JSON, one entry per pull:
+                        {"pull":"owner/name#1","busy":true,"text":"…"} — redacted on the way in
+  --supervision <path>  supervise only: what each pull has already been told (default:
+                        ./supervision.json; absent means a first tick)
   --dry-run             report every change without writing a file or touching the repository
   --json                machine-readable output
   -h, --help            this text
