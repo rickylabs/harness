@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **139/166 done · 3 running · 13 queued · 11 abandoned**
+`[################----]` **141/167 done · 3 running · 12 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T03:56:58Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T04:30:59Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (3)
 
@@ -16,7 +16,7 @@ Something could be acting on these right now.
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
 
-## Anomalies (4)
+## Anomalies (5)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -26,19 +26,20 @@ Something could be acting on these right now.
 - **#175** — is in milestone (none) but its epic #34 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#176** — is in milestone (none) but its epic #32 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#177** — is in milestone (none) but its epic #32 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#178** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 106/124 done · 3 running · 13 queued · 2 abandoned
+`[##########--]` 107/124 done · 3 running · 12 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 14/14 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[###########-]` 15/16 done · 1 queued | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[#########---]` 6/8 done · 2 queued | `triage` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[######------]` 4/8 done · 4 queued | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 5/8 done · 3 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 8/9 done · 1 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 17/20 done · 1 running · 2 abandoned | `impl` |
@@ -48,26 +49,26 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 33/42 done · 9 abandoned
+`[#########---]` 34/43 done · 9 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[############]` 1/1 done | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[############]` 2/2 done | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[############]` 1/1 done | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[############]` 2/2 done | `triage` |
 | _(no epic)_ | `[#########---]` 28/37 done · 9 abandoned | — |
 
 ## Waiting to start
 
 <details>
-<summary>13 filed, nothing started</summary>
+<summary>12 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#47 E2.2 — Fork deepseek-harness-docker, keeping the upstream remote](https://github.com/rickylabs/harness/issues/47) | `triage` | `e2` |
 | [#49 E2.4 — Register the stack on the N5 and verify it comes up](https://github.com/rickylabs/harness/issues/49) | `triage` | `e2` |
-| [#52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk](https://github.com/rickylabs/harness/issues/52) | `triage` | `e3` |
 | [#53 E3.3 — provider-codex against the running app-server daemon](https://github.com/rickylabs/harness/issues/53) | `triage` | `e3` |
 | [#54 E3.4 — provider-acp: agy on dsh's in-tree ACP driver](https://github.com/rickylabs/harness/issues/54) | `triage` | `e3` |
 | [#55 E3.5 — provider-opencode on @opencode-ai/sdk/v2](https://github.com/rickylabs/harness/issues/55) | `triage` | `e3` |
@@ -86,9 +87,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  139/166 done · 3 running · 13 queued · 11 abandoned
+# rickylabs/harness  [################----]  141/167 done · 3 running · 12 queued · 11 abandoned
 
-## M1 — dsh coordinator foundation  [#################---]  106/124 done · 3 running · 13 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [#################---]  107/124 done · 3 running · 12 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 14/14 done
@@ -138,9 +139,9 @@ Something could be acting on these right now.
     shipped              PR139 feat(deploy): run the dsh web surface on the N5 (E2.3, #48)
 
   E3 — Subagent providers over structured protocols #33  [triage]
-    [########--------] 4/8 done · 4 queued
+    [##########------] 5/8 done · 3 queued
     shipped              #51 E3.1 — DispatchRequest and the SubagentProvider contract
-    triage               #52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk
+    shipped              #52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk
     triage               #53 E3.3 — provider-codex against the running app-server daemon
     triage               #54 E3.4 — provider-acp: agy on dsh's in-tree ACP driver
     triage               #55 E3.5 — provider-opencode on @opencode-ai/sdk/v2
@@ -244,7 +245,7 @@ Something could be acting on these right now.
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
 
-## (no milestone)  [###############-----]  33/42 done · 9 abandoned
+## (no milestone)  [###############-----]  34/43 done · 9 abandoned
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [################] 1/1 done
@@ -254,6 +255,10 @@ Something could be acting on these right now.
     [################] 2/2 done
     shipped              #176 E2.5 — claim the ctx.llm seam in the app shell (p2)
     shipped              PR177 feat(dsh-app): register the three token-metered backends on ctx.llm (#176)
+
+  E3 — Subagent providers over structured protocols #33  [triage]  (epic is in M1 — dsh coordinator foundation)
+    [################] 1/1 done
+    shipped              PR178 feat(provider-claude): launch, observe, steer and stop a claude run (#52)
 
   E4 — Model gateway and routing matrix #34  [triage]  (epic is in M1 — dsh coordinator foundation)
     [################] 2/2 done
