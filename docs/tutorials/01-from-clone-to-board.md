@@ -9,13 +9,17 @@ provider, no API key, and nothing that costs money.
 
 ## Before you start
 
-You need four things, and you will not be asked for a fifth later:
+You need five things, and you will not be asked for a sixth later:
 
 - **Node 24 or newer** and **[pnpm](https://pnpm.io) 11**.
 - **The [`gh`](https://cli.github.com) CLI, authenticated** — `gh auth status` should print a
   logged-in account. Steps 2 and 3 read and write GitHub through it.
 - **A scratch repository you own**, empty, that you do not mind changing. Call it `owner/scratch`
   below and substitute your own throughout. Step 2 writes labels into it.
+- **A local clone of that scratch repository**, sitting beside this one (below, it is assumed to
+  be at `../scratch`). `dsh-forge` writes files into a checkout, not into GitHub, so it needs a
+  working tree to write into — and writing into this checkout would be a mistake explained at
+  step 2.
 - About 500 MB of disk for `node_modules`.
 
 > [!WARNING]
@@ -43,15 +47,10 @@ Now the tests:
 pnpm test
 ```
 
-Each package prints its own totals, one line per package:
-
-```
-packages/dsh-app test: # pass 122
-packages/dsh-app test: # fail 0
-```
-
-The counts grow as the project does. The number that matters is `# fail 0`, on every package, and
-`pnpm test` exiting `0`.
+Each package prints its own totals — a `pass` line and a `fail` line per
+package, prefixed with its path, like `packages/dsh-app test: … pass …`.
+The counts grow as the project does. The number that matters is `# fail 0`,
+on every package, and `pnpm test` exiting `0`.
 
 **If it fails.** A failure in `pnpm install` about the Node version means you are below 24 — check
 `node --version`. A failure in `pnpm run build` that names `check:docs` means a CLI changed without
@@ -60,10 +59,24 @@ test failure on a clean clone is a real bug, and worth an issue.
 
 ## Step 2 — Install the board process into your repository
 
+The tools reach GitHub through `gh`, and they write *files* into a checkout.
+Both facts decide how you invoke them here.
+
+A warning first, because it is the one way to lose work in this step: the
+`--cwd` flag decides which checkout gets the files, and it defaults to the
+directory you are standing in. Run `init` from inside this clone without
+`--cwd` and it treats the harness checkout as the target — it would overwrite
+this repository's own tracked `.github/labels.yml` and board skill with your
+scratch repository's taxonomy. Nothing stops you: there is no automatic
+origin/target guard. So every command in this step is run from the harness
+clone, with its binaries, and **every one passes `--cwd ../scratch`
+explicitly** — the scratch clone you made before you started. The generated
+files belong in the scratch checkout, where you can review and commit them.
+
 The tools reach GitHub through `gh`. Ask them what they can see first:
 
 ```bash
-node packages/forge/dist/cli.js doctor --repo owner/scratch
+node packages/forge/dist/cli.js doctor --repo owner/scratch --cwd ../scratch
 ```
 
 <details>
@@ -72,49 +85,47 @@ node packages/forge/dist/cli.js doctor --repo owner/scratch
 Every package here except `contracts` is `private: true`, so pnpm links their executables where a
 *dependent* resolves them, not at the repository root. Running the built entry point is the honest
 invocation from a fresh clone, and it is what this repository's own scripts do. The root README
-[explains it once](../../README.md#quickstart) and nothing else needs to.
+[explains it once](../../README.md#local-proof-first) and nothing else needs to.
 
 </details>
 
 `doctor` writes nothing. It reports the repository it resolved, how it reaches GitHub, how many
-labels are already there, and what it derived from the repository itself:
-
-```
-repository       owner/scratch
-github           gh — gh CLI (gh version 2.97.0 (2026-07-31))
-labels present   0
-labels proposed  61
-lane prefix      topic:
-skill dirs       .claude/skills
-```
+labels are already there (`labels present`), how many it proposes (`labels proposed`), the lane
+prefix it detected (`lane prefix`), and the skill directories it found (`skill dirs`).
 
 Next, see what it would do without doing it:
 
 ```bash
-node packages/forge/dist/cli.js init --repo owner/scratch --dry-run
+node packages/forge/dist/cli.js init --repo owner/scratch --cwd ../scratch --dry-run
 ```
 
-Read that output before continuing. It is the whole change, in advance. Then apply it:
+Read that output before continuing. It is the whole change, in advance — including the files it
+will write, which it names relative to `../scratch`. Then apply it:
 
 ```bash
-node packages/forge/dist/cli.js init --repo owner/scratch
+node packages/forge/dist/cli.js init --repo owner/scratch --cwd ../scratch
 ```
 
-`init` does three things in order: writes `.github/labels.yml`, creates the labels on GitHub, and
-installs the `board-process` skill under `.claude/skills/`. It **never deletes a label** — deleting
-one would take with it the record of everything that ever carried it. Where the file and the live
-repository disagree, `init` reports the conflict and exits `1` rather than guessing which is right.
+`init` does three things in order: writes `.github/labels.yml` into the scratch checkout, creates
+the labels on GitHub, and installs the `board-process` skill under the scratch checkout's
+`.claude/skills/`. Those two files are now **scratch repository content**: review them and commit
+them there, in the usual way. `init` **never deletes a label** — deleting one would take with it
+the record of everything that ever carried it. Where the file and the live repository disagree,
+`init` reports the conflict and exits `1` rather than guessing which is right.
 
-**If it fails.** Exit `3` means no usable transport: `gh` is missing, not authenticated, or GitHub is
-unreachable — `gh auth status` tells you which. Exit `1` is not a crash; it is drift, and the output
-names each conflicting label. A conflict on a fresh scratch repository usually means the repository
-was not as empty as you thought.
+**If it fails.** Exit `3` means no usable transport: `gh` is missing, not authenticated, or GitHub
+is unreachable — `gh auth status` tells you which. Exit `1` is not a crash; it is drift, and the
+output names each conflicting label. A conflict on a fresh scratch repository usually means the
+repository was not as empty as you thought.
 
 ## Step 3 — File something, move it, and watch the column change
 
-The label taxonomy has one rule that matters more than the rest: **exactly one `status:` label on an
-open item at a time.** That label *is* the board column. Two of them means the column is a lie, and
-the board says so out loud.
+The label taxonomy has one rule that matters more than the rest: **exactly one `status:` label on
+an open item at a time.** That label *is* the board column. Two of them means the column is a lie
+— and every board view says so: a banner above the work, `!` beside the affected rows, and the
+word `check` in the banner, because the banner counts and marks while `check` names each
+contradiction and exits non-zero. When a view shows you that banner, run the check before doing
+anything about the column underneath it.
 
 File an issue:
 
@@ -275,9 +286,8 @@ Read it back:
 node packages/telemetry/dist/cli.js runs --home /tmp/tel-home
 ```
 
-```
-2026-09-05T10:04:00Z  claude    complete claude-opus-5
-```
+One line, newest first: the finish time, the seam (`source`), the outcome, and the model, padded
+into columns — trailing spaces included, so compare content rather than bytes.
 
 And ask what you would open first if that run had gone wrong:
 

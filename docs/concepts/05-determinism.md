@@ -91,10 +91,13 @@ comparison running in CI, what holds it true is a convention — someone remembe
 and conventions decay silently, which is the failure this page opened with.
 
 Documentation was the largest such gap, which is why the docs lane treats it as an engineering
-problem rather than a writing one. The [CLI reference](../reference/cli/README.md) is now generated
-from the CLIs and byte-compared by `pnpm run check:docs`, inside the same `pnpm run build` CI already
-runs; links are next ([#147](https://github.com/rickylabs/harness/issues/147)). The rule that work
-serves is the one stated on the [docs index](../README.md#the-rule-these-docs-are-held-to):
+problem rather than a writing one. The [CLI reference](../reference/cli/README.md) is generated
+from the CLIs and byte-compared by `pnpm run check:docs`, and relative links and anchors are
+resolved by `pnpm run check:links` — both inside the same `pnpm run build` CI already runs. What
+no gate compares yet is output pasted into hand-written prose: a tutorial block that has drifted
+from the command's real output still fails silently,
+[#212](https://github.com/rickylabs/harness/issues/212) being the recorded instance. The rule that
+work serves is the one stated on the [docs index](../README.md#the-rule-these-docs-are-held-to):
 
 > Every document either states facts it owns, or is generated from the code that owns them.
 

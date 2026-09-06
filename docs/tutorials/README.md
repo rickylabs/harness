@@ -8,10 +8,10 @@ tutorial that pauses to explain a choice has stopped teaching and started docume
 
 | Page | What you end up with | Needs |
 | --- | --- | --- |
-| [01 — From a clone to a moving board](01-from-clone-to-board.md) | A built workspace, a board process installed in a repository of yours, an item moved a column, and a run recorded and read back | Node 24, pnpm 11, `gh` authenticated, a scratch repository |
+| [01 — From a clone to a moving board](01-from-clone-to-board.md) | A built workspace, a board process installed in a repository of yours, an item moved a column, and a run recorded and read back | Node 24, pnpm 11, `gh` authenticated, a scratch repository cloned beside this one |
 
-Shorter than a tutorial and already runnable: the [Quickstart](../../README.md#quickstart) in the
-root README — install, build, and four commands that do something real.
+Shorter than a tutorial and already runnable: the [local proof](../../README.md#local-proof-first)
+in the root README — install, build, and the commands that do something real.
 
 ## What belongs here
 

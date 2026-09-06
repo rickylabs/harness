@@ -38,7 +38,9 @@ decision 4 on the [roadmap](https://github.com/rickylabs/harness/issues/30), and
 
 ## What it actually is, then
 
-Five binaries and the plugin packages behind them, composed into one `dsh` profile:
+Five binaries answer questions from a terminal, and a `dsh` profile composes
+five plugin rows — the board, coordinator and telemetry plugins plus one
+adapter per seam — into one `dsh` process:
 
 | | |
 | --- | --- |
@@ -46,7 +48,7 @@ Five binaries and the plugin packages behind them, composed into one `dsh` profi
 | **project** | [`board`](../../packages/board) — GitHub → columns, and the anomalies that mean the board contradicts itself |
 | **record** | [`telemetry`](../../packages/telemetry) — a bounded log of what ran, readable with nothing awake |
 | **install** | [`forge`](../../packages/forge) — put this whole process into another repository |
-| **compose** | [`dsh-app`](../../packages/dsh-app) — the profile and bundle patch that make the four into one `dsh` |
+| **compose** | [`dsh-app`](../../packages/dsh-app) — the profile and bundle patch that compose the plugins into one `dsh` |
 
 ## Why `dsh`
 
