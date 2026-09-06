@@ -323,3 +323,35 @@ requested, which is what launch identity being data rather than prose is for.
 is the better default here — a review that silently runs a tier low is worse than one that does not
 start, because it produces a verdict that looks routed and is not. Until then, every dispatch's
 effort must be verified after launch rather than assumed, and this run does that.
+
+## 2026-09-06 — seat 3 routing authority correction
+
+The sibling netscript checkout carried retired named routes. A Sol xhigh review was started
+from that stale source, then interrupted when the current remote lane-policy identified the
+2026-09-04 workload matrix as authority. No review from that route is accepted as a gate.
+An attempted fable-5 plan evaluator returned model unavailable and no verdict. Current
+matrix must be rendered from a fresh read-only source pin before further delegation.
+Source: https://github.com/rickylabs/netscript/blob/main/.llm/harness/workflow/lane-policy.md
+
+## 2026-09-06 — durable-loop scope and canonical handoff
+
+The continuation adds a draft durable-loop plan under issue 191, with production-only owner
+forks F1/F2 appended to plan.md rather than silently deciding storage or a live canary.
+The original dispatch schedule remains intact. context-pack.md is refreshed as the canonical
+cold-resume surface; the historical wave-zero state remains in Git history and the worklog.
+PR 193 is explicitly draft; these artifacts do not certify an implemented orchestration loop.
+
+## 2026-09-06 — owner addendum: references before porting
+
+Folded the owner correction into the current draft, without restarting delivered work. The new
+reference-port-addendum.md ties structural choices to netscript Codex sources, framework docs,
+EIS RFCs/actual composition and Ledgerline's construction patterns. DAG slice C now depends on
+P (#53 Codex port). Explicit integration gap: reference helper spawns a child while #53 requires
+existing-daemon attachment; source inspection is not a live transport proof. Several source
+wrappers are deprecated, so successor parity is also required before implementation.
+
+## 2026-09-06 — readiness correction and E3 observed failures
+
+The owner corrected the decision to leave PR193 draft. Green CI and explicitly deferred
+production forks permit review now. Added observed #196/#198 constraints and ordered the
+six E3 leaves on the #53/live-driver critical path; no historical plan or completed slice reset.

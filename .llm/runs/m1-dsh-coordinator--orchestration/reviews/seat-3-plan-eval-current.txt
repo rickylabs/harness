@@ -1,0 +1,36 @@
+## Verdict: **FAIL_FIX**
+
+The plan's shape is sound — bounded repair with a machine-checkable gate, merge behind an independent evaluation, the correctness fix isolated into its own PR, E6/E9 explicitly held as draft, no owner forks pre-empted. Six defects, all cheap to fix; none require re-planning.
+
+**Verification limit:** no network in this session. I could not check the live `dsh-board check` exit code, PR 190's CI, or issue 182's body. Everything below is from the repository at `db3f91c` plus the run artifacts.
+
+### What I confirmed
+
+- **Target list is exact.** The 13 issues in Decision 1 match `BOARD.md:26-38` in set *and* order — 183, 186, 174, 175, 188, 176, 184, 185, 177, 178, 179, 180, 181, all `epic-milestone-conflict`, all "in milestone (none)" under epics #31/#32/#33/#34/#140.
+- **The defect is real.** `packages/dsh-app/src/llm/request.ts` `flattenText` concatenates sibling text blocks with `parts.join("")`.
+- **PR 190 head matches.** `.git/worktrees/review-190/HEAD` is `faebcda72b2418456e9365825020f459356b3b28`. The diff is docs-only, 11 files, and does **not** touch `request.ts` — so no collision with the sibling fix.
+- **The "isolated" scope boundary holds.** The other `parts.join("")` sites — `adapter.ts:184` (`drain`) and `stream.ts:146` (`readBody`) — are byte-stream concatenations where `""` is correct. State this in the issue so the implementer doesn't "fix" them.
+
+### Findings
+
+**1 — Blocking. The routing matrix is not pinned, which is the failure this run just recorded.** `drift.md` (2026-09-06, seat 3 routing correction) ends: *"Current matrix must be rendered from a fresh read-only source pin before further delegation."* Decision 2 names GLM 5.3 Flash and a DeepSeek V4 Pro fallback and cites no pin — no revision, no URL, no read date. The run has already discarded one review for coming off a stale route. Fix: record the pinned source (the netscript `lane-policy.md` revision) in the plan before delegating.
+
+**2 — Blocking. Decision 2's effort contradicts the only in-repo record of that cell.** `drift.md` (2026-09-04) records `formal_impl_evaluation` → `z-ai/glm-5.3-flash` · **`max`** over OpenRouter. The plan says "provider-default effort" with no reconciliation. One of the two is stale; the plan must say which and why. Fixed by the pin in finding 1.
+
+**3 — Blocking. The relay-brief data rule is dropped.** `drift.md` (2026-09-04) records that the owner enabled OpenRouter training-data toggles and that the resulting standing condition "now has teeth": relay evaluator briefs carry **the diff under review and nothing else** — no run artifacts, no `.llm/` evidence. The plan's risk line says only "no credential/session data in artifacts," which is strictly narrower. Same entry: *"a GLM verdict… must never be cited as reasoning evidence."* The plan makes a GLM verdict the sole IMPL-EVAL gate for PR 190 without that caveat. Exposure here is low (PR 190 is docs), but the constraint belongs in the gate, not inferred from a prior drift entry.
+
+**4 — Non-blocking, cited evidence wrong.** The plan cites `request.ts:136`. The join is **`request.ts:131`**, inside `flattenText` (declared line 120). Line 136 is inside `toolMessages`, a different function. The claim is correct; the line is not.
+
+**5 — Non-blocking, scope. "Nested tool result behavior" is not a shape that exists.** Decision 3 requires verifying it. `request.ts:128-129` states plainly that nesting a tool result inside a tool result "is not a shape dsh produces," and `flattenText` handles only `text`/`image`/`reasoning`. Restate as "tool-result content flattening" or drop it. Relatedly, Risk 3 says to compare "upstream text-block contract and existing tests" — I found **no** sibling-block coverage in `request.test.ts`, `stream.test.ts`, `adapter.test.ts` or `transport.test.ts`, so local tests will not supply the contract. Name the actual upstream source: `ContentBlock` from `@deepseek-ai/dsh-llm` (`request.ts:42`).
+
+**6 — Non-blocking, sequencing the merge gate misses.** PR 190 reverts `BOARD.md`'s activity line from `2026-09-06T19:23:10Z` (main, `db3f91c`) back to `18:07:16Z` — a stale render of a generated file. The DAG puts milestone repair first; repair pushes to main, and `.github/workflows/board.yml` republishes on `push: [main]`, so by merge time that one-line hunk is a likely squash conflict, and if it merges it briefly reasserts a board with the 13 anomalies already repaired. The workflow self-heals on the next push or half-hour tick, so this is a conflict/ordering issue rather than a durable regression — but the gate as written ("CI successful, author Anthropic") does not catch it. Add a mergeability re-check immediately before merge, and drop the generated `BOARD.md` hunk from the branch rather than merging a stale render.
+
+**7 — Non-blocking, the repair gate under-specifies.** Two gaps: (a) `BOARD.md:44-48` shows M1 at 109/124; adding M1 to 13 items moves that burn-down, and "check exit 0" cannot distinguish a correct repair from a double-count. State the expected post-repair numerator/denominator and read it back. (b) `context-pack.md:31` records "Epics de-milestoned so the burn-down counts leaves once" as *completed*, yet all five parent epics here sit in M1. Say whether that decision was reverted or these epics were missed. (c) Bounded repair needs a defined undo: the plan says "require check exit 0" but never says what happens if it isn't — revert the batch, or stop and report.
+
+### On the two constraints you named
+
+**Sibling-block implementation waits for upstream evidence — satisfied.** Decision 3 gates code behind plan review, and the DAG runs research → plan evaluation → implementation. Finding 5 only sharpens what "upstream evidence" points at.
+
+**Bounded repair — satisfied in scope, incomplete in gate.** Decision 1 correctly fences identity, topic, status and dispatch labels, and Owner forks explicitly declines to publish packages or activate a fleet. Finding 7 is about the readback, not the boundary.
+
+Fix 1–3 before any delegation, 6–7 before any board mutation; 4–5 can be corrected in the same edit.

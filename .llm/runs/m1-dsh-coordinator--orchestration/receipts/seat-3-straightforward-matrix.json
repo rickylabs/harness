@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "mode": "tier",
+  "tiers": [
+    {
+      "tier": "straightforward",
+      "description": "Straightforward implementations and features; medium temperature and medium complexity.",
+      "implementation": [
+        {
+          "model": "sol",
+          "effort": "medium"
+        },
+        {
+          "model": "glm_5_3_flash",
+          "effort": "provider_default"
+        }
+      ],
+      "ui_ux": [
+        {
+          "model": "kimi_k3",
+          "effort": "high"
+        },
+        {
+          "model": "gemini_3_8_flash",
+          "effort": "high"
+        }
+      ],
+      "plan": [
+        {
+          "model": "sol",
+          "effort": "medium"
+        },
+        {
+          "model": "glm_5_3_flash",
+          "effort": "provider_default"
+        }
+      ],
+      "plan_evaluation": [
+        {
+          "model": "opus_5",
+          "effort": "medium"
+        },
+        {
+          "model": "qwen_3_8_flash_next",
+          "effort": "provider_default"
+        }
+      ],
+      "implementation_evaluation": [
+        {
+          "model": "glm_5_3_flash",
+          "effort": "provider_default"
+        },
+        {
+          "model": "deepseek_v4_pro",
+          "effort": "provider_default"
+        }
+      ],
+      "vision_evaluation": [
+        {
+          "model": "deepseek_v4_flash_vision",
+          "effort": "provider_default"
+        },
+        {
+          "model": "kimi_k3",
+          "effort": "low"
+        }
+      ],
+      "documentation": [
+        {
+          "model": "gemini_3_8_flash",
+          "effort": "high"
+        },
+        {
+          "model": "qwen_3_8_flash_next",
+          "effort": "provider_default"
+        }
+      ],
+      "deep_research": [
+        {
+          "model": "gemini_3_8_flash",
+          "effort": "medium"
+        },
+        {
+          "model": "luna",
+          "effort": "max"
+        }
+      ],
+      "planPolicy": {
+        "maxRounds": 0,
+        "repairInFlightAt": "immediate",
+        "reSteerSameSession": true
+      },
+      "implementationPolicy": {
+        "maxRounds": 5,
+        "notifyOwnerAfter": 3,
+        "reSteerSameSession": true
+      },
+      "documentationPolicy": {
+        "maxRounds": 2,
+        "notifyOwnerAfter": 2,
+        "reSteerSameSession": true
+      }
+    }
+  ]
+}
