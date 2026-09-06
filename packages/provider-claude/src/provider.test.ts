@@ -18,6 +18,7 @@ import { describe, it } from "node:test";
 import {
   conformanceProblems,
   isSafeToRetry,
+  markInstrumented,
   selectProvider,
   type DispatchRequest,
   type RunRef,
@@ -237,9 +238,18 @@ describe("declaring what it can do", () => {
     assert.equal(provider.id, DEFAULT_ID);
   });
 
-  it("is the provider a claude dispatch selects", () => {
+  it("is the provider a claude dispatch selects, once something has wrapped it", () => {
+    // Both halves in one test, because the interesting one is the first. What this package produces
+    // is a *raw* provider, and a raw provider is refused: instrumentation is the composition root's
+    // job, and a seam that dispatched through an unwrapped provider would run an agent no log could
+    // account for. Registration is what supplies the wrapper; there is none in this package's tests,
+    // so `markInstrumented` stands in for one. See #208.
     const provider = makeProvider(fakeSdk().query);
-    const selection = selectProvider({ providers: [provider] }, REQUEST);
+    const unwrapped = selectProvider({ providers: [provider] }, REQUEST);
+    assert.equal(unwrapped.selected, false);
+    assert.equal(unwrapped.selected === false && unwrapped.rule, "uninstrumented");
+
+    const selection = selectProvider({ providers: [markInstrumented(provider, "provider.test")] }, REQUEST);
     assert.equal(selection.selected, true);
     if (selection.selected) assert.equal(selection.provider, provider);
   });

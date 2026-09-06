@@ -54,6 +54,15 @@ mode: with the service present and empty, a dispatch reaches `selectProvider` an
 `no-providers` and a sentence saying why. Without the row it reaches `ctx.subagents` and throws on
 `undefined`, which reads as a broken daemon rather than an unconfigured one.
 
+It injects `harnessTelemetry` and stays `PENDING` without it, because a coordinator that can dispatch
+but cannot record loses runs silently. `instrument.ts` is what does the recording: it decorates each
+provider so every dispatch, steer, stop and liveness change reaches the sink, and marks the wrapper
+with `markInstrumented` so `selectProvider` can refuse a registry holding anything unmarked. The mark
+is the load-bearing half. Registration replaces the whole registry rather than passing through this
+package, so wrapping at the seam never reached a provider that E3 supplies — see
+[#208](https://github.com/rickylabs/harness/issues/208). The refusal happens where every provider has
+to pass no matter who registered it.
+
 ## `dsh-profile`
 
 A dsh profile is four artefacts in `$DSH_HOME/profiles/<name>/`, and getting one of them subtly

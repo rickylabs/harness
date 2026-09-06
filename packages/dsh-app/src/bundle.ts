@@ -83,8 +83,10 @@ export const BUNDLE_ROWS: readonly BundleRow[] = [
       "missing-service crash at the first dispatch.",
       "",
       "It injects `harnessTelemetry` (E9 · #83) and stays PENDING without it. Empty is not the",
-      "same as unwatched: whatever E3 registers is wrapped before it reaches the context, so an",
-      "uninstrumented provider is not something a provider package can produce by forgetting.",
+      "same as unwatched: what this row provides is wrapped for telemetry and marked as wrapped,",
+      "and `selectProvider` refuses to dispatch through a registry holding a provider that is not",
+      "(#208). Registration replaces the registry rather than passing through the wrapper, so the",
+      "refusal — not the wrapping — is what a provider package cannot get around by forgetting.",
     ],
   },
   {
