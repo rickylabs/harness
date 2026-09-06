@@ -2,16 +2,18 @@
 
 # rickylabs/harness
 
-`[#################---]` **151/177 done · 4 running · 11 queued · 11 abandoned**
+`[################----]` **151/179 done · 6 running · 11 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T19:23:10Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T20:01:34Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (4)
+## Moving now (6)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
+| [#189 docs: the repository is public — correct every false claim, then polish](https://github.com/rickylabs/harness/issues/189) | `impl` | — |
+| [PR190 docs: correct every claim the repository going public made false](https://github.com/rickylabs/harness/pull/190) | `impl-eval` | — |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
@@ -58,7 +60,7 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 42/53 done · 1 running · 1 queued · 9 abandoned
+`[#########---]` 42/55 done · 3 running · 1 queued · 9 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -68,7 +70,7 @@ Something could be acting on these right now.
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[############]` 2/2 done | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[############]` 4/4 done | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[#########---]` 3/4 done · 1 queued | `triage` |
-| _(no epic)_ | `[#########---]` 28/37 done · 9 abandoned | — |
+| _(no epic)_ | `[########----]` 28/39 done · 2 running · 9 abandoned | — |
 
 ## Waiting to start
 
@@ -97,7 +99,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [#################---]  151/177 done · 4 running · 11 queued · 11 abandoned
+# rickylabs/harness  [################----]  151/179 done · 6 running · 11 queued · 11 abandoned
 
 ## M1 — dsh coordinator foundation  [#################---]  109/124 done · 3 running · 10 queued · 2 abandoned
 
@@ -255,7 +257,7 @@ Something could be acting on these right now.
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
 
-## (no milestone)  [###############-----]  42/53 done · 1 running · 1 queued · 9 abandoned
+## (no milestone)  [###############-----]  42/55 done · 3 running · 1 queued · 9 abandoned
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [##########------] 2/3 done · 1 running
@@ -329,6 +331,8 @@ Something could be acting on these right now.
     shipped              #103 review: PR #101 (review_claude · Codex · Sol · xhigh)
     shipped              #106 review: PR #105 (review_claude · Codex · Sol · xhigh)
     shipped              #107 review: PR #101 re-review after FAIL_FIX (review_claude · Codex · Sol · xhigh)
+    impl                 #189 docs: the repository is public — correct every false claim, then polish (p0)
+    impl-eval            PR190 docs: correct every claim the repository going public made false (p0)
 ```
 
 </details>
