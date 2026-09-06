@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **142/168 done · 4 running · 11 queued · 11 abandoned**
+`[#################---]` **143/168 done · 3 running · 11 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T05:18:58Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T05:19:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (4)
+## Moving now (3)
 
 Something could be acting on these right now.
 
@@ -15,15 +15,10 @@ Something could be acting on these right now.
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
-| [PR179 feat(provider-opencode): dispatch, watch and stop a run on a server we do not own](https://github.com/rickylabs/harness/pull/179) | `impl` | `e3` |
 
-## Anomalies (7)
+## Anomalies (6)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#179** — closed on GitHub but sits in impl; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
@@ -55,13 +50,13 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 34/44 done · 1 running · 9 abandoned
+`[#########---]` 35/44 done · 9 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[############]` 1/1 done | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[############]` 2/2 done | `triage` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[######------]` 1/2 done · 1 running | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[############]` 2/2 done | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[############]` 2/2 done | `triage` |
 | _(no epic)_ | `[#########---]` 28/37 done · 9 abandoned | — |
 
@@ -92,7 +87,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  142/168 done · 4 running · 11 queued · 11 abandoned
+# rickylabs/harness  [#################---]  143/168 done · 3 running · 11 queued · 11 abandoned
 
 ## M1 — dsh coordinator foundation  [#################---]  108/124 done · 3 running · 11 queued · 2 abandoned
 
@@ -250,7 +245,7 @@ Something could be acting on these right now.
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
 
-## (no milestone)  [###############-----]  34/44 done · 1 running · 9 abandoned
+## (no milestone)  [###############-----]  35/44 done · 9 abandoned
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [################] 1/1 done
@@ -262,9 +257,9 @@ Something could be acting on these right now.
     shipped              PR177 feat(dsh-app): register the three token-metered backends on ctx.llm (#176)
 
   E3 — Subagent providers over structured protocols #33  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [########--------] 1/2 done · 1 running
+    [################] 2/2 done
     shipped              PR178 feat(provider-claude): launch, observe, steer and stop a claude run (#52)
-    impl                 PR179 feat(provider-opencode): dispatch, watch and stop a run on a server we do not own
+    shipped              PR179 feat(provider-opencode): dispatch, watch and stop a run on a server we do not own
 
   E4 — Model gateway and routing matrix #34  [triage]  (epic is in M1 — dsh coordinator foundation)
     [################] 2/2 done
