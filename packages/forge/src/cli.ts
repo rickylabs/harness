@@ -9,6 +9,7 @@
  * taxonomy installer that refuses to run outside one blessed environment does not get run.
  */
 
+import { readFileSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -42,9 +43,16 @@ import {
 import { CORE_TAXONOMY, RETIRED_LABELS, type LabelSpec } from "./labels/taxonomy.js";
 import { installSkill } from "./skill/install.js";
 import { CONFIG_FILE, describeIssue, parseTargetsConfig } from "./targets/config.js";
+import {
+  HANDOVER_FILE,
+  checkHandover,
+  chooseBackends,
+  tallyHandover,
+} from "./targets/handover.js";
+import { describeLedgerIssue, loadHandoverLedger } from "./targets/ledger.js";
 import { checkTargets, describeProblem, type TargetTable } from "./targets/model.js";
 import { reconcileBridge, tallyBridge, type BridgeSource } from "./targets/reconcile.js";
-import { renderBridge, renderTable } from "./targets/render.js";
+import { renderBridge, renderHandover, renderTable } from "./targets/render.js";
 import { renderMirrorPreview, renderTriggers } from "./swarm/render.js";
 import {
   admitSwarmComments,
@@ -102,6 +110,7 @@ usage
   dsh-forge targets show           print the dispatch table in resolution order
   dsh-forge targets check          exit non-zero when the table is wrong (for CI)
   dsh-forge targets reconcile      which inbox issues the dispatcher claims, and what came back
+  dsh-forge targets backend        which backend dispatches each target, and why
   dsh-forge swarm admit            decide every /swarm comment the way the dispatcher would
   dsh-forge swarm mirror           the inbox issue each honoured trigger would open
   dsh-forge init                   eject + apply + skill install, in that order
@@ -117,6 +126,8 @@ options
   --labels <a,b>        status settle only: the labels the item carries now (repeatable)
   --event <path>        status settle only: a GitHub event payload to read all of that from
   --config <path>       targets and swarm: the dispatcher's config (default: ./${CONFIG_FILE})
+  --handover <path>     targets backend only: the parity ledger (default: ./${HANDOVER_FILE};
+                        absent means every target still dispatches through divybot)
   --snapshot <path>     targets reconcile and swarm: a 'dsh-board snapshot' JSON file (repeatable —
                         one per repository, including the inbox's own)
   --comments <path>     swarm only: a 'gh api repos/<owner>/<name>/issues/comments' JSON dump
@@ -149,7 +160,25 @@ interface Context {
 
 class UsageError extends Error {}
 class TransportError extends Error {}
-class FileError extends Error {}
+
+/**
+ * A file in the repository the tool could read and could not use.
+ *
+ * The hint travels with the error because the advice is per-file and the handler is not: telling an
+ * operator whose `divybot.json` has a typo to re-eject `.github/labels.yml` is worse than saying
+ * nothing, and that is what a single hard-coded line at the catch site produces once more than one
+ * command can raise this.
+ */
+class FileError extends Error {
+  readonly hint: string;
+
+  constructor(message: string, hint: string) {
+    super(message);
+    this.hint = hint;
+  }
+}
+
+const LABELS_HINT = `fix the row(s) above, or delete ${LABELS_FILE} and re-run 'dsh-forge labels eject'.`;
 
 const out = (line = ""): void => {
   process.stdout.write(`${line}\n`);
@@ -238,6 +267,7 @@ const requireParsableFile = (ctx: Context): void => {
   const lines = ctx.fileIssues.map((i) => `  ${LABELS_FILE}:${i.line}  ${i.message}`);
   throw new FileError(
     [`${LABELS_FILE} has ${ctx.fileIssues.length} unusable row(s); refusing to continue:`, ...lines].join("\n"),
+    LABELS_HINT,
   );
 };
 
@@ -595,7 +625,10 @@ async function loadTable(root: string, config: string | undefined): Promise<Targ
   const { table, issues } = parseTargetsConfig(text);
   if (table === null || issues.length > 0) {
     const lines = issues.map((issue) => `  ${describeIssue(issue)}`).join("\n");
-    throw new FileError(`${path} has ${String(issues.length)} problem(s):\n${lines}`);
+    throw new FileError(
+      `${path} has ${String(issues.length)} problem(s):\n${lines}`,
+      "this is divybot's own file — fix the row(s) above there, not here.",
+    );
   }
   return table;
 }
@@ -694,6 +727,48 @@ async function readSnapshot(path: string): Promise<BridgeSource> {
       return typeof source === "object" && source !== null ? [source as BridgeSource["items"][number]] : [];
     }),
   };
+}
+
+/**
+ * `targets backend` — which backend each target dispatches through, and why.
+ *
+ * The migration's progress, which nobody can quote today. Drift when the ledger has a problem,
+ * because every one of them is a row that looks effective and is not — a pin nobody can reach, a
+ * parity claim with nothing behind it. Never drift on a target still being on divybot: that is the
+ * documented default and the state the whole fleet is in.
+ */
+async function cmdTargetsBackend(
+  root: string,
+  options: { config: string | undefined; handover: string | undefined },
+  json: boolean,
+): Promise<number> {
+  const table = await loadTable(root, options.config);
+  const path = resolve(root, options.handover ?? HANDOVER_FILE);
+  const loaded = loadHandoverLedger(path, (file) => readFileSync(file, "utf8"));
+  if (loaded.issues.length > 0) {
+    const lines = loaded.issues.map((issue) => `  ${describeLedgerIssue(issue)}`).join("\n");
+    throw new FileError(
+      `${path} has ${String(loaded.issues.length)} problem(s):\n${lines}`,
+      `fix the row(s) above, or delete ${HANDOVER_FILE} — an absent ledger means every target ` +
+        `dispatches through divybot, which is where the fleet is today.`,
+    );
+  }
+
+  const choices = chooseBackends(table, loaded.ledger);
+  const problems = checkHandover(table, loaded.ledger);
+  if (json) {
+    out(
+      JSON.stringify(
+        { path, found: loaded.found, ledger: loaded.ledger, choices, tally: tallyHandover(choices, loaded.ledger), problems },
+        null,
+        2,
+      ),
+    );
+  } else {
+    out(renderHandover(choices, loaded.ledger, problems));
+    if (!loaded.found) out(`\nno ledger at ${path} — everything above is the default`);
+  }
+  return problems.length === 0 ? EXIT.ok : EXIT.drift;
 }
 
 // ── swarm ────────────────────────────────────────────────────────────────────
@@ -934,6 +1009,7 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         event: { type: "string" },
         labels: { type: "string", multiple: true, default: [] },
         config: { type: "string" },
+        handover: { type: "string" },
         snapshot: { type: "string", multiple: true, default: [] },
         comments: { type: "string", multiple: true, default: [] },
         seen: { type: "string" },
@@ -992,6 +1068,12 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
           return await cmdTargetsReconcile(
             repoRoot,
             { config: values.config, snapshots: values.snapshot ?? [] },
+            json,
+          );
+        case "backend":
+          return await cmdTargetsBackend(
+            repoRoot,
+            { config: values.config, handover: values.handover },
             json,
           );
         default:
@@ -1061,7 +1143,7 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
     if (error instanceof FileError) {
       out(error.message);
       out();
-      out(`fix the row(s) above, or delete ${LABELS_FILE} and re-run 'dsh-forge labels eject'.`);
+      out(error.hint);
       return EXIT.drift;
     }
     out(error instanceof Error ? error.message : String(error));

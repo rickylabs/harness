@@ -138,7 +138,41 @@ export {
   type Delivery,
 } from "./targets/reconcile.js";
 
-export { renderBridge, renderProblems, renderTable } from "./targets/render.js";
+export {
+  BACKENDS,
+  BACKEND_REASONS,
+  EMPTY_LEDGER,
+  HANDOVER_FILE,
+  HANDOVER_REFUSALS,
+  PARITY_ACCOUNTS,
+  checkHandover,
+  chooseBackend,
+  chooseBackends,
+  describeBackendReason,
+  describeHandoverProblem,
+  tallyHandover,
+  type Backend,
+  type BackendChoice,
+  type BackendPin,
+  type BackendReason,
+  type HandoverLedger,
+  type HandoverProblem,
+  type HandoverRefusal,
+  type HandoverTally,
+  type ParityRecord,
+} from "./targets/handover.js";
+
+export {
+  describeLedgerIssue,
+  loadHandoverLedger,
+  parseHandoverLedger,
+  type LedgerIssue,
+  type LedgerReader,
+  type LoadedLedger,
+  type ParsedLedger,
+} from "./targets/ledger.js";
+
+export { renderBridge, renderHandover, renderProblems, renderTable } from "./targets/render.js";
 
 export {
   SKIPPED_REFUSALS,
