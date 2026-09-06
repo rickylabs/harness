@@ -186,3 +186,20 @@ a session name.
 - `currentMainSha`: every merge into `main` must be reflected before the next report.
 - Vendored tool versions against the netscript pin.
 - Lane orchestrator ids: they must stop being `/unbound` the moment a lane is dispatched.
+
+## Seat 3 continuation owner forks — 2026-09-06
+
+These are draft forks for the new durable-loop scope in issue 191. They do not rewrite the
+original dispatch schedule or authorize production activation. Full design and gates are in
+[durable-loop-plan.md](durable-loop-plan.md).
+
+F1. **Production durable-store deployment.** Atomic local journal on a persistent volume or
+service-backed transactional store? Recommendation: prove the store interface with local
+persistence first, then choose production storage against documented deployment constraints.
+Cost if wrong: migration and recovery work. Blocks production activation; interface and fake
+crash tests may proceed through their own plan gates.
+
+F2. **First live mutation canary.** Which repository/task is authorized and what human merge
+policy applies? Recommendation: one explicitly opted-in harness task with manual merge.
+Cost if wrong: duplicate agents or unauthorized repository changes. Blocks live activation;
+no existing release or governance owner decision is inferred from this proposal.

@@ -1,113 +1,47 @@
-# Context Pack: M1 — dsh coordinator foundation
+# Seat 3 continuation — current handoff
 
-## Run Metadata
+PR 190 is merged after two exact-head GLM implementation evaluations and its final green CI.
+All 13 inherited board contradictions are repaired. E6/E9 durable-loop design is a draft on
+issues 36 and 39, tracked in issue 191. The first isolated consolidation fix shipped in PR 194, closing issue 192.
 
-| Field | Value |
-| --- | --- |
-| Run ID | `m1-dsh-coordinator--orchestration` |
-| Branch | `harness/m1-dsh-coordinator--orchestration` |
-| Current phase | `plan` — Step 0 frozen and gated, nothing dispatched |
-| Route | milestone-cluster |
-| Baseline | `b7d5e586e32f31ef44cab7b1327ab890f8e23794` |
+## Authority
 
-## Current State
+Read the owner-provided shared and harness continuation briefs. Four ratified decisions on
+issue 30 remain in force, with its comments amending the cockpit names to Atelier. Current
+netscript delegation authority is 8ba53bc50ca02aab29e99ba5362728839b8f1713. The older sibling
+checkout contains retired named routes; do not dispatch from it. The renderer output is in
+receipts/seat-3-straightforward-matrix.json. Seat 3 is Astra medium, milestone coordinator.
 
-Orchestrator profile mode is **enabled, gated green, and running**. Wave 0 is dispatched: `#40`
-(claude, `internals`) and `#42` (codex, `docs`) carry the `harness` label and are live. The other
-47 leaves are unlabelled and inert.
+## Completed evidence
 
-**One coordinator owns the whole milestone.** The two-thread lane split published in `#30` is
-retracted — the second thread was already committed to unrelated work and was never running this
-programme. Its harness-related findings were parked, recovered, and reconciled into this run before
-any agent started; see `reconciliation.md`. All four topic lanes are bound to
-`harness-m1/<lane>/claude-opus-5-desktop-5dc200b1`.
+- seat-3-plan.md and reviews/seat-3-plan-eval-r2.txt: independent Opus plan gate PASS.
+- reviews/pr-190-glm.md: FAIL_FIX, two public-visibility omissions.
+- reviews/pr-190-glm-r2.md: PASS for 585ea0018a9e367d748b7578b9a3e13886d02e7c.
+- PR 190 CI passed in 43 seconds and squash merge closed issue 189; both labels shipped.
+- Milestone repair added only the 13 named children, membership 134 → 147 at repair time,
+  all labels and states unchanged. dsh-board check with topic lane returned 0.
+- durable-loop-plan.md: draft filed at issues 36/39 and tracked as 191, status plan.
 
-Everything below wave 0 is unblocked. The `features` lane is idle by design until `#51` lands the
-dispatch contract in wave 1; dispatching it earlier would fork that contract four ways.
+## Active and next
 
-## Completed
+Issue 192 is complete: PR 194 merged as 56ba46a5a294f9de70d84a3f81ab6f45860d69d7.
+Independent GLM evaluation PASS on f7c599ddb29bd99e2e666c6f4f683f7c9e7ac0ac; 251/251
+package tests, all workspace tests, build checks and CI passed. Issue/PR labels are shipped.
+The regression-first run failed exactly four new assertions before the delimiter change.
+Remaining issue 182 fixes: coordinator citation gate; telemetry/instrument identity and double
+counting; board/forge umbrella-label parity. Each remains its own PR.
 
-- 49 leaf issues filed, linked, labelled and frozen into M1 (`#40`–`#88`).
-- Epics de-milestoned so the burn-down counts leaves once.
-- Gate tooling vendored in-repo with a `deno.json` that runs it.
-- Step 0 artifacts generated from the live board: intake, inventory, dependency DAG, cluster state.
-- `milestone-status.md` rendered; dispatch gate green with zero errors and zero findings.
-- Stage B: vendor CLI inventory, credential presence, and paid-transport reachability established.
-- The N5 thread's parked work recovered off an `/ephemeral` mount and reconciled — four receipts,
-  two corrections to Stage B, and the `ctx.agentTeams` contract it flagged as an unretrieved gap.
-- Four lanes bound to a real coordinator identity; `topic-orchestrators-unbound` resolved.
-- **Wave 0 dispatched** — `#40` and `#42` labelled.
+Issue 191 is planning, not a delivered loop. Its six slices need their own brief/gates. The
+store deployment and live-canary forks block production activation, not source research.
+Existing owner forks remain unchanged: contracts release tag/npm scope proof, governance
+ADR 0002, docker fork, permanent topic conflicts and the other handoff decisions.
 
-## In Progress
+## Host and data boundaries
 
-- `#40` — pnpm workspace skeleton, TS project references, 14 buildable package stubs (claude).
-- `#42` — doctrine move into `doctrine/` plus the commitment-to-epic pointer table (codex).
-- Both are attached runs bounded at `timeout: 180m`. Neither has opened a PR yet, which is why
-  `state.leaves[]` is still empty — the schema records a leaf only once a PR exists.
+No unrelated tmux/container changes, no sibling repository mutations. No credentials or
+real allowance/session snapshots in artifacts. gh token is repo-only: PR label edits that
+attempt org/project reads fail; REST issue-label updates with exact-one-status readback work.
+Do not modify workflows with this token. Never apply harness as a taxonomy label.
 
-## Next Steps
-
-1. Watch `#40` and `#42` to first PR. A leaf that **closes without an open PR** was torn down by
-   its `timeout:`, not completed — reopen and re-dispatch rather than counting it done.
-2. On `#40`'s PR: release `#41`, `#43`, `#44`, `#45`. They are held only because they edit files
-   `#40` creates, and `#43` owns the root `README` / `AGENTS.md` / `CLAUDE.md`.
-3. **Owner:** decide `#62` — ssh executor or privileged sidecar — which unblocks all of E5. It now
-   carries hard evidence: `ai-agents` cannot see the host daemon at all (`reconciliation.md` § 1.3).
-4. **Owner:** merge PR `#89`, and ratify "adopt the `ctx.agentTeams` shapes, not the dependency".
-5. Before W3: rescope `#65` from service repair to the health-probe contract `#34` already calls
-   for, and re-plan `#36` on `TeamTaskSnapshot` shapes.
-
-## Key Decisions
-
-| Decision | Source | Notes |
-| --- | --- | --- |
-| Plugin-only, no dsh core fork | owner | depend on published `@deepseek-ai/dsh` |
-| Node + pnpm, netscript as a service | owner | not a build-time dependency |
-| GitHub is the board's truth | owner | dsh projects the live view; proven by the Orchid integration |
-| dsh layer only, both cockpits elsewhere | owner | forces `contracts` to be a *published* package |
-| Two seams, not one | architecture | vendor CLIs → `ctx.subagents`; API/local models → `ctx.llm` |
-| Gate at the sandbox boundary | architecture | dsh cannot gate tool calls inside a vendor CLI child |
-| Strangler-fig on divybot | plan | one dispatch payload, per-target flag selects provider or divybot |
-| Single coordinator for all nine epics | owner | the two-thread split in `#30` is retracted, not reassigned |
-| Adopt `ctx.agentTeams` shapes, not the dependency | proposed | experimental private seam; copy `revision` CAS, `blockedBy`, `writeScopes` |
-
-## Files Changed
-
-| Path | Status | Notes |
-| --- | --- | --- |
-| `deno.json` | new | `@std/path` plus the render and validate tasks |
-| `.llm/tools/harness/*.ts` | new | vendored renderer and validator |
-| `.llm/tools/gates/*.ts` | new | the validator's only transitive dependencies |
-| `.llm/harness/templates/*` | new | the ten run templates |
-| `.llm/runs/m1-dsh-coordinator--orchestration/*` | new | this run |
-
-## Gates
-
-| Gate family | Current status | Evidence |
-| --- | --- | --- |
-| Step 0 dispatch gate | PASS | `{ ok: true, errors: [], findings: [] }` |
-| Status byte-identity | PASS | `milestone-status.md` is renderer output |
-| Board reconciliation | PASS | PR export supplied and identity-matched |
-| Static / fitness / runtime / consumer | N/A | no product code exists in this repository yet |
-
-## Open Questions
-
-- Does a wave boundary with no published artifact still declare a canary point, or does the first
-  canary wait for a booting dsh instance at the W1 boundary? Recorded as owner-undecided in
-  `canary-cadence.md`; resolving it by habit inside a run is exactly what the skill forbids.
-- `#62`: ssh executor or privileged sidecar for `sandboxctl`? The sidecar is narrower and
-  auditable; the ssh executor is zero new code and broad host authority.
-
-## Drift and Debt
-
-- Drift: eight entries. The significant one is the retracted two-thread lane split — for a period
-  the board asserted ownership that did not exist, which is the exact failure the status file is
-  meant to make impossible.
-- Debt: `build-cluster.ts` is no longer safe to re-run blind. It regenerates state from the frozen
-  inventory and would discard lane bindings, the resolved blocker and the dispatch record while
-  agents are running against the board it describes. Renderer and validator stay safe; they read.
-- Debt: the `#41`/`#43`/`#44`/`#45` file-collision constraint lives in prose, not in data.
-
-## Commits
-
-- See the PR's commit list.
+Draft PR 193 publishes these continuation artifacts. Keep it draft until the durable-loop
+plan receives its own review; the maintenance-plan PASS does not certify that new design.

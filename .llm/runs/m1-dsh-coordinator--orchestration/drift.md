@@ -332,3 +332,11 @@ from that stale source, then interrupted when the current remote lane-policy ide
 An attempted fable-5 plan evaluator returned model unavailable and no verdict. Current
 matrix must be rendered from a fresh read-only source pin before further delegation.
 Source: https://github.com/rickylabs/netscript/blob/main/.llm/harness/workflow/lane-policy.md
+
+## 2026-09-06 — durable-loop scope and canonical handoff
+
+The continuation adds a draft durable-loop plan under issue 191, with production-only owner
+forks F1/F2 appended to plan.md rather than silently deciding storage or a live canary.
+The original dispatch schedule remains intact. context-pack.md is refreshed as the canonical
+cold-resume surface; the historical wave-zero state remains in Git history and the worklog.
+PR 193 is explicitly draft; these artifacts do not certify an implemented orchestration loop.

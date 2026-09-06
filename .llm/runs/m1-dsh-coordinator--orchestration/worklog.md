@@ -431,3 +431,19 @@ production-only owner forks. Prior autocorner repository retrieval returned not 
   six slices, crash and reconnect gates, and production-only owner forks. No runtime activated.
 - Issue 192 owns sibling-block correctness, with Opus plan evaluation PASS after making empty
   siblings explicit. Sol medium implements the bounded slice; remaining 182 findings stay open.
+
+## 2026-09-06 — first-day acceptance complete
+
+Issue 192 shipped via PR 194, merged at 20:42:55 UTC as
+56ba46a5a294f9de70d84a3f81ab6f45860d69d7. Independent GLM 5.3 Flash evaluator returned PASS
+on f7c599ddb29bd99e2e666c6f4f683f7c9e7ac0ac and independently ran all 251 package tests.
+CI passed in 54 seconds. Four new regressions failed before the fix; all workspace tests and
+repository build passed afterward. Issue 192 and PR 194 labels were settled to shipped;
+issue 182 checklist now names both shipped slices (#186 and #194), with the other three
+correctness findings open and the durable loop tracked separately in #191.
+
+First-day outputs: PR 190 independently evaluated/corrected/merged; one isolated 182 finding
+shipped; written E6/E9 plan filed on issues 36 and 39, tracked in 191 and draft PR 193;
+13 inherited contradictions repaired with exact membership and label/state readback.
+The draft loop is not implemented. Its production store/canary forks are appended in plan.md.
+No release tag, workflow modification, stub behavior or unrelated host action was performed.
