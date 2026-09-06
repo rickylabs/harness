@@ -44,9 +44,11 @@ export {
   HARNESSES,
   PROMPT_GUARD,
   ROUTERS,
+  TIMER_CEILING_MS,
   parseGoDuration,
   parseSwarm,
   renderSwarm,
+  timeoutMs,
   toDispatchRequest,
   validateDispatch,
 } from "./dispatch.js";
