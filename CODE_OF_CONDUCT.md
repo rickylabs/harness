@@ -1,8 +1,8 @@
 # Code of conduct
 
 This repository adopts the [Contributor Covenant, version 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
-by reference. Copying five kilobytes of it into a private repository with one owner would not make
-the standard any more binding; the link is the standard.
+by reference. Copying five kilobytes of it into a repository with one owner would not make the
+standard any more binding; the link is the standard.
 
 The short version: be decent, assume good faith, disagree about the work rather than about the
 person, and accept that the owner decides.

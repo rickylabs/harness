@@ -26,7 +26,11 @@ milestones and pull requests, and renders a view.
 
 ## It is not a UI
 
-The cockpits — an Expo app and a web app — live in `rickylabs/netscript`. This repository owes them
+The cockpits — `rickylabs/atelier-cockpit`, the engineering cockpit, and
+`rickylabs/atelier-mobile`, the Expo companion — are separate products in their own repositories,
+and they were separated from netscript by an
+[amendment](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579) that left the
+rest of decision 4 standing. This repository owes them
 exactly one thing: [`@rickylabs/harness-contracts`](../../packages/contracts), a published package
 of route and type definitions, consumed over npm and never as a workspace import. That is ratified
 decision 4 on the [roadmap](https://github.com/rickylabs/harness/issues/30), and it is the reason

@@ -4,7 +4,7 @@ One pnpm workspace package per Cordis plugin, plus the app that composes them. T
 target layout from #31, and it was created all at once so that the dependency shape was decided
 before any of the code was written.
 
-**Eight carry real code; seven are stubs waiting on their epic.** A stub is a `package.json`, a
+**Eleven carry real code; four are stubs waiting on their epic.** A stub is a `package.json`, a
 tsconfig and a placeholder export — enough to hold its place in the project graph, and not enough to
 pretend it works. Every stub README says so in its first lines, names what the package will own, and
 names what is blocking it. Do not add behaviour to a stub before its epic has defined the contract.
@@ -13,8 +13,9 @@ names what is blocking it. Do not add behaviour to a stub before its epic has de
 |---|---|---|---|
 | `dsh-app` | ✅ | E2 · #32 | our dsh profile + bundle (`cordis.patch.yml`); depends on every plugin below |
 | `subagents` | ✅ | E3 · #33 | the `ctx.subagents` contract itself: `DispatchRequest`, its `/swarm` wire format, and `SubagentProvider` |
-| `provider-claude`, `provider-codex`, `provider-acp`, `provider-opencode` | — | E3 · #33 | `ctx.subagents` / `SubagentProvider` — autonomous vendor CLIs, metered by quota window |
-| `llm-local` | — | E4 · #34 | `ctx.llm` / `LlmAdapter` — API-key and local models, metered per token |
+| `provider-claude`, `provider-opencode` | ✅ | E3 · #33 | `ctx.subagents` / `SubagentProvider` — autonomous vendor CLIs, metered by quota window |
+| `provider-codex`, `provider-acp` | — | E3 · #33 | the same seam, over app-server JSON-RPC and over ACP |
+| `llm-local` | ✅ | E4 · #34 | `ctx.llm` / `LlmAdapter` — API-key and local models, metered per token |
 | `routing` | ✅ | E4 · #34 | delegation matrix |
 | `governance` | — | E5 · #35 | tri-regime admission control; blocked behind #62 |
 | `board`, `coordinator` | ✅ | E6 · #36 | task DAG, kanban projection, MASTER workflows |

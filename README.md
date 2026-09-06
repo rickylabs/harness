@@ -1,13 +1,18 @@
 # harness
 
+[![ci](https://github.com/rickylabs/harness/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rickylabs/harness/actions/workflows/ci.yml)
+[![licence: MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
+[![node](https://img.shields.io/badge/node-%E2%89%A524-informational)](https://nodejs.org)
+[![dsh plugin layer](https://img.shields.io/badge/dsh-plugin%20layer-6f42c1)](https://github.com/deepseek-ai/deepseek-harness)
+
 **The deterministic coordinator layer for an agent fleet.** A monorepo of
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugins that turn a
 GitHub repository into a board, decide what may run next, and tell you what the fleet did —
 without waking an agent to ask.
 
 > **Scope.** This repository is the `dsh` plugin layer, the doctrine those plugins encode, and the
-> run artifacts they produce. Nothing else. The cockpits that consume it live in
-> `rickylabs/netscript` and reach this layer over a published contract package
+> run artifacts they produce. Nothing else. The cockpits that consume it are separate products in
+> separate repositories and reach this layer over a published contract package
 > ([decision 4](#ratified-decisions)).
 >
 > **Status** lives on the board, not in this file: the
@@ -168,29 +173,31 @@ agent reads first. That is a correctness bug in a coordinator, not a cosmetic on
 
 ## Packages
 
-Fifteen packages. Eight carry real code; seven are stubs waiting on their epic, and say so.
+Fifteen packages. Eleven carry real code; four are stubs waiting on their epic, and say so.
 
 | Package | Ships | What it owns |
 | --- | --- | --- |
 | [`telemetry`](packages/telemetry) | ✅ | The run record: a bounded, rotated JSONL log, and the readers that merge it with vendor transcripts. |
-| [`contracts`](packages/contracts) | ✅ | The wire protocol and types the netscript cockpits consume. The one **published** package. |
+| [`contracts`](packages/contracts) | ✅ | The wire protocol and types the cockpits consume. The one **published** package. |
 | [`coordinator`](packages/coordinator) | ✅ | Evaluator independence, workflow definitions, the admission gate, journals and replay. |
 | [`forge`](packages/forge) | ✅ | The board taxonomy and process skill, installable into any repository. |
 | [`board`](packages/board) | ✅ | The GitHub → board projection, and the checks that catch a board contradicting itself. |
 | [`routing`](packages/routing) | ✅ | The model matrix. The single owner of every model id in this repository. |
 | [`subagents`](packages/subagents) | ✅ | The `ctx.subagents` seam: quota-metered autonomous workers. |
+| [`provider-claude`](packages/provider-claude) | ✅ | That seam over the Claude Agent SDK — the provider that proved a run is steerable in flight. |
+| [`provider-opencode`](packages/provider-opencode) | ✅ | That seam over a long-lived `opencode serve` — the first provider that does not own what it drives. |
+| [`llm-local`](packages/llm-local) | ✅ | The `ctx.llm` seam: where a token-metered request may be sent, and where it must not. |
 | [`dsh-app`](packages/dsh-app) | ✅ | The profile and the bundle patch that compose every plugin above into one `dsh`. |
 | [`governance`](packages/governance) | — | Tri-regime admission control. [E5](https://github.com/rickylabs/harness/issues/35). |
-| [`llm-local`](packages/llm-local) | — | The `ctx.llm` seam: OpenRouter and local endpoints. [E4](https://github.com/rickylabs/harness/issues/34). |
-| [`netscript-bridge`](packages/netscript-bridge) | — | The adapter decision 2 rests on. |
-| [`provider-claude`](packages/provider-claude) | — | [E3](https://github.com/rickylabs/harness/issues/33). |
-| [`provider-codex`](packages/provider-codex) | — | [E3](https://github.com/rickylabs/harness/issues/33). |
-| [`provider-opencode`](packages/provider-opencode) | — | [E3](https://github.com/rickylabs/harness/issues/33). |
-| [`provider-acp`](packages/provider-acp) | — | [E3](https://github.com/rickylabs/harness/issues/33). |
+| [`netscript-bridge`](packages/netscript-bridge) | — | The adapter decision 2 rests on. [E7](https://github.com/rickylabs/harness/issues/37). |
+| [`provider-codex`](packages/provider-codex) | — | Codex over app-server JSON-RPC. [E3](https://github.com/rickylabs/harness/issues/33). |
+| [`provider-acp`](packages/provider-acp) | — | One provider for every ACP-speaking agent. [E3](https://github.com/rickylabs/harness/issues/33). |
 
 A stub is a `package.json`, a tsconfig and a placeholder — enough to hold its place in the project
 graph so the dependency shape is decided before the code is written, and not enough to pretend it
-works.
+works. Each stub README opens with `Status: stub`, names what the package will own, and names what
+is blocking it; that line is what changes when the code lands, so the claim and the code move
+together.
 
 ## Why this exists
 
@@ -258,11 +265,20 @@ reversing one is a change to #30 first.
    forked, with the upstream remote kept for updates.
 2. **Node + pnpm.** netscript stays a service behind an adapter, not a build-time dependency.
 3. **GitHub is the source of truth for the board**; `dsh` projects the live view.
-4. **This repo is the `dsh` layer only.** The Expo cockpit and the web cockpit both live in
-   netscript. Consequence: `contracts` must be a *published* package, not a workspace import.
+4. **This repo is the `dsh` layer only.** No cockpit is built here. The two that consume this layer
+   are separate products in their own repositories — `rickylabs/atelier-cockpit`, the engineering
+   cockpit, and `rickylabs/atelier-mobile`, the Expo companion. Consequence: `contracts` must be a
+   *published* package, not a workspace import.
 
-Two further decisions — the MIT licence, and the divybot/herdr strangler-fig — are recorded on #30
-as **taken, reversible**. They are not restated as settled here; read them on the board.
+Decision 4 originally placed both cockpits inside `rickylabs/netscript` and was amended on
+[#30](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579) once they became
+products in their own right. What the amendment did **not** change is the consequence: the
+published contract package is still the only thing this repository owes them, which is the half of
+the decision that constrains the code here.
+
+Two further decisions — the MIT licence with a public npm scope, and the divybot/herdr
+strangler-fig — are recorded on #30 as **taken, reversible**. They are not restated as settled
+here; read them on the board.
 
 ## Doctrine
 
@@ -307,20 +323,34 @@ owner fork, recorded on [#140](https://github.com/rickylabs/harness/issues/140).
 `pnpm run build`, `pnpm test` — the same three a contributor runs locally, against the same
 lockfile. One job, because a check that lives in two places is a check with two places to forget it.
 
-Those root scripts carry three checks of their own:
+`build` wraps the compile in eight repository-wide checks, and every one of them exists because of
+a failure that produced **no error** — a document that kept rendering, a form that kept accepting
+input, a page that kept being served, while the fact underneath it had changed. Each script's
+header comment names the specific incident it was written after.
 
 | Script | What it refuses to let through |
 | --- | --- |
 | `check:graph` | workspace dependencies that disagree with the TypeScript project references |
 | `check:lifecycle` | the board's phase list differing between the two files that hold it |
+| `check:links` | a relative link or heading anchor in any markdown file that arrives nowhere |
+| `check:forms` | an issue form that no longer parses, or a `render:` field that would truncate a dispatched brief |
+| `check:snapshots` | a committed allowance snapshot — a quota or spend figure that was true for an afternoon |
 | `check:publish` | the publishable package not publishing what it claims to |
+| `check:docs` | a CLI reference page that disagrees with the binary's own `--help` |
+| `check:skill` | a committed agent process skill that is not what `dsh-forge` would write today |
+
+A ninth, `pnpm run check:metadata`, compares this repository's GitHub description against the one
+in `package.json`. It is a command rather than a gate because it needs the network and an
+authenticated `gh`, and a check that cannot run offline has no business failing a build.
 
 `ci` itself publishes nothing. `@rickylabs/harness-contracts` has a separate pipeline,
 [`release-contracts.yml`](.github/workflows/release-contracts.yml), triggered by a
-`harness-contracts-v*` tag rather than by a merge, and inert until the repository has an
-`NPM_TOKEN`. Keeping that credential out of the workflow that runs on every pull request is the
-point of the split. See [`packages/contracts/README.md`](packages/contracts/README.md) for the
-versioning and deprecation policy.
+`harness-contracts-v*` tag rather than by a merge. Keeping the registry credential out of the
+workflow that runs on every pull request is the point of the split; a `workflow_dispatch` on the
+release pipeline defaults to a dry run and packs without uploading, so the pipeline can be
+exercised without spending a version number. See
+[`packages/contracts/README.md`](packages/contracts/README.md) for the versioning and deprecation
+policy, and for why an npm version is the one artifact here that cannot be revised.
 
 ## Deployment
 

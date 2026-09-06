@@ -1,7 +1,7 @@
 # Support
 
-This is a private repository with one owner. There are no Discussions, no wiki, and no public
-support channel — so the honest routing is short.
+This is a public repository with one owner. It is readable by anyone and there is no Discussions
+tab, no wiki, and no support channel other than the issue tracker — so the honest routing is short.
 
 | I want to… | Go to |
 | --- | --- |
