@@ -91,6 +91,9 @@ importers:
       '@rickylabs/board':
         specifier: workspace:*
         version: link:../board
+      '@rickylabs/subagents':
+        specifier: workspace:*
+        version: link:../subagents
 
   packages/governance: {}
 

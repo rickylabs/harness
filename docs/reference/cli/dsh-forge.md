@@ -36,6 +36,8 @@ usage
   dsh-forge targets show           print the dispatch table in resolution order
   dsh-forge targets check          exit non-zero when the table is wrong (for CI)
   dsh-forge targets reconcile      which inbox issues the dispatcher claims, and what came back
+  dsh-forge swarm admit            decide every /swarm comment the way the dispatcher would
+  dsh-forge swarm mirror           the inbox issue each honoured trigger would open
   dsh-forge init                   eject + apply + skill install, in that order
 
 options
@@ -48,9 +50,13 @@ options
   --ending <how>        status settle only: completed | not-planned | reopened
   --labels <a,b>        status settle only: the labels the item carries now (repeatable)
   --event <path>        status settle only: a GitHub event payload to read all of that from
-  --config <path>       targets only: the dispatcher's config (default: ./divybot.json)
-  --snapshot <path>     targets reconcile only: a 'dsh-board snapshot' JSON file (repeatable —
+  --config <path>       targets and swarm: the dispatcher's config (default: ./divybot.json)
+  --snapshot <path>     targets reconcile and swarm: a 'dsh-board snapshot' JSON file (repeatable —
                         one per repository, including the inbox's own)
+  --comments <path>     swarm only: a 'gh api repos/<owner>/<name>/issues/comments' JSON dump
+                        (repeatable — one per target repository)
+  --seen <path>         swarm only: the dispatcher's state.json, whose seen_swarm keys name the
+                        comments it has already decided
   --dry-run             report every change without writing a file or touching the repository
   --json                machine-readable output
   -h, --help            this text

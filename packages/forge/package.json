@@ -25,7 +25,8 @@
     "dist"
   ],
   "dependencies": {
-    "@rickylabs/board": "workspace:*"
+    "@rickylabs/board": "workspace:*",
+    "@rickylabs/subagents": "workspace:*"
   },
   "scripts": {
     "build": "tsc -b",

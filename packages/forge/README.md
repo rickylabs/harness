@@ -22,10 +22,12 @@ dsh-forge init            # eject + apply + skill install
 dsh-forge targets show    # the dispatch table, in resolution order
 dsh-forge targets check   # non-zero exit when the table is wrong, for CI
 dsh-forge targets reconcile   # which inbox issues get dispatched, and what came back
+dsh-forge swarm admit     # decide every /swarm comment the way the dispatcher would
+dsh-forge swarm mirror    # the inbox issue each honoured trigger would open
 ```
 
 Options: `--repo owner/name`, `--cwd <path>`, `--no-detect`, `--force`, `--dry-run`, `--json`,
-`--config <path>`, `--snapshot <path>` (repeatable).
+`--config <path>`, `--snapshot <path>` (repeatable), `--comments <path>` (repeatable), `--seen <path>`.
 Exit codes: `0` ok, `1` drift or conflict, `2` usage, `3` no usable GitHub transport.
 
 ## What it installs
@@ -151,6 +153,56 @@ did the work.
 item with no deliveries has to be able to tell "the run has produced nothing yet" from "nobody
 handed me that repository's snapshot"; those want opposite reactions, and both otherwise render as
 an empty list.
+
+## The comment trigger
+
+`/swarm` is the one path by which work enters the fleet from outside the inbox: a comment on an issue
+in a *target* repository, which the dispatcher mirrors into the inbox as a labelled issue and then
+dispatches like any other. That makes it the fleet's authority boundary, and `dsh-forge swarm` is the
+transliteration of the gate chain that guards it — same gates, same order, offline.
+
+```bash
+gh api "repos/denoland/deno/issues/comments?since=2026-09-01T00:00:00Z&per_page=100" > deno-comments.json
+dsh-forge swarm admit --config ../divybot.json --comments deno-comments.json --snapshot deno.json
+dsh-forge swarm mirror --config ../divybot.json --comments deno-comments.json --snapshot deno.json
+```
+
+`admit` prints one verdict per comment, unauthorised attempts first, and **exits `1` when any comment
+carried a `/swarm` from somebody who is not the bot.** That is the one place this package departs
+from `targets reconcile`'s rule that the contents are never drift: an inbox with unclaimed issues is
+a day's work, but a stranger trying to spend the fleet's quota is an event, and a check that stays
+green through it is not a check. The signal self-clears — whether the feed is windowed with `--since`
+or the comment is listed in the dispatcher's `state.json` (`--seen`), the same attempt reads
+`already-seen` next run, so the number counts *new* attempts rather than accumulating.
+
+The free-text prompt is never printed. It is a stranger's prose whose entire purpose is to be
+followed by an agent, and this output gets pasted into issues and quoted back into agent context; it
+stays in `--json`, where a reader has to have gone looking for it.
+
+### Four things the gate chain does that are not obvious
+
+- **A target that *is* the inbox is skipped.** So in `rickylabs/harness` the trigger never fires at
+  all: the inbox is where mirrors land, and a mirror that could trigger another mirror is a loop.
+- **The `/swarm` test and the `/swarm` grammar are not the same test.** Admission needs the body to
+  *start with* `/swarm` after trimming; the block parser needs a line equal to `/swarm` exactly. A
+  comment reading `/swarm harness: claude` is therefore honoured with nothing parsed — it dispatches
+  the target's default agent. Transliterated, not corrected.
+- **The dedupe mark is taken before the author check.** An unauthorised attempt is recorded as seen,
+  so it is refused once loudly and thereafter quietly. That is what makes the drift exit above
+  survivable in CI.
+- **Upstream's `err != nil || state != "open"` is split in two.** `issue-unknown` means no supplied
+  snapshot covers the issue; `issue-not-open` means one does and it is closed. Upstream cannot tell
+  those apart because it is holding an HTTP error; an operator reading this output needs to, since
+  the first is a missing `--snapshot` and the second is a correct refusal.
+
+There are **no attribution trailers**. Upstream hardcodes a `Co-Authored-By` into the mirrored issue;
+our fork removed it, and `renderMirror` is byte-compared against the trailer-free template in the
+suite so it stays removed. `admit` does report attribution trailers it finds *in the comment* —
+those reach the agent's goal preamble and end up in its commits.
+
+One caveat on `mirror`: `SourceIssue.body` is fetched for pull requests and deliberately not for
+issues, so a mirror rendered from a board snapshot has a blank source section. It is a correct
+preview of what would be filed, not the exact bytes a spawn would read.
 
 ## Ports from
 
