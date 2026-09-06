@@ -14,17 +14,26 @@
  *   tried. `checkCapability` makes the table's invariants executable.
  * - `budget.ts` — the token-budget floor as a branded type, so a ceiling too small for a model that
  *   reasons before it answers cannot be spelled at a call site.
+ * - `endpoint.ts` — a backend name plus a deployment override, resolved into a request target. The
+ *   one place text from outside the repository becomes something a request is aimed at, and the one
+ *   place that refuses a URL carrying a credential.
+ * - `health.ts` — readiness (#57). Five outcomes, each with a distinct remedy, each carrying the
+ *   path where its evidence actually is.
  *
  * ## What is deliberately absent
  *
- * No adapter, no client, no health probe: nothing here has contacted an endpoint, and every base
- * URL is a default rather than a fact about a deployment. Those are #57's, and they consume this
- * table rather than restate it.
+ * Nothing here opens a socket. `endpoint.ts` says where a request goes and `health.ts` says what
+ * came back of it, and both take the exchange as data — the same split as `routing`'s `probe.ts`,
+ * for the same reason: a rule that opens a socket cannot be tested.
+ *
+ * There is also no chat client. Registering a `ctx.llm` adapter is the app shell's (E2 · #32), and
+ * the readiness half is what a registration needs first; a completion request built here with no
+ * seam to attach to would be an API invented ahead of its caller.
  *
  * Quota, spend and load are absent for a stronger reason — all three change while you read them, so
- * a committed copy is wrong by the time it ships. This package answers *could this ever work here*.
- * Whether it works right now is a probe: taking one is #57's, and what its result is worth is
- * `@rickylabs/routing`'s `probe.ts` (#59).
+ * a committed copy is wrong by the time it ships. This package answers *could this ever work here*,
+ * and `health.ts` answers *is it working right now*. What a reading is still worth ten minutes later
+ * is `@rickylabs/routing`'s `probe.ts` (#59).
  */
 
 export const PACKAGE_NAME = "@rickylabs/llm-local" as const;
@@ -68,3 +77,32 @@ export {
   reasoningBudget,
 } from "./budget.js";
 export type { BudgetRefusal, BudgetVerdict, ReasoningBudget } from "./budget.js";
+
+export {
+  ENDPOINT_REFUSALS,
+  ENDPOINT_SOURCES,
+  completionsUrl,
+  describeEndpoint,
+  describeEndpointRefusal,
+  modelsUrl,
+  readinessRequest,
+  resolveEndpoint,
+} from "./endpoint.js";
+export type {
+  Endpoint,
+  EndpointRefusal,
+  EndpointSource,
+  EndpointVerdict,
+  ReadinessRequest,
+} from "./endpoint.js";
+
+export {
+  READINESS,
+  checkHealth,
+  describeHealth,
+  describeReadiness,
+  isReady,
+  parseModelsList,
+  toObservation,
+} from "./health.js";
+export type { Exchange, Health, HealthRequest, HealthVerdict, Readiness } from "./health.js";

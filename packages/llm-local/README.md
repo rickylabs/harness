@@ -3,7 +3,8 @@
 Where a `ctx.llm` request can be sent, and where it must not. LM Studio, llama-rocm, OpenRouter.
 
 Owned by **E4 · [#34](https://github.com/rickylabs/harness/issues/34)**; the capability matrix is
-**[#60](https://github.com/rickylabs/harness/issues/60)**. Nothing here reaches an endpoint.
+**[#60](https://github.com/rickylabs/harness/issues/60)**, the adapters are
+**[#57](https://github.com/rickylabs/harness/issues/57)**. Nothing here opens a socket.
 
 ## What is in here
 
@@ -12,6 +13,8 @@ Owned by **E4 · [#34](https://github.com/rickylabs/harness/issues/34)**; the ca
 | `backends.ts` | The three destinations: base URL, locality, accelerator, readiness, diagnostics |
 | `capability.ts` | The model × backend matrix — what runs where, what does not, and why |
 | `budget.ts` | The token-budget floor, as a branded type |
+| `endpoint.ts` | A backend name plus a deployment override, resolved into a request target |
+| `health.ts` | What came back of a readiness check: five outcomes, each with its own remedy |
 
 ## The line this package does not cross
 
@@ -73,6 +76,66 @@ the field earns its place: a model that fails to load leaves nothing useful in t
 stdout, so `nerdctl logs` shows a healthy server while every request fails. The evidence is in the
 app's own log directory.
 
+`health.ts` is that check, expressed as a reading rather than a boolean. A boolean would have to
+collapse five situations that share nothing but their unhappiness:
+
+| Reading | What actually happened | What to do about it |
+| --- | --- | --- |
+| `ready` | The endpoint answered and lists the model | Dispatch |
+| `not-loaded` | The server is up; this model is not | Load it, and read the app's own log |
+| `rejected` | A status, not a list — 401, 404, 500 | Fix the credential, the path, or the server |
+| `unreadable` | Something answered and it was not the service | Check what is on that port |
+| `unreachable` | Nothing accepted a connection | Start the server process |
+
+The last two rows are the ones a liveness ping gets wrong in both directions. A reverse proxy on the
+wrong port answers `200` and is not the service; a running container with `sleep infinity` for an
+entrypoint is up and has no server in it. And the diagnostics travel with the reading, so a failed
+load points at `/config/.lmstudio/server-logs/YYYY-MM/*.log` while a dead socket does not — that
+directory is empty for a good reason when nothing ever started, and sending an operator to an empty
+log file costs them the ten minutes the field exists to save.
+
+Nothing here opens a socket. The exchange goes in as data — `{ reached: false, error }` or
+`{ reached: true, status, body }` — which is the same split as
+[`routing`'s `probe.ts`](../routing/README.md#availability-expires-and-everything-else-here-does-not),
+for the same reason: a rule that opens a socket cannot be tested.
+
+## A reading that cannot be projected is not projected
+
+`toObservation` turns a reading into the shape `routing` scores, and for `not-loaded` it answers
+`null` instead. `Observation.reachable` is documented as *the destination answered at all*, and in
+this case it did. Setting it `false` would produce the right verdict by writing a false statement
+into a record telemetry keeps; setting `completed: false` would claim the probe stopped short when it
+ran to the end. Refusing to project is the honest third option: `availabilityOf` sees no observation,
+answers `unknown`, and `mayDispatch` refuses — so it fails closed without lying — and the fact itself
+survives on `Health.readiness`, where it is the whole point of the reading.
+
+The same care runs the other way. `probe.ts` scores `degraded` by scanning an observation's `output`
+for a vendor warning, so a body that could reach that field could steer a routing verdict. Nothing
+derived from a response body is written there: `output` is authored locally from the readiness state.
+A models list that happens to contain the codex marker in a description is a `ready` endpoint, not a
+degraded one.
+
+## No refusal quotes the override
+
+`endpoint.ts` is the one place text from outside the repository becomes something a request is aimed
+at, and the shapes people actually type include `https://KEY@host/v1` and `https://host/v1?api-key=`.
+Both are refused — and a refusal cannot quote what it refused without doing precisely the thing it
+exists to prevent, because a base URL is written into receipts, run logs and issue bodies.
+
+Rather than exempt those two messages, no message in the file quotes the override at all. Each names
+the backend, the structural fact that was wrong, and — where parsing got that far — the scheme, which
+is a short closed vocabulary and never a secret. `admit.ts` reaches the same rule from the other
+direction.
+
+A query string is refused rather than dropped, which is the one that looks like over-strictness and
+is not. Dropping it is the worst of the three options: the operator who wrote `?api-key=` believes
+the key is being sent, the request goes out without it, and the 401 that comes back reads as a bad
+credential rather than as a discarded one.
+
+Blank falls through to the table default, because that is what an unset environment variable reads
+as, and a daemon that will not boot over `LLM_BASE_URL=` in a compose file has refused the wrong
+thing.
+
 ## A budget under 300 tokens is unrepresentable
 
 Ask a model that reasons before it answers for a completion in ten tokens and it does not refuse. It
@@ -109,15 +172,18 @@ would imply this package could send it somewhere, and no adapter here ever will.
 
 ## What is deliberately not here
 
-No adapter, no client, no health probe. Every base URL is the N5 compose default, not a fact about a
-deployment; resolving an override and proving anything reachable belongs to
-**[#57](https://github.com/rickylabs/harness/issues/57)**, which consumes this table rather than
-restating it.
+No chat client, and no `ctx.llm` registration. Registering the seam is the app shell's
+(**E2 · [#32](https://github.com/rickylabs/harness/issues/32)**), and readiness is what a
+registration needs first; a completion request built here with no seam to attach to would be an API
+invented ahead of its caller.
+
+No transport either. `endpoint.ts` says where a request goes and `health.ts` says what came back of
+one, and both take the exchange as data.
 
 Quota, spend and load are absent for a stronger reason: all three change while you read them, so a
-committed copy is wrong by the time it ships. This package answers *could this ever work here*.
-Whether it works right now is a probe: taking one is #57's, and what its result is worth —
-how long, and when silence in its output is not evidence — is
+committed copy is wrong by the time it ships. This package answers *could this ever work here*, and
+`health.ts` answers *is it working right now*. What that answer is still worth ten minutes later —
+how long, and when silence in a probe's output is not evidence — is
 [`routing`'s `probe.ts`](../routing/README.md#availability-expires-and-everything-else-here-does-not).
 
 ---
