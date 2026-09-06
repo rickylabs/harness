@@ -62,10 +62,15 @@ export const PATCH_HEADER: readonly string[] = [
 /**
  * The rows.
  *
- * Four, not five. `@rickylabs/forge` is deliberately absent: it is a CLI that stamps a label
- * taxonomy and installs a skill into a repository checkout, and a booted daemon has nothing to ask
- * it. Adding a fifth row for symmetry would claim a seam that no caller reaches, and a service
- * nobody injects is indistinguishable from a service that does not work.
+ * `@rickylabs/forge` is deliberately absent: it is a CLI that stamps a label taxonomy and installs a
+ * skill into a repository checkout, and a booted daemon has nothing to ask it. Adding a row for
+ * symmetry would claim a seam that no caller reaches, and a service nobody injects is
+ * indistinguishable from a service that does not work.
+ *
+ * `harness-llm` is the one row that claims nothing at all. Every other row here provides a service
+ * at a key of ours; that one registers an adapter on `ctx.llm`, which is dsh's own seam and already
+ * mounted by the composed profile. It is a row rather than a call somewhere else because a
+ * registration has to be tied to a fiber's lifetime to survive a reload — see the plugin's own note.
  */
 export const BUNDLE_ROWS: readonly BundleRow[] = [
   {
@@ -107,6 +112,20 @@ export const BUNDLE_ROWS: readonly BundleRow[] = [
       "The run sink and snapshot builder (E9 · #39) — the `status ?` killer. Resolving the",
       "observability paths at boot rather than per call is the point: a snapshot taken after a",
       "log rotation must read the same directory the sink was writing to.",
+    ],
+  },
+  {
+    id: "harness-llm",
+    name: "@rickylabs/dsh-app/plugins/llm",
+    why: [
+      "The three token-metered destinations — lm-studio, llama-rocm, openrouter (E2 · #176) —",
+      "registered on `ctx.llm`, which `@deepseek-ai/dsh-llm` owns and the composed profile",
+      "already mounts. This row claims no key; it injects `llm` and stays PENDING without it.",
+      "",
+      "Base URLs only. A credential is never a profile key: a profile is committed and a",
+      "credential must not be, so `OPENROUTER_API_KEY` is read from the daemon's environment at",
+      "dispatch. The `ctx.subagents` seam above is a different meter — quota windows, not",
+      "tokens — and the two are kept apart deliberately.",
     ],
   },
 ];

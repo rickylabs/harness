@@ -3,8 +3,8 @@
  *
  * Installing the profile into a throwaway `DSH_HOME` and running the real `dsh` binary is heavier
  * than a unit test, and it is the only thing that would actually catch what #50 is about: a dsh
- * release that moves a row. Re-reading our own `cordis.patch.yml` would test nothing — those four
- * rows are ours and they are already covered by `bundle.test.ts`. The eighty-five rows underneath
+ * release that moves a row. Re-reading our own `cordis.patch.yml` would test nothing — those rows
+ * are ours and they are already covered by `bundle.test.ts`. The eighty-five rows underneath
  * them belong to `@deepseek-ai/dsh-base` and arrive through a version range, and this is the only
  * place in the repository that looks at them.
  *
@@ -43,6 +43,7 @@ const OUR_ROWS = [
   "harness-board",
   "harness-coordinator",
   "harness-telemetry",
+  "harness-llm",
 ] as const;
 
 function explain(committed: string, composed: string): string {
@@ -205,7 +206,7 @@ describe("the committed snapshot", () => {
     assert.ok(base < ours, "our rows compose before dsh-base's");
   });
 
-  it("ends with our four rows", () => {
+  it("ends with our own rows, in bundle order", () => {
     if (parsed === undefined) throw new Error("the snapshot was not read");
     // A re-blessing that reordered the bundles would still match byte for byte — it regenerated the
     // file — and would still be wrong. This is the assertion a bless cannot launder.

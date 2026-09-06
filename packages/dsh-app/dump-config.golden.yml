@@ -14,8 +14,8 @@
 #     pnpm run golden:bless -- "what moved, and why that is expected"
 #
 # dsh    0.1.2-rc.1
-# rows   89
-# why    first blessing: dsh 0.1.2-rc.1 composes 85 dsh-base rows under our 4
+# rows   90
+# why    harness-llm joins the bundle: the three token-metered destinations register on ctx.llm (#176)
 #
 # ---- composed entry list below, provenance above ----
 # == @deepseek-ai/dsh-base
@@ -363,3 +363,5 @@
   name: '@rickylabs/dsh-app/plugins/coordinator'
 - id: harness-telemetry
   name: '@rickylabs/dsh-app/plugins/telemetry'
+- id: harness-llm
+  name: '@rickylabs/dsh-app/plugins/llm'

@@ -17,6 +17,7 @@ import { BUNDLE_ROWS, PATCH_FILE, renderPatch, subpathOf, type BundleRow } from 
 import { packageDirOf } from "./cli.js";
 import { CONTEXT_KEY as BOARD_KEY, name as boardName } from "./plugins/board.js";
 import { CONTEXT_KEY as COORDINATOR_KEY, name as coordinatorName } from "./plugins/coordinator.js";
+import { name as llmName } from "./plugins/llm.js";
 import { CONTEXT_KEY as SUBAGENTS_KEY, name as subagentsName } from "./plugins/subagents.js";
 import { CONTEXT_KEY as TELEMETRY_KEY, name as telemetryName } from "./plugins/telemetry.js";
 
@@ -81,13 +82,16 @@ describe("BUNDLE_ROWS", () => {
   it("carries one row per plugin module, ids matching the plugin names", () => {
     assert.deepEqual(
       BUNDLE_ROWS.map((entry) => entry.id),
-      [subagentsName, boardName, coordinatorName, telemetryName],
+      [subagentsName, boardName, coordinatorName, telemetryName, llmName],
     );
   });
 
-  it("claims four distinct context keys", () => {
+  it("claims four distinct context keys, one fewer than it has rows", () => {
+    // Five rows, four keys. `harness-llm` registers on `ctx.llm`, which dsh owns, and claims none of
+    // its own — so a fifth entry here would be asserting a key that must not exist.
     const keys = [SUBAGENTS_KEY, BOARD_KEY, COORDINATOR_KEY, TELEMETRY_KEY];
     assert.equal(new Set(keys).size, keys.length, "two plugins would claim one service name");
+    assert.equal(BUNDLE_ROWS.length, keys.length + 1);
   });
 
   it("explains every row", () => {

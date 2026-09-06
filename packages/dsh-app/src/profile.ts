@@ -65,8 +65,8 @@ export const BUNDLE_PACKAGE = "@rickylabs/dsh-app";
  * `tool-fs`, `tool-subagent` and two dozen more at the root and lets each session mount a preset
  * instead. That is the supported shape of that surface, not a regression: the *registries* those
  * tools resolve (`subagents`, `jobs`, `skill`, the token meter) stay host-plane, and `subagents` is
- * exactly the seam `harness-subagents` claims. Our four rows are host-plane services and the web
- * bundle does not address any of them.
+ * exactly the seam `harness-subagents` claims. Our rows are host-plane — four services and one
+ * adapter registered on dsh's own `llm` — and the web bundle does not address any of them.
  */
 export const PROFILE_SURFACES = {
   tui: [],

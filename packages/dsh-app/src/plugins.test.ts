@@ -28,6 +28,7 @@ import coordinator, {
   createService as createCoordinator,
   resolvePolicy,
 } from "./plugins/coordinator.js";
+import llm, { createAdapter, resolveOverrides } from "./plugins/llm.js";
 import subagents, {
   CONTEXT_KEY as SUBAGENTS_KEY,
   createRegistry,
@@ -38,6 +39,51 @@ import telemetry, {
   createService as createTelemetry,
   resolveHome,
 } from "./plugins/telemetry.js";
+
+/**
+ * A stand-in for `@deepseek-ai/dsh-llm`'s runtime, recording what `harness-llm` does to it.
+ *
+ * The real `LlmRuntime` is a service with a lifecycle of its own, and booting one here would test
+ * dsh rather than this row. What this row owes the seam is small and exact: one `registerAdapter`
+ * call naming three providers, and the disposer it hands back called once on unload.
+ *
+ * `provide` is reached through a `string`-typed name on purpose. Its typed overload would demand a
+ * real `LlmRuntime` for the `llm` key, and widening the name to `string` selects the untyped
+ * overload instead of casting the stand-in into a shape it deliberately does not have.
+ */
+const LLM_KEY: string = "llm";
+
+interface Registration {
+  readonly providers: readonly string[];
+  readonly adapter: unknown;
+}
+
+interface FakeSeam {
+  readonly plugin: { name: string; apply: (ctx: Context) => void };
+  readonly registered: Registration[];
+  released: number;
+}
+
+function fakeSeam(): FakeSeam {
+  const seam: FakeSeam = {
+    registered: [],
+    released: 0,
+    plugin: {
+      name: "fake-llm-runtime",
+      apply: (ctx: Context): void => {
+        ctx.provide(LLM_KEY, {
+          registerAdapter: (providers: readonly string[], adapter: unknown): (() => void) => {
+            seam.registered.push({ providers: [...providers], adapter });
+            return (): void => {
+              seam.released += 1;
+            };
+          },
+        });
+      },
+    },
+  };
+  return seam;
+}
 
 describe("each plugin claims its service and gives it back", () => {
   it("harness-subagents, once its telemetry dependency is on the context", async () => {
@@ -88,6 +134,40 @@ describe("each plugin claims its service and gives it back", () => {
     assert.equal(ctx.get(COORDINATOR_KEY), undefined);
   });
 
+  it("harness-llm binds its routes to the seam it does not own, and gives them back", async () => {
+    // The one row that claims nothing. What it must do instead is register on somebody else's seam
+    // and, crucially, release on unload: a registration that outlives its fiber makes the next load
+    // fail with `DUPLICATE_ADAPTER` while leaving the new fiber with no routes at all.
+    const seam = fakeSeam();
+    const ctx = new Context();
+    const host = await ctx.plugin(seam.plugin);
+    const fiber = await ctx.plugin(llm);
+
+    assert.equal(seam.registered.length, 1, "the three routes register in one call, or not at all");
+    assert.deepEqual(seam.registered[0]?.providers, ["lm-studio", "llama-rocm", "openrouter"]);
+    assert.equal(seam.released, 0);
+
+    await fiber.dispose();
+    assert.equal(seam.released, 1, "the registration outlived the fiber that made it");
+    await host.dispose();
+  });
+
+  it("harness-llm waits for the seam instead of failing without it", async () => {
+    // The point of `inject` here. `apply` reads `ctx.llm` unconditionally, so a row that activated
+    // before dsh-llm was mounted would fail on a property access at boot. It is meant to be loadable
+    // into a profile that has not mounted the runtime; there it simply does nothing yet.
+    const seam = fakeSeam();
+    const ctx = new Context();
+    const fiber = await ctx.plugin(llm);
+    assert.equal(seam.registered.length, 0, "something registered with no runtime to register on");
+
+    const host = await ctx.plugin(seam.plugin);
+    assert.equal(seam.registered.length, 1, "the waiting fiber never activated");
+
+    await fiber.dispose();
+    await host.dispose();
+  });
+
   it("harness-telemetry", async () => {
     const ctx = new Context();
     const fiber = await ctx.plugin(telemetry);
@@ -122,8 +202,14 @@ describe("the bundle as a whole", () => {
 
   it("names each plugin, so a fiber diagnostic says which one", () => {
     assert.deepEqual(
-      [subagents.name, board.name, coordinator.name, telemetry.name],
-      ["harness-subagents", "harness-board", "harness-coordinator", "harness-telemetry"],
+      [subagents.name, board.name, coordinator.name, telemetry.name, llm.name],
+      [
+        "harness-subagents",
+        "harness-board",
+        "harness-coordinator",
+        "harness-telemetry",
+        "harness-llm",
+      ],
     );
   });
 });
@@ -178,6 +264,31 @@ describe("the configured half, without a context", () => {
     assert.deepEqual(emptyRegistry().providers, []);
     // Nothing is written by building the registry: the decorator writes on a verb, not on a boot.
     assert.deepEqual(sink.events, []);
+  });
+
+  it("llm treats a blank base URL as no override at all", () => {
+    // A profile written by hand tends to carry every key with an empty value. Passing "" through as
+    // an override would turn each of those into a `resolveEndpoint` refusal, so a deployment that
+    // configured nothing would boot with three dead routes and no clue why.
+    assert.deepEqual(resolveOverrides(undefined), {});
+    assert.deepEqual(resolveOverrides({ lmStudioUrl: "", llamaRocmUrl: "", openrouterUrl: "" }), {});
+  });
+
+  it("llm maps its three config keys onto the backends they name", () => {
+    assert.deepEqual(
+      resolveOverrides({
+        lmStudioUrl: "http://box:1234/v1",
+        llamaRocmUrl: "",
+        openrouterUrl: "http://relay/v1",
+      }),
+      { "lm-studio": "http://box:1234/v1", openrouter: "http://relay/v1" },
+    );
+  });
+
+  it("llm builds an adapter that answers about the routes it was configured for", async () => {
+    const adapter = createAdapter({ lmStudioUrl: "http://box:1234/v1" });
+    assert.deepEqual(adapter.providerInfo("lm-studio"), { id: "lm-studio", name: "LM Studio" });
+    assert.notEqual((await adapter.listModels("lm-studio")).length, 0);
   });
 
   it("telemetry honours the environment override, and does so at construction", () => {

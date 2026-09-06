@@ -13,7 +13,7 @@ import { describe, it } from "node:test";
 
 import { EXIT, applyPlan, main, packageDirOf, type CliDeps, type ProfileFs } from "./cli.js";
 import { PATCH_FILE } from "./bundle.js";
-import { planProfile } from "./profile.js";
+import { planProfile, plannedRowIds } from "./profile.js";
 
 const home = resolve("/tmp/dsh-home");
 const packageDir = resolve("/repo/packages/dsh-app");
@@ -84,7 +84,10 @@ describe("install", () => {
       ].sort(),
     );
     assert.equal(fs.links.get(join(profileDir, "node_modules", "@rickylabs/dsh-app")), packageDir);
-    assert.match(text, /4 rows will be inserted/);
+    // Counted from the bundle rather than pinned, because the number is not the property under
+    // test: what matters is that the installer reports the same count it is about to write. Pinning
+    // it turns adding a row into a test edit, and a test edited to match output stops checking it.
+    assert.match(text, new RegExp(`${String(plannedRowIds().length)} rows will be inserted`));
     assert.match(text, /dsh --profile rickylabs --dump-config/);
   });
 
