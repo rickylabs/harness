@@ -72,6 +72,19 @@ import {
 } from "./supervise/steer.js";
 import { renderMirrorPreview, renderTriggers } from "./swarm/render.js";
 import {
+  DEFAULT_SETTLE,
+  DEFAULT_STUCK,
+  DEFAULT_TIMEOUT,
+  checkTeardown,
+  inboxIssues,
+  planTeardown,
+  tallyTeardown,
+  type Artefact,
+  type RunObservation,
+  type TeardownInput,
+} from "./swarm/teardown.js";
+import { renderTeardown } from "./swarm/teardown-render.js";
+import {
   admitSwarmComments,
   findSourceIssue,
   renderMirror,
@@ -130,6 +143,7 @@ usage
   dsh-forge targets backend        which backend dispatches each target, and why
   dsh-forge swarm admit            decide every /swarm comment the way the dispatcher would
   dsh-forge swarm mirror           the inbox issue each honoured trigger would open
+  dsh-forge swarm teardown         which runs are past their deadline, and which actually stopped
   dsh-forge supervise              what is new on each agent's PR, and what it has already been told
   dsh-forge init                   eject + apply + skill install, in that order
 
@@ -152,6 +166,16 @@ options
                         (repeatable — one per target repository)
   --seen <path>         swarm only: the dispatcher's state.json, whose seen_swarm keys name the
                         comments it has already decided
+  --runs <path>         swarm teardown only: a JSON array of observed runs (repeatable), each
+                        {"ref":"owner/name#1","harness":"claude","startedAt":"<iso>","timeout":"2h",
+                        "exited":false,"artefacts":[{"path":"…","at":"<iso>","bytes":0}]}
+  --at <iso>            swarm teardown only: the moment to judge against (default: now)
+  --settle <duration>   swarm teardown only: how long an artefact must be quiet before a run counts
+                        as verified down (default: ${DEFAULT_SETTLE})
+  --stuck <duration>    swarm teardown only: how long past its deadline a run may write before it is
+                        called stuck (default: ${DEFAULT_STUCK})
+  --deadline <duration> swarm teardown only: the timeout a run with none of its own gets (default:
+                        ${DEFAULT_TIMEOUT})
   --pulls <path>        supervise only: a 'gh pr list --json' dump (repeatable — one per repository)
   --panes <path>        supervise only: 'herdr pane read' output as JSON, one entry per pull:
                         {"pull":"owner/name#1","busy":true,"text":"…"} — redacted on the way in
@@ -1002,6 +1026,135 @@ async function readSeen(path: string): Promise<readonly string[]> {
   return Object.entries(seen).flatMap(([key, value]) => (value === true ? [key] : []));
 }
 
+/**
+ * `swarm teardown` — which runs are past their deadline, and which of them actually stopped.
+ *
+ * The third offline command in this group, and the one where the property earns the most: it
+ * decides whether an inbox issue may be closed, and a decision to close the last board item naming
+ * a live run should be reviewable by somebody who cannot reach the network.
+ *
+ * **Nothing here stops anything or closes anything.** The plan on each verdict is what teardown
+ * owes; the execution channel (E5 · #62) pays it. That separation is what makes `verify` a step
+ * rather than an assumption — see `swarm/teardown.ts` on why an exit code is not evidence.
+ */
+async function cmdSwarmTeardown(
+  root: string,
+  options: {
+    config: string | undefined;
+    runs: readonly string[];
+    snapshots: readonly string[];
+    at: string | undefined;
+    settle: string | undefined;
+    stuck: string | undefined;
+    deadline: string | undefined;
+  },
+  json: boolean,
+): Promise<number> {
+  const table = await loadTable(root, options.config);
+  if (options.runs.length === 0) {
+    throw new UsageError(
+      "swarm teardown needs at least one --runs: a JSON array of " +
+        '{"ref":"owner/name#1","harness":"claude","startedAt":"<iso>","timeout":"2h","exited":false,' +
+        '"artefacts":[{"path":"…","at":"<iso>","bytes":0}]}',
+    );
+  }
+
+  const runs: RunObservation[] = [];
+  let dropped = 0;
+  for (const path of options.runs) {
+    const read = await readRuns(resolve(root, path));
+    dropped += read.dropped;
+    runs.push(...read.runs);
+  }
+  const projections: BridgeSource[] = [];
+  for (const path of options.snapshots) projections.push(await readSnapshot(resolve(root, path)));
+
+  const input: TeardownInput = {
+    at: options.at ?? new Date().toISOString(),
+    runs,
+    inbox: inboxIssues(table, projections),
+    ...(options.deadline === undefined ? {} : { defaultTimeout: options.deadline }),
+    ...(options.settle === undefined ? {} : { settle: options.settle }),
+    ...(options.stuck === undefined ? {} : { stuck: options.stuck }),
+  };
+  const teardown = planTeardown(table, input);
+  const problems = checkTeardown(teardown);
+
+  if (json) {
+    out(JSON.stringify({ teardown, tally: tallyTeardown(teardown), problems, dropped }, null, 2));
+  } else {
+    out(renderTeardown(teardown, problems));
+    if (projections.length === 0) {
+      out(
+        "\nno --snapshot, so no inbox issue was matched — every run reads as 'no inbox issue' and no " +
+          "orphan can be found",
+      );
+    }
+    if (dropped > 0) out(`\n${String(dropped)} row(s) in the run dumps had no usable ref and were dropped`);
+  }
+  return problems.length === 0 ? EXIT.ok : EXIT.drift;
+}
+
+/**
+ * Read one run dump.
+ *
+ * This format is ours rather than a vendor's — nothing upstream reports a run's artefacts — so it
+ * is deliberately the shape a shell loop over `stat` already produces, and `at`/`mtime` and
+ * `bytes`/`size` are both accepted for the same reason. A row with no `ref` is dropped and counted:
+ * the ref is the join key onto the inbox, and a run that cannot be joined would read as a run whose
+ * issue is missing, which is a different and much louder claim.
+ */
+async function readRuns(path: string): Promise<{ runs: readonly RunObservation[]; dropped: number }> {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    throw new UsageError(
+      `could not read the run dump at ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (!Array.isArray(payload)) throw new UsageError(`${path} is not a run dump — expected a JSON array`);
+
+  const runs: RunObservation[] = [];
+  let dropped = 0;
+  for (const row of payload) {
+    if (typeof row !== "object" || row === null) {
+      dropped += 1;
+      continue;
+    }
+    const raw = row as Record<string, unknown>;
+    const ref = asString(raw["ref"]);
+    if (ref === "") {
+      dropped += 1;
+      continue;
+    }
+    runs.push({
+      ref,
+      harness: asString(raw["harness"]) || asString(raw["agent"]),
+      startedAt: asString(raw["startedAt"]),
+      timeout: asString(raw["timeout"]),
+      artefacts: readArtefacts(raw["artefacts"]),
+      exited: raw["exited"] === true,
+      ...(typeof raw["exitCode"] === "number" ? { exitCode: raw["exitCode"] } : {}),
+    });
+  }
+  return { runs, dropped };
+}
+
+function readArtefacts(value: unknown): readonly Artefact[] {
+  if (!Array.isArray(value)) return [];
+  const artefacts: Artefact[] = [];
+  for (const row of value) {
+    if (typeof row !== "object" || row === null) continue;
+    const raw = row as Record<string, unknown>;
+    const at = asString(raw["at"]) || asString(raw["mtime"]);
+    if (at === "") continue;
+    const size = raw["bytes"] ?? raw["size"];
+    artefacts.push({ path: asString(raw["path"]), at, bytes: typeof size === "number" ? size : 0 });
+  }
+  return artefacts;
+}
+
 // ── supervise ────────────────────────────────────────────────────────────────
 
 /**
@@ -1257,6 +1410,11 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         snapshot: { type: "string", multiple: true, default: [] },
         comments: { type: "string", multiple: true, default: [] },
         seen: { type: "string" },
+        runs: { type: "string", multiple: true, default: [] },
+        at: { type: "string" },
+        settle: { type: "string" },
+        stuck: { type: "string" },
+        deadline: { type: "string" },
         pulls: { type: "string", multiple: true, default: [] },
         panes: { type: "string", multiple: true, default: [] },
         supervision: { type: "string" },
@@ -1343,6 +1501,22 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
           return await cmdSwarmAdmit(repoRoot, swarm, json);
         case "mirror":
           return await cmdSwarmMirror(repoRoot, swarm, json);
+        case "teardown":
+          // Its own options object: teardown reads run dumps and clocks, not comments and seen
+          // keys, and passing it a shape whose fields it ignores would suggest they do something.
+          return await cmdSwarmTeardown(
+            repoRoot,
+            {
+              config: values.config,
+              runs: values.runs ?? [],
+              snapshots: values.snapshot ?? [],
+              at: values.at,
+              settle: values.settle,
+              stuck: values.stuck,
+              deadline: values.deadline,
+            },
+            json,
+          );
         default:
           throw new UsageError(`unknown command: swarm ${sub}`);
       }

@@ -264,6 +264,72 @@ One caveat on `mirror`: `SourceIssue.body` is fetched for pull requests and deli
 issues, so a mirror rendered from a board snapshot has a blank source section. It is a correct
 preview of what would be filed, not the exact bytes a spawn would read.
 
+## Tearing a run down
+
+A `/swarm` opens an inbox issue and starts a run. Something has to close both, and the obvious signal
+is the wrong one: **three agents have reported that they stopped while their process trees were still
+writing.** An exit code is the run's own account of itself, and the run is the thing under suspicion.
+
+So `dsh-forge swarm teardown` is the inverse of the liveness rule in `@rickylabs/telemetry` — that a
+node is green on a growing artefact, never on an open socket. Here a run is *down* when its artefacts
+have stopped growing, and on nothing else.
+
+```bash
+dsh-forge swarm teardown --config ../divybot.json --runs runs.json --snapshot inbox.json
+```
+
+`--runs` is a JSON array, one row per run the fleet believes is live. The shape is ours, because
+nothing upstream reports a run's artefacts, and it is deliberately what a shell loop over `stat`
+already produces — `at`/`mtime` and `bytes`/`size` are both accepted:
+
+```json
+[
+  {
+    "ref": "denoland/deno#42",
+    "harness": "claude",
+    "startedAt": "2026-03-01T07:00:00Z",
+    "timeout": "4h",
+    "exited": false,
+    "artefacts": [{ "path": ".llm/denoland-deno-42/transcript.jsonl", "at": "2026-03-01T11:59:30Z", "bytes": 412000 }]
+  }
+]
+```
+
+`--snapshot` is the inbox's own `dsh-board snapshot`. It is what joins a run to the issue teardown
+would close, through the `[owner/name#42]` title the mirror carries. Without it every run reads as
+`(no inbox issue)` and no orphan can be found, and the command says so rather than printing a clean
+table.
+
+Each run gets a state, the evidence that state rests on, and the steps still owed in the order they
+are owed — `stop → verify → close`. **Nothing here stops anything or closes anything.** The plan is
+what teardown owes; the execution channel (E5 · #62) pays it, which is what keeps `verify` a step
+rather than an assumption. `--at` supplies the clock, so two runs over the same inputs decide the
+same way and a verdict pasted into an issue stays true.
+
+### The deadline is advisory; quiet is what decides
+
+The state ladder asks about quiet first. A run that finished early is `stopped` before its deadline,
+and a run an hour past its deadline is *not* `stopped` while its transcript is moving — it is
+`expired`, and `stop` is owed. `timeout:` therefore says when to *intervene*, never when the run
+ended.
+
+- `--settle` (default `5m`) is how long every artefact must be still before a run counts as down.
+- `--stuck` (default `1h`) is how far past its deadline a run may keep writing before
+  `teardown-stuck` says that whatever should be enforcing the timeout is not.
+- `--deadline` (default `4h`) is the timeout a run with none of its own gets. Upstream discards an
+  unparseable `timeout:` in silence; we discard it too, and then say `timeout-not-a-duration`.
+
+### An orphan is a question, not a chore
+
+An open inbox issue no run claims is reported and **never closed**. This command cannot tell a wedged
+run's leftovers from an issue the dispatcher simply has not reached yet, and closing the second kind
+silently deletes requested work. It is listed, `orphaned-inbox-issue` names it, and the next poll
+re-dispatches it.
+
+The two errors here are not symmetric, which is why `close` is last and never first: closing a live
+run's issue removes the only thing on the board naming a run still spending quota, while leaving one
+open a tick too long costs a re-poll.
+
 ## Supervising an agent's pull request
 
 A dispatched run opens a PR and then keeps going. Reviews land, CI turns red, `main` moves under it —

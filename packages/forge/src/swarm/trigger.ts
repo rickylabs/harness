@@ -174,6 +174,16 @@ export interface SwarmAdmission {
 const MIRROR_TITLE = /^\[([^\]]+#\d+)\]/;
 
 /**
+ * The `repo#n` an inbox issue's title mirrors, or `""`.
+ *
+ * Exported so that the one pattern has one reader. Two modules asking the same question of the same
+ * titles with two hand-written regexes is the shape of bug `go-grammar.ts` exists to remember.
+ */
+export function refOfInboxTitle(title: string): string {
+  return MIRROR_TITLE.exec(title)?.[1] ?? "";
+}
+
+/**
  * Decide every comment in every feed, in the dispatcher's own order.
  *
  * Deterministic and offline: the gates read the table, the feeds and the projections, and nothing
@@ -301,8 +311,8 @@ function mirroredRefs(table: TargetTable, projections: readonly BridgeSource[]):
   for (const projection of projections) {
     if (projection.repo !== table.inbox) continue;
     for (const item of projection.items) {
-      const match = MIRROR_TITLE.exec(item.title);
-      if (match?.[1] !== undefined) refs.add(match[1]);
+      const ref = refOfInboxTitle(item.title);
+      if (ref !== "") refs.add(ref);
     }
   }
   return refs;
