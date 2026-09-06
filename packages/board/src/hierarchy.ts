@@ -14,7 +14,7 @@
  * not show up on the machine that wrote the tests.
  */
 
-import type { BoardItem, BoardSnapshot } from "./model.js";
+import type { Anomaly, BoardItem, BoardSnapshot } from "./model.js";
 import { isAbandoned, isDeliveryUnknown, isShipped } from "./model.js";
 import { compareNullableStrings, compareStrings } from "./order.js";
 // `epicSlugOf` moved to `project.ts`, where it is defined once. The projector has to answer "which
@@ -82,6 +82,18 @@ export interface Hierarchy {
   readonly generatedAt: string;
   readonly milestones: readonly MilestoneNode[];
   readonly progress: Progress;
+  /**
+   * The snapshot's anomalies, carried through unchanged.
+   *
+   * Here rather than left behind on the snapshot because every phase in this tree is a claim the
+   * anomalies can contradict, and a renderer that receives the tree without them will print those
+   * claims as settled. That is not hypothetical: `renderHierarchy` and `renderColumns` both did
+   * exactly that, reporting a column for an item carrying two `status:` labels while `digest`
+   * showed the same board as broken. Duplicating the list is the cheap half of the fix; the
+   * expensive half would be remembering to pass it at every call site, which is the thing that
+   * failed. Nothing in this module reads it.
+   */
+  readonly anomalies: readonly Anomaly[];
 }
 
 /**
@@ -328,5 +340,6 @@ export function buildHierarchy(snapshot: BoardSnapshot): Hierarchy {
     generatedAt: snapshot.generatedAt,
     milestones,
     progress: sumProgress(milestones.map((m) => m.progress)),
+    anomalies: snapshot.anomalies,
   };
 }

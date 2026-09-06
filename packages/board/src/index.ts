@@ -74,7 +74,9 @@ export type {
 } from "./dispatch.js";
 
 export {
+  anomalousItems,
   renderAnomalies,
+  renderAnomalyBanner,
   renderBar,
   renderColumns,
   renderCompleteness,

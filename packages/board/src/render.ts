@@ -8,7 +8,7 @@
 
 import type { Hierarchy, MilestoneNode, Progress } from "./hierarchy.js";
 import { sourceSaysDelivered } from "./model.js";
-import type { BoardItem, BoardSnapshot, Completeness } from "./model.js";
+import type { Anomaly, BoardItem, BoardSnapshot, Completeness } from "./model.js";
 import { compareStrings } from "./order.js";
 
 const pad = (value: string, width: number): string =>
@@ -66,6 +66,53 @@ export function renderCompleteness(completeness: Completeness | null): string | 
   );
 }
 
+/** `1 anomaly`, `2 anomalies`. One place, so no view has to remember the plural. */
+const countAnomalies = (n: number): string => `${n} ${n === 1 ? "anomaly" : "anomalies"}`;
+
+/**
+ * The item numbers named in at least one anomaly.
+ *
+ * Board-level anomalies carry no item and are deliberately absent from this set. A truncated fetch
+ * is a statement about the projection, and hanging its mark on whichever row happened to be first
+ * would blame an issue for something that is not about it. Those are counted by the banner, which
+ * is the only surface that can carry them honestly.
+ */
+export function anomalousItems(anomalies: readonly Anomaly[]): ReadonlySet<number> {
+  const numbers = new Set<number>();
+  for (const anomaly of anomalies) if (anomaly.item !== null) numbers.add(anomaly.item);
+  return numbers;
+}
+
+/**
+ * The warning that this board disagrees with itself, or `null` when it does not.
+ *
+ * Every human-facing view prints this, and the rule behind it generalises to the next one written:
+ * a projection that renders `phase` while dropping `anomalies` is claiming a consistency it never
+ * checked. On an item carrying two `status:` labels the phase resolves to whichever label came
+ * first, so the column is printed with the confidence of a settled fact and nothing on screen says
+ * one of two answers was picked. `check` is not the answer to that — it is a separate command, and
+ * the reader who is looking at a column is by definition not looking at `check`.
+ */
+export function renderAnomalyBanner(anomalies: readonly Anomaly[]): string | null {
+  if (anomalies.length === 0) return null;
+  // Only promise a mark when there is one to find. On a board whose only anomaly is board-level,
+  // telling the reader to look for `!` sends them hunting for something that is not there.
+  const marked = anomalousItems(anomalies).size > 0 ? " ! marks an affected item." : "";
+  return (
+    `!! ANOMALIES (${anomalies.length}) — this board contradicts itself.${marked}` +
+    ` Run "dsh-board check" for the detail.`
+  );
+}
+
+/**
+ * The two-character gutter before an item.
+ *
+ * Always two characters, marked or not, so flagging a row never shifts the text beside it and two
+ * renders of the same board still diff cleanly.
+ */
+const mark = (item: BoardItem, flagged: ReadonlySet<number>): string =>
+  flagged.has(item.source.number) ? "! " : "  ";
+
 /** A fixed-width progress bar. Deterministic, and never rounds an incomplete epic up to full. */
 export function renderBar(progress: Progress, width = 20): string {
   if (progress.total === 0) return `[${" ".repeat(width)}]`;
@@ -78,12 +125,17 @@ export function renderBar(progress: Progress, width = 20): string {
 
 /** The kanban view: one section per column, in lifecycle order. */
 export function renderColumns(snapshot: BoardSnapshot): string {
-  const lines: string[] = [`# board — ${snapshot.repo}`, `generated ${snapshot.generatedAt}`, ""];
+  const lines: string[] = [`# board — ${snapshot.repo}`, `generated ${snapshot.generatedAt}`];
+  // Above the columns, because it is the sentence that decides whether they can be believed.
+  const warning = renderAnomalyBanner(snapshot.anomalies);
+  if (warning !== null) lines.push(warning);
+  lines.push("");
 
+  const flagged = anomalousItems(snapshot.anomalies);
   for (const column of snapshot.columns) {
     if (column.items.length === 0) continue;
     lines.push(`## ${column.phase.name} (${column.items.length})`);
-    for (const item of column.items) lines.push(`  ${label(item)}`);
+    for (const item of column.items) lines.push(`${mark(item, flagged)}${label(item)}`);
     lines.push("");
   }
 
@@ -100,27 +152,41 @@ export function renderColumns(snapshot: BoardSnapshot): string {
   const invisible = snapshot.unphased.filter((i) => !isDropped(i));
   const dropped = snapshot.unphased.filter(isDropped);
 
+  // Every row here is named in an anomaly, so the whole section marks. That reads as redundant
+  // next to a heading that already says as much, and it is still worth printing: the banner states
+  // a count, and a reader who can only find two of five marks upstairs has to be able to find the
+  // other three. A section that opted out of the gutter would make the count look wrong.
   if (invisible.length > 0) {
     lines.push(`## in no column (${invisible.length})`);
     lines.push("  Real work the board cannot see: open and untriaged, or delivered and unlabelled.");
-    for (const item of invisible) lines.push(`  ${label(item)}`);
+    for (const item of invisible) lines.push(`${mark(item, flagged)}${label(item)}`);
     lines.push("");
   }
 
+  // Conversely, almost nothing here marks: the anomalies about a close all require either an open
+  // item or a phase, and these have neither. A mark that does appear is the exception the caption
+  // is generalising over — an unknown `status:` label on an abandoned item, say — and saying so is
+  // better than a caption that quietly covers for it.
   if (dropped.length > 0) {
     lines.push(`## closed without shipping (${dropped.length})`);
     lines.push("  No status label is the correct shape for these. Nothing to do.");
-    for (const item of dropped) lines.push(`  ${label(item)}`);
+    for (const item of dropped) lines.push(`${mark(item, flagged)}${label(item)}`);
     lines.push("");
   }
 
   return lines.join("\n");
 }
 
-function renderMilestone(milestone: MilestoneNode): readonly string[] {
+function renderMilestone(milestone: MilestoneNode, flagged: ReadonlySet<number>): readonly string[] {
   const lines: string[] = [];
   const name = milestone.name ?? "(no milestone)";
   lines.push(`## ${name}  ${renderBar(milestone.progress)}  ${renderProgress(milestone.progress)}`);
+
+  // A task line is `<indent><phase><label>`, and the phase is the claim an anomaly contradicts —
+  // so the mark goes in the indent, immediately left of it, rather than trailing the title where
+  // it would read as part of the item's name.
+  const taskLine = (task: BoardItem): string =>
+    `  ${mark(task, flagged)}${pad(task.phase?.name ?? "no status", 20)} ${label(task)}`;
 
   for (const epic of milestone.epics) {
     const number = epic.issue === null ? "" : ` #${epic.issue.source.number}`;
@@ -132,25 +198,20 @@ function renderMilestone(milestone: MilestoneNode): readonly string[] {
       epic.issue !== null && epic.homeMilestone !== milestone.name
         ? `  (epic is in ${epic.homeMilestone ?? "no milestone"})`
         : "";
+    const epicMark = epic.issue === null ? "  " : mark(epic.issue, flagged);
     lines.push("");
-    lines.push(`  ${epic.title}${number}  [${phase}]${home}`);
+    lines.push(`${epicMark}${epic.title}${number}  [${phase}]${home}`);
     lines.push(`    ${renderBar(epic.progress, 16)} ${renderProgress(epic.progress)}`);
     if (epic.issue === null) {
       lines.push(`    (no epic issue claims the slug ${epic.slug})`);
     }
-    for (const task of epic.tasks) {
-      const taskPhase = task.phase?.name ?? "no status";
-      lines.push(`    ${pad(taskPhase, 20)} ${label(task)}`);
-    }
+    for (const task of epic.tasks) lines.push(taskLine(task));
   }
 
   if (milestone.looseTasks.length > 0) {
     lines.push("");
     lines.push(`  (no epic)`);
-    for (const task of milestone.looseTasks) {
-      const taskPhase = task.phase?.name ?? "no status";
-      lines.push(`    ${pad(taskPhase, 20)} ${label(task)}`);
-    }
+    for (const task of milestone.looseTasks) lines.push(taskLine(task));
   }
 
   return lines;
@@ -166,6 +227,15 @@ export interface HierarchyRenderOptions {
    * board actually moved. See `digest.ts`, which states the board's own latest activity instead.
    */
   readonly stamp?: boolean;
+  /**
+   * Whether to warn that the board contradicts itself, and mark the rows it contradicts.
+   *
+   * On by default, so a view has to opt *out* of reporting anomalies rather than remember to opt
+   * in — the direction matters, because forgetting is exactly what produced the defect this
+   * option exists to fix. The one caller that turns it off is `digest.ts`, which gives every
+   * anomaly its own section, with the detail and the repair, above the tree.
+   */
+  readonly anomalies?: boolean;
 }
 
 /**
@@ -180,9 +250,15 @@ export function renderHierarchy(
     `# ${hierarchy.repo}  ${renderBar(hierarchy.progress)}  ${renderProgress(hierarchy.progress)}`,
   ];
   if (options.stamp !== false) lines.push(`generated ${hierarchy.generatedAt}`);
+
+  const reporting = options.anomalies !== false;
+  const warning = reporting ? renderAnomalyBanner(hierarchy.anomalies) : null;
+  if (warning !== null) lines.push(warning);
+  const flagged = reporting ? anomalousItems(hierarchy.anomalies) : new Set<number>();
+
   for (const milestone of hierarchy.milestones) {
     lines.push("");
-    lines.push(...renderMilestone(milestone));
+    lines.push(...renderMilestone(milestone, flagged));
   }
   return lines.join("\n");
 }
@@ -207,7 +283,7 @@ export function renderAnomalies(snapshot: BoardSnapshot): string {
     else list.push(line);
   }
 
-  const lines: string[] = [`${snapshot.anomalies.length} anomalies`];
+  const lines: string[] = [countAnomalies(snapshot.anomalies.length)];
   for (const kind of [...byKind.keys()].sort(compareStrings)) {
     lines.push("");
     lines.push(`## ${kind}`);

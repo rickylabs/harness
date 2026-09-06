@@ -254,7 +254,12 @@ export function renderDigest(snapshot: BoardSnapshot, hierarchy: Hierarchy): str
       "```",
       // No stamp: see the header comment. The freshness line above already carries the only
       // timestamp on this page, and it is one that means something.
-      renderHierarchy(hierarchy, { stamp: false }),
+      //
+      // No anomaly banner either, and this is the only view entitled to leave it out: `## Anomalies`
+      // above states the same count with the detail and the repair beside it, which is strictly
+      // more than the banner says. A terminal view has no such section, which is why the option
+      // defaults the other way.
+      renderHierarchy(hierarchy, { stamp: false, anomalies: false }),
       "```",
       "",
     ]),
