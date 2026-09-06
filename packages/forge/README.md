@@ -22,12 +22,14 @@ dsh-forge init            # eject + apply + skill install
 dsh-forge targets show    # the dispatch table, in resolution order
 dsh-forge targets check   # non-zero exit when the table is wrong, for CI
 dsh-forge targets reconcile   # which inbox issues get dispatched, and what came back
+dsh-forge targets backend # which backend dispatches each target, and why
 dsh-forge swarm admit     # decide every /swarm comment the way the dispatcher would
 dsh-forge swarm mirror    # the inbox issue each honoured trigger would open
 ```
 
 Options: `--repo owner/name`, `--cwd <path>`, `--no-detect`, `--force`, `--dry-run`, `--json`,
-`--config <path>`, `--snapshot <path>` (repeatable), `--comments <path>` (repeatable), `--seen <path>`.
+`--config <path>`, `--handover <path>`, `--snapshot <path>` (repeatable), `--comments <path>`
+(repeatable), `--seen <path>`.
 Exit codes: `0` ok, `1` drift or conflict, `2` usage, `3` no usable GitHub transport.
 
 ## What it installs
@@ -153,6 +155,62 @@ did the work.
 item with no deliveries has to be able to tell "the run has produced nothing yet" from "nobody
 handed me that repository's snapshot"; those want opposite reactions, and both otherwise render as
 an empty list.
+
+## Which backend dispatches a target
+
+divybot is the only path verified zero-touch across all four harnesses, so it is not retired on day
+one and it is not retired all at once. It is retired **per vendor, at parity, with the evidence
+recorded** — a strangler fig, and `dsh-forge targets backend` is where you read how far it has got.
+
+```bash
+dsh-forge targets backend --config ../divybot.json
+```
+
+The decision lives in a sibling `handover.json`, not in `divybot.json`. That file is the
+dispatcher's and we own none of it; handover is a decision the coordinator makes *about* the
+dispatcher, and divybot would ignore the key anyway. It also keeps the dangerous mistake legible:
+a fleet where both backends believe they own a target double-spawns every run, and the fix for that
+has to read as a change to something we control.
+
+**An absent `handover.json` is an answer, not a gap.** It means every target dispatches through
+divybot, which is both the documented default and the state the fleet is in today — nothing has to
+be written for the current behaviour to be describable.
+
+Two axes decide a row. *Parity* is per account, carries evidence, and flips the default. A *pin* is
+per target, carries a reason, and overrides in either direction — except forward without evidence:
+
+| pin        | parity     | backend    | reason            |
+| ---------- | ---------- | ---------- | ----------------- |
+| (none)     | not proven | `divybot`  | `awaiting-parity` |
+| (none)     | proven     | `provider` | `parity-proven`   |
+| `divybot`  | either     | `divybot`  | `held-back`       |
+| `provider` | proven     | `provider` | `pinned-forward`  |
+| `provider` | not proven | `divybot`  | `pin-refused`     |
+
+The last row is the safety property. A pin is an operator's intent; parity is a claim somebody had
+to write evidence for. When they disagree the evidence wins, and the disagreement surfaces as a
+`checkHandover` problem rather than as a silent move. `held-back` is the claw-back, and it beats
+proven parity — it is the one control that has to keep working after a retirement goes wrong.
+
+### Three things the ledger does that are not obvious
+
+- **A target needs *every* account it can fall through to.** `agents` is an overflow preference and
+  which one runs is a function of live governor budget, so `["claude", "codex"]` with parity only
+  for `claude` stays on divybot. The alternative is a target that works until quota pressure and
+  then needs a vendor the provider path cannot serve.
+- **A record with no evidence is not parity.** It is not honoured-and-flagged; it does not count at
+  all, and its account stays in the row's `no parity for …` line. Reporting it while moving the
+  target anyway would make the migration's one safety property a footnote under the thing it was
+  supposed to prevent.
+- **Parity is keyed by *account*, not by harness.** `agentsOf` has already mapped `opencode` onto
+  `codex` before anything reads the table, so a record keyed `opencode` can never match — which is
+  `parity-unreachable`, not a silent no-op. The reachable set is derived from `HARNESSES`, so a
+  harness added upstream widens it for free.
+
+Unknown keys are reported here, unlike in `divybot.json`. That file is mostly none of our business;
+this one is entirely ours, and its whole failure mode is looking effective while doing nothing — an
+`evidance:` typo would otherwise surface only as "records no evidence", which is true, unhelpful,
+and three minutes from the actual mistake.
 
 ## The comment trigger
 

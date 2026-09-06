@@ -36,6 +36,7 @@ usage
   dsh-forge targets show           print the dispatch table in resolution order
   dsh-forge targets check          exit non-zero when the table is wrong (for CI)
   dsh-forge targets reconcile      which inbox issues the dispatcher claims, and what came back
+  dsh-forge targets backend        which backend dispatches each target, and why
   dsh-forge swarm admit            decide every /swarm comment the way the dispatcher would
   dsh-forge swarm mirror           the inbox issue each honoured trigger would open
   dsh-forge init                   eject + apply + skill install, in that order
@@ -51,6 +52,8 @@ options
   --labels <a,b>        status settle only: the labels the item carries now (repeatable)
   --event <path>        status settle only: a GitHub event payload to read all of that from
   --config <path>       targets and swarm: the dispatcher's config (default: ./divybot.json)
+  --handover <path>     targets backend only: the parity ledger (default: ./handover.json;
+                        absent means every target still dispatches through divybot)
   --snapshot <path>     targets reconcile and swarm: a 'dsh-board snapshot' JSON file (repeatable —
                         one per repository, including the inbox's own)
   --comments <path>     swarm only: a 'gh api repos/<owner>/<name>/issues/comments' JSON dump

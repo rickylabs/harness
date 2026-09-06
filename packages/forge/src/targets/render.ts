@@ -7,6 +7,8 @@
  * computed in `model.ts` or `reconcile.ts`, and this file only chooses what to leave out.
  */
 
+import type { BackendChoice, HandoverLedger, HandoverProblem } from "./handover.js";
+import { describeBackendReason, describeHandoverProblem, tallyHandover } from "./handover.js";
 import type { Target, TargetTable } from "./model.js";
 import { describeProblem } from "./model.js";
 import type { BridgeItem, BridgeSnapshot } from "./reconcile.js";
@@ -140,6 +142,70 @@ export function renderBridge(snapshot: BridgeSnapshot): string {
   }
 
   lines.push(renderProblems(snapshot));
+  return lines.join("\n").trimEnd();
+}
+
+/**
+ * The migration, one line per target plus the ledger it was decided from.
+ *
+ * Ordered by table order rather than by backend, because the question this answers is "where does
+ * *this* target go", and an operator who knows the label is scanning for it. The counts at the top
+ * are the migration's actual progress, which is the number nobody can quote today.
+ *
+ * The parity block prints even when no target uses an account, because a record that matches nothing
+ * is a thing worth seeing next to the targets it was presumably written for.
+ */
+export function renderHandover(
+  choices: readonly BackendChoice[],
+  ledger: HandoverLedger,
+  problems: readonly HandoverProblem[],
+): string {
+  const tally = tallyHandover(choices, ledger);
+  const lines: string[] = [
+    `${String(tally.targets)} target(s) — ${String(tally.divybot)} on divybot · ` +
+      `${String(tally.provider)} on providers · ${String(tally.provenAccounts)} account(s) at parity`,
+    "",
+  ];
+
+  if (choices.length === 0) lines.push("no targets");
+  else {
+    const width = Math.max(...choices.map((choice) => choice.target.label.length), 5);
+    lines.push(`${pad("label", width)}  backend   why`);
+    for (const choice of choices) {
+      lines.push(
+        `${pad(choice.target.label, width)}  ${pad(choice.backend, 8)}  ${choice.reason} — ` +
+          describeBackendReason(choice.reason),
+      );
+      if (choice.missing.length > 0) {
+        lines.push(`${pad("", width)}  ${pad("", 8)}  no parity for ${choice.missing.join(", ")}`);
+      }
+      if (choice.pin !== null) {
+        lines.push(`${pad("", width)}  ${pad("", 8)}  pinned ${choice.pin.backend}: ${choice.pin.reason || "(no reason given)"}`);
+      }
+    }
+    lines.push("");
+  }
+
+  if (ledger.parity.length === 0) {
+    lines.push("parity: nothing recorded — every target stays on divybot, which is where the fleet is today");
+  } else {
+    lines.push(`parity (${String(ledger.parity.length)})`);
+    for (const record of ledger.parity) {
+      lines.push(
+        `  ${record.account}  via ${record.provider || "(no provider named)"}  ` +
+          `${record.provenAt || "(no date)"}  ${record.evidence || "(NO EVIDENCE)"}`,
+      );
+      if (record.note !== "") lines.push(`      ${record.note}`);
+    }
+  }
+  lines.push("");
+
+  if (problems.length === 0) lines.push("ledger: no problems");
+  else {
+    lines.push(`ledger: ${String(problems.length)} problem(s)`);
+    for (const problem of problems) lines.push(`  ${describeHandoverProblem(problem)}`);
+  }
+
   return lines.join("\n").trimEnd();
 }
 
