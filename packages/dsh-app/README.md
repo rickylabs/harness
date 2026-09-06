@@ -231,6 +231,31 @@ Each row takes its options from the profile's own patch layer, in the ordinary c
   read from the daemon's environment at dispatch, and a request that needs it and cannot find it is
   refused by name before a socket is opened.
 
+### Board session projection
+
+When dsh provides `ctx.sessionProjections`, `harness-board` also registers the strict
+`harnessBoard` projection. The service's synchronous `refresh(session, input)` accepts a
+caller-fetched GitHub issue cut and telemetry runs, derives the public milestone → epic → task →
+child-run tree, and appends two adjacent whole-value events: `todo/write`, followed by
+`harness/board-write`. GitHub remains authoritative. A model may replace its local todo list during
+a turn, and the next refresh replaces that list from the next board snapshot.
+
+Refresh fails before either append when the projection registry or published `todos` projection is
+absent, board-item normalization fails, or the strict public DTO rejects the result. The board
+service itself still loads without either optional dsh capability, so profiles that only use the
+pure projector keep working.
+
+Run the executable integration smoke with no agent or model:
+
+```bash
+pnpm --filter @rickylabs/dsh-app run smoke:board-projection
+```
+
+It composes the published `SessionStore`, `SessionProjectionRegistry`, `ToolRuntime`, and
+`dsh-tool-todo` plugin with `allowParallelInProgress: true`, loads `harness-board`, refreshes a live
+session twice, checks todo authority and a parent/child run attachment, then verifies projection
+removal on plugin disposal.
+
 ## Tests
 
 Four tests are the ones that would have caught a real outage: the byte comparison

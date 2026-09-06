@@ -26,6 +26,11 @@
  */
 
 import type { Context } from "@deepseek-ai/cordis";
+import type { Session } from "@deepseek-ai/dsh-session";
+import type {
+  ProjectionSnapshot,
+  SessionProjectionRegistry,
+} from "@deepseek-ai/dsh-session-projection";
 import z from "@deepseek-ai/schemastery";
 import {
   DEFAULT_LIFECYCLE,
@@ -36,6 +41,19 @@ import {
   type ProjectOptions,
   type SourceIssue,
 } from "@rickylabs/board";
+import {
+  buildSnapshot,
+  buildTree,
+  normaliseItems,
+  publicTree,
+  type RunRecord,
+} from "@rickylabs/telemetry";
+import {
+  appendBoardRefresh,
+  boardProjectionDefinition,
+  toBoardProjection,
+  todosFromBoard,
+} from "./board-projection.js";
 
 /** Where this service attaches. Prefixed so it cannot collide with a service dsh adds later. */
 export const CONTEXT_KEY = "harnessBoard" as const;
@@ -87,6 +105,17 @@ export interface BoardService {
   readonly priorityOrder: readonly string[];
   /** Project fetched issues into columns, using the configured taxonomy. */
   project(issues: readonly SourceIssue[], options: BoundProjectOptions): BoardSnapshot;
+  /** Replace the live session's board and todo projections from one caller-owned evidence cut. */
+  refresh(session: Session, input: BoardRefreshInput): ProjectionSnapshot;
+}
+
+/** Caller-owned inputs: GitHub issues, telemetry runs, clocks, and completeness evidence. */
+export interface BoardRefreshInput {
+  readonly issues: readonly SourceIssue[];
+  readonly project: BoundProjectOptions;
+  readonly runs: readonly RunRecord[];
+  readonly notes?: readonly string[];
+  readonly telemetryComplete: boolean;
 }
 
 declare module "@deepseek-ai/cordis" {
@@ -104,7 +133,10 @@ export function resolveConfig(config: Partial<BoardConfig> | undefined): BoardCo
 }
 
 /** Build the service without a context, so it can be tested without booting cordis. */
-export function createService(config: Partial<BoardConfig> | undefined): BoardService {
+export function createService(
+  config: Partial<BoardConfig> | undefined,
+  registry: () => SessionProjectionRegistry | undefined = () => undefined,
+): BoardService {
   const resolved = resolveConfig(config);
   return {
     lifecycle: DEFAULT_LIFECYCLE,
@@ -118,11 +150,66 @@ export function createService(config: Partial<BoardConfig> | undefined): BoardSe
         priorityOrder: resolved.priorityOrder,
       });
     },
+    refresh(session, input) {
+      const projections = registry();
+      if (projections === undefined) {
+        throw new Error("board refresh requires ctx.sessionProjections");
+      }
+
+      // Materialize first: an absent todo capability must fail before either whole-value write.
+      if (!("todos" in projections.snapshot(session, ["todos"]).values)) {
+        throw new Error("board refresh requires the registered todos projection");
+      }
+
+      const board = projectBoard(input.issues, {
+        ...input.project,
+        lifecycle: DEFAULT_LIFECYCLE,
+        lanePrefix: resolved.lanePrefix,
+        priorityOrder: resolved.priorityOrder,
+      });
+      const loaded = normaliseItems(board, "board projection");
+      if (!loaded.ok) {
+        throw new Error(`board projection normalization failed: ${loaded.notes.join("; ")}`);
+      }
+      const telemetry = buildSnapshot({
+        generatedAt: board.generatedAt,
+        runs: input.runs,
+        items: loaded.items,
+        notes: [...(input.notes ?? []), ...loaded.notes],
+      });
+      const tree = buildTree({
+        snapshot: telemetry,
+        items: loaded.items,
+        now: board.generatedAt,
+      });
+      const complete =
+        input.telemetryComplete &&
+        board.completeness !== null &&
+        board.completeness.capped.length === 0;
+      const projection = toBoardProjection(publicTree(tree, complete));
+      const todos = todosFromBoard(board);
+
+      // Session.append and the projection drive are synchronous. Keep this method synchronous so
+      // no second refresh or listener can interleave between these adjacent replacement events.
+      appendBoardRefresh(session, todos, projection);
+      return projections.snapshot(session, ["todos", "harnessBoard"]);
+    },
   };
 }
 
 export function apply(ctx: Context, config?: Partial<BoardConfig>): void {
-  ctx.provide(CONTEXT_KEY, createService(config));
+  let projections: SessionProjectionRegistry | undefined;
+  ctx.provide(CONTEXT_KEY, createService(config, () => projections));
+  ctx.inject(["sessionProjections"], (projectionCtx) => {
+    projections = projectionCtx.sessionProjections;
+    projectionCtx.sessionProjections.register(boardProjectionDefinition);
+    projectionCtx.effect(
+      () => () => {
+        if (projections === projectionCtx.sessionProjections) projections = undefined;
+      },
+      "harness-board projection binding",
+    );
+  });
 }
 
 export default { name, Config, apply };
