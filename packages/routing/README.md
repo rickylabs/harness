@@ -14,6 +14,7 @@ Owned by **E4 · #34**, defined by **#58**.
 | `family.ts` | Generator is not evaluator, checked against the two-seam topology |
 | `resolve.ts` | The only sanctioned way to ask the table a question |
 | `admit.ts` | The gate a dispatch passes before anything is spent on it |
+| `probe.ts` | Availability — the one fact here that expires |
 
 ## Family is a property of the model, not of the harness
 
@@ -140,6 +141,57 @@ The scan is structural — `sk-`, `ghp_`, `AKIA`, a `PRIVATE KEY` block, a `name
 the key block — because a generic "long random string" test would refuse legitimate briefs, and a
 gate operators learn to route around is worse than no gate. A brief that merely says the key is read
 from `openrouter.env` is admitted.
+
+## Availability expires, and everything else here does not
+
+Everything above is true until somebody edits it. A subscription window empties and refills, a relay
+balance only goes down, and a staged rollout turns a model on for some accounts on a Tuesday.
+**E4.3 ([#59](https://github.com/rickylabs/harness/issues/59)) states the consequence: time-sliding
+facts must never be committed.** `probe.ts` is where that stops being a rule people remember.
+
+It sits beside admission rather than inside it because the two questions are different. Admission
+asks whether a pairing is *permitted*, and answers from the table. Availability asks whether it is
+*possible right now*, and no table can answer that. Neither may borrow the other's answer.
+
+Nothing here opens a socket either. A caller takes the observation and hands the result in; this
+decides what the result means. Same split as the lease module and the liveness module, same reason:
+a decision that opens a socket cannot be tested, and an availability rule that cannot be tested will
+be wrong on the day it matters.
+
+### The third success-coded failure
+
+Ask codex-cli for a model it has no metadata for and it prints
+`Model metadata for '…' not found. Defaulting to fallback metadata` — and then runs the job, exit
+code zero, with the wrong context window and the wrong reasoning defaults. A probe that asserts on
+the status admits precisely the run it was written to refuse.
+
+So there are four verdicts, not two. `degraded` is that case: the destination did not refuse, and
+what came back is not what was asked for.
+
+And the absence of that warning is only evidence if the probe got far enough to print it. A run that
+died on authentication contains no warning either. An `Observation` therefore carries `reachable` and
+`completed` separately — the first says something answered, the second says the probe reached the
+point where the warning would have appeared. Reachable but incomplete is `unknown`: nothing was
+established, and something did answer.
+
+An unattributable warning — the marker with no model named — is read as being about the model asked
+for. A warning that names only *other* models is not.
+
+### A constant may refuse, and may never permit
+
+Static allowances survive as "a documented fallback", and the sharp form of that is asymmetric. A
+constant saying *unavailable* is safe in the only way that matters: being wrong costs a dispatch that
+did not happen. A constant saying *available* is the whole failure — a value typed weeks ago,
+spending a subscription window today, looking exactly like a reading.
+
+`availabilityOf` refuses a fallback of `available` and answers `unknown`. Every verdict carries its
+`source` — `probe`, `fallback` or `none` — so a caller cannot receive a constant without also
+receiving the word for what it is, and `mayDispatch` requires both `available` and `probe`. That
+second test is deliberately redundant against verdicts this module builds, and not redundant at all
+against one a caller assembled by hand.
+
+The rule's other half is `check:snapshots`, which runs in `build`: no tracked data file may carry a
+key that is only ever true as of a moment. A type cannot see a file that nothing imports.
 
 ## What this package does not do
 
