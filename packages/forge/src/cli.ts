@@ -45,6 +45,17 @@ import { CONFIG_FILE, describeIssue, parseTargetsConfig } from "./targets/config
 import { checkTargets, describeProblem, type TargetTable } from "./targets/model.js";
 import { reconcileBridge, tallyBridge, type BridgeSource } from "./targets/reconcile.js";
 import { renderBridge, renderTable } from "./targets/render.js";
+import { renderMirrorPreview, renderTriggers } from "./swarm/render.js";
+import {
+  admitSwarmComments,
+  findSourceIssue,
+  renderMirror,
+  repoOfIssueUrl,
+  tallySwarm,
+  type SwarmComment,
+  type SwarmInput,
+  type SwarmMirror,
+} from "./swarm/trigger.js";
 
 /**
  * The command's contract with whatever called it.
@@ -91,6 +102,8 @@ usage
   dsh-forge targets show           print the dispatch table in resolution order
   dsh-forge targets check          exit non-zero when the table is wrong (for CI)
   dsh-forge targets reconcile      which inbox issues the dispatcher claims, and what came back
+  dsh-forge swarm admit            decide every /swarm comment the way the dispatcher would
+  dsh-forge swarm mirror           the inbox issue each honoured trigger would open
   dsh-forge init                   eject + apply + skill install, in that order
 
 options
@@ -103,9 +116,13 @@ options
   --ending <how>        status settle only: ${ENDINGS.join(" | ")}
   --labels <a,b>        status settle only: the labels the item carries now (repeatable)
   --event <path>        status settle only: a GitHub event payload to read all of that from
-  --config <path>       targets only: the dispatcher's config (default: ./${CONFIG_FILE})
-  --snapshot <path>     targets reconcile only: a 'dsh-board snapshot' JSON file (repeatable —
+  --config <path>       targets and swarm: the dispatcher's config (default: ./${CONFIG_FILE})
+  --snapshot <path>     targets reconcile and swarm: a 'dsh-board snapshot' JSON file (repeatable —
                         one per repository, including the inbox's own)
+  --comments <path>     swarm only: a 'gh api repos/<owner>/<name>/issues/comments' JSON dump
+                        (repeatable — one per target repository)
+  --seen <path>         swarm only: the dispatcher's state.json, whose seen_swarm keys name the
+                        comments it has already decided
   --dry-run             report every change without writing a file or touching the repository
   --json                machine-readable output
   -h, --help            this text
@@ -679,6 +696,214 @@ async function readSnapshot(path: string): Promise<BridgeSource> {
   };
 }
 
+// ── swarm ────────────────────────────────────────────────────────────────────
+
+/**
+ * Everything both swarm commands need: the table, the feeds, the projections and the seen set.
+ *
+ * Same offline property as `targets`. `gh api .../issues/comments` and `dsh-board snapshot` do the
+ * fetching; this composes what they produced, which is what makes the answer reproducible and
+ * quotable rather than a thing that was true when somebody ran it.
+ */
+async function loadSwarm(
+  root: string,
+  options: {
+    config: string | undefined;
+    comments: readonly string[];
+    snapshots: readonly string[];
+    seen: string | undefined;
+  },
+): Promise<{ table: TargetTable; input: SwarmInput; dropped: number }> {
+  const table = await loadTable(root, options.config);
+  if (options.comments.length === 0) {
+    throw new UsageError(
+      "swarm needs at least one --comments: run " +
+        "'gh api \"repos/<owner>/<name>/issues/comments?since=<iso8601>&per_page=100\" > comments.json'",
+    );
+  }
+  const feeds = new Map<string, SwarmComment[]>();
+  let dropped = 0;
+  for (const path of options.comments) {
+    const read = await readComments(resolve(root, path));
+    dropped += read.dropped;
+    for (const [repo, comments] of read.feeds) {
+      const bucket = feeds.get(repo);
+      if (bucket === undefined) feeds.set(repo, [...comments]);
+      else bucket.push(...comments);
+    }
+  }
+  const projections: BridgeSource[] = [];
+  for (const path of options.snapshots) projections.push(await readSnapshot(resolve(root, path)));
+  const seen = options.seen === undefined ? [] : await readSeen(resolve(root, options.seen));
+
+  return {
+    table,
+    input: {
+      feeds: [...feeds].map(([repo, comments]) => ({ repo, comments })),
+      projections,
+      seen,
+    },
+    dropped,
+  };
+}
+
+/**
+ * `swarm admit` — one verdict per comment, in the dispatcher's own gate order.
+ *
+ * Drift on an unauthorised attempt, which is the one place this group departs from
+ * `targets reconcile`'s rule that the contents are never drift. An inbox with unclaimed issues is a
+ * day's work; somebody who is not the bot trying to spend the fleet's quota is an event, and a check
+ * that stays green through it is not a check. The signal self-clears: whether the feed is assembled
+ * with a `--since` window or the comment is recorded in `--seen`, the same attempt is `already-seen`
+ * on the next run, so the number counts *new* attempts rather than accumulating forever.
+ */
+async function cmdSwarmAdmit(
+  root: string,
+  options: Parameters<typeof loadSwarm>[1],
+  json: boolean,
+): Promise<number> {
+  const { table, input, dropped } = await loadSwarm(root, options);
+  const admission = admitSwarmComments(table, input);
+  const tally = tallySwarm(admission);
+  const problems = checkTargets(table);
+
+  if (json) {
+    out(JSON.stringify({ ...admission, tally, problems, dropped }, null, 2));
+  } else {
+    out(renderTriggers(admission));
+    if (dropped > 0) out(`\n${String(dropped)} comment(s) had no readable issue_url and were dropped`);
+    if (problems.length > 0) {
+      out(`\n${String(problems.length)} problem(s) with the table — run 'dsh-forge targets check'`);
+    }
+  }
+  return tally.unauthorised > 0 || problems.length > 0 ? EXIT.drift : EXIT.ok;
+}
+
+/**
+ * `swarm mirror` — the inbox issue each honoured trigger would open, before anything opens it.
+ *
+ * Nothing here writes. The mirrored body is what the spawned agent is handed, so being able to read
+ * it first is the difference between authorising a run and authorising a shape.
+ */
+async function cmdSwarmMirror(
+  root: string,
+  options: Parameters<typeof loadSwarm>[1],
+  json: boolean,
+): Promise<number> {
+  const { table, input } = await loadSwarm(root, options);
+  const admission = admitSwarmComments(table, input);
+
+  const mirrors: SwarmMirror[] = [];
+  for (const verdict of admission.verdicts) {
+    if (!verdict.honoured || verdict.issue === null) continue;
+    const issue = findSourceIssue(input.projections, verdict.repo, verdict.issue);
+    const comment = input.feeds
+      .find((feed) => feed.repo === verdict.repo)
+      ?.comments.find((candidate) => candidate.id === verdict.commentId);
+    if (issue === null || comment === undefined) continue;
+    mirrors.push(renderMirror(verdict, issue, comment));
+  }
+
+  if (json) {
+    out(JSON.stringify({ inbox: table.inbox, mirrors }, null, 2));
+    return EXIT.ok;
+  }
+  if (mirrors.length === 0) {
+    out("no honoured trigger — run 'dsh-forge swarm admit' to see why");
+    return EXIT.ok;
+  }
+  out(`${table.inbox} ← ${String(mirrors.length)} issue(s) would be opened\n`);
+  out(mirrors.map((mirror) => renderMirrorPreview(mirror)).join("\n\n---\n\n"));
+  return EXIT.ok;
+}
+
+/**
+ * Read a raw `gh api .../issues/comments` dump and group it by repository.
+ *
+ * The repository comes off each row's `issue_url` rather than from a flag, for the same reason
+ * `readSnapshot` takes it from the file: a feed filed under the wrong repository resolves against
+ * the wrong target, and a `/swarm` admitted under somebody else's label is the one error in this
+ * path that produces a confident wrong answer instead of a visible one.
+ */
+async function readComments(
+  path: string,
+): Promise<{ feeds: ReadonlyMap<string, readonly SwarmComment[]>; dropped: number }> {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    throw new UsageError(
+      `could not read the comment dump at ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (!Array.isArray(payload)) {
+    throw new UsageError(
+      `${path} is not a comment dump — expected the JSON array 'gh api repos/<owner>/<name>/issues/comments' returns`,
+    );
+  }
+
+  const feeds = new Map<string, SwarmComment[]>();
+  let dropped = 0;
+  for (const row of payload) {
+    if (typeof row !== "object" || row === null) {
+      dropped += 1;
+      continue;
+    }
+    const raw = row as {
+      id?: unknown;
+      body?: unknown;
+      issue_url?: unknown;
+      html_url?: unknown;
+      user?: { login?: unknown } | null;
+    };
+    const issueUrl = typeof raw.issue_url === "string" ? raw.issue_url : "";
+    const repo = repoOfIssueUrl(issueUrl);
+    if (typeof raw.id !== "number" || repo === "") {
+      dropped += 1;
+      continue;
+    }
+    const comment: SwarmComment = {
+      id: raw.id,
+      body: typeof raw.body === "string" ? raw.body : "",
+      issueUrl,
+      htmlUrl: typeof raw.html_url === "string" ? raw.html_url : "",
+      // A deleted account has a null `user`. Empty is never the bot login, which is what refuses it.
+      author: typeof raw.user?.login === "string" ? raw.user.login : "",
+    };
+    const bucket = feeds.get(repo);
+    if (bucket === undefined) feeds.set(repo, [comment]);
+    else bucket.push(comment);
+  }
+  return { feeds, dropped };
+}
+
+/**
+ * The `seen_swarm` keys from the dispatcher's `state.json`.
+ *
+ * A missing key is an empty set rather than an error: `seen_swarm` is `omitempty` on the Go side, so
+ * a dispatcher that has never honoured a trigger writes a state file without it, and refusing to
+ * read that file would make the flag unusable on exactly the fleets it is easiest to reason about.
+ */
+async function readSeen(path: string): Promise<readonly string[]> {
+  let payload: unknown;
+  try {
+    payload = JSON.parse(await readFile(path, "utf8"));
+  } catch (error) {
+    throw new UsageError(
+      `could not read the dispatcher state at ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (typeof payload !== "object" || payload === null) {
+    throw new UsageError(`${path} is not a dispatcher state file`);
+  }
+  const seen = (payload as { seen_swarm?: unknown }).seen_swarm;
+  if (seen === undefined || seen === null) return [];
+  if (typeof seen !== "object") {
+    throw new UsageError(`${path} has a seen_swarm that is not an object`);
+  }
+  return Object.entries(seen).flatMap(([key, value]) => (value === true ? [key] : []));
+}
+
 // ── entry ────────────────────────────────────────────────────────────────────
 
 /**
@@ -710,6 +935,8 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         labels: { type: "string", multiple: true, default: [] },
         config: { type: "string" },
         snapshot: { type: "string", multiple: true, default: [] },
+        comments: { type: "string", multiple: true, default: [] },
+        seen: { type: "string" },
         "dry-run": { type: "boolean", default: false },
         json: { type: "boolean", default: false },
         help: { type: "boolean", short: "h", default: false },
@@ -769,6 +996,26 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
           );
         default:
           throw new UsageError(`unknown command: targets ${sub}`);
+      }
+    }
+
+    // Offline for the same reason, and it matters more here: this group decides an authority
+    // question, and a check an operator cannot run without credentials is one they run once.
+    if (group === "swarm") {
+      const swarm = {
+        config: values.config,
+        comments: values.comments ?? [],
+        snapshots: values.snapshot ?? [],
+        seen: values.seen,
+      };
+      switch (sub) {
+        case "admit":
+        case undefined:
+          return await cmdSwarmAdmit(repoRoot, swarm, json);
+        case "mirror":
+          return await cmdSwarmMirror(repoRoot, swarm, json);
+        default:
+          throw new UsageError(`unknown command: swarm ${sub}`);
       }
     }
 

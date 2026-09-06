@@ -26,7 +26,7 @@
  *   That is what ships, and it is transliterated rather than corrected — see the note there.
  */
 
-import { HARNESSES, parseGoDuration } from "@rickylabs/board";
+import { HARNESSES, parseGoDuration } from "@rickylabs/subagents";
 
 /**
  * One row of the table: an inbox label, the repository its issues are worked in, and the agent.

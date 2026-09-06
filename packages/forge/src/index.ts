@@ -140,6 +140,31 @@ export {
 
 export { renderBridge, renderProblems, renderTable } from "./targets/render.js";
 
+export {
+  SKIPPED_REFUSALS,
+  SWARM_REFUSALS,
+  admitSwarmComments,
+  attributionTrailers,
+  describeRefusal as describeSwarmRefusal,
+  findSourceIssue,
+  isSkippedRefusal,
+  issueOfUrl,
+  renderMirror,
+  repoOfIssueUrl,
+  tallySwarm,
+  truncate,
+  type SwarmAdmission,
+  type SwarmComment,
+  type SwarmFeed,
+  type SwarmInput,
+  type SwarmMirror,
+  type SwarmRefusal,
+  type SwarmTally,
+  type SwarmVerdict,
+} from "./swarm/trigger.js";
+
+export { renderMirrorPreview, renderTriggers } from "./swarm/render.js";
+
 export { renderSkill, type SkillContext } from "./skill/render.js";
 
 export {
