@@ -184,24 +184,58 @@ describe("acquire", () => {
 describe("release", () => {
   it("removes the row and leaves the fence where it is", () => {
     const before = ledgerOf([lease()]);
-    const result = release(before, "run-alpha", "coordinator-1");
+    const result = release(before, "run-alpha", "coordinator-1", 1);
     assert.equal(result.released, true);
     assert.equal(result.ledger.leases.length, 0);
     // A released token is not returned to the pool: the next grant must not reuse its number.
     assert.equal(result.ledger.fence, 1);
+    assert.equal(result.problem, null);
   });
 
   it("refuses to release somebody else's lease", () => {
     const before = ledgerOf([lease()]);
-    const result = release(before, "run-alpha", "coordinator-2");
+    const result = release(before, "run-alpha", "coordinator-2", 1);
     assert.equal(result.released, false);
     assert.equal(result.ledger, before);
+    assert.equal(result.problem?.reason, "held-by-another");
   });
 
   it("says so when there was nothing to release", () => {
-    const result = release(EMPTY_LEDGER, "run-alpha", "coordinator-1");
+    const result = release(EMPTY_LEDGER, "run-alpha", "coordinator-1", 1);
     assert.equal(result.released, false);
     assert.equal(result.previous, null);
+    assert.equal(result.problem?.reason, "no-lease");
+  });
+
+  it("refuses an evicted holder that woke up wearing the same name", () => {
+    // The bug this parameter exists for. A holder string is reusable by design — `coord-harness` is
+    // a tmux session name, and the name outlives the process. So a stalled holder and the holder
+    // that replaced it are two writers with one name, and only the fence separates them.
+    //
+    // The delete is what makes this the quiet failure rather than the loud one: afterwards the
+    // ledger says the run is unheld, `checkLedger` finds nothing wrong with that, and the next
+    // acquire is granted while the live holder is still in the worktree.
+    const stalled = ledgerOf([lease({ renewedAt: ago(90) })]);
+    const takenOver = acquire(stalled, { runId: "run-alpha", holder: "coordinator-1" }, NOW);
+    assert.equal(takenOver.outcome, "taken-over");
+    assert.equal(takenOver.ledger.leases[0]?.fence, 2);
+
+    const stale = release(takenOver.ledger, "run-alpha", "coordinator-1", 1);
+    assert.equal(stale.released, false);
+    assert.equal(stale.problem?.reason, "stale-fence");
+    // Same refusal `admitResume` already raises for this exact caller at the other door.
+    assert.equal(stale.ledger, takenOver.ledger);
+    assert.equal(holds(stale.ledger, "run-alpha", "coordinator-1", 2), true);
+  });
+
+  it("still lets a holder tidy up its own expired lease, because expiry is not eviction", () => {
+    // Deliberately allowed. A lease that lapsed and that nobody took over is exactly the row its
+    // holder should be able to clear, and the fence not having moved is the proof nobody did. A
+    // release that tested expiry instead of the fence would strand these rows forever.
+    const lapsed = ledgerOf([lease({ renewedAt: ago(90) })]);
+    const result = release(lapsed, "run-alpha", "coordinator-1", 1);
+    assert.equal(result.released, true);
+    assert.equal(result.ledger.leases.length, 0);
   });
 });
 
@@ -571,7 +605,7 @@ describe("two coordinators, one session", () => {
 
   it("does not let a released lease hand the next holder an old token", () => {
     const first = acquire(EMPTY_LEDGER, { runId: "run-alpha", holder: "coordinator-1" }, NOW);
-    const given = release(first.ledger, "run-alpha", "coordinator-1");
+    const given = release(first.ledger, "run-alpha", "coordinator-1", 1);
     const second = acquire(given.ledger, { runId: "run-alpha", holder: "coordinator-2" }, NOW);
 
     assert.equal(second.lease?.fence, 2);
