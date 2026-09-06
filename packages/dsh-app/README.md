@@ -8,8 +8,8 @@ Owned by epic E2 · #32. See [`packages/README.md`](../README.md) for workspace 
 
 Every other package in this repository is a library with a CLI bolted on, which is a fine way to
 build the pieces and no way at all to run them. This one is the place they become a running system:
-a dsh profile that composes `@deepseek-ai/dsh-base` with our four services, and a bundle that says
-which rows go onto the entry list.
+a dsh profile that composes `@deepseek-ai/dsh-base` with our four services and our LLM adapter, and
+a bundle that says which rows go onto the entry list.
 
 **We depend on published `@deepseek-ai/dsh`. There is no core fork** — decision 1 of #30. The only
 fork in this project is `runzhliu/deepseek-harness-docker`, and it is not this. What that buys is
@@ -24,14 +24,15 @@ the YAML, and `bundle.test.ts` re-renders it and compares bytes — so an edit t
 fails the test rather than reaching a daemon. Two failures move from boot time to test time that
 way: a row naming a subpath the `exports` map does not publish, and two rows sharing an id.
 
-Four rows, one `insert` with no `id`, so cordis appends them at the root of the entry list:
+Five rows, one `insert` with no `id`, so cordis appends them at the root of the entry list:
 
-| row | service | epic |
+| row | claims | epic |
 | --- | --- | --- |
 | `harness-subagents` | `ctx.subagents` | E3 · #33 |
 | `harness-board` | `ctx.harnessBoard` | E6 · #36 |
 | `harness-coordinator` | `ctx.harnessCoordinator` | E6 · #36 |
 | `harness-telemetry` | `ctx.harnessTelemetry` | E9 · #39 |
+| `harness-llm` | nothing — registers on `ctx.llm` | E2 · #176 |
 
 Nothing here addresses a base row. This bundle *adds* services; it does not reconfigure dsh's own,
 because a patch that reaches into `@deepseek-ai/dsh-base`'s rows is a fork wearing a config file.
@@ -41,7 +42,11 @@ because a patch that reaches into `@deepseek-ai/dsh-base`'s rows is a fork weari
 `ctx.subagents` and `ctx.llm` are separate services because they are separate resources —
 [`docs/concepts/02-the-two-seams.md`](../../docs/concepts/02-the-two-seams.md) owns that argument.
 What matters here is the composition consequence: **this package claims the first and leaves the
-second to dsh.**
+second to dsh.** `harness-llm` is not a walk-back of that. It provides no service and takes no key;
+it injects `llm`, waits for dsh's runtime to mount, and calls `registerAdapter` for the three
+token-metered destinations — so the meters stay separate while the routes become reachable. Base
+URLs are configuration; `OPENROUTER_API_KEY` is not, and is read from the daemon's environment at
+dispatch, because a profile is committed and a credential must not be.
 
 `harness-subagents` registers an **empty** registry and knows nothing about how providers will
 attach — E3 owns that. Claiming the key early is not anticipation, it is a choice about the failure
@@ -147,13 +152,16 @@ So the second half is a test. `plugins.test.ts` boots a real cordis `Context`, l
 and asserts the service is readable at its key — **and gone again after the fiber unloads**, which
 is the property that makes a patch reload safe. Two plugins that both survived disposal would
 collide on the next load with `service "x" has been registered`, at boot, with no way to rename
-either side. Loading all four onto one context is the collision test, and it is worth running rather
+either side. Loading them all onto one context is the collision test, and it is worth running rather
 than reading off four `CONTEXT_KEY` constants: the constants are what we chose, the context is what
-cordis does with them.
+cordis does with them. `harness-llm` has no key to read, so its two cases assert the other half of
+the same property — that loading it registers its three routes exactly once, and that unloading the
+fiber hands them back. A registration that outlived its fiber would fail the next load with
+`DUPLICATE_ADAPTER` while leaving the new fiber with no routes at all.
 
 ## The golden snapshot
 
-`cordis.patch.yml` states the four rows *we* add. It says nothing about the eighty-five rows
+`cordis.patch.yml` states the rows *we* add. It says nothing about the eighty-five rows
 `@deepseek-ai/dsh-base` puts underneath them — and those are the ones an upgrade moves. A release
 that renames `session-log-deepseek`, drops `fs-sandbox`, or reorders the list so a service is claimed
 after its first consumer changes what our plugins boot into, and every symptom of that arrives at
@@ -190,7 +198,7 @@ or may not write. The command prints rows before and after, the ids that appeare
 and the dsh version either side: the paragraph the upgrade's pull request wants.
 
 Regenerating is also the obvious way to launder a bad change, so two assertions survive it. The
-snapshot must still **end with our four rows in bundle order**, and `@deepseek-ai/dsh-base`'s layer
+snapshot must still **end with our own rows in bundle order**, and `@deepseek-ai/dsh-base`'s layer
 must still compose **before** ours. A re-bless that reordered the bundles would match byte for byte
 and still be wrong; these are what catch it.
 
@@ -217,10 +225,15 @@ Each row takes its options from the profile's own patch layer, in the ordinary c
 - **`harness-telemetry`** — `home` (default: this user's). `DSH_TELEMETRY_DIR` and friends are read
   once, at construction, so a snapshot taken after a rotation reads the directory the sink was
   writing to.
+- **`harness-llm`** — `lmStudioUrl`, `llamaRocmUrl`, `openrouterUrl`, all defaulting to `""`, which
+  means "use `@rickylabs/llm-local`'s backend table". Base URLs and nothing else. There is no
+  credential key and there will not be one: the profile is committed, so `OPENROUTER_API_KEY` is
+  read from the daemon's environment at dispatch, and a request that needs it and cannot find it is
+  refused by name before a socket is opened.
 
 ## Tests
 
-122 tests. Four of them are the ones that would have caught a real outage: the byte comparison
+Four tests are the ones that would have caught a real outage: the byte comparison
 between `cordis.patch.yml` and `renderPatch()`, the check that every row names a published export
 subpath, the disposal assertion above, and the golden snapshot — the only place in the repository
 that looks at the rows dsh-base contributes.
@@ -230,6 +243,15 @@ than generating it, because a compose file is read by an operator at 2am and its
 of what it is for. Each check is a failure the N5 has actually produced — a `noexec` `TMPDIR`, a
 compose key the MinisCloud editor drops without saying so, a published port with the container's
 own loopback behind it.
+
+`src/llm/` is tested by a different route again, and its shape is what makes that possible:
+`transport.ts` is the only module that touches a socket, and it is a one-function parameter
+everywhere else. So every step between a `GenerateOptions` and the `StreamChunk`s it produces —
+refusal ordering, SSE framing, usage translation, a truncated body, a mid-stream reset — is asserted
+against a canned exchange with no server running. One property runs through several of those cases
+rather than living in one: a key planted in the credential reader reaches exactly one header and
+appears in no chunk and no refusal message the adapter ever produces, on the success path and on
+each failure path alike.
 
 The CLI tests run `main()` against a fake filesystem with a failure switch, so the exit statuses
 above are asserted rather than described — including the two that only show up when something is

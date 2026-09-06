@@ -203,6 +203,7 @@ describe("plannedRowIds", () => {
       "harness-board",
       "harness-coordinator",
       "harness-telemetry",
+      "harness-llm",
     ]);
   });
 });

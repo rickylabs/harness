@@ -3,9 +3,9 @@
  *
  * This is the only package in the repository that knows dsh exists. Every other package is plain
  * TypeScript with no framework dependency, and stays that way: the domain logic is tested by
- * running it, not by booting a container to run it. What lives here is the *binding* — the four
- * plugin modules that claim a service on a cordis `Context`, the patch layer that names them, and
- * the profile that composes that layer with `dsh-base`.
+ * running it, not by booting a container to run it. What lives here is the *binding* — the five
+ * plugin modules that put something on a cordis `Context`, the patch layer that names them, and the
+ * profile that composes that layer with `dsh-base`.
  *
  * Keeping the coupling in one package is a decision, not an accident. The alternative — every
  * subsystem shipping its own cordis plugin — would put a framework dependency in fifteen packages
@@ -28,9 +28,13 @@
  * cannot collide with one of ours — a collision that cordis reports as
  * `service "x" has been registered at <fiber>`, at boot, with no way to rename either side.
  *
- * `ctx.llm` is the other half of the subagent seam and is deliberately not claimed here: it takes
- * an API key and meters per token, and collapsing the two into one abstraction is the design error
- * the split exists to prevent. E4 · #34 owns it.
+ * There is a fifth plugin module and no fifth key. `ctx.llm` is the other half of the subagent seam
+ * — it takes an API key and meters per token, and collapsing the two into one abstraction is the
+ * design error the split exists to prevent — but it is `@deepseek-ai/dsh-llm`'s key, not ours, and
+ * the composed profile already mounts it. `harness-llm` (E2 · #176) therefore *registers* an
+ * adapter for our three token-metered destinations on a seam it does not own, and claims nothing.
+ * A row that provided `llm` would be a second claim on a key that already has an owner, which is
+ * exactly the boot-time collision the `harness` prefix above exists to avoid.
  *
  * ## Where the two seams are allowed to meet
  *
@@ -115,6 +119,32 @@ export {
 } from "./plugins/telemetry.js";
 
 export { createRegistry as createSubagentRegistry, emptyRegistry } from "./plugins/subagents.js";
+
+// No `CONTEXT_KEY` here, unlike the four above: `harness-llm` registers on `ctx.llm` and claims
+// nothing of its own. What it exports instead is the adapter, reachable without booting cordis.
+export {
+  createAdapter as createLlmAdapter,
+  resolveOverrides as resolveLlmOverrides,
+  type LlmConfig,
+} from "./plugins/llm.js";
+
+export {
+  envCredentials,
+  LocalLlmAdapter,
+  ADAPTER_FAILURE_CODES,
+  CREDENTIAL_REF,
+  PROVIDER_NAMES,
+  type AdapterFailureCode,
+  type AdapterOptions,
+  type CredentialReader,
+} from "./llm/adapter.js";
+
+export {
+  fetchTransport,
+  type Transport,
+  type WireExchange,
+  type WireRequest,
+} from "./llm/transport.js";
 
 export {
   clipDetail,

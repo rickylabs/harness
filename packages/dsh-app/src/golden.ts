@@ -1,7 +1,7 @@
 /**
  * The golden `--dump-config` snapshot: what dsh actually composes for the `rickylabs` profile.
  *
- * `cordis.patch.yml` states the four rows *we* add. It says nothing about the eighty-five rows
+ * `cordis.patch.yml` states the rows *we* add. It says nothing about the eighty-five rows
  * `@deepseek-ai/dsh-base` puts underneath them, and those are the ones a dsh upgrade moves. A
  * release that renames `session-log-deepseek`, drops `fs-sandbox`, or reorders the list so a service
  * is claimed after its first consumer changes what our plugins boot into — and every symptom of that
