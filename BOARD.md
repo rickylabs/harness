@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[###############-----]` **157/197 done · 14 running · 14 queued · 11 abandoned · 1 invisible**
+`[###############-----]` **158/200 done · 17 running · 13 queued · 11 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-06T22:06:19Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T22:27:22Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (14)
+## Moving now (17)
 
 Something could be acting on these right now.
 
@@ -14,9 +14,12 @@ Something could be acting on these right now.
 | --- | --- | --- |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
-| [#204 fix(board): connect the task projection to stable dsh surfaces](https://github.com/rickylabs/harness/issues/204) | `research` | `e6` |
-| [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `research` | `e9` |
+| [#204 fix(board): connect the task projection to stable dsh surfaces](https://github.com/rickylabs/harness/issues/204) | `impl` | `e6` |
+| [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
+| [#208 the `ctx.subagents` telemetry guarantee is prose, not construction: the only way to register a provider bypasses it](https://github.com/rickylabs/harness/issues/208) | `plan` | `e3` |
+| [#209 E10 — Relaunch the public README and docs from the rewritten product](https://github.com/rickylabs/harness/issues/209) | `plan` | `e10` |
 | [#203 the coordinator's citation gate checks that a citation exists, not that it refers to anything](https://github.com/rickylabs/harness/issues/203) | `research` | `e6` |
+| [#206 two public types are named `Liveness`, and #198 is planning a third vocabulary for the same concept](https://github.com/rickylabs/harness/issues/206) | `plan` | `e3` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
@@ -27,26 +30,18 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (1)
-
-`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`epic-milestone-conflict`**
-
-- **#208** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
-
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 125/151 done · 13 running · 11 queued · 2 abandoned
+`[#########---]` 126/156 done · 16 running · 12 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
-| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[###########-]` 16/17 done · 1 queued | `impl` |
+| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 17/19 done · 1 running · 1 queued | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 10/12 done · 2 queued | `triage` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[######------]` 10/18 done · 6 running · 2 queued | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#####-------]` 10/21 done · 8 running · 3 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 19/25 done · 4 running · 2 abandoned | `impl` |
@@ -56,24 +51,22 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 32/46 done · 1 running · 3 queued · 9 abandoned · 1 invisible
+`[########----]` 32/44 done · 1 running · 1 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
-| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[####--------]` 2/5 done · 1 running · 2 queued | `impl` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[------------]` 0/1 done · 1 queued | `triage` |
+| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[######------]` 2/4 done · 1 running · 1 queued | `impl` |
 | _(no epic)_ | `[#########---]` 30/40 done · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>14 filed, nothing started</summary>
+<summary>13 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#202 board and forge disagree on what an epic is, and one of the labels does not exist](https://github.com/rickylabs/harness/issues/202) | `triage` | `e0` |
-| [#208 the `ctx.subagents` telemetry guarantee is prose, not construction: the only way to register a provider bypasses it](https://github.com/rickylabs/harness/issues/208) | `triage` | `e3` |
-| [#206 two public types are named `Liveness`, and #198 is planning a third vocabulary for the same concept](https://github.com/rickylabs/harness/issues/206) | `triage` | `e0` |
+| [#210 `release` is the one lease door that does not check the fence: an evicted holder can delete the live holder's lease](https://github.com/rickylabs/harness/issues/210) | `triage` | `e3` |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#47 E2.2 — Fork deepseek-harness-docker, keeping the upstream remote](https://github.com/rickylabs/harness/issues/47) | `triage` | `e2` |
 | [#49 E2.4 — Register the stack on the N5 and verify it comes up](https://github.com/rickylabs/harness/issues/49) | `triage` | `e2` |
@@ -94,9 +87,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  157/197 done · 14 running · 14 queued · 11 abandoned · 1 invisible
+# rickylabs/harness  [###############-----]  158/200 done · 17 running · 13 queued · 11 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  125/151 done · 13 running · 11 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [################----]  126/156 done · 16 running · 12 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -118,7 +111,7 @@ Something could be acting on these right now.
     shipped              PR185 chore(scripts): keep the scratchpad out of the link check and out of git (p3)
 
   E10 — Docs: the front door, the reference, and the check that keeps them honest #140  [impl]
-    [###############-] 16/17 done · 1 queued
+    [##############--] 17/19 done · 1 running · 1 queued
     shipped              #141 E10.1 — Rewrite the root README from scratch (p1)
     shipped              #142 E10.2 — docs/ skeleton and the explanation set (p1)
     shipped              #143 E10.3 — Generated CLI reference with a drift test (p2)
@@ -136,6 +129,8 @@ Something could be acting on these right now.
     shipped              PR155 docs: the five community files, and templates that know what a label does (p2)
     shipped              PR156 chore(docs): check links, forms, and the generated skill in CI (p2)
     shipped              PR188 fix(forge): render the skill from the checkout, not from live issues (p1)
+    plan                 #209 E10 — Relaunch the public README and docs from the rewritten product (p1)
+    shipped              PR211 docs: establish the public relaunch lane and E3 triage
 
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]
     [#############---] 10/12 done · 2 queued
@@ -153,7 +148,7 @@ Something could be acting on these right now.
     shipped              PR194 fix(dsh-app): preserve sibling text-block boundaries in LLM requests (p1)
 
   E3 — Subagent providers over structured protocols #33  [triage]
-    [########--------] 10/18 done · 6 running · 2 queued
+    [#######---------] 10/21 done · 8 running · 3 queued
     shipped              #51 E3.1 — DispatchRequest and the SubagentProvider contract
     shipped              #52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk
     triage               #53 E3.3 — provider-codex against the running app-server daemon
@@ -172,6 +167,9 @@ Something could be acting on these right now.
     plan                 #198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused
     plan                 #199 E3.9 - Two wake signals: progress and idle are not interchangeable
     plan                 #200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats
+    plan                 #206 two public types are named `Liveness`, and #198 is planning a third vocabulary for the same concept (p2)
+    plan                 #208 the `ctx.subagents` telemetry guarantee is prose, not construction: the only way to register a provider bypasses it (p1)
+    triage               #210 `release` is the one lease door that does not check the fence: an evicted holder can delete the live holder's lease (p1)
 
   E4 — Model gateway and routing matrix #34  [triage]
     [##############--] 12/13 done · 1 queued
@@ -224,7 +222,7 @@ Something could be acting on these right now.
     plan                 #191 E6/E9 — Plan the durable orchestration loop and restart visibility proof (p1)
     shipped              PR193 docs: record milestone continuation and draft E6/E9 durable loop
     research             #203 the coordinator's citation gate checks that a citation exists, not that it refers to anything (p2)
-    research             #204 fix(board): connect the task projection to stable dsh surfaces (p1)
+    impl                 #204 fix(board): connect the task projection to stable dsh surfaces (p1)
     shipped              PR207 docs: record MVP verdicts and executable CLI preview
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [shipped]
@@ -277,21 +275,16 @@ Something could be acting on these right now.
     shipped              PR129 feat(telemetry): read the observability log back and merge it into the backfill
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
-    research             #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
+    impl                 #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
 
-## (no milestone)  [#############-------]  32/46 done · 1 running · 3 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  32/44 done · 1 running · 1 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
-    [######----------] 2/5 done · 1 running · 2 queued
+    [########--------] 2/4 done · 1 running · 1 queued
     shipped              PR97 docs(root): state the four ratified decisions from #30 in README/AGENTS
     impl                 #182 Consolidation pass — the Astra medium review of the shipped ground work (p1)
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     triage               #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
-    triage               #206 two public types are named `Liveness`, and #198 is planning a third vocabulary for the same concept (p2)
-
-  E3 — Subagent providers over structured protocols #33  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [----------------] 0/1 done · 1 queued
-    triage               #208 the `ctx.subagents` telemetry guarantee is prose, not construction: the only way to register a provider bypasses it (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
