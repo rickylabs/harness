@@ -2,24 +2,26 @@
 
 # rickylabs/harness
 
-`[###############-----]` **124/157 done · 2 running · 20 queued · 11 abandoned**
+`[###############-----]` **124/158 done · 4 running · 19 queued · 11 abandoned**
 
-_Latest board activity: 2026-09-06T00:12:06Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-06T00:27:56Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (2)
+## Moving now (4)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
+| [PR169 feat(forge): pick a target's backend from recorded parity, not from intent](https://github.com/rickylabs/harness/pull/169) | `impl` | `e7` |
 | [#68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation](https://github.com/rickylabs/harness/issues/68) | `impl-eval` | `e6` |
+| [#76 E7.3 — Dispatch selector: provider or divybot, per target](https://github.com/rickylabs/harness/issues/76) | `impl` | `e7` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl-eval` | `e9` |
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 95/119 done · 2 running · 20 queued · 2 abandoned
+`[#########---]` 95/120 done · 4 running · 19 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -30,7 +32,7 @@ Something could be acting on these right now.
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[########----]` 6/9 done · 3 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[------------]` 0/6 done · 6 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 17/20 done · 1 running · 2 abandoned | `impl` |
-| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 15/18 done · 3 queued | `impl` |
+| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[#########---]` 15/19 done · 2 running · 2 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `triage` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[###########-]` 12/13 done · 1 running | `impl` |
 
@@ -46,7 +48,7 @@ Something could be acting on these right now.
 ## Waiting to start
 
 <details>
-<summary>20 filed, nothing started</summary>
+<summary>19 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -67,7 +69,6 @@ Something could be acting on these right now.
 | [#66 E5.5 — Wire the gate at the sandbox boundary](https://github.com/rickylabs/harness/issues/66) | `triage` | `e5` |
 | [#67 E5.6 — Boot-parameter verification after every kernel update](https://github.com/rickylabs/harness/issues/67) | `triage` | `e5` |
 | [#75 E7.2 — PR supervision loop](https://github.com/rickylabs/harness/issues/75) | `triage` | `e7` |
-| [#76 E7.3 — Dispatch selector: provider or divybot, per target](https://github.com/rickylabs/harness/issues/76) | `triage` | `e7` |
 | [#77 E7.4 — Port timeout: semantics](https://github.com/rickylabs/harness/issues/77) | `triage` | `e7` |
 | [#138 routing: does GPT Astra enter the delegation matrix? (owner decision)](https://github.com/rickylabs/harness/issues/138) | `triage` | `e4` |
 
@@ -79,9 +80,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  124/157 done · 2 running · 20 queued · 11 abandoned
+# rickylabs/harness  [###############-----]  124/158 done · 4 running · 19 queued · 11 abandoned
 
-## M1 — dsh coordinator foundation  [###############-----]  95/119 done · 2 running · 20 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [###############-----]  95/120 done · 4 running · 19 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [impl]
     [################] 14/14 done
@@ -185,10 +186,10 @@ Something could be acting on these right now.
     shipped              PR163 fix(board): grant the board workflow the scopes it actually reads (p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
-    [#############---] 15/18 done · 3 queued
+    [############----] 15/19 done · 2 running · 2 queued
     shipped              #74 E7.1 — forge: the issue/PR bridge and label→target mapping
     triage               #75 E7.2 — PR supervision loop
-    triage               #76 E7.3 — Dispatch selector: provider or divybot, per target
+    impl                 #76 E7.3 — Dispatch selector: provider or divybot, per target
     triage               #77 E7.4 — Port timeout: semantics
     shipped              #78 E7.5 — Preserve the /swarm comment-authority security property
     shipped              PR98 feat(forge): portable label taxonomy and board-process skill CLI
@@ -204,6 +205,7 @@ Something could be acting on these right now.
     shipped              PR160 feat(forge): apply the close rule instead of only stating it (p1)
     shipped              PR167 feat(forge): read divybot's dispatch table and reconcile it with the board (p1)
     shipped              PR168 feat(forge): /swarm comment authority, offline and gate-for-gate (p1)
+    impl                 PR169 feat(forge): pick a target's backend from recorded parity, not from intent (p1)
 
   E8 — Contracts: published package for the netscript UIs #38  [triage]
     [################] 8/8 done
