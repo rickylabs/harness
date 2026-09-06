@@ -180,6 +180,60 @@ describe("translating a conversation", () => {
     ]);
   });
 
+  it("separates sibling text blocks in a user turn", () => {
+    const messages: Message[] = [
+      createUserMessage({
+        content: [
+          { type: "text", text: "first" },
+          { type: "text", text: "second" },
+        ],
+        source: { kind: "user" },
+      }),
+    ];
+    const { body } = sent(buildRequest({ endpoint: LM_STUDIO, options: options({ messages }) }));
+    assert.deepEqual(wireMessages(body), [{ role: "user", content: "first\nsecond" }]);
+  });
+
+  it("separates assistant text siblings without giving omitted reasoning a boundary", () => {
+    const messages: Message[] = [
+      createAssistantMessage({
+        content: [
+          { type: "text", text: "first" },
+          { type: "reasoning", text: "private scratchpad" },
+          { type: "text", text: "second" },
+        ],
+        source: { provider: "lm-studio", model: "a-model" },
+      }),
+    ];
+    const { body } = sent(buildRequest({ endpoint: LM_STUDIO, options: options({ messages }) }));
+    assert.deepEqual(wireMessages(body), [{ role: "assistant", content: "first\nsecond" }]);
+  });
+
+  it("retains empty sibling boundaries, including an otherwise-empty user turn", () => {
+    const messages: Message[] = [
+      createUserMessage({
+        content: [
+          { type: "text", text: "first" },
+          { type: "text", text: "" },
+          { type: "text", text: "second" },
+        ],
+        source: { kind: "user" },
+      }),
+      createUserMessage({
+        content: [
+          { type: "text", text: "" },
+          { type: "text", text: "" },
+        ],
+        source: { kind: "user" },
+      }),
+    ];
+    const { body } = sent(buildRequest({ endpoint: LM_STUDIO, options: options({ messages }) }));
+    assert.deepEqual(wireMessages(body), [
+      { role: "user", content: "first\n\nsecond" },
+      { role: "user", content: "\n" },
+    ]);
+  });
+
   it("drops a reasoning block rather than re-sending the model its own scratchpad", () => {
     const messages: Message[] = [
       createAssistantMessage({
@@ -264,6 +318,27 @@ describe("translating a conversation", () => {
     const { body } = sent(buildRequest({ endpoint: LM_STUDIO, options: options({ messages }) }));
     const [only] = wireMessages(body);
     assert.equal(only?.["content"], "[tool error] connection refused");
+  });
+
+  it("separates text siblings inside a failed tool result and keeps its correlation", () => {
+    const messages: Message[] = [
+      createToolResultMessage({
+        callId: ToolCallId("call_siblings"),
+        content: [
+          { type: "text", text: "first" },
+          { type: "text", text: "second" },
+        ],
+        isError: true,
+      }),
+    ];
+    const { body } = sent(buildRequest({ endpoint: LM_STUDIO, options: options({ messages }) }));
+    assert.deepEqual(wireMessages(body), [
+      {
+        role: "tool",
+        tool_call_id: "call_siblings",
+        content: "[tool error] first\nsecond",
+      },
+    ]);
   });
 });
 
