@@ -82,6 +82,16 @@ describe("renderSkill", () => {
     assert.match(renderSkill(ctx), /Not for a red build, a dependency, or a review/);
   });
 
+  it("tells an agent to build the half of a gated item that is still buildable", () => {
+    // The judgement call that decides whether the list stays short. An issue whose live wiring waits
+    // on a decision while its display work does not is an issue an agent should be working, and the
+    // flag would claim the opposite. Without this line the flag spreads to everything downstream of
+    // a decision, which is a longer list than the board already had.
+    const text = renderSkill(ctx);
+    assert.match(text, /Not for a \*\*half\*\*-gated item/);
+    assert.match(text, /build the\s+half that does not depend on the answer/);
+  });
+
   it("says nothing about the flag in a repository that does not have it", () => {
     const text = renderSkill({ ...ctx, specs: ctx.specs.filter((s) => s.name !== "flag:owner-decision") });
     assert.ok(!text.includes("When the next move is not yours"));

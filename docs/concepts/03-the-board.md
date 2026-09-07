@@ -68,9 +68,11 @@ one column and any number of the others.
 
 Every one of the ten phases describes a state of *agent* work. So an item that stops because a human
 has to decide something has no true phase to move to: it keeps whichever column the work reached,
-and the projection counts it as running. On this repository that was four items at once — including
-a `p1` whose remaining half could not start until a decision issue was answered — all of them under
-a heading that said something could be acting on them right now.
+and the projection counts it among the work in progress. On this repository that was four items at
+once, and they were miscounted in two different ways. One sat in `plan-eval`, under a heading that
+says something could be acting on it right now — an issue whose own title begins "DECISION:". The
+other three sat in `triage` and were counted as queued, which is the quieter version of the same
+lie: a queue is a promise that something eventually picks the item up, and nothing was going to.
 
 That is worse than a missing feature. The header ratio is the answer to "status ?", and a count that
 includes work with no runner is a count the reader has to discount, which is the same as not having
@@ -83,7 +85,10 @@ decision sitting in `triage` is not first in a queue either, because no agent wi
 The digest lists these first, above what is moving, under **Waiting on you**.
 
 Deliberately narrow: not a red build, not an unreviewed PR, not a dependency. Those have runners
-already and the board can see them. This means *no amount of agent time will move it*. And because a
+already and the board can see them. This means *no amount of agent time will move it*. Nor does a
+*half*-gated item qualify — where a decision blocks one part of an issue and leaves another
+buildable, the flag would claim nothing can move while something still can, and the answer is the
+one the **owner fork** already gives: build the half that does not depend on the answer. And because a
 list is only worth reading while it is short, a flag left on a closed or terminal item is itself
 reported, as `stale-owner-decision`.
 
