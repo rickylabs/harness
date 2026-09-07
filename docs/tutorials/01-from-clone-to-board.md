@@ -114,14 +114,15 @@ them there, in the usual way. `init` **never deletes a label** — deleting one 
 the record of everything that ever carried it. Where the file and the live repository disagree,
 `init` reports the conflict and exits `1` rather than guessing which is right.
 
-One trap to know before you trust the exit code: `init` exits `0` when it
-wrote the local files, even if the GitHub half of its work was skipped or
-failed — with no usable transport it says `skipped apply` and still exits
-`0`, and a label that GitHub refuses is reported and then swallowed the same
-way. Exit `0` from `init` means *the files were written*; it does not mean
-the labels exist on GitHub. Three readbacks close that gap, in increasing
-strength. The first is local file review — the files really are in the
-scratch checkout:
+One trap to know before you trust the exit code. `init` exits `0` when it wrote
+the local files and the GitHub half never ran: with no usable transport it prints
+`skipped apply` and converts that to success on purpose, because ejecting the
+file is real work worth keeping. A label GitHub *refuses* is not treated that
+way — apply stops at it, prints `FAILED at <label>`, and `init` exits `1`. So the
+gap is narrow and specific: exit `0` means the files were written and nothing was
+refused, but the labels may never have been attempted at all. Three readbacks
+close it, in increasing strength. The first is local file review — the files
+really are in the scratch checkout:
 
 ```bash
 git -C ../scratch status --short
@@ -155,8 +156,9 @@ exit `3` with no usable transport: `gh` is missing, not authenticated, or GitHub
 the ejected file disagree, naming each drifted label; on a fresh scratch repository that usually
 means the apply never actually landed, and re-running `init` resumes it — it never deletes a
 label, so re-running is safe. `doctor` and `init` do not exit `3`: `doctor` reports what it could
-see and exits `0`, and `init`'s exit code says nothing about GitHub, which is exactly why the
-readbacks above exist.
+see and exits `0`, and `init` turns a missing transport into `0` after writing its files. A
+non-zero from `init` means a label was refused or a conflict was found — never that GitHub was
+simply out of reach, which is exactly why the readbacks above exist.
 
 ## Step 3 — File something, move it, and watch the column change
 
