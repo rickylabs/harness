@@ -80,3 +80,44 @@ lane exists to prevent, caught by the re-pin rule instead of a reviewer.
 instructs); step-3 literals re-verified; receipts re-run at the new head;
 inventory and worklog updated. The #218 sentence is history, not a claim:
 the committed text states only the merged code's behavior.
+
+## D8 — Re-pin file corrections at the final pass (M1 root cause)
+
+The `c0f4434` re-pin was recorded in the worklog but the inventory's pin-table
+edit was silently lost: the patch script asserted mid-way (on a later edit)
+and aborted before its file write, so six in-memory replacements never hit
+disk while the worklog claimed they had. The evaluator caught the residue
+(stale `3c866d2` pin; missing row). Disposition: accepted as a process defect
+of the author, not of the content — the corrections were re-applied and
+verified written; the README snapshot pin was still pointing at `3c866d2`
+while describing #219 behavior, now pinned to the last resolved baseline
+`a4693bd`. Lesson recorded: every multi-edit patch must print its post-write
+verification, which later scripts in this run do.
+
+## D9 — Third re-pin: #222 merged during review
+
+`origin/main` advanced to `a4693bd` (owner PR 222, #208 wrapper provenance:
+dispatch now checks the instrumentation mark; a raw provider is unselectable)
+while the lane was under review. Disposition: accepted — delta inspected only;
+no status-row conclusion changed (the composed registry remains empty and the
+`no-providers` refusal remains named); citations re-anchored; inventory and
+README re-pinned to `a4693bd`.
+
+## D10 — Transport constraint violation in an H1 validation attempt
+
+The author's init-fixture check intended as an "offline" H1 receipt was not
+offline: environment overrides did not disable the inherited GitHub
+transport, the CLI attempted a real label POST against the placeholder
+repository `owner/scratch` (HTTP 404, zero applied), and the exit status was
+captured after a pipe. That violated the lane's no-GitHub-operations
+constraint. Disposition: accepted as an author process defect — the run is
+preserved as an incident record with its true characterization, never
+counted as a receipt; H1 is proven instead by the coordinator's
+injected-transport check (`CliOverrides.probeTransport → none`, four
+asserted calls, zero GitHub contact). All forge/gh execution in this lane is
+now permanently stopped; live verification remains documented-but-unexecuted
+network instruction in the tutorial, with a stop-if-fails rule.
+
+## D11 — Externally merged PR and correction follow-up
+
+PR223 merged externally at 033da73 while the seven required content fixes were still local. A lease-protected push correctly refused to replace the changed/deleted branch. The coordinator preserved the owner’s #212 link correction and carried only the two correction commits onto c98fbeb as a follow-up branch. Owner PR224’s liveness rename and PR226’s title bounds were retained. Registry/profile/forge/projection source and four stub declarations were checked; maturity conclusions did not change, and the README/inventory pin now names c98fbeb. The prior source-only PASS at fd27035 is retained as evidence, with final integration/visual review still required.
