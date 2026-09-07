@@ -405,12 +405,26 @@ function normalise(text, bindings) {
     .replace(/\n+$/, "");
 }
 
+/**
+ * Any real machine path still standing in normalised output — ignoring the placeholders it was
+ * normalised *into*.
+ *
+ * That exception is the whole of this function's difficulty. A display placeholder can itself sit
+ * under the real temp root: `/tmp/dsh-home` does, on every machine whose `tmpdir()` is `/tmp`.
+ * Scanning for `tmpdir()` without blanking the placeholders first reports the substitution this
+ * script just made — and reports it only on POSIX, so a Windows run passes and CI does not. Blank
+ * them, and what is left is a path nothing accounted for.
+ */
 function leaks(text, bindings) {
   const real = slashes(tmpdir());
+  let residue = text;
+  for (const shown of [...PLACEHOLDERS.values(), CHECKOUT_PLACEHOLDER]) {
+    residue = residue.split(shown).join("");
+  }
   const found = [];
-  if (text.includes(real)) found.push(real);
+  if (residue.includes(real)) found.push(real);
   for (const dir of bindings.values()) {
-    if (typeof dir === "string" && dir.includes(real) && text.includes(slashes(dir))) {
+    if (typeof dir === "string" && dir.includes(real) && residue.includes(slashes(dir))) {
       found.push(slashes(dir));
     }
   }
