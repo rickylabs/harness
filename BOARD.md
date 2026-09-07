@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **183/225 done · 12 running · 16 queued · 12 abandoned · 2 invisible**
+`[################----]` **185/226 done · 11 running · 17 queued · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T01:48:52Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T01:51:24Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (12)
+## Moving now (11)
 
 Something could be acting on these right now.
 
@@ -15,7 +15,6 @@ Something could be acting on these right now.
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
-| [#203 the coordinator's citation gate checks that a citation exists, not that it refers to anything](https://github.com/rickylabs/harness/issues/203) | `research` | `e6` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#195 E3.5 - Route identity: fail closed when the observed route differs from the requested one](https://github.com/rickylabs/harness/issues/195) | `research` | `e3` |
@@ -25,27 +24,19 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Not on the board (1)
-
-Open, and carrying no `status:` label — real work no column can see.
-
-| item | column | epic |
-| --- | --- | --- |
-| [PR236 feat(coordinator): make a citation refer to something (#203)](https://github.com/rickylabs/harness/pull/236) | — | — |
-
 ## Anomalies (1)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
-**`no-status`**
+**`epic-milestone-conflict`**
 
-- **#236** — open item has no status label, so it appears in no column
+- **#236** — is in milestone (none) but its epic #36 is in M1 — dsh coordinator foundation; the epic appears under both
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 149/179 done · 11 running · 16 queued · 3 abandoned
+`[##########--]` 150/179 done · 10 running · 16 queued · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -55,7 +46,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 15/23 done · 6 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
-| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 23/27 done · 2 running · 2 abandoned | `impl` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 24/27 done · 1 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 21/25 done · 4 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 14/16 done · 2 running | `impl` |
@@ -63,23 +54,25 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 34/46 done · 1 running · 9 abandoned · 2 invisible
+`[########----]` 35/47 done · 1 running · 1 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
-| _(no epic)_ | `[########----]` 30/41 done · 9 abandoned · 2 invisible | — |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
+| _(no epic)_ | `[########----]` 30/41 done · 1 queued · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>16 filed, nothing started</summary>
+<summary>17 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#212 the tutorial's pasted output is stale at step 4, and no gate in the repo can catch that](https://github.com/rickylabs/harness/issues/212) | `triage` | `e10` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
 | [#233 nothing detects a label the code branches on that the taxonomy never creates](https://github.com/rickylabs/harness/issues/233) | `triage` | `e7` |
+| [#237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life](https://github.com/rickylabs/harness/issues/225) | `triage` | `e7` |
 | [#234 17 labels live on the repo and in no taxonomy, including the dispatch label](https://github.com/rickylabs/harness/issues/234) | `triage` | `e7` |
@@ -102,9 +95,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  183/225 done · 12 running · 16 queued · 12 abandoned · 2 invisible
+# rickylabs/harness  [################----]  185/226 done · 11 running · 17 queued · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  149/179 done · 11 running · 16 queued · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  150/179 done · 10 running · 16 queued · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -226,7 +219,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR173 docs(doctrine): ADR 0002 - the sandboxctl execution channel (proposed) (p1)
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
-    [#############---] 23/27 done · 2 running · 2 abandoned
+    [##############--] 24/27 done · 1 running · 2 abandoned
     shipped              #68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation
     shipped              #69 E6.2 — coordinator: the workflow definitions
     shipped              #70 E6.3 — Emit one dispatch payload in the /swarm wire format
@@ -249,7 +242,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR163 fix(board): grant the board workflow the scopes it actually reads (p1)
     plan                 #191 E6/E9 — Plan the durable orchestration loop and restart visibility proof (p1)
     shipped              PR193 docs: record milestone continuation and draft E6/E9 durable loop
-    research             #203 the coordinator's citation gate checks that a citation exists, not that it refers to anything (p2)
+    shipped              #203 the coordinator's citation gate checks that a citation exists, not that it refers to anything (p2)
     shipped              #204 fix(board): connect the task projection to stable dsh surfaces (p1)
     shipped              PR207 docs: record MVP verdicts and executable CLI preview
     shipped              PR214 fix(board): publish the hierarchy through dsh projections and todos
@@ -317,7 +310,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [##############------]  34/46 done · 1 running · 9 abandoned · 2 invisible
+## (no milestone)  [##############------]  35/47 done · 1 running · 1 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -326,6 +319,10 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
+
+  E6 — Coordinator: workflows, task DAG, board projection #36  [impl]  (epic is in M1 — dsh coordinator foundation)
+    [################] 1/1 done
+    shipped              PR236 feat(coordinator): make a citation refer to something (#203) (p2)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
@@ -368,7 +365,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #189 docs: the repository is public — correct every false claim, then polish (p0)
     shipped              PR190 docs: correct every claim the repository going public made false (p0)
     no status            #201 E10 - Documentation and the public front door
-    no status            PR236 feat(coordinator): make a citation refer to something (#203)
+    triage               #237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way (p2)
 ```
 
 </details>
