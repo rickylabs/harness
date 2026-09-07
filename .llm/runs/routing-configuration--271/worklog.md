@@ -13,3 +13,9 @@ The planner produced research, plan and drift artifacts. The coordinator reviewe
 [source: owner continuation directive; topic: E11 sequencing; received 2026-09-07]
 [source: fresh matrix CLI and native initialization; topic: planning route and identity; checked 2026-09-07]
 [source: pnpm frozen install and recursive package build; topic: baseline buildability; executed 2026-09-07]
+
+## Independent plan gate completed
+
+Muse Spark1.3 max, meta family, reviewed the Fable5.1-authored plan in one retained session. Round1 at daf974d returned four bounded FAIL_FIX findings; round2 at2a4a09f confirmed those repairs and required explicit consumer protection across new input revisions. The final check at548f24d returned PASS, with no remaining findings. The extended bounded repair and escalation were surfaced on issue271 under the owner's standing autonomous instruction. Exact verdicts are retained here. No product code changed before PASS.
+
+Transport evidence: the initial zero-estimate launcher refusal was corrected; a conservative estimate exceeded Go allowance. Live model pricing then justified the estimate used for successful preflight without any model, effort, scope or token-cap reduction. A tooling-directory handoff was corrected in the same session; subsequent reads confirmed the exact Harness head. Resumed CLI launchers did not terminate after terminal reviewer messages, so terminal session exports (with model/variant identity) establish the verdicts; lingering owned launchers were stopped afterward. No exit0 claim is made for those stopped launchers.
