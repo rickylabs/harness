@@ -19,7 +19,7 @@ explain them.
 - Never done this before → [From a clone to a moving board](tutorials/01-from-clone-to-board.md).
   Fifteen minutes, no server, ends with a board column changing.
 - New to the project → the [root README](../README.md), then [concepts](concepts/).
-- Want to run something → [Quickstart](../README.md#quickstart).
+- Want to run something → [Local proof first](../README.md#local-proof-first).
 - Want a flag, a subcommand or an exit code → [CLI reference](reference/cli/README.md).
 - Want to understand a design decision → [`concepts/`](concepts/) for the model,
   [`doctrine/`](../doctrine/) for the method, and the

@@ -42,11 +42,11 @@ page is how those are absorbed rather than denied.
 
 ## A column is a label
 
-The lifecycle is a set of `status:` labels — the ten phases are listed in the
-[root README](../../README.md#github-is-the-board-dsh-projects-it), and the rules an agent must
-follow are generated into
-[`.claude/skills/board-process/SKILL.md`](../../.claude/skills/board-process/SKILL.md) from the
-taxonomy actually installed in the repository, not from a document somebody kept up to date.
+The lifecycle is a set of `status:` labels — the ten phases are listed with
+their order in the generated
+[`.claude/skills/board-process/SKILL.md`](../../.claude/skills/board-process/SKILL.md), and the
+rules an agent must follow are generated there too, from the taxonomy actually installed in the
+repository, not from a document somebody kept up to date.
 
 Two properties matter more than the list:
 
