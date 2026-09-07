@@ -5,15 +5,15 @@ state:	OPEN
 author:	rickylabs
 labels:	epic:e6, priority:p1, status:research, task, topic:features, type:feat
 comments:	0
-assignees:	
-projects:	
+assignees:
+projects:
 milestone:	M1 — dsh coordinator foundation
-issue-type:	
-parent:	
-sub-issues:	
-sub-issues-completed:	
-blocked-by:	
-blocking:	
+issue-type:
+parent:
+sub-issues:
+sub-issues-completed:
+blocked-by:
+blocking:
 number:	253
 --
 Step C of the #191 dependency DAG:
