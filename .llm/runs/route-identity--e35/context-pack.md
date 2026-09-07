@@ -2,12 +2,12 @@
 
 ## Resume here
 
-The run has completed research and locked a bounded implementation plan for #195. The recommended
-change adds a pure provider/model/effort/cwd gate in `subagents`, optional typed evidence on
-`DispatchResult`, and Codex thread/start plus pre-turn orchestration behind an injected initialized
-protocol port. It does not implement a provider or transport. Next action: independent Opus 5
-medium plan evaluation. Product code must not change before that verdict is `PASS`
-(`doctrine/WORKFLOW.md:80`).
+Stage G passed and the bounded #195 implementation is complete in the working tree for draft PR
+#238. It adds a pure provider/model/effort/cwd gate in `subagents`, optional typed evidence plus
+`isRouteVerified`, and Codex thread/start plus pre-turn orchestration behind an injected initialized
+raw-response port. It does not implement a provider or transport. Focused tests, workspace
+typecheck, and build pass. The next gate is the implementation commit followed by the coordinator's
+independent exact-head GLM 5.3 Flash review and CI; no implementation-review verdict exists yet.
 
 ## Fixed contract
 
@@ -44,8 +44,9 @@ is also a later integration gate (`packages/dsh-app/src/instrument.ts:223`).
 - Coordinator: Astra medium; author: Sol medium; fallback: none.
 - Plan evaluator: Opus 5 medium, independent.
 - Intended implementer: Sol medium; implementation reviewer: GLM 5.3 Flash provider default.
-- Planning mutation surface is the run-artifact files listed in `supervisor.md`; no product edits
-  or commit.
+- Stage G: `PASS` after binding amendments; evaluator Opus 5 medium session
+  `0570aa7e-058e-4e5e-91e7-a0acf6d02745`.
+- Stage H: Sol medium implementation; draft PR #238; no fallback.
 
 ## Read next
 
@@ -61,9 +62,8 @@ is also a later integration gate (`packages/dsh-app/src/instrument.ts:223`).
 
 ## Outstanding gates
 
-1. Obtain independent plan-eval `PASS`; record fixes as drift rather than rewriting history.
-2. Implement only the declared product manifest.
-3. Run focused package tests, typecheck, build, and diff check.
-4. Obtain independent implementation review at exact HEAD.
-5. Report the prerequisite as callable/tested, never as live or deployed; #53 remains the transport
+1. Commit the green manifest with the required co-author trailer and report exact HEAD.
+2. Obtain independent implementation review at exact HEAD.
+3. Let coordinator/CI run the full suite and PR gates.
+4. Report the prerequisite as callable/tested, never as live or deployed; #53 remains the transport
    and production integration gate.

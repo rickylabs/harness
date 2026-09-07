@@ -76,6 +76,7 @@ export {
   conformanceProblems,
   instrumentedBy,
   isInstrumented,
+  isRouteVerified,
   isSafeToRetry,
   markInstrumented,
   registryProblems,
@@ -106,6 +107,24 @@ export type {
   SubagentProvider,
   SubagentRegistry,
 } from "./provider.js";
+
+export {
+  ROUTE_FIELDS,
+  compareRouteIdentity,
+  describeRouteEvidence,
+  isRouteEvidenceVerified,
+} from "./route.js";
+export type {
+  InvalidRouteField,
+  RouteField,
+  RouteIdentityEvidence,
+  RouteIdentityInput,
+  RouteIdentityValues,
+  RouteSide,
+  RouteSource,
+  RouteStatus,
+  RouteValueEvidence,
+} from "./route.js";
 
 export {
   DEFAULT_STALE,

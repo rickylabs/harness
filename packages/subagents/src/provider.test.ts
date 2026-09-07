@@ -8,6 +8,7 @@ import {
   conformanceProblems,
   instrumentedBy,
   isInstrumented,
+  isRouteVerified,
   isSafeToRetry,
   markInstrumented,
   registryProblems,
@@ -102,6 +103,37 @@ describe("isSafeToRetry", () => {
     const unknown = retryGuidance({ verdict: "unknown", run: null, detail: "" });
     assert.match(unknown, /do not retry/);
     assert.match(unknown, /observe first/);
+  });
+});
+
+describe("isRouteVerified", () => {
+  it("treats legacy accepted results without evidence as unverified", () => {
+    assert.equal(
+      isRouteVerified({ verdict: "accepted", run: null, detail: "legacy provider" }),
+      false,
+    );
+  });
+
+  it("requires accepted plus complete matching evidence", async () => {
+    const { compareRouteIdentity } = await import("./route.js");
+    const route = compareRouteIdentity(
+      { provider: "openai", model: "gpt-test", effort: "medium", cwd: "/work" },
+      { provider: "openai", model: "gpt-test", effort: "medium", cwd: "/work" },
+    );
+    assert.equal(isRouteVerified({ verdict: "accepted", run: null, detail: "ok", route }), true);
+    assert.equal(isRouteVerified({ verdict: "unknown", run: null, detail: "lost", route }), false);
+
+    const contradictory = {
+      ...route,
+      observed: {
+        ...route.observed,
+        effort: { ...route.observed.effort, value: "high" },
+      },
+    };
+    assert.equal(
+      isRouteVerified({ verdict: "accepted", run: null, detail: "fabricated", route: contradictory }),
+      false,
+    );
   });
 });
 

@@ -15,6 +15,14 @@ the locked plan rather than silently copied.
 
 No plan-evaluation or implementation drift has occurred yet.
 
+## Stage-H implementation choices
+
+| ID | Observation | Disposition |
+|---|---|---|
+| D-004 | A public injectable request-id factory would let callers weaken UUID uniqueness. | Kept request-id generation internal with a fresh Node `randomUUID()` for thread/start and turn/start; fakes respond to the actual request id. This binds amendment finding 1. Source: `.llm/runs/route-identity--e35/plan-amendment.md:5` |
+| D-005 | A mismatched thread is identified even though no useful turn was sent. | The refused result retains the thread handle for later #53 reconciliation/cleanup; this slice performs no cleanup. Retry remains safe only after route/config correction. Source: `packages/subagents/src/provider.ts:258` |
+| D-006 | Raw response property access can throw, and a matching route without a usable thread id is not attributable. | Parser/read boundaries convert thrown accessors to unknown; missing thread identity downgrades route evidence to unknown without the phrase “route verified.” Source: `.llm/runs/route-identity--e35/plan-amendment.md:6` |
+
 ## Coordinator metadata correction
 
 Preflight found merged PR #236 missing milestone M1; restored milestone 1. A phase-helper invocation initially supplied `plan-eval` instead of the full `status:plan-eval`, temporarily removing #195 from a status column and creating an inert unintended label. The helper assertion and board check failed. Immediately restored the canonical status, removed the unintended label from #195, and deleted that newly created label. Final board check returned zero anomalies. No harness trigger was applied.

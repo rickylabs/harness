@@ -36,3 +36,23 @@ or sibling-repository mutation. The plan is ready for independent evaluation.
 
 - 2026-09-07 coordinator: retrieved the four pinned prior-art files through GitHub Contents API (app-server-message, launch-codex-slice, runtime launch-route-identity, delegation-matrix); URLs in research are retrieved references. Offline protocol-schema.md added. Preferred implementation-review availability probe `opencode-go/glm-5.3-flash`, provider default, returned READY with exit 0 in session `ses_f8662e42effe7zTBk07HaxnZqE`; no fallback. This is availability evidence only, not an independent verdict or a server route attestation.
 - 2026-09-07 coordinator: independent Opus 5 medium plan evaluation launched through Claude Code with no tools. #195 advanced to status:plan-eval; phase comment https://github.com/rickylabs/harness/issues/195#issuecomment-5564001108. Board check is zero anomalies after immediate metadata repairs.
+- 2026-09-07 coordinator: retained sanitized plan-evaluation attribution shows session
+  `0570aa7e-058e-4e5e-91e7-a0acf6d02745`, `is_error: false`, and model-usage keys for Opus 5 and an
+  auxiliary Haiku model. This corroborates Opus participation, but does not attest effort, exclusive
+  model use, or the auxiliary model's role. No fallback was requested
+  (`run:0570aa7e-058e-4e5e-91e7-a0acf6d02745`).
+- 2026-09-07 coordinator: Stage G recorded `PASS` for the original plan plus all binding amendments;
+  draft PR #238 was created and #195/#238 moved to implementation. This implementer did not mutate
+  the board or PR (`.llm/runs/route-identity--e35/plan-eval.md:1`).
+- 2026-09-07 implementer: added the pure four-field comparator, closed provenance labels, optional
+  `DispatchResult.route`, fail-closed `isRouteVerified`, and raw-response Codex pre-turn helper.
+  Added no provider, transport, process, socket, filesystem, environment or auth integration.
+- 2026-09-07 implementer: `pnpm --filter @rickylabs/subagents test` passed 227/227 tests;
+  `pnpm --filter @rickylabs/provider-codex test` passed 44/44 tests; `pnpm typecheck` passed for all
+  15 packages; `pnpm build` passed graph, lifecycle, links, forms, snapshots, all package builds,
+  publish, CLI docs, and generated-skill checks.
+- 2026-09-07 implementer: the GLM 5.3 Flash availability probe remains only route availability.
+  Its event record contained READY and requested-route metadata but no observed server provider,
+  model or effort fields; it is not an implementation review or route attestation
+  (`run:ses_f8662e42effe7zTBk07HaxnZqE`).
+- 2026-09-07 implementer: implementation review has not run and no implementation `PASS` is claimed.

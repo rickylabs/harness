@@ -127,9 +127,11 @@ The seam is a decision, not a promise of code. At the current baseline:
   [`provider-claude`](../../packages/provider-claude), with the Claude Agent SDK injected by a
   composition root, and [`provider-opencode`](../../packages/provider-opencode), which talks to a
   long-lived `opencode serve` it does not own. [`provider-codex`](../../packages/provider-codex)
-  and [`provider-acp`](../../packages/provider-acp) remain stubs. None of the four is registered
-  by the profile: the composed registry is still empty, so *implemented* is not *composed*, and a
-  clone cannot dispatch into this seam until a composition root registers a provider.
+  ships only a transport-free route-identity and pre-turn protocol prerequisite; attachment and its
+  full provider remain gated by #53. [`provider-acp`](../../packages/provider-acp) remains an empty
+  stub. No Codex provider is composed into `ctx.subagents`. None of the four is registered by the
+  profile: the composed registry is still empty, so *implemented* is not *composed*, and a clone
+  cannot dispatch into this seam until a composition root registers a provider.
 - [`packages/llm-local`](../../packages/llm-local) is implemented — three destinations,
   `lm-studio`, `llama-rocm` and `openrouter`, plus capability and budget tables — and `dsh-app`'s
   `harness-llm` row registers an adapter for all three on dsh's own `ctx.llm` service. Whether any

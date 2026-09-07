@@ -2,12 +2,11 @@
 
 ## Summary
 
-This run plans the bounded route-identity prerequisite for issue #195. It may write only the run
-artifacts named below. It may inspect the repository, public issue records, official Codex
-documentation, generated credential-free schemas, and the pinned read-only prior-art checkout.
-It may not edit product code, commit, mutate the board, connect to a live provider, inspect
-credentials, or read private host telemetry. The lifecycle requires a separate plan evaluation
-before implementation begins (`doctrine/WORKFLOW.md:71`, `doctrine/WORKFLOW.md:80`).
+This run planned and is now implementing the bounded route-identity prerequisite for issue #195.
+Stage G passed through an independent Opus 5 medium evaluation plus the binding narrow amendments
+in `plan-amendment.md` (`.llm/runs/route-identity--e35/plan-eval.md:1`). Stage H authorizes only the
+product mutation manifest in `plan.md` plus run evidence. Board mutation, live provider access,
+credentials, private telemetry, and sibling-repository mutation remain prohibited.
 
 ## Identity
 
@@ -23,7 +22,7 @@ before implementation begins (`doctrine/WORKFLOW.md:71`, `doctrine/WORKFLOW.md:8
 | Research/plan author | Sol, medium reasoning, Codex |
 | Matrix pin | `8ba53bc50ca02aab29e99ba5362728839b8f1713` |
 | Plan evaluator | Opus 5, medium, independent session |
-| Intended implementer | Sol, medium, independent session |
+| Stage-H implementer | Sol, medium, Codex, implementation turn |
 | Intended implementation reviewer | GLM 5.3 Flash, provider default, independent session |
 | Fallback | none taken |
 
@@ -44,9 +43,18 @@ packages do not choose it (`packages/subagents/src/dispatch.ts:34`).
 Every other path is read-only in this planning session. The exact mutation surface is required
 at Stage A (`doctrine/WORKFLOW.md:31`).
 
+## Stage-H authorization
+
+Product mutation is authorized by the Stage-G `PASS` for the original plan plus
+`plan-amendment.md`. The exact product manifest is the table in `plan.md`; all run artifacts in this
+directory may be updated as evidence. Draft PR #238 exists for this branch. The implementer may run
+local package/workspace checks and commit the reviewed scope with the required co-author trailer.
+No implementation-review verdict exists yet; the coordinator owns the later independent GLM 5.3
+Flash review, CI, PR, merge, issue status, and board verification.
+
 ## Explicit prohibitions
 
-- No product source, package manifest, test, doctrine, issue, label, board, PR, or commit mutation.
+- No product mutation outside the Stage-H manifest; no doctrine, issue, label, board, PR, or push.
 - No `harness` label: it is a live dispatch trigger (`AGENTS.md:37`).
 - No provider process spawn, daemon attach, restart, repair, canary, turn, or other live connection.
 - No auth files, environment secrets, credentials, private telemetry, or operational snapshots.

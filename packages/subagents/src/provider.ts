@@ -44,6 +44,7 @@
  */
 
 import { validateDispatch, type DispatchRequest, type Harness } from "./dispatch.js";
+import { isRouteEvidenceVerified, type RouteIdentityEvidence } from "./route.js";
 
 /**
  * Where a `SubagentRegistry` attaches on the dsh context.
@@ -93,10 +94,20 @@ export type DispatchVerdict = "accepted" | "refused" | "unknown";
 
 export interface DispatchResult {
   readonly verdict: DispatchVerdict;
-  /** Present on `accepted`. On `unknown` it may also be present, if the provider got that far. */
+  /**
+   * Present on `accepted`. It may also be present on `unknown`, or on `refused` when an identified
+   * empty session was created but no useful work was sent and the handle is needed for cleanup.
+   */
   readonly run: RunRef | null;
   /** Why. A verdict with no reason cannot be acted on by anything except a coin toss. */
   readonly detail: string;
+  /**
+   * Requested-versus-observed route evidence when the provider can obtain it.
+   *
+   * Optional for compatibility with providers that predate route observation. Absence is
+   * unverified, never agreement; callers use `isRouteVerified` rather than optional chaining.
+   */
+  readonly route?: RouteIdentityEvidence;
 }
 
 /**
@@ -257,6 +268,11 @@ export function isInstrumented(provider: SubagentProvider): boolean {
  */
 export function isSafeToRetry(result: DispatchResult): boolean {
   return result.verdict === "refused";
+}
+
+/** True only for an accepted dispatch with complete, matching route evidence. */
+export function isRouteVerified(result: DispatchResult): boolean {
+  return result.verdict === "accepted" && isRouteEvidenceVerified(result.route);
 }
 
 /** What to do about a dispatch that did not plainly succeed, in a sentence. */
