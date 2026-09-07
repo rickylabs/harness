@@ -75,9 +75,12 @@
  *   "ended on purpose". The event and its verdict are recorded; the run's outcome is left to the
  *   next observation or to the transcript. Widening `RunOutcome` is a contract change and belongs
  *   on E9, not in a decorator.
- * - **The fold has no idea a dispatch is not yet a run.** Any event with a run id becomes a run in
- *   `foldLiveEvents`, so a dispatch that is refused, or that dies before its verdict, still appears
- *   as a live-only row. That is the reader's decision to make and the right place to fix it.
+ * - **A dispatch that dies before its verdict still appears as a run.** That half is deliberate: the
+ *   pre-dispatch line is the only evidence an agent may be running somewhere, and hiding it would
+ *   undo the reason `dispatch` writes twice. The other half — a dispatch the provider *refused* —
+ *   used to appear too, and no longer does: `verdictDetail` writes the verdict, and rule 4 in
+ *   `telemetry/src/live.ts` counts a refused live-only dispatch instead of making a row of it.
+ *   Finding 5 on #182.
  * - **Nothing here can supply `branch`.** `DispatchRequest` carries routing, not a branch, and an
  *   `Observation`'s artifacts are paths that can name a home directory — which is why `origin` is
  *   excluded from the public projection. Artifacts are recorded as a count.
@@ -111,7 +114,15 @@ import type { RunOutcome, RunSource, SessionTelemetrySink } from "@rickylabs/tel
 export const EVENT_KIND = {
   /** A dispatch was sent. Written before the provider is called, so a crash still leaves a trace. */
   dispatching: "subagent.dispatching",
-  /** The dispatch verdict. */
+  /**
+   * The dispatch verdict.
+   *
+   * The one kind a reader may take a `verdict` from as a statement about whether the run exists.
+   * `steer` and `stop` write a `verdict` too and both of those unions also spell `refused`, so the
+   * name is load-bearing across the seam: `telemetry/src/live.ts` matches this exact string. Renaming
+   * it does not break a build — it stops refused dispatches being recognised, and they go back to
+   * appearing as runs.
+   */
   dispatch: "subagent.dispatch",
   /** An observation whose liveness differed from the previous one. */
   observe: "subagent.observe",
