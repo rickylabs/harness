@@ -4,8 +4,7 @@
  *
  * The command exists to make one sentence false: "I'm constantly spamming `status ?` to my current
  * orchestrator because I have zero visibility across the board." So it must work when every agent
- * is asleep, when the coordinator has crashed, and when the network is down. It reads files, and
- * that is all it does.
+ * is asleep, when the coordinator has crashed, and when the network is down. It reads files and explicitly configured observation services.
  *
  * Board items are read from a JSON file rather than fetched, because the fetch belongs to the board
  * package and a status command that needs a GitHub token is a status command that fails exactly
@@ -17,7 +16,10 @@
  * could not see. Every other status collapses into "it worked", "you asked wrong", or "I broke".
  */
 
-import { readFile } from "node:fs/promises";
+import { open, readFile } from "node:fs/promises";
+import { spawn } from "node:child_process";
+import { isAbsolute, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { homedir } from "node:os";
 
 import { backfillFromDisk, defaultRoots, type BackfillRoots } from "./backfill/index.js";
@@ -42,6 +44,13 @@ import { renderSnapshot, renderTree } from "./render.js";
 import type { TelemetryEvent } from "./sink.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
+import { parseSource, SourceError, type GovernanceSource, type UsageSource, type Leg } from "./source.js";
+import type { RegimeStatus } from "@rickylabs/harness-contracts";
+import type { LiveLog } from "./live.js";
+import { mapUsage } from "./governance/usage.js";
+import { mapSpend } from "./governance/spend.js";
+import { mapCapacity } from "./governance/capacity.js";
+import { composeGovernance } from "./governance/compose.js";
 
 /**
  * What the command exited with, and what a caller should do about it.
@@ -93,6 +102,7 @@ options:
   --items <path>         board items to join runs to: "dsh-board snapshot" output, or a
                          JSON array of {number, title, epic, milestone, phase} refs
   --observations <path>  governance observation JSON for tree/status
+  --observations-from <spec>  live source descriptor JSON path, or file:<absolute-path>
   --limit <n>            runs to read per seam, most recent first (default: 500)
   --since <iso>          only runs with activity at or after this time
   --now <iso>            reference time for ages, so output is reproducible
@@ -106,6 +116,15 @@ snapshot: account subscription windows, provider spend, host RAM/VRAM, and item-
 admissions. The file is read again on every invocation. No flag is explicit UNKNOWN/UNAVAILABLE;
 a requested unreadable or invalid file is incomplete (exit 3). Stale values stay visible as STALE,
 and missing measurements stay unknown rather than becoming zero.
+
+"--observations-from" applies only to tree/status and excludes "--observations". A descriptor
+configures independent usage, spend, configured-cgroup-v2 and recorded-admission readers.
+Model IDs, window durations and safe labels are runtime configuration. No model is dispatched.
+Live readings use collection completion time unless --now explicitly sets the evaluation clock.
+A failed requested leg is unread, keeps successful legs visible, and returns incomplete (exit 3).
+All-unconfigured is UNAVAILABLE/exit 3. Unlimited cgroup total/headroom and pending approvals are
+unknown. File mode retains stale values and its existing exit behavior. See telemetry README
+for descriptor fields, the env-only service dependency and public-safe admission reason codes.
 
 "record" reads JSONL on stdin — one {"runId","kind","at","detail"} object per line, "at"
 and "detail" optional. A bad line loses that line and is named; an empty batch is not an
@@ -135,6 +154,8 @@ interface Flags {
   readonly home: string;
   readonly items: string | null;
   readonly observations: string | null;
+  readonly observationsFrom: string | null;
+  readonly nowExplicit: boolean;
   readonly limit: number;
   readonly since: string | null;
   /** `--since` as an epoch millisecond, which is what actually bounds the readers. */
@@ -165,6 +186,8 @@ export function parseFlags(argv: readonly string[]): Flags {
   let home = homedir();
   let items: string | null = null;
   let observations: string | null = null;
+  let observationsFrom: string | null = null;
+  let nowExplicit = false;
   let limit = 500;
   let since: string | null = null;
   let sinceMs: number | null = null;
@@ -193,6 +216,9 @@ export function parseFlags(argv: readonly string[]): Flags {
       case "--observations":
         observations = next();
         break;
+      case "--observations-from":
+        observationsFrom = next();
+        break;
       case "--limit": {
         // Parsed strictly rather than leniently: `--limit 1.5` under parseInt becomes 1, which is a
         // scan the operator did not ask for and would have no reason to suspect.
@@ -214,6 +240,7 @@ export function parseFlags(argv: readonly string[]): Flags {
         const raw = next();
         timeFlag(raw, "--now");
         now = raw;
+        nowExplicit = true;
         break;
       }
       case "--json":
@@ -233,7 +260,13 @@ export function parseFlags(argv: readonly string[]): Flags {
         if (arg !== undefined) rest.push(arg);
     }
   }
-  return { home, items, observations, limit, since, sinceMs, now, json, help, run, kind, rest };
+  if (observations !== null && observationsFrom !== null) throw new Error("observation source flags are mutually exclusive");
+  if (observationsFrom !== null) {
+    const path = observationsFrom.startsWith("file:") ? observationsFrom.slice(5) : observationsFrom;
+    if (!isAbsolute(path) || /[\x00-\x1f\x7f]/.test(path)) throw new Error("observation source requires an absolute path");
+    if (rest[0] !== "status" && rest[0] !== "tree" && !help) throw new Error("--observations-from requires tree or status");
+  }
+  return { home, items, observations, observationsFrom, nowExplicit, limit, since, sinceMs, now, json, help, run, kind, rest };
 }
 
 /**
@@ -416,7 +449,7 @@ function whereItWrites(flags: Flags): number {
   return complete ? EXIT.ok : EXIT.incomplete;
 }
 
-export async function main(argv: readonly string[]): Promise<number> {
+export async function main(argv: readonly string[], services: SourceServices = defaultSourceServices()): Promise<number> {
   let flags: Flags;
   try {
     flags = parseFlags(argv);
@@ -437,6 +470,15 @@ export async function main(argv: readonly string[]): Promise<number> {
   if (command === "record") return await recordEvents(flags);
   if (command === "where") return whereItWrites(flags);
 
+  let source: GovernanceSource | null = null;
+  let observationPath = flags.observations;
+  if (flags.observationsFrom !== null) {
+    if (flags.observationsFrom.startsWith("file:")) observationPath = flags.observationsFrom.slice(5);
+    else {
+      try { source = parseSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
+      catch { process.stdout.write("governance source: invalid-descriptor\n"); return EXIT.usage; }
+    }
+  }
   const roots: BackfillRoots = defaultRoots(flags.home);
   const scan = await backfillFromDisk(roots, { limit: flags.limit, sinceMs: flags.sinceMs });
 
@@ -446,9 +488,13 @@ export async function main(argv: readonly string[]): Promise<number> {
   // Resolution notes are dropped here on purpose: they are about where telemetry would be *written*,
   // which is `where`'s question, and repeating them under every `status` would train an operator to
   // skip the line that matters.
-  const target = resolveObservability(flags.home, process.env);
+  const target = resolveObservability(flags.home, services.env);
   const log = await readLiveLog(logPaths(target), flags.now);
-  const merged = mergeLiveRuns(scan.runs, foldLiveEvents(log.files));
+  // An admission receipt is evidence about a gate, not a run lifecycle event.
+  const runFiles = source === null ? log.files : log.files.map(file => ({ ...file,
+    events: file.events.filter(event => event.kind !== "governance.admission"),
+  }));
+  const merged = mergeLiveRuns(scan.runs, foldLiveEvents(runFiles));
   const view = {
     notes: [...scan.notes, ...log.notes, ...merged.notes],
     degraded: scan.degraded || log.degraded || merged.degraded,
@@ -517,14 +563,18 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 
   if (command === "status" || command === "tree") {
-    const [loaded, observed] = await Promise.all([
+    const [loaded, collected] = await Promise.all([
       loadItems(flags.items),
-      loadGovernance(flags.observations, flags.now),
+      source === null
+        ? loadGovernance(observationPath, flags.now).then(observed => ({ observed, completion: flags.now }))
+        : collectGovernance(source, log, services, flags.nowExplicit ? flags.now : undefined),
     ]);
+    const { observed } = collected;
+    const now = source !== null && !flags.nowExplicit ? collected.completion : flags.now;
     const notes = [...view.notes, ...loaded.notes, ...observed.notes];
     const complete = !view.degraded && loaded.ok && observed.ok;
     const snapshot = buildSnapshot({
-      generatedAt: flags.now,
+      generatedAt: now,
       runs,
       items: loaded.items,
       notes,
@@ -534,18 +584,18 @@ export async function main(argv: readonly string[]): Promise<number> {
       // The same snapshot, so attribution is decided once and both commands agree about which run
       // belongs to which item. The items are handed over a second time on purpose: a snapshot only
       // retains items that runs attached to, and this view exists for the ones nobody has touched.
-      const tree = buildTree({ snapshot, items: loaded.items, now: flags.now });
+      const tree = buildTree({ snapshot, items: loaded.items, now });
       process.stdout.write(
         flags.json
           ? `${JSON.stringify(publicTree(tree, complete), null, 2)}\n`
-          : `${renderTree(tree, flags.now)}\n`,
+          : `${renderTree(tree, now)}\n`,
       );
       return complete ? EXIT.ok : EXIT.incomplete;
     }
     process.stdout.write(
       flags.json
         ? `${JSON.stringify(publicSnapshot(snapshot, complete), null, 2)}\n`
-        : `${renderSnapshot(snapshot, flags.now)}\n`,
+        : `${renderSnapshot(snapshot, now)}\n`,
     );
     return complete ? EXIT.ok : EXIT.incomplete;
   }
@@ -564,4 +614,141 @@ if (invoked.endsWith("cli.js") || invoked.endsWith("dsh-telemetry")) {
       process.stdout.write(`dsh-telemetry failed: ${String(error)}\n`);
       process.exitCode = EXIT.failed;
     });
+}
+
+/** Service injection keeps offline tests independent of Deno, credentials and networking. */
+export interface UsageCommand {
+  readonly bin: string;
+  readonly args: readonly string[];
+  readonly env: Readonly<Record<string, string>>;
+  readonly timeoutMs: number;
+  readonly maxBytes: number;
+}
+export interface SourceServices {
+  readonly env: Readonly<Record<string, string | undefined>>;
+  readonly clock: () => string;
+  readonly usage: (command: UsageCommand) => Promise<unknown>;
+  readonly fetch: typeof fetch;
+  readonly readText: (path: string, maxBytes: number) => Promise<string>;
+}
+export function usageCommand(source: UsageSource, credential: string): UsageCommand {
+  const imports = {
+    "harness:usage": pathToFileURL(join(source.checkout, ".llm/tools/agentic/runtime/provider-usage.ts")).href,
+    "harness:usage-validity": pathToFileURL(join(source.checkout, ".llm/tools/agentic/config/subscriptions.ts")).href,
+  };
+  return { bin: source.denoBin, args: ["run", "--no-config", "--no-lock", "--no-prompt", "--no-remote", "--no-code-cache",
+    `--import-map=data:application/json,${encodeURIComponent(JSON.stringify({ imports }))}`,
+    `--allow-env=${source.credentialEnv}`, "--allow-net=opencode.ai", source.probe,
+    source.model, source.credentialEnv, String(source.maxBytes), String(source.timeoutMs)],
+    env: { [source.credentialEnv]: credential, DENO_NO_UPDATE_CHECK: "1", DENO_DIR: "/dev/null" },
+    timeoutMs: source.timeoutMs, maxBytes: source.maxBytes };
+}
+
+/** Bounded regular-file reads; no symlink traversal restrictions are implied by operator config. */
+export async function readSourceText(path: string, maxBytes: number): Promise<string> {
+  const file = await open(path, "r");
+  try {
+    if (!(await file.stat()).isFile()) throw new SourceError("shape-mismatch");
+    const chunks: Buffer[] = [];
+    let size = 0;
+    for (;;) {
+      const buffer = Buffer.alloc(Math.min(65_536, maxBytes + 1 - size));
+      const { bytesRead } = await file.read(buffer);
+      if (bytesRead === 0) break;
+      size += bytesRead;
+      if (size > maxBytes) throw new SourceError("oversize");
+      chunks.push(buffer.subarray(0, bytesRead));
+    }
+    return Buffer.concat(chunks).toString("utf8");
+  } finally { await file.close(); }
+}
+export async function runUsageProbe(command: UsageCommand): Promise<unknown> {
+  return await new Promise((resolve, reject) => {
+    const child = spawn(command.bin, [...command.args], { env: { ...command.env }, stdio: ["ignore", "pipe", "ignore"], shell: false });
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let failure: SourceError | null = null;
+    const fail = (code: "timeout" | "oversize"): void => {
+      failure ??= new SourceError(code);
+      child.kill("SIGKILL");
+    };
+    const timer = setTimeout(() => fail("timeout"), command.timeoutMs);
+    child.stdout.on("data", (chunk: Buffer) => {
+      size += chunk.byteLength;
+      if (size > command.maxBytes) fail("oversize");
+      else if (failure === null) chunks.push(chunk);
+    });
+    child.on("error", () => { clearTimeout(timer); reject(new SourceError("spawn-failed")); });
+    child.on("close", code => {
+      clearTimeout(timer);
+      if (failure !== null) { reject(failure); return; }
+      if (code !== 0) { reject(new SourceError("spawn-failed")); return; }
+      try { resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown); }
+      catch { reject(new SourceError("non-json")); }
+    });
+  });
+}
+export function defaultSourceServices(): SourceServices {
+  return { env: process.env, clock: () => new Date().toISOString(), usage: runUsageProbe, fetch: globalThis.fetch, readText: readSourceText };
+}
+async function readResponse(response: Response, maxBytes: number): Promise<unknown> {
+  if (!response.ok || response.body === null) throw new SourceError("request-failed");
+  const reader = response.body.getReader();
+  const chunks: Buffer[] = [];
+  let size = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) throw new SourceError("oversize");
+      chunks.push(Buffer.from(value));
+    }
+  } finally { await reader.cancel().catch(() => {}); }
+  try { return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown; }
+  catch { throw new SourceError("non-json"); }
+}
+async function isolatedLeg(read: () => Promise<Leg<RegimeStatus>>, fallback: "request-failed" | "cgroup-unreadable"): Promise<Leg<RegimeStatus>> {
+  try { return await read(); }
+  catch (error) { return { ok: false, code: error instanceof SourceError ? error.code : fallback }; }
+}
+export async function collectGovernance(source: GovernanceSource, log: LiveLog, services: SourceServices, now?: string): Promise<{ observed: ParsedGovernance; completion: string }> {
+  const missing: Leg<RegimeStatus> = { ok: false, code: "not-configured" };
+  const [usage, spend, capacity] = await Promise.all([
+    isolatedLeg(async () => {
+      if (source.usage === null) return missing;
+      const credential = services.env[source.usage.credentialEnv]?.trim();
+      if (!credential) return { ok: false, code: "credential-unbound" };
+      return mapUsage(await services.usage(usageCommand(source.usage, credential)), source.usage, source.accountLabel);
+    }, "request-failed"),
+    isolatedLeg(async () => {
+      if (source.spend === null) return missing;
+      const config = source.spend;
+      const credential = services.env[config.credentialEnv]?.trim();
+      if (!credential) return { ok: false, code: "credential-unbound" };
+      const controller = new AbortController();
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => { controller.abort(); reject(new SourceError("timeout")); }, config.timeoutMs);
+      });
+      try {
+        const read = async (): Promise<unknown> => readResponse(await services.fetch(config.url, {
+          headers: { accept: "application/json", authorization: `Bearer ${credential}` }, redirect: "error", signal: controller.signal,
+        }), config.maxBytes);
+        const payload = await Promise.race([read(), timeout]);
+        return mapSpend(payload, config, services.clock());
+      } finally { clearTimeout(timer); controller.abort(); }
+    }, "request-failed"),
+    isolatedLeg(async () => {
+      if (source.capacity === null) return missing;
+      const config = source.capacity;
+      const [current, max] = await Promise.all([
+        services.readText(join(config.cgroupRoot, "memory.current"), 128),
+        services.readText(join(config.cgroupRoot, "memory.max"), 128),
+      ]);
+      return mapCapacity(current, max, config, services.clock());
+    }, "cgroup-unreadable"),
+  ]);
+  const completion = services.clock();
+  return { observed: composeGovernance(source, { usage, spend, capacity, events: log.files.flatMap(file => file.events), logDegraded: log.degraded }, completion, now ?? completion), completion };
 }

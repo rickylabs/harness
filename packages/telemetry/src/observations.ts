@@ -75,7 +75,8 @@ export type GovernanceView = AvailableGovernanceView | UnavailableGovernanceView
 export interface ParsedGovernance {
   readonly governance: GovernanceView;
   readonly notes: readonly string[];
-  /** False only when a requested input was malformed. An absent optional input is complete. */
+  /** False when requested evidence is malformed or unavailable, including partial live sources.
+   * An absent optional file input retains its shipped complete behavior. */
   readonly ok: boolean;
 }
 

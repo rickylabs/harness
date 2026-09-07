@@ -8,26 +8,39 @@
  */
 
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, stat, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 
-import { EXIT, main, parseFlags } from "./cli.js";
+import { EXIT, main, parseFlags, collectGovernance, defaultSourceServices, usageCommand, runUsageProbe, readSourceText, type SourceServices } from "./cli.js";
+import { spawn as spawnChild } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { parseSource, SPEND_URL, SourceError } from "./source.js";
 import { livePath, resolveObservability } from "./observability.js";
 
 let home: string;
+let heldEnvironment: Record<string, string | undefined>;
 
 beforeEach(async () => {
   home = await mkdtemp(join(tmpdir(), "dsh-cli-"));
+  heldEnvironment = { HOME: process.env.HOME };
+  for (const key of Object.keys(process.env)) {
+    if (key.startsWith("DSH_TELEMETRY_")) { heldEnvironment[key] = process.env[key]; delete process.env[key]; }
+  }
+  process.env.HOME = home;
 });
 
 afterEach(async () => {
   await rm(home, { recursive: true, force: true });
+  for (const key of Object.keys(process.env)) if (key.startsWith("DSH_TELEMETRY_")) delete process.env[key];
+  for (const [key, value] of Object.entries(heldEnvironment)) {
+    if (value === undefined) delete process.env[key]; else process.env[key] = value;
+  }
 });
 
 /** Run the CLI with stdout captured, so a test reads exactly what an operator would see. */
-async function run(argv: readonly string[]): Promise<{ code: number; out: string }> {
+async function run(argv: readonly string[], services?: SourceServices): Promise<{ code: number; out: string }> {
   const written: string[] = [];
   const original = process.stdout.write.bind(process.stdout);
   process.stdout.write = ((chunk: string | Uint8Array): boolean => {
@@ -35,7 +48,7 @@ async function run(argv: readonly string[]): Promise<{ code: number; out: string
     return true;
   }) as typeof process.stdout.write;
   try {
-    const code = await main(argv);
+    const code = await main(argv, services);
     return { code, out: written.join("") };
   } finally {
     process.stdout.write = original;
@@ -702,5 +715,253 @@ describe("dsh-telemetry, with the live log", () => {
     const { code, out } = await run(["runs", "--home", home, "--now", "2026-09-04T22:00:00.000Z"]);
     assert.equal(code, EXIT.ok);
     assert.ok(!out.includes("live log:"));
+  });
+});
+
+const LIVE_NOW = "2026-09-07T12:00:00.000Z";
+const USAGE_CANARY = "synthetic-usage-secret-canary";
+const SPEND_CANARY = "synthetic-spend-secret-canary";
+const PRIVATE_CANARY = "synthetic-private-project-session-path-host-canary";
+function liveDescriptor() {
+  return {
+    accountLabel: "synthetic", usage: { denoBin: "/fixture/deno", probe: "/fixture/probe.ts", checkout: join(home, "upstream"), model: "fixture/model",
+      credentialEnv: "USAGE_API_KEY", timeoutMs: 100, maxBytes: 4096,
+      windows: { rolling_five_hours: { label: "short", windowMinutes: 3 }, weekly: { label: "week", windowMinutes: 5 }, monthly: { label: "month", windowMinutes: 7 } } },
+    spend: { url: SPEND_URL, credentialEnv: "SPEND_API_KEY", window: "monthly", validForMs: 60000, timeoutMs: 100, maxBytes: 4096 },
+    capacity: { cgroupRoot: join(home, "cgroup"), scopeLabel: "configured-cgroup", validForMs: 60000 },
+    admissions: { fromObservabilityLog: true },
+  };
+}
+function usagePayload(capturedAt = LIVE_NOW) {
+  return { provider: "opencode_go", capturedAt, validForMs: 900000,
+    percentageWindows: Object.fromEntries(["rolling_five_hours", "weekly", "monthly"].map(id => [id, { percent: 42, status: "allowed", resetsAt: "2026-09-07T13:00:00Z" }])),
+    private: PRIVATE_CANARY,
+  };
+}
+const admissionEvent = () => ({ at: LIVE_NOW, runId: PRIVATE_CANARY, kind: "governance.admission", detail: {
+  item: { number: 205 }, regime: "subscription", state: "throttle", observedAt: LIVE_NOW, validUntil: "2026-09-07T12:05:00Z",
+  provenance: PRIVATE_CANARY, outcome: { accepted: false, reason: "quota-paced", detail: PRIVATE_CANARY },
+} });
+function fakeServices(over: Partial<SourceServices> = {}): SourceServices {
+  return { ...defaultSourceServices(), env: { USAGE_API_KEY: USAGE_CANARY, SPEND_API_KEY: SPEND_CANARY }, clock: () => LIVE_NOW,
+    usage: async () => usagePayload(), fetch: async () => new Response(JSON.stringify({ data: { usage_monthly: 2, label: PRIVATE_CANARY } })),
+    readText: async path => path.endsWith("memory.current") ? "1024\n" : "max\n", ...over };
+}
+const emptyLog = { files: [], notes: [], degraded: false };
+async function seedLive(descriptor: unknown = liveDescriptor()): Promise<string> {
+  await mkdir(join(home, "cgroup"), { recursive: true });
+  await mkdir(join(home, "upstream"), { recursive: true });
+  await writeFile(join(home, "upstream", "unchanged.txt"), "synthetic source dependency\n");
+  await writeFile(join(home, "cgroup", "memory.current"), "1024\n");
+  await writeFile(join(home, "cgroup", "memory.max"), "max\n");
+  const path = join(home, "source.json");
+  await writeFile(path, JSON.stringify(descriptor));
+  return path;
+}
+async function filesBelow(root: string): Promise<unknown> {
+  const result: Record<string, unknown> = {};
+  for (const entry of await readdir(root, { withFileTypes: true })) {
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) result[entry.name] = await filesBelow(path);
+    else { const info = await stat(path); result[entry.name] = [info.mtimeMs, info.size, await readFile(path, "utf8")]; }
+  }
+  return result;
+}
+/** A real process, with no inherited credentials or ambient telemetry overrides. */
+async function cliProcess(args: string[], stdin = "", program?: string): Promise<{ code: number; out: string; err: string }> {
+  const cli = fileURLToPath(new URL("./cli.js", import.meta.url));
+  return await new Promise((resolve, reject) => {
+    const child = spawnChild(process.execPath, program === undefined ? [cli, ...args] : ["--input-type=module", "-e", program, ...args], {
+      env: { HOME: home, PATH: process.env.PATH ?? "" }, stdio: ["pipe", "pipe", "pipe"],
+    });
+    let out = "";
+    let err = "";
+    child.stdout.on("data", chunk => { out += String(chunk); });
+    child.stderr.on("data", chunk => { err += String(chunk); });
+    child.on("error", reject);
+    child.on("close", code => resolve({ code: code ?? 1, out, err }));
+    child.stdin.end(stdin);
+  });
+}
+
+describe("live governance CLI and services", () => {
+  it("pins the env-only permission vector and minimizes child environment; no credential argv", async () => {
+    const config = parseSource(liveDescriptor()).usage!;
+    const command = usageCommand(config, USAGE_CANARY);
+    assert.deepEqual(command.args.slice(0, 6), ["run", "--no-config", "--no-lock", "--no-prompt", "--no-remote", "--no-code-cache"]);
+    assert.deepEqual(command.args.filter(a => a.startsWith("--allow-")), ["--allow-env=USAGE_API_KEY", "--allow-net=opencode.ai"]);
+    assert.deepEqual(Object.keys(command.env).sort(), ["DENO_DIR", "DENO_NO_UPDATE_CHECK", "USAGE_API_KEY"]);
+    assert.equal(command.env.DENO_DIR, "/dev/null");
+    assert.equal(command.env.USAGE_API_KEY, USAGE_CANARY);
+    assert.doesNotMatch(JSON.stringify(command.args), /secret-canary|--now|--allow-read|--allow-write|--allow-run/);
+    const probe = await readFile(fileURLToPath(new URL("../adapters/opencode-usage-probe.ts", import.meta.url)), "utf8");
+    assert.match(probe, /from "harness:usage"/);
+    assert.match(probe, /from "harness:usage-validity"/);
+    assert.match(probe, /readTextFile: denied/);
+    assert.match(probe, /stat: denied/);
+    assert.match(probe, /validForMs: EXPENSE_SNAPSHOT_MAX_AGE_MS/);
+    assert.doesNotMatch(probe, /Deno\.env\.toObject|reserveCopilotCredits|--now/);
+  });
+  it("isolates each service failure and exposes incomplete evidence without leaking credentials or exceptions", async () => {
+    const source = parseSource(liveDescriptor());
+    let calls = 0;
+    const services = fakeServices({ usage: async command => {
+      assert.equal(command.env.USAGE_API_KEY, USAGE_CANARY);
+      assert.doesNotMatch(JSON.stringify(command.args), /secret-canary/);
+      throw new Error(PRIVATE_CANARY + USAGE_CANARY);
+    }, fetch: async (url, init) => {
+      calls++;
+      assert.equal(url, SPEND_URL);
+      assert.equal(init?.redirect, "error");
+      assert.equal(new Headers(init?.headers).get("authorization"), `Bearer ${SPEND_CANARY}`);
+      return new Response(JSON.stringify({ data: { usage_monthly: 2, byok_usage_monthly: 20, label: PRIVATE_CANARY } }));
+    } });
+    const result = await collectGovernance(source, emptyLog, services);
+    assert.equal(calls, 1);
+    assert.equal(result.observed.ok, false);
+    assert.equal(result.observed.governance.availability, "fresh");
+    assert.match(JSON.stringify(result), /"spentUsd":2/);
+    assert.match(JSON.stringify(result), /"ramUsedBytes":1024/);
+    assert.doesNotMatch(JSON.stringify(result), /secret-canary|private-project/);
+    const failedCapacity = await collectGovernance(source, emptyLog, fakeServices({ readText: async () => { throw new Error(PRIVATE_CANARY); } }));
+    assert.equal(failedCapacity.observed.ok, false);
+    assert.match(JSON.stringify(failedCapacity), /"usedPercent":42/);
+    assert.match(failedCapacity.observed.notes.join(" "), /capacity: cgroup-unreadable/);
+  });
+  it("missing env bindings perform no service call and preserve the capacity leg", async () => {
+    let called = false;
+    const services = fakeServices({ env: {}, usage: async () => { called = true; throw new Error(); }, fetch: async () => { called = true; throw new Error(); } });
+    const result = await collectGovernance(parseSource(liveDescriptor()), emptyLog, services);
+    assert.equal(called, false);
+    assert.equal(result.observed.ok, false);
+    assert.match(result.observed.notes.join(" "), /usage: credential-unbound/);
+    assert.match(result.observed.notes.join(" "), /spend: credential-unbound/);
+    assert.match(JSON.stringify(result), /"ramUsedBytes":1024/);
+  });
+  it("spend refuses non-JSON, HTTP failure, oversized streaming bodies and timed-out responses", async () => {
+    for (const [fetcher, reason] of [
+      [async () => new Response("not-json"), "non-json"],
+      [async () => new Response("private", { status: 401 }), "request-failed"],
+      [async () => new Response("x".repeat(4097)), "oversize"],
+      [async () => new Promise<Response>(() => {}), "timeout"],
+      [async () => new Response(new ReadableStream({ start() {} })), "timeout"],
+    ] as const) {
+      const source = parseSource({ ...liveDescriptor(), spend: { ...liveDescriptor().spend, timeoutMs: 5 } });
+      const result = await collectGovernance(source, emptyLog, fakeServices({ fetch: fetcher }));
+      assert.equal(result.observed.ok, false);
+      assert.match(result.observed.notes.join(" "), new RegExp(`spend: ${reason}`));
+      assert.match(JSON.stringify(result), /"usedPercent":42/);
+    }
+  });
+  it("takes completion after every successful read, rejects expired/future leaves, and never passes evaluation time to the probe", async () => {
+    const stamps = ["2026-09-07T12:00:01Z", "2026-09-07T12:00:02Z", "2026-09-07T12:00:03Z"];
+    const result = await collectGovernance(parseSource(liveDescriptor()), emptyLog, fakeServices({ clock: () => stamps.shift()!, usage: async command => {
+      assert.doesNotMatch(JSON.stringify(command.args), /--now|13:00/);
+      return usagePayload();
+    } }), "2026-09-07T13:00:00Z");
+    assert.equal(result.completion, "2026-09-07T12:00:03Z");
+    assert.equal(result.observed.governance.availability, "stale");
+    assert.match(JSON.stringify(result), /2026-09-07T12:00:00.000Z/);
+    for (const capturedAt of ["2026-09-07T11:00:00Z", "2026-09-07T12:00:01Z"]) {
+      const result = await collectGovernance(parseSource(liveDescriptor()), emptyLog, fakeServices({ usage: async () => usagePayload(capturedAt) }));
+      assert.equal(result.observed.ok, false);
+      assert.doesNotMatch(JSON.stringify(result), /"usedPercent"/);
+      assert.match(JSON.stringify(result), /"spentUsd":2/);
+    }
+  });
+  it("real CLI file: compatibility, refresh and all-unconfigured completeness are deterministic and read-only", async () => {
+    const file = join(home, "observations.json");
+    await writeFile(file, JSON.stringify(governanceFixture()));
+    const args = ["status", "--home", home, "--now", "2026-09-07T12:00:00Z", "--json"];
+    const before = await filesBelow(home);
+    const old = await cliProcess([...args, "--observations", file]);
+    const alias = await cliProcess([...args, "--observations-from", `file:${file}`]);
+    assert.equal(alias.code, 0);
+    assert.deepEqual(alias, old);
+    assert.deepEqual(await filesBelow(home), before);
+    await writeFile(file, JSON.stringify(governanceFixture(21)));
+    const refreshed = await cliProcess([...args, "--observations-from", `file:${file}`]);
+    assert.equal(refreshed.code, 0);
+    assert.match(refreshed.out, /"usedPercent": 21/);
+    const config = await seedLive({ accountLabel: "synthetic", usage: null, spend: null, capacity: null, admissions: null });
+    const unconfigured = await cliProcess([...args, "--observations-from", config]);
+    assert.equal(unconfigured.code, 3);
+    assert.equal(JSON.parse(unconfigured.out).complete, false);
+    assert.match(unconfigured.out, /unavailable/);
+  });
+  it("real writer-to-reader CLI path consumes synthetic admissions with injected services and no observation writes", async () => {
+    const path = await seedLive();
+    const recorded = await cliProcess(["record", "--home", home, "--json"], JSON.stringify(admissionEvent()) + "\n");
+    assert.equal(recorded.code, 0);
+    const before = await filesBelow(home);
+    const cliUrl = new URL("./cli.js", import.meta.url).href;
+    const program = `import {main, defaultSourceServices} from ${JSON.stringify(cliUrl)};
+      const services = {...defaultSourceServices(), env: {USAGE_API_KEY: "${USAGE_CANARY}", SPEND_API_KEY: "${SPEND_CANARY}"},
+        clock: () => "${LIVE_NOW}", usage: async () => (${JSON.stringify(usagePayload())}),
+        fetch: async () => new Response(JSON.stringify({data: {usage_monthly: 2, label: "${PRIVATE_CANARY}"}}))};
+      process.exitCode = await main(process.argv.slice(1), services);`;
+    for (const command of ["status", "tree"]) {
+      for (const json of [[], ["--json"]]) {
+        const result = await cliProcess([command, "--home", home, "--observations-from", path, ...json], "", program);
+        assert.equal(result.code, 0, result.err + result.out);
+        assert.doesNotMatch(result.out + result.err, /secret-canary|private-project-session|fixture\/model/);
+        assert.match(result.out, /quota-paced/);
+        assert.match(result.out, /reader:recorded-admission/);
+        if (json.length > 0) {
+          assert.equal(JSON.parse(result.out).complete, true);
+          assert.match(result.out, /"ramTotalBytes": null/);
+          assert.match(result.out, /"ramUsedBytes": 1024/);
+        } else assert.match(result.out, /total unknown · headroom unknown/);
+      }
+    }
+    assert.deepEqual(await filesBelow(home), before);
+    // The writer can supply envelope time, but it must never invent missing detail time.
+    const malformedNewest = admissionEvent();
+    const { observedAt: _omitted, ...invalidDetail } = malformedNewest.detail;
+    const appended = await cliProcess(["record", "--home", home], JSON.stringify({ ...malformedNewest, detail: invalidDetail }) + "\n");
+    assert.equal(appended.code, 0);
+    const afterAppend = await filesBelow(home);
+    const invalid = await cliProcess(["status", "--home", home, "--observations-from", path, "--json"], "", program);
+    assert.equal(invalid.code, 3);
+    assert.equal(JSON.parse(invalid.out).complete, false);
+    assert.match(invalid.out, /shape-mismatch/);
+    assert.doesNotMatch(invalid.out, /quota-paced|private-project-session/);
+    assert.deepEqual(await filesBelow(home), afterAppend);
+  });
+  it("real CLI keeps successful capacity when credentials and admissions are unavailable; invalid source is usage error", async () => {
+    const path = await seedLive();
+    const before = await filesBelow(home);
+    const result = await cliProcess(["status", "--home", home, "--observations-from", path, "--json"]);
+    assert.equal(result.code, 3);
+    assert.equal(JSON.parse(result.out).complete, false);
+    assert.match(result.out, /"ramUsedBytes": 1024/);
+    assert.match(result.out, /credential-unbound/);
+    assert.deepEqual(await filesBelow(home), before);
+    await writeFile(join(home, "cgroup", "memory.current"), "2048\n");
+    const refreshedBefore = await filesBelow(home);
+    const refreshed = await cliProcess(["status", "--home", home, "--observations-from", path, "--json"]);
+    assert.equal(refreshed.code, 3);
+    assert.match(refreshed.out, /"ramUsedBytes": 2048/);
+    assert.ok(Date.parse(JSON.parse(refreshed.out).generatedAt) > Date.parse(JSON.parse(result.out).generatedAt));
+    assert.deepEqual(await filesBelow(home), refreshedBefore);
+    await writeFile(path, JSON.stringify({ ...liveDescriptor(), spend: { ...liveDescriptor().spend, url: "https://private-canary.invalid" } }));
+    const invalid = await cliProcess(["status", "--home", home, "--observations-from", path]);
+    assert.equal(invalid.code, 2);
+    assert.equal(invalid.out, "governance source: invalid-descriptor\n");
+    assert.throws(() => parseFlags(["status", "--observations", path, "--observations-from", path]), /mutually exclusive/);
+    assert.throws(() => parseFlags(["runs", "--observations-from", path]), /requires tree or status/);
+  });
+  it("bounds regular file reads and real subprocess output, timeout, stderr and malformed output without Deno", async () => {
+    const path = join(home, "bounded.json");
+    await writeFile(path, "12345");
+    await assert.rejects(readSourceText(path, 4), (e: unknown) => e instanceof SourceError && e.code === "oversize");
+    assert.equal(await readSourceText(path, 5), "12345");
+    const command = { bin: process.execPath, args: ["-e", "process.stderr.write('private-canary');process.stdout.write('{}')"], env: { HOME: home }, timeoutMs: 2000, maxBytes: 1024 };
+    assert.deepEqual(await runUsageProbe(command), {});
+    for (const [script, code] of [["process.stdout.write('x'.repeat(1025))", "oversize"], ["process.stdout.write('x')", "non-json"], ["process.exitCode=3", "spawn-failed"]]) {
+      await assert.rejects(runUsageProbe({ ...command, args: ["-e", script!] }), (e: unknown) => e instanceof SourceError && e.code === code);
+    }
+    await assert.rejects(runUsageProbe({ ...command, args: ["-e", "setInterval(()=>{}, 1000)"], timeoutMs: 30 }), (e: unknown) => e instanceof SourceError && e.code === "timeout");
+    await assert.rejects(runUsageProbe({ ...command, bin: join(home, "absent") }), (e: unknown) => e instanceof SourceError && e.code === "spawn-failed");
   });
 });

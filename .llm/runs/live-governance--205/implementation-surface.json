@@ -1,0 +1,90 @@
+{
+  "baseHead": "0e9998405e70bfb850bcff1adb7df22bca2a758d",
+  "state": "uncommitted implementation; no publication",
+  "files": [
+    {
+      "path": "docs/reference/cli/dsh-telemetry.md",
+      "sha256": "580e7d0302b1e4e71932a0953e98b1b946b1e1cb2407f736ca3526e92922c6df"
+    },
+    {
+      "path": "packages/telemetry/README.md",
+      "sha256": "32f9660ad5c703811efebede256f82e6fb2e3b32db6e01e87bb7df85ed9c4438"
+    },
+    {
+      "path": "packages/telemetry/adapters/opencode-usage-probe.ts",
+      "sha256": "b976d336f13a794d5b225fc91a4e46765bd7a802d016ce9b45012027aa1d13dd"
+    },
+    {
+      "path": "packages/telemetry/src/cli.test.ts",
+      "sha256": "6f22dabcfa14d2b9d3bdfe34abea6592500b6d8da1e7aff46547b611fe403046"
+    },
+    {
+      "path": "packages/telemetry/src/cli.ts",
+      "sha256": "08a6ba73d3cdb472cfaa84055ca52a25ea1aae3a82fc24fbab43d6f455d46a0b"
+    },
+    {
+      "path": "packages/telemetry/src/governance/admissions.test.ts",
+      "sha256": "797ec337b7e478206e0667ec2fa17cb0bc3a409ee1123b1753c8cc76959355f6"
+    },
+    {
+      "path": "packages/telemetry/src/governance/admissions.ts",
+      "sha256": "2a4ec193d549c3c98c206d450a02a13e3d169ecf25f3dd6fb650260d98e2c1e5"
+    },
+    {
+      "path": "packages/telemetry/src/governance/capacity.test.ts",
+      "sha256": "bc335092aeae03c7e5b4bea81831db1309c04363e9323833dfecb6f72853a5e7"
+    },
+    {
+      "path": "packages/telemetry/src/governance/capacity.ts",
+      "sha256": "04682295b26a011f8b5f26ebae34a2342bfedf1f61d18e099f5ccf1c33691af3"
+    },
+    {
+      "path": "packages/telemetry/src/governance/compose.test.ts",
+      "sha256": "900c7330bb060dd6d40e2b1cf04e0a67b961e4f452ea74297191ed2b535061f7"
+    },
+    {
+      "path": "packages/telemetry/src/governance/compose.ts",
+      "sha256": "940cf76892c118a61a1714f049991c71665127181f74f317caf41c7070f53fed"
+    },
+    {
+      "path": "packages/telemetry/src/governance/spend.test.ts",
+      "sha256": "dade8ea2d69dfc29c33b441a16b661cc29af25d26a995a97c868d02b7374df78"
+    },
+    {
+      "path": "packages/telemetry/src/governance/spend.ts",
+      "sha256": "60f9ef1eea31f2ad1a6741c111d5799724206df3b1381d8093cdea619530188f"
+    },
+    {
+      "path": "packages/telemetry/src/governance/usage.test.ts",
+      "sha256": "0b35a42adb3926efac73eadc59efdc21898f5ccb991015ce11fb084d87459906"
+    },
+    {
+      "path": "packages/telemetry/src/governance/usage.ts",
+      "sha256": "2119665d146e67951abaa41604c375add09441fa2f796cbbcc5362a02a484140"
+    },
+    {
+      "path": "packages/telemetry/src/index.ts",
+      "sha256": "97fe81d52af6a8ce46b8f358bd831e1e06780ac012a9dd5d09ef99d72961945d"
+    },
+    {
+      "path": "packages/telemetry/src/observations.ts",
+      "sha256": "2c96da176e8aee8382d63f7b79e20c95a00ece207e17b451d954a50bf0f24564"
+    },
+    {
+      "path": "packages/telemetry/src/render.test.ts",
+      "sha256": "0fa93fec9d72eda875eb4c442695427b891be57a875ce6f0c297b00d32e226f3"
+    },
+    {
+      "path": "packages/telemetry/src/render.ts",
+      "sha256": "10fc839458e2e6d4a455484d5105cb11aaa2f459e2c64344b3cc63ff89164ec5"
+    },
+    {
+      "path": "packages/telemetry/src/source.test.ts",
+      "sha256": "588eb61dbc69b79b620a501bc3edc76331351100a923135122683de2d95c0c41"
+    },
+    {
+      "path": "packages/telemetry/src/source.ts",
+      "sha256": "96285c3c6d185133744f09214c6f3b997e901582506cff0b8a46eec72473d1c4"
+    }
+  ]
+}

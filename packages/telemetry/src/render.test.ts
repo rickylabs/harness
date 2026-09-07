@@ -491,3 +491,33 @@ describe("a run printed under the item that named it", () => {
     assert.match(text, /#85 item 85/);
   });
 });
+
+describe("truthful governance leaf freshness", () => {
+  it("qualifies a fresh envelope and counts stale leaves per regime, including all-stale", () => {
+    const base = observed();
+    assert.notEqual(base.availability, "unavailable");
+    if (base.availability === "unavailable") return;
+    const original = base.state.regimes[0];
+    assert.equal(original?.regime, "subscription");
+    if (original?.regime !== "subscription") return;
+    for (const allStale of [false, true]) {
+      const accounts = original.accounts.map(a => ({ ...a, observedAt: "2026-09-04T21:00:00.000Z" }));
+      if (!allStale) accounts.push({ ...original.accounts[0]!, account: "second", observedAt: original.accounts[0]!.observedAt! });
+      const governance = observed({ state: { ...base.state, regimes: [{ ...original, accounts }, ...base.state.regimes.slice(1)] } });
+      const text = renderSnapshot({ ...empty, governance }, NOW);
+      assert.match(text, /governance: FRESH \(1 leaf readings stale\)/);
+      assert.match(text, new RegExp(`subscription \\[throttle\\] \\(1 of ${allStale ? 1 : 2} readings stale\\)`));
+      assert.match(text, /primary \[throttle\] · STALE · read/);
+    }
+  });
+  it("retains known used or total capacity while headroom remains unknown", () => {
+    const base = observed();
+    if (base.availability === "unavailable") throw new Error();
+    const governance = observed({ state: { ...base.state, regimes: base.state.regimes.map(r => r.regime === "capacity"
+      ? { ...r, hosts: r.hosts.map(h => ({ ...h, ramTotalBytes: null, vramUsedBytes: null })) } : r) } });
+    const text = renderSnapshot({ ...empty, governance }, NOW);
+    assert.match(text, /RAM  32.0 GiB used \/ total unknown · headroom unknown/);
+    assert.match(text, /VRAM used unknown \/ 24.0 GiB total · headroom unknown/);
+    assert.doesNotMatch(text, /100% free/);
+  });
+});

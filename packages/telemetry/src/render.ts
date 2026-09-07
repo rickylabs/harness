@@ -97,7 +97,9 @@ function readingAge(observedAt: string | null, now: string): string {
 }
 
 function headroom(used: number | null, total: number | null): string {
-  if (used === null || total === null) return "used/total/headroom unknown";
+  if (used === null && total === null) return "used/total/headroom unknown";
+  if (total === null) return `${humanBytes(used!)} used / total unknown · headroom unknown`;
+  if (used === null) return `used unknown / ${humanBytes(total)} total · headroom unknown`;
   return `${humanBytes(used)} used / ${humanBytes(total)} total · ${humanBytes(total - used)} headroom`;
 }
 
@@ -116,17 +118,26 @@ export function renderGovernance(
     return lines;
   }
 
-  const marker = governance.availability === "stale" ? "STALE" : "FRESH";
+  const span = Date.parse(governance.validUntil) - Date.parse(governance.observedAt);
+  const stale = (at: string | null): boolean => at !== null && Date.parse(now) > Date.parse(at) + span;
+  const age = (at: string | null): string => `${stale(at) ? "STALE · " : ""}${readingAge(at, now)}`;
+  const leaves = (regime: (typeof governance.state.regimes)[number]): readonly { readonly observedAt: string | null }[] =>
+    regime.regime === "subscription" ? regime.accounts : regime.regime === "metered" ? regime.providers : regime.hosts;
+  const totalStale = governance.state.regimes.flatMap(regime => [...leaves(regime)]).filter(leaf => stale(leaf.observedAt)).length;
+  const marker = governance.availability === "stale" ? "STALE" :
+    `FRESH${totalStale === 0 ? "" : ` (${totalStale} leaf readings stale)`}`;
   const lines = [
     `governance: ${marker} · ${governance.provenance} · observed ${humanAge(governance.observedAt, now)} ago`,
   ];
   for (const regime of governance.state.regimes) {
-    lines.push(`  ${regime.regime} [${regime.state}]${regime.note === null ? "" : ` — ${regime.note}`}`);
+    const readings = leaves(regime);
+    const staleCount = readings.filter(leaf => stale(leaf.observedAt)).length;
+    lines.push(`  ${regime.regime} [${regime.state}]${staleCount === 0 ? "" : ` (${staleCount} of ${readings.length} readings stale)`}${regime.note === null ? "" : ` — ${regime.note}`}`);
     if (regime.regime === "subscription") {
       if (regime.accounts.length === 0) lines.push("    no accounts reported");
       for (const account of regime.accounts) {
         lines.push(
-          `    ${account.seam}/${account.account} [${account.state}] · ${readingAge(account.observedAt, now)}`,
+          `    ${account.seam}/${account.account} [${account.state}] · ${age(account.observedAt)}`,
         );
         if (account.windows.length === 0) lines.push("      no windows reported");
         for (const window of account.windows) {
@@ -141,13 +152,13 @@ export function renderGovernance(
       for (const provider of regime.providers) {
         const ceiling = provider.ceilingUsd === null ? "ceiling unknown" : `$${provider.ceilingUsd.toFixed(2)} ceiling`;
         lines.push(
-          `    ${provider.provider}: $${provider.spentUsd.toFixed(2)} spent / ${ceiling} (${provider.windowLabel}) · ${readingAge(provider.observedAt, now)}`,
+          `    ${provider.provider}: $${provider.spentUsd.toFixed(2)} spent / ${ceiling} (${provider.windowLabel}) · ${age(provider.observedAt)}`,
         );
       }
     } else {
       if (regime.hosts.length === 0) lines.push("    no hosts reported");
       for (const host of regime.hosts) {
-        lines.push(`    ${host.host} · ${readingAge(host.observedAt, now)}`);
+        lines.push(`    ${host.host} · ${age(host.observedAt)}`);
         lines.push(`      VRAM ${headroom(host.vramUsedBytes, host.vramTotalBytes)}`);
         lines.push(`      RAM  ${headroom(host.ramUsedBytes, host.ramTotalBytes)}`);
       }

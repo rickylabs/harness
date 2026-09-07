@@ -39,6 +39,7 @@ options:
   --items <path>         board items to join runs to: "dsh-board snapshot" output, or a
                          JSON array of {number, title, epic, milestone, phase} refs
   --observations <path>  governance observation JSON for tree/status
+  --observations-from <spec>  live source descriptor JSON path, or file:<absolute-path>
   --limit <n>            runs to read per seam, most recent first (default: 500)
   --since <iso>          only runs with activity at or after this time
   --now <iso>            reference time for ages, so output is reproducible
@@ -52,6 +53,15 @@ snapshot: account subscription windows, provider spend, host RAM/VRAM, and item-
 admissions. The file is read again on every invocation. No flag is explicit UNKNOWN/UNAVAILABLE;
 a requested unreadable or invalid file is incomplete (exit 3). Stale values stay visible as STALE,
 and missing measurements stay unknown rather than becoming zero.
+
+"--observations-from" applies only to tree/status and excludes "--observations". A descriptor
+configures independent usage, spend, configured-cgroup-v2 and recorded-admission readers.
+Model IDs, window durations and safe labels are runtime configuration. No model is dispatched.
+Live readings use collection completion time unless --now explicitly sets the evaluation clock.
+A failed requested leg is unread, keeps successful legs visible, and returns incomplete (exit 3).
+All-unconfigured is UNAVAILABLE/exit 3. Unlimited cgroup total/headroom and pending approvals are
+unknown. File mode retains stale values and its existing exit behavior. See telemetry README
+for descriptor fields, the env-only service dependency and public-safe admission reason codes.
 
 "record" reads JSONL on stdin — one {"runId","kind","at","detail"} object per line, "at"
 and "detail" optional. A bad line loses that line and is named; an empty batch is not an
