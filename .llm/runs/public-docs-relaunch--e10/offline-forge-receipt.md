@@ -18,3 +18,7 @@ Four calls were asserted in one Node process, which exited 0:
 | doctor | 0 | unavailable transport remained diagnostic output |
 
 The injected probe was called exactly four times. The implementation path is resolveContext at cli.ts:251-273; cmdInit maps unavailable apply to EXIT.ok at cli.ts:583-604. This proves the exception without contacting GitHub. Tutorial live label verification/readback remains a documented prerequisite, not an executed network receipt.
+
+## Final review containment
+
+The final independent model review uses a dedicated process-local OpenCode agent configuration with shell, editing, network tools and subagents denied; only repository source/receipt reading and search are enabled. The coordinator runs required commands separately and provides their observed status. This is an additional containment measure after the failed isolation checks, not a claim that prompt instructions alone prevent effects. Configuration semantics: [OpenCode permissions](https://opencode.ai/docs/permissions/) and [runtime config overrides](https://opencode.ai/docs/config/).

@@ -257,3 +257,9 @@ The attempted offline forge check reached GitHub and was rejected with HTTP 404;
 Earlier piped-`tail` exit captures in this worklog are superseded by this
 table wherever they conflict; every status above was read from the command
 itself (`EXIT=$?` with no intermediate pipe).
+
+## Coordinator final wording and evidence pass
+
+The documentation model returned exact patches when the process-local file-path permissions rejected its final three edits. The coordinator applied those patches mechanically: the remaining matrix transport wording now names the verification requirement without a generic exit claim; the diagram hint names the observed zoom controls; and the H1 disposition table is structurally intact, with the incident note below it. The complete incident receipt records both rejected placeholder attempts. No product code changed.
+
+The coordinator asserted the worktree head 94438ff, then ran check:links and check:docs in that worktree after the wording edits; both exited 0. The author's final typecheck/build/test receipts remain recorded above, and CI plus a restricted source/receipt review gate the resulting commit.

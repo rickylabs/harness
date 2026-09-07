@@ -136,8 +136,8 @@ here; **Composed** — the `dsh-app` profile actually registers it;
 **Host-dependent** — use needs a live provider, server, credential or
 transport a clone does not supply; **Stub** — a placeholder reserving
 dependency shape. Nothing in this matrix is a running swarm, and no row
-claims one. On a narrow screen, tables scroll sideways rather than clip,
-and the diagram opens full-size on click.
+claims one. On a narrow screen, tables scroll sideways. Use the diagram's
+zoom controls or read the walkthrough below.
 
 | Surface | Status | What that means here |
 | --- | --- | --- |
@@ -150,7 +150,7 @@ and the diagram opens full-size on click.
 | Governance display | Implemented | `dsh-telemetry tree`/`status` reads a typed observation file — quota, spend, capacity, refusals, each with its age; absent input reads UNKNOWN, never "all clear". The live host adapter is blocked on [#62](https://github.com/rickylabs/harness/issues/62) |
 | `provider-codex`, `provider-acp`, `governance`, `netscript-bridge` | Stub | each README opens with `Status: stub` and names its blocking epic |
 | `contracts` | Implemented | the only publishable package; release is tag-triggered, and no registry release is claimed here |
-| GitHub transports; `deploy/` stack | Host-dependent | reading GitHub needs `gh` or `GITHUB_TOKEN` and exits **3** without; the compose stack encodes one specific box |
+| GitHub transports; `deploy/` stack | Host-dependent | GitHub board reads and label checks need a working transport; verify `init` with `labels check` and a live readback. The compose stack targets one specific box |
 
 ## Choose your path
 
