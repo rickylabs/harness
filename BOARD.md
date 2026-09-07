@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **209/258 done · 16 running · 20 queued · 12 abandoned · 1 invisible**
+`[###############-----]` **209/263 done · 16 running · 24 queued · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-07T10:44:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T11:49:27Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (16)
 
@@ -33,15 +33,16 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 169/204 done · 15 running · 17 queued · 3 abandoned
+`[#########---]` 169/209 done · 15 running · 21 queued · 3 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 27/30 done · 2 queued · 1 abandoned | `impl` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/5 done · 5 queued | `triage` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[########----]` 17/24 done · 5 running · 2 queued | `triage` |
-| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 2 queued | `triage` |
+| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 invisible | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
@@ -61,11 +62,15 @@ Something could be acting on these right now.
 ## Waiting to start
 
 <details>
-<summary>20 filed, nothing started</summary>
+<summary>24 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
-| [#269 fix(routing): adopt fleet Muse Spark 1.3 tier and role lanes](https://github.com/rickylabs/harness/issues/269) | `triage` | `e4` |
+| [#271 Routing configuration 1/5 — Load a wholly replaceable routing configuration](https://github.com/rickylabs/harness/issues/271) | `triage` | `e11` |
+| [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `triage` | `e11` |
+| [#273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator](https://github.com/rickylabs/harness/issues/273) | `triage` | `e11` |
+| [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `triage` | `e11` |
+| [#275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON](https://github.com/rickylabs/harness/issues/275) | `triage` | `e11` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
 | [#237 docs: restore approved consumer repository names and direct architecture citation](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
 | [#264 E6 — Define creation capability ownership before exposing P2 actions](https://github.com/rickylabs/harness/issues/264) | `triage` | `e6` |
@@ -94,9 +99,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  209/258 done · 16 running · 20 queued · 12 abandoned · 1 invisible
+# rickylabs/harness  [###############-----]  209/263 done · 16 running · 24 queued · 12 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [################----]  169/204 done · 15 running · 17 queued · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  169/209 done · 15 running · 21 queued · 3 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -150,6 +155,14 @@ Something could be acting on these right now.
     shipped              PR243 feat(docs): gate the tutorial's pasted output instead of trusting it (p2)
     triage               #244 docs(runtime): enforce Node 24 floor and validate Node 26 target (p3)
 
+  E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]
+    [----------------] 0/5 done · 5 queued
+    triage               #271 Routing configuration 1/5 — Load a wholly replaceable routing configuration (p1)
+    triage               #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p1)
+    triage               #273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator (p1)
+    triage               #274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration (p1)
+    triage               #275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON (p1)
+
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]
     [#############---] 12/14 done · 2 queued
     shipped              #46 E2.1 — packages/dsh-app: the `rickylabs` profile and bundle
@@ -195,7 +208,7 @@ Something could be acting on these right now.
     shipped              PR238 feat(route-identity--e35): refuse mismatched Codex routes before task submission
 
   E4 — Model gateway and routing matrix #34  [triage]
-    [#############---] 12/14 done · 2 queued
+    [#############---] 12/14 done · 1 queued · 1 invisible
     shipped              #57 E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters
     shipped              #58 E4.2 — routing: tiers, the family rule, and fallback chains
     shipped              #59 E4.3 — Capability probes instead of committed constants
@@ -209,7 +222,7 @@ Something could be acting on these right now.
     shipped              PR175 feat(llm-local): resolve endpoints and read readiness (#57) (p1)
     shipped              PR180 feat(routing): seat Astra on complex implementation, and check the row holds
     triage               #181 fix(routing): resolve complex evaluators across both implementer families
-    triage               #269 fix(routing): adopt fleet Muse Spark 1.3 tier and role lanes (p1)
+    no status            #269 fix(routing): adopt fleet Muse Spark 1.3 tier and role lanes (p1)
 
   E5 — Governance: tri-regime admission control #35  [triage]
     [######----------] 3/8 done · 5 queued
