@@ -19,3 +19,27 @@
 - 2026-09-07T20:55Z — Wrote `research.md`, `plan.md`, `drift.md`, `worklog.md`. No product, test,
   docs, workflow, board, host or sibling mutation. No commit, push or label. Next: independent plan
   evaluation (matrix `plan_evaluation`: `glm_5_3` provider_default, fallback `fable_5_1` low).
+
+- Implementation session, run attribution 2026-09-08 — Historical `20:1xZ` through `20:5xZ`
+  entries above are approximate ordering placeholders, not exact receipts (BI-10). Dates in this
+  implementation handoff identify the supplied task/run date; no exact wall-clock ordering relative
+  to planning/evaluation is inferred. Verified independent Stage G PASS at evaluated `01c523e`,
+  with receipt-only current head `89933b6`. Read the required AGENTS/doctrine/concept/run artifacts
+  before mutation. Initial turn stopped without mutation because launcher identity evidence was
+  missing. Coordinator then supplied the actual pre-turn sanitized receipt and fresh resumed matrix.
+- Implementation session, run attribution 2026-09-08 — Implemented contracts decoder/types/exports,
+  version candidate and tests; structured telemetry coverage and refusal codes; one-shot CLI before
+  transcript scan; seven byte-locked synthetic fixtures; actual installed consumer runtime and
+  compiled root/server declarations. Root test chain owns the installed gate. No workflow changes,
+  agents, evaluator dispatch, live provider effects or sibling mutations.
+- Implementation session, run attribution 2026-09-08 — Recorded initial telemetry diagnostic-test
+  failure and executable-temp EACCES in verification/drift; repaired the assertion and configured an
+  executable scratch environment. No offline-install network fallback. Final contracts 184/184,
+  telemetry 431/431, root 2,878/2,878 plus installed hook passed. Typecheck, build, publish,
+  generated-doc check, standalone installed check, diff check and targeted archive scan passed.
+  Build tutorial checker retained 3 declared untested blocks; independent/live acceptance remains
+  unverified. See [verification.md](verification.md) for exact totals and sanitized receipts.
+- Implementation session, run attribution 2026-09-08 — Committed product implementation as
+  `e6c14d9`; evidence-only commit follows. Contracts tarball SHA-256 is
+  `cf3296949a8afbfabef7f6926d8ae732e831ec389453020c9fdd70bd07f27c1d`.
+  No push, PR, merge, tag, release or board action. Coordinator independently reviews and gates.
