@@ -4,6 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 
+import { EPIC_LABEL } from "@rickylabs/board";
+
 import { detectLanePrefix, detectRepoLabels, detectSkillDirs, epicSlug } from "./detect.js";
 import type { GitHubTransport, IssueRef } from "./github.js";
 
@@ -122,7 +124,7 @@ describe("detectRepoLabels", () => {
     assert.deepEqual(names(result.labels), ["topic:w0-docs", "topic:w0-internals"]);
   });
 
-  it("derives epics from open umbrella issues, stripping the title's prefix", async () => {
+  it("derives epics from open epic issues, stripping the title's prefix", async () => {
     const result = await detectRepoLabels({
       repoRoot: root,
       repo: "owner/repo",
@@ -134,6 +136,31 @@ describe("detectRepoLabels", () => {
       families: ["epic"],
     });
     assert.deepEqual(names(result.labels), ["epic:board-projection", "epic:github-bridge"]);
+  });
+
+  it("asks GitHub for the same label the board reads", async () => {
+    // The divergence in #202 lived in this query and no test could see it: `fakeTransport` answers
+    // every search with the same issues, so a query naming a label that does not exist returns the
+    // fixture anyway and the suite stays green. Recording the query is what makes the string
+    // testable, and building the expectation from board's exported constant is what makes the two
+    // packages fail together rather than drift apart.
+    const found: IssueRef[] = [{ number: 36, title: "Epic: Board projection", labels: [] }];
+    const queries: string[] = [];
+    const transport: GitHubTransport = {
+      ...fakeTransport(found),
+      searchIssues: async (_repo, query) => {
+        queries.push(query);
+        return found;
+      },
+    };
+    await detectRepoLabels({
+      repoRoot: root,
+      repo: "owner/repo",
+      transport,
+      existing: [],
+      families: ["epic"],
+    });
+    assert.deepEqual(queries, [`is:issue is:open label:${EPIC_LABEL}`]);
   });
 
   it("marks the epics as live, by identity, so a render can drop exactly those", async () => {

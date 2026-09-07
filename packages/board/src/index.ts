@@ -44,7 +44,14 @@ export { compareNullableStrings, compareStrings } from "./order.js";
 
 export { closingKeywordTargets } from "./closing.js";
 
-export { DEFAULT_PRIORITY_ORDER, epicSlugOf, projectBoard, slugOfEpicTitle } from "./project.js";
+export {
+  DEFAULT_PRIORITY_ORDER,
+  EPIC_LABEL,
+  epicSlugOf,
+  isEpicLabels,
+  projectBoard,
+  slugOfEpicTitle,
+} from "./project.js";
 export type { ProjectOptions } from "./project.js";
 
 export { bucketOf, buildHierarchy, progressOf } from "./hierarchy.js";

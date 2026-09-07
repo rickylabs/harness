@@ -96,6 +96,9 @@
   description: "Request an extra evaluator beyond the opposite-family default"
 
 # ── flag: portable core ──
+- name: "epic"
+  color: "5319e7"
+  description: "Epic — tracked work stream"
 - name: "rfc"
   color: "5319e7"
   description: "Request for Comments — substantial or breaking design change"
