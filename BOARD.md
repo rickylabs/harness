@@ -2,9 +2,20 @@
 
 # rickylabs/harness
 
-`[################----]` **191/230 done · 10 running · 16 queued · 12 abandoned · 1 invisible**
+`[################----]` **191/231 done · 10 running · 13 queued · 4 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T02:52:51Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T03:00:04Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+
+## Waiting on you (4)
+
+Stopped on a decision only a person can make. No agent will pick these up.
+
+| item | column | epic |
+| --- | --- | --- |
+| [#237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
+| [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
+| [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
+| [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
 ## Moving now (10)
 
@@ -15,17 +26,21 @@ Something could be acting on these right now.
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
-| [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
+| [PR242 docs(board): a half-gated item is not an owner-gated one](https://github.com/rickylabs/harness/pull/242) | `impl-eval` | — |
 
-## Anomalies (1)
+## Anomalies (2)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#242** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
@@ -35,16 +50,16 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 156/183 done · 9 running · 15 queued · 3 abandoned
+`[##########--]` 156/183 done · 8 running · 13 queued · 3 blocked · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
-| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 25/28 done · 2 queued · 1 abandoned | `impl` |
+| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 25/28 done · 1 queued · 1 blocked · 1 abandoned | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[########----]` 17/24 done · 5 running · 2 queued | `triage` |
-| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 queued | `triage` |
-| [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
+| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 blocked | `triage` |
+| [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 5 queued · 1 blocked | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 25/28 done · 1 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
@@ -53,25 +68,23 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 35/47 done · 1 running · 1 queued · 9 abandoned · 1 invisible
+`[########----]` 35/48 done · 2 running · 1 blocked · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[############]` 1/1 done | `impl` |
-| _(no epic)_ | `[########----]` 30/41 done · 1 queued · 9 abandoned · 1 invisible | — |
+| _(no epic)_ | `[########----]` 30/42 done · 1 running · 1 blocked · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>16 filed, nothing started</summary>
+<summary>13 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#212 the tutorial's pasted output is stale at step 4, and no gate in the repo can catch that](https://github.com/rickylabs/harness/issues/212) | `triage` | `e10` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
-| [#237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
-| [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life](https://github.com/rickylabs/harness/issues/225) | `triage` | `e7` |
 | [#234 17 labels live on the repo and in no taxonomy, including the dispatch label](https://github.com/rickylabs/harness/issues/234) | `triage` | `e7` |
 | [#47 E2.2 — Fork deepseek-harness-docker, keeping the upstream remote](https://github.com/rickylabs/harness/issues/47) | `triage` | `e2` |
@@ -83,7 +96,6 @@ Something could be acting on these right now.
 | [#65 E5.4 — Local-capacity regime: the third regime, which has no owner today](https://github.com/rickylabs/harness/issues/65) | `triage` | `e5` |
 | [#66 E5.5 — Wire the gate at the sandbox boundary](https://github.com/rickylabs/harness/issues/66) | `triage` | `e5` |
 | [#67 E5.6 — Boot-parameter verification after every kernel update](https://github.com/rickylabs/harness/issues/67) | `triage` | `e5` |
-| [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
 </details>
 
@@ -93,9 +105,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  191/230 done · 10 running · 16 queued · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  191/231 done · 10 running · 13 queued · 4 blocked · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [#################---]  156/183 done · 9 running · 15 queued · 3 abandoned
+## M1 — dsh coordinator foundation  [#################---]  156/183 done · 8 running · 13 queued · 3 blocked · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -117,7 +129,7 @@ Something could be acting on these right now.
     shipped              PR185 chore(scripts): keep the scratchpad out of the link check and out of git (p3)
 
   E10 — Docs: the front door, the reference, and the check that keeps them honest #140  [impl]
-    [##############--] 25/28 done · 2 queued · 1 abandoned
+    [##############--] 25/28 done · 1 queued · 1 blocked · 1 abandoned
     shipped              #141 E10.1 — Rewrite the root README from scratch (p1)
     shipped              #142 E10.2 — docs/ skeleton and the explanation set (p1)
     shipped              #143 E10.3 — Generated CLI reference with a drift test (p2)
@@ -125,7 +137,7 @@ Something could be acting on these right now.
     shipped              #145 E10.5 — Getting started: one tutorial that runs (p1)
     shipped              #146 E10.6 — Community and contribution files, issue and PR templates (p2)
     shipped              #147 E10.7 — Docs CI: link check, generated-doc drift check, repo description (p2)
-    triage               #148 E10.8 — The published docs site (owner fork — do not start) (p3)
+    triage               #148 E10.8 — The published docs site (owner fork — do not start) (p3, waiting on owner)
     shipped              PR149 chore(labels): open the docs lane — eject epic:e10 and the gate/ci rows
     shipped              PR150 docs: rewrite the root README as a front door (E10.1, #141)
     shipped              PR151 docs: create docs/ and write the explanation layer (E10.2, #142)
@@ -192,7 +204,7 @@ Something could be acting on these right now.
     shipped              PR238 feat(route-identity--e35): refuse mismatched Codex routes before task submission
 
   E4 — Model gateway and routing matrix #34  [triage]
-    [##############--] 12/13 done · 1 queued
+    [##############--] 12/13 done · 1 blocked
     shipped              #57 E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters
     shipped              #58 E4.2 — routing: tiers, the family rule, and fallback chains
     shipped              #59 E4.3 — Capability probes instead of committed constants
@@ -205,11 +217,11 @@ Something could be acting on these right now.
     shipped              PR174 feat(routing): availability is probed, and a constant may never permit (p1)
     shipped              PR175 feat(llm-local): resolve endpoints and read readiness (#57) (p1)
     shipped              PR180 feat(routing): seat Astra on complex implementation, and check the row holds
-    triage               #181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)
+    triage               #181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision) (waiting on owner)
 
   E5 — Governance: tri-regime admission control #35  [triage]
-    [##--------------] 1/7 done · 1 running · 5 queued
-    plan-eval            #62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)
+    [##--------------] 1/7 done · 5 queued · 1 blocked
+    plan-eval            #62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic) (waiting on owner)
     triage               #63 E5.2 — Port the Orchid subscription-quota governor
     triage               #64 E5.3 — Metered-spend regime
     triage               #65 E5.4 — Local-capacity regime: the third regime, which has no owner today
@@ -312,7 +324,7 @@ Something could be acting on these right now.
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [##############------]  35/47 done · 1 running · 1 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  35/48 done · 2 running · 1 blocked · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -367,7 +379,8 @@ Something could be acting on these right now.
     shipped              #189 docs: the repository is public — correct every false claim, then polish (p0)
     shipped              PR190 docs: correct every claim the repository going public made false (p0)
     no status            #201 E10 - Documentation and the public front door
-    triage               #237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way (p2)
+    triage               #237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way (p2, waiting on owner)
+    impl-eval            PR242 docs(board): a half-gated item is not an owner-gated one
 ```
 
 </details>
