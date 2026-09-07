@@ -26,5 +26,13 @@
   "matches": true,
   "verdict": "PASS",
   "reviewArtifact": "implementation-eval.md",
-  "scope": "Tested source head; receipt commit adds evidence only. Not publication or downstream compatibility."
+  "scope": "Tested source head; receipt commit adds evidence only. Not publication or downstream compatibility.",
+  "repairSourceHead": "fd38b6db71d2152fe2b83b26464dc7712df5ae9a",
+  "repairVerdict": "PASS",
+  "repairMatrix": "matrix-implementation-evaluation-ci-repair.json",
+  "repairObserved": {
+    "model": "muse-spark-1.3-contributor",
+    "provider": "opencode-go",
+    "effort": "xhigh"
+  }
 }

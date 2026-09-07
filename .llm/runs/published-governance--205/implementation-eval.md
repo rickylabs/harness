@@ -186,6 +186,92 @@ live accuracy of the underlying usage/spend/cgroup/log readers beyond the synthe
 fixtures, and it makes no claim about live quota, real dispatch-host capacity, or the
 fidelity of any operator log content.
 
+## R1 — CI repair review: snapshot-guard fixture inventory (final verdict: PASS)
+
+Historical verdict preserved: PASS at `8185ea6` (product `e6c14d9`) stands as the review of
+that source. What follows is the separate repair review at the exact final source below; the
+earlier PASS is not carried forward blindly.
+
+CI correction accepted: run `34170219400` on PR #278 failed the build at `check:snapshots`
+because the first full local build ran before the seven new governance JSON fixtures were
+tracked, so the check's `git ls-files` scan omitted them; `pnpm test` was skipped in that CI
+run. The writer's correction (drift D-9, verification repair section) states this plainly and
+does not claim the old build receipt covered the final tree. No CI PASS or CI test result is
+claimed for the failed run.
+
+Bounded repair under review: `459afc6` changes exactly three product files —
+`scripts/check-snapshots.mjs` (exact seven path-and-SHA-256 fixture inventory, fail-closed),
+`scripts/check-snapshots.test.mjs` (new 7-case isolated guard suite), root `package.json`
+(`check:snapshots` now also runs the guard suite; the guard stays wired into the existing
+`build` chain). Verified: zero diff `8185ea6..fd38b6d` across `packages/`, `.github/`,
+`pnpm-lock.yaml`, `pnpm-workspace.yaml` and `scripts/check-installed-contracts.mjs` — no
+contracts/telemetry/workflow semantic change and no fixture-byte change after the reviewed
+source. The seven inventoried SHA-256 digests all match the working-tree fixture bytes
+(independently recomputed this session).
+
+What the guard guarantees, verified by execution rather than reading:
+
+- Exact inventory, never a directory exemption: only an exact path AND byte-digest match is
+  skipped; the skip is per-path (`approvedFixtures`), so identical fixture bytes at any other
+  path still face ordinary key/name detection (own probe G2; suite cases for new-file and
+  copied-bytes).
+- Changed/missing/unreadable inventoried fixtures fail even with snapshot keys removed: a
+  trailing-newline change fails, a `{}` replacement fails, a deleted fixture fails (suite
+  cases; the failure message names the path and the SHA-256 rule, never file contents).
+- Symlink refusal: a symlink at an inventoried path is refused via `lstatSync` even when it
+  resolves to byte-identical content (own probe G1).
+- Isolation: every git invocation in the guard test runs in a scratch repository with
+  `HOME`, `GIT_CONFIG_NOSYSTEM` and `GIT_CONFIG_GLOBAL` pinned and scratch cleanup; the
+  checker itself runs exactly one git command, read-only `git ls-files -z` (own probe G4).
+  A hostile operator gitconfig left present-but-unpinned does not disturb the guard (own
+  probe G3). The real worktree index was verified untouched (clean `git status` before and
+  after all guard runs).
+- Operator snapshots outside the inventory still fail ordinary detection (suite case), and
+  diagnostics never echo values (suite asserts absence of the planted canary string).
+
+Overclaim check on the correction: the packed candidate receipt is byte-identical to the
+historical one — version 0.2.0, protocol 1, 73 files, same SHA-256 digest as verified by my
+own installed-gate run below — so "unchanged digest" is confirmed, not repeated. The
+"2,878 tests" figure is the repair author's count; I did not rerun the full workspace suite
+and do not independently assert that total — I ran the repair-relevant gates listed below,
+which include both affected-area suites (contracts 184, telemetry 431) at the final head.
+
+Repair-relevant gates actually run this session at the final head (owned executable TMPDIR
+outside the worktree, raw logs outside git):
+
+| Command | Result |
+| --- | --- |
+| `node scripts/check-snapshots.mjs` (own run) | exit 0 — 91 tracked data files, 7 exact synthetic fixtures verified |
+| `node --test scripts/check-snapshots.test.mjs` (own run) | 7 passed, 0 failed/skipped/cancelled/todo |
+| Own guard adversarial probe, 4 groups | pass — G1 symlink-at-inventory refused, G2 symlinked-copy detected, G3 hostile-gitconfig isolation, G4 pinned-env/read-only-checker source proof |
+| `pnpm run typecheck` | exit 0, whole workspace |
+| `pnpm run build` (full, tracked-sensitive) | exit 0 — snapshot gate plus guard suite pass inside the chain; publish/docs/tutorial checks pass (3 tutorial blocks remain declared untested, as before) |
+| contracts suite at final head | 184 passed, 0 failed/skipped/cancelled/todo |
+| telemetry suite at final head | 431 passed, 0 failed/skipped/cancelled/todo |
+| `pnpm run check:installed` (own run) | exit 0 — same tarball digest as historical receipt; root/server runtime and compiled declarations; real CLI synthetic probe started, terminated, reaped, no grandchildren |
+| `pnpm run check:publish` | contracts 0.2.0, protocol 1, 73 files, no tests |
+| `git diff --check`, `git status --porcelain` | diff-check clean; status shows only this authored eval-file modification — no product/test/doc repairs by this session |
+
+Original decoder/CLI adversarial evidence (20 + 9 + 1 probe groups from the prior session) is
+retained without rerun because every product file it exercises is byte-identical between the
+reviewed and final heads (zero diff verified above); the repair touches only the snapshot
+guard, its test, and script wiring.
+
+**Final verdict: PASS** at exact final source
+`fd38b6db71d2152fe2b83b26464dc7712df5ae9a` (repair `459afc6`; receipt commit adds only run
+evidence). Scope of this PASS: the snapshot-guard repair is correctly bounded, fail-closed,
+isolated, wired into the existing build, and green across the gates above, with no semantic
+change to the previously reviewed slice. Remaining scope is unchanged: synthetic-only
+evidence; live #205/#87 acceptance, #265, approval/ceiling/GPU/dispatch-host unknowns, and
+Proxy/log-reader limits as listed above. This claims no registry publication and no
+downstream compatibility; the next receipt-only commit is coordinator-owned. No
+commit/repair/push/merge/board/tag/publish performed by this session.
+[source: scripts/check-snapshots.mjs:81-92,113-128; scripts/check-snapshots.test.mjs;
+package.json; topic: repair under review; read this session]
+[source: matrix-implementation-evaluation-ci-repair.json (this run; coordinator copies after
+review); topic: repair-review route, unchanged feature evaluator Muse Spark 1.3 xhigh and
+loop policy; read this session]
+
 ## Material residual limits (unchanged by this PASS)
 
 - Synthetic evidence only; live #205/#87 acceptance remains unverified and unclaimed.

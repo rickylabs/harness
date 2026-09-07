@@ -1,3 +1,13 @@
+# Current coordinator checkpoint
+
+**Repair review PASS at `fd38b6db71d2152fe2b83b26464dc7712df5ae9a`.** PR #278 is awaiting the new final-head CI run. The following receipt commit changes only run evidence; product repair is `459afc6` and governance implementation remains `e6c14d9`. Read implementation-eval.md section R1 for the same evaluator's independent full build, snapshot guard negatives, affected suites and installed-consumer receipt. Its original no-repair statement describes the pre-CI verdict; R1 records the later CI repair.
+
+The failed CI run 34170219400 remains a failure with tests skipped. Post-commit local gates passed: 2,878 workspace tests and 7 additional guard tests, full build/typecheck and installed fixture. The packed candidate remains 0.2.0/protocol1, SHA-256 cf3296949a8afbfabef7f6926d8ae732e831ec389453020c9fdd70bd07f27c1d. No release or downstream compatibility is claimed. Owner alone tags/publishes; #205/#87 live acceptance and #265 remain open.
+
+[source: implementation-eval.md R1; topic: final repair verdict and exact source; consulted 2026-09-08]
+
+---
+
 # Published governance read — resume pack
 
 **CI repair is committed at `459afc6`; post-commit local gates passed. Same-session independent

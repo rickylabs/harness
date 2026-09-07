@@ -67,3 +67,10 @@ Coordinator independently exercised 616 schema-path mutations against the final 
   isolated guard: 7/7. Actual installed tarball root/server runtime and declaration compilation and
   probe termination/reaping passed. Candidate digest unchanged; no publication or remote actions.
   Corrected verification and resume pack; same evaluator repair review remains coordinator-owned.
+
+
+## Coordinator preserves R1 PASS — 2026-09-08 attribution
+
+Same native evaluator, fresh matrix CLI and live expense guard, returned PASS at fd38b6db71d2152fe2b83b26464dc7712df5ae9a. Native assistant metadata remained Muse Spark 1.3 / opencode-go / xhigh throughout. Reviewer independently ran full tracked-sensitive build, typecheck, 7 snapshot regression tests, 4 additional guard probes, 184 contracts tests, 431 telemetry tests and installed-consumer/publish checks. No contracts or telemetry byte changes followed the prior product review. This receipt-only commit preserves the R1 verdict and fresh query. New exact-head CI remains required; failed run34170219400 is not relabelled as passing.
+
+[source: implementation-eval.md R1 and matrix-implementation-evaluation-ci-repair.json; topic: same-session repair review and preserved evidence; consulted 2026-09-08]
