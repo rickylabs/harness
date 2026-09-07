@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **210/264 done · 17 running · 23 queued · 12 abandoned · 2 invisible**
+`[###############-----]` **211/265 done · 17 running · 23 queued · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-07T20:02:01Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T20:13:19Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (17)
 
@@ -30,6 +30,18 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
+## Anomalies (2)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#271** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+
+**`epic-milestone-conflict`**
+
+- **#277** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+
 ## Epics
 
 ### M1 — dsh coordinator foundation
@@ -53,11 +65,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 40/54 done · 1 running · 3 queued · 9 abandoned · 1 invisible
+`[########----]` 41/55 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[############]` 1/1 done | `triage` |
 | _(no epic)_ | `[########----]` 36/49 done · 3 queued · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
@@ -99,7 +112,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  210/264 done · 17 running · 23 queued · 12 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  211/265 done · 17 running · 23 queued · 12 abandoned · 2 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  170/210 done · 16 running · 20 queued · 3 abandoned · 1 invisible
 
@@ -348,7 +361,7 @@ Something could be acting on these right now.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  40/54 done · 1 running · 3 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  41/55 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -357,6 +370,10 @@ Something could be acting on these right now.
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
+
+  E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]  (epic is in M1 — dsh coordinator foundation)
+    [################] 1/1 done
+    shipped              PR277 routing-configuration--271: load an explicit replaceable routing document (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
