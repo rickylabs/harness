@@ -148,7 +148,8 @@ zoom controls or read the walkthrough below.
 | `ctx.llm` seam | Composed | the adapter registers all three routes — `lm-studio`, `llama-rocm`, `openrouter`; every destination is Host-dependent at dispatch |
 | Board session projection | Composed | strict public projection plus todo writes over published `dsh` session services, proven by a synthetic composition smoke, not a daemon boot; carries task phase, run completeness, and — since [#220](https://github.com/rickylabs/harness/issues/220) — every board anomaly with its detail, the kinds naming each item, and the fetch coverage, so a pane can say a column is disputed without shelling out to `check` |
 | Governance display | Implemented | `dsh-telemetry tree`/`status` reads a typed observation file — quota, spend, capacity, refusals, each with its age; absent input reads UNKNOWN, never "all clear". The live host adapter is blocked on [#62](https://github.com/rickylabs/harness/issues/62) |
-| `provider-codex`, `provider-acp`, `governance`, `netscript-bridge` | Stub | each README opens with `Status: stub` and names its blocking epic |
+| `provider-codex` protocol prerequisite | Implemented — not composed | exact four-field route verification and pre-turn gating ship; the full provider and live transport remain blocked on #53. No Codex provider is composed into `ctx.subagents` |
+| `provider-acp`, `governance`, `netscript-bridge` | Stub | each README opens with `Status: stub` and names its blocking epic |
 | `contracts` | Implemented | the only publishable package; release is tag-triggered, and no registry release is claimed here |
 | GitHub transports; `deploy/` stack | Host-dependent | GitHub board reads and label checks need a working transport; verify `init` with `labels check` and a live readback. The compose stack targets one specific box |
 
@@ -335,9 +336,10 @@ list is the orientation, at the baseline above.
   contract itself; [`provider-claude`](packages/provider-claude) and
   [`provider-opencode`](packages/provider-opencode) are Implemented against
   it and not registered by the profile;
-  [`provider-codex`](packages/provider-codex) and
-  [`provider-acp`](packages/provider-acp) are Stubs. The composed registry is
-  empty.
+  [`provider-codex`](packages/provider-codex) ships only its route-identity and
+  pre-turn protocol prerequisite, while its full provider remains blocked on
+  #53; [`provider-acp`](packages/provider-acp) is a Stub. No Codex provider is
+  composed into `ctx.subagents`, and the composed registry is empty.
 - **The llm seam** — [`llm-local`](packages/llm-local) (destinations,
   capabilities, budgets) and [`routing`](packages/routing) (the model matrix)
   are Implemented; the profile Composes the adapter for all three routes;

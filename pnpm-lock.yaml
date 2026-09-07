@@ -131,7 +131,11 @@ importers:
         specifier: workspace:*
         version: link:../subagents
 
-  packages/provider-codex: {}
+  packages/provider-codex:
+    dependencies:
+      '@rickylabs/subagents':
+        specifier: workspace:*
+        version: link:../subagents
 
   packages/provider-opencode:
     dependencies:
