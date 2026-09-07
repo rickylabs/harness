@@ -26,7 +26,7 @@ import type {
   RegimeStatus,
 } from "@rickylabs/harness-contracts";
 
-import type { Liveness } from "./liveness.js";
+import type { LivenessVerdict } from "./liveness.js";
 import type {
   AttributedRun,
   BoardItemRef,
@@ -297,7 +297,7 @@ export function publicSnapshot(snapshot: TelemetrySnapshot, complete: boolean): 
 /**
  * The tree as published.
  *
- * Only the runs need projecting: `BoardItemRef`, `LinkedRef` and `Liveness` hold numbers, titles,
+ * Only the runs need projecting: `BoardItemRef`, `LinkedRef` and `LivenessVerdict` hold numbers, titles,
  * labels and timestamps that came from GitHub in the first place, and nothing that names this
  * machine. The nesting is rebuilt by hand anyway, for the reason the module header gives — a field
  * added to a node type should not become a published field by nobody's decision.
@@ -306,7 +306,7 @@ export interface PublicItemNode {
   readonly item: BoardItemRef;
   readonly runs: readonly PublicAttributedRun[];
   readonly links: readonly LinkedRef[];
-  readonly liveness: Liveness;
+  readonly liveness: LivenessVerdict;
 }
 
 export interface PublicEpicNode {
@@ -314,13 +314,13 @@ export interface PublicEpicNode {
   readonly item: BoardItemRef | null;
   readonly tasks: readonly PublicItemNode[];
   readonly pulls: readonly PublicItemNode[];
-  readonly liveness: Liveness;
+  readonly liveness: LivenessVerdict;
 }
 
 export interface PublicMilestoneNode {
   readonly milestone: string | null;
   readonly epics: readonly PublicEpicNode[];
-  readonly liveness: Liveness;
+  readonly liveness: LivenessVerdict;
 }
 
 export interface PublicTree {

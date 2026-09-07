@@ -31,7 +31,7 @@
 import {
   liveness,
   type Evidence,
-  type Liveness,
+  type LivenessVerdict,
   type LivenessWindows,
 } from "./liveness.js";
 import type { AttributedRun, BoardItemRef, QuotaReading, TelemetrySnapshot } from "./model.js";
@@ -70,7 +70,7 @@ export interface ItemNode {
   /** Root runs attributed to this item. Subagents hang inside each one, not here. */
   readonly runs: readonly AttributedRun[];
   readonly links: readonly LinkedRef[];
-  readonly liveness: Liveness;
+  readonly liveness: LivenessVerdict;
 }
 
 export interface EpicNode {
@@ -87,13 +87,13 @@ export interface EpicNode {
    * list one level up.
    */
   readonly pulls: readonly ItemNode[];
-  readonly liveness: Liveness;
+  readonly liveness: LivenessVerdict;
 }
 
 export interface MilestoneNode {
   readonly milestone: string | null;
   readonly epics: readonly EpicNode[];
-  readonly liveness: Liveness;
+  readonly liveness: LivenessVerdict;
 }
 
 /** The whole picture, as data. Pure: same inputs, same tree, on any host. */

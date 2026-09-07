@@ -100,16 +100,23 @@ export interface DispatchResult {
 }
 
 /**
- * What a run is doing.
+ * What a run is doing, **as its executor reports it**.
  *
  * `queued` and `running` are both alive; the split matters because a run that is queued for
  * forty minutes is a governance problem and a run that is executing for forty minutes is not.
+ *
+ * `Run-` is load-bearing. `@rickylabs/telemetry` publishes a `LivenessVerdict` that is a different
+ * question about the same run: not what the executor said, but what the *evidence* supports — a
+ * growing artifact, a new commit, a live turn. The two disagree exactly where a status screen earns
+ * its keep, on the run that claims `running` and has produced nothing for six hours. Both types were
+ * once called `Liveness`, in one npm scope, and `dsh-app` already imports from both packages in one
+ * file. See #206.
  */
-export type Liveness = "queued" | "running" | "finished" | "failed" | "unknown";
+export type RunLiveness = "queued" | "running" | "finished" | "failed" | "unknown";
 
 export interface Observation {
   readonly run: RunRef;
-  readonly liveness: Liveness;
+  readonly liveness: RunLiveness;
   /** ISO 8601, from the caller's clock. When this was true, not when it was asked. */
   readonly observedAt: string;
   readonly detail: string;

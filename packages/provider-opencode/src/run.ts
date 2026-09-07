@@ -25,7 +25,7 @@
  * dead end, and `isOver` deliberately does not include it.
  */
 
-import type { Liveness } from "@rickylabs/subagents";
+import type { RunLiveness } from "@rickylabs/subagents";
 
 import type { Signal } from "./events.js";
 
@@ -34,7 +34,7 @@ export interface RunRecord {
   readonly runId: string;
   /** The opencode session id. Minted by `POST /session`, before the agent exists. */
   readonly external: string | null;
-  readonly liveness: Liveness;
+  readonly liveness: RunLiveness;
   /** One line about the most recent thing that happened. Never carries prompt or agent text. */
   readonly detail: string;
   /** The model id the matrix pinned, as it went into the prompt body. */
@@ -56,8 +56,8 @@ export interface RunRecord {
   readonly artifacts: readonly string[];
 }
 
-/** Liveness values from which nothing further can happen. `unknown` is not one of them. */
-const TERMINAL: readonly Liveness[] = ["finished", "failed"];
+/** RunLiveness values from which nothing further can happen. `unknown` is not one of them. */
+const TERMINAL: readonly RunLiveness[] = ["finished", "failed"];
 
 export function isOver(record: RunRecord): boolean {
   return TERMINAL.includes(record.liveness);
@@ -256,7 +256,7 @@ export function describe(record: RunRecord): string {
 export function unverified(
   record: RunRecord,
   reason: string,
-): { readonly liveness: Liveness; readonly detail: string } {
+): { readonly liveness: RunLiveness; readonly detail: string } {
   if (isOver(record)) return { liveness: record.liveness, detail: record.detail };
   const seen = record.lastEventAt ?? record.startedAt;
   return {

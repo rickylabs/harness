@@ -81,9 +81,9 @@ export {
   newest,
   DEFAULT_WINDOWS,
   type Evidence,
-  type Liveness,
   type LivenessEvidence,
   type LivenessState,
+  type LivenessVerdict,
   type LivenessWindows,
 } from "./liveness.js";
 

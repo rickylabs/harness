@@ -89,7 +89,7 @@ import type {
   DispatchResult,
   DispatchVerdict,
   Harness,
-  Liveness,
+  RunLiveness,
   Observation,
   RunRef,
   SteerResult,
@@ -163,11 +163,16 @@ const OUTCOME_OF_VERDICT: Readonly<Record<DispatchVerdict, RunOutcome | null>> =
 /**
  * What an observation licenses saying about the run.
  *
+ * The one place the two liveness vocabularies cross, and the name says which one is the key: this
+ * maps `@rickylabs/subagents`' `RunLiveness` — what the executor reported — onto telemetry's
+ * `RunOutcome`. Telemetry's own `LivenessVerdict` is not in this table and does not belong in it; it
+ * is derived from evidence downstream of these events, not translated from them. See #206.
+ *
  * `queued` maps to `running` rather than to nothing: `RunOutcome` distinguishes finished from
  * unfinished, and a queued run is certainly unfinished. `unknown` stays unknown — a provider that
  * cannot reach its executor does not know, and that is a fact about our knowledge, not the run.
  */
-const OUTCOME_OF_LIVENESS: Readonly<Record<Liveness, RunOutcome | null>> = {
+const OUTCOME_OF_RUN_LIVENESS: Readonly<Record<RunLiveness, RunOutcome | null>> = {
   queued: "running",
   running: "running",
   finished: "complete",
@@ -225,10 +230,10 @@ function verdictDetail(provider: string, result: DispatchResult): Record<string,
   return detail;
 }
 
-/** Liveness, its reason, and how many artifacts were named — never which ones. */
+/** The reported liveness, its reason, and how many artifacts were named — never which ones. */
 function observationDetail(provider: string, observation: Observation): Record<string, unknown> {
   const detail: Record<string, unknown> = { provider, liveness: observation.liveness };
-  const outcome = OUTCOME_OF_LIVENESS[observation.liveness];
+  const outcome = OUTCOME_OF_RUN_LIVENESS[observation.liveness];
   if (outcome !== null) detail.outcome = outcome;
   if (observation.artifacts.length > 0) detail.artifacts = observation.artifacts.length;
   if (observation.detail !== "") detail.note = clipDetail(observation.detail);
@@ -318,9 +323,9 @@ export function instrumentProvider(
    * than only on a change. Without that a run whose liveness is stable — which is most of them, and
    * exactly the ones being watched hardest — would be the first evicted.
    */
-  const seen = new Map<string, Liveness>();
+  const seen = new Map<string, RunLiveness>();
 
-  const remember = (runId: string, liveness: Liveness): void => {
+  const remember = (runId: string, liveness: RunLiveness): void => {
     seen.delete(runId);
     seen.set(runId, liveness);
     while (seen.size > capacity) {
