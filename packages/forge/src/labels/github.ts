@@ -8,6 +8,8 @@
  */
 
 import { execFile } from "node:child_process";
+import { stat } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { promisify } from "node:util";
 
 const run = promisify(execFile);
@@ -214,12 +216,73 @@ export async function detectTransport(): Promise<TransportProbe> {
   return { kind: "none", reasons };
 }
 
-/** Resolve `owner/repo` from git remotes when the caller did not pass one. */
+const REPO_SEGMENT = /^[A-Za-z0-9_.-]+$/;
+const GITHUB_PROTOCOLS = new Set(["git:", "http:", "https:", "ssh:"]);
+
+/**
+ * Read a GitHub repository identity from a Git remote URL without retaining credentials.
+ *
+ * Git accepts both scheme URLs and an scp-like SSH form. Keep those grammars separate: feeding the
+ * latter to `URL` turns its owner into a protocol, while a substring regex can mistake a lookalike
+ * host for GitHub. The return value is only the two path segments, never the raw URL or user-info.
+ */
+export function parseGitHubRepoSlug(remote: string): string | null {
+  const text = remote.trim();
+  if (text === "") return null;
+
+  let owner: string | undefined;
+  let repo: string | undefined;
+
+  // Check this first: `github.com:o/r` is syntactically a URL with protocol `github.com:`, even
+  // though Git interprets it as the scp-like form.
+  const scp = /^(?:[^@/:\s]+@)?github\.com:([^/?#\s]+)\/([^/?#\s]+?)\/?$/i.exec(text);
+  if (scp) {
+    owner = scp[1];
+    repo = scp[2];
+  } else {
+    try {
+      const url = new URL(text);
+      if (!GITHUB_PROTOCOLS.has(url.protocol) || url.hostname.toLowerCase() !== "github.com") return null;
+      if (url.search !== "" || url.hash !== "") return null;
+      const path = url.pathname.endsWith("/") ? url.pathname.slice(0, -1) : url.pathname;
+      const match = /^\/([^/]+)\/([^/]+)$/.exec(path);
+      if (!match) return null;
+      owner = match[1];
+      repo = match[2];
+    } catch {
+      return null;
+    }
+  }
+
+  repo = repo?.endsWith(".git") ? repo.slice(0, -4) : repo;
+  if (!owner || !repo || !REPO_SEGMENT.test(owner) || !REPO_SEGMENT.test(repo)) return null;
+  return `${owner}/${repo}`;
+}
+
+/** The closest directory Git can inspect, including an ancestor of a not-yet-created target. */
+async function nearestExistingDirectory(path: string): Promise<string | null> {
+  let candidate = resolve(path);
+  for (;;) {
+    try {
+      const entry = await stat(candidate);
+      if (entry.isDirectory()) return candidate;
+    } catch {
+      // Missing, inaccessible and not-a-directory targets all fall back to a parent. At filesystem
+      // root there is no evidence to recover, so the caller treats the repository as unknown.
+    }
+    const parent = dirname(candidate);
+    if (parent === candidate) return null;
+    candidate = parent;
+  }
+}
+
+/** Resolve `owner/repo` from the enclosing checkout's origin when the caller did not pass one. */
 export async function detectRepoSlug(cwd: string): Promise<string | null> {
   try {
-    const { stdout } = await run("git", ["remote", "get-url", "origin"], { cwd, timeout: 15_000 });
-    const match = /github\.com[/:]([^/]+)\/(.+?)(?:\.git)?\s*$/.exec(stdout);
-    return match ? `${match[1]}/${match[2]}` : null;
+    const inspect = await nearestExistingDirectory(cwd);
+    if (inspect === null) return null;
+    const { stdout } = await run("git", ["remote", "get-url", "origin"], { cwd: inspect, timeout: 15_000 });
+    return parseGitHubRepoSlug(stdout);
   } catch {
     return null;
   }

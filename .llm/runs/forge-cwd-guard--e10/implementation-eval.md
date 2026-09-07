@@ -1,0 +1,24 @@
+Evaluator: GLM 5.3 Flash, provider-default reasoning, independent session ses_f86a8ca87ffeNvHvhN3AZkfvuV. Source-only with shell, writes, network and delegation mechanically denied. Coordinator verified the reviewed clean head and executed the quoted checks.
+
+## Final independent implementation evaluation — forge-cwd-guard--e10 · #217 · head `95e01cd1c22a3afe0ef6030a04f0635bb679da12`
+
+All source reads are complete. Reviewer honesty: source-only session — I executed nothing. The CI run (actions/runs/34071482921, full typecheck/build/test green), the parent receipts (505/505 forge tests, build 0, dry-run exit 2 with byte-identical SHA-256s), and the head SHA are adopted as supplied evidence, not independently executed or verified — the worktree gitdir is outside this sandbox.
+
+### Findings (all with concrete path:line)
+
+1. **Correctness / ordering.** Strict `--repo` validation (cli.ts:1614-1616) precedes the guard; `guardCheckoutTarget` (cli.ts:261-288) runs at cli.ts:1618, before `resolveContext` and its transport probe (cli.ts:1628, 307) and before any write. `CheckoutMismatchError` → exit `2` without the usage header (cli.ts:1657-1660), asserted at cli.test.ts:172,176.
+2. **Parser/identity compatibility.** `parseGitHubRepoSlug` (labels/github.ts:229-260): scp-before-URL ordering with the `github.com:o/r` trap documented (229-242), exact case-insensitive host, scheme allowlist (220), two segments, single `.git` strip (257), ASCII segment validation (219,258), credentials never returned. Test tables (labels/github.test.ts:7-47) match disposition F3, including lookalike hosts, encoded segments, query/fragment. `detectRepoSlug` routed through it (280-289); inference through real git preserved (cli.test.ts:221-228); explicit `owner/repo.git` literal matches origin `owner/repo.git.git` (cli.test.ts:297-302).
+3. **Nonexistent nested path refusal.** `nearestExistingDirectory` (labels/github.ts:263-277) walks to the nearest existing ancestor; filesystem root → null → unknown → proceed. Both nested cases refuse with `probes: 0` and nothing created (cli.test.ts:183-192, 194-202).
+4. **Unchanged sentinel tests.** Sentinel labels and skill bytes asserted byte-exact after all three writers run against a mismatch, with zero probes and zero mutations (cli.test.ts:160-181).
+5. **Force visibility / JSON.** Plain: warning on stdout (cli.ts:287; cli.test.ts:230-239). JSON: warning on stderr, stdout stays machine-parseable (cli.ts:286; cli.test.ts:241-250 asserts `JSON.parse(stdout).written === true`). Dry-run advice preserves `--force --dry-run` (cli.ts:277; cli.test.ts:252-260, 262-270).
+6. **Malformed slug privacy.** Malformed `--repo` (incl. credentialed URL) rejected with a fixed message, no echo (cli.ts:249, 1614-1616; cli.test.ts:288-295 asserts no `secret`); forced-JSON fixture uses a `user:secret@` origin and asserts neither stream carries it (cli.test.ts:242,249). Refusal text contains only validated/parsed slugs plus the resolved cwd (cli.ts:274-282).
+7. **No-origin limits.** Absent/non-GitHub origin → `null` → proceed (cli.ts:271-272; cli.test.ts:204-209: exit 0, probe 1, file written) — portable offline promise kept.
+8. **Read-only/remote-only preserved.** `isLocalWriter` (cli.ts:251-254) covers exactly `init`, `labels eject`, bare/`install` `skill`. Writer-surface exhaustiveness re-verified: the package's only local write sites are `cmdEject`'s `writeFile` (cli.ts:559-560) and `installSkill` (cli.ts:606; skill/install.ts:77,91-92,124), reachable only through those three commands — there is no fourth CLI writer to guard. `labels apply` positive control reaches the fake transport on a mismatched origin (cli.test.ts:272-278); `skill garbage` remains a usage error (cli.test.ts:280-286); status/targets/swarm/supervise return before the guard (cli.ts:1527-1612).
+9. **Docs.** README safety rule 3 (packages/forge/README.md:94-98); `--force` help names the mismatch (cli.ts:159-160) and the regenerated reference byte-matches it (docs/reference/cli/dsh-forge.md:50-51), enforced by the build's byte-compare (scripts/cli-reference.mjs:18-20, 240-264 — the plan.md:94-95 citation is accurate). Tutorial step 2 explains the guard, exit `2`, nested-cwd refusal, and portable boundary while keeping explicit `--cwd ../scratch` (docs/tutorials/01-from-clone-to-board.md:66-81); the harness hazard warning is retained (25-28); the owner #228 correction — a refused label stops apply with `FAILED at <label>` and `init` exits `1`, never "GitHub out of reach" — is preserved (123-129, 166).
+10. **Run artifacts.** plan.md decisions D1–D6, the eight drift deltas, and the F1–F10 dispositions are each traceable to landed code/tests as cited above; drift.md correctly records deltas rather than rewriting the plan; the worklog honestly separates parent-executed preview from implementation work.
+
+No in-scope defect found; nothing speculative raised.
+
+### Verdict
+
+**PASS**

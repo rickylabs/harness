@@ -63,16 +63,22 @@ This step's tools do two different things: they read and write GitHub, and
 they write *files* into a checkout. Both facts decide how you invoke them
 here.
 
-A warning first, because it is the one way to lose work in this step: the
-`--cwd` flag decides which checkout gets the files, and it defaults to the
-directory you are standing in. Run `init` from inside this clone without
-`--cwd` and it treats the harness checkout as the target — it would overwrite
-this repository's own tracked `.github/labels.yml` and board skill with your
-scratch repository's taxonomy. Nothing stops you: there is no automatic
-origin/target guard. So every command in this step is run from the harness
-clone, with its binaries, and **every one passes `--cwd ../scratch`
-explicitly** — the scratch clone you made before you started. The generated
-files belong in the scratch checkout, where you can review and commit them.
+A warning first, because `--cwd` decides which checkout gets generated files
+and defaults to the directory you are standing in. Forge now checks its local
+writers before they probe GitHub or write: if explicit `--repo owner/scratch`
+disagrees with the GitHub origin enclosing `--cwd`, the command refuses with
+exit `2` and names both repositories. It does the same when the final `--cwd`
+path does not exist but an existing parent belongs to a different checkout.
+Use `doctor` with the same arguments to inspect the target; `--force` accepts a
+deliberate mismatch and prints a warning.
+
+Keep the destination explicit anyway. Every command in this step runs from the
+harness clone, with its binaries, and **every one passes `--cwd ../scratch`** —
+the scratch clone you made before you started. That makes the intended output
+location reviewable before the guard is needed. A checkout with no GitHub
+origin supplies no contradictory identity, so Forge preserves portable local
+eject/install workflows rather than guessing; explicit `--cwd` remains the
+reliable way to put generated files where they belong.
 
 Ask them what they can see first:
 

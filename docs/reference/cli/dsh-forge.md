@@ -47,7 +47,8 @@ options
   --repo <owner/name>   target repository (default: the origin remote)
   --cwd <path>          repository root (default: the working directory)
   --no-detect           portable core only; derive nothing from this repository
-  --force               settle conflicts and overwrite files this tool did not generate
+  --force               settle conflicts, overwrite foreign generated files, and accept a
+                        detected --repo / checkout-origin mismatch
   --dispatch-label <n>  the label that starts an agent run here; teaches the skill to be careful
                         with it (default: none — most repositories have no dispatcher)
   --ending <how>        status settle only: completed | not-planned | reopened
