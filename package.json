@@ -19,7 +19,7 @@
     "check:label-registry": "node scripts/check-label-registry.mjs",
     "check:links": "node scripts/check-links.mjs",
     "check:forms": "node scripts/check-forms.mjs",
-    "check:snapshots": "node scripts/check-snapshots.mjs",
+    "check:snapshots": "node scripts/check-snapshots.mjs && node --test scripts/check-snapshots.test.mjs",
     "check:metadata": "node scripts/check-metadata.mjs",
     "docs:cli": "pnpm -r run build && node scripts/cli-reference.mjs --write",
     "build": "pnpm run check:graph && pnpm run check:lifecycle && pnpm run check:links && pnpm run check:forms && pnpm run check:snapshots && pnpm run check:compiled-policy && pnpm -r run build && pnpm run check:publish && pnpm run check:label-registry && pnpm run check:docs && pnpm run check:skill && pnpm run check:tutorial",

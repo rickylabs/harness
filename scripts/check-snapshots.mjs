@@ -30,7 +30,8 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readFileSync, statSync, lstatSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -77,6 +78,19 @@ const NAME_PATTERN = /(allowance|quota)/i;
 const DATA_FILE = /\.(json|ya?ml)$/;
 const SKIP = [/(^|\/)node_modules\//, /(^|\/)dist\//, /(^|\/)pnpm-lock\.yaml$/];
 
+// Reviewed fixed public synthetic contract evidence, not live dispatch observations.
+// This is an exact path AND byte-digest inventory, never a directory or marker exemption.
+// Changing even non-snapshot bytes requires deliberate review of this inventory.
+const SYNTHETIC_CONTRACT_FIXTURES = {
+  "packages/contracts/test-fixtures/governance-read/admissions-only.json": "ee401d61aebaf06cec5d5d5da887d6677bb0bebdf4af488f7cdd6fbe2ce28860",
+  "packages/contracts/test-fixtures/governance-read/complete-without-admissions.json": "2a50ba3a6acce838288141f6954362b7dbeb0fcc6ce0d0b3a2ebb3a0a823bf52",
+  "packages/contracts/test-fixtures/governance-read/conflicting-admissions.json": "b187d17b5c60e53c08ce363e724a65b129abc1c5199e90c7e6689679c3ec0814",
+  "packages/contracts/test-fixtures/governance-read/degraded-log.json": "e10022e319cccd54e2313592e1901ddd0d0bb245f1cfa550519d5e6825d9d753",
+  "packages/contracts/test-fixtures/governance-read/mixed-timeout.json": "458ab0f127467fb4ecbcebfd353350fd87e9cc369362a16ff33849d3ee57b341",
+  "packages/contracts/test-fixtures/governance-read/stale.json": "42be209b2ae8bbb4b27764b0cfabcc36acc305d67c0b02acbb845f3234c51d8d",
+  "packages/contracts/test-fixtures/governance-read/unavailable-not-configured.json": "fccae4390e0e2b50d2e1c83dbb2a41560c0fff2d3a2c68d0020c5dc208e94e5f"
+};
+
 let tracked;
 try {
   const listed = execFileSync("git", ["ls-files", "-z"], { cwd: ROOT, encoding: "utf8" });
@@ -96,8 +110,22 @@ if (files.length === 0) {
 }
 
 const problems = [];
+const approvedFixtures = new Set();
+for (const [path, expected] of Object.entries(SYNTHETIC_CONTRACT_FIXTURES)) {
+  try {
+    const full = join(ROOT, path);
+    if (!tracked.includes(path) || !lstatSync(full).isFile()) throw new Error();
+    const actual = createHash("sha256").update(readFileSync(full)).digest("hex");
+    if (actual !== expected) throw new Error();
+    approvedFixtures.add(path);
+  } catch {
+    // Fail even if changed bytes no longer contain snapshot keys. Never echo file contents.
+    problems.push(`${path}: inventoried synthetic fixture is missing, unreadable or changed; exact SHA-256 match required`);
+  }
+}
 
 for (const path of files) {
+  if (approvedFixtures.has(path)) continue;
   const full = join(ROOT, path);
 
   // A tracked path can be a deleted-but-staged entry, or a submodule. Neither is readable.
@@ -141,5 +169,5 @@ if (problems.length > 0) {
 }
 
 console.log(
-  `check:snapshots — ${files.length} tracked data file(s) carry no allowance snapshot`,
+  `check:snapshots — ${files.length} tracked data file(s) carry no live allowance snapshot (${approvedFixtures.size} exact synthetic fixtures verified)`,
 );
