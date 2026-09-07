@@ -214,6 +214,53 @@ describe("buildHierarchy, on work that stopped without landing", () => {
   });
 });
 
+describe("buildHierarchy, on work waiting for a person", () => {
+  it("counts a flagged item as blocked rather than as running", () => {
+    // The count this exists to keep honest. Before the flag, an item stopped on an owner decision
+    // kept whichever column the work reached, so the digest listed it under "something could be
+    // acting on these right now" and the header said `N running` about work with no runner.
+    const h = tree([issue({ number: 1, labels: ["status:impl", "flag:owner-decision"] })]);
+    assert.equal(h.progress.blocked, 1);
+    assert.equal(h.progress.inFlight, 0);
+  });
+
+  it("counts a flagged item in a queued column as blocked, not as queued", () => {
+    // The case that reads wrong until you say it out loud: `queued` promises the item gets picked
+    // up, and this one does not. An owner fork sitting in `triage` is not first in any line — no
+    // agent will take it at all — so listing it under "waiting to start" is the same false green
+    // one column to the left.
+    const h = tree([issue({ number: 1, labels: ["status:triage", "flag:owner-decision"] })]);
+    assert.equal(h.progress.blocked, 1);
+    assert.equal(h.progress.queued, 0);
+  });
+
+  it("still counts a shipped item as shipped when the flag outlived the decision", () => {
+    // The endings come first deliberately. A stale flag is a fact about the label, not about the
+    // work, and demoting delivered work on the strength of one is how a bookkeeping slip starts
+    // subtracting from the number everyone reads. `stale-owner-decision` reports the label itself.
+    const h = tree([issue({ number: 1, labels: ["status:shipped", "flag:owner-decision"] })]);
+    assert.equal(h.progress.shipped, 1);
+    assert.equal(h.progress.blocked, 0);
+  });
+
+  it("keeps the buckets summing to the total with a flagged item among them", () => {
+    const h = tree([
+      issue({ number: 1, labels: ["status:shipped"] }),
+      issue({ number: 2, labels: ["status:ci-fail"] }),
+      issue({ number: 3, labels: ["status:impl", "flag:owner-decision"] }),
+      issue({ number: 4, labels: ["status:impl"] }),
+    ]);
+    const p = h.progress;
+    assert.equal(
+      p.shipped + p.blocked + p.inFlight + p.queued + p.invisible + p.abandoned + p.unknown,
+      p.total,
+      "the flag must move an item between buckets, never into two of them",
+    );
+    assert.equal(p.blocked, 2, "the red build and the owner decision are both stopped");
+    assert.equal(p.inFlight, 1);
+  });
+});
+
 describe("buildHierarchy, when two epic issues claim one slug", () => {
   const conflicting = [
     issue({ number: 41, title: "E6 — the newer one", labels: ["epic", "epic:e6"] }),

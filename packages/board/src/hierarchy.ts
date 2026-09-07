@@ -145,13 +145,21 @@ export type Bucket =
  * - A terminal item with no reported merge state is `unknown`, ahead of `shipped`, because the
  *   whole point of separating them is that the optimistic reading must not win by default.
  * - `blocked` before `queued` and `inFlight`: a stuck item is not merely unstarted or running.
+ * - The owner-decision flag counts as blocked wherever the phase would have said otherwise, but
+ *   *after* the endings above: a shipped item carrying a stale flag has still shipped, and the
+ *   `stale-owner-decision` anomaly is what reports the flag itself as the thing that is wrong.
  */
 export function bucketOf(item: BoardItem): Bucket {
   if (isAbandoned(item)) return "abandoned";
   if (item.phase === null) return "invisible";
   if (isDeliveryUnknown(item)) return "unknown";
   if (isShipped(item)) return "shipped";
-  if (BLOCKED_PHASES.has(item.phase.name)) return "blocked";
+  // Both readings of "blocked" in one test, because they are one fact: the work has stopped and
+  // nothing that is already running will restart it. A red build needs someone to look; an owner
+  // decision needs someone to decide. Neither is `inFlight`, and it is `inFlight` that this line
+  // exists to keep honest — before the flag, four owner-gated items on this repository were
+  // counted as running, which is precisely the count nobody can afford to disbelieve.
+  if (item.waitingOnOwner || BLOCKED_PHASES.has(item.phase.name)) return "blocked";
   if (item.phase.queued) return "queued";
   return "inFlight";
 }

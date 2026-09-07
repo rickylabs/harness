@@ -17,6 +17,7 @@ import {
   DEFAULT_LANE_PREFIX,
   DEFAULT_PRIORITY_ORDER,
   EPIC_LABEL,
+  OWNER_DECISION_LABEL,
   SINGLE_VALUE_FAMILIES,
 } from "./labels.js";
 import { DEFAULT_LIFECYCLE, phaseOf, statusLabelsOf, unknownStatusLabels } from "./lifecycle.js";
@@ -77,6 +78,7 @@ function toItem(source: SourceIssue, lifecycle: Lifecycle, lanePrefix: string): 
     priority: labelValue(source.labels, "priority"),
     type: labelValue(source.labels, "type"),
     isEpic: isEpicLabels(source.labels),
+    waitingOnOwner: source.labels.includes(OWNER_DECISION_LABEL),
   };
 }
 
@@ -342,6 +344,28 @@ function anomaliesFor(
       item: n,
       detail: `sits in ${item.phase.name} but was closed without merging; it did not ship`,
     });
+  }
+
+  // The owner-decision flag asks a person for something, and the whole value of the list it fills
+  // is that it is short enough to read. Nothing removes the label when the decision is finally
+  // made, so a flag that outlives its question is how "waiting on you" turns into a list of
+  // settled ones — the same silence the flag was added to break, one level up.
+  //
+  // Only the two states where the item can no longer be waiting for anything, so the repair is a
+  // single label removal that holds. An item that is genuinely still waiting says nothing here,
+  // however long it waits: the flag being old is not evidence that it is wrong.
+  if (item.waitingOnOwner) {
+    const closed = item.source.state === "closed";
+    if (closed || item.phase?.terminal === true) {
+      const where = closed ? "is closed" : `sits in ${item.phase?.name ?? "a terminal column"}`;
+      found.push({
+        kind: "stale-owner-decision",
+        item: n,
+        detail:
+          `${where} but still carries the owner-decision flag; the question was answered or went ` +
+          "moot — drop the flag, or reopen this if it is still live",
+      });
+    }
   }
 
   return found;

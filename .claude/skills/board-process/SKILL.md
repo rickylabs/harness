@@ -48,6 +48,31 @@ On close:
 to the close gate, carried *alongside* whichever phase the item is actually in, and the
 reasoning goes in a comment on the item rather than in the label.
 
+## When the next move is not yours
+
+Apply `flag:owner-decision` the moment you stop because a **person** has to decide something —
+an authority call, a name that goes in public, a spend, a fork in the design that is not yours to
+take. Not for a red build, a dependency, or a review you are waiting on: those have runners
+already, and the board can see them.
+
+**Leave the `status:` label exactly where it is.** The phase records how far the work got; the
+flag records who is next. They are different facts and the item needs both — a half-shipped item
+moved into some holding column loses the half that shipped, and the flag is what keeps you from
+having to choose.
+
+Three parts, one action:
+
+1. Comment on the item with **the decision, not the situation** — the options you can see, what
+   you would do, and what unblocks on each answer. A flag over a comment that only says "stuck"
+   moves the work from a queue nobody is watching to a list nobody can act on.
+2. Apply the flag. It is what takes the item out of the running count and puts it on the short
+   list the owner reads first.
+3. Stop working the item. That is the claim the flag makes; carry on and it is false.
+
+Remove the flag in the same action as the answer — whoever acts on the decision drops it. The
+list is worth reading only while it is short, so a flag that outlives its question is the same
+silence one level up. The board reports one left behind as `stale-owner-decision`.
+
 ## Families
 
 - `type:` — `feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`, `umbrella`, `sub-pr`. Every open issue and PR carries exactly one.
@@ -58,7 +83,7 @@ reasoning goes in a comment on the item rather than in the label.
 - `ci:` — `full`, `skip-release-contracts`. `ci:full` wins over every skip label.
 - `epic:` — `e9`, `e8`, `e7`, `e6`, `e5`, `e4`, `e3`, `e2`, `e1`, `e0`, `e10`. Groups everything under one program epic.
 - `eval:` — `skip`, `third-opinion`. Evaluator routing, as data on the issue rather than prose in a brief.
-- flags — `epic`, `rfc`, `breaking`, `flag:close-gate-override`. Cross-cutting and additive; never the board column.
+- flags — `epic`, `rfc`, `breaking`, `flag:close-gate-override`, `flag:owner-decision`. Cross-cutting and additive; never the board column.
 
 `eval:skip` is the only label here that turns a gate off. Applying it without saying, in the PR,
 what evidence stands in for the evaluation is how a false green reaches the default branch.

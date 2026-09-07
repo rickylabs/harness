@@ -138,6 +138,30 @@ describe("renderColumns", () => {
     assert.match(text, /\(draft\)/);
   });
 
+  it("marks an item that is waiting on the owner", () => {
+    // The column views group by phase, and this deliberately is not one — so without the mark the
+    // fact appears nowhere in them, and an item nobody can move reads exactly like its neighbours.
+    const text = renderColumns(
+      snapshotOf([issue({ number: 8, labels: ["status:impl", "flag:owner-decision"] })]),
+    );
+    assert.match(text, /## impl \(1\)/);
+    assert.match(text, /#8 item 8 \(waiting on owner\)/);
+  });
+
+  it("keeps the marks in one order when an item carries several", () => {
+    const text = renderColumns(
+      snapshotOf([
+        issue({
+          number: 9,
+          kind: "pull-request",
+          draft: true,
+          labels: ["status:impl-eval", "priority:p1", "flag:owner-decision"],
+        }),
+      ]),
+    );
+    assert.match(text, /\(draft, p1, waiting on owner\)/);
+  });
+
   it("is deterministic", () => {
     const issues = [issue({ number: 2, labels: ["status:plan"] }), issue({ number: 1, labels: ["status:plan"] })];
     assert.equal(renderColumns(snapshotOf(issues)), renderColumns(snapshotOf([...issues].reverse())));

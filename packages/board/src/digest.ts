@@ -193,6 +193,17 @@ export function renderDigest(snapshot: BoardSnapshot, hierarchy: Hierarchy): str
   // about it here would put the prescribed ending on a list headed "needs attention".
   const unlabelled = inBucket("invisible").filter((i) => i.source.state === "open");
 
+  // The one section that counts epic issues as well as tasks, against the rule the rest of this
+  // page follows. Every other section answers "how much is there", and for that a population that
+  // matches the header is worth more than the two or three rows it leaves out. This one answers
+  // "what is being asked of you", where a row left out is a request the owner never sees — and an
+  // epic is exactly the kind of item that carries a decision, because a decision about direction
+  // is what an epic is mostly made of. Consistency is the cheaper thing to give up.
+  const waitingOnOwner = snapshot.items.filter((i) => i.waitingOnOwner && bucketOf(i) === "blocked");
+  // Everything else in the blocked bucket, so the two sections partition it and no item is listed
+  // twice under two different reasons to look at it.
+  const stuck = inBucket("blocked").filter((i) => !i.waitingOnOwner);
+
   const activity = latestActivity(snapshot.items);
   const banner = renderCompleteness(snapshot.completeness);
 
@@ -216,12 +227,20 @@ export function renderDigest(snapshot: BoardSnapshot, hierarchy: Hierarchy): str
   );
 
   lines.push(
+    // First on the page, above even what is running. Everything below this is a report; this is the
+    // only part addressed to the reader, and it is the half of "status ?" that waiting longer will
+    // never answer.
+    ...section(
+      "Waiting on you",
+      "Stopped on a decision only a person can make. No agent will pick these up.",
+      waitingOnOwner,
+    ),
     ...section(
       "Moving now",
       "Something could be acting on these right now.",
       inBucket("inFlight"),
     ),
-    ...section("Stuck", "Not moving, and not waiting on anything that will start on its own.", inBucket("blocked")),
+    ...section("Stuck", "Not moving, and not waiting on anything that will start on its own.", stuck),
     ...section(
       "Not on the board",
       "Open, and carrying no `status:` label — real work no column can see.",

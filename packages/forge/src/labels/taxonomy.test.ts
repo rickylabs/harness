@@ -7,6 +7,7 @@ import {
   CLOSE_GATE_OVERRIDE,
   CORE_FAMILIES,
   CORE_TAXONOMY,
+  OWNER_DECISION,
   RETIRED_CLOSE_GATE_STATUS,
   RETIRED_LABELS,
   STATUS_LABELS,
@@ -69,6 +70,25 @@ describe("core taxonomy", () => {
     assert.equal(flag.family, "flag");
     // The point of the move: a flag is additive, so it can sit beside the item's real phase.
     assert.ok(!CLOSE_GATE_OVERRIDE.startsWith("status:"));
+  });
+
+  it("carries the owner decision as a flag too, for the same reason", () => {
+    // A `status:blocked` would have been exclusive with the phase, so every owner-gated item would
+    // have had to choose between recording how far it got and recording who is holding it. The two
+    // facts are on different axes and the item needs both.
+    const flag = CORE_TAXONOMY.find((s) => s.name === OWNER_DECISION);
+    assert.ok(flag, `${OWNER_DECISION} is not in the core taxonomy`);
+    assert.equal(flag.family, "flag");
+    assert.ok(!OWNER_DECISION.startsWith("status:"));
+    assert.ok(!(STATUS_LIFECYCLE as readonly string[]).includes(OWNER_DECISION));
+  });
+
+  it("describes the owner-decision flag within what GitHub will show", () => {
+    // The label picker is where an agent that has not read the skill meets this label, and GitHub
+    // truncates a description past 100 characters — mid-sentence, with no ellipsis.
+    const flag = CORE_TAXONOMY.find((s) => s.name === OWNER_DECISION);
+    assert.ok(flag);
+    assert.ok(flag.description.length <= 100, `${flag.description.length} chars`);
   });
 });
 

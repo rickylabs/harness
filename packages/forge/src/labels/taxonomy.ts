@@ -92,6 +92,26 @@ export const CLOSE_GATE_OVERRIDE = "flag:close-gate-override" as const;
 /** What {@link CLOSE_GATE_OVERRIDE} was called before #100. Declared only so it can be retired. */
 export const RETIRED_CLOSE_GATE_STATUS = "status:close-gate-override" as const;
 
+/**
+ * Work that has stopped because a human has to decide something, not because an agent is on it.
+ *
+ * Every phase in {@link STATUS_LIFECYCLE} describes a state of *agent* work, so an item waiting on
+ * the owner keeps whichever column the work reached and the board reports it as running. On the
+ * repository this was written against, that was four items at once, one of them a `p1` whose
+ * remaining half could not start until a decision issue was answered (#240).
+ *
+ * A flag rather than an eleventh phase, for the same reason as {@link CLOSE_GATE_OVERRIDE} and one
+ * more. Phases are exclusive, so a `status:blocked` would make every owner-gated item choose
+ * between two true statements — and it would choose *against* the more informative one, because
+ * the phase is the record of how far the work got and a column named for who is holding it erases
+ * that. Additive, the two facts coexist: the phase says how far, the flag says who is next.
+ *
+ * Deliberately narrow. It does not mean "blocked", which gets used for a red build, a dependency,
+ * or a PR that has not been reviewed yet — all of which the board can already see. It means the
+ * next actor is a person and no amount of agent time will move it.
+ */
+export const OWNER_DECISION = "flag:owner-decision" as const;
+
 const c = {
   type: "c5def5",
   umbrella: "5319e7",
@@ -187,6 +207,10 @@ export const FLAG_LABELS: readonly LabelSpec[] = [
   spec("rfc", c.umbrella, "Request for Comments — substantial or breaking design change", "flag"),
   spec("breaking", c.danger, "Introduces a breaking change", "flag"),
   spec(CLOSE_GATE_OVERRIDE, c.danger, "Audited exception to the closing-keyword acceptance gate", "flag"),
+  // Coloured like `priority:p1` rather than like the two flags above, because it is the one label
+  // on the board addressed to a particular person. Those describe the change; this one is a
+  // request, and it should read as one at a glance.
+  spec(OWNER_DECISION, c.p1, "Waiting on an owner decision — no agent can proceed", "flag"),
 ];
 
 /**

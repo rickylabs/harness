@@ -46,6 +46,7 @@ reports every contradiction it can name, in `AnomalyKind` order:
 | `epic-closed-by-child` | an umbrella closed while its children are still open |
 | `closing-keyword-targets-epic` | an open PR whose keyword will close an umbrella on merge |
 | `duplicate-label` | two labels of one family, so reading that family is a coin toss |
+| `stale-owner-decision` | a finished item still asking for a decision, on a list worth reading only while it is short |
 | `incomplete-fetch` | the fetch was capped; this board is a prefix of the real one |
 
 This table used to open with "six kinds" and list six, while the type had carried eleven for some

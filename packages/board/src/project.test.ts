@@ -761,3 +761,85 @@ describe("closing-keyword-targets-epic", () => {
     );
   });
 });
+
+describe("the owner-decision flag", () => {
+  it("reads the label onto the item, alongside the phase rather than over it", () => {
+    // Both facts survive the projection, which is the entire argument for a flag over an eleventh
+    // column: the phase still says how far the work got, and the flag says who is next.
+    const item = project([
+      issue({ number: 1, labels: ["status:impl", "flag:owner-decision"] }),
+    ]).items[0];
+    assert.equal(item?.waitingOnOwner, true);
+    assert.equal(item?.phase?.name, "impl");
+  });
+
+  it("is false on an item that does not carry it", () => {
+    assert.equal(project([issue({ number: 1, labels: ["status:impl"] })]).items[0]?.waitingOnOwner, false);
+  });
+
+  it("decides no column of its own", () => {
+    // `flag:` is specified as never deciding a column, and this is the assertion that holds the
+    // taxonomy to it: the item is drawn where its status label puts it and nowhere else.
+    const snapshot = project([issue({ number: 1, labels: ["status:impl", "flag:owner-decision"] })]);
+    assert.deepEqual(
+      snapshot.columns.filter((c) => c.items.length > 0).map((c) => c.phase.name),
+      ["impl"],
+    );
+    assert.deepEqual(snapshot.unphased, []);
+  });
+
+  it("raises no anomaly while the item is genuinely still waiting", () => {
+    // However long it waits. The flag being old is not evidence that it is wrong — an owner
+    // decision that has gone unanswered for a month is the case the list exists to keep visible,
+    // and a rule that nagged about it would push the reader to clear the flag instead of decide.
+    const snapshot = project([
+      issue({ number: 1, labels: ["status:triage", "flag:owner-decision"] }),
+      issue({ number: 2, labels: ["status:impl", "flag:owner-decision"] }),
+      issue({ number: 3, labels: ["status:plan-eval", "flag:owner-decision"] }),
+    ]);
+    assert.deepEqual(snapshot.anomalies.filter((a) => a.kind === "stale-owner-decision"), []);
+  });
+
+  it("reports the flag left on a closed item", () => {
+    const snapshot = project([
+      issue({
+        number: 62,
+        state: "closed",
+        closedBecause: "completed",
+        labels: ["status:shipped", "flag:owner-decision"],
+      }),
+    ]);
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "stale-owner-decision");
+    assert.ok(anomaly, "expected a stale-owner-decision anomaly");
+    assert.equal(anomaly?.item, 62);
+    assert.match(anomaly?.detail ?? "", /is closed/);
+    assert.match(anomaly?.detail ?? "", /drop the flag/);
+  });
+
+  it("reports the flag left on an item that reached a terminal column", () => {
+    const snapshot = project([issue({ number: 5, labels: ["status:shipped", "flag:owner-decision"] })]);
+    const anomaly = snapshot.anomalies.find((a) => a.kind === "stale-owner-decision");
+    assert.ok(anomaly, "expected a stale-owner-decision anomaly");
+    assert.match(anomaly?.detail ?? "", /sits in shipped/);
+  });
+
+  it("reports it once, so the repair is one label removal", () => {
+    // Closed *and* terminal is the ordinary shape of finished work, not two problems.
+    const snapshot = project([
+      issue({
+        number: 5,
+        state: "closed",
+        closedBecause: "completed",
+        labels: ["status:shipped", "flag:owner-decision"],
+      }),
+    ]);
+    assert.equal(snapshot.anomalies.filter((a) => a.kind === "stale-owner-decision").length, 1);
+  });
+
+  it("says nothing about a closed item that never carried the flag", () => {
+    const snapshot = project([
+      issue({ number: 5, state: "closed", closedBecause: "completed", labels: ["status:shipped"] }),
+    ]);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "stale-owner-decision"));
+  });
+});

@@ -102,6 +102,53 @@ describe("renderDigest", () => {
     assert.ok(!text.includes("## Moving now"), "a blocked item is not moving");
   });
 
+  it("puts what is waiting on the reader above everything else on the page", () => {
+    // Everything below this heading is a report. This is the only part addressed to the person
+    // reading, and it is the half of "status ?" that waiting longer will never answer — so it goes
+    // above even what is running, which is the section it was carved out of.
+    const text = digestOf([
+      issue({ number: 1, labels: ["status:impl"] }),
+      issue({ number: 62, labels: ["status:plan-eval", "flag:owner-decision"] }),
+    ]);
+    assert.match(text, /## Waiting on you \(1\)/);
+    assert.ok(
+      text.indexOf("## Waiting on you") < text.indexOf("## Moving now"),
+      "the decision the reader owes comes before the work they do not",
+    );
+    assert.match(sectionOf(text, "## Waiting on you"), /#62 item 62/);
+  });
+
+  it("keeps a flagged item out of Moving now, whatever column it is in", () => {
+    const text = digestOf([issue({ number: 62, labels: ["status:impl", "flag:owner-decision"] })]);
+    assert.ok(!text.includes("## Moving now"), "nothing is acting on work that needs a decision");
+  });
+
+  it("splits the blocked bucket in two, so no item is listed under both reasons", () => {
+    const text = digestOf([
+      issue({ number: 1, labels: ["status:ci-fail"] }),
+      issue({ number: 62, labels: ["status:impl", "flag:owner-decision"] }),
+    ]);
+    assert.match(text, /## Waiting on you \(1\)/);
+    assert.match(text, /## Stuck \(1\)/);
+    assert.ok(!sectionOf(text, "## Stuck").includes("#62 "), "a decision is not a red build");
+    assert.ok(!sectionOf(text, "## Waiting on you").includes("#1 "), "a red build is not a decision");
+  });
+
+  it("lists an epic here, against the population rule the rest of the page keeps", () => {
+    // Every other section answers "how much is there", where matching the header's population is
+    // worth more than the row it leaves out. This one answers "what is being asked of you", where a
+    // row left out is a request the owner never sees — and a decision about direction is most of
+    // what an epic is made of.
+    const text = digestOf([
+      issue({ number: 39, title: "E9 — Telemetry", labels: ["epic", "status:impl", "flag:owner-decision"] }),
+    ]);
+    assert.match(sectionOf(text, "## Waiting on you"), /#39 E9 — Telemetry/);
+  });
+
+  it("omits the section entirely when nothing is waiting on the reader", () => {
+    assert.ok(!digestOf([issue({ number: 1, labels: ["status:impl"] })]).includes("Waiting on you"));
+  });
+
   it("lists open unlabelled work, and leaves closed unlabelled work alone", () => {
     // A closed item with no status label is the prescribed shape for abandoned work. Putting it
     // on a list headed "needs attention" nags about the correct outcome.
