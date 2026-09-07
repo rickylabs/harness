@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **204/245 done · 9 running · 14 queued · 5 blocked · 12 abandoned · 1 invisible**
+`[################----]` **204/246 done · 11 running · 14 queued · 4 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T06:41:53Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T06:54:58Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (5)
+## Waiting on you (4)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
@@ -15,10 +15,9 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#244 the tutorial hedges twice where the repository should decide: Node 24-vs-22, and which platforms it supports](https://github.com/rickylabs/harness/issues/244) | `triage` | `e10` |
-| [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
-## Moving now (9)
+## Moving now (11)
 
 Something could be acting on these right now.
 
@@ -27,18 +26,29 @@ Something could be acting on these right now.
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
+| [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `ready-merge` | `e5` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
+| [PR257 docs: sidecar-ratification--e5 accepts owner decision](https://github.com/rickylabs/harness/pull/257) | `ready-merge` | `e5` |
+
+## Anomalies (2)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#62** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#257** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 164/191 done · 8 running · 12 queued · 4 blocked · 3 abandoned
+`[##########--]` 164/192 done · 10 running · 12 queued · 3 blocked · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -47,7 +57,7 @@ Something could be acting on these right now.
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[########----]` 17/24 done · 5 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 blocked | `triage` |
-| [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 5 queued · 1 blocked | `triage` |
+| [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/8 done · 2 running · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 29/32 done · 1 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
@@ -93,9 +103,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  204/245 done · 9 running · 14 queued · 5 blocked · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  204/246 done · 11 running · 14 queued · 4 blocked · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [#################---]  164/191 done · 8 running · 12 queued · 4 blocked · 3 abandoned
+## M1 — dsh coordinator foundation  [#################---]  164/192 done · 10 running · 12 queued · 3 blocked · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -210,14 +220,15 @@ Something could be acting on these right now.
     triage               #181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision) (waiting on owner)
 
   E5 — Governance: tri-regime admission control #35  [triage]
-    [##--------------] 1/7 done · 5 queued · 1 blocked
-    plan-eval            #62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic) (waiting on owner)
+    [##--------------] 1/8 done · 2 running · 5 queued
+    ready-merge          #62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)
     triage               #63 E5.2 — Port the Orchid subscription-quota governor
     triage               #64 E5.3 — Metered-spend regime
     triage               #65 E5.4 — Local-capacity regime: the third regime, which has no owner today
     triage               #66 E5.5 — Wire the gate at the sandbox boundary
     triage               #67 E5.6 — Boot-parameter verification after every kernel update
     shipped              PR173 docs(doctrine): ADR 0002 - the sandboxctl execution channel (proposed) (p1)
+    ready-merge          PR257 docs: sidecar-ratification--e5 accepts owner decision
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
     [##############--] 29/32 done · 1 running · 2 abandoned
