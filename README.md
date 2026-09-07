@@ -73,9 +73,10 @@ The loop, arrow by arrow:
    taxonomy to that repository's GitHub — setup, on purpose, not in passing.
 2. **`dsh-board`** reads GitHub and projects it: columns, a hierarchy view, a
    digest page, and a check that names every way the board contradicts
-   itself. When it does, every view says so — a banner above the work, with
-   the affected rows marked — and the check carries the detail. It writes
-   nothing back; its GitHub transport is read-only by construction.
+   itself. When it does, every terminal view says so — a banner above the
+   work, with the affected rows marked — and the check carries the detail.
+   It writes nothing back; its GitHub transport is read-only by
+   construction.
 3. **`dsh-coordinator`** answers the deterministic questions over state
    derived from that projection: what may run next, whether a step's gates
    passed, and who may review whose work. Deciding and doing are separate
@@ -98,11 +99,11 @@ gates, the seam contracts, the record and the replay. It does not by itself
 supply a continuously running, fully wired dispatcher — nothing here
 schedules these services or writes the coordinator's state file yet; a
 durable loop is an open lane, not a shipped one. `dsh-board` only reads and
-projects GitHub; every view flags a board that contradicts itself, and its
-check names the detail. `dsh-forge` is the separate, explicit mutation
-boundary, scoped to label and process setup, with named create/update calls
-in its GitHub transport. The two seams stay distinct: the profile currently composes
-an **empty** subagent registry — a dispatch into it returns a named
+projects GitHub; every terminal view flags a board that contradicts itself,
+and its check names the detail. `dsh-forge` is the separate, explicit
+mutation boundary, scoped to label and process setup, with named create/update calls
+in its GitHub transport. The two seams stay distinct: the profile currently
+composes an **empty** subagent registry — a dispatch into it returns a named
 `no-providers` refusal rather than a crash — while the local LLM routes are
 registered but remain dependent on reachable backends and credentials at
 dispatch time.
@@ -111,7 +112,7 @@ dispatch time.
 
 | A human decides | An agent does | The layer enforces |
 | --- | --- | --- |
-| Intent: issues, labels, milestones, pull requests | The stochastic work: research, implementation, review | Projection: GitHub → board views; every view flags a self-contradiction; `check` names it; a half-seen board is refused |
+| Intent: issues, labels, milestones, pull requests | The stochastic work: research, implementation, review | Projection: GitHub → board views; every terminal view flags a self-contradiction; `check` names it; a half-seen board is refused |
 | Owner forks: whatever depends on what the owner wants | Lifecycle moves on its own item — one `status:` label at a time, per the generated skill | Eligibility: what may run next; every effect step must have a gate upstream, checked not promised |
 | Acceptance: merges, closes, consequential writes | Recording evidence as it works | Independence: an author never evaluates its own artifact; no legal evaluator is a blocker, never a softer rule |
 | Running `dsh-forge` to install labels and process | — | Replay: decisions re-run from their own inputs; a different answer is reported as nondeterminism |
@@ -128,14 +129,15 @@ auditable at all.
 regenerated from GitHub every half hour, and the
 [E0 roadmap](https://github.com/rickylabs/harness/issues/30) is what is built
 and what is not. What follows is a snapshot — every row resolved from source
-at commit `3c866d2` (2026-09-07), meant to be re-resolved, not remembered;
-[the board](BOARD.md) carries whatever moved since.
+at commit `c98fbeb` (2026-09-07, then `main`), meant to be re-resolved, not
+remembered; [the board](BOARD.md) carries whatever moved since.
 The labels are exact: **Implemented** — source and meaningful tests exist
 here; **Composed** — the `dsh-app` profile actually registers it;
 **Host-dependent** — use needs a live provider, server, credential or
 transport a clone does not supply; **Stub** — a placeholder reserving
 dependency shape. Nothing in this matrix is a running swarm, and no row
-claims one.
+claims one. On a narrow screen, tables scroll sideways. Use the diagram's
+zoom controls or read the walkthrough below.
 
 | Surface | Status | What that means here |
 | --- | --- | --- |
@@ -144,11 +146,11 @@ claims one.
 | `ctx.subagents` seam | Composed — empty | zero registered providers; a dispatch returns the named `no-providers` refusal |
 | `provider-claude`, `provider-opencode` | Implemented — not composed | the profile registers neither; running them is Host-dependent (an injected SDK with credentials; a live `opencode serve`) |
 | `ctx.llm` seam | Composed | the adapter registers all three routes — `lm-studio`, `llama-rocm`, `openrouter`; every destination is Host-dependent at dispatch |
-| Board session projection | Composed | strict public projection plus todo writes over published `dsh` session services; proven by a synthetic composition smoke, not a daemon boot |
+| Board session projection | Composed — partial | strict public projection plus todo writes over published `dsh` session services, proven by a synthetic composition smoke, not a daemon boot; carries task phase and run completeness, not yet board anomaly/completeness metadata ([#220](https://github.com/rickylabs/harness/issues/220)) — the terminal banners above are a separate surface |
 | Governance display | Implemented | `dsh-telemetry tree`/`status` reads a typed observation file — quota, spend, capacity, refusals, each with its age; absent input reads UNKNOWN, never "all clear". The live host adapter is blocked on [#62](https://github.com/rickylabs/harness/issues/62) |
 | `provider-codex`, `provider-acp`, `governance`, `netscript-bridge` | Stub | each README opens with `Status: stub` and names its blocking epic |
 | `contracts` | Implemented | the only publishable package; release is tag-triggered, and no registry release is claimed here |
-| GitHub transports; `deploy/` stack | Host-dependent | `gh` or `GITHUB_TOKEN`, exit **3** without; the compose stack encodes one specific box |
+| GitHub transports; `deploy/` stack | Host-dependent | GitHub board reads and label checks need a working transport; verify `init` with `labels check` and a live readback. The compose stack targets one specific box |
 
 ## Choose your path
 
@@ -230,8 +232,12 @@ Further proofs, by what they need:
 - **Network: `gh` or `GITHUB_TOKEN`.** `dsh-board columns` projects a
   repository; `dsh-board digest` prints the markdown page
   [BOARD.md](BOARD.md) is made of; `dsh-forge doctor` reports what a target
-  repository and your environment support. Without a transport, the GitHub
-  tools exit **3** and say so rather than printing an empty board.
+  repository and your environment support. The tools whose whole job is
+  reading GitHub exit **3** and say so when no transport is available. Two
+  forge commands are deliberately not in that set: `doctor` exits **0** and
+  reports what it could see, and `init` exits **0** having written its local
+  files even when the GitHub half was skipped — which is why the tutorial
+  ends that step with a readback that can fail loudly.
 - **A live host.** Provider sessions (an injected Claude Agent SDK; a
   long-lived `opencode serve`), local model servers behind the `ctx.llm`
   routes, and the [deployed web surface](deploy/README.md) all need machines
@@ -264,9 +270,11 @@ contradiction.
 - **GitHub holds board truth.** There is no second database of task state.
   `dsh-board` projects issues, labels and pull requests, refuses to report a
   board it only half saw, and flags a board that contradicts itself in every
-  view — `check` names the contradictions and exits non-zero; `digest` prints
-  them with the repair. `dsh-forge` is the one explicit write boundary, and
-  it writes labels, never evidence.
+  terminal view — `check` names the contradictions and exits non-zero;
+  `digest` prints them with the repair. The session projection carries task
+  phase and run completeness but not yet that anomaly metadata
+  ([#220](https://github.com/rickylabs/harness/issues/220)). `dsh-forge` is
+  the one explicit write boundary, and it writes labels, never evidence.
   [03 — The board](docs/concepts/03-the-board.md) owns the reasoning.
 - **Everything generated is generated.** Six artifacts in this repository are
   produced by code and five are byte-compared against it on every build; the

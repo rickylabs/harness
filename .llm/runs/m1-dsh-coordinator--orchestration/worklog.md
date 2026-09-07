@@ -471,3 +471,7 @@ liveness. No provider code or host process changed.
 Independent GLM 5.3 Flash sessions evaluated exact source 66af5123411eda8a9598e3f1bcfcff6a28c8b358. Issue #68 FAIL_FIX: stable dsh projection/todo adapter absent (fix #204). Issue #87 FAIL_FIX: account-aware quota, capacity and admission reasons absent (fix #205). Verdicts posted to each issue and parent epic; #68/#87 returned to impl, epics remain open. Suites: board 230, telemetry 342, dsh-app 251, contracts 121 passing; no live host wiring tested. Synthetic running-to-complete telemetry join and live issue #203 projection passed. Forge init dry-run exited 0; fresh target install not claimed tested.
 
 #203 moved from E0 triage/no milestone into E6 research/M1 and assigned rickylabs. #196 now asserts explicit RunRef, canonical cwd and recorded worktree ownership, including failed cd and same-cwd between-turn recency cases. Board checks before/after: zero anomalies. No production authority, release tag, storage or canary decision inferred.
+
+## Steer 4 execution checkpoint
+
+Adapter and display slice shipped with independent verdicts; live authority remains open. E3 triage, the dedicated docs lane, concurrent owner fixes, model transport recovery and board reconciliation are recorded in [steer-4-closeout.md](steer-4-closeout.md). The docs lane is PR 223; its independent findings are recorded under the E10 run and require final disposition before merge.

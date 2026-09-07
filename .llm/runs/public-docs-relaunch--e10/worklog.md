@@ -173,3 +173,99 @@ Append-only. Times are UTC where it matters; session-relative otherwise.
   exit 0 (BUILD_EXIT), `check:links` exit 0, `check:docs` exit 0, five
   `--help` exit 0, `policies` exit 0. Steps 4/5 fixtures unaffected by the
   range (no telemetry/dsh-app changes) — earlier byte-exact receipts stand.
+
+## Stage H — final narrow pass (implementation eval 1, Muse Spark 1.3 xhigh)
+
+- Eval verdict: `PASS AFTER NARROW FIXES` (2H/2M/3L), fully emitted with
+  step_finish; wrapper later returned 143 — verdict stands as emitted, fresh
+  exact-head re-review owned by parent. Visual W5 (Gemini 3.8 Flash, 375 px):
+  PASS, screenshots under `receipts/review-1/`.
+- Rebase: `origin/main` had moved to `a4693bd` (#222 subagents telemetry
+  guarantee checked at dispatch; board publish). Branch re-based (stash of the
+  coordinator's m1 worklog edit around the rebase; popped intact). Docs commit
+  now `98e3ec8` on `a4693bd`. Delta inspected only; status-row conclusions
+  unchanged (empty registry + named refusal), citations re-anchored:
+  `provider.ts:303-305,374`; `subagents.ts:89-105`.
+- H1 fixed (README network bullet + matrix row; tutorial readbacks + corrected
+  "If it fails"): forge `cmdInit` maps unavailable/failed apply to `EXIT.ok`
+  (`cli.ts:583-604`), `doctor` exits 0 offline (`:391`), only
+  plan/apply/check raise `TransportError`→3 (`:1606-1608`); `labels check`
+  drift→non-zero (`:426-440`), success line `:416`. Isolated fixture receipt:
+  real `init` exit 0 with local files written while apply FAILED (HTTP 404);
+  `labels check` classified network-dependent, never executed, never claimed.
+- H2 fixed: README scoped anomaly flags to *terminal* views (walkthrough,
+  supply paragraph, who-decides cell); projection row relabeled
+  `Composed — partial` with the #220 limitation (carries task phase + run
+  completeness, not board anomaly/completeness metadata); commitments bullet
+  2 carries the distinction. #219 banners stay a terminal surface.
+- M1 fixed at root cause: the earlier inventory patch script aborted before
+  writing (assertion after six in-memory replaces), so the `c0f4434` pin row
+  and citation updates never landed while the worklog claimed them — recorded
+  here and in drift D8. Pin table now has `c0f4434` **and** `a4693bd` rows;
+  README pins `a4693bd`; closing line names the last resolved baseline.
+- M2 (`# fail 0` → `fail 0`), L1 (README:104 re-wrapped, prose ≤80), L2
+  (duplicate gh sentence collapsed), L3 (unobserved trailing-space claim
+  dropped) all fixed.
+- Dispositions: [`implementation-disposition-1.md`](implementation-disposition-1.md).
+- Coordinator evidence kept and committed with this pass: `vision-eval-1.md`,
+  `receipts/review-1/` (375 px screenshots), `transport-fallback.md`,
+  `m1-dsh-coordinator--orchestration/steer-4-closeout.md` + modified worklog.
+  No review verdict text edited.
+- Gates at final text: see final receipt table appended below this entry.
+
+## Verification isolation correction
+
+The attempted offline forge check reached GitHub and was rejected with HTTP 404; zero labels were reported applied. Its pipeline status was not accepted as producer evidence. The coordinator stopped the writer, reported the incident, and replaced the check with the existing injected unavailable-transport seam. See [offline-forge-receipt.md](offline-forge-receipt.md) for the complete disposition and the four asserted returns.
+
+## Stage H — transport-incident correction and pass completion
+
+- Coordinator stopped the check run: the author's `GH_CONFIG_DIR`/`HOME`
+  override did **not** disable the inherited transport — the "offline" init
+  fixture attempted a real GitHub label POST against `owner/scratch`
+  (HTTP 404, zero applied), outside the lane's no-GitHub constraint, and its
+  `INIT_EXIT` was read after a pipe (tail's status, not the producer's). The
+  user has been informed. That run is preserved as an incident record only
+  ([`offline-forge-receipt.md`](offline-forge-receipt.md) §1); it is never
+  characterized as offline and never counted as a receipt.
+- H1 is proven instead by the coordinator's safe replacement, adopted
+  verbatim: real CLI main with `CliOverrides.probeTransport → kind:"none"`
+  (`cli.ts:1418-1422`), synthetic slug, `--no-detect`, fresh fixture —
+  dry-run 0/no file · init 0/local files · labels check 3 · doctor 0 · four
+  probes · Node 0, zero GitHub contact. No further forge/gh execution in this
+  lane; no HOME overrides.
+- Tutorial H1 completed: local `git -C ../scratch status --short` file review
+  plus **two** unexecuted network instructions (`gh label list --repo
+  owner/scratch --limit 100`; `dsh-forge labels check --repo owner/scratch
+  --cwd ../scratch`), expected outputs stated, stop-if-fails rule added.
+- Inventory state verified on disk by grep before patching (the coordinator
+  warned a script may have failed silently; all eight earlier edits were in
+  fact present — verified, not assumed). Receipt rows corrected: incident
+  characterization, safe-replacement adoption, readback classification.
+- Disposition rows corrected to match ([`implementation-disposition-1.md`](implementation-disposition-1.md)).
+
+### Final receipt table (this pass, true producer statuses, no pipes)
+
+| Gate | Command | Producer exit | Detail |
+| --- | --- | --- | --- |
+| typecheck | `pnpm run typecheck` | 0 | plan-required aggregate row |
+| build | `pnpm run build` | 0 | 8 checks + compile; last lines check:docs 6/6 + check:skill 1/1 |
+| test | `pnpm test` | 0 | 11 packages, every `fail` line reads 0 |
+| links | `pnpm run check:links` | 0 | 57 files, 305 relative, 27 anchors, 0 broken |
+| docs | `pnpm run check:docs` | 0 | 6 generated pages match binaries |
+| forge H1 | coordinator injected-transport check | 0 (Node) | see [`offline-forge-receipt.md`](offline-forge-receipt.md) |
+
+Earlier piped-`tail` exit captures in this worklog are superseded by this
+table wherever they conflict; every status above was read from the command
+itself (`EXIT=$?` with no intermediate pipe).
+
+## Coordinator final wording and evidence pass
+
+The documentation model returned exact patches when the process-local file-path permissions rejected its final three edits. The coordinator applied those patches mechanically: the remaining matrix transport wording now names the verification requirement without a generic exit claim; the diagram hint names the observed zoom controls; and the H1 disposition table is structurally intact, with the incident note below it. The complete incident receipt records both rejected placeholder attempts. No product code changed.
+
+The coordinator asserted the worktree head 94438ff, then ran check:links and check:docs in that worktree after the wording edits; both exited 0. The author's final typecheck/build/test receipts remain recorded above, and CI plus a restricted source/receipt review gate the resulting commit.
+
+## Correction follow-up after external merge
+
+PR223 merged externally at 033da73 with owner commit bc5cac6’s #212 link correction before the review fixes were pushed. The protected push refused stale history. The coordinator created docs/209-review-corrections on c98fbeb and cherry-picked only the review-fix/evidence commits; the owner’s link and #224/#226 code remain. Maturity was re-resolved from the source delta and stub/composition declarations and pinned to c98fbeb. The safe forge proof still applies: forge/src/cli.ts has no delta from a4693bd. The final branch receives fresh local aggregate checks, CI and restricted independent review.
+
+Coordinator integration validation on the c98fbeb-based correction branch: typecheck, build and full tests each exited 0 through an && chain with individual complete logs. The new run-artifact relative-target audit found zero missing files; git diff --check passed. Forge CLI and the board/LLM/subagent composition sources remain unchanged from the safe proof baseline.
