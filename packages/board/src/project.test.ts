@@ -17,7 +17,8 @@ import {
   sourceSaysDelivered,
 } from "./model.js";
 import type { SourceIssue } from "./model.js";
-import { EPIC_LABEL, isEpicLabels, projectBoard, slugOfEpicTitle } from "./project.js";
+import { EPIC_LABEL } from "./labels.js";
+import { isEpicLabels, projectBoard, slugOfEpicTitle } from "./project.js";
 
 const AT = "2026-09-05T00:00:00.000Z";
 

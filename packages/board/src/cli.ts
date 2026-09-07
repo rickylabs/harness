@@ -22,6 +22,7 @@ import { renderDigest } from "./digest.js";
 import { buildHierarchy } from "./hierarchy.js";
 import { fetchItems, TransportUnavailable, detectRepoSlug } from "./github.js";
 import type { FetchResult } from "./github.js";
+import { DEFAULT_LANE_PREFIX } from "./labels.js";
 import { projectBoard } from "./project.js";
 import { renderAnomalies, renderColumns, renderHierarchy, renderCompleteness } from "./render.js";
 
@@ -100,7 +101,7 @@ const defaultDeps = (): CliDeps => ({
 });
 
 function parseArgs(argv: readonly string[]): { command: string; options: Options } {
-  const options: Options = { repo: null, lanePrefix: "lane", limit: 500, at: null };
+  const options: Options = { repo: null, lanePrefix: DEFAULT_LANE_PREFIX, limit: 500, at: null };
   const rest: string[] = [];
 
   for (let i = 0; i < argv.length; i += 1) {

@@ -10,6 +10,7 @@
 import {
   CLOSE_GATE_OVERRIDE,
   STATUS_LIFECYCLE,
+  STATUS_READY_MERGE,
   STATUS_TERMINAL,
   type LabelFamily,
   type LabelSpec,
@@ -37,9 +38,6 @@ export interface SkillContext {
    */
   readonly retired?: readonly LabelSpec[];
 }
-
-/** The phase that gates merge. Named so the skill text cannot drift from the lifecycle array. */
-const MERGE_GATE = "status:ready-merge";
 
 const namesIn = (specs: readonly LabelSpec[], family: LabelFamily): readonly string[] =>
   specs.filter((s) => s.family === family).map((s) => s.name);
@@ -145,7 +143,7 @@ export function renderSkill(ctx: SkillContext): string {
     "```",
     "",
     "Move the label in the same action as the phase it records. A PR arriving at merge with a stale or",
-    `missing status has skipped a gate — \`${MERGE_GATE}\` is a claim that the gates ran, so setting it`,
+    `missing status has skipped a gate — \`${STATUS_READY_MERGE}\` is a claim that the gates ran, so setting it`,
     "early is not optimism, it is a false green.",
     "",
     "On close:",

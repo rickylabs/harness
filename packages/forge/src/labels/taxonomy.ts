@@ -68,6 +68,17 @@ export const STATUS_LIFECYCLE = [
 export const STATUS_TERMINAL = "status:shipped" as const;
 
 /**
+ * The phase that gates merge — the last column before {@link STATUS_TERMINAL}.
+ *
+ * Typed as a member of {@link STATUS_LIFECYCLE} rather than as a bare string. `skill/render.ts`
+ * held its own copy of this literal under a comment promising the skill text "cannot drift from
+ * the lifecycle array", which was a promise nothing kept: renaming the phase would have left the
+ * generated skill telling agents to set a label that no longer exists, and every gate would still
+ * have been green. The annotation is what makes the promise true — the rename stops compiling.
+ */
+export const STATUS_READY_MERGE: (typeof STATUS_LIFECYCLE)[number] = "status:ready-merge";
+
+/**
  * The audited exception path for a red close gate.
  *
  * A flag rather than a status, because a status is the board column and this was never a column.
