@@ -1,6 +1,6 @@
 Coordinator clarification: the draft was authored by Qwen 3.8 Max and completed by GLM 5.3 Flash after evidenced transport timeouts. The reviewer’s author header names only the first writer. This is a visual-only PASS; the content review separately requires correcting the baseline pin and other behavior claims.
 
-Screenshots: [docs-preview209-section-0.png](receipts/review-1/docs-preview209-section-0.png), [docs-preview209-section-2.png](receipts/review-1/docs-preview209-section-2.png), [docs-preview209-section-3.png](receipts/review-1/docs-preview209-section-3.png), [docs-preview209-section-4.png](receipts/review-1/docs-preview209-section-4.png), [docs-preview209-section-5.png](receipts/review-1/docs-preview209-section-5.png), [docs-preview209-section-6.png](receipts/review-1/docs-preview209-section-6.png), [docs-map209-section-0.png](receipts/review-1/docs-map209-section-0.png), [docs-tutorial209-section-3.png](receipts/review-1/docs-tutorial209-section-3.png).
+Screenshots remain host-local; see visual-receipts.md for SHA-256 identifiers. They are not tracked, honoring the owner decision in PR228.
 
 # Independent Feature Vision Evaluation: Issue #209 (W5 Gate)
 
