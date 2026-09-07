@@ -65,6 +65,22 @@ export const DEFAULT_LANE_PREFIX = "lane";
  */
 export const EPIC_LABEL = "epic";
 
+/**
+ * The label that says the next actor is a person.
+ *
+ * Every phase in the lifecycle describes a state of *agent* work, so before this existed an item
+ * waiting on the owner kept whichever column the work reached and was counted as running — four
+ * items at once on the board this was written against, including a `p1` whose remaining half was
+ * gated on an unanswered decision issue (#240). `bucketOf` reads it ahead of the queued/in-flight
+ * split, which is the whole point: the count that answers "status ?" stops including work that has
+ * no runner and cannot get one.
+ *
+ * Additive, and it has to be. The phase records how far the work got — a column named for who is
+ * holding it would erase that — so the two facts are carried side by side rather than one over the
+ * other. `forge` files it under `flag`, the family specified as never deciding a column.
+ */
+export const OWNER_DECISION_LABEL = "flag:owner-decision";
+
 /** How the projector uses a literal, which decides what the taxonomy has to provide for it. */
 export type LabelUseKind =
   /** A whole label name, compared for equality. The taxonomy must create exactly this label. */
@@ -119,6 +135,13 @@ export const LABEL_USES: readonly LabelUse[] = [
     family: null,
     site: PROJECT,
     reads: "the marker that makes an issue an epic, and the only one; nothing else marks a parent",
+  },
+  {
+    kind: "name",
+    literal: OWNER_DECISION_LABEL,
+    family: null,
+    site: PROJECT,
+    reads: "moves an item out of the running count and onto the list of what is waiting on a person",
   },
   ...SINGLE_VALUE_FAMILIES.map(
     (family): LabelUse => ({

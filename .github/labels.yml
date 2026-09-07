@@ -108,6 +108,9 @@
 - name: "flag:close-gate-override"
   color: "b60205"
   description: "Audited exception to the closing-keyword acceptance gate"
+- name: "flag:owner-decision"
+  color: "d93f0b"
+  description: "Waiting on an owner decision — no agent can proceed"
 
 # ── area: derived from this repository ──
 - name: "area:board"

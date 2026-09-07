@@ -21,6 +21,10 @@ function label(item: BoardItem): string {
   const flags: string[] = [];
   if (item.source.draft === true) flags.push("draft");
   if (item.priority !== null) flags.push(item.priority);
+  // Last, and spelled out rather than abbreviated like the two above. It is the only one of the
+  // three that names something for the reader to do, and in the column views it is the only place
+  // the fact appears at all — those group by phase, and this is deliberately not a phase.
+  if (item.waitingOnOwner) flags.push("waiting on owner");
   const suffix = flags.length > 0 ? ` (${flags.join(", ")})` : "";
   return `${id} ${item.source.title}${suffix}`;
 }

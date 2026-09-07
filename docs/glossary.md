@@ -45,7 +45,7 @@ first, the label follows.
 ### gate
 
 A check that decides whether something may proceed, as opposed to a phase that says where work is.
-`status:close-gate-override` and the `gate:*` labels are gates; the ten `status:` phases are not.
+`flag:close-gate-override` and the `gate:*` labels are gates; the ten `status:` phases are not.
 Keeping the two in separate prefixes is what makes "exactly one status label" a statement that can
 be enforced. A gate that runs leaves a **receipt**.
 
@@ -74,6 +74,11 @@ A decision only the owner can make, raised rather than resolved. Where sources c
 is outside an agent's authority, the run records a numbered fork with the question, the options, a
 recommendation, and the cost of getting it wrong — and then proceeds with everything that does not
 depend on the answer. Not deciding is a deliverable; guessing quietly is not.
+
+On the board the same thing is a label: `flag:owner-decision`, carried *alongside* whichever phase
+the work reached. A fork recorded only in a run's output is one the owner has to go looking for; the
+flag is what puts it on the page they already read, and what stops the projection counting the item
+as work in progress. See [03 — The board](concepts/03-the-board.md).
 
 ### profile
 

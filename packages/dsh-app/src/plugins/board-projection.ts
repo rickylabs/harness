@@ -208,6 +208,7 @@ const ANOMALY_KINDS = [
   "epic-closed-by-child",
   "closing-keyword-targets-epic",
   "duplicate-label",
+  "stale-owner-decision",
   "incomplete-fetch",
 ] as const satisfies readonly AnomalyKind[];
 

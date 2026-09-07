@@ -50,6 +50,7 @@ export {
   ENUMERATED_FAMILIES,
   EPIC_LABEL,
   LABEL_USES,
+  OWNER_DECISION_LABEL,
   SINGLE_VALUE_FAMILIES,
 } from "./labels.js";
 export type { LabelUse, LabelUseKind } from "./labels.js";

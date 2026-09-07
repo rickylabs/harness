@@ -9,6 +9,7 @@
 
 import {
   CLOSE_GATE_OVERRIDE,
+  OWNER_DECISION,
   STATUS_LIFECYCLE,
   STATUS_READY_MERGE,
   STATUS_TERMINAL,
@@ -74,6 +75,48 @@ function dispatchSection(label: string | null): readonly string[] {
     "",
     "Then read the brief back with `gh issue view` before you apply the label. What that prints is",
     "the whole prompt only if it is the whole of what you wrote.",
+    "",
+  ];
+}
+
+/**
+ * How to hand work back to a person without the board reporting it as running.
+ *
+ * The one section here addressed to an agent that is *stopping*. Every phase in the lifecycle
+ * describes a state of agent work, so an agent that hits a decision it cannot make has no true label
+ * to move to, leaves the item where it is, and the board keeps counting it as in flight — the
+ * failure this flag exists to fix, and it is only fixed if the agent that stops applies the flag.
+ *
+ * Rendered only where the label is actually installed, per this file's own rule: naming a label a
+ * repository does not have teaches an agent to invent one.
+ */
+function ownerDecisionSection(specs: readonly LabelSpec[]): readonly string[] {
+  if (!specs.some((s) => s.name === OWNER_DECISION)) return [];
+  return [
+    "## When the next move is not yours",
+    "",
+    `Apply \`${OWNER_DECISION}\` the moment you stop because a **person** has to decide something —`,
+    "an authority call, a name that goes in public, a spend, a fork in the design that is not yours to",
+    "take. Not for a red build, a dependency, or a review you are waiting on: those have runners",
+    "already, and the board can see them.",
+    "",
+    "**Leave the `status:` label exactly where it is.** The phase records how far the work got; the",
+    "flag records who is next. They are different facts and the item needs both — a half-shipped item",
+    "moved into some holding column loses the half that shipped, and the flag is what keeps you from",
+    "having to choose.",
+    "",
+    "Three parts, one action:",
+    "",
+    "1. Comment on the item with **the decision, not the situation** — the options you can see, what",
+    "   you would do, and what unblocks on each answer. A flag over a comment that only says \"stuck\"",
+    "   moves the work from a queue nobody is watching to a list nobody can act on.",
+    "2. Apply the flag. It is what takes the item out of the running count and puts it on the short",
+    "   list the owner reads first.",
+    "3. Stop working the item. That is the claim the flag makes; carry on and it is false.",
+    "",
+    "Remove the flag in the same action as the answer — whoever acts on the decision drops it. The",
+    "list is worth reading only while it is short, so a flag that outlives its question is the same",
+    "silence one level up. The board reports one left behind as `stale-owner-decision`.",
     "",
   ];
 }
@@ -158,6 +201,7 @@ export function renderSkill(ctx: SkillContext): string {
     "to the close gate, carried *alongside* whichever phase the item is actually in, and the",
     "reasoning goes in a comment on the item rather than in the label.",
     "",
+    ...ownerDecisionSection(ctx.specs),
     "## Families",
     "",
     ...bullet("type", "type:", "Every open issue and PR carries exactly one."),
