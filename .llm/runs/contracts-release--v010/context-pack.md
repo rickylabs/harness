@@ -1,74 +1,82 @@
 # Contracts v0.1.0 release handoff
 
-READY FOR OWNER TAG PUSH. Publication has not happened.
+READY FOR HUMAN REVIEW. Merge PR 268 before preparing the final release tag.
+No package publication has happened. The obsolete local tag was withdrawn.
 
-Source marker: Harness release source and executable checks; topic: first public contracts artifact; date: 2026-09-07.
+Source marker: Harness source, npm tarball inspection and release workflow;
+topic: first public contracts artifact with MIT licence; date: 2026-09-07.
 
 Package: `@rickylabs/harness-contracts@0.1.0`, protocol 1.
-Release commit: `684840b61d4cbccec69f0ff015d2715941ca16b8`.
-Last contracts change: `fa0456cefa7211094a747f0a9b924ae53835da18`.
-Local annotated tag prepared (not pushed): `harness-contracts-v0.1.0`.
+Licensed package candidate: `88668ac564dc867e556bcae75d86c0ba47713ee4`.
+This candidate is on the PR branch, not yet main. The owner must pin the resulting
+merged main commit before creating `harness-contracts-v0.1.0`; a squash merge will
+change its identity. The old candidate `684840b` lacked the package licence and
+is superseded for publication. Its unpushed local tag was deleted, not moved.
 
-The existing release workflow passed its dry-run at the exact release commit:
-https://github.com/rickylabs/harness/actions/runs/34105805648
-This ran on Node 24. Publication and tag-only ancestry/version gates were skipped by design.
-Locally, main ancestry passed and the manifest version matches the tag suffix;
-local and remote tag absence was checked before creating the annotated local tag.
-The public npm registry returned 404 for this version on 2026-09-07.
+## Executed checks
 
-Local clean checkout: Node v26.8.1, pnpm 11.25.0, npm 11.19.0.
-`pnpm install --frozen-lockfile`, `pnpm run typecheck`, `pnpm run build`, and `pnpm test` exited 0.
-2,667 tests passed across 12 packages. The actual npm tarball was installed into
-an isolated consumer; runtime root/server/package.json exports, protocol and package
-identity, unknown versus failed, and a snapshot/fold round trip passed. TypeScript
-consumer imports and a negative terminal-unknown settlement assertion passed.
+Corrected release rehearsal:
+https://github.com/rickylabs/harness/actions/runs/34107640626
+SUCCESS at exact candidate `88668ac564dc867e556bcae75d86c0ba47713ee4`.
+Node 24, frozen install, typecheck, build, all 2,667 tests and npm pack dry-run passed.
+Publication and tag-only ancestry/version gates were skipped because dryRun=true.
+The older candidate's local frozen install/typecheck/build and 2,667 tests passed;
+those historical results are not presented as a new local full-suite run.
 
-Tarball: `rickylabs-harness-contracts-0.1.0.tgz`; 102,111 bytes, 67 entries, no test files.
-SHA-256: `2c985e4eb20646b2c2f349ed9ee1fd04320ce8013ce60489f67232f332025a28`.
-npm integrity: `sha512-6aYiqGI7gdEMbzxusfC3QpvkBVy0rAz/MKxFHshZ5ESZVar7FXB6QuxlwPkvONXk4PZwZDqWDtUQTZnPqlhUBg==`.
-This hash identifies the local tarball, not an assertion about the future CI-built tarball.
+Actual `npm pack` of the corrected package produced 68 entries including
+`package/LICENSE`. Extracted licence bytes exactly match the repository-root
+MIT licence. The actual tarball was installed into an isolated consumer;
+installation, runtime exports/protocol/hub-fold round trip and TypeScript
+consumer checks all exited 0. Local Node v26.8.1, pnpm 11.25.0, npm 11.19.0.
 
-Source/export locations: `packages/contracts/package.json` defines root, `/server`
-and `/package.json` exports; TypeScript schemas are in `packages/contracts/src/`.
-No product OpenAPI is emitted by Harness. The product backend must install this
-version and produce its own captured OpenAPI and generated-client evidence.
-A tag alone is insufficient: downstream integration starts after registry publication succeeds.
+Tarball: `rickylabs-harness-contracts-0.1.0.tgz`; 102,820 bytes.
+SHA-256: `866a3e3d998a3b1e28d74db6a9b4509d2e0b8e70f0f7b62082d2cf375f12479b`.
+npm integrity: `sha512-5UCtJKDwEpqRa4jXkwguK7uEgWBIug7TBAFXfyaULkrZUoj/Z+STInXi35YVb1772k4udxWupFINznY2YT8d3w==`.
+These identify the locally built tarball, not the future CI publication bytes.
 
-Known limits: exact provider queued state is not represented by RunView.outcome;
-evidence freshness is a separate dimension. Reconnect freshness defect is tracked
-in issue 265. Public stop, steer, receipt lookup, revision/coverage and grouping
-semantics remain tracked in issues 259–263; creation capability is deferred in 264.
-No downstream runtime integration, generated OpenAPI or native compatibility PASS
-is claimed. Proposed v0.2.0 drafts are not this release.
+## What remains
 
-NPM_TOKEN is configured (name inspected only). Its validity and npm scope publishing
-permission remain UNKNOWN until the publishing job runs. Registry publication and
-provenance verification remain UNKNOWN, not passed.
+Npm publishing authentication is entirely UNREHEARSED. `npm pack` does not contact
+the registry. NPM_TOKEN is configured by name, but its value, expiry, scope
+ownership and publish permission were not tested. The registry audit returned
+E404 for this package; no published artifact in the scope was established by this
+run. Registry publication and provenance remain UNKNOWN, not passed.
 
-Owner action after checking the local annotated tag points to the pinned commit:
+A failed publication does not itself burn version 0.1.0. If npm never accepted
+the upload, that version remains available. A workflow may fail after acceptance,
+however: inspect registry state before retrying. Never overwrite a published version.
 
-    git push origin refs/tags/harness-contracts-v0.1.0
+Human actions: merge PR 268; verify the resulting main commit includes the licence
+and passes its required checks; create the annotated release tag at that commit;
+then push only `refs/tags/harness-contracts-v0.1.0`. The existing release workflow
+checks main ancestry/version and publishes with provenance. Do not additionally
+run manual non-dry-run dispatch as a second publication attempt.
 
-That push triggers `.github/workflows/release-contracts.yml`, which checks ancestry
-and version and invokes `npm publish --provenance --access public`. Do not invoke
-manual non-dry-run workflow dispatch as an additional publication attempt. Do not
-move or overwrite the release tag if publication fails; investigate the receipt.
-After publication, inspect registry version, integrity and provenance, then give
-the backend the installed version and source identity. Human merge of PR 266 is
-a separate action; the release commit already exists on main.
+## Consumer boundary and known limits
 
+Exports are root, `/server`, and `/package.json` in
+`packages/contracts/package.json`; TypeScript schemas live under
+`packages/contracts/src/`. No product OpenAPI is emitted by Harness. The product
+backend must install the published version and supply its captured OpenAPI digest,
+generated package identity/exports, and matching downstream native receipts.
+Neither a diagram nor absence of adapter call sites proves compatibility or
+no-schema impact. No downstream runtime/API/native PASS is claimed.
 
-Independent review: PASS, NetScript matrix simple / implementation_evaluation,
-requested route `opencode-go/minimax-m3`, effort `provider_default`, session
-`ses_f84c97506ffeWcJ2Ju72zzQTFf`. Reviewer checked documentation against source and
-local receipts; did not independently execute tests or fetch CI. Provider/model
-attestation beyond the requested launcher route remains unknown.
+Exact provider queued state is not represented by RunView.outcome; evidence
+freshness is independent. PR 266 records documented loss for v0.1.0. Issue 265
+owns the reconnect freshness defect; proposed 0.2.0 remains draft/deferred.
+Existing stop/steer/receipt/revision/grouping gaps remain in issues 259–263;
+creation capability remains deferred in 264. No new research item was opened.
 
-Fidelity fixture executed with synthetic historical timestamps: five execution
-states can share the same fresh-evidence verdict; an old running claim is stalled;
-missing evidence without a running claim is quiet. It also asserts that the wire
-outcome omits queued and preserves unknown. This is not an adapter integration test.
-Architecture/fidelity decision is recorded in PR 266 for human review.
+## Review and scope
 
-This run changes release evidence only. No package version, protocol source,
-workflow, protected owner issue or downstream repository is changed.
+The original handoff and architecture received independent MiniMax M3 review,
+NetScript matrix simple / implementation_evaluation, requested
+`opencode-go/minimax-m3`, effort `provider_default`, session
+`ses_f84c97506ffeWcJ2Ju72zzQTFf`. The licence correction received a subsequent same-session PASS after independent
+source/receipt inspection. Review is read-only; tests and CI
+are coordinator-run evidence, not independently executed by that reviewer.
+Provider/model attestation beyond requested route remains unknown.
+
+This PR adds package licence text and release evidence only. No runtime protocol,
+workflow, package version, protected owner issue or downstream source is changed.
