@@ -4,7 +4,7 @@
 
 `[################----]` **206/257 done · 18 running · 15 queued · 5 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T09:40:39Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T09:48:15Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (5)
 
@@ -41,7 +41,15 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 | [PR266 docs: record the locked three-layer architecture](https://github.com/rickylabs/harness/pull/266) | `ready-merge` | — |
-| [PR268 docs: prepare contracts v0.1.0 release handoff](https://github.com/rickylabs/harness/pull/268) | `ready-merge` | `e8` |
+| [PR268 docs: prepare contracts v0.1.0 release handoff](https://github.com/rickylabs/harness/pull/268) | `impl-eval` | `e8` |
+
+## Anomalies (1)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#266** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 ## Epics
 
@@ -311,7 +319,7 @@ Something could be acting on these right now.
     shipped              PR134 feat(contracts): reference cockpit binding shared by both surfaces
     shipped              PR135 feat(contracts): publish as @rickylabs/harness-contracts, with a checked release pipeline
     impl-eval            #267 Release contracts v0.1.0: owner push of prepared tag (p0, waiting on owner)
-    ready-merge          PR268 docs: prepare contracts v0.1.0 release handoff
+    impl-eval            PR268 docs: prepare contracts v0.1.0 release handoff
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
     [############----] 17/21 done · 4 running
