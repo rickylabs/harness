@@ -1,6 +1,6 @@
 {
   "name": "@rickylabs/harness-contracts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Types, wire protocol and client bindings shared by the dsh coordinator and its cockpits",
   "keywords": [
     "dsh",

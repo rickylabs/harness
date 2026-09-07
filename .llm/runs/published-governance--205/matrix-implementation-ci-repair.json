@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "mode": "tier",
+  "tiers": [
+    {
+      "tier": "feature",
+      "description": "Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.",
+      "implementation": [
+        {
+          "model": "astra",
+          "effort": "low"
+        },
+        {
+          "model": "muse_spark_1_3",
+          "effort": "xhigh"
+        }
+      ],
+      "ui_ux": [
+        {
+          "model": "kimi_k3",
+          "effort": "high"
+        },
+        {
+          "model": "gemini_3_8_flash",
+          "effort": "high"
+        }
+      ],
+      "plan": [
+        {
+          "model": "fable_5_1",
+          "effort": "low"
+        },
+        {
+          "model": "muse_spark_1_3",
+          "effort": "xhigh"
+        }
+      ],
+      "plan_evaluation": [
+        {
+          "model": "glm_5_3",
+          "effort": "provider_default"
+        },
+        {
+          "model": "fable_5_1",
+          "effort": "low"
+        }
+      ],
+      "implementation_evaluation": [
+        {
+          "model": "muse_spark_1_3",
+          "effort": "xhigh"
+        },
+        {
+          "model": "opus_5",
+          "effort": "xhigh"
+        }
+      ],
+      "vision_evaluation": [
+        {
+          "model": "gemini_3_8_flash",
+          "effort": "high"
+        },
+        {
+          "model": "muse_spark_1_3",
+          "effort": "xhigh"
+        }
+      ],
+      "documentation": [
+        {
+          "model": "qwen_3_8_max",
+          "effort": "provider_default"
+        },
+        {
+          "model": "glm_5_3_flash",
+          "effort": "provider_default"
+        }
+      ],
+      "deep_research": [
+        {
+          "model": "gemini_3_8_flash",
+          "effort": "high"
+        },
+        {
+          "model": "luna",
+          "effort": "max"
+        }
+      ],
+      "planPolicy": {
+        "maxRounds": 2,
+        "repairInFlightAt": 2,
+        "reSteerSameSession": true
+      },
+      "implementationPolicy": {
+        "maxRounds": 5,
+        "notifyOwnerAfter": 3,
+        "reSteerSameSession": true
+      },
+      "documentationPolicy": {
+        "maxRounds": 2,
+        "notifyOwnerAfter": 2,
+        "reSteerSameSession": true
+      }
+    }
+  ]
+}

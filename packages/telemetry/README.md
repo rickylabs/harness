@@ -561,3 +561,48 @@ Observation reads write no telemetry, cache, quota reservation or source state. 
 CLI tests write fixtures **before** measuring read-side immutability. Node tests use isolated temporary
 homes with ambient `DSH_TELEMETRY_*` neutralized, real CLI subprocesses and injected services; they
 need no credentials, network or Deno. Live acceptance remains a separate coordinator integration gate.
+
+## Published governance read command
+
+`dsh-telemetry governance --observations-from <absolute-descriptor-path> [--now <iso>] [--home <path>]`
+collects the explicitly configured sources once and emits one schema-1/protocol-1 governance JSON
+object. `--json` is accepted but unnecessary. The installed
+`@rickylabs/harness-contracts` root export `readGovernanceSnapshot` decodes it losslessly into typed
+source coverage, envelope/state and recorded admission refusals. See the
+[contracts document](../contracts/README.md#governance-read-document-020-candidate).
+
+The command rejects missing descriptors, `file:`, `--observations`, `--items`, `--run`, `--kind`,
+`--limit`, `--since`, extra positional arguments and unknown flags before collection. It scans no
+transcripts and renders no board. Descriptor fields are the operator-configured live-source fields
+already documented above. Credentials enter reader services only through the configured environment
+binding; credential values never go in argv or the public document. The command does not dispatch
+models or change policy. Usage/spend services run only when the operator configures and binds them.
+
+Exit 0 means configured evidence is complete; exit 3 means incomplete or unavailable. Both emit one
+JSON object and newline. Exit 2 reports invalid command line/descriptor; exit 1 reports a fixed
+internal/projection diagnostic and emits no document. Successful sources remain visible when another
+source fails. Sources have closed status/reason codes and their own provenance/timestamps; notes are
+informational and must not be parsed. Admission refusals are not execution outcomes. Empty/degraded/
+conflicting logs remain distinct; pending approvals are always `not-observed`, never a census.
+`--now` changes the evaluation clock only, not source capture or completion timestamps.
+
+`status`, `tree`, their public displays and the legacy `--observations`/`file:` envelope retain their
+existing behavior. That legacy display input is not a second authority for the published read path.
+No `RemoteSnapshot`, protocol, hub, fold or client change is part of this slice.
+
+### Installed consumer verification
+
+After a workspace build, `pnpm run check:installed` packs contracts 0.2.0, installs the actual tarball
+with `npm install --offline` in an isolated consumer, imports both root and `/server` runtime exports,
+and actually compiles a TypeScript consumer of both installed declaration entry points. It then
+records a synthetic admission using the real CLI and invokes the real governance command with a
+synthetic cgroup and an actual bounded sleeping Node probe. The CLI must terminate and reap that
+probe; it creates no descendants. An all-unconfigured descriptor is also decoded with the installed
+package. The receipt includes the tarball SHA-256, version, unchanged protocol, exports and fixtures.
+The root `test` chain runs this gate after package tests; no additional workflow is needed.
+
+The fixture currently requires a POSIX shebang host and an **executable temporary filesystem**.
+If the default temp mount is `noexec`, configure `TMPDIR` to an operator-selected executable scratch
+location before running the gate/root tests. A failure is reported as failure; there is no network
+install fallback. Scratch trees and child processes are owned and cleaned by the script. No live
+provider access, host-capacity measurement, downstream compatibility or publication is tested.

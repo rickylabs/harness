@@ -1,4 +1,4 @@
-import type { RegimeStatus } from "@rickylabs/harness-contracts";
+import type { AdmissionDropReason, RegimeStatus } from "@rickylabs/harness-contracts";
 import { parseGovernanceObservation, type AdmissionObservation } from "../observations.js";
 import { instant, object, positive } from "../source.js";
 import { compareStrings } from "../order.js";
@@ -12,6 +12,7 @@ export interface RecordedAdmissions {
   readonly admissions: readonly AdmissionObservation[];
   readonly ok: boolean;
   readonly notes: readonly string[];
+  readonly codes: readonly AdmissionDropReason[];
 }
 export function unreadRegimes(note: string): RegimeStatus[] {
   return [
@@ -23,7 +24,7 @@ export function unreadRegimes(note: string): RegimeStatus[] {
 
 /** Never derives an item or decision timestamp from the log identity or transport timestamp. */
 export function mapAdmissions(events: readonly unknown[], completion: string, degraded = false): RecordedAdmissions {
-  if (degraded) return { admissions: [], ok: false, notes: ["admissions: log-unreadable"] };
+  if (degraded) return { admissions: [], ok: false, notes: ["admissions: log-unreadable"], codes: [] };
   type Candidate = { at: number | null; observation: AdmissionObservation | null; identity: string | null };
   const groups = new Map<string, Candidate[]>();
   let malformed = false;
@@ -69,8 +70,9 @@ export function mapAdmissions(events: readonly unknown[], completion: string, de
     groups.set(key, group);
   }
   const notes: string[] = [];
-  if (malformed) notes.push("admissions: shape-mismatch; malformed records rejected");
-  if (unscoped) return { admissions: [], ok: false, notes };
+  const codes: AdmissionDropReason[] = [];
+  if (malformed) { notes.push("admissions: shape-mismatch; malformed records rejected"); codes.push("shape-mismatch"); }
+  if (unscoped) return { admissions: [], ok: false, notes, codes };
   const admissions: AdmissionObservation[] = [];
   for (const group of groups.values()) {
     if (group.some(candidate => candidate.at === null)) continue;
@@ -79,17 +81,19 @@ export function mapAdmissions(events: readonly unknown[], completion: string, de
     if (latest.some(candidate => candidate.observation === null)) continue;
     if (new Set(latest.map(candidate => candidate.identity)).size !== 1) {
       notes.push("admissions: admission-conflict");
+      codes.push("admission-conflict");
       continue;
     }
     const observation = latest[0]!.observation!;
     if (Date.parse(observation.validUntil) < Date.parse(completion)) {
       notes.push("admissions: stale-source");
+      codes.push("stale-source");
       continue;
     }
     admissions.push(observation);
   }
   admissions.sort((a, b) => a.item.number - b.item.number || compareStrings(a.regime, b.regime));
   if (admissions.length === 0) notes.push("admissions: no-admissions; no current admission decision recorded");
-  return { admissions, ok: notes.length === 0, notes: [...new Set(notes)] };
+  return { admissions, ok: notes.length === 0, notes: [...new Set(notes)], codes: [...new Set(codes)] };
 }
 const nullNote = "admission validation only";

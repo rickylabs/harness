@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "protocol": 1,
+  "producer": "dsh-telemetry",
+  "evaluatedAt": "2026-09-07T12:00:00.000Z",
+  "sources": {
+    "usage": {
+      "status": "failed",
+      "reason": "timeout"
+    },
+    "spend": {
+      "status": "not-configured"
+    },
+    "capacity": {
+      "status": "read",
+      "observedAt": "2026-09-07T12:00:00.000Z",
+      "validUntil": "2026-09-07T12:01:00.000Z",
+      "freshness": "fresh",
+      "provenance": "reader:cgroup-memory"
+    },
+    "admissions": {
+      "status": "read",
+      "records": 1,
+      "empty": false,
+      "dropped": [],
+      "provenance": "reader:recorded-admission",
+      "collectedAt": "2026-09-07T12:00:00.000Z"
+    },
+    "approvals": {
+      "status": "not-observed"
+    }
+  },
+  "notes": [
+    "pending approvals unobserved",
+    "usage: timeout",
+    "spend: not-configured"
+  ],
+  "availability": "fresh",
+  "observedAt": "2026-09-07T12:00:00.000Z",
+  "validUntil": "2026-09-07T12:01:00.000Z",
+  "provenance": "reader:composed",
+  "complete": false,
+  "state": {
+    "generatedAt": "2026-09-07T12:00:00.000Z",
+    "regimes": [
+      {
+        "regime": "subscription",
+        "state": "allow",
+        "accounts": [],
+        "note": "usage: timeout"
+      },
+      {
+        "regime": "metered",
+        "state": "allow",
+        "providers": [],
+        "note": "spend: not-configured"
+      },
+      {
+        "regime": "capacity",
+        "state": "allow",
+        "hosts": [
+          {
+            "host": "synthetic-cgroup",
+            "vramUsedBytes": null,
+            "vramTotalBytes": null,
+            "ramUsedBytes": 1024,
+            "ramTotalBytes": 4096,
+            "observedAt": "2026-09-07T12:00:00.000Z"
+          }
+        ],
+        "note": "reader:cgroup-memory; scope is configured cgroup v2, not a verified dispatch host; GPU unknown"
+      }
+    ],
+    "pending": [],
+    "notes": [
+      "pending approvals unobserved",
+      "spend: not-configured",
+      "usage: timeout"
+    ]
+  },
+  "admissions": [
+    {
+      "item": 7,
+      "regime": "subscription",
+      "state": "throttle",
+      "observedAt": "2026-09-07T12:00:00.000Z",
+      "validUntil": "2026-09-07T12:05:00.000Z",
+      "freshness": "fresh",
+      "provenance": "reader:recorded-admission",
+      "reason": "quota-paced",
+      "accepted": false
+    }
+  ],
+  "unavailableReason": null
+}
