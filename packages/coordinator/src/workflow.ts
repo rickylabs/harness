@@ -19,7 +19,31 @@
  * governance at all, and `checkWorkflow` refuses it by name.
  */
 
+import type { CitationKind } from "./citation.js";
+
 export type Stage = "decompose" | "dispatch" | "gate" | "review" | "land";
+
+/**
+ * One thing a step must cite.
+ *
+ * A bare string names the evidence and accepts any citation that refers to something. The object
+ * form additionally pins *what kind* of thing — `{ name: "merge-commit", kind: "sha" }` — and
+ * `settle` then refuses a citation of the wrong kind, which is how a step that must cite the commit
+ * it landed stops being satisfiable by linking the pull request that contains it.
+ *
+ * Most evidence stays a bare string, and that is a judgement rather than an omission: `verdict`,
+ * `coverage` and `transcript` are all legitimately a file on the N5, a run, or an issue depending on
+ * where the work happened, and pinning one shape would refuse two correct citations to catch no
+ * incorrect ones. A kind is declared only where exactly one shape can be right.
+ */
+export type EvidenceSpec = string | { readonly name: string; readonly kind: CitationKind };
+
+/** The evidence's name, whichever form it was declared in. */
+export const evidenceName = (spec: EvidenceSpec): string => (typeof spec === "string" ? spec : spec.name);
+
+/** The kind this evidence must be cited as, or `null` when any reference will do. */
+export const evidenceKind = (spec: EvidenceSpec): CitationKind | null =>
+  typeof spec === "string" ? null : spec.kind;
 
 export type StepKind =
   /** Gathers evidence. Changes nothing, refuses nothing. */
@@ -39,10 +63,10 @@ export interface Step {
    * What this step must cite to be recorded as done — Principle 3, as a field.
    *
    * An empty list means the step makes no claim. Anything else, and `settle` refuses to mark it done
-   * without citations, which is the difference between a workflow that says evidence is required and
-   * one that requires it.
+   * without citations that parse as references, which is the difference between a workflow that says
+   * evidence is required and one that requires it.
    */
-  readonly evidence: readonly string[];
+  readonly evidence: readonly EvidenceSpec[];
   readonly describe: string;
 }
 
@@ -189,7 +213,9 @@ export const MILESTONE_WORKFLOW: Workflow = {
       stage: "decompose",
       kind: "effect",
       needs: ["gate-decomposition"],
-      evidence: ["issue-urls"],
+      // Pinned to a URL: this is the step that touched the world, and "I created the issues" is the
+      // single claim in this workflow most worth being unable to make vaguely.
+      evidence: [{ name: "issue-urls", kind: "url" }],
       describe: "create the issues — the first thing that touches the world",
     },
     {
@@ -213,7 +239,10 @@ export const MILESTONE_WORKFLOW: Workflow = {
       stage: "dispatch",
       kind: "effect",
       needs: ["gate-admission", "select-evaluator"],
-      evidence: ["run-id", "payload"],
+      // `run-id` is pinned; `payload` is not. The id has exactly one correct shape and telemetry
+      // joins on it, so a wrong-shaped one silently orphans the run from its own record. The payload
+      // is a file on whichever host dispatched, and sometimes the run that carries it.
+      evidence: [{ name: "run-id", kind: "run" }, "payload"],
       describe: "dispatch the subagent run in the wire format",
     },
     {
@@ -245,7 +274,9 @@ export const MILESTONE_WORKFLOW: Workflow = {
       stage: "land",
       kind: "effect",
       needs: ["gate-land"],
-      evidence: ["merge-commit"],
+      // The commit, not the pull request that contains it. A PR URL is what somebody cites when they
+      // mean "it was approved"; the merge commit is the only thing that says it actually landed.
+      evidence: [{ name: "merge-commit", kind: "sha" }],
       describe: "land the change",
     },
   ],
