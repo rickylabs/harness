@@ -12,6 +12,7 @@ import {
   renderSnapshot,
   renderTree,
   RENDER_CAPS,
+  WIDE_TITLE_WIDTH,
 } from "./render.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
@@ -411,5 +412,82 @@ describe("renderTree", () => {
   it("renders the same text twice for the same tree", () => {
     const t = treeOf([item(85, "e9"), item(2, "e6")], [run({ id: "a" })]);
     assert.equal(renderTree(t, NOW), renderTree(t, NOW));
+  });
+});
+
+const lineStartingWith = (text: string, prefix: string): string => {
+  const line = text.split("\n").find((l) => l.startsWith(prefix));
+  assert.ok(line, `no line starts with ${JSON.stringify(prefix)}`);
+  return line;
+};
+
+// Every title in the fixtures above is "item 85", which is why a green suite never saw any of this.
+// Measured on the real board, where titles run past a hundred characters.
+const LONG =
+  "`release` is the one lease door that does not check the fence: an evicted holder can delete the live holder's lease";
+
+const attributed = (number: number) =>
+  run({ id: "a", updatedAt: "2026-09-04T21:58:00.000Z", linkedIssues: [{ number, from: "path" }] });
+
+describe("titles that do not fit", () => {
+  it("clips the expanded title, which is the form the rows that matter take", () => {
+    // The compact form is reached only when a node has no runs and no links, so the rows that kept
+    // their columns were the quiet ones and the rows an operator scanning for "what is happening
+    // right now" reads first were the ones that wrapped. The inconsistency was inverted.
+    const text = renderTree(treeOf([item(210, "e9", { title: LONG })], [attributed(210)]), NOW);
+    assert.equal(
+      lineStartingWith(text, "    #210 "),
+      `    #210 ${LONG.slice(0, WIDE_TITLE_WIDTH - 1)}…`,
+    );
+  });
+
+  it("gives it exactly the space the compact row spends on title and state", () => {
+    const compact = lineStartingWith(renderTree(treeOf([item(210, "e9", { title: LONG })]), NOW), "    #210 ");
+    const expanded = lineStartingWith(
+      renderTree(treeOf([item(210, "e9", { title: LONG })], [attributed(210)]), NOW),
+      "    #210 ",
+    );
+    // The compact row pads title and state into fixed columns and prints liveness after them; the
+    // expanded row moves state onto its own line, so the title inherits both columns and nothing
+    // follows it. Neither form is wider than the other.
+    assert.equal(expanded.length, "    #210 ".length + WIDE_TITLE_WIDTH);
+    assert.ok(expanded.length < compact.length);
+  });
+
+  it("clips a title on a run line too, because that line also carries nothing after it", () => {
+    const text = renderSnapshot(
+      buildSnapshot({ generatedAt: NOW, runs: [attributed(210)], items: [item(210, "e9", { title: LONG })] }),
+      NOW,
+    );
+    const line = text.split("\n").find((l) => l.includes("#210"));
+    assert.ok(line);
+    assert.match(line, /…$/);
+  });
+});
+
+describe("a run printed under the item that named it", () => {
+  const nested = () => renderTree(treeOf([item(85, "e9")], [attributed(85)]), NOW);
+
+  it("does not restate the number and title from the line above", () => {
+    const text = nested();
+    assert.match(text, /#85 item 85/);
+    const runLine = text.split("\n").find((l) => l.includes("▶ codex"));
+    assert.ok(runLine);
+    // The restatement was a second copy of the longest string on the screen, indented further than
+    // the first — so it was the copy that wrapped.
+    assert.equal(runLine.includes("#85"), false);
+  });
+
+  it("folds into the one line carrying what the run alone knows", () => {
+    assert.match(nested(), /▶ codex {5}gpt-5\.6-sol\/xhigh · 12\.0kin\/900out · updated 2m ago/);
+  });
+
+  it("still names an item the caller has not already printed", () => {
+    // Under an epic heading the item is not on the screen yet, so the run line is where it is named.
+    const text = renderSnapshot(
+      buildSnapshot({ generatedAt: NOW, runs: [attributed(85)], items: [item(85, "e9")] }),
+      NOW,
+    );
+    assert.match(text, /#85 item 85/);
   });
 });

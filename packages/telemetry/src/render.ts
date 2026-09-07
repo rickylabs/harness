@@ -28,9 +28,28 @@ import type { ActivityTree, EpicNode, ItemNode, LinkedRef, MilestoneNode } from 
 const pad = (text: string, width: number): string =>
   text.length >= width ? text : text + " ".repeat(width - text.length);
 
-/** Shorten to fit a column, marking that something was removed. Titles only, never numbers. */
+/**
+ * Shorten to fit a column, marking that something was removed. Titles only, never numbers.
+ *
+ * Every board title on this screen goes through here, including the ones on lines with nothing
+ * printed after them. A title is arbitrary text a person typed into GitHub, so an unbounded one is a
+ * wrapped line, and a wrapped line costs the alignment of every row under it. See #205.
+ */
 const clip = (text: string, width: number): string =>
   text.length <= width ? text : `${text.slice(0, width - 1)}…`;
+
+const TITLE_WIDTH = 44;
+const STATE_WIDTH = 30;
+
+/**
+ * How wide a title may be on a line that carries nothing after it.
+ *
+ * Derived rather than picked. The compact item row spends `TITLE_WIDTH`, two spaces and
+ * `STATE_WIDTH` before it reaches the liveness column; the expanded row moves the state onto its own
+ * line below and so has that space free. Sharing the bound is what keeps the two forms the same
+ * width on the page, which is the only reason either of them is padded at all.
+ */
+export const WIDE_TITLE_WIDTH = TITLE_WIDTH + 2 + STATE_WIDTH;
 
 /** Compact large token counts, because six significant digits is not what anyone reads for. */
 export function humanTokens(value: number | undefined): string {
@@ -195,7 +214,22 @@ const OUTCOME_MARK: Record<string, string> = {
   unknown: "·",
 };
 
-function renderRun(node: AttributedRun, now: string, depth: number): string[] {
+/**
+ * One run, under whatever put it on the screen.
+ *
+ * Two shapes, for the same reason `renderItemNode` has two. `namedItem` is the item number the
+ * caller has already printed directly above, and a run belonging to that item does not restate it:
+ * the restatement is a second copy of the longest string on the screen, indented further than the
+ * first, so it is the copy that wraps. That case folds into one line carrying what the run alone
+ * knows — source, model, tokens, age — which is what earns the row its place. Everywhere else the
+ * item is not on the screen yet, so the run names it. See #205.
+ */
+function renderRun(
+  node: AttributedRun,
+  now: string,
+  depth: number,
+  namedItem: number | null = null,
+): string[] {
   const { run } = node;
   const indent = "  ".repeat(depth + 1);
   const mark = OUTCOME_MARK[run.outcome] ?? "·";
@@ -203,17 +237,22 @@ function renderRun(node: AttributedRun, now: string, depth: number): string[] {
     run.identity.model === null
       ? "model unrecorded"
       : `${run.identity.model}${run.identity.effort === null ? "" : `/${run.identity.effort}`}`;
-  const item = node.item === null ? "" : ` #${node.item.number} ${node.item.title}`;
   const tokens = `${humanTokens(run.usage.inputTokens)}in/${humanTokens(run.usage.outputTokens)}out`;
+  const detail = `${identity} · ${tokens} · updated ${humanAge(run.updatedAt, now)} ago`;
   // A run that joined to no item is named by its session id, not by its prompt. The id is what
   // `why` takes, so the line an operator is reading is also the line telling them what to type.
-  const label = item === "" ? ` ${run.id.slice(0, 8)}` : item;
+  const label =
+    node.item === null
+      ? ` ${run.id.slice(0, 8)}`
+      : node.item.number === namedItem
+        ? ""
+        : ` #${node.item.number} ${clip(node.item.title, WIDE_TITLE_WIDTH)}`;
 
-  const lines = [
-    `${indent}${mark} ${pad(run.source, 9)}${label}`,
-    `${indent}    ${identity} · ${tokens} · updated ${humanAge(run.updatedAt, now)} ago`,
-  ];
-  for (const child of node.children) lines.push(...renderRun(child, now, depth + 1));
+  const lines =
+    label === ""
+      ? [`${indent}${mark} ${pad(run.source, 9)} ${detail}`]
+      : [`${indent}${mark} ${pad(run.source, 9)}${label}`, `${indent}    ${detail}`];
+  for (const child of node.children) lines.push(...renderRun(child, now, depth + 1, namedItem));
   return lines;
 }
 
@@ -297,8 +336,6 @@ function renderLink(link: LinkedRef): string {
   return `#${link.number} ${renderItemState(target)} (${link.from})`;
 }
 
-const TITLE_WIDTH = 44;
-
 /**
  * One item node.
  *
@@ -312,16 +349,18 @@ function renderItemNode(node: ItemNode, now: string, indent: string): string[] {
   const head = `${indent}#${node.item.number} `;
   if (node.runs.length === 0 && node.links.length === 0) {
     return [
-      `${head}${pad(clip(node.item.title, TITLE_WIDTH), TITLE_WIDTH)}  ${pad(renderItemState(node.item), 30)} ${renderLiveness(node.liveness, now)}`,
+      `${head}${pad(clip(node.item.title, TITLE_WIDTH), TITLE_WIDTH)}  ${pad(renderItemState(node.item), STATE_WIDTH)} ${renderLiveness(node.liveness, now)}`,
     ];
   }
 
   const inner = `${indent}    `;
   const lines = [
-    `${head}${node.item.title}`,
+    `${head}${clip(node.item.title, WIDE_TITLE_WIDTH)}`,
     `${inner}${renderItemState(node.item)} · ${renderLiveness(node.liveness, now)}`,
   ];
-  for (const run of node.runs) lines.push(...renderRun(run, now, indent.length / 2 + 1));
+  for (const run of node.runs) {
+    lines.push(...renderRun(run, now, indent.length / 2 + 1, node.item.number));
+  }
   if (node.links.length > 0) {
     lines.push(`${inner}links: ${node.links.map(renderLink).join(" · ")}`);
   }
@@ -329,7 +368,7 @@ function renderItemNode(node: ItemNode, now: string, indent: string): string[] {
 }
 
 function renderEpicNode(node: EpicNode, now: string): string[] {
-  const title = node.item === null ? "" : ` ${node.item.title}`;
+  const title = node.item === null ? "" : ` ${clip(node.item.title, WIDE_TITLE_WIDTH)}`;
   const runs = flatten([...node.tasks, ...node.pulls].flatMap((task) => task.runs)).length;
   const lines = [
     `  epic:${node.epic ?? "none"}${title}`,

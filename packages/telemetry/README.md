@@ -306,12 +306,28 @@ epic:E9 (W2)
       claude-opus-5/medium · 812.4kin/41.2kout · updated 5m ago
 ```
 
+`tree` prints those same runs one level lower, under the item they joined to, and there the run line
+carries no `#number title` at all — the line directly above already does. A restated title is a
+second copy of the longest string on the screen at a deeper indent, so it is the copy that wraps, on
+exactly the rows an operator scanning for "what is happening right now" reads first:
+
+```
+    #210 `release` is the one lease door that does not check the fence: an evicted h…
+        issue open · impl · live (turn, 5m ago)
+        ▶ claude    claude-opus-5/medium · 812.4kin/41.2kout · updated 5m ago
+```
+
+Every title on the screen is clipped, including on lines with nothing printed after them. A GitHub
+title is arbitrary text somebody typed, and one long one costs the alignment of every row under it.
+
 Without `--items` nothing is attributed — and the snapshot says that rather than showing an empty
-board, because silence there reads as "no work is happening", which is the exact wrong answer:
+board, because silence there reads as "no work is happening", which is the exact wrong answer. An
+unattributed run is named by its session id, which is what `why` takes, rather than by a title a run
+record does not carry:
 
 ```
 unattributed — 3 run(s) the board cannot see
-  · claude    telemetry sink
+  · claude    01997e0c
       claude-opus-5/medium · 812.4kin/41.2kout · updated 5m ago
   ...
 
