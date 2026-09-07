@@ -226,5 +226,19 @@ reader does not use the older diagnostic journal reader's tolerant malformed-lin
 The real-child suite in [`state-store-crash.test.ts`](src/state-store-crash.test.ts) uses IPC to reach
 each boundary, then asserts a SIGKILL exit and reopens through explicit recovery. These tests prove
 local process-crash behavior, not power-loss, hardware-cache or production filesystem flush behavior.
-Production store selection, runtime wiring, dispatch and external reconciliation remain #191's
+Production store selection, live runtime wiring, live dispatch and external reconciliation remain #191's
 integration work and owner decisions F1/F2.
+
+### Dispatch admission evidence
+
+`admissibleDispatch(states)` revalidates the prerequisites of `dispatch-run` in the canonical
+`MILESTONE_WORKFLOW`. It rejects malformed/duplicate/unknown states, preserves the original
+admission's own-state and upstream terminal refusals, then replays done prerequisites in declaration
+order through `settle` and admits the reconstructed state again. Pending downstream states are
+permitted; non-pending future states are refused. This uses the existing citation rules, including
+read-step evidence, without fetching or attesting any cited reference.
+
+The helper is pure. The [offline driver in dsh-app](../dsh-app/README.md#offline-durable-dispatch)
+owns composition with routing and the store; coordinator gains no routing/provider dependency and
+no execution channel. Forked and blocked prerequisites stop at the first admission pass, so they
+are never replayed as new outcomes.
