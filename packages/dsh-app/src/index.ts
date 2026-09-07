@@ -107,6 +107,7 @@ export {
   boardProjectionSchema,
   toBoardProjection,
   todosFromBoard,
+  type BoardEvidence,
   type BoardProjection,
 } from "./plugins/board-projection.js";
 

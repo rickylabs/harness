@@ -146,7 +146,7 @@ zoom controls or read the walkthrough below.
 | `ctx.subagents` seam | Composed — empty | zero registered providers; a dispatch returns the named `no-providers` refusal |
 | `provider-claude`, `provider-opencode` | Implemented — not composed | the profile registers neither; running them is Host-dependent (an injected SDK with credentials; a live `opencode serve`) |
 | `ctx.llm` seam | Composed | the adapter registers all three routes — `lm-studio`, `llama-rocm`, `openrouter`; every destination is Host-dependent at dispatch |
-| Board session projection | Composed — partial | strict public projection plus todo writes over published `dsh` session services, proven by a synthetic composition smoke, not a daemon boot; carries task phase and run completeness, not yet board anomaly/completeness metadata ([#220](https://github.com/rickylabs/harness/issues/220)) — the terminal banners above are a separate surface |
+| Board session projection | Composed | strict public projection plus todo writes over published `dsh` session services, proven by a synthetic composition smoke, not a daemon boot; carries task phase, run completeness, and — since [#220](https://github.com/rickylabs/harness/issues/220) — every board anomaly with its detail, the kinds naming each item, and the fetch coverage, so a pane can say a column is disputed without shelling out to `check` |
 | Governance display | Implemented | `dsh-telemetry tree`/`status` reads a typed observation file — quota, spend, capacity, refusals, each with its age; absent input reads UNKNOWN, never "all clear". The live host adapter is blocked on [#62](https://github.com/rickylabs/harness/issues/62) |
 | `provider-codex`, `provider-acp`, `governance`, `netscript-bridge` | Stub | each README opens with `Status: stub` and names its blocking epic |
 | `contracts` | Implemented | the only publishable package; release is tag-triggered, and no registry release is claimed here |
@@ -271,8 +271,9 @@ contradiction.
   `dsh-board` projects issues, labels and pull requests, refuses to report a
   board it only half saw, and flags a board that contradicts itself in every
   terminal view — `check` names the contradictions and exits non-zero;
-  `digest` prints them with the repair. The session projection carries task
-  phase and run completeness but not yet that anomaly metadata
+  `digest` prints them with the repair. The session projection carries the
+  same anomalies with their detail, the kinds naming each item, and the fetch
+  coverage, so a pane can say a column is disputed without shelling out
   ([#220](https://github.com/rickylabs/harness/issues/220)). `dsh-forge` is
   the one explicit write boundary, and it writes labels, never evidence.
   [03 — The board](docs/concepts/03-the-board.md) owns the reasoning.
