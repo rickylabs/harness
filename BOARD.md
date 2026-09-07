@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **201/244 done · 11 running · 14 queued · 5 blocked · 12 abandoned · 1 invisible**
+`[################----]` **202/244 done · 10 running · 14 queued · 5 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T04:59:31Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T05:06:46Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (5)
 
@@ -18,7 +18,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
-## Moving now (11)
+## Moving now (10)
 
 Something could be acting on these right now.
 
@@ -27,22 +27,13 @@ Something could be acting on these right now.
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
-| [#253 E6.C — drive a dispatch through the durable store against fakes, with no live effect](https://github.com/rickylabs/harness/issues/253) | `plan-eval` | `e6` |
-| [PR254 docs(how-to): add the first how-to guide, installing the board process](https://github.com/rickylabs/harness/pull/254) | `impl-eval` | — |
+| [#253 E6.C — drive a dispatch through the durable store against fakes, with no live effect](https://github.com/rickylabs/harness/issues/253) | `impl` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
-
-## Anomalies (1)
-
-`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#254** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 
 ## Epics
 
@@ -66,12 +57,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 39/54 done · 2 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible
+`[########----]` 40/54 done · 1 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
-| _(no epic)_ | `[########----]` 35/49 done · 1 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible | — |
+| _(no epic)_ | `[########----]` 36/49 done · 2 queued · 1 blocked · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
@@ -103,7 +94,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  201/244 done · 11 running · 14 queued · 5 blocked · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  202/244 done · 10 running · 14 queued · 5 blocked · 12 abandoned · 1 invisible
 
 ## M1 — dsh coordinator foundation  [#################---]  162/190 done · 9 running · 12 queued · 4 blocked · 3 abandoned
 
@@ -261,7 +252,7 @@ Something could be acting on these right now.
     shipped              PR236 feat(coordinator): make a citation refer to something (#203) (p2)
     shipped              #245 E6.A — durable state store: one writer, a crash-safe checkpoint, and refusal on corruption (p1)
     shipped              PR247 feat(durable-state--e6a): persist intents and checkpoints under one writer (p1)
-    plan-eval            #253 E6.C — drive a dispatch through the durable store against fakes, with no live effect (p1)
+    impl                 #253 E6.C — drive a dispatch through the durable store against fakes, with no live effect (p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
     [##############--] 23/26 done · 3 queued
@@ -329,7 +320,7 @@ Something could be acting on these right now.
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [##############------]  39/54 done · 2 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  40/54 done · 1 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -387,7 +378,7 @@ Something could be acting on these right now.
     shipped              PR250 docs: record the MVP acceptance verdicts and a runnable board+telemetry preview
     shipped              PR251 docs: retain the review evidence and owner corrections from the public docs relaunch
     shipped              PR252 docs: complete the Stage B discovery run with its external and document legs (p3)
-    impl-eval            PR254 docs(how-to): add the first how-to guide, installing the board process (p2)
+    shipped              PR254 docs(how-to): add the first how-to guide, installing the board process (p2)
     triage               #255 fix(forge): skill install --dry-run reports a file as created that it does not create (p3)
 ```
 
