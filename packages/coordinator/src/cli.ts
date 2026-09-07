@@ -127,7 +127,11 @@ null when it can run).
 The state is { "steps": [ {"id","outcome","citations","note"} ] }, where outcome is
 pending, done, blocked or forked. A step nobody wrote down is pending, so a missing
 or partial file means less runs, never more. Citations are a map from the evidence
-name a step declares to the thing being cited.
+name a step declares to the thing being cited, and each one has to refer to
+something: a URL, #123 or owner/repo#123, run:<id>, a path like src/plan.ts:190, or
+a 7-40 character sha. Prose is not a citation. A step may also pin the kind — "land"
+must cite a sha, not the pull request that contains it — and "workflow" prints what
+each step owes.
 
 "admit" is the gate a dispatcher calls. It walks the step's transitive prerequisites
 and refuses an effect while any gate among them is unpassed — checking only the

@@ -13,10 +13,44 @@ import {
   STATE_NOTE_CAP,
   type StepState,
 } from "./plan.js";
-import { MILESTONE_WORKFLOW, type Step, type Workflow } from "./workflow.js";
+import {
+  MILESTONE_WORKFLOW,
+  evidenceKind,
+  evidenceName,
+  type EvidenceSpec,
+  type Step,
+  type Workflow,
+} from "./workflow.js";
 
-function step(id: string, kind: Step["kind"], needs: readonly string[], evidence: readonly string[] = []): Step {
+function step(
+  id: string,
+  kind: Step["kind"],
+  needs: readonly string[],
+  evidence: readonly EvidenceSpec[] = [],
+): Step {
   return { id, stage: "dispatch", kind, needs, evidence, describe: id };
+}
+
+/**
+ * A citation that satisfies what the spec asks for.
+ *
+ * Written as a function of the spec rather than a constant, so it stays correct when a step pins a
+ * kind — and so a workflow that declared a kind nothing could satisfy would fail here rather than
+ * quietly never being exercised.
+ */
+function citationFor(spec: EvidenceSpec): string {
+  switch (evidenceKind(spec)) {
+    case "url":
+      return `https://example.invalid/${evidenceName(spec)}`;
+    case "run":
+      return `run:${evidenceName(spec)}`;
+    case "sha":
+      return "3c232190";
+    case "issue":
+      return "#69";
+    default:
+      return `evidence/${evidenceName(spec)}.md`;
+  }
 }
 
 /** look → gate → write(effect, cites a receipt). The smallest thing with a gate in front of an effect. */
@@ -41,7 +75,7 @@ function halted(id: string, outcome: "blocked" | "forked", note: string): StepSt
 function allDoneExcept(...except: readonly string[]): readonly StepState[] {
   return MILESTONE_WORKFLOW.steps
     .filter((s) => !except.includes(s.id))
-    .map((s) => done(s.id, Object.fromEntries(s.evidence.map((name) => [name, `cited:${name}`]))));
+    .map((s) => done(s.id, Object.fromEntries(s.evidence.map((spec) => [evidenceName(spec), citationFor(spec)]))));
 }
 
 describe("statesOf", () => {
@@ -159,9 +193,9 @@ describe("runnable", () => {
 
 describe("settle", () => {
   it("records a done step with its citations", () => {
-    const result = settle(SMALL, [], "look", { outcome: "done", citations: { source: "issue #69" } });
+    const result = settle(SMALL, [], "look", { outcome: "done", citations: { source: "#69" } });
     if (!result.settled) throw new Error(`expected a settlement, got ${result.rule}`);
-    assert.deepEqual(result.states[0], { id: "look", outcome: "done", citations: { source: "issue #69" }, note: null });
+    assert.deepEqual(result.states[0], { id: "look", outcome: "done", citations: { source: "#69" }, note: null });
   });
 
   it("refuses to record done without a citation for every declared piece of evidence", () => {
@@ -201,16 +235,87 @@ describe("settle", () => {
   });
 
   it("refuses to settle a step that was not admitted in the first place", () => {
-    const result = settle(SMALL, [done("look")], "write", { outcome: "done", citations: { receipt: "sha" } });
+    const result = settle(SMALL, [done("look")], "write", { outcome: "done", citations: { receipt: "3c232190" } });
     if (result.settled) throw new Error("expected a refusal");
     assert.equal(result.rule, "ungated-effect");
   });
 
   it("does not mutate the states it was given", () => {
     const before: readonly StepState[] = [];
-    const result = settle(SMALL, before, "look", { outcome: "done", citations: { source: "x" } });
+    const result = settle(SMALL, before, "look", { outcome: "done", citations: { source: "#69" } });
     assert.ok(result.settled);
     assert.deepEqual(before, []);
+  });
+
+  it("refuses a citation that refers to nothing, however non-empty it is", () => {
+    // #203, in one line. `{ source: "x" }` satisfied the old gate — it checked that a citation was
+    // present, not that it pointed at anything — so "cited" meant "the field was filled in".
+    const result = settle(SMALL, [], "look", { outcome: "done", citations: { source: "x" } });
+    if (result.settled) throw new Error("expected a refusal");
+    assert.equal(result.rule, "unreferenced");
+    assert.match(result.detail, /refers to nothing a reader could follow/);
+    // The refusal quotes what was written and says what would have counted, because an agent that is
+    // told only "no" writes "x2".
+    assert.match(result.detail, /"x"/);
+    assert.match(result.detail, /owner\/repo#123/);
+  });
+
+  it("refuses prose that reads like evidence to a human and is not", () => {
+    for (const prose of ["see the PR", "verified locally", "done", "TODO"]) {
+      const result = settle(SMALL, [], "look", { outcome: "done", citations: { source: prose } });
+      if (result.settled) throw new Error(`expected a refusal for ${JSON.stringify(prose)}`);
+      assert.equal(result.rule, "unreferenced");
+    }
+  });
+
+  it("refuses a reference of the wrong kind where the step pins one", () => {
+    // `land` must cite the commit. A pull request URL is what somebody cites when they mean it was
+    // approved; only the merge commit says it actually landed — and a URL is a perfectly good
+    // citation, so nothing but the pinned kind catches this.
+    const states = allDoneExcept("land");
+    const result = settle(MILESTONE_WORKFLOW, states, "land", {
+      outcome: "done",
+      citations: { "merge-commit": "https://github.com/rickylabs/harness/pull/232" },
+    });
+    if (result.settled) throw new Error("expected a refusal");
+    assert.equal(result.rule, "miscited");
+    assert.match(result.detail, /wanted a sha, got a url/);
+  });
+
+  it("accepts the pinned kind", () => {
+    const states = allDoneExcept("land");
+    const result = settle(MILESTONE_WORKFLOW, states, "land", {
+      outcome: "done",
+      citations: { "merge-commit": "3c23219" },
+    });
+    if (!result.settled) throw new Error(`expected a settlement, got ${result.rule}: ${result.detail}`);
+  });
+
+  it("reports nothing-cited before wrong-kind, so the fixes come in the order they must happen", () => {
+    // `dispatch-run` owes a run id and a payload. Here the run id is the wrong kind and the payload
+    // is absent; being told about the kind first sends an agent to fix the citation it did write.
+    const states = allDoneExcept("dispatch-run");
+    const result = settle(MILESTONE_WORKFLOW, states, "dispatch-run", {
+      outcome: "done",
+      citations: { "run-id": "#12" },
+    });
+    if (result.settled) throw new Error("expected a refusal");
+    assert.equal(result.rule, "uncited");
+    assert.match(result.detail, /cites no payload/);
+  });
+
+  it("satisfies every step of the real workflow with a citation of the kind it declares", () => {
+    // The guard on the fixtures themselves: a step could pin a kind that nothing in this suite ever
+    // supplies, and the pin would then never be exercised. Settling the whole workflow proves each
+    // declared kind is satisfiable, and `allDoneExcept` above is only trustworthy because of it.
+    let states: readonly StepState[] = [];
+    for (const s of MILESTONE_WORKFLOW.steps) {
+      const citations = Object.fromEntries(s.evidence.map((spec) => [evidenceName(spec), citationFor(spec)]));
+      const result = settle(MILESTONE_WORKFLOW, states, s.id, { outcome: "done", citations });
+      if (!result.settled) throw new Error(`${s.id} refused: ${result.rule} — ${result.detail}`);
+      states = result.states;
+    }
+    assert.equal(planOf(MILESTONE_WORKFLOW, states).complete, true);
   });
 });
 
@@ -218,12 +323,12 @@ describe("planOf", () => {
   it("is the same value for the same inputs", () => {
     // The whole reason this is a pure function: it goes in the journal, and a planner that returned
     // an equal-but-differently-shaped value would report drift on every replay.
-    const states = [done("look", { source: "s" })];
+    const states = [done("look", { source: "#69" })];
     assert.equal(canonicalJson(planOf(SMALL, states)), canonicalJson(planOf(SMALL, states)));
   });
 
   it("reports what is runnable and what is waiting on what", () => {
-    const plan = planOf(SMALL, [done("look", { source: "s" })]);
+    const plan = planOf(SMALL, [done("look", { source: "#69" })]);
     assert.equal(plan.complete, false);
     assert.deepEqual(plan.done, ["look"]);
     assert.deepEqual(plan.runnable, ["gate"]);
@@ -263,10 +368,10 @@ describe("planOf", () => {
 describe("parseStates", () => {
   it("reads a state document", () => {
     const parsed = parseStates(
-      JSON.stringify({ steps: [{ id: "look", outcome: "done", citations: { source: "issue #69" } }] }),
+      JSON.stringify({ steps: [{ id: "look", outcome: "done", citations: { source: "#69" } }] }),
     );
     assert.deepEqual(parsed.notes, []);
-    assert.deepEqual(parsed.states, [{ id: "look", outcome: "done", citations: { source: "issue #69" }, note: null }]);
+    assert.deepEqual(parsed.states, [{ id: "look", outcome: "done", citations: { source: "#69" }, note: null }]);
   });
 
   it("says so when the file is not JSON", () => {
@@ -297,10 +402,13 @@ describe("parseStates", () => {
   });
 
   it("drops citations that are not non-empty strings", () => {
+    // A number or a null is a malformed file, not a citation somebody wrote badly, and it goes. The
+    // string that merely refers to nothing is the case that is kept and noted — see `readStates`.
     const parsed = parseStates(
-      JSON.stringify({ steps: [{ id: "look", outcome: "done", citations: { a: "ok", b: "", c: 7, d: null } }] }),
+      JSON.stringify({ steps: [{ id: "look", outcome: "done", citations: { a: "#1", b: "", c: 7, d: null } }] }),
     );
-    assert.deepEqual(parsed.states[0]?.citations, { a: "ok" });
+    assert.deepEqual(parsed.states[0]?.citations, { a: "#1" });
+    assert.deepEqual(parsed.notes, []);
   });
 
   it("names the first few dropped entries and then counts the rest", () => {
@@ -317,11 +425,65 @@ describe("parseStates", () => {
 
 describe("readStates", () => {
   it("reads an already-parsed value, so replay does not round-trip through a string", () => {
-    const parsed = readStates({ steps: [{ id: "look", outcome: "done", citations: { source: "s" } }] });
+    const parsed = readStates({ steps: [{ id: "look", outcome: "done", citations: { source: "#69" } }] });
     assert.deepEqual(parsed.states.map((s) => s.id), ["look"]);
   });
 
   it("rejects a value that is not an object", () => {
     assert.match(readStates([1, 2, 3]).notes[0] ?? "", /not a JSON object/);
   });
+
+  it("keeps a citation that refers to nothing, and says so", () => {
+    // The parity rule for state written before #203, or by hand. `settle` refuses "see the PR" going
+    // in; a file that already contains it is history, and this reader does not get to improve it.
+    // Dropping the value would leave the step recorded done with no citation at all — which reads
+    // exactly like a clean run, and is the more dangerous of the two wrong answers.
+    const parsed = readStates({
+      steps: [{ id: "look", outcome: "done", citations: { source: "see the PR" } }],
+    });
+    assert.deepEqual(parsed.states[0]?.citations, { source: "see the PR" });
+    assert.equal(parsed.states[0]?.outcome, "done");
+    assert.match(parsed.notes[0] ?? "", /kept but unreferenced: look\.source cites "see the PR"/);
+  });
+
+  it("says nothing about a file whose citations all refer to something", () => {
+    const parsed = readStates({
+      steps: [
+        { id: "look", outcome: "done", citations: { source: "#69" } },
+        { id: "gate", outcome: "done", citations: { verdict: "evidence/verdict.md" } },
+        { id: "write", outcome: "done", citations: { receipt: "3c23219" } },
+      ],
+    });
+    assert.deepEqual(parsed.notes, []);
+    assert.equal(parsed.states.length, 3);
+  });
+
+  it("names the first few unreferenced citations and then counts the rest", () => {
+    // The same cap the dropped-entry notes use, for the same reason: a file written by a tool that
+    // cited nothing correctly should produce a readable complaint, not one note per step.
+    const steps = Array.from({ length: STATE_NOTE_CAP + 2 }, (_, i) => ({
+      id: `s${i}`,
+      outcome: "done",
+      citations: { source: "nope" },
+    }));
+    const parsed = readStates({ steps });
+    assert.equal(parsed.states.length, STATE_NOTE_CAP + 2);
+    const kept = parsed.notes.filter((n) => n.startsWith("kept but unreferenced:"));
+    assert.equal(kept.length, STATE_NOTE_CAP);
+    assert.equal(parsed.notes[parsed.notes.length - 1], `${STATE_NOTE_CAP + 2} citation(s) refer to nothing in total`);
+  });
+
+  it("puts the dropped-entry tally before the citation notes", () => {
+    // `parseStates` promises dropped entries first and then their count; adding a second class of
+    // note must not reorder the first, or a caller reading notes[0] gets a different kind of thing.
+    const parsed = readStates({
+      steps: [
+        { id: "bad", outcome: "finished" },
+        { id: "look", outcome: "done", citations: { source: "nope" } },
+      ],
+    });
+    assert.match(parsed.notes[0] ?? "", /^step 0 dropped/);
+    assert.match(parsed.notes[1] ?? "", /^kept but unreferenced/);
+  });
+
 });

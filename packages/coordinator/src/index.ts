@@ -112,10 +112,21 @@ export {
 } from "./replay.js";
 
 export {
+  CITATION_FORMS,
+  CITATION_KINDS,
+  parseCitation,
+  type Citation,
+  type CitationKind,
+} from "./citation.js";
+
+export {
   checkWorkflow,
+  evidenceKind,
+  evidenceName,
   prerequisites,
   MILESTONE_WORKFLOW,
   WORKFLOWS,
+  type EvidenceSpec,
   type Problem,
   type ProblemRule,
   type Stage,
