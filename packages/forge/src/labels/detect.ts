@@ -11,6 +11,8 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 
+import { EPIC_LABEL } from "@rickylabs/board";
+
 import {
   areaLabel,
   ciLabel,
@@ -293,7 +295,12 @@ async function detectEpics(repo: string, transport: GitHubTransport | null): Pro
 
   let issues: Awaited<ReturnType<GitHubTransport["searchIssues"]>> = [];
   try {
-    issues = await transport.searchIssues(repo, "is:issue is:open label:epic,type:umbrella");
+    // The query is built from board's constant, not a literal, because the two used to disagree:
+    // this search accepted `type:umbrella` and the projection did not, so an issue carrying it was
+    // an epic to the deriver and a child to the board (#202). `type:umbrella` is dropped here rather
+    // than added there — it is specified as a PR label, and an item carrying it *and* an `epic:`
+    // label would otherwise claim a slug its parent already owns.
+    issues = await transport.searchIssues(repo, `is:issue is:open label:${EPIC_LABEL}`);
   } catch (error) {
     notes.push(`epic search failed (${error instanceof Error ? error.message : String(error)}) — epic: labels skipped`);
     return { labels, evidence, notes };

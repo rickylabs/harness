@@ -12,9 +12,11 @@ import {
   renderSnapshot,
   renderTree,
   RENDER_CAPS,
+  WIDE_TITLE_WIDTH,
 } from "./render.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
+import { parseGovernanceObservation, unavailableGovernance } from "./observations.js";
 
 const NOW = "2026-09-04T22:00:00.000Z";
 
@@ -38,8 +40,58 @@ const empty: TelemetrySnapshot = {
   epics: [],
   unattributed: [],
   quota: [],
+  governance: unavailableGovernance("no --observations supplied"),
   notes: [],
 };
+
+function observed(over: Readonly<Record<string, unknown>> = {}) {
+  return parseGovernanceObservation({
+    observedAt: "2026-09-04T21:55:00.000Z",
+    validUntil: "2026-09-04T22:05:00.000Z",
+    provenance: "synthetic:test",
+    state: {
+      generatedAt: "2026-09-04T21:55:00.000Z",
+      regimes: [
+        {
+          regime: "subscription",
+          state: "throttle",
+          accounts: [{
+            seam: "codex",
+            account: "primary",
+            state: "throttle",
+            windows: [{ label: "5h", windowMinutes: 300, usedPercent: 63, resetsAt: "2026-09-04T23:00:00.000Z", binding: true }],
+            observedAt: "2026-09-04T21:55:00.000Z",
+          }],
+          note: "paced against binding window",
+        },
+        {
+          regime: "metered",
+          state: "allow",
+          providers: [{ provider: "openrouter", spentUsd: 12.5, ceilingUsd: 50, windowLabel: "monthly", observedAt: "2026-09-04T21:55:00.000Z" }],
+          note: null,
+        },
+        {
+          regime: "capacity",
+          state: "allow",
+          hosts: [{ host: "n5-fixture", vramUsedBytes: 8 * 1024 ** 3, vramTotalBytes: 24 * 1024 ** 3, ramUsedBytes: 32 * 1024 ** 3, ramTotalBytes: 128 * 1024 ** 3, observedAt: "2026-09-04T21:55:00.000Z" }],
+          note: null,
+        },
+      ],
+      pending: [],
+      notes: [],
+    },
+    admissions: [{
+      item: { number: 205 },
+      regime: "subscription",
+      state: "throttle",
+      observedAt: "2026-09-04T21:54:00.000Z",
+      validUntil: "2026-09-04T22:01:00.000Z",
+      provenance: "synthetic:dispatcher",
+      outcome: { accepted: false, reason: "quota-paced", detail: "waiting for the next subscription slot" },
+    }],
+    ...over,
+  }, NOW);
+}
 
 describe("humanTokens", () => {
   it("distinguishes a missing count from a zero", () => {
@@ -114,9 +166,58 @@ describe("renderSnapshot", () => {
     assert.ok(governance < work, "governance rendered below the work");
   });
 
-  it("says out loud that no seam reported a quota, instead of showing nothing", () => {
+  it("says out loud that governance is unavailable, instead of showing nothing", () => {
     // A missing governance section reads as "all clear", which is the one thing it does not mean.
-    assert.match(renderSnapshot(empty, NOW), /governance: no seam reported a quota window in this scan/);
+    assert.match(renderSnapshot(empty, NOW), /governance: UNKNOWN\/UNAVAILABLE — no --observations supplied/);
+  });
+
+  it("shows quota, spend, headroom, and the actual admission reason before progress", () => {
+    const text = renderSnapshot({ ...empty, governance: observed() }, NOW);
+    assert.match(text, /codex\/primary \[throttle\]/);
+    assert.match(text, /binding 5h: 63% used/);
+    assert.match(text, /openrouter: \$12\.50 spent \/ \$50\.00 ceiling/);
+    assert.match(text, /VRAM 8\.0 GiB used \/ 24\.0 GiB total · 16\.0 GiB headroom/);
+    assert.match(text, /#205 throttle \[subscription\] — quota-paced: waiting for the next subscription slot/);
+    assert.ok(text.indexOf("#205 throttle") < text.indexOf("run(s) across"));
+  });
+
+  it("marks a stale refusal independently of fresh regime readings", () => {
+    const base = observed();
+    assert.notEqual(base.availability, "unavailable");
+    if (base.availability === "unavailable") return;
+    const governance = observed({
+      admissions: base.admissions.map(({ availability: _availability, ...admission }) => ({
+        ...admission,
+        validUntil: "2026-09-04T21:59:00.000Z",
+      })),
+    });
+    const text = renderSnapshot({ ...empty, governance }, NOW);
+    assert.match(text, /governance: FRESH/);
+    assert.match(text, /#205 STALE throttle/);
+  });
+
+  it("renders null leaf measurements and timestamps as unknown and never read", () => {
+    const base = observed();
+    assert.notEqual(base.availability, "unavailable");
+    if (base.availability === "unavailable") return;
+    const state = {
+      ...base.state,
+      regimes: base.state.regimes.map((entry) => entry.regime === "capacity"
+        ? {
+            ...entry,
+            hosts: entry.hosts.map((host) => ({
+              ...host,
+              vramUsedBytes: null,
+              vramTotalBytes: null,
+              observedAt: null,
+            })),
+          }
+        : entry),
+    };
+    const text = renderSnapshot({ ...empty, governance: observed({ state }) }, NOW);
+    assert.match(text, /n5-fixture · never read/);
+    assert.match(text, /VRAM used\/total\/headroom unknown/);
+    assert.doesNotMatch(text, /100% free|healthy/);
   });
 
   it("never drops a note", () => {
@@ -311,5 +412,82 @@ describe("renderTree", () => {
   it("renders the same text twice for the same tree", () => {
     const t = treeOf([item(85, "e9"), item(2, "e6")], [run({ id: "a" })]);
     assert.equal(renderTree(t, NOW), renderTree(t, NOW));
+  });
+});
+
+const lineStartingWith = (text: string, prefix: string): string => {
+  const line = text.split("\n").find((l) => l.startsWith(prefix));
+  assert.ok(line, `no line starts with ${JSON.stringify(prefix)}`);
+  return line;
+};
+
+// Every title in the fixtures above is "item 85", which is why a green suite never saw any of this.
+// Measured on the real board, where titles run past a hundred characters.
+const LONG =
+  "`release` is the one lease door that does not check the fence: an evicted holder can delete the live holder's lease";
+
+const attributed = (number: number) =>
+  run({ id: "a", updatedAt: "2026-09-04T21:58:00.000Z", linkedIssues: [{ number, from: "path" }] });
+
+describe("titles that do not fit", () => {
+  it("clips the expanded title, which is the form the rows that matter take", () => {
+    // The compact form is reached only when a node has no runs and no links, so the rows that kept
+    // their columns were the quiet ones and the rows an operator scanning for "what is happening
+    // right now" reads first were the ones that wrapped. The inconsistency was inverted.
+    const text = renderTree(treeOf([item(210, "e9", { title: LONG })], [attributed(210)]), NOW);
+    assert.equal(
+      lineStartingWith(text, "    #210 "),
+      `    #210 ${LONG.slice(0, WIDE_TITLE_WIDTH - 1)}…`,
+    );
+  });
+
+  it("gives it exactly the space the compact row spends on title and state", () => {
+    const compact = lineStartingWith(renderTree(treeOf([item(210, "e9", { title: LONG })]), NOW), "    #210 ");
+    const expanded = lineStartingWith(
+      renderTree(treeOf([item(210, "e9", { title: LONG })], [attributed(210)]), NOW),
+      "    #210 ",
+    );
+    // The compact row pads title and state into fixed columns and prints liveness after them; the
+    // expanded row moves state onto its own line, so the title inherits both columns and nothing
+    // follows it. Neither form is wider than the other.
+    assert.equal(expanded.length, "    #210 ".length + WIDE_TITLE_WIDTH);
+    assert.ok(expanded.length < compact.length);
+  });
+
+  it("clips a title on a run line too, because that line also carries nothing after it", () => {
+    const text = renderSnapshot(
+      buildSnapshot({ generatedAt: NOW, runs: [attributed(210)], items: [item(210, "e9", { title: LONG })] }),
+      NOW,
+    );
+    const line = text.split("\n").find((l) => l.includes("#210"));
+    assert.ok(line);
+    assert.match(line, /…$/);
+  });
+});
+
+describe("a run printed under the item that named it", () => {
+  const nested = () => renderTree(treeOf([item(85, "e9")], [attributed(85)]), NOW);
+
+  it("does not restate the number and title from the line above", () => {
+    const text = nested();
+    assert.match(text, /#85 item 85/);
+    const runLine = text.split("\n").find((l) => l.includes("▶ codex"));
+    assert.ok(runLine);
+    // The restatement was a second copy of the longest string on the screen, indented further than
+    // the first — so it was the copy that wrapped.
+    assert.equal(runLine.includes("#85"), false);
+  });
+
+  it("folds into the one line carrying what the run alone knows", () => {
+    assert.match(nested(), /▶ codex {5}gpt-5\.6-sol\/xhigh · 12\.0kin\/900out · updated 2m ago/);
+  });
+
+  it("still names an item the caller has not already printed", () => {
+    // Under an epic heading the item is not on the screen yet, so the run line is where it is named.
+    const text = renderSnapshot(
+      buildSnapshot({ generatedAt: NOW, runs: [attributed(85)], items: [item(85, "e9")] }),
+      NOW,
+    );
+    assert.match(text, /#85 item 85/);
   });
 });

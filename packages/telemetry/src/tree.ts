@@ -12,8 +12,9 @@
  *   and its `hierarchy.ts` says so in its header: the fourth level "lives in the session stores and
  *   belongs to E9". This module is that fourth level, attached above the other three.
  * - The fourth is run truth, recovered from transcript stores with no agent awake. `parent_id` in
- *   opencode's database and the sidechain flag in Claude's transcripts give the subagent tree; the
- *   attribution that hangs a run on an issue is `attributeTo` in `snapshot.ts`.
+ *   opencode's database gives the subagent tree outright; Claude's store gives it by naming a file
+ *   after the child and writing the parent's id on every line inside, which `backfill/claude.ts`
+ *   reads as a pair. The attribution that hangs a run on an issue is `attributeTo` in `snapshot.ts`.
  *
  * Two properties this module has that the flat snapshot does not.
  *
@@ -31,10 +32,11 @@
 import {
   liveness,
   type Evidence,
-  type Liveness,
+  type LivenessVerdict,
   type LivenessWindows,
 } from "./liveness.js";
 import type { AttributedRun, BoardItemRef, QuotaReading, TelemetrySnapshot } from "./model.js";
+import type { GovernanceView } from "./observations.js";
 import { compareNullableStrings } from "./order.js";
 import { flatten } from "./snapshot.js";
 
@@ -69,7 +71,7 @@ export interface ItemNode {
   /** Root runs attributed to this item. Subagents hang inside each one, not here. */
   readonly runs: readonly AttributedRun[];
   readonly links: readonly LinkedRef[];
-  readonly liveness: Liveness;
+  readonly liveness: LivenessVerdict;
 }
 
 export interface EpicNode {
@@ -86,13 +88,13 @@ export interface EpicNode {
    * list one level up.
    */
   readonly pulls: readonly ItemNode[];
-  readonly liveness: Liveness;
+  readonly liveness: LivenessVerdict;
 }
 
 export interface MilestoneNode {
   readonly milestone: string | null;
   readonly epics: readonly EpicNode[];
-  readonly liveness: Liveness;
+  readonly liveness: LivenessVerdict;
 }
 
 /** The whole picture, as data. Pure: same inputs, same tree, on any host. */
@@ -104,6 +106,7 @@ export interface ActivityTree {
   /** Runs that joined to no board item at all: real work the board cannot see. */
   readonly unattributed: readonly AttributedRun[];
   readonly quota: readonly QuotaReading[];
+  readonly governance: GovernanceView;
   readonly notes: readonly string[];
 }
 
@@ -284,6 +287,7 @@ export function buildTree(input: TreeInput): ActivityTree {
     milestones,
     unattributed: orphaned,
     quota: input.snapshot.quota,
+    governance: input.snapshot.governance,
     notes,
   };
 }

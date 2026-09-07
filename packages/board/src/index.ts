@@ -44,7 +44,18 @@ export { compareNullableStrings, compareStrings } from "./order.js";
 
 export { closingKeywordTargets } from "./closing.js";
 
-export { DEFAULT_PRIORITY_ORDER, epicSlugOf, projectBoard, slugOfEpicTitle } from "./project.js";
+export {
+  DEFAULT_LANE_PREFIX,
+  DEFAULT_PRIORITY_ORDER,
+  ENUMERATED_FAMILIES,
+  EPIC_LABEL,
+  LABEL_USES,
+  OWNER_DECISION_LABEL,
+  SINGLE_VALUE_FAMILIES,
+} from "./labels.js";
+export type { LabelUse, LabelUseKind } from "./labels.js";
+
+export { epicSlugOf, isEpicLabels, projectBoard, slugOfEpicTitle } from "./project.js";
 export type { ProjectOptions } from "./project.js";
 
 export { bucketOf, buildHierarchy, progressOf } from "./hierarchy.js";
@@ -74,7 +85,9 @@ export type {
 } from "./dispatch.js";
 
 export {
+  anomalousItems,
   renderAnomalies,
+  renderAnomalyBanner,
   renderBar,
   renderColumns,
   renderCompleteness,

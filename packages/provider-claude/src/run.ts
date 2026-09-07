@@ -22,21 +22,21 @@
  * the run and closes the inbox, and that is a decision rather than a reading of the protocol.
  *
  * The alternative — keep the session open and report it as still running — puts the contract in an
- * impossible position. `Liveness` has no `idle`. Reporting `running` makes a supervisor wait forever
+ * impossible position. `RunLiveness` has no `idle`. Reporting `running` makes a supervisor wait forever
  * on an agent that is waiting on it; reporting `finished` releases the lease while a live CLI still
  * holds the worktree, which is the two-agents-on-one-branch failure the lease exists to prevent.
  * Ending the run at the first `result` makes the reported state true either way, and leaves steering
  * meaning what it should mean: interjecting while the agent is working.
  */
 
-import type { Liveness } from "@rickylabs/subagents";
+import type { RunLiveness } from "@rickylabs/subagents";
 
 /** Everything the provider knows about one run. */
 export interface RunRecord {
   readonly runId: string;
   /** The vendor's session id, once the init message has named it. */
   readonly external: string | null;
-  readonly liveness: Liveness;
+  readonly liveness: RunLiveness;
   /** One line about the most recent thing that happened. Never carries prompt or agent text. */
   readonly detail: string;
   /** The model id the matrix pinned, as it was passed to `query()`. */
@@ -59,8 +59,8 @@ export interface RunRecord {
   readonly artifacts: readonly string[];
 }
 
-/** Liveness values from which nothing further can happen. */
-const TERMINAL: readonly Liveness[] = ["finished", "failed"];
+/** RunLiveness values from which nothing further can happen. */
+const TERMINAL: readonly RunLiveness[] = ["finished", "failed"];
 
 /** Whether the run is over. */
 export function isOver(record: RunRecord): boolean {

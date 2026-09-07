@@ -103,6 +103,19 @@ export type AnomalyKind =
   | "closing-keyword-targets-epic"
   /** Two labels of one family on one item, so reading that family is a coin toss. */
   | "duplicate-label"
+  /**
+   * An item still asking for an owner decision after it finished.
+   *
+   * The flag exists to fill one short list — what is waiting on a person — and a short list is the
+   * only reason anyone reads it. Nothing removes the label when the decision is finally made, so
+   * without this rule the list accumulates settled questions until it is skipped, which is the
+   * failure the flag was introduced to fix, one level up.
+   *
+   * Fires only on a close or a terminal column, so the repair is removing one label and it never
+   * fires again. Work that is genuinely still waiting keeps the flag for as long as it waits, and
+   * says nothing here.
+   */
+  | "stale-owner-decision"
   /** The fetch was capped, so the board on screen is a prefix of the real one. */
   | "incomplete-fetch";
 
@@ -148,6 +161,14 @@ export interface BoardItem {
   readonly type: string | null;
   /** `true` when the item is an epic in its own right rather than a task under one. */
   readonly isEpic: boolean;
+  /**
+   * `true` when the item carries the owner-decision flag: stopped, and stopped on a person.
+   *
+   * Separate from `phase` because it is a different axis. The phase says how far the work got; this
+   * says who is next. Folding it into the column would have made the two mutually exclusive, and
+   * the item would have lost whichever fact the column did not keep.
+   */
+  readonly waitingOnOwner: boolean;
 }
 
 /** One column of the projection. */

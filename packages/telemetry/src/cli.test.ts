@@ -8,7 +8,7 @@
  */
 
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
@@ -42,6 +42,24 @@ async function run(argv: readonly string[]): Promise<{ code: number; out: string
   }
 }
 
+/** Keep synthetic governance checks independent of ambient telemetry configuration. */
+async function runIsolated(argv: readonly string[]): Promise<{ code: number; out: string }> {
+  const held = new Map<string, string>();
+  for (const [key, value] of Object.entries(process.env)) {
+    if (!key.startsWith("DSH_TELEMETRY_") || value === undefined) continue;
+    held.set(key, value);
+    delete process.env[key];
+  }
+  try {
+    return await run(argv);
+  } finally {
+    for (const key of Object.keys(process.env)) {
+      if (key.startsWith("DSH_TELEMETRY_")) delete process.env[key];
+    }
+    for (const [key, value] of held) process.env[key] = value;
+  }
+}
+
 async function seedClaude(sessionId: string, branch: string): Promise<void> {
   const dir = join(home, ".claude", "projects", "slug");
   await mkdir(dir, { recursive: true });
@@ -57,13 +75,72 @@ async function seedClaude(sessionId: string, branch: string): Promise<void> {
   await writeFile(join(dir, `${sessionId}.jsonl`), `${line}\n`);
 }
 
+function governanceFixture(usedPercent = 63): unknown {
+  return {
+    observedAt: "2026-09-07T11:55:00.000Z",
+    validUntil: "2026-09-07T12:05:00.000Z",
+    provenance: "synthetic:test",
+    state: {
+      generatedAt: "2026-09-07T11:55:00.000Z",
+      regimes: [
+        {
+          regime: "subscription",
+          state: "throttle",
+          accounts: [{
+            seam: "codex",
+            account: "primary",
+            state: "throttle",
+            windows: [{ label: "5h", windowMinutes: 300, usedPercent, resetsAt: null, binding: true }],
+            observedAt: "2026-09-07T11:55:00.000Z",
+          }],
+          note: null,
+        },
+        {
+          regime: "metered",
+          state: "allow",
+          providers: [{ provider: "openrouter", spentUsd: 12.5, ceilingUsd: 50, windowLabel: "monthly", observedAt: "2026-09-07T11:55:00.000Z" }],
+          note: null,
+        },
+        {
+          regime: "capacity",
+          state: "allow",
+          hosts: [{ host: "n5-fixture", vramUsedBytes: 8 * 1024 ** 3, vramTotalBytes: 24 * 1024 ** 3, ramUsedBytes: null, ramTotalBytes: null, observedAt: "2026-09-07T11:55:00.000Z" }],
+          note: null,
+        },
+      ],
+      pending: [],
+      notes: [],
+    },
+    admissions: [{
+      item: { number: 205 },
+      regime: "subscription",
+      state: "throttle",
+      observedAt: "2026-09-07T11:54:00.000Z",
+      validUntil: "2026-09-07T12:01:00.000Z",
+      provenance: "synthetic:dispatcher",
+      outcome: { accepted: false, reason: "quota-paced", detail: "waiting for the next subscription slot" },
+    }],
+  };
+}
+
+async function seedGovernance(name: string, value: unknown = governanceFixture()): Promise<string> {
+  const path = join(home, name);
+  await writeFile(path, `${JSON.stringify(value)}\n`);
+  return path;
+}
+
 describe("parseFlags", () => {
   it("defaults to this user's home and a bounded scan", () => {
     const flags = parseFlags(["status"]);
     assert.equal(flags.rest[0], "status");
     assert.equal(flags.limit, 500);
     assert.equal(flags.items, null);
+    assert.equal(flags.observations, null);
     assert.equal(flags.json, false);
+  });
+
+  it("takes an explicit governance observation file", () => {
+    assert.equal(parseFlags(["status", "--observations", "fixture.json"]).observations, "fixture.json");
   });
 
   it("rejects a limit that is not a positive integer, rather than scanning nothing", () => {
@@ -313,6 +390,81 @@ describe("dsh-telemetry --json", () => {
     assert.equal(parsed.complete, true);
     assert.ok(Array.isArray(parsed.notes));
     assert.ok(Array.isArray(parsed.epics));
+  });
+});
+
+describe("dsh-telemetry governance observations", () => {
+  it("shows account quota, spend, capacity, and the actual admission reason before progress", async () => {
+    const observations = await seedGovernance("fresh-governance.json");
+    const { code, out } = await runIsolated([
+      "status",
+      "--home",
+      home,
+      "--observations",
+      observations,
+      "--now",
+      "2026-09-07T12:00:00.000Z",
+    ]);
+    assert.equal(code, EXIT.ok);
+    assert.match(out, /governance: FRESH/);
+    assert.match(out, /codex\/primary/);
+    assert.match(out, /openrouter: \$12\.50 spent/);
+    assert.match(out, /16\.0 GiB headroom/);
+    assert.match(out, /#205 throttle \[subscription\] — quota-paced: waiting for the next subscription slot/);
+    assert.ok(out.indexOf("#205 throttle") < out.indexOf("run(s) across"));
+  });
+
+  it("publishes the same governance value from status and tree", async () => {
+    const observations = await seedGovernance("shared-governance.json");
+    const args = [
+      "--home",
+      home,
+      "--observations",
+      observations,
+      "--now",
+      "2026-09-07T12:00:00.000Z",
+      "--json",
+    ];
+    const status = await runIsolated(["status", ...args]);
+    const tree = await runIsolated(["tree", ...args]);
+    assert.equal(status.code, EXIT.ok);
+    assert.equal(tree.code, EXIT.ok);
+    const statusJson = JSON.parse(status.out) as { readonly governance: unknown };
+    const treeJson = JSON.parse(tree.out) as { readonly governance: unknown };
+    assert.deepEqual(treeJson.governance, statusJson.governance);
+    assert.equal(JSON.stringify(statusJson.governance).includes(observations), false);
+  });
+
+  it("refreshes from a changed file on the next invocation without writing a telemetry event", async () => {
+    const observations = await seedGovernance("changing-governance.json", governanceFixture(63));
+    const args = ["status", "--home", home, "--observations", observations, "--now", "2026-09-07T12:00:00.000Z"];
+    const first = await runIsolated(args);
+    await writeFile(observations, `${JSON.stringify(governanceFixture(91))}\n`);
+    const second = await runIsolated(args);
+    assert.match(first.out, /63% used/);
+    assert.match(second.out, /91% used/);
+    assert.notEqual(second.out, first.out);
+    const live = livePath(resolveObservability(home, {}));
+    await assert.rejects(readFile(live, "utf8"), /ENOENT/);
+  });
+
+  it("makes requested missing or malformed observations incomplete without publishing the path", async () => {
+    const missing = join(home, "private-observations-canary.json");
+    const unreadable = await runIsolated([
+      "status", "--home", home, "--observations", missing, "--now", "2026-09-07T12:00:00.000Z", "--json",
+    ]);
+    assert.equal(unreadable.code, EXIT.incomplete);
+    assert.equal(unreadable.out.includes(missing), false);
+    const unreadableJson = JSON.parse(unreadable.out) as { readonly complete: boolean; readonly governance: { readonly availability: string } };
+    assert.equal(unreadableJson.complete, false);
+    assert.equal(unreadableJson.governance.availability, "unavailable");
+
+    const malformed = await seedGovernance("malformed-governance.json", { provenance: "/home/private/canary" });
+    const invalid = await runIsolated([
+      "tree", "--home", home, "--observations", malformed, "--now", "2026-09-07T12:00:00.000Z", "--json",
+    ]);
+    assert.equal(invalid.code, EXIT.incomplete);
+    assert.equal(invalid.out.includes("/home/private/canary"), false);
   });
 });
 

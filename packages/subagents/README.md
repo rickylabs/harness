@@ -71,12 +71,23 @@ journal (#71) and checked in CI against a table of declarations with nothing ins
 - Two providers under one id refuse the whole selection rather than tie-break. `RunRef.provider` is
   how a later `observe` or `stop` finds its executor, so an ambiguous id can route a stop to the
   wrong run.
+- A provider nothing has marked with `markInstrumented` refuses the whole selection too, and for the
+  same reason it is refused whole rather than passed over: on a half-wired registry, passing it over
+  would keep dispatches succeeding through the wrapped half while the raw provider sat there reachable
+  by anything iterating `registry.providers`. See [#208](https://github.com/rickylabs/harness/issues/208).
 - Otherwise registration order wins, and every passed-over provider is reported with the rule that
   passed it over.
 
 `conformanceProblems` and `registryProblems` check what a provider claims about itself before it is
 asked to do anything — composition-time validation for `dsh-app`. Blind and unstoppable are reported
-without being failed, because divybot is genuinely both and saying so is the contract working.
+without being failed, because divybot is genuinely both and saying so is the contract working. The
+two checks that live on the *registry* are the two a provider cannot answer about itself: whether
+another provider took its id, and whether the composition root remembered to wrap it.
+
+`markInstrumented(provider, wrapper)` is how a composition root states that it wrapped something —
+`instrumentedBy` reads it back. It is a wiring assertion, not a security boundary: it proves that
+something calling itself `wrapper` said it wrapped this object, and nothing about whether the sink
+behind it works. Sink durability is checked where the sink is.
 
 ## Holding a session
 

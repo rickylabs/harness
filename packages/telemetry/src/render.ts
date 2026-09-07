@@ -12,7 +12,7 @@
  * - No colour, no cursor control. This gets pasted into issues and read over ssh.
  */
 
-import type { Liveness } from "./liveness.js";
+import type { LivenessVerdict } from "./liveness.js";
 import {
   sumUsage,
   type AttributedRun,
@@ -20,15 +20,36 @@ import {
   type QuotaReading,
   type TelemetrySnapshot,
 } from "./model.js";
+import { humanBytes } from "./observability.js";
+import type { GovernanceView } from "./observations.js";
 import { flatten } from "./snapshot.js";
 import type { ActivityTree, EpicNode, ItemNode, LinkedRef, MilestoneNode } from "./tree.js";
 
 const pad = (text: string, width: number): string =>
   text.length >= width ? text : text + " ".repeat(width - text.length);
 
-/** Shorten to fit a column, marking that something was removed. Titles only, never numbers. */
+/**
+ * Shorten to fit a column, marking that something was removed. Titles only, never numbers.
+ *
+ * Every board title on this screen goes through here, including the ones on lines with nothing
+ * printed after them. A title is arbitrary text a person typed into GitHub, so an unbounded one is a
+ * wrapped line, and a wrapped line costs the alignment of every row under it. See #205.
+ */
 const clip = (text: string, width: number): string =>
   text.length <= width ? text : `${text.slice(0, width - 1)}…`;
+
+const TITLE_WIDTH = 44;
+const STATE_WIDTH = 30;
+
+/**
+ * How wide a title may be on a line that carries nothing after it.
+ *
+ * Derived rather than picked. The compact item row spends `TITLE_WIDTH`, two spaces and
+ * `STATE_WIDTH` before it reaches the liveness column; the expanded row moves the state onto its own
+ * line below and so has that space free. Sharing the bound is what keeps the two forms the same
+ * width on the page, which is the only reason either of them is padded at all.
+ */
+export const WIDE_TITLE_WIDTH = TITLE_WIDTH + 2 + STATE_WIDTH;
 
 /** Compact large token counts, because six significant digits is not what anyone reads for. */
 export function humanTokens(value: number | undefined): string {
@@ -69,6 +90,81 @@ export function renderQuota(reading: QuotaReading, now: string): string {
   const credits =
     reading.creditBalance === null ? "" : `, credits ${reading.creditBalance}`;
   return `  ${pad(reading.source, 9)} ${used} used${window}${resets}${plan}${credits}  (read ${humanAge(reading.observedAt, now)} ago)`;
+}
+
+function readingAge(observedAt: string | null, now: string): string {
+  return observedAt === null ? "never read" : `read ${humanAge(observedAt, now)} ago`;
+}
+
+function headroom(used: number | null, total: number | null): string {
+  if (used === null || total === null) return "used/total/headroom unknown";
+  return `${humanBytes(used)} used / ${humanBytes(total)} total · ${humanBytes(total - used)} headroom`;
+}
+
+/** Render the same leading governance block for both status and tree. */
+export function renderGovernance(
+  governance: GovernanceView,
+  legacyQuota: readonly QuotaReading[],
+  now: string,
+): string[] {
+  if (governance.availability === "unavailable") {
+    const lines = [`governance: UNKNOWN/UNAVAILABLE — ${governance.unavailableReason}`];
+    if (legacyQuota.length > 0) {
+      lines.push("  transcript quota (account unknown):");
+      for (const reading of legacyQuota) lines.push(`  ${renderQuota(reading, now)}`);
+    }
+    return lines;
+  }
+
+  const marker = governance.availability === "stale" ? "STALE" : "FRESH";
+  const lines = [
+    `governance: ${marker} · ${governance.provenance} · observed ${humanAge(governance.observedAt, now)} ago`,
+  ];
+  for (const regime of governance.state.regimes) {
+    lines.push(`  ${regime.regime} [${regime.state}]${regime.note === null ? "" : ` — ${regime.note}`}`);
+    if (regime.regime === "subscription") {
+      if (regime.accounts.length === 0) lines.push("    no accounts reported");
+      for (const account of regime.accounts) {
+        lines.push(
+          `    ${account.seam}/${account.account} [${account.state}] · ${readingAge(account.observedAt, now)}`,
+        );
+        if (account.windows.length === 0) lines.push("      no windows reported");
+        for (const window of account.windows) {
+          const reset = window.resetsAt === null ? "reset unknown" : `resets in ${humanAge(now, window.resetsAt)}`;
+          lines.push(
+            `      ${window.binding ? "binding " : ""}${window.label}: ${window.usedPercent}% used · ${reset}`,
+          );
+        }
+      }
+    } else if (regime.regime === "metered") {
+      if (regime.providers.length === 0) lines.push("    no providers reported");
+      for (const provider of regime.providers) {
+        const ceiling = provider.ceilingUsd === null ? "ceiling unknown" : `$${provider.ceilingUsd.toFixed(2)} ceiling`;
+        lines.push(
+          `    ${provider.provider}: $${provider.spentUsd.toFixed(2)} spent / ${ceiling} (${provider.windowLabel}) · ${readingAge(provider.observedAt, now)}`,
+        );
+      }
+    } else {
+      if (regime.hosts.length === 0) lines.push("    no hosts reported");
+      for (const host of regime.hosts) {
+        lines.push(`    ${host.host} · ${readingAge(host.observedAt, now)}`);
+        lines.push(`      VRAM ${headroom(host.vramUsedBytes, host.vramTotalBytes)}`);
+        lines.push(`      RAM  ${headroom(host.ramUsedBytes, host.ramTotalBytes)}`);
+      }
+    }
+  }
+
+  for (const admission of governance.admissions) {
+    const freshness = admission.availability === "stale" ? "STALE " : "";
+    lines.push(
+      `  #${admission.item.number} ${freshness}${admission.state} [${admission.regime}] — ${admission.outcome.reason}: ${admission.outcome.detail} · ${admission.provenance} · read ${humanAge(admission.observedAt, now)} ago`,
+    );
+  }
+  for (const approval of governance.state.pending) {
+    lines.push(`  approval ${approval.id}${approval.item === null ? "" : ` for #${approval.item}`} — ${approval.summary}`);
+  }
+  for (const message of governance.state.notes) lines.push(`  note: ${message}`);
+  return lines;
 }
 
 /** Distinct notes shown before the block is summarised, and runs shown in a flat list. */
@@ -118,7 +214,22 @@ const OUTCOME_MARK: Record<string, string> = {
   unknown: "·",
 };
 
-function renderRun(node: AttributedRun, now: string, depth: number): string[] {
+/**
+ * One run, under whatever put it on the screen.
+ *
+ * Two shapes, for the same reason `renderItemNode` has two. `namedItem` is the item number the
+ * caller has already printed directly above, and a run belonging to that item does not restate it:
+ * the restatement is a second copy of the longest string on the screen, indented further than the
+ * first, so it is the copy that wraps. That case folds into one line carrying what the run alone
+ * knows — source, model, tokens, age — which is what earns the row its place. Everywhere else the
+ * item is not on the screen yet, so the run names it. See #205.
+ */
+function renderRun(
+  node: AttributedRun,
+  now: string,
+  depth: number,
+  namedItem: number | null = null,
+): string[] {
   const { run } = node;
   const indent = "  ".repeat(depth + 1);
   const mark = OUTCOME_MARK[run.outcome] ?? "·";
@@ -126,17 +237,22 @@ function renderRun(node: AttributedRun, now: string, depth: number): string[] {
     run.identity.model === null
       ? "model unrecorded"
       : `${run.identity.model}${run.identity.effort === null ? "" : `/${run.identity.effort}`}`;
-  const item = node.item === null ? "" : ` #${node.item.number} ${node.item.title}`;
   const tokens = `${humanTokens(run.usage.inputTokens)}in/${humanTokens(run.usage.outputTokens)}out`;
+  const detail = `${identity} · ${tokens} · updated ${humanAge(run.updatedAt, now)} ago`;
   // A run that joined to no item is named by its session id, not by its prompt. The id is what
   // `why` takes, so the line an operator is reading is also the line telling them what to type.
-  const label = item === "" ? ` ${run.id.slice(0, 8)}` : item;
+  const label =
+    node.item === null
+      ? ` ${run.id.slice(0, 8)}`
+      : node.item.number === namedItem
+        ? ""
+        : ` #${node.item.number} ${clip(node.item.title, WIDE_TITLE_WIDTH)}`;
 
-  const lines = [
-    `${indent}${mark} ${pad(run.source, 9)}${label}`,
-    `${indent}    ${identity} · ${tokens} · updated ${humanAge(run.updatedAt, now)} ago`,
-  ];
-  for (const child of node.children) lines.push(...renderRun(child, now, depth + 1));
+  const lines =
+    label === ""
+      ? [`${indent}${mark} ${pad(run.source, 9)} ${detail}`]
+      : [`${indent}${mark} ${pad(run.source, 9)}${label}`, `${indent}    ${detail}`];
+  for (const child of node.children) lines.push(...renderRun(child, now, depth + 1, namedItem));
   return lines;
 }
 
@@ -151,14 +267,7 @@ export function renderSnapshot(snapshot: TelemetrySnapshot, now: string = snapsh
   lines.push(`board activity as of ${snapshot.generatedAt}`);
 
   lines.push("");
-  if (snapshot.quota.length === 0) {
-    // Said out loud. A missing governance section reads as "all clear", which is the one thing it
-    // does not mean: no seam reported a window, so capacity is simply unknown.
-    lines.push("governance: no seam reported a quota window in this scan");
-  } else {
-    lines.push("governance:");
-    for (const reading of snapshot.quota) lines.push(renderQuota(reading, now));
-  }
+  lines.push(...renderGovernance(snapshot.governance, snapshot.quota, now));
 
   const totals = [...snapshot.epics.flatMap((e) => e.runs), ...snapshot.unattributed];
   const all = flatten(totals);
@@ -215,7 +324,7 @@ export function renderItemState(item: BoardItemRef): string {
  * reader who cannot tell them apart cannot weigh the answer: `live (turn, 2m ago)` is an agent
  * working, `live (item, 2m ago)` may be nothing but a label somebody just changed.
  */
-export function renderLiveness(state: Liveness, now: string): string {
+export function renderLiveness(state: LivenessVerdict, now: string): string {
   if (state.at === null) return `${state.state} (nothing recorded)`;
   return `${state.state} (${state.evidence}, ${humanAge(state.at, now)} ago)`;
 }
@@ -226,8 +335,6 @@ function renderLink(link: LinkedRef): string {
   if (target === null) return `#${link.number} (${link.from}, not on this board)`;
   return `#${link.number} ${renderItemState(target)} (${link.from})`;
 }
-
-const TITLE_WIDTH = 44;
 
 /**
  * One item node.
@@ -242,16 +349,18 @@ function renderItemNode(node: ItemNode, now: string, indent: string): string[] {
   const head = `${indent}#${node.item.number} `;
   if (node.runs.length === 0 && node.links.length === 0) {
     return [
-      `${head}${pad(clip(node.item.title, TITLE_WIDTH), TITLE_WIDTH)}  ${pad(renderItemState(node.item), 30)} ${renderLiveness(node.liveness, now)}`,
+      `${head}${pad(clip(node.item.title, TITLE_WIDTH), TITLE_WIDTH)}  ${pad(renderItemState(node.item), STATE_WIDTH)} ${renderLiveness(node.liveness, now)}`,
     ];
   }
 
   const inner = `${indent}    `;
   const lines = [
-    `${head}${node.item.title}`,
+    `${head}${clip(node.item.title, WIDE_TITLE_WIDTH)}`,
     `${inner}${renderItemState(node.item)} · ${renderLiveness(node.liveness, now)}`,
   ];
-  for (const run of node.runs) lines.push(...renderRun(run, now, indent.length / 2 + 1));
+  for (const run of node.runs) {
+    lines.push(...renderRun(run, now, indent.length / 2 + 1, node.item.number));
+  }
   if (node.links.length > 0) {
     lines.push(`${inner}links: ${node.links.map(renderLink).join(" · ")}`);
   }
@@ -259,7 +368,7 @@ function renderItemNode(node: ItemNode, now: string, indent: string): string[] {
 }
 
 function renderEpicNode(node: EpicNode, now: string): string[] {
-  const title = node.item === null ? "" : ` ${node.item.title}`;
+  const title = node.item === null ? "" : ` ${clip(node.item.title, WIDE_TITLE_WIDTH)}`;
   const runs = flatten([...node.tasks, ...node.pulls].flatMap((task) => task.runs)).length;
   const lines = [
     `  epic:${node.epic ?? "none"}${title}`,
@@ -299,12 +408,7 @@ export function renderTree(tree: ActivityTree, now: string = tree.now): string {
   const lines: string[] = [`board activity as of ${tree.generatedAt}`];
 
   lines.push("");
-  if (tree.quota.length === 0) {
-    lines.push("governance: no seam reported a quota window in this scan");
-  } else {
-    lines.push("governance:");
-    for (const reading of tree.quota) lines.push(renderQuota(reading, now));
-  }
+  lines.push(...renderGovernance(tree.governance, tree.quota, now));
 
   const nodes = tree.milestones.flatMap((m) => m.epics.flatMap((e) => [...e.tasks, ...e.pulls]));
   const runs = flatten([...nodes.flatMap((n) => n.runs), ...tree.unattributed]);

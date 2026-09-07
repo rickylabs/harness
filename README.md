@@ -6,31 +6,199 @@
 [![dsh plugin layer](https://img.shields.io/badge/dsh-plugin%20layer-6f42c1)](https://github.com/deepseek-ai/deepseek-harness)
 
 **The deterministic coordinator layer for an agent fleet.** A monorepo of
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`) plugins that turn a
-GitHub repository into a board, decide what may run next, and tell you what the fleet did —
-without waking an agent to ask.
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`)
+plugins that turn a GitHub repository into a board, decide what may run next,
+and tell you what the fleet did — without waking an agent to ask.
 
-> **Scope.** This repository is the `dsh` plugin layer, the doctrine those plugins encode, and the
-> run artifacts they produce. Nothing else. The cockpits that consume it are separate products in
-> separate repositories and reach this layer over a published contract package
-> ([decision 4](#ratified-decisions)).
->
-> **Status** lives on the board, not in this file: the
-> [E0 roadmap](https://github.com/rickylabs/harness/issues/30) is what is built and what is not.
-
-📋 [**The board**](BOARD.md) — what is moving, what is stuck, and what the board is lying about,
-rendered from GitHub every half hour. That page is the answer to "status ?"; this file never
-answers it, because a hand-maintained status section is a fact that goes stale between two commits
-and nothing goes red when it does.
-
-📖 [**Documentation**](docs/) — concepts, how-to, reference and a
-[glossary](docs/glossary.md). This file is the front door; `docs/` is the house.
+[Understand the loop](#how-the-layer-works) | [Try a local proof](#local-proof-first) |
+[The board](BOARD.md) | [Documentation](docs/)
 
 ---
 
-## What runs today
+## Why this exists
 
-Five command-line tools. Each one answers a question you would otherwise have to ask an agent.
+An agent can write code all night. What it cannot do is tell you, reliably,
+what it did, whether it was allowed to, and who should check it — the moment
+you ask, you are interrupting it, and its answer about itself is an account
+from memory, not a record.
+
+Harness exists so the human/agent split has a substrate. A human holds the
+decisions that need a person: what the fleet should work on, which fork gets
+the owner's call, what counts as accepted. Agents hold the work: research,
+implementation, review. Between them sits a deterministic layer that projects
+the work onto a board, decides what may run next, gates every change behind
+an explicit check, and records what happened.
+
+The bottleneck this targets is not code production. Coding agents produce
+output faster than humans can review it; the scarce resource is coordination
+and review — knowing what ran, what it changed, whether it may proceed, and
+who is allowed to say so, read from disk rather than interrupting a session.
+
+The method is not new here. The doctrine this repository encodes ran across
+three codebases with nothing in common — a Deno runtime spine, a Deno chat
+harness at depth, and a Next.js marketing site — and transferred cleanly for
+mechanics and not at all for domain knowledge. That asymmetry is the product
+seam: **mechanics are portable, knowledge is specific.** The prior-art table
+in [`AGENTS.md`](AGENTS.md) names all three.
+
+## How the layer works
+
+Three actors, one loop. The diagram is the whole system; the prose under it
+walks every arrow, and the paragraph after that states exactly which parts of
+the picture this repository supplies at this baseline.
+
+```mermaid
+flowchart TD
+  H[Human: intent, forks, acceptance] --> G[GitHub issues, labels, pull requests]
+  H --> F[dsh-forge: explicit labels and process setup]
+  F --> G
+  G --> B[dsh-board: read and project]
+  B --> C[dsh-coordinator: plan, gate, select, replay]
+  C --> D[Dispatcher or operator on a live host]
+  D --> S[ctx.subagents: autonomous agent tasks]
+  D --> L[ctx.llm: prompt and token calls]
+  S --> E[Artifacts, changes, run evidence]
+  L --> E
+  E --> T[dsh-telemetry: sink and backfill]
+  T --> H
+  E --> A[Human or dispatcher chooses a GitHub update]
+  A --> G
+```
+
+The loop, arrow by arrow:
+
+1. A **human** holds intent where the work already lives: GitHub issues,
+   labels and pull requests. When a repository needs this board process at
+   all, a human runs **`dsh-forge`** explicitly, and forge writes the label
+   taxonomy to that repository's GitHub — setup, on purpose, not in passing.
+2. **`dsh-board`** reads GitHub and projects it: columns, a hierarchy view, a
+   digest page, and a check that names every way the board contradicts
+   itself. When it does, every terminal view says so — a banner above the
+   work, with the affected rows marked — and the check carries the detail.
+   It writes nothing back; its GitHub transport is read-only by
+   construction.
+3. **`dsh-coordinator`** answers the deterministic questions over state
+   derived from that projection: what may run next, whether a step's gates
+   passed, and who may review whose work. Deciding and doing are separate
+   jobs — the workflow is inert data, and performing an effect belongs to a
+   caller.
+4. That caller is a **dispatcher or operator on a live host**. Work reaches
+   models through one of two seams and never both at once: autonomous vendor
+   CLIs at **`ctx.subagents`**, and prompt-completion calls at **`ctx.llm`**.
+5. Both seams leave **artifacts, changes and run evidence** behind.
+   **`dsh-telemetry`** sinks and backfills that record, and a human can read
+   it from disk with no agent awake — which closes the loop where it started:
+   intent in, legible status out.
+6. Evidence does not write itself back to GitHub. A **human or dispatcher
+   chooses** the update — a comment, a label move, a pull request — and that
+   choice is what lands on the board.
+
+**What this repository supplies, and what it does not.** Harness is the
+deterministic decisions and services in that diagram: the projection, the
+gates, the seam contracts, the record and the replay. It does not by itself
+supply a continuously running, fully wired dispatcher — nothing here
+schedules these services or writes the coordinator's state file yet; a
+durable loop is an open lane, not a shipped one. `dsh-board` only reads and
+projects GitHub; every terminal view flags a board that contradicts itself,
+and its check names the detail. `dsh-forge` is the separate, explicit
+mutation boundary, scoped to label and process setup, with named create/update calls
+in its GitHub transport. The two seams stay distinct: the profile currently
+composes an **empty** subagent registry — a dispatch into it returns a named
+`no-providers` refusal rather than a crash — while the local LLM routes are
+registered but remain dependent on reachable backends and credentials at
+dispatch time.
+
+## Who decides what
+
+| A human decides | An agent does | The layer enforces |
+| --- | --- | --- |
+| Intent: issues, labels, milestones, pull requests | The stochastic work: research, implementation, review | Projection: GitHub → board views; every terminal view flags a self-contradiction; `check` names it; a half-seen board is refused |
+| Owner forks: whatever depends on what the owner wants | Lifecycle moves on its own item — one `status:` label at a time, per the generated skill | Eligibility: what may run next; every effect step must have a gate upstream, checked not promised |
+| Acceptance: merges, closes, consequential writes | Recording evidence as it works | Independence: an author never evaluates its own artifact; no legal evaluator is a blocker, never a softer rule |
+| Running `dsh-forge` to install labels and process | — | Replay: decisions re-run from their own inputs; a different answer is reported as nondeterminism |
+
+The middle column is where all the intelligence in this system lives, and the
+outer two are why it can be trusted: humans keep the decisions that are
+theirs, agents keep the work that is theirs, and the layer in between never
+improvises — it is pure functions over declared data, which is what makes it
+auditable at all.
+
+## What exists at this baseline
+
+**Status** moves on the board, not in this file: [BOARD.md](BOARD.md) is
+regenerated from GitHub every half hour, and the
+[E0 roadmap](https://github.com/rickylabs/harness/issues/30) is what is built
+and what is not. What follows is a snapshot — every row resolved from source
+at commit `c98fbeb` (2026-09-07, then `main`), meant to be re-resolved, not
+remembered; [the board](BOARD.md) carries whatever moved since.
+The labels are exact: **Implemented** — source and meaningful tests exist
+here; **Composed** — the `dsh-app` profile actually registers it;
+**Host-dependent** — use needs a live provider, server, credential or
+transport a clone does not supply; **Stub** — a placeholder reserving
+dependency shape. Nothing in this matrix is a running swarm, and no row
+claims one. On a narrow screen, tables scroll sideways. Use the diagram's
+zoom controls or read the walkthrough below.
+
+| Surface | Status | What that means here |
+| --- | --- | --- |
+| Five CLIs: `dsh-board`, `dsh-coordinator`, `dsh-telemetry`, `dsh-forge`, `dsh-profile` | Implemented | built and tested; each `--help` is byte-compared into the generated reference |
+| The `dsh` profile | Composed | five plugin rows registered; the profile is bound to this checkout and not published |
+| `ctx.subagents` seam | Composed — empty | zero registered providers; a dispatch returns the named `no-providers` refusal |
+| `provider-claude`, `provider-opencode` | Implemented — not composed | the profile registers neither; running them is Host-dependent (an injected SDK with credentials; a live `opencode serve`) |
+| `ctx.llm` seam | Composed | the adapter registers all three routes — `lm-studio`, `llama-rocm`, `openrouter`; every destination is Host-dependent at dispatch |
+| Board session projection | Composed | strict public projection plus todo writes over published `dsh` session services, proven by a synthetic composition smoke, not a daemon boot; carries task phase, run completeness, and — since [#220](https://github.com/rickylabs/harness/issues/220) — every board anomaly with its detail, the kinds naming each item, and the fetch coverage, so a pane can say a column is disputed without shelling out to `check` |
+| Governance display | Implemented | `dsh-telemetry tree`/`status` reads a typed observation file — quota, spend, capacity, refusals, each with its age; absent input reads UNKNOWN, never "all clear". The live host adapter is blocked on [#62](https://github.com/rickylabs/harness/issues/62) |
+| `provider-codex` protocol prerequisite | Implemented — not composed | exact four-field route verification and pre-turn gating ship; the full provider and live transport remain blocked on #53. No Codex provider is composed into `ctx.subagents` |
+| `provider-acp`, `governance`, `netscript-bridge` | Stub | each README opens with `Status: stub` and names its blocking epic |
+| `contracts` | Implemented | the only publishable package; release is tag-triggered, and no registry release is claimed here |
+| GitHub transports; `deploy/` stack | Host-dependent | GitHub board reads and label checks need a working transport; verify `init` with `labels check` and a live readback. The compose stack targets one specific box |
+
+## Choose your path
+
+| You are… | Go | First outcome |
+| --- | --- | --- |
+| evaluating or reviewing | the diagram above → [doctrine/WORKFLOW.md](doctrine/WORKFLOW.md) → [concepts](docs/concepts/) | how work is staged, gated and independently reviewed, and what counts as evidence |
+| contributing | the status matrix → [packages/README.md](packages/README.md) → [CONTRIBUTING.md](CONTRIBUTING.md) | the current implementation truth and a safe change surface |
+| adopting locally | [local proof](#local-proof-first) → the [tutorial](docs/tutorials/01-from-clone-to-board.md) | deterministic behavior proven on your machine, without a daemon |
+| operating a live host | the status matrix → [deploy/README.md](deploy/README.md) → [dsh-app](packages/dsh-app/README.md) and provider docs | profile wiring and every external prerequisite, named |
+
+## Local proof first
+
+What a clone can do, offline, is prove the deterministic half. Node 24 is the
+declared and recommended baseline, alongside [pnpm](https://pnpm.io) 11:
+
+```bash
+pnpm install
+pnpm run build
+```
+
+`build` is not only a compile — it runs eight repository-wide checks around
+it. Two of them guard documents: every generated CLI reference page is
+byte-compared against its binary, and every relative link and anchor is
+resolved. What they check is exactly what they check — generated pages and
+links, not hand-written prose. Pasted output in prose is checked by nobody —
+[#212](https://github.com/rickylabs/harness/issues/212) is the standing
+counter-example, and the reason this README pastes almost none. The rule the
+gap is measured against lives on the
+[docs index](docs/README.md#the-rule-these-docs-are-held-to).
+
+Then the first proof. It needs nothing but the build — no network, no
+credentials, no home directory:
+
+```bash
+node packages/coordinator/dist/cli.js policies
+```
+
+It prints the two evaluator-independence policies and which one is the
+default, plus the guarantee that holds under both: a session never evaluates
+itself, and a roster with no legal evaluator is a blocker rather than
+permission for same-family review.
+
+Five command-line tools exist, deliberately separate binaries rather than
+subcommands of one. Each reads a different source of truth — the GitHub API,
+a state file on stdin, a log directory on disk, the repository you are
+standing in — and each answers a question you would otherwise have to ask an
+agent:
 
 | Command | Package | The question it answers |
 | --- | --- | --- |
@@ -40,270 +208,165 @@ Five command-line tools. Each one answers a question you would otherwise have to
 | `dsh-forge` | [`forge`](packages/forge) | Install this board process into any repository. |
 | `dsh-profile` | [`dsh-app`](packages/dsh-app) | Compose every plugin into one `dsh` profile. |
 
-They are deliberately separate binaries rather than subcommands of one. Each reads a different
-source of truth — the GitHub API, a state file on stdin, a log directory on disk, the repository
-you are standing in — and a tool that fails should fail for one reason you can name.
-
-## Quickstart
-
-Four commands that prove the build works. If you would rather be walked through the whole thing once
-— installing the board into a repository of your own, moving an item, reading a run —
-[From a clone to a moving board](docs/tutorials/01-from-clone-to-board.md) is fifteen minutes and
-needs no server.
-
-Node 24 or newer, and [pnpm](https://pnpm.io) 11.
-
-```bash
-pnpm install
-pnpm run build
-```
-
-Then, from the repository root:
-
-```bash
-node packages/coordinator/dist/cli.js policies
-```
-
-That one needs nothing but the build — it prints the independence rules that decide who may review
-whose work. The next three read the world:
-
-```bash
-node packages/board/dist/cli.js columns       # the kanban view of this repository
-node packages/forge/dist/cli.js doctor        # what this repo and this environment support
-node packages/telemetry/dist/cli.js where     # where run evidence is written, and what to read first
-```
-
-`dsh-board` and `dsh-forge` reach GitHub through the [`gh`](https://cli.github.com) CLI or a
-`GITHUB_TOKEN`; both exit **3** and say so when neither is available, rather than printing an empty
-board. `dsh-telemetry` reads local directories and needs no network at all.
-
-The same projection has a second output for people who are not at a terminal:
-
-```bash
-node packages/board/dist/cli.js digest        # the board as a markdown page
-```
-
-That is what [`BOARD.md`](BOARD.md) is. It prints to stdout and writes nothing —
-[`board.yml`](.github/workflows/board.yml) does the writing, every half hour, and commits only when
-the content actually changed.
-
 <details>
 <summary>Why <code>node packages/…/dist/cli.js</code> and not the bare command name</summary>
 
-Every package here except `contracts` is `private: true`, so pnpm links their bins where a
-*dependent* resolves them — not at the repository root. Running the built entry point directly is
-the honest invocation from a fresh clone, and it is what the repository's own scripts do (see
-`skill:install` in the root `package.json`). Installing the profile with `dsh-profile install` is
-what puts them somewhere a `dsh` process can find them; that path is described in
-[`deploy/`](deploy/README.md).
+Every package here except `contracts` is `private: true`, so pnpm links their
+bins where a *dependent* resolves them — not at the repository root. Running
+the built entry point directly is the honest invocation from a fresh clone,
+and it is what the repository's own scripts do (see `skill:install` in the
+root `package.json`). Installing the profile with `dsh-profile install` is
+what puts them somewhere a `dsh` process can find them.
 
 </details>
 
-### Install the board process into another repository
+Further proofs, by what they need:
 
-`dsh-forge` is the part that works outside this repository. Point it at any repo and it writes the
-label taxonomy, the lifecycle, and the skill that teaches an agent to move work through them:
+- **Offline, isolated fixtures.** See what the profile installer would write,
+  without writing it: `node packages/dsh-app/dist/cli.js install --dry-run
+  --home /tmp/dsh-home`. Ask telemetry where it would keep its log: `node
+  packages/telemetry/dist/cli.js where --home /tmp/tel-home`. Render the
+  governance display from a synthetic observation file — the fixture and its
+  commands live in the
+  [telemetry README](packages/telemetry/README.md#synthetic-governance-fixture),
+  and every value in it is synthetic by construction.
+- **Network: `gh` or `GITHUB_TOKEN`.** `dsh-board columns` projects a
+  repository; `dsh-board digest` prints the markdown page
+  [BOARD.md](BOARD.md) is made of; `dsh-forge doctor` reports what a target
+  repository and your environment support. The tools whose whole job is
+  reading GitHub exit **3** and say so when no transport is available. Two
+  forge commands are deliberately not in that set: `doctor` exits **0** and
+  reports what it could see, and `init` exits **0** having written its local
+  files even when the GitHub half was skipped — which is why the tutorial
+  ends that step with a readback that can fail loudly.
+- **A live host.** Provider sessions (an injected Claude Agent SDK; a
+  long-lived `opencode serve`), local model servers behind the `ctx.llm`
+  routes, and the [deployed web surface](deploy/README.md) all need machines
+  and credentials this repository does not supply. The docs state those
+  prerequisites; nothing here claims they passed.
 
-```bash
-node packages/forge/dist/cli.js init --repo owner/name
-```
+To be walked through the whole thing once — building, installing the board
+process into a repository of your own, moving an item, composing the profile,
+recording a run and reading it back —
+[From a clone to a moving board](docs/tutorials/01-from-clone-to-board.md) is
+fifteen minutes and needs no server.
 
-`init` is `labels eject` + `labels apply` + `skill install`, in that order. It **never deletes a
-label** — a deleted label takes the record of everything that carried it. Where the ejected file
-and the live repository disagree, it reports drift and exits **1** instead of guessing.
+## Architecture commitments
 
-## The idea, in one page
+Scope first, so the rest is readable: this repository is the `dsh` plugin
+layer, the doctrine those plugins encode, and the run artifacts they produce
+— nothing else. Private external consumers live in separate repositories (such
+as a cockpit and a mobile client we run against it), reaching this layer over a
+published contract package (ratified decision 4, below).
 
-Compressed. [`docs/concepts/`](docs/concepts/) has the long form — five pages on what this is, the
-two seams, the board, the two meanings of *run*, and why determinism is the point.
+Four commitments shape every package. Each is summarized once here and owned
+in full by exactly one page, because a fact in two places is a future
+contradiction.
 
-### GitHub is the board; `dsh` projects it
+- **Two seams, not one.** Subscription agent CLIs and API-key or local models
+  attach to different `dsh` services, are metered differently, and running
+  out of one does not resemble running out of the other. Collapsing them is
+  the design error the package split exists to prevent.
+  [02 — Two seams](docs/concepts/02-the-two-seams.md) owns the argument.
+- **GitHub holds board truth.** There is no second database of task state.
+  `dsh-board` projects issues, labels and pull requests, refuses to report a
+  board it only half saw, and flags a board that contradicts itself in every
+  terminal view — `check` names the contradictions and exits non-zero;
+  `digest` prints them with the repair. The session projection carries the
+  same anomalies with their detail, the kinds naming each item, and the fetch
+  coverage, so a pane can say a column is disputed without shelling out
+  ([#220](https://github.com/rickylabs/harness/issues/220)). `dsh-forge` is
+  the one explicit write boundary, and it writes labels, never evidence.
+  [03 — The board](docs/concepts/03-the-board.md) owns the reasoning.
+- **Everything generated is generated.** Six artifacts in this repository are
+  produced by code and five are byte-compared against it on every build; the
+  sixth, BOARD.md, is rewritten wholesale every half hour, so an edit to it
+  is reverted rather than rejected. [CONTRIBUTING.md](CONTRIBUTING.md) owns
+  the table and the regeneration commands;
+  [05 — Determinism](docs/concepts/05-determinism.md) owns why drift is a
+  correctness bug.
+- **Artifacts over chat, with citations.** A conclusion that exists only in a
+  conversation does not exist; run directories under `.llm/runs/` are
+  committed, reviewed and kept. Every load-bearing claim carries a path, a
+  page or a URL. [doctrine/PRINCIPLES.md](doctrine/PRINCIPLES.md) owns the
+  rules; [04 — What "run" means](docs/concepts/04-the-run.md) owns the word's
+  two meanings.
 
-There is no second database of task state. Issues, labels, milestones and pull requests *are* the
-board, and `dsh-board` renders a view of them ([decision 3](#ratified-decisions)). This is why the
-board survives a machine dying, and why a human editing an issue in a browser is a first-class way
-to steer the fleet rather than an inconsistency to reconcile.
-
-The lifecycle is ten `status:` labels — `triage`, `research`, `plan`, `plan-eval`, `impl`,
-`impl-eval`, `augment-review`, `ci-fail`, `ready-merge`, `shipped` — and an item carries exactly
-one at a time. `dsh-board check` exits non-zero when that is violated.
-
-### Two seams, not one
-
-The central architectural finding of this project, and the thing most easily collapsed by accident:
-**subscription agent CLIs and API-key models attach to different `dsh` services.**
-
-`ctx.subagents` takes autonomous workers — Claude Code, Codex, opencode, agy — that run their own
-loop and are metered by a **quota window**. `ctx.llm` takes models behind a token stream —
-OpenRouter, LM Studio, local llama — metered **per token**, inside `dsh`'s loop.
-
-[`docs/concepts/02-the-two-seams.md`](docs/concepts/02-the-two-seams.md) owns this argument in full:
-what each seam is metered by, what running out of one means, where a gate can and cannot stand, and
-the three places the coordinator reads it.
-
-Three consequences follow, and they are why this is a design decision rather than a taxonomy:
-
-1. "An evaluator must not be the artifact's author" becomes **topological** instead of a naming
-   convention — it is enforced where the two seams meet. That is `dsh-coordinator evaluator`.
-2. **Governance is not one regime.** It is three, because the two seams plus the local models
-   admit work on incomparable grounds.
-3. `dsh` **cannot** gate a tool call happening inside a vendor CLI's child process. So the gate
-   moves to the sandbox boundary, not to the tool call.
-
-### Everything generated is generated
-
-Six artifacts in this repository are produced by code rather than maintained by hand, and five of
-them are verified against that code on every build: the `dsh` bundle patch (`cordis.patch.yml`,
-byte-compared in a test), the board-process skill (`.claude/skills/board-process/SKILL.md`, written
-by `dsh-forge skill install`), the CLI reference pages (`docs/reference/cli/`, re-derived from each
-binary), the config golden snapshot (captured from the real binary, re-blessed with a written
-reason), and the label taxonomy (`.github/labels.yml`, ejected by `dsh-forge labels eject`).
-
-[`BOARD.md`](BOARD.md) is the sixth, and the one no check guards — it is rewritten wholesale every
-half hour, so an edit to it is not rejected but reverted. `CONTRIBUTING.md` has the full table and
-the command that regenerates each one.
-
-The rule behind all six:
-
-> **Every artifact either states facts it owns, or is generated from the code that owns them.**
-
-A file that restates a fact some other file owns is a fact that will eventually disagree with
-itself, and the failure is silent — nothing goes red, the document just becomes a lie that the next
-agent reads first. That is a correctness bug in a coordinator, not a cosmetic one.
-
-## Packages
-
-Fifteen packages. Eleven carry real code; four are stubs waiting on their epic, and say so.
-
-| Package | Ships | What it owns |
-| --- | --- | --- |
-| [`telemetry`](packages/telemetry) | ✅ | The run record: a bounded, rotated JSONL log, and the readers that merge it with vendor transcripts. |
-| [`contracts`](packages/contracts) | ✅ | The wire protocol and types the cockpits consume. The one **published** package. |
-| [`coordinator`](packages/coordinator) | ✅ | Evaluator independence, workflow definitions, the admission gate, journals and replay. |
-| [`forge`](packages/forge) | ✅ | The board taxonomy and process skill, installable into any repository. |
-| [`board`](packages/board) | ✅ | The GitHub → board projection, and the checks that catch a board contradicting itself. |
-| [`routing`](packages/routing) | ✅ | The model matrix. The single owner of every model id in this repository. |
-| [`subagents`](packages/subagents) | ✅ | The `ctx.subagents` seam: quota-metered autonomous workers. |
-| [`provider-claude`](packages/provider-claude) | ✅ | That seam over the Claude Agent SDK — the provider that proved a run is steerable in flight. |
-| [`provider-opencode`](packages/provider-opencode) | ✅ | That seam over a long-lived `opencode serve` — the first provider that does not own what it drives. |
-| [`llm-local`](packages/llm-local) | ✅ | The `ctx.llm` seam: where a token-metered request may be sent, and where it must not. |
-| [`dsh-app`](packages/dsh-app) | ✅ | The profile and the bundle patch that compose every plugin above into one `dsh`. |
-| [`governance`](packages/governance) | — | Tri-regime admission control. [E5](https://github.com/rickylabs/harness/issues/35). |
-| [`netscript-bridge`](packages/netscript-bridge) | — | The adapter decision 2 rests on. [E7](https://github.com/rickylabs/harness/issues/37). |
-| [`provider-codex`](packages/provider-codex) | — | Codex over app-server JSON-RPC. [E3](https://github.com/rickylabs/harness/issues/33). |
-| [`provider-acp`](packages/provider-acp) | — | One provider for every ACP-speaking agent. [E3](https://github.com/rickylabs/harness/issues/33). |
-
-A stub is a `package.json`, a tsconfig and a placeholder — enough to hold its place in the project
-graph so the dependency shape is decided before the code is written, and not enough to pretend it
-works. Each stub README opens with `Status: stub`, names what the package will own, and names what
-is blocking it; that line is what changes when the code lands, so the claim and the code move
-together.
-
-## Why this exists
-
-Coding agents produce output faster than humans can review it. The bottleneck moved.
-
-The working loop it replaces: open a mobile agent client, triage which daemons died, step into the
-one that matters, steer it, back out, watch the orchestrator, repeat — and reach for a desktop only
-to review real work. The agents are capable. What is missing is a substrate that makes their work
-legible, resumable and reviewable across projects, machines and vendors.
-
-Two products bracket the gap. [t3.codes](https://t3.codes) is a control panel *over agent sessions*
-— multi-vendor, mobile, remote-capable; it manages conversations and has no opinion about the work.
-[Linear](https://linear.app) is a board growing agent teammates — structure, initiatives, roadmap;
-it manages intent and never touches the run. Neither owns the middle: staged runs, cited research,
-locked decisions, explicit owner forks, adversarial review, and gates that must pass before
-anything mutates.
-
-That substrate has been run against three codebases with nothing in common:
-
-| Repository | Stack | Role |
-| --- | --- | --- |
-| `rickylabs/netscript` | Deno 2.x, JSR, Aspire | Origin. Runtime spine and harness v3 doctrine. |
-| `rickylabs/eis-chat` | Deno, oRPC, Turso, Deno KV | The harness at depth: services, workers, sagas, streams. |
-| `autocorner/website` | Next.js 16, React 19, Sanity, bun | A doctrine port across a total stack swap. |
-
-The port to a non-Deno, non-netscript codebase transferred **cleanly for mechanics and not at all
-for domain knowledge**. That asymmetry is the product seam:
-
-> **Mechanics are portable. Knowledge is specific. Ship the mechanics; scaffold the knowledge.**
-
-## Design commitments
-
-- **Artifacts over chat.** If it is not in a run artifact, it did not happen.
-- **Citations or it is not a claim.** Every load-bearing statement carries a repo path, a document
-  page, or a URL.
-- **Owner forks are raised, never resolved silently.** Ambiguity is escalated with a recommendation
-  and a cost-if-wrong.
-- **Nothing mutates before a gate passes.** Plans are locked and evaluated before the board, the
-  code, or the world is touched.
-- **Deterministic work belongs in the daemon.** Anything an agent is asked to do repeatedly and
-  identically is a bug in the harness.
-- **Local first, vendor neutral.** Claude Code, Codex, opencode, Copilot — the harness outlives
-  whichever one you opened this morning.
-
-Each commitment is made executable by a named epic on the
-[roadmap](https://github.com/rickylabs/harness/issues/30). Two of the six —
-*artifacts over chat* and *citations or it is not a claim* — are only **partially** owned:
-[E9](https://github.com/rickylabs/harness/issues/39) makes artifacts durable but does not decide
-what has to become one, and [E6](https://github.com/rickylabs/harness/issues/36) carries evidence
-between steps but sets no citation bar. Both need an owner before the commitment is real. A tidy
-table that hid this would be worth less than the gap it papers over.
-
-## Ratified decisions
+### Ratified decisions
 
 Four decisions are **ratified** in the *Decisions taken* table of the
-[E0 roadmap](https://github.com/rickylabs/harness/issues/30). They are restated here because root
-documents are what an agent reads first, and a root document that contradicts a ratified decision
-propagates the contradiction silently. They are not re-opened in a run, a PR, or a prompt;
+[E0 roadmap](https://github.com/rickylabs/harness/issues/30). They are
+restated here because root documents are what an agent reads first, and a
+root document that contradicts a ratified decision propagates the
+contradiction silently. They are not re-opened in a run, a PR, or a prompt;
 reversing one is a change to #30 first.
 
 1. **Plugin-only, no core fork.** Depend on published
-   [`@deepseek-ai/dsh`](https://github.com/deepseek-ai/deepseek-harness). We ship Cordis plugin
-   packages and one profile. Only
-   [`runzhliu/deepseek-harness-docker`](https://github.com/runzhliu/deepseek-harness-docker) is
-   forked, with the upstream remote kept for updates.
-2. **Node + pnpm.** netscript stays a service behind an adapter, not a build-time dependency.
-3. **GitHub is the source of truth for the board**; `dsh` projects the live view.
-4. **This repo is the `dsh` layer only.** No cockpit is built here. The two that consume this layer
-   are separate products in their own repositories — `rickylabs/atelier-cockpit`, the engineering
-   cockpit, and `rickylabs/atelier-mobile`, the Expo companion. Consequence: `contracts` must be a
+   [`@deepseek-ai/dsh`](https://github.com/deepseek-ai/deepseek-harness). We
+   ship Cordis plugin packages and one profile. Only
+   [`runzhliu/deepseek-harness-docker`](https://github.com/runzhliu/deepseek-harness-docker)
+   is forked, with the upstream remote kept for updates.
+2. **Node + pnpm.** netscript stays a service behind an adapter, not a
+   build-time dependency.
+3. **GitHub is the source of truth for the board**; `dsh` projects the live
+   view.
+4. **This repo is the `dsh` layer only.** No cockpit is built here. Private
+   external consumers live in separate repositories (such as a cockpit and a
+   mobile client we run against it). Consequence: `contracts` must be a
    *published* package, not a workspace import.
 
-Decision 4 originally placed both cockpits inside `rickylabs/netscript` and was amended on
-[#30](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579) once they became
-products in their own right. What the amendment did **not** change is the consequence: the
-published contract package is still the only thing this repository owes them, which is the half of
-the decision that constrains the code here.
+Decision 4 originally placed external consumers inside `rickylabs/netscript` and
+was amended on
+[#30](https://github.com/rickylabs/harness/issues/30)
+once they became products in their own right; the published contract package
+is still the only thing this repository owes them. Two further decisions —
+the MIT licence with a public npm scope, and the divybot/herdr strangler-fig
+— are recorded on #30 as **taken, reversible**; read them on the board.
 
-Two further decisions — the MIT licence with a public npm scope, and the divybot/herdr
-strangler-fig — are recorded on #30 as **taken, reversible**. They are not restated as settled
-here; read them on the board.
+## Packages
 
-## Doctrine
+Fifteen packages, grouped by what they are for. The authoritative package →
+epic → attachment table is [packages/README.md](packages/README.md); this
+list is the orientation, at the baseline above.
 
-[`doctrine/`](doctrine/) is the portable half: plain markdown, zero runtime, works in any
-repository in any language with no daemon installed. It is what ported at 7/10 across the three
-stacks above.
+- **Decide, project, record** — [`coordinator`](packages/coordinator),
+  [`board`](packages/board), [`telemetry`](packages/telemetry). Implemented,
+  and Composed as profile rows. The five CLIs above are their faces.
+- **The subagents seam** — [`subagents`](packages/subagents) holds the
+  contract itself; [`provider-claude`](packages/provider-claude) and
+  [`provider-opencode`](packages/provider-opencode) are Implemented against
+  it and not registered by the profile;
+  [`provider-codex`](packages/provider-codex) ships only its route-identity and
+  pre-turn protocol prerequisite, while its full provider remains blocked on
+  #53; [`provider-acp`](packages/provider-acp) is a Stub. No Codex provider is
+  composed into `ctx.subagents`, and the composed registry is empty.
+- **The llm seam** — [`llm-local`](packages/llm-local) (destinations,
+  capabilities, budgets) and [`routing`](packages/routing) (the model matrix)
+  are Implemented; the profile Composes the adapter for all three routes;
+  each destination stays Host-dependent.
+- **Compose and publish** — [`dsh-app`](packages/dsh-app) is the profile and
+  bundle patch; [`contracts`](packages/contracts) is the wire protocol external
+  consumers consume and the only publishable package;
+  [`forge`](packages/forge) installs the board process into any repository
+  and is CLI-only — it needs no profile row.
+- **Reserved** — [`governance`](packages/governance) and
+  [`netscript-bridge`](packages/netscript-bridge) are Stubs waiting on their
+  epics, and say so in their first lines. A stub is a `package.json`, a
+  tsconfig and a placeholder: enough to hold its place in the project graph
+  so the dependency shape is decided before the code is written, and not
+  enough to pretend it works.
 
-- [`WORKFLOW.md`](doctrine/WORKFLOW.md) — the run lifecycle, and how to pick a run up from any CLI
-- [`PRINCIPLES.md`](doctrine/PRINCIPLES.md) — the rules a run is judged against
-- [`TOOLCHAIN.md`](doctrine/TOOLCHAIN.md) — which tool for which job
-- [`decisions/`](doctrine/decisions/) — architecture decision records
-
-The plugins in `packages/` are the other half: the parts of that doctrine a machine can enforce.
-
-## Repository map
+### Repository map
 
 ```
 packages/             the dsh plugin layer — one package per subsystem
-docs/                 concepts, how-to, reference, tutorials, glossary
+docs/                 concepts, tutorials, how-to, reference, glossary
 doctrine/             how to work here: portable, stable, no runtime
 deploy/               the N5 compose stack and the patch overlays it applies
 scripts/              the repository-wide checks the root scripts run
 .llm/runs/            run artifacts — durable, reviewed via PR
 .llm/harness/         the artifact templates a run fills in
-.llm/tools/           milestone and gate tooling (Deno; see the note below)
+.llm/tools/           milestone and gate tooling (Deno; see below)
 .github/labels.yml    the ejected label taxonomy — generated, then reviewed
 .github/workflows/    the CI gate, the release pipeline, the status-label settler, the board
 .claude/skills/       the generated board skill (`pnpm run skill:install`)
@@ -313,61 +376,28 @@ CLAUDE.md             entry point, standard mode
 deno.json             see below
 ```
 
-`deno.json` and `deno.lock` at the root of a pnpm monorepo look like debris and are not: they run
-the milestone and gate tooling under `.llm/tools/`. Whether that second toolchain stays is an open
-owner fork, recorded on [#140](https://github.com/rickylabs/harness/issues/140).
+`deno.json` and `deno.lock` at the root of a pnpm monorepo look like debris
+and are not: they run the milestone and gate tooling under `.llm/tools/`.
+Whether that second toolchain stays is an open owner fork, recorded on
+[#140](https://github.com/rickylabs/harness/issues/140).
 
-## Checks
+## Contributing
 
-`ci` runs on every pull request and on `main` as a single job: `pnpm run typecheck`,
-`pnpm run build`, `pnpm test` — the same three a contributor runs locally, against the same
-lockfile. One job, because a check that lives in two places is a check with two places to forget it.
+This repository **is** an agent inbox. An issue labelled `harness` is polled
+every thirty seconds and dispatched to a real agent on a real host, with no
+confirmation step. That is a feature, not a hazard, but it means the label
+starts something. Label deliberately —
+[`AGENTS.md`](AGENTS.md#operational-hazard-this-repository-is-a-live-inbox)
+owns the full statement of what follows from that.
 
-`build` wraps the compile in eight repository-wide checks, and every one of them exists because of
-a failure that produced **no error** — a document that kept rendering, a form that kept accepting
-input, a page that kept being served, while the fact underneath it had changed. Each script's
-header comment names the specific incident it was written after.
-
-| Script | What it refuses to let through |
-| --- | --- |
-| `check:graph` | workspace dependencies that disagree with the TypeScript project references |
-| `check:lifecycle` | the board's phase list differing between the two files that hold it |
-| `check:links` | a relative link or heading anchor in any markdown file that arrives nowhere |
-| `check:forms` | an issue form that no longer parses, or a `render:` field that would truncate a dispatched brief |
-| `check:snapshots` | a committed allowance snapshot — a quota or spend figure that was true for an afternoon |
-| `check:publish` | the publishable package not publishing what it claims to |
-| `check:docs` | a CLI reference page that disagrees with the binary's own `--help` |
-| `check:skill` | a committed agent process skill that is not what `dsh-forge` would write today |
-
-A ninth, `pnpm run check:metadata`, compares this repository's GitHub description against the one
-in `package.json`. It is a command rather than a gate because it needs the network and an
-authenticated `gh`, and a check that cannot run offline has no business failing a build.
-
-`ci` itself publishes nothing. `@rickylabs/harness-contracts` has a separate pipeline,
-[`release-contracts.yml`](.github/workflows/release-contracts.yml), triggered by a
-`harness-contracts-v*` tag rather than by a merge. Keeping the registry credential out of the
-workflow that runs on every pull request is the point of the split; a `workflow_dispatch` on the
-release pipeline defaults to a dry run and packs without uploading, so the pipeline can be
-exercised without spending a version number. See
-[`packages/contracts/README.md`](packages/contracts/README.md) for the versioning and deprecation
-policy, and for why an npm version is the one artifact here that cannot be revised.
-
-## Deployment
-
-[`deploy/`](deploy/README.md) runs the `dsh` web surface as a container on the N5: the compose
-file, the patch overlay that binds it, and — importantly — what actually gates that surface, since
-the upstream Docker image's warning about it is out of date.
-
-## Contributing, and a note for anyone filing work here
-
-This repository **is** an agent inbox. An issue labelled `harness` is polled and dispatched to a
-real agent. That is a feature, not a hazard, but it means the label starts something. Label
-deliberately — [`AGENTS.md`](AGENTS.md#operational-hazard-this-repository-is-a-live-inbox) owns the
-full statement of what follows from that.
+Most pull requests here are opened by an agent, and the rules that matter are
+the ones a machine can check: [`CONTRIBUTING.md`](CONTRIBUTING.md) owns the
+four-command local loop, the branch and PR conventions, and the generated
+files you must not hand-edit.
 
 | File | What it settles |
 | --- | --- |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The four-command local loop, the branch and pull request conventions, and the six generated files you must not hand-edit |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The local loop, conventions, and the six generated files |
 | [`SECURITY.md`](SECURITY.md) | Three surfaces an ordinary repository does not have: content that instructs an agent, a label that executes, and run artifacts that are committed |
 | [`GOVERNANCE.md`](GOVERNANCE.md) | Where a decision lives, and the owner-fork rule that makes autonomous work safe here |
 | [`SUPPORT.md`](SUPPORT.md) | Where to go for each kind of question, given that there are no Discussions |
@@ -375,5 +405,6 @@ full statement of what follows from that.
 
 ## Licence
 
-**MIT**, matching `dsh`, so the plugin packages can carry the `dsh-plugin` topic. Taken on
-[#30](https://github.com/rickylabs/harness/issues/30) as reversible. See [`LICENSE`](LICENSE).
+**MIT**, matching `dsh`, so the plugin packages can carry the `dsh-plugin`
+topic. Taken on [#30](https://github.com/rickylabs/harness/issues/30) as
+reversible. See [`LICENSE`](LICENSE).

@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { EPIC_LABEL } from "@rickylabs/board";
+
 import {
   CLOSE_GATE_OVERRIDE,
   CORE_FAMILIES,
   CORE_TAXONOMY,
+  OWNER_DECISION,
   RETIRED_CLOSE_GATE_STATUS,
   RETIRED_LABELS,
   STATUS_LABELS,
@@ -67,6 +70,25 @@ describe("core taxonomy", () => {
     assert.equal(flag.family, "flag");
     // The point of the move: a flag is additive, so it can sit beside the item's real phase.
     assert.ok(!CLOSE_GATE_OVERRIDE.startsWith("status:"));
+  });
+
+  it("carries the owner decision as a flag too, for the same reason", () => {
+    // A `status:blocked` would have been exclusive with the phase, so every owner-gated item would
+    // have had to choose between recording how far it got and recording who is holding it. The two
+    // facts are on different axes and the item needs both.
+    const flag = CORE_TAXONOMY.find((s) => s.name === OWNER_DECISION);
+    assert.ok(flag, `${OWNER_DECISION} is not in the core taxonomy`);
+    assert.equal(flag.family, "flag");
+    assert.ok(!OWNER_DECISION.startsWith("status:"));
+    assert.ok(!(STATUS_LIFECYCLE as readonly string[]).includes(OWNER_DECISION));
+  });
+
+  it("describes the owner-decision flag within what GitHub will show", () => {
+    // The label picker is where an agent that has not read the skill meets this label, and GitHub
+    // truncates a description past 100 characters — mid-sentence, with no ellipsis.
+    const flag = CORE_TAXONOMY.find((s) => s.name === OWNER_DECISION);
+    assert.ok(flag);
+    assert.ok(flag.description.length <= 100, `${flag.description.length} chars`);
   });
 });
 
@@ -208,6 +230,23 @@ describe("CORE_FAMILIES", () => {
       assert.ok(!isCoreFamily(label.family), `${label.name} is in a core family`);
       assert.equal(label.origin, "detected", label.name);
     }
+  });
+
+  it("ships the label the board reads to identify an epic", () => {
+    // The portability hole behind #202: `detectEpics` searched GitHub for the `epic` label, and
+    // `init` never created it. Against this repository that worked, because the label predates the
+    // taxonomy and was made by hand — but forging a fresh repository produced a taxonomy in which
+    // nothing could mark an epic at all, and a deriver hunting for a label its own `init` never
+    // made. Importing board's constant rather than repeating the string is the point of the test:
+    // it fails if either side is renamed alone.
+    const row = CORE_TAXONOMY.find((spec) => spec.name === EPIC_LABEL);
+    assert.ok(row, `the core taxonomy must define ${EPIC_LABEL}`);
+    // Family `flag`, not `epic`: `epic` is the *detected* family that `epicLabel` stamps slugs
+    // into, and CORE_FAMILIES is derived from the core's own families, so a core row in family
+    // `epic` would reclassify every derived `epic:<slug>` as portable — which is what the two
+    // assertions above this one measure.
+    assert.equal(row.family, "flag");
+    assert.equal(row.origin, "core");
   });
 
   it("agrees with the origin every core spec was built with", () => {

@@ -67,6 +67,37 @@ describe("renderSkill", () => {
     assert.match(text, /No fenced code blocks/);
   });
 
+  it("tells an agent what to do when the thing blocking it is a person", () => {
+    // The flag only works if the agent that stops applies it. Nothing else in the run is in a
+    // position to know that the reason it stopped was a decision rather than a failure.
+    const text = renderSkill(ctx);
+    assert.match(text, /## When the next move is not yours/);
+    assert.match(text, /`flag:owner-decision`/);
+    assert.match(text, /Leave the `status:` label exactly where it is/);
+  });
+
+  it("draws the line at things that already have a runner", () => {
+    // Applied to a red build or an open review, the flag stops being a list of what a person owes
+    // and becomes a second copy of the board — which is the thing that gets a list ignored.
+    assert.match(renderSkill(ctx), /Not for a red build, a dependency, or a review/);
+  });
+
+  it("tells an agent to build the half of a gated item that is still buildable", () => {
+    // The judgement call that decides whether the list stays short. An issue whose live wiring waits
+    // on a decision while its display work does not is an issue an agent should be working, and the
+    // flag would claim the opposite. Without this line the flag spreads to everything downstream of
+    // a decision, which is a longer list than the board already had.
+    const text = renderSkill(ctx);
+    assert.match(text, /Not for a \*\*half\*\*-gated item/);
+    assert.match(text, /build the\s+half that does not depend on the answer/);
+  });
+
+  it("says nothing about the flag in a repository that does not have it", () => {
+    const text = renderSkill({ ...ctx, specs: ctx.specs.filter((s) => s.name !== "flag:owner-decision") });
+    assert.ok(!text.includes("When the next move is not yours"));
+    assert.ok(!text.includes("owner-decision"), "naming a missing label teaches an agent to invent it");
+  });
+
   it("puts the dispatch rules where they are read before the label goes on", () => {
     // Ordering is the whole point of the section: an agent that meets it after the instructions for
     // advancing a phase has already written the body it was supposed to write differently.

@@ -26,10 +26,9 @@ milestones and pull requests, and renders a view.
 
 ## It is not a UI
 
-The cockpits — `rickylabs/atelier-cockpit`, the engineering cockpit, and
-`rickylabs/atelier-mobile`, the Expo companion — are separate products in their own repositories,
-and they were separated from netscript by an
-[amendment](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579) that left the
+Private external consumers — such as a cockpit and a mobile client we run against it — live in
+separate repositories, and were separated from netscript by an amendment on
+[#30](https://github.com/rickylabs/harness/issues/30) that left the
 rest of decision 4 standing. This repository owes them
 exactly one thing: [`@rickylabs/harness-contracts`](../../packages/contracts), a published package
 of route and type definitions, consumed over npm and never as a workspace import. That is ratified
@@ -38,7 +37,9 @@ decision 4 on the [roadmap](https://github.com/rickylabs/harness/issues/30), and
 
 ## What it actually is, then
 
-Five binaries and the plugin packages behind them, composed into one `dsh` profile:
+Five binaries answer questions from a terminal, and a `dsh` profile composes
+five plugin rows — the board, coordinator and telemetry plugins plus one
+adapter per seam — into one `dsh` process:
 
 | | |
 | --- | --- |
@@ -46,7 +47,7 @@ Five binaries and the plugin packages behind them, composed into one `dsh` profi
 | **project** | [`board`](../../packages/board) — GitHub → columns, and the anomalies that mean the board contradicts itself |
 | **record** | [`telemetry`](../../packages/telemetry) — a bounded log of what ran, readable with nothing awake |
 | **install** | [`forge`](../../packages/forge) — put this whole process into another repository |
-| **compose** | [`dsh-app`](../../packages/dsh-app) — the profile and bundle patch that make the four into one `dsh` |
+| **compose** | [`dsh-app`](../../packages/dsh-app) — the profile and bundle patch that compose the plugins into one `dsh` |
 
 ## Why `dsh`
 

@@ -66,8 +66,16 @@ export interface Evidence {
   readonly claimsRunning: boolean;
 }
 
-/** A node's state, with the evidence that produced it named rather than implied. */
-export interface Liveness {
+/**
+ * A node's state, with the evidence that produced it named rather than implied.
+ *
+ * A **verdict**, and named for it: this is what the evidence supports, which is not what any
+ * executor said. `@rickylabs/subagents` publishes `RunLiveness` for the other question — the
+ * lifecycle a provider reports — and the two disagree precisely where this package is useful, on the
+ * run that says `running` and has produced nothing since yesterday. Both were once called
+ * `Liveness`, in one scope. See #206.
+ */
+export interface LivenessVerdict {
   readonly state: LivenessState;
   readonly evidence: LivenessEvidence;
   /** The timestamp the verdict rests on. `null` when nothing datable was found. */
@@ -114,7 +122,7 @@ export function classify(
   evidence: Evidence,
   now: string,
   windows: LivenessWindows = DEFAULT_WINDOWS,
-): Liveness {
+): LivenessVerdict {
   const nowMs = Date.parse(now);
   const atMs = evidence.at === null ? Number.NaN : Date.parse(evidence.at);
   const datable = Number.isFinite(nowMs) && Number.isFinite(atMs);
@@ -149,6 +157,6 @@ export function liveness(
   evidence: readonly Evidence[],
   now: string,
   windows: LivenessWindows = DEFAULT_WINDOWS,
-): Liveness {
+): LivenessVerdict {
   return classify(newest(evidence), now, windows);
 }

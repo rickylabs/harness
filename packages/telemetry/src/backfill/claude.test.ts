@@ -157,6 +157,78 @@ describe("parseClaudeTranscript", () => {
   });
 });
 
+describe("parseClaudeTranscript, on the subagent tree", () => {
+  /**
+   * The store names a subagent's file after the subagent and writes the *parent's* id on every line
+   * inside it. A scan of a real store found 161 transcripts, of which 154 were shaped exactly this
+   * way; reading the id off the line filed all 154 under six parents, as roots.
+   */
+  const child = (over: Record<string, unknown> = {}) => ({
+    ...user("search the packages for the sink", { isSidechain: true }),
+    ...over,
+  });
+
+  it("files a subagent under its own name and names the session that spawned it", () => {
+    const run = parseRun(
+      lines(child(), assistant({ input_tokens: 3 }, { isSidechain: true })),
+      "/store/9f3c1d20-aaaa-bbbb-cccc-000000000001.jsonl",
+    );
+    assert.ok(run);
+    assert.equal(run.id, "9f3c1d20-aaaa-bbbb-cccc-000000000001");
+    assert.equal(run.parentId, "5dc200b1-b629-4b56-b487-6990b69ef498");
+  });
+
+  it("leaves a root transcript alone, id and all", () => {
+    const run = parseRun(
+      lines(user("go"), assistant({ input_tokens: 1 })),
+      "/store/some-other-name.jsonl",
+    );
+    assert.ok(run);
+    assert.equal(run.id, "5dc200b1-b629-4b56-b487-6990b69ef498");
+    assert.equal(run.parentId, null);
+  });
+
+  it("keeps a session that carries its subagents inline as one root", () => {
+    // Same file, sidechain turns inside it, but the file is named after the session its lines
+    // state. Nothing here is somebody else's run, so splitting it would invent a second one.
+    const run = parseRun(
+      lines(user("go"), child(), assistant({ input_tokens: 1 })),
+      "/store/5dc200b1-b629-4b56-b487-6990b69ef498.jsonl",
+    );
+    assert.ok(run);
+    assert.equal(run.id, "5dc200b1-b629-4b56-b487-6990b69ef498");
+    assert.equal(run.parentId, null);
+  });
+
+  it("takes one sidechain line as enough, because unanimity is not the store's promise", () => {
+    // A single unflagged housekeeping record in an otherwise sidechain file must not hand the run
+    // back to its parent's id — which is what requiring every line to agree would do.
+    const run = parseRun(
+      lines(child(), { type: "mode", sessionId: "5dc200b1-b629-4b56-b487-6990b69ef498" }),
+      "/store/9f3c1d20-aaaa-bbbb-cccc-000000000001.jsonl",
+    );
+    assert.equal(run?.id, "9f3c1d20-aaaa-bbbb-cccc-000000000001");
+  });
+
+  it("still reads branch and issue links off the lines, which is where the subagent worked", () => {
+    // The identity moves; the work does not. A subagent runs in its parent's checkout, so the
+    // branch on its lines is its own branch and #39 is its own issue.
+    const run = parseRun(lines(child()), "/store/9f3c1d20-aaaa-bbbb-cccc-000000000001.jsonl");
+    assert.equal(run?.branch, "orch/divybot-39");
+    assert.deepEqual(run?.linkedIssues, [{ number: 39, from: "path" }]);
+  });
+
+  it("stays a root when the caller passed an origin that is not a transcript path", () => {
+    // `parseClaudeTranscript` takes the origin as an argument so it can be tested against a string,
+    // and the scan is the only caller that passes a real one. A caller holding no file has no child
+    // name to give, and filing a run under a label nothing in the store carries is worse than
+    // filing it under the id the lines actually state.
+    const run = parseRun(lines(child()), "o");
+    assert.equal(run?.id, "5dc200b1-b629-4b56-b487-6990b69ef498");
+    assert.equal(run?.parentId, null);
+  });
+});
+
 describe("parseClaudeTranscript, on a transcript it cannot fully read", () => {
   it("survives a line that is JSON but not a record", () => {
     // Finding F-4 on #105. `JSON.parse("null")` returns null, the old parser cast it to Line and

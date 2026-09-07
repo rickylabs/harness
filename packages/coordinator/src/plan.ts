@@ -14,13 +14,18 @@
  *   be satisfied by a hand-edited state file marking one step done, which is exactly the case the
  *   principle is about.
  * - **Principle 3, citations or it is not a claim.** `settle` will not record a step done without a
- *   citation for every piece of evidence its definition declares, and names the missing ones.
+ *   citation for every piece of evidence its definition declares, and each citation must parse as a
+ *   reference to something — a URL, an issue, a run, a file, or a sha (`citation.ts`). It names what
+ *   was not cited, what does not refer to anything, and what refers to the wrong kind of thing. What
+ *   it does not do is check that the thing referred to exists: that needs the network, and this file
+ *   stays pure so the plan remains journallable.
  * - **Principle 4, owner forks are raised, not resolved.** A forked step is terminal for its branch.
  *   Nothing downstream becomes runnable, no default is chosen, and the fork is surfaced by name so it
  *   can be routed to the issue bridge in #37.
  */
 
-import { prerequisites, type Step, type Workflow } from "./workflow.js";
+import { CITATION_FORMS, parseCitation } from "./citation.js";
+import { evidenceKind, evidenceName, prerequisites, type Step, type Workflow } from "./workflow.js";
 
 export type Outcome =
   /** Not yet run. */
@@ -39,6 +44,11 @@ export interface StepState {
    * Evidence name to citation. Keyed rather than a free list, so "cited" is checkable: a step that
    * declares `["roster", "decision"]` and hands back one URL is missing something specific, and this
    * says which.
+   *
+   * Values that `settle` admitted parse as references (`citation.ts`). Values that arrive through
+   * `readStates` may not: a state file written before #203, or by hand, can hold anything, and that
+   * reader keeps such a value and notes it rather than dropping it — dropping would rewrite history
+   * into something better-looking than what happened.
    */
   readonly citations: Readonly<Record<string, string>>;
   /** Why it refused or forked. Required for both — a refusal with no reason cannot be acted on. */
@@ -57,7 +67,15 @@ export type Admission =
   | { readonly admitted: true; readonly step: string; readonly because: string }
   | { readonly admitted: false; readonly step: string; readonly rule: AdmissionRule; readonly detail: string };
 
-export type SettleRule = AdmissionRule | "uncited" | "unexplained-refusal";
+export type SettleRule =
+  | AdmissionRule
+  /** Declared evidence with nothing cited for it at all. */
+  | "uncited"
+  /** Something was cited, but it does not refer to anything a later reader could follow. */
+  | "unreferenced"
+  /** A reference of the wrong kind: a URL where the step must cite the commit it landed. */
+  | "miscited"
+  | "unexplained-refusal";
 
 export type StepResult =
   | { readonly outcome: "done"; readonly citations: Readonly<Record<string, string>> }
@@ -171,8 +189,9 @@ export function runnable(workflow: Workflow, states: readonly StepState[]): read
  * Record an outcome, or refuse to.
  *
  * The refusals are the point. A step cannot be recorded done without a citation for every piece of
- * evidence it declares, and cannot be recorded blocked or forked without a reason — an unexplained
- * refusal is indistinguishable from a crash, and gets treated as one.
+ * evidence it declares — one that refers to something, and to the right kind of something where the
+ * step says which — and cannot be recorded blocked or forked without a reason, because an
+ * unexplained refusal is indistinguishable from a crash and gets treated as one.
  */
 export function settle(
   workflow: Workflow,
@@ -187,15 +206,53 @@ export function settle(
   const step = workflow.steps.find((s) => s.id === id) as Step;
 
   if (result.outcome === "done") {
-    const missing = step.evidence.filter((name) => {
+    const uncited: string[] = [];
+    const unreferenced: string[] = [];
+    const miscited: string[] = [];
+
+    for (const spec of step.evidence) {
+      const name = evidenceName(spec);
       const cited = result.citations[name];
-      return typeof cited !== "string" || cited.trim().length === 0;
-    });
-    if (missing.length > 0) {
+      if (typeof cited !== "string" || cited.trim().length === 0) {
+        uncited.push(name);
+        continue;
+      }
+      const citation = parseCitation(cited);
+      if (citation === null) {
+        unreferenced.push(`${name} (${JSON.stringify(cited.trim())})`);
+        continue;
+      }
+      const wanted = evidenceKind(spec);
+      if (wanted !== null && citation.kind !== wanted) {
+        miscited.push(`${name} (wanted a ${wanted}, got a ${citation.kind})`);
+      }
+    }
+
+    // One rule at a time, most fundamental first. All three can be true at once, and an agent handed
+    // three complaints tends to fix the last one; an agent handed "you cited nothing for regime"
+    // fixes that and comes back. The order is also the order the fixes have to happen in — there is
+    // no point saying a citation is the wrong kind of thing to somebody who has not written one.
+    if (uncited.length > 0) {
       return {
         settled: false,
         rule: "uncited",
-        detail: `${id} claims to be done but cites no ${missing.join(", ")} — citations or it is not a claim`,
+        detail: `${id} claims to be done but cites no ${uncited.join(", ")} — citations or it is not a claim`,
+      };
+    }
+    if (unreferenced.length > 0) {
+      return {
+        settled: false,
+        rule: "unreferenced",
+        detail:
+          `${id} cites ${unreferenced.join(", ")}, which refers to nothing a reader could follow — ` +
+          `a citation is ${CITATION_FORMS}`,
+      };
+    }
+    if (miscited.length > 0) {
+      return {
+        settled: false,
+        rule: "miscited",
+        detail: `${id} cites ${miscited.join(", ")}`,
       };
     }
   } else if (result.note.trim().length === 0) {
@@ -326,6 +383,7 @@ export function readStates(parsed: unknown): ParsedStates {
 
   const states: StepState[] = [];
   const notes: string[] = [];
+  const unreferenced: string[] = [];
   const seen = new Set<string>();
   let dropped = 0;
   let named = 0;
@@ -363,7 +421,14 @@ export function readStates(parsed: unknown): ParsedStates {
     const rawCitations = source["citations"];
     if (typeof rawCitations === "object" && rawCitations !== null && !Array.isArray(rawCitations)) {
       for (const [name, value] of Object.entries(rawCitations as Record<string, unknown>)) {
-        if (typeof value === "string" && value.trim().length > 0) citations[name] = value.trim();
+        if (typeof value !== "string" || value.trim().length === 0) continue;
+        citations[name] = value.trim();
+        // Kept, not dropped, and this is the asymmetry with everything else in this reader. A state
+        // file predating #203 — or one a person edited — can hold `"see the PR"` against a step
+        // already recorded done, and `settle` is not run again on the way in. Dropping it would
+        // leave the step done and *silently* uncited, which reads as a clean run; keeping it leaves
+        // the record intact and says out loud that the claim was never checkable.
+        if (parseCitation(value) === null) unreferenced.push(`${id}.${name} cites ${JSON.stringify(value.trim())}`);
       }
     }
     const note = typeof source["note"] === "string" && source["note"].trim().length > 0 ? source["note"].trim() : null;
@@ -371,5 +436,11 @@ export function readStates(parsed: unknown): ParsedStates {
   }
 
   if (dropped > named) notes.push(`${dropped} step(s) dropped in total`);
+  // After the drop notes, so the existing contract — dropped entries first, then their tally — holds
+  // whatever the citations look like.
+  for (const line of unreferenced.slice(0, STATE_NOTE_CAP)) notes.push(`kept but unreferenced: ${line}`);
+  if (unreferenced.length > STATE_NOTE_CAP) {
+    notes.push(`${unreferenced.length} citation(s) refer to nothing in total`);
+  }
   return { states, notes };
 }

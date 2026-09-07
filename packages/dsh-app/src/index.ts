@@ -97,8 +97,19 @@ export {
   DEFAULT_LANE_PREFIX,
   type BoardConfig,
   type BoardService,
+  type BoardRefreshInput,
   type BoundProjectOptions,
 } from "./plugins/board.js";
+
+export {
+  BOARD_PROJECTION_KEY,
+  BOARD_WRITE_EVENT,
+  boardProjectionSchema,
+  toBoardProjection,
+  todosFromBoard,
+  type BoardEvidence,
+  type BoardProjection,
+} from "./plugins/board-projection.js";
 
 export {
   CONTEXT_KEY as COORDINATOR_CONTEXT_KEY,

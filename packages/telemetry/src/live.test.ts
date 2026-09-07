@@ -50,6 +50,7 @@ function live(over: Partial<LiveRun> = {}): LiveRun {
     branch: null,
     identity: { model: null, effort: null, provider: null, profile: null },
     outcome: null,
+    verdict: null,
     linkedIssues: [],
     origin: "/observability/dsh-telemetry.jsonl",
     events: 1,
@@ -193,6 +194,50 @@ describe("foldLiveEvents", () => {
     assert.equal(runs[0]?.events, 1);
   });
 
+  it("reads a dispatch verdict, and says nothing when no line stated one", () => {
+    const runs = foldLiveEvents([
+      file("/log/live.jsonl", [
+        event("a", "subagent.dispatch", NOW, { verdict: "refused" }),
+        event("b", "start", NOW),
+      ]),
+    ]);
+    assert.equal(runs[0]?.verdict, "refused");
+    assert.equal(runs[1]?.verdict, null);
+  });
+
+  it("refuses a verdict it does not recognise, rather than passing it through", () => {
+    const runs = foldLiveEvents([
+      file("/log/live.jsonl", [event("a", "subagent.dispatch", NOW, { verdict: "queued" })]),
+    ]);
+    assert.equal(runs[0]?.verdict, null);
+  });
+
+  it("takes the verdict only from a dispatch line, so a refused steer is not a refused run", () => {
+    // `SteerVerdict` and `StopVerdict` both spell `refused`, and the instrument writes `verdict` on
+    // all three verbs. Reading it off any kind would let one rejected message erase a run that had
+    // been working for an hour.
+    const runs = foldLiveEvents([
+      file("/log/live.jsonl", [
+        event("a", "subagent.dispatch", "2026-09-05T10:00:00.000Z", { verdict: "accepted" }),
+        event("a", "subagent.steer", "2026-09-05T10:10:00.000Z", { verdict: "refused" }),
+        event("a", "subagent.stop", "2026-09-05T10:20:00.000Z", { verdict: "refused" }),
+      ]),
+    ]);
+    assert.equal(runs[0]?.verdict, "accepted");
+  });
+
+  it("lets a later dispatch overwrite an earlier refusal under the same id", () => {
+    // A refused dispatch retried under the same run id. Without last-statement-wins, the run that
+    // really launched on the second attempt would stay invisible.
+    const runs = foldLiveEvents([
+      file("/log/live.jsonl", [
+        event("a", "subagent.dispatch", "2026-09-05T10:00:00.000Z", { verdict: "refused" }),
+        event("a", "subagent.dispatch", "2026-09-05T10:05:00.000Z", { verdict: "accepted" }),
+      ]),
+    ]);
+    assert.equal(runs[0]?.verdict, "accepted");
+  });
+
   it("reads issue numbers out of a branch, with path evidence", () => {
     const runs = foldLiveEvents([
       file("/log/live.jsonl", [event("a", "start", NOW, { branch: "orch/divybot-86" })]),
@@ -283,6 +328,52 @@ describe("mergeLiveRuns", () => {
     assert.match(merged.notes[0] ?? "", /1 run\(s\) named no seam/);
   });
 
+  it("counts a refused dispatch instead of putting an agent that never launched on the board", () => {
+    const merged = mergeLiveRuns(
+      [],
+      [live({ id: "r9", source: "codex", verdict: "refused" })],
+    );
+    assert.deepEqual(merged.runs, []);
+    assert.match(merged.notes[0] ?? "", /1 dispatch\(es\) the provider refused/);
+  });
+
+  it("does not call a refused dispatch degradation, even when it named no seam", () => {
+    // A refused dispatch is not an under-reported run, so the seam it never got as far as naming is
+    // not a gap in the log. Raising `degraded` here would mark a healthy log broken.
+    const merged = mergeLiveRuns([], [live({ id: "r9", source: null, verdict: "refused" })]);
+    assert.deepEqual(merged.runs, []);
+    assert.equal(merged.degraded, false);
+    assert.equal(merged.notes.length, 1);
+    assert.match(merged.notes[0] ?? "", /the provider refused/);
+  });
+
+  it("still adds a live-only dispatch that was accepted, or never got a verdict", () => {
+    const merged = mergeLiveRuns(
+      [],
+      [
+        live({ id: "r8", source: "codex", verdict: "accepted" }),
+        live({ id: "r9", source: "codex", verdict: "unknown" }),
+        live({ id: "ra", source: "codex", verdict: null }),
+      ],
+    );
+    // `unknown` and a dispatch that died before its verdict are the cases the pre-dispatch line
+    // exists for: an agent may be running somewhere, and a board that hides it is worse than one
+    // that shows a row an operator can check.
+    assert.deepEqual(merged.runs.map((r) => r.id).sort(), ["r8", "r9", "ra"]);
+  });
+
+  it("keeps a refused dispatch that a transcript later contradicted", () => {
+    // The provider said no and something ran anyway — a retry the log never saw, or a refusal that
+    // was wrong. A transcript on disk is the stronger statement, and the record it wrote stands.
+    const merged = mergeLiveRuns(
+      [run({ id: "r9" })],
+      [live({ id: "r9", source: "codex", verdict: "refused", outcome: "complete" })],
+    );
+    assert.equal(merged.runs.length, 1);
+    assert.equal(merged.runs[0]?.outcome, "complete");
+    assert.ok(!merged.notes.some((n) => n.includes("the provider refused")));
+  });
+
   it("fills only the identity slots the transcript left empty", () => {
     const merged = mergeLiveRuns(
       [run({ identity: { model: "opus-5", effort: null, provider: null, profile: null } })],
@@ -327,6 +418,23 @@ describe("mergeLiveRuns", () => {
     );
     assert.equal(merged.runs.length, 2);
     for (const record of merged.runs) assert.equal(record.outcome, "complete");
+  });
+
+  it("counts the runs it resolved, not the records it wrote", () => {
+    // One session, three transcripts, one statement from the log. The note is a claim about how
+    // much the log knew, so reporting three would credit that one statement with two it never
+    // made — and on a real store, where a session id can be held by a dozen records, the note
+    // reads as an order-of-magnitude more knowledge than arrived.
+    const merged = mergeLiveRuns(
+      [
+        run({ id: "r1", origin: "/a.jsonl" }),
+        run({ id: "r1", origin: "/b.jsonl" }),
+        run({ id: "r1", origin: "/c.jsonl" }),
+      ],
+      [live({ id: "r1", outcome: "complete" })],
+    );
+    assert.equal(merged.runs.length, 3);
+    assert.match(merged.notes[0] ?? "", /outcome supplied for 1 run\(s\)/);
   });
 
   it("leaves the disk record's transcript as the file to open", () => {

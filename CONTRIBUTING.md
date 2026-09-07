@@ -32,7 +32,7 @@ Node 24 or newer and [pnpm](https://pnpm.io) 11. The pnpm version is pinned by `
 the root `package.json`, and CI reads that same line rather than pinning a second one — so upgrading
 pnpm is a one-line change, not a two-file dance.
 
-`build` is not only a compile. It runs eight repository-wide checks around the per-package builds,
+`build` is not only a compile. It runs ten repository-wide checks around the per-package builds,
 in this order:
 
 | Check | What it refuses to let through |
@@ -43,22 +43,33 @@ in this order:
 | `check:forms` | an issue form that does not parse, or that applies a label the taxonomy does not declare |
 | `check:snapshots` | a committed allowance snapshot — a quota, a spend balance, a serialised probe |
 | `check:publish` | the publishable package not publishing what it claims to |
+| `check:label-registry` | a label the board branches on that `dsh-forge init` would never create |
 | `check:docs` | a generated CLI reference page that no longer matches its binary |
 | `check:skill` | a committed `SKILL.md` that is not what the generator would write today |
+| `check:tutorial` | a pasted output block in a tutorial that the command no longer prints |
 
 Each one exists because the failure it catches is silent. None of them are optional, and running
-`pnpm -r run build` directly skips all eight.
+`pnpm -r run build` directly skips all ten.
 
 The first five need nothing but the tree, so they run before the compile and a docs-only change
-fails in seconds. The last three read `dist/`, so they run after it.
+fails in seconds. The last five read `dist/`, so they run after it.
 
-Three notes on what these checks deliberately do *not* do. `check:links` never fetches an external
+Five notes on what these checks deliberately do *not* do. `check:links` never fetches an external
 URL — a link check that goes over the network fails when someone else's server is down, and a gate
 that fails for a reason unrelated to the change under review teaches people to skip the gate.
 `check:forms` reads `.github/labels.yml` rather than asking GitHub, so it needs no token and runs in
 the same CI job as everything else. `check:snapshots` reads only tracked `.json` and `.yaml`, never
 prose: the docs discuss quotas and allowances at length and must keep being able to, because a
-paragraph explaining why a quota is not committable is not a committed quota.
+paragraph explaining why a quota is not committable is not a committed quota. And
+`check:label-registry` reads only labels the code branches on — declared in
+`packages/board/src/labels.ts` — not every label the taxonomy defines. Whether a label nobody reads
+should still exist is a curation question with a legitimate answer either way, and folding it in
+here would give people a reason to argue with the half that is not a judgement call. And
+`check:tutorial` runs a deliberately small subset of shell rather than a shell — temporary homes,
+`env -u`, a piped `printf`, and a `node` entry point, with everything else refused by name. A block
+it cannot run has to be marked `verify: none` with a reason, which it then prints. That is slightly
+annoying on purpose: the alternative is a gate that quietly executes whatever a documentation change
+put in front of it.
 
 ### One check that is not a gate
 
@@ -101,6 +112,12 @@ same reason in the pull request.
 "Verified against it" is now literal for the first two: `check:docs` re-derives every CLI reference
 page from its binary, and `check:skill` re-runs the skill generator and compares. Both are in
 `build`, so a hand-edited copy of either fails before review rather than after.
+
+The tutorial is the case that rule cannot reach: a page whose value is the prose around the output
+cannot be generated from the code, so it stays hand-written and goes stale like anything else — it
+did, in four places, before `check:tutorial` existed. What is generated there is not the page but the
+*verdict*: each output block declares whether it is re-run or trusted, the build re-runs the first
+kind, and the second kind is printed with its reason on every pass rather than left to be inferred.
 
 The rule these six serve is stated in full in [`docs/README.md`](docs/README.md#the-rule-these-docs-are-held-to):
 every artifact either states facts it owns, or is generated from the code that owns them.

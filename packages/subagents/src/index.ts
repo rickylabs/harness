@@ -74,7 +74,11 @@ export {
   CONTEXT_KEY,
   capabilityProblem,
   conformanceProblems,
+  instrumentedBy,
+  isInstrumented,
+  isRouteVerified,
   isSafeToRetry,
+  markInstrumented,
   registryProblems,
   retryGuidance,
   selectProvider,
@@ -86,12 +90,12 @@ export type {
   ConformanceRule,
   DispatchResult,
   DispatchVerdict,
-  Liveness,
   Observation,
   OptionalCall,
   ProviderCapabilities,
   Rejection,
   RejectionRule,
+  RunLiveness,
   RunRef,
   SelectedProvider,
   Selection,
@@ -103,6 +107,24 @@ export type {
   SubagentProvider,
   SubagentRegistry,
 } from "./provider.js";
+
+export {
+  ROUTE_FIELDS,
+  compareRouteIdentity,
+  describeRouteEvidence,
+  isRouteEvidenceVerified,
+} from "./route.js";
+export type {
+  InvalidRouteField,
+  RouteField,
+  RouteIdentityEvidence,
+  RouteIdentityInput,
+  RouteIdentityValues,
+  RouteSide,
+  RouteSource,
+  RouteStatus,
+  RouteValueEvidence,
+} from "./route.js";
 
 export {
   DEFAULT_STALE,

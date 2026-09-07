@@ -13,7 +13,7 @@ import { describe, it } from "node:test";
 import type {
   DispatchRequest,
   DispatchResult,
-  Liveness,
+  RunLiveness,
   Observation,
   ProviderCapabilities,
   RunRef,
@@ -21,6 +21,7 @@ import type {
   StopResult,
   SubagentProvider,
 } from "@rickylabs/subagents";
+import { instrumentedBy, isInstrumented, selectProvider } from "@rickylabs/subagents";
 import { createMemorySink } from "@rickylabs/telemetry";
 
 import {
@@ -30,6 +31,7 @@ import {
   sourceOfHarness,
   DETAIL_CAP,
   EVENT_KIND,
+  WRAPPER,
 } from "./instrument.js";
 
 const AT = "2026-01-01T00:00:00.000Z";
@@ -193,7 +195,7 @@ describe("which seam a run is billed to", () => {
 describe("observation, which is a poll and not an event", () => {
   it("writes when the liveness changed and stays quiet when it did not", async () => {
     const sink = createMemorySink();
-    let liveness: Liveness = "queued";
+    let liveness: RunLiveness = "queued";
     const wrapped = instrumentProvider(
       stub({
         async observe(run) {
@@ -348,5 +350,94 @@ describe("the small rules", () => {
     );
     assert.equal(result.verdict, "accepted");
     assert.equal(provider.calls, 1);
+  });
+});
+
+/**
+ * The end of the guarantee, tested from both sides of the seam.
+ *
+ * `packages/subagents` owns the refusal and tests it against a hand-marked provider. What only this
+ * file can show is that the thing the composition root actually builds satisfies it, and that the
+ * thing a provider package actually builds does not. See #208.
+ */
+describe("the mark that makes the refusal mean something", () => {
+  it("marks what it wraps, and never the provider handed in", () => {
+    // Marking the argument would let an unwrapped provider claim instrumentation the moment anybody
+    // wrapped a copy of it — and the copy is the one that writes events.
+    const seat = stub({});
+    const wrapped = instrumentProvider(seat, { sink: createMemorySink(), now: clock });
+    assert.equal(instrumentedBy(wrapped), WRAPPER);
+    assert.equal(isInstrumented(seat), false);
+  });
+
+  it("turns a registry a dispatch would be refused through into one it is not", () => {
+    const sink = createMemorySink();
+    const raw = { providers: [stub({ id: "claude-cli" })] };
+    const before = selectProvider(raw, REQUEST);
+    assert.equal(before.selected, false);
+    assert.equal(before.selected === false && before.rule, "uninstrumented");
+
+    const after = selectProvider(instrumentRegistry(raw, { sink, now: clock }), REQUEST);
+    assert.equal(after.selected, true);
+    assert.equal(after.selected && after.provider.id, "claude-cli");
+  });
+
+  it("refuses to wrap a registry twice", () => {
+    // Not defensive tidiness: two layers each write their own events, so every dispatch appears in
+    // the log twice and nothing downstream can tell that from a genuine retry.
+    const sink = createMemorySink();
+    const once = instrumentRegistry({ providers: [stub({})] }, { sink, now: clock });
+    assert.throws(() => instrumentRegistry(once, { sink, now: clock }), /already marked as instrumented/);
+  });
+});
+
+describe("what the observation memory costs", () => {
+  const pollable = (liveness: () => RunLiveness): SubagentProvider =>
+    stub({
+      async observe(run) {
+        return { run, liveness: liveness(), observedAt: AT, detail: "", artifacts: [] };
+      },
+    });
+
+  it("forgets the least recently observed run once it is full", async () => {
+    const sink = createMemorySink();
+    const wrapped = instrumentProvider(pollable(() => "running"), {
+      sink,
+      now: clock,
+      runMemory: 2,
+    });
+
+    await wrapped.observe({ ...REF, runId: "a" });
+    await wrapped.observe({ ...REF, runId: "b" });
+    await wrapped.observe({ ...REF, runId: "a" }); // makes `b` the older of the two
+    await wrapped.observe({ ...REF, runId: "c" }); // evicts `b`
+    await wrapped.observe({ ...REF, runId: "a" }); // still remembered: silent
+    await wrapped.observe({ ...REF, runId: "b" }); // forgotten: written again
+
+    assert.deepEqual(
+      sink.events.map((event) => event.runId),
+      ["a", "b", "c", "b"],
+    );
+  });
+
+  it("keeps de-duplicating a run that never changes and is polled forever", async () => {
+    // The trap in the obvious fix. Dropping a run once its liveness is terminal means the next poll
+    // finds nothing remembered, writes `finished` again, drops it again — a supervisor that keeps
+    // asking gets a log made entirely of one line. Twenty polls, one event.
+    const sink = createMemorySink();
+    const wrapped = instrumentProvider(pollable(() => "finished"), { sink, now: clock });
+    for (let poll = 0; poll < 20; poll += 1) await wrapped.observe(REF);
+    assert.equal(sink.events.length, 1);
+    assert.equal(sink.events[0]?.detail?.["liveness"], "finished");
+  });
+
+  it("refuses a memory that would defeat the de-duplication it exists for", () => {
+    for (const runMemory of [0, -1, 1.5, Number.NaN]) {
+      assert.throws(
+        () => instrumentProvider(stub({}), { sink: createMemorySink(), runMemory }),
+        /positive integer/,
+        String(runMemory),
+      );
+    }
   });
 });

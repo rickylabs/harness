@@ -42,11 +42,11 @@ page is how those are absorbed rather than denied.
 
 ## A column is a label
 
-The lifecycle is a set of `status:` labels — the ten phases are listed in the
-[root README](../../README.md#github-is-the-board-dsh-projects-it), and the rules an agent must
-follow are generated into
-[`.claude/skills/board-process/SKILL.md`](../../.claude/skills/board-process/SKILL.md) from the
-taxonomy actually installed in the repository, not from a document somebody kept up to date.
+The lifecycle is a set of `status:` labels — the ten phases are listed with
+their order in the generated
+[`.claude/skills/board-process/SKILL.md`](../../.claude/skills/board-process/SKILL.md), and the
+rules an agent must follow are generated there too, from the taxonomy actually installed in the
+repository, not from a document somebody kept up to date.
 
 Two properties matter more than the list:
 
@@ -54,12 +54,43 @@ Two properties matter more than the list:
 and [`packages/board/src/project.ts`](../../packages/board/src/project.ts) reports it as one. Work
 that is simultaneously `impl` and `ready-merge` is work whose real state nobody knows.
 
-**Gates are not phases.** `status:close-gate-override` looks like a status label and is not one; it
-is a gate, and it modifies what may happen rather than saying where the work is. Keeping the two
-kinds in one prefix would make the "exactly one" rule unstateable.
+**Flags are not phases.** `flag:close-gate-override` and `flag:owner-decision` are additive and
+never decide a column: the first modifies what may happen, the second says who is holding the work.
+Keeping them in one prefix with the phases would make the "exactly one" rule unstateable — and it
+would cost the item a fact, since a phase can only ever record one of *how far this got* and *who is
+next*. (`flag:close-gate-override` was itself a `status:` label until that argument won; the old name
+is retired rather than deleted, so the items it audited still say so.)
 
 Lanes (`topic:`), epics (`epic:`) and areas (`area:`) are separate axes on the same item. An item has
 one column and any number of the others.
+
+## The column cannot say "a person has this"
+
+Every one of the ten phases describes a state of *agent* work. So an item that stops because a human
+has to decide something has no true phase to move to: it keeps whichever column the work reached,
+and the projection counts it among the work in progress. On this repository that was four items at
+once, and they were miscounted in two different ways. One sat in `plan-eval`, under a heading that
+says something could be acting on it right now — an issue whose own title begins "DECISION:". The
+other three sat in `triage` and were counted as queued, which is the quieter version of the same
+lie: a queue is a promise that something eventually picks the item up, and nothing was going to.
+
+That is worse than a missing feature. The header ratio is the answer to "status ?", and a count that
+includes work with no runner is a count the reader has to discount, which is the same as not having
+it.
+
+`flag:owner-decision` is the fix, and it is a flag for the reason above: the phase keeps recording
+how far the work got while the flag records that the next actor is a person. The projection reads it
+ahead of the queued/in-flight split, so a flagged item is `blocked` whatever column it is in — a
+decision sitting in `triage` is not first in a queue either, because no agent will take it at all.
+The digest lists these first, above what is moving, under **Waiting on you**.
+
+Deliberately narrow: not a red build, not an unreviewed PR, not a dependency. Those have runners
+already and the board can see them. This means *no amount of agent time will move it*. Nor does a
+*half*-gated item qualify — where a decision blocks one part of an issue and leaves another
+buildable, the flag would claim nothing can move while something still can, and the answer is the
+one the **owner fork** already gives: build the half that does not depend on the answer. And because a
+list is only worth reading while it is short, a flag left on a closed or terminal item is itself
+reported, as `stale-owner-decision`.
 
 ## Anomalies are output, not errors
 
@@ -85,6 +116,10 @@ The board says where work *is*. It cannot say what is *happening* — an item ca
 day whether three agents are hammering it or nothing has been running since Tuesday. That question
 belongs to telemetry, and to the other meaning of the word "run":
 [04 — What "run" means](04-the-run.md).
+
+`flag:owner-decision` is the one exception, and only because it is not an observation: nothing
+watches the item and concludes it has stalled. An agent that stopped says so on its way out. The
+board still cannot tell a busy `impl` from an abandoned one.
 
 ## Installing it elsewhere
 

@@ -13,6 +13,13 @@
  */
 
 import { closingKeywordTargets } from "./closing.js";
+import {
+  DEFAULT_LANE_PREFIX,
+  DEFAULT_PRIORITY_ORDER,
+  EPIC_LABEL,
+  OWNER_DECISION_LABEL,
+  SINGLE_VALUE_FAMILIES,
+} from "./labels.js";
 import { DEFAULT_LIFECYCLE, phaseOf, statusLabelsOf, unknownStatusLabels } from "./lifecycle.js";
 import type { Lifecycle } from "./lifecycle.js";
 import { labelValue, labelValues, sourceSaysDelivered } from "./model.js";
@@ -45,15 +52,22 @@ export interface ProjectOptions {
   readonly completeness?: Completeness;
 }
 
-/** The default urgency ordering; unlisted priorities sort after all listed ones. */
-export const DEFAULT_PRIORITY_ORDER = ["p0", "p1", "p2", "p3"] as const;
-
-/** Label families where a second value on one item is a contradiction, not extra information. */
-const SINGLE_VALUE_FAMILIES = ["epic", "priority", "type"] as const;
-
-/** An item is an epic when it carries the `epic` type label or an `epic` bare label. */
-const detectIsEpic = (labels: readonly string[]): boolean =>
-  labels.includes("epic") || labels.includes("type:epic");
+/**
+ * An item is an epic when it carries the bare `epic` label. Exactly that, and nothing else.
+ *
+ * `type:epic` used to be a second alternative here and never once evaluated true against a real
+ * repository: the label does not exist, and `forge`'s taxonomy has never created it. It survived
+ * because a fixture invented it — `board-smoke-fixture.ts` stamped `type:epic` on its epic, so the
+ * branch had a passing test standing behind data that cannot occur.
+ *
+ * `type:umbrella`, which `forge` used to accept here, is deliberately *not* a second alternative.
+ * It is specified as "Coordinating PR for a multi-slice effort" and belongs to the `type:` family,
+ * which answers what kind of change something is. An epic is not a kind of change; it is a board
+ * object with its own `epic:` slug family. Accepting it here would also reclassify live items: #182
+ * carries `type:umbrella` *and* `epic:e0`, so it would become an epic whose slug is already claimed
+ * by #30 — a `duplicate-epic-slug` anomaly manufactured by the predicate that was meant to fix one.
+ */
+export const isEpicLabels = (labels: readonly string[]): boolean => labels.includes(EPIC_LABEL);
 
 function toItem(source: SourceIssue, lifecycle: Lifecycle, lanePrefix: string): BoardItem {
   return {
@@ -63,7 +77,8 @@ function toItem(source: SourceIssue, lifecycle: Lifecycle, lanePrefix: string): 
     lane: labelValue(source.labels, lanePrefix),
     priority: labelValue(source.labels, "priority"),
     type: labelValue(source.labels, "type"),
-    isEpic: detectIsEpic(source.labels),
+    isEpic: isEpicLabels(source.labels),
+    waitingOnOwner: source.labels.includes(OWNER_DECISION_LABEL),
   };
 }
 
@@ -331,6 +346,28 @@ function anomaliesFor(
     });
   }
 
+  // The owner-decision flag asks a person for something, and the whole value of the list it fills
+  // is that it is short enough to read. Nothing removes the label when the decision is finally
+  // made, so a flag that outlives its question is how "waiting on you" turns into a list of
+  // settled ones — the same silence the flag was added to break, one level up.
+  //
+  // Only the two states where the item can no longer be waiting for anything, so the repair is a
+  // single label removal that holds. An item that is genuinely still waiting says nothing here,
+  // however long it waits: the flag being old is not evidence that it is wrong.
+  if (item.waitingOnOwner) {
+    const closed = item.source.state === "closed";
+    if (closed || item.phase?.terminal === true) {
+      const where = closed ? "is closed" : `sits in ${item.phase?.name ?? "a terminal column"}`;
+      found.push({
+        kind: "stale-owner-decision",
+        item: n,
+        detail:
+          `${where} but still carries the owner-decision flag; the question was answered or went ` +
+          "moot — drop the flag, or reopen this if it is still live",
+      });
+    }
+  }
+
   return found;
 }
 
@@ -349,7 +386,7 @@ export function projectBoard(
   options: ProjectOptions,
 ): BoardSnapshot {
   const lifecycle = options.lifecycle ?? DEFAULT_LIFECYCLE;
-  const lanePrefix = options.lanePrefix ?? "lane";
+  const lanePrefix = options.lanePrefix ?? DEFAULT_LANE_PREFIX;
   const priorityOrder = options.priorityOrder ?? DEFAULT_PRIORITY_ORDER;
 
   const items = issues.map((issue) => toItem(issue, lifecycle, lanePrefix));

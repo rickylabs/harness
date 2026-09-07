@@ -14,7 +14,7 @@ import type { Actor, EvaluatorDecision, Rejection } from "./independence.js";
 import type { JournalComparison } from "./journal.js";
 import type { Plan } from "./plan.js";
 import type { ReplayResult } from "./replay.js";
-import type { Problem, Workflow } from "./workflow.js";
+import { evidenceKind, evidenceName, type Problem, type Workflow } from "./workflow.js";
 import type { Hazard, Judgement } from "./worktree.js";
 
 function describe(actor: Actor): string {
@@ -227,7 +227,15 @@ export function renderWorkflow(workflow: Workflow, problems: readonly Problem[])
   });
   const cites = workflow.steps
     .filter((step) => step.evidence.length > 0)
-    .map((step) => `    ${pad(step.id, idWidth)}  ${step.evidence.join(", ")}`);
+    .map((step) => {
+      // A pinned kind is shown, because this listing is what somebody reads to find out what a step
+      // owes before they run it, and "merge-commit" and "merge-commit (sha)" are different promises.
+      const owed = step.evidence.map((spec) => {
+        const kind = evidenceKind(spec);
+        return kind === null ? evidenceName(spec) : `${evidenceName(spec)} (${kind})`;
+      });
+      return `    ${pad(step.id, idWidth)}  ${owed.join(", ")}`;
+    });
 
   return [...head, ...rows, "", `  must cite (${cites.length}):`, ...cites].join("\n");
 }

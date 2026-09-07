@@ -44,6 +44,7 @@
  */
 
 import { validateDispatch, type DispatchRequest, type Harness } from "./dispatch.js";
+import { isRouteEvidenceVerified, type RouteIdentityEvidence } from "./route.js";
 
 /**
  * Where a `SubagentRegistry` attaches on the dsh context.
@@ -93,23 +94,40 @@ export type DispatchVerdict = "accepted" | "refused" | "unknown";
 
 export interface DispatchResult {
   readonly verdict: DispatchVerdict;
-  /** Present on `accepted`. On `unknown` it may also be present, if the provider got that far. */
+  /**
+   * Present on `accepted`. It may also be present on `unknown`, or on `refused` when an identified
+   * empty session was created but no useful work was sent and the handle is needed for cleanup.
+   */
   readonly run: RunRef | null;
   /** Why. A verdict with no reason cannot be acted on by anything except a coin toss. */
   readonly detail: string;
+  /**
+   * Requested-versus-observed route evidence when the provider can obtain it.
+   *
+   * Optional for compatibility with providers that predate route observation. Absence is
+   * unverified, never agreement; callers use `isRouteVerified` rather than optional chaining.
+   */
+  readonly route?: RouteIdentityEvidence;
 }
 
 /**
- * What a run is doing.
+ * What a run is doing, **as its executor reports it**.
  *
  * `queued` and `running` are both alive; the split matters because a run that is queued for
  * forty minutes is a governance problem and a run that is executing for forty minutes is not.
+ *
+ * `Run-` is load-bearing. `@rickylabs/telemetry` publishes a `LivenessVerdict` that is a different
+ * question about the same run: not what the executor said, but what the *evidence* supports — a
+ * growing artifact, a new commit, a live turn. The two disagree exactly where a status screen earns
+ * its keep, on the run that claims `running` and has produced nothing for six hours. Both types were
+ * once called `Liveness`, in one npm scope, and `dsh-app` already imports from both packages in one
+ * file. See #206.
  */
-export type Liveness = "queued" | "running" | "finished" | "failed" | "unknown";
+export type RunLiveness = "queued" | "running" | "finished" | "failed" | "unknown";
 
 export interface Observation {
   readonly run: RunRef;
-  readonly liveness: Liveness;
+  readonly liveness: RunLiveness;
   /** ISO 8601, from the caller's clock. When this was true, not when it was asked. */
   readonly observedAt: string;
   readonly detail: string;
@@ -162,6 +180,83 @@ export interface SubagentRegistry {
 }
 
 /**
+ * The mark a wrapper leaves on a provider it has instrumented.
+ *
+ * `Symbol.for` rather than a fresh `Symbol`. A unique symbol belongs to one module instance, so two
+ * copies of this package on one disk — a hoisting accident, a linked workspace — would each mint
+ * their own and neither would see the other's mark. Every provider would then read as
+ * uninstrumented and nothing would dispatch. The realm-global registry is what makes the mark
+ * survive that, and the cost of it is stated on `markInstrumented`.
+ */
+const INSTRUMENTED = Symbol.for("@rickylabs/subagents.instrumented");
+
+/**
+ * Record that a provider has been wrapped, and by what.
+ *
+ * ## Why this exists at all
+ *
+ * The seam's promise was prose. `plugins/subagents.ts` wraps the registry it builds, and its comment
+ * concluded from that that "an uninstrumented provider is not something a provider package can
+ * produce by forgetting" — but `providers` is a readonly array on a plain object, and the only way
+ * for E3 to add a provider is to hand over a **new registry**. That path never touches the wrapper.
+ * The guarantee held for the empty registry the plugin builds itself and for nothing that would ever
+ * actually run. A property that can only be read is not enforced; this is the mark that lets it be
+ * checked. See #208.
+ *
+ * ## What it does and does not prove
+ *
+ * It proves that *something calling itself `wrapper` said it had wrapped this object*. That is
+ * enough for the failure this defends against, which is a raw provider reaching `ctx.subagents`
+ * because a composition root forgot a call — and it is the whole of what it proves.
+ *
+ * It is not a security boundary. `Symbol.for` is a public key: anything in the process can write
+ * this property, and a wrapper that marks a provider whose sink is broken, full, or pointed at
+ * `/dev/null` produces exactly the same mark as one that works. Durable evidence is the sink's
+ * problem and is checked where the sink is, not here. Read this as a wiring assertion, in the same
+ * family as `conformanceProblems` — a thing the composition root states and the seam can hold it to.
+ *
+ * Two wrappers around one provider is refused rather than allowed, because it is not a harmless
+ * belt-and-braces: each layer writes its own events, and the log would then report every dispatch
+ * twice with no way for a reader to tell the duplicate from a genuine retry.
+ */
+export function markInstrumented<P extends SubagentProvider>(provider: P, wrapper: string): P {
+  if (wrapper === "") {
+    throw new Error("markInstrumented needs the name of what did the wrapping, not an empty string");
+  }
+  const already = instrumentedBy(provider);
+  if (already === wrapper) return provider;
+  if (already !== null) {
+    throw new Error(
+      `provider ${provider.id} is already marked as instrumented by ${already}; adding ${wrapper} ` +
+        "would put two wrappers around one provider and write every event twice",
+    );
+  }
+  Object.defineProperty(provider, INSTRUMENTED, {
+    value: wrapper,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
+  return provider;
+}
+
+/**
+ * What wrapped this provider, or `null` if nothing claims to have.
+ *
+ * Named as the provenance question rather than a boolean because that is what a refusal needs to
+ * print: "unmarked" and "marked by something you did not expect" are different wiring bugs.
+ */
+export function instrumentedBy(provider: SubagentProvider): string | null {
+  const mark = (provider as unknown as Record<symbol, unknown>)[INSTRUMENTED];
+  return typeof mark === "string" && mark !== "" ? mark : null;
+}
+
+/** Whether anything has claimed to instrument this provider. */
+export function isInstrumented(provider: SubagentProvider): boolean {
+  return instrumentedBy(provider) !== null;
+}
+
+/**
  * Whether a dispatch may be sent again.
  *
  * The whole point of the `unknown` verdict. A refusal was answered by the executor, so nothing
@@ -173,6 +268,11 @@ export interface SubagentRegistry {
  */
 export function isSafeToRetry(result: DispatchResult): boolean {
   return result.verdict === "refused";
+}
+
+/** True only for an accepted dispatch with complete, matching route evidence. */
+export function isRouteVerified(result: DispatchResult): boolean {
+  return result.verdict === "accepted" && isRouteEvidenceVerified(result.route);
 }
 
 /** What to do about a dispatch that did not plainly succeed, in a sentence. */
@@ -210,7 +310,12 @@ export function capabilityProblem(provider: SubagentProvider, call: OptionalCall
 }
 
 /** How a provider was passed over. Every candidate gets one; none is dropped silently. */
-export type RejectionRule = "duplicate-id" | "wrong-harness" | "cannot-observe" | "not-preferred";
+export type RejectionRule =
+  | "duplicate-id"
+  | "uninstrumented"
+  | "wrong-harness"
+  | "cannot-observe"
+  | "not-preferred";
 
 export interface Rejection {
   readonly provider: string;
@@ -218,7 +323,12 @@ export interface Rejection {
   readonly detail: string;
 }
 
-export type BlockRule = "invalid-request" | "no-providers" | "duplicate-id" | "no-candidate";
+export type BlockRule =
+  | "invalid-request"
+  | "no-providers"
+  | "duplicate-id"
+  | "uninstrumented"
+  | "no-candidate";
 
 export interface SelectedProvider {
   readonly selected: true;
@@ -258,6 +368,10 @@ export interface SelectionOptions {
  * exists for the `/swarm` path, and it is reused rather than paraphrased — a second, laxer check
  * here would let a dispatch through this seam that the other seam refuses, and the two seams are
  * supposed to be two encodings of one request.
+ *
+ * It then fails closed on telemetry: a registry holding any provider that nothing has marked as
+ * instrumented is refused whole, rather than the unmarked one being passed over. The argument is
+ * with the check itself.
  */
 export function selectProvider(
   registry: SubagentRegistry,
@@ -305,6 +419,35 @@ export function selectProvider(
       detail:
         `provider id(s) ${duplicates.join(", ")} are registered more than once; a run reference ` +
         "would not identify one executor",
+      rejected,
+    };
+  }
+
+  // A provider nothing has wrapped is a wiring defect, not a candidate that happens not to fit, so
+  // it fails the whole selection the way a duplicate id does rather than being quietly passed over.
+  //
+  // Skipping it instead would be worse than useless on the registry that matters — a half-wired one.
+  // Dispatches would keep succeeding through the wrapped half while the raw provider sat there
+  // reachable by anything that iterates `registry.providers` itself, and the first run that reached
+  // it would be the one run nobody could account for afterwards. The defect is the registry's, and
+  // that is the granularity the refusal is stated at.
+  const unmarked = registry.providers.filter((provider) => !isInstrumented(provider));
+  if (unmarked.length > 0) {
+    for (const provider of unmarked) {
+      rejected.push({
+        provider: provider.id,
+        rule: "uninstrumented",
+        detail: "nothing has marked this provider as instrumented, so its runs would leave no trace",
+      });
+    }
+    return {
+      selected: false,
+      rule: "uninstrumented",
+      detail:
+        `provider(s) ${unmarked.map((provider) => provider.id).join(", ")} reached the registry ` +
+        "without being wrapped for telemetry; a dispatch through them would run an agent that no " +
+        "log can account for. Register through the composition root that wraps, or call " +
+        "markInstrumented if something else already did",
       rejected,
     };
   }
@@ -372,7 +515,13 @@ const describeHarnesses = (provider: SubagentProvider): string =>
     : provider.capabilities.harnesses.join(", ");
 
 /** A provider declaration that contradicts itself or cannot be used. */
-export type ConformanceRule = "no-id" | "unusable-id" | "no-harnesses" | "blind" | "unstoppable";
+export type ConformanceRule =
+  | "no-id"
+  | "unusable-id"
+  | "no-harnesses"
+  | "blind"
+  | "unstoppable"
+  | "uninstrumented";
 
 export interface ConformanceProblem {
   readonly provider: string;
@@ -443,7 +592,14 @@ export function conformanceProblems(provider: SubagentProvider): readonly Confor
   return found;
 }
 
-/** Whether a registry is usable as it stands. Fatal problems only; the rest are reported, not blocking. */
+/**
+ * Whether a registry is usable as it stands. Fatal problems only; the rest are reported, not blocking.
+ *
+ * The two checks that live here rather than in `conformanceProblems` are the two that a provider
+ * cannot answer about itself: whether another provider took its id, and whether the composition root
+ * remembered to wrap it. Both are properties of the assembly, and both are visible at boot — which
+ * is when a deployment should hear about them, rather than at the first dispatch of the night.
+ */
 export function registryProblems(registry: SubagentRegistry): readonly ConformanceProblem[] {
   const found = registry.providers.flatMap((provider) => conformanceProblems(provider));
   for (const id of duplicateIds(registry.providers)) {
@@ -451,6 +607,17 @@ export function registryProblems(registry: SubagentRegistry): readonly Conforman
       provider: id,
       rule: "unusable-id",
       detail: "registered more than once; run references under this id are ambiguous",
+      fatal: true,
+    });
+  }
+  for (const provider of registry.providers) {
+    if (isInstrumented(provider)) continue;
+    found.push({
+      provider: provider.id,
+      rule: "uninstrumented",
+      // Fatal, and it says the same thing `selectProvider` will say: this registry cannot dispatch.
+      // Reporting it as merely diminished would describe a seam that in fact refuses every request.
+      detail: "not wrapped for telemetry, so selectProvider refuses every dispatch to this registry",
       fatal: true,
     });
   }

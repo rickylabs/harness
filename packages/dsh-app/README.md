@@ -54,6 +54,15 @@ mode: with the service present and empty, a dispatch reaches `selectProvider` an
 `no-providers` and a sentence saying why. Without the row it reaches `ctx.subagents` and throws on
 `undefined`, which reads as a broken daemon rather than an unconfigured one.
 
+It injects `harnessTelemetry` and stays `PENDING` without it, because a coordinator that can dispatch
+but cannot record loses runs silently. `instrument.ts` is what does the recording: it decorates each
+provider so every dispatch, steer, stop and liveness change reaches the sink, and marks the wrapper
+with `markInstrumented` so `selectProvider` can refuse a registry holding anything unmarked. The mark
+is the load-bearing half. Registration replaces the whole registry rather than passing through this
+package, so wrapping at the seam never reached a provider that E3 supplies — see
+[#208](https://github.com/rickylabs/harness/issues/208). The refusal happens where every provider has
+to pass no matter who registered it.
+
 ## `dsh-profile`
 
 A dsh profile is four artefacts in `$DSH_HOME/profiles/<name>/`, and getting one of them subtly
@@ -230,6 +239,37 @@ Each row takes its options from the profile's own patch layer, in the ordinary c
   credential key and there will not be one: the profile is committed, so `OPENROUTER_API_KEY` is
   read from the daemon's environment at dispatch, and a request that needs it and cannot find it is
   refused by name before a socket is opened.
+
+### Board session projection
+
+When dsh provides `ctx.sessionProjections`, `harness-board` also registers the strict
+`harnessBoard` projection. The service's synchronous `refresh(session, input)` accepts a
+caller-fetched GitHub issue cut and telemetry runs, derives the public milestone → epic → task →
+child-run tree, and appends two adjacent whole-value events: `todo/write`, followed by
+`harness/board-write`. GitHub remains authoritative. A model may replace its local todo list during
+a turn, and the next refresh replaces that list from the next board snapshot.
+
+`BoardRefreshInput.observations` optionally carries telemetry's typed governance view from the same
+caller-owned evidence cut. The strict projection keeps its account windows, provider spend, local
+capacity, and item-scoped refused admissions. Omitting it publishes explicit unavailable governance
+rather than dropping the field or implying that every regime allows dispatch.
+
+Refresh fails before either append when the projection registry or published `todos` projection is
+absent, board-item normalization fails, or the strict public DTO rejects the result. The board
+service itself still loads without either optional dsh capability, so profiles that only use the
+pure projector keep working.
+
+Run the executable integration smoke with no agent or model:
+
+```bash
+pnpm --filter @rickylabs/dsh-app run smoke:board-projection
+```
+
+It composes the published `SessionStore`, `SessionProjectionRegistry`, `ToolRuntime`, and
+`dsh-tool-todo` plugin with `allowParallelInProgress: true`, loads `harness-board`, refreshes a live
+session twice, checks todo authority, a parent/child run attachment, and explicit unavailable
+governance, then verifies projection removal on plugin disposal. The focused composition test also
+passes a fresh synthetic refusal through `refresh` and checks the published admission fields.
 
 ## Tests
 

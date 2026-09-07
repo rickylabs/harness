@@ -68,6 +68,17 @@ export const STATUS_LIFECYCLE = [
 export const STATUS_TERMINAL = "status:shipped" as const;
 
 /**
+ * The phase that gates merge — the last column before {@link STATUS_TERMINAL}.
+ *
+ * Typed as a member of {@link STATUS_LIFECYCLE} rather than as a bare string. `skill/render.ts`
+ * held its own copy of this literal under a comment promising the skill text "cannot drift from
+ * the lifecycle array", which was a promise nothing kept: renaming the phase would have left the
+ * generated skill telling agents to set a label that no longer exists, and every gate would still
+ * have been green. The annotation is what makes the promise true — the rename stops compiling.
+ */
+export const STATUS_READY_MERGE: (typeof STATUS_LIFECYCLE)[number] = "status:ready-merge";
+
+/**
  * The audited exception path for a red close gate.
  *
  * A flag rather than a status, because a status is the board column and this was never a column.
@@ -80,6 +91,26 @@ export const CLOSE_GATE_OVERRIDE = "flag:close-gate-override" as const;
 
 /** What {@link CLOSE_GATE_OVERRIDE} was called before #100. Declared only so it can be retired. */
 export const RETIRED_CLOSE_GATE_STATUS = "status:close-gate-override" as const;
+
+/**
+ * Work that has stopped because a human has to decide something, not because an agent is on it.
+ *
+ * Every phase in {@link STATUS_LIFECYCLE} describes a state of *agent* work, so an item waiting on
+ * the owner keeps whichever column the work reached and the board reports it as running. On the
+ * repository this was written against, that was four items at once, one of them a `p1` whose
+ * remaining half could not start until a decision issue was answered (#240).
+ *
+ * A flag rather than an eleventh phase, for the same reason as {@link CLOSE_GATE_OVERRIDE} and one
+ * more. Phases are exclusive, so a `status:blocked` would make every owner-gated item choose
+ * between two true statements — and it would choose *against* the more informative one, because
+ * the phase is the record of how far the work got and a column named for who is holding it erases
+ * that. Additive, the two facts coexist: the phase says how far, the flag says who is next.
+ *
+ * Deliberately narrow. It does not mean "blocked", which gets used for a red build, a dependency,
+ * or a PR that has not been reviewed yet — all of which the board can already see. It means the
+ * next actor is a person and no amount of agent time will move it.
+ */
+export const OWNER_DECISION = "flag:owner-decision" as const;
 
 const c = {
   type: "c5def5",
@@ -162,9 +193,24 @@ export const EVAL_LABELS: readonly LabelSpec[] = [
 
 /** Cross-cutting, and additive: a flag never decides which column an item is in. */
 export const FLAG_LABELS: readonly LabelSpec[] = [
+  // The marker `projectBoard` reads to decide an issue is an epic, and the label `detectEpics`
+  // searches for. It is core because without it a freshly forged repository has no way to mark an
+  // epic at all: the taxonomy would create the `epic:<slug>` children and nothing that identifies a
+  // parent, so `detect` would search for a label its own `init` never made (#202).
+  //
+  // The family is `flag`, not `epic`, and that is deliberate rather than convenient. `epic` is the
+  // *detected* family — `epicLabel` stamps `epic:<slug>` from real issues — and `CORE_FAMILIES` is
+  // derived from whatever families appear in the core, so a core row in family `epic` would silently
+  // reclassify every derived slug as portable. `flag` is also the accurate description: this label
+  // is additive and never decides a column, which is exactly what this list promises.
+  spec("epic", c.umbrella, "Epic — tracked work stream", "flag"),
   spec("rfc", c.umbrella, "Request for Comments — substantial or breaking design change", "flag"),
   spec("breaking", c.danger, "Introduces a breaking change", "flag"),
   spec(CLOSE_GATE_OVERRIDE, c.danger, "Audited exception to the closing-keyword acceptance gate", "flag"),
+  // Coloured like `priority:p1` rather than like the two flags above, because it is the one label
+  // on the board addressed to a particular person. Those describe the change; this one is a
+  // request, and it should read as one at a glance.
+  spec(OWNER_DECISION, c.p1, "Waiting on an owner decision — no agent can proceed", "flag"),
 ];
 
 /**

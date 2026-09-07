@@ -9,14 +9,29 @@ provider, no API key, and nothing that costs money.
 
 ## Before you start
 
-You need four things, and you will not be asked for a fifth later:
+You need six things, and you will not be asked for a seventh later:
 
-- **Node 24 or newer** and **[pnpm](https://pnpm.io) 11**.
+- **A POSIX-compatible shell** (such as `bash` or `zsh`). The paths, inline environment assignments,
+  line continuations, and pipes shown below use POSIX syntax and require translation for PowerShell
+  or `cmd.exe`.
+- **Node 24 or newer** (the declared and recommended baseline) and **[pnpm](https://pnpm.io) 11**.
 - **The [`gh`](https://cli.github.com) CLI, authenticated** — `gh auth status` should print a
   logged-in account. Steps 2 and 3 read and write GitHub through it.
 - **A scratch repository you own**, empty, that you do not mind changing. Call it `owner/scratch`
   below and substitute your own throughout. Step 2 writes labels into it.
+- **A local clone of that scratch repository**, sitting beside this one (below, it is assumed to
+  be at `../scratch`). `dsh-forge` writes files into a checkout, not into GitHub, so it needs a
+  working tree to write into — and writing into this checkout would be a mistake explained at
+  step 2.
 - About 500 MB of disk for `node_modules`.
+
+> [!NOTE]
+> **Platform and shell boundaries.** The commands in this tutorial target a POSIX shell. Owner
+> testing recorded on [#212](https://github.com/rickylabs/harness/issues/212) at commit `4ff50fe`
+> under Node 22.20.0 confirmed that build, tests, the offline profile and telemetry path, and
+> read-only `forge doctor` succeeded on Windows; that record does not establish the GitHub-write half
+> of step 2 or step 3 on Windows. CI currently exercises Ubuntu with Node 24; this historical
+> observation does not establish current Windows CI coverage.
 
 > [!WARNING]
 > **Do not use `rickylabs/harness` as your scratch repository.** In that repository the `harness`
@@ -43,27 +58,50 @@ Now the tests:
 pnpm test
 ```
 
-Each package prints its own totals, one line per package:
+Each package prints its own totals — a `pass` line and a `fail` line per
+package, prefixed with its path, like `packages/dsh-app test: … pass …`
+(illustrative expectation — source-derived; counts vary as packages change).
+The counts grow as the project does. The number that matters is `fail 0`,
+on every package, and `pnpm test` exiting `0`.
 
-```
-packages/dsh-app test: # pass 122
-packages/dsh-app test: # fail 0
-```
-
-The counts grow as the project does. The number that matters is `# fail 0`, on every package, and
-`pnpm test` exiting `0`.
-
-**If it fails.** A failure in `pnpm install` about the Node version means you are below 24 — check
-`node --version`. A failure in `pnpm run build` that names `check:docs` means a CLI changed without
-its generated reference page being regenerated; run `pnpm run docs:cli` and commit the result. A
-test failure on a clean clone is a real bug, and worth an issue.
+**If it fails.** Node 24 is the declared and recommended baseline. An engine warning does not by
+itself prove installation failed. (Owner testing recorded on
+[#212](https://github.com/rickylabs/harness/issues/212) at `4ff50fe` completed install, build, and
+tests under Node 22.20.0 after an engine warning, but that is a version-specific historical observation
+rather than a supported baseline or guarantee.) If `pnpm install` fails with an engine error, check
+`node --version`. A failure in `pnpm run build` that names `check:docs` means a CLI changed without its
+generated reference page being regenerated; run `pnpm run docs:cli` and commit the result. One that
+names `check:tutorial` means an output block on *this* page no longer matches what the command
+prints — the check names the file, the line and the first differing line. A test
+failure on a clean clone is a real bug, and worth an issue.
 
 ## Step 2 — Install the board process into your repository
 
-The tools reach GitHub through `gh`. Ask them what they can see first:
+This step's tools do two different things: they read and write GitHub, and
+they write *files* into a checkout. Both facts decide how you invoke them
+here.
+
+A warning first, because `--cwd` decides which checkout gets generated files
+and defaults to the directory you are standing in. Forge now checks its local
+writers before they probe GitHub or write: if explicit `--repo owner/scratch`
+disagrees with the GitHub origin enclosing `--cwd`, the command refuses with
+exit `2` and names both repositories. It does the same when the final `--cwd`
+path does not exist but an existing parent belongs to a different checkout.
+Use `doctor` with the same arguments to inspect the target; `--force` accepts a
+deliberate mismatch and prints a warning.
+
+Keep the destination explicit anyway. Every command in this step runs from the
+harness clone, with its binaries, and **every one passes `--cwd ../scratch`** —
+the scratch clone you made before you started. That makes the intended output
+location reviewable before the guard is needed. A checkout with no GitHub
+origin supplies no contradictory identity, so Forge preserves portable local
+eject/install workflows rather than guessing; explicit `--cwd` remains the
+reliable way to put generated files where they belong.
+
+Ask them what they can see first:
 
 ```bash
-node packages/forge/dist/cli.js doctor --repo owner/scratch
+node packages/forge/dist/cli.js doctor --repo owner/scratch --cwd ../scratch
 ```
 
 <details>
@@ -72,49 +110,94 @@ node packages/forge/dist/cli.js doctor --repo owner/scratch
 Every package here except `contracts` is `private: true`, so pnpm links their executables where a
 *dependent* resolves them, not at the repository root. Running the built entry point is the honest
 invocation from a fresh clone, and it is what this repository's own scripts do. The root README
-[explains it once](../../README.md#quickstart) and nothing else needs to.
+[explains it once](../../README.md#local-proof-first) and nothing else needs to.
 
 </details>
 
-`doctor` writes nothing. It reports the repository it resolved, how it reaches GitHub, how many
-labels are already there, and what it derived from the repository itself:
-
-```
-repository       owner/scratch
-github           gh — gh CLI (gh version 2.97.0 (2026-07-31))
-labels present   0
-labels proposed  61
-lane prefix      topic:
-skill dirs       .claude/skills
-```
+`doctor` writes nothing. (It inspects the target checkout and GitHub context without invoking create or
+write operations; capability-isolated transport remains tracked under
+[#215](https://github.com/rickylabs/harness/issues/215).) It reports the repository it resolved, how
+it reaches GitHub, how many labels are already there (`labels present`), how many it proposes
+(`labels proposed`), the lane prefix it detected (`lane prefix`), and the skill directories it found
+(`skill dirs`).
 
 Next, see what it would do without doing it:
 
 ```bash
-node packages/forge/dist/cli.js init --repo owner/scratch --dry-run
+node packages/forge/dist/cli.js init --repo owner/scratch --cwd ../scratch --dry-run
 ```
 
-Read that output before continuing. It is the whole change, in advance. Then apply it:
+Read that output before continuing. It is the whole change, in advance — including the files it
+will write, which it names relative to `../scratch`. Then apply it:
 
 ```bash
-node packages/forge/dist/cli.js init --repo owner/scratch
+node packages/forge/dist/cli.js init --repo owner/scratch --cwd ../scratch
 ```
 
-`init` does three things in order: writes `.github/labels.yml`, creates the labels on GitHub, and
-installs the `board-process` skill under `.claude/skills/`. It **never deletes a label** — deleting
-one would take with it the record of everything that ever carried it. Where the file and the live
-repository disagree, `init` reports the conflict and exits `1` rather than guessing which is right.
+`init` does three things in order: writes `.github/labels.yml` into the scratch checkout, creates
+the labels on GitHub, and installs the `board-process` skill under the scratch checkout's
+`.claude/skills/`. Those two files are now **scratch repository content**: review them and commit
+them there, in the usual way. `init` **never deletes a label** — deleting one would take with it
+the record of everything that ever carried it. Where the file and the live repository disagree,
+`init` reports the conflict and exits `1` rather than guessing which is right.
 
-**If it fails.** Exit `3` means no usable transport: `gh` is missing, not authenticated, or GitHub is
-unreachable — `gh auth status` tells you which. Exit `1` is not a crash; it is drift, and the output
-names each conflicting label. A conflict on a fresh scratch repository usually means the repository
-was not as empty as you thought.
+One trap to know before you trust the exit code. `init` exits `0` when it wrote
+the local files and the GitHub half never ran: with no usable transport it prints
+`skipped apply` and converts that to success on purpose, because ejecting the
+file is real work worth keeping. A label GitHub *refuses* is not treated that
+way — apply stops at it, prints `FAILED at <label>`, and `init` exits `1`. So the
+gap is narrow and specific: exit `0` means the files were written and nothing was
+refused, but the labels may never have been attempted at all. Three readbacks
+close it, in increasing strength. The first is local file review — the files
+really are in the scratch checkout:
+
+```bash
+git -C ../scratch status --short
+```
+
+which should show `.github/` and `.claude/` as new (illustrative expectation — source-derived; confirms what `init`
+wrote locally and nothing more). The other two read GitHub, so they need the transport — and neither
+has been executed by this tutorial's author; they are instructions, not receipts. First a raw
+readback: list what GitHub actually has, and compare it against the ejected file yourself (instruction;
+live readback not executed by the author):
+
+```bash
+gh label list --repo owner/scratch --limit 100
+```
+
+Then the strict comparison — the ejected file against the live repository,
+naming every drift:
+
+```bash
+node packages/forge/dist/cli.js labels check --repo owner/scratch --cwd ../scratch
+```
+
+On a repository where `init` fully succeeded, that prints `nothing to do —
+the repository already carries this taxonomy` and exits `0` (illustrative expectation —
+source-derived; unexecuted against a live GitHub repository). **If either
+GitHub command fails or shows missing labels, stop there and fix the cause
+before continuing** — later steps only make sense if the labels are real.
+
+**If it fails.** `labels check` — and `labels plan` and `labels apply` — are the commands that
+exit `3` with no usable transport: `gh` is missing, not authenticated, or GitHub is unreachable —
+`gh auth status` tells you which. `labels check` also exits non-zero when the live repository and
+the ejected file disagree, naming each drifted label; on a fresh scratch repository that usually
+means the apply never actually landed, and re-running `init` resumes it — it never deletes a
+label, so re-running is safe. `doctor` and `init` do not exit `3`: `doctor` reports what it could
+see and exits `0`, and `init` turns a missing transport into `0` after writing its files. A
+non-zero from `init` reflects an explicit refusal or error: exit `1` means a label was refused
+by GitHub or conflicted with the live repository, while exit `2` means `--repo` mismatched
+`--cwd` or invocation arguments were malformed — never that GitHub was simply out of reach (which
+exits `0` with skipped apply), which is exactly why the readbacks above exist.
 
 ## Step 3 — File something, move it, and watch the column change
 
-The label taxonomy has one rule that matters more than the rest: **exactly one `status:` label on an
-open item at a time.** That label *is* the board column. Two of them means the column is a lie, and
-the board says so out loud.
+The label taxonomy has one rule that matters more than the rest: **exactly one `status:` label on
+an open item at a time.** That label *is* the board column. Two of them means the column is a lie
+— and every board view says so: a banner above the work, `!` beside the affected rows, and the
+word `check` in the banner, because the banner counts and marks while `check` names each
+contradiction and exits non-zero. When a view shows you that banner, run the check before doing
+anything about the column underneath it.
 
 File an issue:
 
@@ -131,7 +214,7 @@ Project the board:
 node packages/board/dist/cli.js columns --repo owner/scratch
 ```
 
-Your issue is under `## triage`. Now move it one column, exactly as an agent would:
+Your issue is under `## triage` (illustrative expectation — source-derived). Now move it one column, exactly as an agent would:
 
 ```bash
 gh issue edit <number> --repo owner/scratch \
@@ -144,7 +227,7 @@ And project it again:
 node packages/board/dist/cli.js columns --repo owner/scratch
 ```
 
-The issue is now under `## impl`, and the triage count went down by one. That is the whole
+The issue is now under `## impl`, and the triage count went down by one (illustrative expectation — source-derived). That is the whole
 mechanism. There is no database, no sync job and no daemon: GitHub holds the truth, and `dsh-board`
 projects it on demand. Nothing had to be running for the column to be correct.
 
@@ -156,14 +239,18 @@ node packages/board/dist/cli.js check --repo owner/scratch
 
 On a healthy board that is one line and exit `0`:
 
-```
+*(Illustrative output — source-derived; unexecuted against a live GitHub repository)*
+<!-- verify: none - writes to and reads from a live GitHub repository -->
+```text
 no anomalies — every item has exactly one status label
 ```
 
 **If it fails.** `check` exits `1` when the board contradicts itself, and names every case. The
 common ones read like this:
 
-```
+*(Illustrative output — source-derived; unexecuted)*
+<!-- verify: none - a synthetic contradiction a healthy board never produces -->
+```text
 ## closed-but-unshipped
   #46: closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
@@ -180,38 +267,62 @@ because it did not ship.
 Steps 2 and 3 used the CLIs directly. The same code also loads into `dsh` as plugins, and the
 profile is what registers them.
 
-Install it into a scratch home directory so nothing touches your real one:
+> [!NOTE]
+> **Which output blocks are checked.** Every output block on this page carries a machine-readable
+> `verify:` directive in an HTML comment above it, and `pnpm run check:tutorial` — part of
+> `pnpm run build` — reads all of them. So each block is one of two things, and which one is never a
+> matter of trust:
+> 1. **Executed transcripts (normalized).** Re-run on every build and compared against what the
+>    command above actually prints. Machine-specific paths are normalized to display placeholders
+>    first: `/tmp/dsh-home` stands for `$PROFILE_HOME`, `/tmp/tel-home` for `$TELEMETRY_HOME`, and
+>    `/path/to/harness` for your checkout path — none of which are the real temporary paths. Where a
+>    block shows only part of a long output it is marked as an excerpt, and the check requires those
+>    lines to appear together and in order rather than to be the whole of it. Trailing whitespace and
+>    terminal blank lines are trimmed on both sides of the comparison.
+> 2. **Illustrative output (unexecuted).** Derived from source contracts rather than run here: live
+>    GitHub responses, and the synthetic failures a healthy run never produces. The check prints this
+>    list with its reasons on every run, so the boundary between what is proved and what is trusted
+>    is something you can read rather than assume.
+
+Create a unique temporary profile home directory with `mktemp -d` so nothing touches your real one:
 
 ```bash
-node packages/dsh-app/dist/cli.js install --home /tmp/dsh-home
+PROFILE_HOME=$(mktemp -d)
+node packages/dsh-app/dist/cli.js install --home "$PROFILE_HOME"
 ```
 
-```
+*(Executed transcript — normalized; see note above)*
+<!-- verify: exact -->
+```text
 profile   rickylabs
 surface   tui
+directory /tmp/dsh-home/profiles/rickylabs
 bundles   @deepseek-ai/dsh-base, @rickylabs/dsh-app
-rows      harness-subagents, harness-board, harness-coordinator, harness-telemetry
+rows      harness-subagents, harness-board, harness-coordinator, harness-telemetry, harness-llm
+link      node_modules/@rickylabs/dsh-app -> /path/to/harness/packages/dsh-app
 
 wrote  package.json
 wrote  pnpm-workspace.yaml
 wrote  cordis.patch.yml
 wrote  node_modules/@rickylabs/dsh-app
 
-4 rows will be inserted. Verify with:
+5 rows will be inserted. Verify with:
   dsh --profile rickylabs --dump-config
 ```
 
 Take it up on that. `dsh` is resolvable from the package that depends on it:
 
 ```bash
-DSH_HOME=/tmp/dsh-home \
+DSH_HOME="$PROFILE_HOME" \
   packages/dsh-app/node_modules/.bin/dsh --profile rickylabs --dump-config
 ```
 
 The output is long — it is the entire plugin graph. The part you are looking for is at the very
-bottom, after the whole base bundle:
+bottom, after the whole base bundle (excerpted below to show only the appended bundle rows):
 
-```
+*(Executed excerpt — normalized, base bundle omitted; see note above)*
+<!-- verify: contains -->
+```text
 # == @rickylabs/dsh-app
 - id: harness-subagents
   name: '@rickylabs/dsh-app/plugins/subagents'
@@ -221,16 +332,19 @@ bottom, after the whole base bundle:
   name: '@rickylabs/dsh-app/plugins/coordinator'
 - id: harness-telemetry
   name: '@rickylabs/dsh-app/plugins/telemetry'
+- id: harness-llm
+  name: '@rickylabs/dsh-app/plugins/llm'
 ```
 
-Four rows, appended after the base bundle rather than replacing anything in it. That is the profile
+Five rows, appended after the base bundle rather than replacing anything in it. That is the profile
 doing its one job. To confirm later that it is still installed and unmodified:
 
 ```bash
-node packages/dsh-app/dist/cli.js check --home /tmp/dsh-home
+node packages/dsh-app/dist/cli.js check --home "$PROFILE_HOME"
 ```
 
-which prints `installed and matching.` and exits `0`.
+which prints `installed and matching.` (preceded by the profile configuration summary) and exits `0`
+(executed expectation, normalized; see note above).
 
 **If it fails.** `check` exits non-zero when the installed profile has drifted from what this
 repository would generate — usually because the working tree moved after `install` wrote the link.
@@ -242,15 +356,24 @@ its own prerequisites, and it belongs in a how-to rather than here.
 Telemetry answers one question: *what has been running, and where do I look when one of them went
 wrong.* It reads from disk. No agent needs to be awake, and nothing here reaches the network.
 
+Create a separate unique temporary telemetry home with `mktemp -d`. Each telemetry invocation passes
+`--home "$TELEMETRY_HOME"` and explicitly removes the four telemetry environment overrides
+(`DSH_TELEMETRY_DIR`, `DSH_TELEMETRY_ARCHIVE`, `DSH_TELEMETRY_MAX_BYTES`, and
+`DSH_TELEMETRY_GENERATIONS`) via `env -u` so no outer environment variables can redirect telemetry
+paths away from `--home`.
+
 Start by asking where it writes:
 
 ```bash
-node packages/telemetry/dist/cli.js where --home /tmp/tel-home
+TELEMETRY_HOME=$(mktemp -d)
+env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js where --home "$TELEMETRY_HOME"
 ```
 
 It prints the live log path, the rotation policy behind it, and — the useful part — the ordered list
-of places a failing run hides, each with the string to grep for. That list is the answer to "the run
-died and the transcript says nothing", which is the normal case rather than the exceptional one.
+of places a failing run hides, each with the string to grep for (executed expectation, verified in test
+receipts; no live daemon or background queue required; see note above). That list is the answer to "the
+run died and the transcript says nothing", which is the normal case rather than the exceptional one.
 
 Nothing has run yet, so write one event. `record` reads JSONL on stdin, one event per line:
 
@@ -258,30 +381,36 @@ Nothing has run yet, so write one event. `record` reads JSONL on stdin, one even
 printf '%s\n' \
   '{"runId":"demo-1","kind":"run.started","at":"2026-09-05T10:00:00Z","detail":{"source":"claude","model":"claude-opus-5"}}' \
   '{"runId":"demo-1","kind":"run.finished","at":"2026-09-05T10:04:00Z","detail":{"source":"claude","outcome":"complete"}}' \
-  | node packages/telemetry/dist/cli.js record --home /tmp/tel-home
+  | env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js record --home "$TELEMETRY_HOME"
 ```
 
-```
+*(Executed transcript — normalized; see note above)*
+<!-- verify: exact -->
+```text
 recorded 2 event(s) to /tmp/tel-home/observability/dsh-telemetry.jsonl
 ```
 
 Read it back:
 
 ```bash
-node packages/telemetry/dist/cli.js runs --home /tmp/tel-home
+env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js runs --home "$TELEMETRY_HOME"
 ```
 
-```
-2026-09-05T10:04:00Z  claude    complete claude-opus-5
-```
+One line, newest first: the finish time, the seam (`source`), the outcome, and the model,
+padded into columns (e.g. `2026-09-05T10:04:00Z  claude    complete claude-opus-5`; executed expectation, normalized; see note above).
 
 And ask what you would open first if that run had gone wrong:
 
 ```bash
-node packages/telemetry/dist/cli.js why demo-1 --home /tmp/tel-home
+env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js why demo-1 --home "$TELEMETRY_HOME"
 ```
 
-```
+*(Executed transcript — normalized, terminal blank lines omitted; see note above)*
+<!-- verify: exact -->
+```text
 demo-1 (claude, complete) — look here, in this order:
 
   the run's own transcript
@@ -293,10 +422,18 @@ demo-1 (claude, complete) — look here, in this order:
     why: a run that never appears is not a failed run; the dispatcher deferred it, and only its log says so
 ```
 
+Clean up the two temporary directories when you are done:
+
+```bash
+rm -rf "$PROFILE_HOME" "$TELEMETRY_HOME"
+```
+
 **If it fails.** Exit `3` means the picture is incomplete rather than wrong, and the output says
 exactly which part is missing. Two are worth recognising, because you will hit both:
 
-```
+*(Illustrative output — source-derived; unexecuted)*
+<!-- verify: none - an exit-3 path that needs a second machine's store -->
+```text
   claude: no store on this box — nothing has run here
   live log: 1 run(s) named no seam and were left out — add "source" to the event
 ```
@@ -305,7 +442,8 @@ The first is not an error — it is telemetry declining to claim it saw everythi
 The second is: an event without `detail.source` cannot be joined to a seam, so it is counted and
 reported rather than silently guessed at. `source` must be one of `claude`, `codex` or `opencode`,
 and `outcome` one of `running`, `complete`, `failed` or `unknown`. An `outcome` outside that set is
-read as unknown, which is why the run in your first attempt may have come back as `unknown`.
+read as unknown, which is why the run in your first attempt may have come back as `unknown`
+(source-derived illustrative explanation).
 
 ## What you just did
 
@@ -314,7 +452,7 @@ Five things, none of which needed a server:
 1. Built the workspace, with its own consistency checks running as part of the build.
 2. Installed a board taxonomy and an agent-readable process into a repository, additively.
 3. Moved an item through a column and saw the projection change, with nothing running in between.
-4. Registered four plugins into a `dsh` profile and confirmed they land where they should.
+4. Registered five plugins into a `dsh` profile and confirmed they land where they should.
 5. Recorded a run and read back both its state and the ordered list of places to look when one fails.
 
 ## Where to go next

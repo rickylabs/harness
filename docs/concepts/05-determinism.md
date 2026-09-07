@@ -54,11 +54,23 @@ generated *and* readable without a network call.
 ## Invariants that live between packages
 
 Some facts are true of the workspace and of no single package in it, so they are checked by scripts
-the build runs before anything else — `check:graph`, `check:lifecycle`, `check:publish`.
+the build runs around the per-package compiles — `check:graph`, `check:lifecycle`, `check:publish`,
+`check:label-registry`.
 
 The lifecycle check is the one from the story above. Neither package could catch it: `board` must not
 depend on `forge`, because a projector that imports its own installer is no longer projecting
 anything. So the invariant is asserted from outside both, where it is actually true.
+
+The label-registry check is the same shape one level out. The lifecycle check compares two lists of
+*phases*; this one compares the labels the projector branches on against the labels the taxonomy
+creates. That comparison had no home for as long as the vocabulary lived as literals scattered
+through the projection: `type:epic` sat in an epic predicate for the life of the file and was never
+once true, because nothing creates that label. Types could not catch it — `labels.includes` takes a
+string and every string is well-typed — and a fixture that manufactured the label gave the dead
+branch a passing test. So the literals became exported data in `packages/board/src/labels.ts`, which
+is what makes the set comparable at all, and the check runs it in both directions: a label the code
+reads and the taxonomy never creates is a branch that cannot be taken, and a value the taxonomy
+creates and the code never enumerates sorts silently to the end of every column.
 
 The graph check exists for a similar reason. `pnpm -r run build` exits 0 with a missing TypeScript
 project reference, because pnpm builds from the manifest graph and TypeScript resolves through the
@@ -91,10 +103,20 @@ comparison running in CI, what holds it true is a convention — someone remembe
 and conventions decay silently, which is the failure this page opened with.
 
 Documentation was the largest such gap, which is why the docs lane treats it as an engineering
-problem rather than a writing one. The [CLI reference](../reference/cli/README.md) is now generated
-from the CLIs and byte-compared by `pnpm run check:docs`, inside the same `pnpm run build` CI already
-runs; links are next ([#147](https://github.com/rickylabs/harness/issues/147)). The rule that work
-serves is the one stated on the [docs index](../README.md#the-rule-these-docs-are-held-to):
+problem rather than a writing one. The [CLI reference](../reference/cli/README.md) is generated
+from the CLIs and byte-compared by `pnpm run check:docs`, and relative links and anchors are
+resolved by `pnpm run check:links` — both inside the same `pnpm run build` CI already runs.
+
+Output pasted into hand-written prose was the last piece, and the hardest, because the page cannot
+be generated: a tutorial's value is the prose around the output, so it stays hand-written and drifts
+like anything else. It did, in four places, and nothing went red —
+[#212](https://github.com/rickylabs/harness/issues/212) is the recorded instance. `pnpm run
+check:tutorial` closes it from the other side: rather than generate the page, it re-runs the command
+above each block and compares. What that leaves is a smaller and much better-behaved gap — output
+that genuinely cannot be re-run here, such as a live GitHub response. Those blocks are marked, and
+the check prints them with their reasons on every pass, so the boundary between what is proved and
+what is trusted is a list rather than an assumption. The rule all of this serves is the one stated
+on the [docs index](../README.md#the-rule-these-docs-are-held-to):
 
 > Every document either states facts it owns, or is generated from the code that owns them.
 

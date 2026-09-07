@@ -21,6 +21,7 @@ import {
   type TelemetrySnapshot,
 } from "./model.js";
 import { compareStrings } from "./order.js";
+import { unavailableGovernance, type GovernanceView } from "./observations.js";
 
 /** Runs keyed by parent, so a tree can be built in one pass rather than by repeated scanning. */
 function childrenByParent(runs: readonly RunRecord[]): Map<string, RunRecord[]> {
@@ -148,6 +149,8 @@ export interface SnapshotInput {
   readonly items: readonly BoardItemRef[];
   /** Notes carried in from backfill, so one snapshot reports every reason it is incomplete. */
   readonly notes?: readonly string[];
+  /** Point-in-time governance input. Omission remains explicit in the resulting snapshot. */
+  readonly governance?: GovernanceView;
 }
 
 /** Group attributed runs under the epic of the item they joined to. */
@@ -192,6 +195,10 @@ export function buildSnapshot(input: SnapshotInput): TelemetrySnapshot {
     // session that was resumed or compacted is written to more than one transcript — so the same id
     // legitimately arrives several times, each carrying a different slice of the work. Nothing is
     // dropped and nothing is merged; the operator is told that `why <id>` will be ambiguous.
+    //
+    // That is the legitimate cause, and it used to be the minority one: most of what this note
+    // reported was `backfill/claude.ts` filing every subagent under the id of the session that
+    // spawned it. Fixing that upstream is why the counts here are now small enough to read.
     const worst = [...repeated.entries()]
       .sort(([aId, a], [bId, b]) => b - a || compareStrings(aId, bId))
       .slice(0, 3)
@@ -228,7 +235,8 @@ export function buildSnapshot(input: SnapshotInput): TelemetrySnapshot {
     epics,
     unattributed,
     quota: latestQuota(input.runs),
-    notes,
+    governance: input.governance ?? unavailableGovernance("no --observations supplied"),
+    notes: notes.sort(compareStrings),
   };
 }
 

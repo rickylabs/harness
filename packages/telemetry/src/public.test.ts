@@ -11,7 +11,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import type { RunRecord, TelemetrySnapshot } from "./model.js";
-import { publicRun, publicRuns, publicSnapshot, PUBLIC_RUN_KEYS } from "./public.js";
+import { parseGovernanceObservation, unavailableGovernance, type GovernanceView } from "./observations.js";
+import { publicGovernance, publicRun, publicRuns, publicSnapshot, PUBLIC_RUN_KEYS } from "./public.js";
 
 const RUN: RunRecord = {
   id: "ses-a",
@@ -79,11 +80,63 @@ describe("the published envelopes", () => {
       ],
       unattributed: [{ run: { ...RUN, id: "ses-c" }, item: null, children: [] }],
       quota: [],
+      governance: unavailableGovernance("no --observations supplied"),
       notes: [],
     };
     const published = publicSnapshot(snapshot, true);
     assert.equal(published.complete, true);
     assert.equal(JSON.stringify(published).includes("origin"), false);
     assert.equal(JSON.stringify(published).includes(".jsonl"), false);
+  });
+});
+
+describe("publicGovernance", () => {
+  it("projects the explicit allowlist and every pending approval field", () => {
+    const parsed = parseGovernanceObservation({
+      observedAt: "2026-09-04T21:55:00.000Z",
+      validUntil: "2026-09-04T22:05:00.000Z",
+      provenance: "synthetic:test",
+      state: {
+        generatedAt: "2026-09-04T21:55:00.000Z",
+        regimes: [
+          { regime: "subscription", state: "allow", accounts: [], note: null },
+          { regime: "metered", state: "allow", providers: [], note: null },
+          { regime: "capacity", state: "allow", hosts: [], note: null },
+        ],
+        pending: [{
+          id: "approval-1",
+          kind: "dispatch-admission",
+          summary: "Synthetic approval",
+          item: 205,
+          runId: null,
+          regime: "subscription",
+          requestedAt: "2026-09-04T21:54:00.000Z",
+          expiresAt: null,
+        }],
+        notes: ["synthetic note"],
+      },
+      admissions: [{
+        item: { number: 205 },
+        regime: "subscription",
+        state: "pause",
+        observedAt: "2026-09-04T21:54:00.000Z",
+        validUntil: "2026-09-04T22:01:00.000Z",
+        provenance: "synthetic:dispatcher",
+        outcome: { accepted: false, reason: "quota-paused", detail: "binding window exhausted" },
+      }],
+    }, "2026-09-04T22:00:00.000Z");
+    assert.notEqual(parsed.availability, "unavailable");
+    const withPrivateCanary = { ...parsed, localPath: "/home/private/observations.json" } as unknown as GovernanceView;
+    const published = publicGovernance(withPrivateCanary);
+    assert.deepEqual(Object.keys(published).sort(), [
+      "admissions", "availability", "observedAt", "provenance", "state", "unavailableReason", "validUntil",
+    ]);
+    assert.deepEqual(Object.keys(published.state?.pending[0] ?? {}).sort(), [
+      "expiresAt", "id", "item", "kind", "regime", "requestedAt", "runId", "summary",
+    ]);
+    assert.deepEqual(Object.keys(published.admissions[0] ?? {}).sort(), [
+      "availability", "item", "observedAt", "outcome", "provenance", "regime", "state", "validUntil",
+    ]);
+    assert.equal(JSON.stringify(published).includes("/home/private"), false);
   });
 });

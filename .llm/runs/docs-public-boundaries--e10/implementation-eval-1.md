@@ -1,0 +1,17 @@
+Independent GLM5.3Flash provider-default, source-only review at6044541. Coordinator executed the adopted gates; reviewer executed nothing.
+
+## FAIL_FIX
+
+One concrete defect found. Everything else verified clean against source.
+
+**Finding 1 — verbatim duplicated paragraph (introduced by this change).**
+`docs/tutorials/01-from-clone-to-board.md:428-433` and `:435-439` repeat the identical sentence block ("The first is not an error … may have come back as `unknown`"). The second copy is not a labeled variant — it drops the `(source-derived illustrative explanation)` class marker the first copy carries, so it is an unlabeled output-shaped expectation under the very rule this run instituted (`docs/README.md:44-48`, `docs/tutorials/README.md:33-37`). The worklog census (`worklog.md:97`) lists this prose once, so the census and the artifact disagree. Bounded fix: one file, delete one of the two copies (~11 lines). Everything else in the manifest stands; re-evaluation after that deletion is a formality.
+
+**Verified clean (source-checked, not adopted):**
+- Node 24 declared/recommended/CI, correctly separated from the historical observation: `package.json:9-11` (`engines.node >=24`), `README.md:166-167`, tutorial `:17`, CI Ubuntu/Node 24 (`ci.yml:34,48`) matching `:33`. Node 22.20.0 appears only as versioned owner testing on #212 at `4ff50fe` (`:30-34`, `:68-71`) — no support/guarantee claim. No global pnpm failure/warning promise (`:67` says the opposite) and no unsupported-platform policy anywhere in the 8 files.
+- Executable-vs-illustrative: every output-like block classified, inline failure examples labeled (`:63`, `:156-157`, `:173-175`, `:215`, `:228`, `:240`, `:248`, `:422`) — except Finding 1.
+- Fresh homes / `env -u` / cleanup all correct: `mktemp -d` homes (`:282`, `:358`), explicit `--home` throughout, `DSH_HOME` scoped to the dump only (`:307-308`), all four `DSH_TELEMETRY_*` overrides cleared on every telemetry call and never read (`:359-360`, `:374-375`, `:386-387`, `:396-397`; var names match `packages/telemetry/src/observability.ts:37-40`), cleanup removes exactly the two created homes (`:416`).
+- #229 guard / #228 exit semantics / corrected synthesis match forge source: `EXIT={ok:0,drift:1,usage:2,unavailable:3}` (`packages/forge/src/cli.ts:110-128`), mismatch refusal + `--force` warning (`cli.ts:274-285`), `skipped apply`→0 (`cli.ts:639-646`), `FAILED at <label>`→1 (`cli.ts:525,536`). #230 projection preserved (`README.md:149`, `:274-277`).
+- Receipts internally consistent: 7 commands exit 0, 8 bash blocks = the 8 step-4/5 fences, 4 retained transcript fences byte-match the tutorial under the three declared substitutions + marked excerpt + trailing trim; `where`/`runs` correctly kept as prose per drift #2/#7. `ai-agents`/`lm-studio` strings in the receipts' `where` output are static product source (`packages/telemetry/src/diagnostics.ts:40`, `sink.ts:49`) — no operator data leaked.
+
+**Privacy:** no private consumer identifier in any of the 8 files; only the owner-approved provenance phrasing appears (`AGENTS.md:101-106`, `README.md:257-259`, `:312-315`, `docs/concepts/01-what-this-is.md:29-36`, `packages/netscript-bridge/README.md:26-30`); historical review preserves the FAIL_FIX verdict with identity/repo-resolution claims and the comment ID removed (`pr-190-glm.md:21`). None in this reply. Parent's 488-file zero-hit scan adopted; nothing executed by me; #212-open honest-boundary choice is explicitly permitted (drift #7).

@@ -9,8 +9,10 @@
  *
  * It is a decorator rather than a change to `SubagentProvider`, because instrumentation is not a
  * provider's job and a provider author who forgets it should not be able to produce a silent one.
- * `plugins/subagents.ts` wraps the registry at the seam, so an uninstrumented provider cannot be
- * reached through `ctx.subagents` at all.
+ * Wrapping at the seam is not on its own enough to make that true — the only way to register a
+ * provider is to replace the whole registry, and that path never passes through here — so each
+ * wrapper leaves a `markInstrumented` mark and `selectProvider` refuses a registry holding anything
+ * unmarked. The decorator is the mechanism; the refusal is what makes it a guarantee. See #208.
  *
  * ## Where it lives
  *
@@ -52,9 +54,15 @@
  * `observe` writes only when the liveness it saw **differs from the last one this decorator saw**
  * for that run. A supervisor polling every few seconds would otherwise spend the log's whole
  * rotation budget on lines saying nothing changed, and evict the dispatch lines that carry the
- * story. A poll that saw nothing new is not something that happened. The cost is one small map
- * entry per observed run for the life of the fiber, which is the right trade against a log that
- * rotates away its own evidence.
+ * story. A poll that saw nothing new is not something that happened.
+ *
+ * That memory is bounded — `DEFAULT_RUN_MEMORY` runs, least-recently-observed evicted first. A
+ * daemon that stays up for weeks would otherwise keep one entry per run it ever watched, and this
+ * decorator is written to run in exactly that daemon. The obvious alternative, forgetting a run once
+ * its liveness is terminal, is a trap: a supervisor that polls a finished run once more would find
+ * nothing remembered, write the same `finished` line again, forget again, and do that for as long as
+ * anything kept asking. Eviction cannot loop that way, because it needs `DEFAULT_RUN_MEMORY` *other*
+ * runs to be observed in between, and its whole cost is one repeated line for a run that busy.
  *
  * Every write is awaited before the wrapped call returns. The sink never throws — a failed write is
  * a note on the sink, not an exception — so awaiting cannot turn a telemetry problem into a
@@ -67,20 +75,24 @@
  *   "ended on purpose". The event and its verdict are recorded; the run's outcome is left to the
  *   next observation or to the transcript. Widening `RunOutcome` is a contract change and belongs
  *   on E9, not in a decorator.
- * - **The fold has no idea a dispatch is not yet a run.** Any event with a run id becomes a run in
- *   `foldLiveEvents`, so a dispatch that is refused, or that dies before its verdict, still appears
- *   as a live-only row. That is the reader's decision to make and the right place to fix it.
+ * - **A dispatch that dies before its verdict still appears as a run.** That half is deliberate: the
+ *   pre-dispatch line is the only evidence an agent may be running somewhere, and hiding it would
+ *   undo the reason `dispatch` writes twice. The other half — a dispatch the provider *refused* —
+ *   used to appear too, and no longer does: `verdictDetail` writes the verdict, and rule 4 in
+ *   `telemetry/src/live.ts` counts a refused live-only dispatch instead of making a row of it.
+ *   Finding 5 on #182.
  * - **Nothing here can supply `branch`.** `DispatchRequest` carries routing, not a branch, and an
  *   `Observation`'s artifacts are paths that can name a home directory — which is why `origin` is
  *   excluded from the public projection. Artifacts are recorded as a count.
  */
 
+import { instrumentedBy, markInstrumented } from "@rickylabs/subagents";
 import type {
   DispatchRequest,
   DispatchResult,
   DispatchVerdict,
   Harness,
-  Liveness,
+  RunLiveness,
   Observation,
   RunRef,
   SteerResult,
@@ -102,7 +114,15 @@ import type { RunOutcome, RunSource, SessionTelemetrySink } from "@rickylabs/tel
 export const EVENT_KIND = {
   /** A dispatch was sent. Written before the provider is called, so a crash still leaves a trace. */
   dispatching: "subagent.dispatching",
-  /** The dispatch verdict. */
+  /**
+   * The dispatch verdict.
+   *
+   * The one kind a reader may take a `verdict` from as a statement about whether the run exists.
+   * `steer` and `stop` write a `verdict` too and both of those unions also spell `refused`, so the
+   * name is load-bearing across the seam: `telemetry/src/live.ts` matches this exact string. Renaming
+   * it does not break a build — it stops refused dispatches being recognised, and they go back to
+   * appearing as runs.
+   */
   dispatch: "subagent.dispatch",
   /** An observation whose liveness differed from the previous one. */
   observe: "subagent.observe",
@@ -154,11 +174,16 @@ const OUTCOME_OF_VERDICT: Readonly<Record<DispatchVerdict, RunOutcome | null>> =
 /**
  * What an observation licenses saying about the run.
  *
+ * The one place the two liveness vocabularies cross, and the name says which one is the key: this
+ * maps `@rickylabs/subagents`' `RunLiveness` — what the executor reported — onto telemetry's
+ * `RunOutcome`. Telemetry's own `LivenessVerdict` is not in this table and does not belong in it; it
+ * is derived from evidence downstream of these events, not translated from them. See #206.
+ *
  * `queued` maps to `running` rather than to nothing: `RunOutcome` distinguishes finished from
  * unfinished, and a queued run is certainly unfinished. `unknown` stays unknown — a provider that
  * cannot reach its executor does not know, and that is a fact about our knowledge, not the run.
  */
-const OUTCOME_OF_LIVENESS: Readonly<Record<Liveness, RunOutcome | null>> = {
+const OUTCOME_OF_RUN_LIVENESS: Readonly<Record<RunLiveness, RunOutcome | null>> = {
   queued: "running",
   running: "running",
   finished: "complete",
@@ -216,15 +241,24 @@ function verdictDetail(provider: string, result: DispatchResult): Record<string,
   return detail;
 }
 
-/** Liveness, its reason, and how many artifacts were named — never which ones. */
+/** The reported liveness, its reason, and how many artifacts were named — never which ones. */
 function observationDetail(provider: string, observation: Observation): Record<string, unknown> {
   const detail: Record<string, unknown> = { provider, liveness: observation.liveness };
-  const outcome = OUTCOME_OF_LIVENESS[observation.liveness];
+  const outcome = OUTCOME_OF_RUN_LIVENESS[observation.liveness];
   if (outcome !== null) detail.outcome = outcome;
   if (observation.artifacts.length > 0) detail.artifacts = observation.artifacts.length;
   if (observation.detail !== "") detail.note = clipDetail(observation.detail);
   return detail;
 }
+
+/**
+ * How many runs' last-seen liveness one decorated provider remembers.
+ *
+ * Sized for the failure it prevents rather than tuned: a coordinator supervising more than a
+ * thousand concurrent runs on one provider has a governance problem long before it has a memory one,
+ * and below that ceiling nothing is ever evicted and no observation is ever written twice.
+ */
+export const DEFAULT_RUN_MEMORY = 1024;
 
 /** What a decorated provider needs to write. */
 export interface InstrumentOptions {
@@ -238,7 +272,23 @@ export interface InstrumentOptions {
    * the one part of the pipeline that could not be replayed.
    */
   readonly now?: () => string;
+  /**
+   * How many runs to remember for the `observe` de-duplication. Defaults to `DEFAULT_RUN_MEMORY`.
+   *
+   * A positive integer. Zero is not "do not de-duplicate" — it is a decorator that forgets each run
+   * between two polls and writes the same liveness forever — so it is refused rather than honoured.
+   */
+  readonly runMemory?: number;
 }
+
+/**
+ * What this module signs its wrappers with.
+ *
+ * A name rather than a boolean, because a refusal that can say *what* wrapped a provider can also
+ * say when something unexpected did — and because a second wrapper around one provider has to be
+ * refusable, which needs the two to be distinguishable.
+ */
+export const WRAPPER = "@rickylabs/dsh-app/instrument";
 
 /**
  * Wrap one provider so each of its four verbs leaves evidence as it happens.
@@ -248,16 +298,53 @@ export interface InstrumentOptions {
  * one of its methods touches `this`; it would also let a member added to `SubagentProvider` later
  * pass through uninstrumented. Listing them means a new verb fails this compile, which is the
  * failure we want.
+ *
+ * The result is marked with `markInstrumented`, which is what lets `selectProvider` tell a wrapped
+ * provider from a raw one at the far end of the seam. The mark goes on the wrapper, never on the
+ * provider handed in: marking the argument would make an unwrapped provider claim to be
+ * instrumented the moment anyone wrapped a copy of it.
  */
 export function instrumentProvider(
   provider: SubagentProvider,
   options: InstrumentOptions,
 ): SubagentProvider {
+  // Refused here rather than left to `markInstrumented`, which cannot see it: the mark this function
+  // writes goes on the wrapper it builds, and that object is new every time. Wrapping a wrapper would
+  // therefore succeed quietly and write every event twice for the life of the daemon, with no way for
+  // a reader of the log to tell the duplicate from a genuine retry.
+  const already = instrumentedBy(provider);
+  if (already !== null) {
+    throw new Error(
+      `provider ${provider.id} is already marked as instrumented by ${already}; wrapping it again ` +
+        "would write every event twice",
+    );
+  }
+
   const sink = options.sink;
   const now = options.now ?? ((): string => new Date().toISOString());
+  const capacity = options.runMemory ?? DEFAULT_RUN_MEMORY;
+  if (!Number.isInteger(capacity) || capacity < 1) {
+    throw new Error(`runMemory must be a positive integer, not ${String(options.runMemory)}`);
+  }
 
-  /** The last liveness this decorator saw per run — the reason `observe` is not a firehose. */
-  const seen = new Map<string, Liveness>();
+  /**
+   * The last liveness this decorator saw per run — the reason `observe` is not a firehose.
+   *
+   * Insertion order is recency order, because `remember` re-inserts on every observation rather
+   * than only on a change. Without that a run whose liveness is stable — which is most of them, and
+   * exactly the ones being watched hardest — would be the first evicted.
+   */
+  const seen = new Map<string, RunLiveness>();
+
+  const remember = (runId: string, liveness: RunLiveness): void => {
+    seen.delete(runId);
+    seen.set(runId, liveness);
+    while (seen.size > capacity) {
+      const oldest = seen.keys().next();
+      if (oldest.done === true) break;
+      seen.delete(oldest.value);
+    }
+  };
 
   const write = async (
     runId: string,
@@ -267,7 +354,7 @@ export function instrumentProvider(
     await sink.write({ at: now(), runId, kind, detail });
   };
 
-  return {
+  return markInstrumented({
     id: provider.id,
     capabilities: provider.capabilities,
 
@@ -305,8 +392,11 @@ export function instrumentProvider(
         });
         throw error;
       }
-      if (seen.get(run.runId) !== observation.liveness) {
-        seen.set(run.runId, observation.liveness);
+      const previous = seen.get(run.runId);
+      // Recorded before the comparison decides anything, so that watching a run keeps it in memory
+      // even across the long stretches where its liveness does not move.
+      remember(run.runId, observation.liveness);
+      if (previous !== observation.liveness) {
         await write(run.runId, EVENT_KIND.observe, observationDetail(provider.id, observation));
       }
       return observation;
@@ -362,15 +452,21 @@ export function instrumentProvider(
       await write(run.runId, EVENT_KIND.stop, detail);
       return result;
     },
-  };
+  }, WRAPPER);
 }
 
 /**
  * Wrap every provider on a registry.
  *
- * The registry, not the individual provider, is what the seam hands out — so wrapping here is what
- * makes "no provider can be reached uninstrumented" a structural property rather than a convention
- * each provider package has to remember.
+ * The registry, not the individual provider, is what the seam hands out, so this is the right place
+ * to wrap. It is not on its own the reason no provider can be reached uninstrumented — this function
+ * only sees the registries somebody remembers to pass it, and a provider package registering later
+ * hands over a registry of its own that never comes through here. What closes that is the mark each
+ * wrapper leaves and `selectProvider`'s refusal to dispatch through a registry missing one.
+ *
+ * Already-wrapped providers are refused rather than wrapped again: `instrumentProvider` throws on a
+ * provider that already carries a mark, so double-instrumenting a registry fails at composition
+ * instead of writing every event twice for the life of the daemon.
  */
 export function instrumentRegistry(
   registry: SubagentRegistry,

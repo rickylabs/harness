@@ -117,18 +117,31 @@ like it should be about quality:
 
 ## What is actually built
 
-The seam is a decision, not a promise of code. Today:
+The seam is a decision, not a promise of code. At the current baseline:
 
 - [`packages/subagents`](../../packages/subagents) ships the registry and selection behind
   `ctx.subagents`, and `dsh-app` registers it **empty**. A dispatch into an unconfigured system
   returns `no-providers` with a sentence saying why, instead of throwing on `undefined` — an
   unconfigured daemon and a broken one should not look alike.
-- The four provider packages are stubs. E3 fills them.
-- [`packages/llm-local`](../../packages/llm-local) is a stub. E4 fills it, and `ctx.llm` stays dsh's
-  own service until then.
+- Two of the four provider packages are implemented against that contract:
+  [`provider-claude`](../../packages/provider-claude), with the Claude Agent SDK injected by a
+  composition root, and [`provider-opencode`](../../packages/provider-opencode), which talks to a
+  long-lived `opencode serve` it does not own. [`provider-codex`](../../packages/provider-codex)
+  ships only a transport-free route-identity and pre-turn protocol prerequisite; attachment and its
+  full provider remain gated by #53. [`provider-acp`](../../packages/provider-acp) remains an empty
+  stub. No Codex provider is composed into `ctx.subagents`. None of the four is registered by the
+  profile: the composed registry is still empty, so *implemented* is not *composed*, and a clone
+  cannot dispatch into this seam until a composition root registers a provider.
+- [`packages/llm-local`](../../packages/llm-local) is implemented — three destinations,
+  `lm-studio`, `llama-rocm` and `openrouter`, plus capability and budget tables — and `dsh-app`'s
+  `harness-llm` row registers an adapter for all three on dsh's own `ctx.llm` service. Whether any
+  destination answers is a host fact: reachability and credentials are resolved at dispatch, not
+  at boot.
 
-That the packages exist while empty is the point of stating the split early: the shape is fixed
-before there is any code to be tempted into merging.
+The split was stated before any of this code existed, so the shape was fixed while there was
+nothing to be tempted into merging. Now that both seams carry implementations, they still attach
+at two different points, and are still metered two different ways — which is the whole point of
+having refused to merge them.
 
 ---
 

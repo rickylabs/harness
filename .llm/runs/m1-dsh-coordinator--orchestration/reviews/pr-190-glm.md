@@ -18,7 +18,7 @@ FAIL_FIX
 Bounded fix: two files, ~4 lines. Per `doctrine/WORKFLOW.md:117` this is "the plan is sound; specific parts are wrong."
 
 **Verified true (rest of the diff holds):**
-- Cockpit relocation (AGENTS.md:101-108, README.md:268-278, docs/concepts/01-what-this-is.md:29-35, packages/netscript-bridge/README.md:26-28) matches #30 amendment comment 5561573579 verbatim in substance (products renamed to `atelier-cockpit`/`atelier-mobile`, "contracts still has to be a published package" = "the half the amendment left standing"); both repos resolve via `gh repo view`.
+- External consumer relocation (AGENTS.md:101-108, README.md:268-278, docs/concepts/01-what-this-is.md:29-35, packages/netscript-bridge/README.md:26-28) matches the #30 amendment verbatim in substance (external consumers separated into their own repositories, "contracts still has to be a published package" = "the half the amendment left standing").
 - Census: measured 11 shipping packages / 4 stubs (12-line placeholders: governance, netscript-bridge, provider-codex, provider-acp); stub READMEs carry `Status: stub` with owner+blocker.
 - Decision count stays four: #30 *Decisions taken* table rows 5–6 are marked *(taken here, reversible)*; README.md:279-281 reversion is correct.
 - `NPM_TOKEN` secret exists (name-only, `gh secret list`: created 2026-09-06T19:33:24Z); no `harness-contracts-v*` tag exists (`git ls-remote --tags`); `release-contracts.yml:23-30` `workflow_dispatch` `dryRun` default `true` — GOVERNANCE.md:75-77 and packages/contracts/README.md:254-256 accurate.
