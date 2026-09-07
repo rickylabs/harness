@@ -1,0 +1,15 @@
+{
+  "authoritySource": "8ba53bc50ca02aab29e99ba5362728839b8f1713",
+  "requested": {
+    "provider": "openai",
+    "model": "gpt-6-astra",
+    "effort": "low"
+  },
+  "observed": {
+    "provider": "openai",
+    "model": "gpt-6-astra",
+    "effort": "low"
+  },
+  "identityMatchedBeforeTurn": true,
+  "cwdMatchedBeforeTurn": true
+}

@@ -370,9 +370,9 @@ than a line of JSON does.
 
 ## Tests
 
-342 tests, no mocked seams: the sink tests write to real temp directories, the opencode tests build
-a real SQLite database, and the CLI tests run `main()` against a seeded home and read what an
-operator would see. The live-log tests seed a real log through `resolveObservability`, so they stay
+The sink tests write to real temp directories, the opencode tests build a real SQLite database,
+and the CLI tests exercise `main()` and real subprocesses against seeded homes. Live-source tests
+inject observation services so they require neither Deno nor network access. The live-log tests seed a real log through `resolveObservability`, so they stay
 honest on a box where `DSH_TELEMETRY_DIR` is set to somewhere else.
 
 The suite was checked by mutation rather than by coverage. Thirty-five defects — each one a
@@ -424,3 +424,140 @@ with no member outside it produced no root, so those runs disappeared from the s
 That sweep predates `live.ts` and has not been re-run against it. The merge is instead pinned by
 assertion: idempotence is asserted directly, by merging a log over an already-merged view and
 deep-comparing the runs, which is the property the whole no-cursor design rests on.
+
+## Live governance sources
+
+`dsh-telemetry status --observations-from <absolute-descriptor-path>` (also `tree`) composes
+explicitly configured readers through the shipped governance parser and projection. The flag excludes
+`--observations`. `--observations-from file:<absolute-envelope-path>` is an alias for the existing
+file reader: unchanged freshness and exit behavior, reread on each invocation.
+
+A descriptor has exactly `accountLabel`, `usage`, `spend`, `capacity`, and `admissions`. Each leg is
+explicitly `null` or an object with **all** the fields below; omitted fields and unknown fields are
+errors. There are no inferred source defaults. Keep the descriptor outside version control. Paths,
+model IDs, credential names and provider response metadata are never copied into governance output.
+
+| Leg | Required fields |
+| --- | --- |
+| `usage` | `denoBin`, `probe`, `checkout`: absolute paths; `model`: bounded provider/model routing string; `credentialEnv`: environment-variable name; `timeoutMs`; `maxBytes`; `windows` |
+| `usage.windows` | Exactly `rolling_five_hours`, `weekly`, `monthly`, each with a distinct safe `label` and positive integer `windowMinutes`. Durations are configuration, including monthly duration; the reader never guesses them. |
+| `spend` | `url`: exactly `https://openrouter.ai/api/v1/key`; `credentialEnv`; `window`: `total`, `daily`, `weekly`, or `monthly`; `validForMs`; `timeoutMs`; `maxBytes` |
+| `capacity` | `cgroupRoot`: absolute configured cgroup-v2 directory; `scopeLabel`: safe public label; `validForMs` |
+| `admissions` | Exactly `{ "fromObservabilityLog": true }` |
+
+`accountLabel`, `scopeLabel` and window labels use `[A-Za-z0-9][A-Za-z0-9._:-]*`, at most 128
+characters. The account label means one configured credential binding, not discovered fleet coverage.
+`model` is runtime configuration, at most 256 characters, with slash-separated identifier components;
+there are no compiled model IDs or routing decisions. `timeoutMs` is an integer from 1 through 60000;
+`maxBytes` is an integer from 1 through 4194304. `validForMs` and window durations are positive safe
+integers. Environment names are bare identifiers, never values; runtime-control names such as `HOME`,
+`PATH`, and names prefixed `DENO_`, `NODE_`, `LD_`, or `DYLD_` are rejected.
+
+The usage probe is [`adapters/opencode-usage-probe.ts`](adapters/opencode-usage-probe.ts), a **Deno
+service outside the Node TypeScript project**. The configured external checkout supplies
+`.llm/tools/agentic/runtime/provider-usage.ts` and `config/subscriptions.ts` under that same agentic
+root. It is an operational service dependency, never a package or build dependency. An in-memory
+import map resolves two static aliases to those files. The launcher uses `--no-config`, `--no-lock`,
+`--no-prompt`, `--no-remote`, `--no-code-cache`, `--allow-env=<credentialEnv>` and
+`--allow-net=opencode.ai`; no read, write, subprocess, or broad environment permission is granted.
+The minimized child environment contains only that binding and fixed Deno runtime controls;
+`DENO_DIR=/dev/null` prevents disk caching. The probe remaps the named binding to the upstream
+library's `OPENCODE_API_KEY`, injects rejected file readers, and never loads an auth file or `.env`.
+The runtime must support these Deno flags and static import maps. A missing or incompatible service
+fails unread. No provider model process is started.
+
+The upstream snapshot's `capturedAt` and imported `EXPENSE_SNAPSHOT_MAX_AGE_MS` travel in the
+serialized result. The probe supplies its clock after response parsing, does not accept `--now`,
+bounds response bytes, refuses redirects, and the parent bounds stdout and total runtime. Quota
+percentages remain subscription allowances, never billed dollars. Every window has `binding:false`
+and the subscription note says binding is unobserved. No maximum-percentage or pacing policy runs.
+
+Spend uses a GET of the exact current-key URL with `redirect:error`, an authorization header from
+the named environment binding, a bounded streaming body and a timeout covering the response body.
+The selected fields are `usage`, `usage_daily`, `usage_weekly`, and `usage_monthly`, respectively.
+Output provider is always `openrouter`; window labels are the four reader-owned enum values;
+`ceilingUsd` is always null. BYOK amounts are never added and balances are never used to infer spend
+or a ceiling. Only total/monthly were receipt-observed during planning; omitted daily/weekly fields
+fail unread. Labels, user metadata, response text and transport errors are not projected.
+
+Capacity reads only `memory.current` and `memory.max` within `cgroupRoot`. This is **configured cgroup
+v2 scope**, not automatic current-cgroup discovery or a verified dispatch/physical-host limit.
+There is no v1, ancestor or host-memory fallback. `max` retains known used bytes and reports total
+and headroom unknown. GPU measurements stay null. Partial known values remain visible in text.
+
+### Recorded admissions
+
+The producer is the gate with authority (E5 wiring), not this observation reader. It records the
+existing telemetry envelope through `record`, with an explicit decision timestamp in `detail`:
+
+```json
+{
+  "at": "2026-09-07T12:00:00Z",
+  "runId": "synthetic-log-identity",
+  "kind": "governance.admission",
+  "detail": {
+    "item": { "number": 205 },
+    "regime": "subscription",
+    "state": "throttle",
+    "observedAt": "2026-09-07T12:00:00Z",
+    "validUntil": "2026-09-07T12:05:00Z",
+    "outcome": { "accepted": false, "reason": "quota-paced", "detail": "Synthetic gate explanation" }
+  }
+}
+```
+
+This example is synthetic, not an operational admission receipt. The reader accepts `throttle` or
+`pause` with a public-safe machine-readable refusal code. Codes contain 1–128 ASCII letters,
+digits, dots, underscores, colons or hyphens and start with a letter or digit. Their meaning belongs
+to the producer and the published `DispatchOutcome` contract, not a new telemetry taxonomy:
+`quota-paused`, `lane-unknown`, `needs-approval` and future producer codes are accepted. Producers
+must keep credentials and private identifiers out of these public reason codes. Prose and paths
+fail unread; private explanatory detail is withheld. The whole
+observation detail is validated by the existing governance parser before publication. Caller provenance
+is replaced by `reader:recorded-admission`; the reason is retained, while free-form operator detail
+and any approval payload are withheld to prevent private prose or run identity from being published.
+The output explicitly says that admission is not execution evidence. Pending approvals are unobserved.
+
+The newest decision timestamp wins per item/regime, independent of log order. Identical duplicates
+collapse (including equivalent timestamp offsets); same-time conflicting decisions make that key
+unavailable. Differences in private operator detail also count as conflicts before redaction.
+A malformed newest record cannot revive an older refusal. An unorderable timestamp blocks its key;
+an unidentifiable admission or degraded log blocks the admission leg because the superseded item
+cannot be established. Valid other keys survive scoped failures. Expired newest decisions are removed,
+without reviving older ones. Missing admissions make a configured admission source incomplete.
+The log envelope `at` is never substituted for missing detail time. Routing events, arbitrary prose,
+and `runId` never supply item identity or admission facts. In live-source mode these receipt events
+are excluded from run lifecycle merging.
+
+### Freshness and failure behavior
+
+Collection completion stamps the envelope; original source timestamps remain on leaves. Expired or
+future legs are removed independently with fixed diagnostics, never restamped. Envelope expiry is
+the earliest retained source expiry, including recorded admissions. With no successful source the
+view is unavailable. Without `--now`, the CLI evaluates against completion time; explicit `--now`
+can intentionally make a live envelope stale or future-invalid. File-mode stale values remain visible.
+Text rendering also compares leaf ages with the envelope's declared validity span and marks/counts
+stale leaves; a fresh envelope badge is qualified when its leaves are stale. This derived display span
+is not a claim of independently observed leaf validity.
+
+| Condition | Result |
+| --- | --- |
+| Invalid descriptor, nonabsolute source path, conflicting flags | Exit 2, fixed usage diagnostic before source I/O |
+| Leg explicitly `null` | Distinct `not-configured` note; other configured legs can complete |
+| All legs `null`, or no successful retained leg | Unavailable, `complete:false`, exit 3 |
+| Missing credential binding | `credential-unbound`; that leg unread |
+| Spawn failure/nonzero exit, timeout, oversized output, non-JSON, invalid payload | `spawn-failed`, `timeout`, `oversize`, `non-json`, or `shape-mismatch`; that leg unread |
+| Spend HTTP/transport failure | `request-failed`; spend unread |
+| Cgroup unreadable/unsupported | `cgroup-unreadable` or `shape-mismatch`; capacity unread |
+| Cgroup unlimited | Known used retained; total/headroom unknown, explicit scope note |
+| Log unreadable/degraded, no current admissions, conflicting admissions | `log-unreadable`, `no-admissions`, or `admission-conflict`; admission evidence incomplete |
+| Expired/future source at completion | `stale-source` or `future-source`; discarded without restamping |
+| Invalid composed envelope/evaluation clock | Unavailable, `envelope-invalid`, exit 3 |
+| Any requested source fails while another succeeds | Successful sources still render; `complete:false`, exit 3 |
+
+`complete` describes the requested inputs and the existing telemetry scan, not fleet-wide discovery,
+physical-host capacity, pending-approval completeness, or proof that any item was dispatched.
+Observation reads write no telemetry, cache, quota reservation or source state. The synthetic producer
+CLI tests write fixtures **before** measuring read-side immutability. Node tests use isolated temporary
+homes with ambient `DSH_TELEMETRY_*` neutralized, real CLI subprocesses and injected services; they
+need no credentials, network or Deno. Live acceptance remains a separate coordinator integration gate.

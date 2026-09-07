@@ -215,3 +215,5 @@ export {
   type MilestoneNode,
   type TreeInput,
 } from "./tree.js";
+
+export { parseSource, type GovernanceSource, type SourceRefusal } from "./source.js";
