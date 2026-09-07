@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **185/227 done · 12 running · 17 queued · 12 abandoned · 1 invisible**
+`[################----]` **187/228 done · 12 running · 16 queued · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T02:13:44Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T02:26:48Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (12)
 
@@ -17,19 +17,19 @@ Something could be acting on these right now.
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
-| [#195 E3.5 - Route identity: fail closed when the observed route differs from the requested one](https://github.com/rickylabs/harness/issues/195) | `impl` | `e3` |
+| [#195 E3.5 - Route identity: fail closed when the observed route differs from the requested one](https://github.com/rickylabs/harness/issues/195) | `impl-eval` | `e3` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
-| [PR238 feat(route-identity--e35): refuse mismatched Codex routes before task submission](https://github.com/rickylabs/harness/pull/238) | `impl` | `e3` |
+| [PR238 feat(route-identity--e35): refuse mismatched Codex routes before task submission](https://github.com/rickylabs/harness/pull/238) | `impl-eval` | `e3` |
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 151/181 done · 11 running · 16 queued · 3 abandoned
+`[##########--]` 153/182 done · 11 running · 15 queued · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -40,7 +40,7 @@ Something could be acting on these right now.
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 25/28 done · 1 running · 2 abandoned | `impl` |
-| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 21/25 done · 4 queued | `impl` |
+| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 14/16 done · 2 running | `impl` |
 | _(no epic)_ | `[############]` 2/2 done | — |
@@ -57,13 +57,12 @@ Something could be acting on these right now.
 ## Waiting to start
 
 <details>
-<summary>17 filed, nothing started</summary>
+<summary>16 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#212 the tutorial's pasted output is stale at step 4, and no gate in the repo can catch that](https://github.com/rickylabs/harness/issues/212) | `triage` | `e10` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
-| [#233 nothing detects a label the code branches on that the taxonomy never creates](https://github.com/rickylabs/harness/issues/233) | `triage` | `e7` |
 | [#237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life](https://github.com/rickylabs/harness/issues/225) | `triage` | `e7` |
@@ -87,9 +86,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  185/227 done · 12 running · 17 queued · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  187/228 done · 12 running · 16 queued · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  151/181 done · 11 running · 16 queued · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  153/182 done · 11 running · 15 queued · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -172,7 +171,7 @@ Something could be acting on these right now.
     shipped              PR179 feat(provider-opencode): dispatch, watch and stop a run on a server we do not own
     shipped              #183 provider-opencode: `unknown` is not `refused` — four ways a live run is reported wrong (p0)
     shipped              PR186 fix(provider-opencode): refuse only what the server actually refused (p0)
-    impl                 #195 E3.5 - Route identity: fail closed when the observed route differs from the requested one
+    impl-eval            #195 E3.5 - Route identity: fail closed when the observed route differs from the requested one
     plan                 #196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume
     research             #197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt
     plan                 #198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused
@@ -183,7 +182,7 @@ Something could be acting on these right now.
     shipped              #210 `release` is the one lease door that does not check the fence: an evicted holder can delete the live holder's lease (p1)
     shipped              PR222 fix(subagents): make the telemetry guarantee something a dispatch checks (p1)
     shipped              PR224 refactor(subagents,telemetry,contracts): give the two liveness concepts two names (p2)
-    impl                 PR238 feat(route-identity--e35): refuse mismatched Codex routes before task submission (draft)
+    impl-eval            PR238 feat(route-identity--e35): refuse mismatched Codex routes before task submission (draft)
 
   E4 — Model gateway and routing matrix #34  [triage]
     [##############--] 12/13 done · 1 queued
@@ -243,7 +242,7 @@ Something could be acting on these right now.
     shipped              PR236 feat(coordinator): make a citation refer to something (#203) (p2)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
-    [#############---] 21/25 done · 4 queued
+    [##############--] 23/26 done · 3 queued
     shipped              #74 E7.1 — forge: the issue/PR bridge and label→target mapping
     shipped              #75 E7.2 — PR supervision loop
     shipped              #76 E7.3 — Dispatch selector: provider or divybot, per target
@@ -267,8 +266,9 @@ Something could be acting on these right now.
     shipped              PR171 feat(forge): tear a run down on its artefacts, never on its exit code (p1)
     triage               #215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type (p2)
     triage               #225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life (p3)
-    triage               #233 nothing detects a label the code branches on that the taxonomy never creates (p2)
+    shipped              #233 nothing detects a label the code branches on that the taxonomy never creates (p2)
     triage               #234 17 labels live on the repo and in no taxonomy, including the dispatch label (p3)
+    shipped              PR239 feat(board): check the labels the code reads against the ones forge creates (p2)
 
   E8 — Contracts: published package for the netscript UIs #38  [shipped]
     [################] 8/8 done
