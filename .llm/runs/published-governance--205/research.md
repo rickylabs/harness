@@ -21,25 +21,25 @@ unchanged since the v0.1.0 tag commit.
 ### 1.1 Published contracts (`packages/contracts`)
 
 - `GovernanceState` is `{generatedAt, regimes, pending, notes}`; every regime is always present and
-  an unread regime reports `allow` with a note ([`src/governance.ts:16-26`](../../../../packages/contracts/src/governance.ts),
+  an unread regime reports `allow` with a note ([`src/governance.ts:16-26`](../../../packages/contracts/src/governance.ts),
   `:204-209`). `RegimeStatus` is a closed union on `regime` (`:118-136`). Leaves carry `observedAt: string | null`
   (`SubscriptionAccount:82`, `MeteredSpend:92`, `CapacityReading:108`).
 - `RemoteSnapshot` requires `protocol`, `generation`, `generatedAt`, `complete`, `repo`, `lifecycle`,
   `tasks`, `runs`, `anomalies`, `governance: GovernanceState`, `notes`
-  ([`src/snapshot.ts:54-70`](../../../../packages/contracts/src/snapshot.ts)). `complete` is documented as
+  ([`src/snapshot.ts:54-70`](../../../packages/contracts/src/snapshot.ts)). `complete` is documented as
   projection truncation, not source coverage (`:20-26`).
-- `PROTOCOL_VERSION = 1` ([`src/events.ts:54`](../../../../packages/contracts/src/events.ts));
+- `PROTOCOL_VERSION = 1` ([`src/events.ts:54`](../../../packages/contracts/src/events.ts));
   `governance.changed` carries a whole `GovernanceState` (`:93`); `readServerEvent` validates the envelope
   and deliberately not the payload (`:180-225`).
 - `DispatchOutcome.accepted: true` means admitted, not launched (`src/routes.ts:86-91`); the refused arm
   carries `reason` as "a short machine-ish reason" and prose `detail` (`:96-113`).
 - The hub is pure: "Nothing here opens a socket, reads a clock or allocates an id"
-  ([`src/server.ts:14-17`](../../../../packages/contracts/src/server.ts)); `openHub(state)` needs a full
+  ([`src/server.ts:14-17`](../../../packages/contracts/src/server.ts)); `openHub(state)` needs a full
   `RemoteSnapshot` (`:100-104`, `:124-126`); `publish` diffs whole boards (`:189-205`).
 - The fold returns `null` from `snapshotOf` when `governance` is null (`src/fold.ts:188-215`); it stores
   `governance.changed` payloads verbatim (`:487-488`).
 - Root entry exports for governance are types plus `REGIMES`, `REGIME_STATES`, `KNOWN_APPROVAL_KINDS`,
-  `APPROVAL_VERDICTS` ([`src/index.ts:117-134`](../../../../packages/contracts/src/index.ts)). The installed
+  `APPROVAL_VERDICTS` ([`src/index.ts:117-134`](../../../packages/contracts/src/index.ts)). The installed
   0.1.0 tarball has no runtime export whose name contains "governance" (executed 2026-09-07, §4.1).
 - README policy: no dependencies (`README.md:18`); "While 0.x, the minor plays the role of the major"
   (`:201`); protocol bump is always a package major (`:190-214`); deprecation path "Add before removing"
@@ -55,23 +55,23 @@ unchanged since the v0.1.0 tag commit.
 
 - Descriptor validation: `parseSource` requires exactly `usage|spend|capacity|admissions|accountLabel`,
   absolute paths, bounded numbers, safe labels; refuses runtime-control env names
-  ([`src/source.ts:87-129`](../../../../packages/telemetry/src/source.ts)). `SourceRefusal` is the closed
+  ([`src/source.ts:87-129`](../../../packages/telemetry/src/source.ts)). `SourceRefusal` is the closed
   failure vocabulary (`:38-41`). `Leg<T>` is `{ok:true,value,observedAt,validUntil} | {ok:false,code}` (`:131-132`).
 - Leg mappers: usage (`src/governance/usage.ts:5-22`, subscription, `binding:false`, reader-stamped);
   spend (`spend.ts:4-15`, `ceilingUsd: null`); capacity (`capacity.ts:7-23`, `max` → `ramTotalBytes: null`);
   admissions (`admissions.ts:25-94`): newest-per-item/regime, duplicate collapse, `admission-conflict`,
   `stale-source`, `log-unreadable`, `no-admissions`; caller provenance replaced by `reader:recorded-admission`
   and private detail withheld (`:63-65`).
-- Composition ([`src/governance/compose.ts:15-59`](../../../../packages/telemetry/src/governance/compose.ts)):
+- Composition ([`src/governance/compose.ts:15-59`](../../../packages/telemetry/src/governance/compose.ts)):
   failed or discarded legs become `unreadRegimes` entries with `note: "<leg>: <code>"` (`:26-40`); the only
   structured record of per-leg failure is the note string; `ok` is a separate boolean; the envelope is
   stamped with `completion` and `provenance: "reader:composed"` (`:51-53`); with no successful expiry the
   view is `unavailableGovernance("no successful live sources")` (`:48-50`).
-- `ParsedGovernance = {governance: GovernanceView, notes, ok}` ([`src/observations.ts:75-81`](../../../../packages/telemetry/src/observations.ts));
+- `ParsedGovernance = {governance: GovernanceView, notes, ok}` ([`src/observations.ts:75-81`](../../../packages/telemetry/src/observations.ts));
   `UnavailableGovernanceView.state` is `null` (`:63-71`); `parseGovernanceObservation` enforces exactly three
   regimes, leaf timestamps not later than the envelope, admissions `accepted:false` and state `throttle|pause`
   (`:303-369`, `:385-416`). `unavailableReason` is free prose (`:414`).
-- CLI ([`src/cli.ts`](../../../../packages/telemetry/src/cli.ts)): `--observations-from` accepts a descriptor
+- CLI ([`src/cli.ts`](../../../packages/telemetry/src/cli.ts)): `--observations-from` accepts a descriptor
   or `file:` alias (`:473-480`); `status`/`tree` compose live governance (`:565-599`) and publish
   `PublicSnapshot`/`PublicTree` with `governance: PublicGovernance` (`src/public.ts:95-130`, `:223-244`);
   `collectGovernance(source, log, services, now?)` is the injectable seam (`:715-754`); `SourceServices`
@@ -93,7 +93,7 @@ unchanged since the v0.1.0 tag commit.
   read (executed 2026-09-07, §4.2).
 - `dsh-app`'s board projection mirrors `PublicGovernance` with a strict zod schema and ships it as a
   dsh-session wire DTO at `stateVersion: 2`
-  ([`packages/dsh-app/src/plugins/board-projection.ts:183-186`](../../../../packages/dsh-app/src/plugins/board-projection.ts),
+  ([`packages/dsh-app/src/plugins/board-projection.ts:183-186`](../../../packages/dsh-app/src/plugins/board-projection.ts),
   `:470-490`, `:711`). It is private to the app and is not the published contract.
 
 ### 1.4 What does not exist
