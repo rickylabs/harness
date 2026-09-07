@@ -4,7 +4,7 @@
 
 `[################----]` **206/254 done · 16 running · 15 queued · 4 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T08:09:48Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T08:29:09Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (4)
 
@@ -32,7 +32,7 @@ Something could be acting on these right now.
 | [#261 E6 — Define command receipt lookup and unknown reconciliation boundaries](https://github.com/rickylabs/harness/issues/261) | `research` | `e6` |
 | [#262 E9 — Specify projection revision, observation coverage and census authority](https://github.com/rickylabs/harness/issues/262) | `research` | `e9` |
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
-| [#265 E9 — Retain the board without false freshness across connection loss and restart](https://github.com/rickylabs/harness/issues/265) | `plan` | `e9` |
+| [#265 E9 — Retain the board without false freshness across connection loss and restart](https://github.com/rickylabs/harness/issues/265) | `plan-eval` | `e9` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -330,7 +330,7 @@ Something could be acting on these right now.
     shipped              PR241 feat(board): let the board say a person is holding the work (p1)
     shipped              PR246 fix(telemetry): read the Claude store's subagent tree instead of assuming there isn't one (p1)
     research             #262 E9 — Specify projection revision, observation coverage and census authority (p1)
-    plan                 #265 E9 — Retain the board without false freshness across connection loss and restart (p1)
+    plan-eval            #265 E9 — Retain the board without false freshness across connection loss and restart (p1)
 
   (no epic)
     shipped              PR219 fix(board): say so when a column is a lie
