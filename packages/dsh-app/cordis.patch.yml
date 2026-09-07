@@ -42,9 +42,16 @@
     - id: harness-telemetry
       name: '@rickylabs/dsh-app/plugins/telemetry'
 
+    # The explicit routing document selection (#271). A deployment may replace this whole
+    # document in its profile patch. No missing-document fallback exists.
+    - id: harness-routing
+      name: '@rickylabs/dsh-app/plugins/routing'
+      config:
+        document: "@rickylabs/routing/config/routing.v1.json"
+
     # The three token-metered destinations — lm-studio, llama-rocm, openrouter (E2 · #176) —
     # registered on `ctx.llm`, which `@deepseek-ai/dsh-llm` owns and the composed profile
-    # already mounts. This row claims no key; it injects `llm` and stays PENDING without it.
+    # already mounts. It injects `llm` and `harnessRouting`, staying PENDING without either.
     #
     # Base URLs only. A credential is never a profile key: a profile is committed and a
     # credential must not be, so `OPENROUTER_API_KEY` is read from the daemon's environment at

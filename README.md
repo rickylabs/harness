@@ -343,7 +343,7 @@ list is the orientation, at the baseline above.
   #53; [`provider-acp`](packages/provider-acp) is a Stub. No Codex provider is
   composed into `ctx.subagents`, and the composed registry is empty.
 - **The llm seam** — [`llm-local`](packages/llm-local) (destinations,
-  capabilities, budgets) and [`routing`](packages/routing) (the model matrix)
+  capabilities, budgets) and [`routing`](packages/routing) (the explicit routing document loader)
   are Implemented; the profile Composes the adapter for all three routes;
   each destination stays Host-dependent.
 - **Compose and publish** — [`dsh-app`](packages/dsh-app) is the profile and

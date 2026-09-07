@@ -17,15 +17,15 @@
  *
  * So the seam travels in `RunIdentity` because a run's identity is data, not prose, and callers
  * need it for metering and for reporting. The rule itself reads family off the model — see
- * `models.ts` for why that is the load-bearing choice — and is therefore structural: it holds
+ * the document's model bindings for why that is the load-bearing choice — and is therefore structural: it holds
  * across seams, across harnesses, and across transports without a special case for any of them.
  */
 
 import type { Harness } from "@rickylabs/subagents";
 
-import { familyOf, isApprovedOpenEvaluator } from "./models.js";
-import type { ModelFamily, Transport } from "./models.js";
-import type { Certifies } from "./policy.js";
+import { familyOf, isApprovedOpenEvaluator } from "./configuration.js";
+import type { RoutingConfiguration, ModelFamily, Transport } from "./schema.js";
+import type { Certifies } from "./schema.js";
 
 /** The two metering seams. See AGENTS.md for the full topology. */
 export const SEAMS = ["subagents", "llm"] as const;
@@ -54,8 +54,8 @@ export type RunIdentity =
     };
 
 /** The family a run belongs to, or `null` when its model is not one this package pins. */
-export function familyOfRun(run: RunIdentity): ModelFamily | null {
-  return familyOf(run.model);
+export function familyOfRun(configuration: RoutingConfiguration, run: RunIdentity): ModelFamily | null {
+  return familyOf(configuration, run.model);
 }
 
 /** A proposed pairing: `evaluator` is being asked to certify `author`'s work. */
@@ -101,19 +101,19 @@ export type EvaluatorVerdict =
  * the difference matters at the coordinator: a refused pairing is a routing fact to record and
  * fall back from, not an exception to unwind a run around.
  */
-export function checkEvaluator(assignment: EvaluatorAssignment): EvaluatorVerdict {
+export function checkEvaluator(configuration: RoutingConfiguration, assignment: EvaluatorAssignment): EvaluatorVerdict {
   const { author, evaluator, certifies } = assignment;
 
   if (author.runId === evaluator.runId) {
     return { ok: false, reason: "same-run", runId: author.runId };
   }
 
-  const authorFamily = familyOf(author.model);
+  const authorFamily = familyOf(configuration, author.model);
   if (authorFamily === null) {
     return { ok: false, reason: "unpinned-model", side: "author", model: author.model };
   }
 
-  const evaluatorFamily = familyOf(evaluator.model);
+  const evaluatorFamily = familyOf(configuration, evaluator.model);
   if (evaluatorFamily === null) {
     return { ok: false, reason: "unpinned-model", side: "evaluator", model: evaluator.model };
   }
@@ -130,7 +130,7 @@ export function checkEvaluator(assignment: EvaluatorAssignment): EvaluatorVerdic
     return { ok: false, reason: "wrong-author-family", certifies, authorFamily };
   }
 
-  if (evaluator.transport === "openrouter" && !isApprovedOpenEvaluator(evaluator.model)) {
+  if (evaluator.transport === "openrouter" && !isApprovedOpenEvaluator(configuration, evaluator.model)) {
     return { ok: false, reason: "unapproved-open-evaluator", model: evaluator.model };
   }
 

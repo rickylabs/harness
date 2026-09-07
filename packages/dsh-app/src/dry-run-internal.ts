@@ -1,7 +1,7 @@
 /** Internal phase instrumentation for owned crash tests; not exported by the package. */
 import { admissibleDispatch, digest, type StepState } from "@rickylabs/coordinator";
 import type { DeliveryReceipt, IntentKey, StateStoreHandle, StoreResult } from "@rickylabs/harness-contracts";
-import { admitDispatch, describeAdmission } from "@rickylabs/routing";
+import { admitDispatch, describeAdmission, parseRoutingDocument } from "@rickylabs/routing";
 import { compareRouteIdentity, HARNESSES, isRouteEvidenceVerified, ROUTERS, type DispatchRequest } from "@rickylabs/subagents";
 import type { DriveOutcome, DriveRefusal } from "./dry-run.js";
 
@@ -44,15 +44,29 @@ export interface DriveTestHooks {
 const refuse = (refusal: DriveRefusal): DriveOutcome => ({ drove: false, appended: 0, refusal });
 const malformed = (): DriveOutcome => refuse({ kind: "source-unusable", detail: "expected an open GitHub issue, canonical workflow, matching scope and positive attempt" });
 
-async function write<T>(operation: "intent" | "receipt", action: () => Promise<StoreResult<T>>): Promise<StoreResult<T>> {
+async function write<T>(operation: "read" | "intent" | "receipt", action: () => Promise<StoreResult<T>>): Promise<StoreResult<T>> {
   try { return await action(); }
   catch { return { ok: false, refusal: { kind: "io-failure", operation } }; }
 }
 
 /** Only the public wrapper accepts caller data; hooks are not reachable through its exports. */
-export async function driveSnapshot(handle: StateStoreHandle, value: unknown, hooks: DriveTestHooks = {}): Promise<DriveOutcome> {
+const operations = new WeakMap<StateStoreHandle, Promise<void>>();
+/** Serialize the entire read/admit/effect sequence, not merely the store's individual writes. */
+export function driveSnapshot(handle: StateStoreHandle, value: unknown, hooks: DriveTestHooks = {}): Promise<DriveOutcome> {
+  const previous = operations.get(handle) ?? Promise.resolve();
+  const result = previous.then(() => driveChecked(handle, value, hooks));
+  const tail = result.then(() => {}, () => {});
+  operations.set(handle, tail);
+  void tail.then(() => { if (operations.get(handle) === tail) operations.delete(handle); });
+  return result;
+}
+async function driveChecked(handle: StateStoreHandle, value: unknown, hooks: DriveTestHooks): Promise<DriveOutcome> {
   if (!object(value)) return malformed();
-  const { source, scope, dispatch, fake } = value;
+  const { source, scope, dispatch, fake, routing } = value;
+  if (!object(routing) || !text(routing.source) || !text(routing.text) ||
+      Object.keys(routing).some(k => k !== "source" && k !== "text")) return malformed();
+  const loaded = parseRoutingDocument(routing.text, routing.source);
+  if (!loaded.ok) return refuse({ kind: "routing-unusable", refusal: loaded.refusal });
   if (!object(source) || !object(scope) || !text(scope.repository) || !text(scope.milestone) ||
       source.repository !== scope.repository || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(scope.repository) ||
       source.kind !== "issue" || source.state !== "open" || !Number.isSafeInteger(source.number) || (source.number as number) <= 0 ||
@@ -72,7 +86,7 @@ export async function driveSnapshot(handle: StateStoreHandle, value: unknown, ho
       (dispatch.router !== undefined && !ROUTERS.includes(dispatch.router as NonNullable<DispatchRequest["router"]>))) {
     return refuse({ kind: "dispatch-inadmissible", problems: [{ reason: "malformed", message: "dispatch fields have invalid types or transport" }], detail: "malformed: dispatch fields have invalid types or transport" });
   }
-  const routed = admitDispatch(dispatch as unknown as DispatchRequest, { lane: value.lane });
+  const routed = admitDispatch(loaded.loaded.configuration, dispatch as unknown as DispatchRequest, { lane: value.lane });
   if (!routed.ok) return refuse({ kind: "dispatch-inadmissible", problems: routed.problems, detail: describeAdmission(routed) });
   if (!object(fake) || !code(fake.name) || !code(fake.provider)) return refuse({ kind: "executor-not-data", detail: "fake name and provider must be short lowercase identifiers" });
   const observed = object(fake.observation) ? fake.observation : {};
@@ -84,9 +98,17 @@ export async function driveSnapshot(handle: StateStoreHandle, value: unknown, ho
     fields: [...new Set([...route.mismatches, ...route.invalid.map(i => i.field)])] });
   const key: IntentKey = { repository: scope.repository, task: `issue-${source.number}`, workflowStep: "dispatch-run",
     attempt: value.attempt as number,
-    inputRevision: digest({ mode: "dry-run", scope, source, lane: value.lane, workflow: "milestone", step: "dispatch-run",
+    inputRevision: digest({ mode: "dry-run", routing: loaded.loaded.source.digest, scope, source, lane: value.lane, workflow: "milestone", step: "dispatch-run",
       dispatch: routed.dispatch, cwd: value.cwd, provider: fake.provider, fake: { name: fake.name, result: fake.result }, admission: admission.states }),
   };
+  const state = await write("read", () => handle.read());
+  if (!state.ok) return refuse({ kind: "store-refused", operation: "read", refusal: state.refusal });
+  const sameOperation = (effect: { readonly key: IntentKey }): boolean => effect.key.repository === key.repository &&
+    effect.key.task === key.task && effect.key.workflowStep === key.workflowStep;
+  if (state.value.pending.some(sameOperation)) return refuse({ kind: "unresolved-prior-effect", status: "pending" });
+  if (state.value.terminal.some(effect => effect.status === "unknown" && sameOperation(effect))) {
+    return refuse({ kind: "unresolved-prior-effect", status: "unknown" });
+  }
   await hooks.assembled?.(structuredClone(key));
   const intent = await write("intent", () => handle.intent(key));
   if (!intent.ok) return { drove: false, appended: "unknown", refusal: { kind: "store-refused", operation: "intent", refusal: intent.refusal } };

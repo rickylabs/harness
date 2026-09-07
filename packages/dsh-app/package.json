@@ -33,6 +33,10 @@
       "types": "./dist/plugins/telemetry.d.ts",
       "default": "./dist/plugins/telemetry.js"
     },
+    "./plugins/routing": {
+      "types": "./dist/plugins/routing.d.ts",
+      "default": "./dist/plugins/routing.js"
+    },
     "./plugins/llm": {
       "types": "./dist/plugins/llm.d.ts",
       "default": "./dist/plugins/llm.js"
@@ -43,6 +47,7 @@
   "files": ["dist", "cordis.patch.yml"],
   "scripts": {
     "build": "tsc -b",
+    "bundle:render": "tsc -b && node --input-type=module -e \"import { writeFileSync } from 'node:fs'; import { renderPatch, PATCH_FILE } from './dist/bundle.js'; writeFileSync(PATCH_FILE, renderPatch());\"",
     "typecheck": "tsc -b --emitDeclarationOnly",
     "test": "tsc -b && node --test \"dist/**/*.test.js\"",
     "smoke:board-projection": "tsc -b && node dist/board-smoke.js",

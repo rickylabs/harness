@@ -14,7 +14,7 @@
  *
  * ## The check that is not an assignment
  *
- * Two of the pins are not unprefixed. `LOCAL_MODEL_IDS` are `n5air/qwen3.8-27b` and
+ * Two ids in the shipped compatibility document are not unprefixed: `n5air/qwen3.8-27b` and
  * `n5air/ling-3.0-flash`, and `routing` is explicit that there the prefix *is* part of the id. `n5air`
  * is also a router. So a dispatch naming `router: n5air` with either of those models produces
  * `{ providerID: "n5air", modelID: "n5air/qwen3.8-27b" }` — the prefix twice, which is exactly what

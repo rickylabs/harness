@@ -1,75 +1,12 @@
-/**
- * Admission — the last place a dispatch can be refused for free.
- *
- * `validateDispatch` in `@rickylabs/subagents` refuses a request that leaves a choice implicit: no
- * model, no effort, an empty prompt, a timeout the executor would silently discard. It cannot
- * refuse a *wrong* model, and it says so in its own header — it "does not choose models", because
- * the matrix is the single source of truth and a second copy of it there would be a second answer
- * to a question that must only have one.
- *
- * So the check has to live on this side, and this is the file the routing README has been pointing
- * at: "#34 owns making a wrong id fail loudly there."
- *
- * ## Why the dependency runs this way
- *
- * `routing` already depends on `subagents` — `policy.ts` reads `Harness` and `Router` from it, and
- * `toDispatch` hands back the routing half of a `DispatchRequest`. Adding a `routing` import to
- * `subagents` to put this check beside `validateDispatch` would close that edge into a cycle, which
- * `check:graph` refuses. That constraint happens to point at the right design anyway: admission is a
- * question about the matrix, and the matrix lives here.
- *
- * ## What "before any spend" means
- *
- * Every refusal below is decidable from two tables and the request itself. Nothing here opens a
- * socket, reads a file, or looks at a quota — whether a destination can serve the model *right now*
- * is `probe.ts`, and admission never consults it. A permitted pairing that is momentarily
- * unavailable is a scheduling fact, not a routing one, and the two answers must stay separable so a
- * receipt can say which of them stopped a run. A dispatch that fails admission has cost a table walk;
- * the same dispatch launched has cost a subscription window, or real money on the relay, and has
- * left a run in the record that nobody selected.
- *
- * The failure this prevents is not a crash. A provider handed an id it does not recognise does not
- * usually fail — it falls back to whatever its own config says, runs to completion, and reports
- * success. The receipt then names a model that never ran. That is the same shape as the empty
- * completion `@rickylabs/llm-local`'s budget floor exists to prevent: a success-coded failure, and
- * the most expensive kind to find later.
- *
- * ## Three ways a model id can be wrong, and they are not the same problem
- *
- * - `unknown-model` — not pinned at all. A typo, or an id belonging to some other system.
- * - `unrouted-model` — pinned, but no lane in the matrix names it. The two `n5air/` seats are here
- *   today: `@rickylabs/llm-local` knows where they can physically run, and no route sends work to
- *   them yet. Pinning an id is not routing it.
- * - `unroutable-model` — pinned and routed, but never to this harness. `opus-5` is real and the
- *   matrix uses it constantly; `agy` is not somewhere it goes.
- *
- * Each one wants a different fix, so each one gets its own refusal rather than a shared "bad model".
- *
- * ## Credential material is refused first, and alone
- *
- * A dispatch is written into a GitHub issue body, into a receipt and into a run log. A credential in
- * the payload is therefore a credential in all three at once, and the third acceptance criterion of
- * #61 is that this cannot happen. The relay key is bound by *profile name* and read from its
- * mode-600 file at launch; nothing in a `/swarm` block ever carries the value.
- *
- * Two details make the guard hold rather than merely exist:
- *
- * - **A payload carrying credential material is refused on that ground alone.** Every other message
- *   below names the offending field's value, and one of those fields is the one holding the secret.
- *   Reporting both would put the key in the refusal, and the refusal is the thing that gets logged.
- * - **No message ever echoes a value longer than the longest name this package knows.** A value
- *   longer than that is not a mistyped id — there is nothing it could be a typo *of* — and the other
- *   thing it is likely to be is a key. Its length is reported instead, which is enough to diagnose a
- *   typo, and the `expected` list names what would have been admitted regardless.
+/** Admission composes wire validation with one explicit routing document before any spend.
+ * Payload credentials are refused before ordinary diagnostics. Unknown, unrouted and
+ * unroutable models are separate failures. No socket, quota observation or file read occurs.
  */
-
 import { HARNESSES, ROUTERS, validateDispatch } from "@rickylabs/subagents";
 import type { DispatchRequest } from "@rickylabs/subagents";
 
-import { EFFORTS, isPinnedModel, pinnedModels } from "./models.js";
-import type { Effort, Transport } from "./models.js";
-import { LANES, ROUTE_POLICY, lanePolicy } from "./policy.js";
-import type { Lane, RouteStep } from "./policy.js";
+import { isPinnedModel, pinnedModels, lanePolicy, lanes, declaredEfforts as configurationEfforts, isDeclaredEffort } from "./configuration.js";
+import type { RoutingConfiguration, Effort, Transport, Lane, RouteStep } from "./schema.js";
 
 /** Every ground on which a dispatch is refused before it can spend anything. */
 export const ADMISSION_REFUSALS = [
@@ -130,17 +67,17 @@ export type Admission =
   | { readonly ok: false; readonly problems: readonly AdmissionProblem[] };
 
 /** Every step in the matrix, flattened, with the lane it came from. */
-const ALL_STEPS: readonly { readonly lane: Lane; readonly step: RouteStep }[] = ROUTE_POLICY.flatMap(
-  (policy) => policy.chain.map((step) => ({ lane: policy.lane, step })),
-);
+function allSteps(configuration: RoutingConfiguration): readonly { readonly lane: Lane; readonly step: RouteStep }[] {
+  return configuration.lanes.flatMap(policy => policy.chain.map(step => ({ lane: policy.lane, step })));
+}
 
 /**
  * The interactive harness a `-run` form is the non-interactive twin of.
  *
  * The matrix names `codex` and `opencode`; the `-run` variants are the same seam launched without a
  * terminal, supervised by PR path and deadline instead. Treating them as different harnesses would
- * make every non-interactive dispatch unroutable, which is not what the table means — `policy.ts`
- * already pairs `codex` with `codex-run` in `DEEP_RESEARCH_HARNESSES` for exactly this reason.
+ * make every non-interactive dispatch unroutable, which is not what the table means — the configured document
+ * already pairs `codex` with `codex-run` in its native-only constraint for exactly this reason.
  */
 const INTERACTIVE_TWIN: ReadonlyMap<string, string> = new Map([
   ["codex-run", "codex"],
@@ -152,9 +89,9 @@ function baseHarness(harness: string): string {
 }
 
 /** Every model the matrix routes anywhere, in table order. */
-export function routedModels(): readonly string[] {
+export function routedModels(configuration: RoutingConfiguration): readonly string[] {
   const models: string[] = [];
-  for (const { step } of ALL_STEPS) {
+  for (const { step } of allSteps(configuration)) {
     if (!models.includes(step.route.model)) models.push(step.route.model);
   }
   return models;
@@ -167,10 +104,10 @@ export function routedModels(): readonly string[] {
  * refusal to name. Derived from the table on every call rather than indexed once: the walk is
  * thirty-odd steps, and an index is a second copy of the matrix that can go stale.
  */
-export function routableModels(harness: string, router?: string): readonly string[] {
+export function routableModels(configuration: RoutingConfiguration, harness: string, router?: string): readonly string[] {
   const base = baseHarness(harness);
   const models: string[] = [];
-  for (const { step } of ALL_STEPS) {
+  for (const { step } of allSteps(configuration)) {
     const { route } = step;
     if (baseHarness(route.harness) !== base) continue;
     if (router !== undefined && route.router !== undefined && route.router !== router) continue;
@@ -180,9 +117,9 @@ export function routableModels(harness: string, router?: string): readonly strin
 }
 
 /** The transports the matrix reaches a model over. Empty for a model no lane routes. */
-export function transportsFor(model: string): readonly Transport[] {
+export function transportsFor(configuration: RoutingConfiguration, model: string): readonly Transport[] {
   const transports: Transport[] = [];
-  for (const { step } of ALL_STEPS) {
+  for (const { step } of allSteps(configuration)) {
     if (step.route.model !== model) continue;
     if (!transports.includes(step.route.transport)) transports.push(step.route.transport);
   }
@@ -195,9 +132,9 @@ export function transportsFor(model: string): readonly Transport[] {
  * A profile is an identifier for a credential, never the credential. Listing them in a refusal is
  * how the gate tells an operator what to write without anything having read a key.
  */
-export function relayProfiles(): readonly string[] {
+export function relayProfiles(configuration: RoutingConfiguration): readonly string[] {
   const profiles: string[] = [];
-  for (const { step } of ALL_STEPS) {
+  for (const { step } of allSteps(configuration)) {
     const { profile } = step.route;
     if (profile !== undefined && !profiles.includes(profile)) profiles.push(profile);
   }
@@ -205,8 +142,8 @@ export function relayProfiles(): readonly string[] {
 }
 
 /** The models one lane routes, optionally narrowed to the steps that use a given harness. */
-export function laneModels(lane: string, harness?: string): readonly string[] {
-  const policy = lanePolicy(lane);
+export function laneModels(configuration: RoutingConfiguration, lane: string, harness?: string): readonly string[] {
+  const policy = lanePolicy(configuration, lane);
   if (policy === null) return [];
   const base = harness === undefined ? undefined : baseHarness(harness);
   const models: string[] = [];
@@ -224,8 +161,8 @@ export function laneModels(lane: string, harness?: string): readonly string[] {
  * has declared `high`. It includes nothing else, which is the point: an effort outside this list is
  * an escalation nobody wrote down, and `resolve.ts` refuses those rather than approximating upward.
  */
-function declaredEfforts(lane: string, model: string, harness: string): readonly Effort[] {
-  const policy = lanePolicy(lane);
+function declaredEfforts(configuration: RoutingConfiguration, lane: string, model: string, harness: string): readonly Effort[] {
+  const policy = lanePolicy(configuration, lane);
   if (policy === null) return [];
   const base = baseHarness(harness);
   const efforts: Effort[] = [];
@@ -247,18 +184,11 @@ function declaredEfforts(lane: string, model: string, harness: string): readonly
  * value longer than this is not a mistyped id — there is no name it could be a typo of — so echoing
  * it into a log buys nothing and risks echoing a key.
  */
-const LONGEST_NAME: number = [
-  ...pinnedModels(),
-  ...LANES,
-  ...EFFORTS,
-  ...relayProfiles(),
-  ...ROUTERS,
-  ...HARNESSES,
-].reduce((longest, name) => (name.length > longest ? name.length : longest), 0);
-
-/** Quote a value for a message, or describe it if it is too long to be a name. */
-function echo(value: string): string {
-  if (value.length <= LONGEST_NAME) return JSON.stringify(value);
+/** Derived per document; never a mutable global activation. */
+function echo(configuration: RoutingConfiguration, value: string): string {
+  const longest = [...pinnedModels(configuration), ...lanes(configuration), ...configurationEfforts(configuration),
+    ...relayProfiles(configuration), ...ROUTERS, ...HARNESSES].reduce((n, name) => Math.max(n, name.length), 0);
+  if (value.length <= longest) return JSON.stringify(value);
   return `a ${String(value.length)}-character value`;
 }
 
@@ -344,22 +274,18 @@ function credentialProblems(dispatch: DispatchRequest): readonly AdmissionProble
   return problems;
 }
 
-function isEffort(value: string): value is Effort {
-  return EFFORTS.some((effort) => effort === value);
-}
-
 /** Everything the matrix can say about a model id, independent of any lane. */
-function modelProblems(dispatch: DispatchRequest, model: string): readonly AdmissionProblem[] {
-  const forRoute = routableModels(dispatch.harness, dispatch.router);
-  const forHarness = routableModels(dispatch.harness);
-  const expected = forRoute.length > 0 ? forRoute : forHarness.length > 0 ? forHarness : routedModels();
+function modelProblems(configuration: RoutingConfiguration, dispatch: DispatchRequest, model: string): readonly AdmissionProblem[] {
+  const forRoute = routableModels(configuration, dispatch.harness, dispatch.router);
+  const forHarness = routableModels(configuration, dispatch.harness);
+  const expected = forRoute.length > 0 ? forRoute : forHarness.length > 0 ? forHarness : routedModels(configuration);
 
-  if (!isPinnedModel(model)) {
+  if (!isPinnedModel(configuration, model)) {
     return [
       {
         reason: "unknown-model",
         message:
-          `model ${echo(model)} is not one routing pins, so nothing can say where it goes. A ` +
+          `model ${echo(configuration, model)} is not one routing pins, so nothing can say where it goes. A ` +
           "provider handed an id it does not recognise falls back to its own config, runs to " +
           "completion and reports success, and the receipt then names a model that never ran.",
         expected,
@@ -367,13 +293,13 @@ function modelProblems(dispatch: DispatchRequest, model: string): readonly Admis
     ];
   }
 
-  const transports = transportsFor(model);
+  const transports = transportsFor(configuration, model);
   if (transports.length === 0) {
     return [
       {
         reason: "unrouted-model",
         message:
-          `model ${echo(model)} is pinned but no lane in the matrix routes it, so there is no step ` +
+          `model ${echo(configuration, model)} is pinned but no lane in the matrix routes it, so there is no step ` +
           "to take a transport, a profile or an effort from. Pinning an id is not routing it.",
         expected,
       },
@@ -385,11 +311,11 @@ function modelProblems(dispatch: DispatchRequest, model: string): readonly Admis
   if (!forRoute.includes(model)) {
     const where =
       dispatch.router === undefined
-        ? `to ${echo(dispatch.harness)}`
-        : `to ${echo(dispatch.harness)} over ${echo(dispatch.router)}`;
+        ? `to ${echo(configuration, dispatch.harness)}`
+        : `to ${echo(configuration, dispatch.harness)} over ${echo(configuration, dispatch.router)}`;
     problems.push({
       reason: "unroutable-model",
-      message: `the matrix never sends ${echo(model)} ${where}`,
+      message: `the matrix never sends ${echo(configuration, model)} ${where}`,
       expected,
     });
   }
@@ -400,7 +326,7 @@ function modelProblems(dispatch: DispatchRequest, model: string): readonly Admis
       problems.push({
         reason: "wrong-router",
         message:
-          `${echo(model)} is reached over the relay only, and router ${echo(dispatch.router)} ` +
+          `${echo(configuration, model)} is reached over the relay only, and router ${echo(configuration, dispatch.router)} ` +
           "would look for it on a box that does not serve it.",
         expected: ["openrouter"],
       });
@@ -412,10 +338,10 @@ function modelProblems(dispatch: DispatchRequest, model: string): readonly Admis
       problems.push({
         reason: "unbound-credential",
         message:
-          `${echo(model)} is a relay model and the request names no profile. The profile is what ` +
+          `${echo(configuration, model)} is a relay model and the request names no profile. The profile is what ` +
           "binds the credential, and a relay call with nothing bound either fails at the gateway " +
           "or picks up whichever ambient key is lying around, which nobody chose.",
-        expected: relayProfiles(),
+        expected: relayProfiles(configuration),
       });
     }
   }
@@ -424,54 +350,54 @@ function modelProblems(dispatch: DispatchRequest, model: string): readonly Admis
 }
 
 /** Everything that only makes sense once the coordinator says which lane this is. */
-function laneProblems(
+function laneProblems(configuration: RoutingConfiguration,
   dispatch: DispatchRequest,
   lane: string,
   model: string | undefined,
   effort: string | undefined,
 ): readonly AdmissionProblem[] {
-  if (lanePolicy(lane) === null) {
+  if (lanePolicy(configuration, lane) === null) {
     return [
       {
         reason: "unknown-lane",
-        message: `lane ${echo(lane)} is not one the matrix routes`,
-        expected: [...LANES],
+        message: `lane ${echo(configuration, lane)} is not one the matrix routes`,
+        expected: [...lanes(configuration)],
       },
     ];
   }
   if (model === undefined || model === "") return [];
 
-  const anyStep = laneModels(lane);
+  const anyStep = laneModels(configuration, lane);
   if (!anyStep.includes(model)) {
     return [
       {
         reason: "lane-model-mismatch",
-        message: `lane ${echo(lane)} has no step that routes ${echo(model)}`,
+        message: `lane ${echo(configuration, lane)} has no step that routes ${echo(configuration, model)}`,
         expected: anyStep,
       },
     ];
   }
 
-  const onHarness = laneModels(lane, dispatch.harness);
+  const onHarness = laneModels(configuration, lane, dispatch.harness);
   if (!onHarness.includes(model)) {
     return [
       {
         reason: "lane-model-mismatch",
         message:
-          `lane ${echo(lane)} routes ${echo(model)}, but never through ${echo(dispatch.harness)}`,
+          `lane ${echo(configuration, lane)} routes ${echo(configuration, model)}, but never through ${echo(configuration, dispatch.harness)}`,
         expected: onHarness.length > 0 ? onHarness : anyStep,
       },
     ];
   }
 
   if (effort === undefined || effort === "") return [];
-  const declared = declaredEfforts(lane, model, dispatch.harness);
+  const declared = declaredEfforts(configuration, lane, model, dispatch.harness);
   if (!declared.some((candidate) => candidate === effort)) {
     return [
       {
         reason: "undeclared-effort",
         message:
-          `lane ${echo(lane)} runs ${echo(model)} at ${declared.join(" or ")}. ${echo(effort)} is ` +
+          `lane ${echo(configuration, lane)} runs ${echo(configuration, model)} at ${declared.join(" or ")}. ${echo(configuration, effort)} is ` +
           "an escalation no step declares, and an undeclared escalation is refused rather than " +
           "inferred.",
         expected: [...declared],
@@ -490,8 +416,12 @@ function laneProblems(
  * `checkPolicy` and `resolveRoute` return one: at the coordinator a refused dispatch is a routing
  * fact to record and fall back from, not an exception to unwind a run around.
  */
-export function admitDispatch(dispatch: DispatchRequest, context: AdmissionContext = {}): Admission {
-  const carried = credentialProblems(dispatch);
+export function admitDispatch(configuration: RoutingConfiguration, dispatch: DispatchRequest, context: AdmissionContext = {}): Admission {
+  const carried = [...credentialProblems(dispatch)];
+  if (context.lane !== undefined) {
+    const shape = matchShape(context.lane, [...KEY_SHAPES, ASSIGNMENT_SHAPE]);
+    if (shape !== null) carried.push(credentialProblem("lane", shape));
+  }
   if (carried.length > 0) return { ok: false, problems: carried };
 
   const problems: AdmissionProblem[] = validateDispatch(dispatch).map((message) => ({
@@ -502,21 +432,27 @@ export function admitDispatch(dispatch: DispatchRequest, context: AdmissionConte
   const { model, effort } = dispatch;
 
   if (model !== undefined && model !== "") {
-    problems.push(...modelProblems(dispatch, model));
+    problems.push(...modelProblems(configuration, dispatch, model));
   }
-  if (effort !== undefined && effort !== "" && !isEffort(effort)) {
+  if (effort !== undefined && effort !== "" && !isDeclaredEffort(configuration, effort)) {
     problems.push({
       reason: "unknown-effort",
-      message: `effort ${echo(effort)} is not a rung on the ladder`,
-      expected: [...EFFORTS],
+      message: `effort ${echo(configuration, effort)} is not a rung on the ladder`,
+      expected: [...configurationEfforts(configuration)],
     });
   }
   if (context.lane !== undefined) {
-    problems.push(...laneProblems(dispatch, context.lane, model, effort));
+    problems.push(...laneProblems(configuration, dispatch, context.lane, model, effort));
   }
 
   if (problems.length === 0) return { ok: true, dispatch };
-  return { ok: false, problems };
+  // Configured names used to be compiled trusted strings. They now share the diagnostic
+  // credential boundary with the request, including expected choices and escalation names.
+  return { ok: false, problems: problems.map(problem => ({
+    ...problem,
+    message: matchShape(problem.message, [...KEY_SHAPES, ASSIGNMENT_SHAPE]) === null ? problem.message : "configured routing value contains credential-shaped material; value withheld",
+    ...(problem.expected === undefined ? {} : { expected: problem.expected.filter(value => matchShape(value, [...KEY_SHAPES, ASSIGNMENT_SHAPE]) === null) }),
+  })) };
 }
 
 /**

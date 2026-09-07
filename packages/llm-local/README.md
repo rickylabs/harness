@@ -11,7 +11,7 @@ Owned by **E4 · [#34](https://github.com/rickylabs/harness/issues/34)**; the ca
 | File | What it owns |
 | --- | --- |
 | `backends.ts` | The three destinations: base URL, locality, accelerator, readiness, diagnostics |
-| `capability.ts` | The model × backend matrix — what runs where, what does not, and why |
+| `capability.ts` | Mechanism validation and queries over explicit model/backend placement data |
 | `budget.ts` | The token-budget floor, as a branded type |
 | `endpoint.ts` | A backend name plus a deployment override, resolved into a request target |
 | `health.ts` | What came back of a readiness check: five outcomes, each with its own remedy |
@@ -23,15 +23,21 @@ package answers *where do I send a request for `x`*, and never *should the reque
 packages answering the second question is the failure mode: there would be no way to tell which
 answer a run had used.
 
-So the ids in `capability.ts` are imported, never spelled. A model `routing` does not pin cannot be
-placed here — `checkCapability` reports it as a problem rather than inventing a row for it.
+Placements come from the same wholly replaced [routing document](../routing/config/routing.v1.json).
+Routing validates their shape, model references, duplicate pairs and explicit membership totality.
+`checkCapability(placements)` validates the backend mechanism, verdict, refusal reason and
+requirements. `requirePlacements(placements)` refuses with fixed codes before exposing anything,
+and returns a detached frozen array on success. `placementOf`, `canRun`, `refusalOf`, `backendsFor`
+and `placedModels` take that array first. There is no compiled placement table or model-id import.
+An empty membership is legal and lists no models.
 
-The dependency runs one way. `routing` does not know a backend exists.
+The dependency runs one way: this package depends on routing. Routing treats backend identifiers
+as opaque strings and does not import this package; unsupported mechanisms refuse at composition.
 
 ## Local availability is not guessable from the id
 
-Every asymmetry in the matrix cost a debugging session to find, and none of them can be inferred
-from the model name, the vendor, or whether the weights are open:
+The shipped compatibility document retains the earlier placement observations below. They are
+transcribed evidence, not a fresh host probe, and cannot be inferred from a model id:
 
 - **GLM-5.3-Flash is relay-only.** `glm5next` is absent from this box's llama.cpp build, so neither
   local backend can load it. The accelerator is not the obstacle, which is why swapping to ROCm does
@@ -55,9 +61,9 @@ observed sends a dispatch somewhere it may die.
 `canRun` fails closed on `unverified`, because the question it answers is *may I dispatch here
 without probing first*.
 
-The distinction is what makes totality worth enforcing. `checkCapability` requires a placement for
-every model × backend pair, so a model that gains a pin in `routing` cannot silently have no row —
-but that is only safe if the filler value is allowed to say "unknown".
+Routing enforces totality for models explicitly present in the placement section, across that
+section’s declared backends. Vendor-CLI-only models need no placement. No prefix or compiled list
+implies membership. `checkCapability` preserves the rule that a participating model runs somewhere.
 
 Four refusal reasons, each with a distinct remedy, which is the test for whether one deserves to
 exist: `absent-from-build` (rebuild), `crashes-on-backend` (use the other accelerator),
@@ -166,8 +172,7 @@ The local endpoints sit here too, and they are the case that makes the split obv
 on the N5's own GPU costs nothing per token and is still not a subagent. It has no session, nothing
 to steer, and nothing to observe.
 
-`moonshotai/kimi-k3` is the mirror image, and is deliberately absent from the matrix even though
-`routing` pins it: it is reached through opencode's own router, on the subagent seam. Listing it
+In the shipped compatibility document, `moonshotai/kimi-k3` is deliberately absent from placements: it is reached through opencode's own router, on the subagent seam. Listing it
 would imply this package could send it somewhere, and no adapter here ever will.
 
 ## What is deliberately not here

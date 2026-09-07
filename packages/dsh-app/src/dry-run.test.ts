@@ -1,3 +1,4 @@
+import { parseRoutingDocument } from "@rickylabs/routing";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { digest, MemoryStateStore } from "@rickylabs/coordinator";
@@ -92,7 +93,8 @@ test("semantic key binds every requested change and remains deterministic", asyn
   // This exact live-shaped revision lacks the dry-run brand and cannot alias the dry-run key.
   const admission = base.states.filter(s => s.outcome === "done");
   const inputs = { scope: base.scope, source: base.source, lane: base.lane, workflow: base.workflow, step: "dispatch-run", dispatch: base.dispatch, cwd: base.cwd, provider: base.fake.provider, fake: { name: base.fake.name, result: base.fake.result }, admission };
-  assert.equal(key.inputRevision, digest({ mode: "dry-run", ...inputs }));
+  const parsed = parseRoutingDocument(base.routing.text, base.routing.source); assert.ok(parsed.ok);
+  assert.equal(key.inputRevision, digest({ mode: "dry-run", routing: parsed.loaded.source.digest, ...inputs }));
   assert.notEqual(key.inputRevision, digest(inputs));
 });
 test("inputs are detached before await and acknowledgement follows the durable receipt", async () => {
@@ -151,4 +153,65 @@ for (const [id, fields] of [
   const outcome = await driveDryRun(handle, { ...base, states } as DryRunPlan);
   assert.ok(!outcome.drove && outcome.appended === 0 && outcome.refusal.kind === "admission-failed");
   assert.equal(value(await handle.read()).lastEntry, 0);
+});
+
+test("document identity uses actual bytes, never an asserted digest or a source label", async () => {
+  const original = await keyOf(base);
+  assert.notDeepEqual(await keyOf({ ...base, routing: { ...base.routing, text: base.routing.text + " " } }), original);
+  assert.deepEqual(await keyOf({ ...base, routing: { ...base.routing, source: "another-label" } }), original);
+  const { handle } = await memory();
+  const forged = { ...base, routing: { ...base.routing, text: base.routing.text + " ", digest: "old-digest" } };
+  const result = await driveDryRun(handle, forged);
+  assert.ok(!result.drove && result.appended === 0 && result.refusal.kind === "source-unusable");
+  assert.equal(value(await handle.read()).lastEntry, 0);
+});
+for (const routing of [undefined, null, {}, { source: "fixture", text: "{" }, { source: "fixture", text: "[]" }]) test("unusable routing refuses before assembly and delivery", async () => {
+  const { handle } = await memory(); let assembled = 0; let attempted = 0;
+  const outcome = await driveSnapshot(handle, { ...base, routing }, { assembled: () => { assembled++; }, attempted: () => { attempted++; } });
+  assert.ok(!outcome.drove && outcome.appended === 0);
+  assert.ok(outcome.refusal.kind === "routing-unusable" || outcome.refusal.kind === "source-unusable");
+  assert.equal(assembled, 0); assert.equal(attempted, 0); assert.equal(value(await handle.read()).lastEntry, 0);
+});
+for (const orphaned of [false, true]) test(`memory protects unresolved operation across revisions and attempts (orphaned=${orphaned})`, async () => {
+  const setup = await memory(); let handle = setup.handle;
+  const prior = value(await handle.intent({ repository: SCOPE.repository, task: "issue-7", workflowStep: "dispatch-run", attempt: 1, inputRevision: "old-pre-routing-revision" }));
+  if (orphaned) { setup.store.simulateCrash(); handle = value(await setup.store.recover(handle.holder)); }
+  const before = value(await handle.read()); let assembled = 0; let attempted = 0;
+  const results = await Promise.all([1, 2, 99].map(attempt => driveSnapshot(handle,
+    { ...base, attempt, routing: { ...base.routing, text: base.routing.text + " ".repeat(attempt) } },
+    { assembled: () => { assembled++; }, attempted: () => { attempted++; } })));
+  for (const result of results) {
+    assert.deepEqual(result, { drove: false, appended: 0, refusal: { kind: "unresolved-prior-effect", status: orphaned ? "unknown" : "pending" } });
+  }
+  assert.equal(assembled, 0); assert.equal(attempted, 0); assert.deepEqual(value(await handle.read()), before);
+  assert.deepEqual((orphaned ? before.terminal : before.pending)[0]?.key, prior.key);
+});
+test("simultaneous new-key drives serialize through an undetermined effect", async () => {
+  const { handle } = await memory(); let attempted = 0;
+  const results = await Promise.all([1, 2, 3].map(attempt => driveSnapshot(handle,
+    { ...base, attempt, routing: { ...base.routing, text: base.routing.text + " ".repeat(attempt) }, fake: { ...base.fake, result: { kind: "unknown" } } },
+    { attempted: () => { attempted++; } })));
+  assert.equal(results.filter(r => r.drove).length, 1);
+  for (const result of results.slice(1)) assert.deepEqual(result, { drove: false, appended: 0, refusal: { kind: "unresolved-prior-effect", status: "pending" } });
+  assert.equal(attempted, 1); const state = value(await handle.read()); assert.equal(state.lastEntry, 1); assert.equal(state.pending.length, 1);
+});
+for (const throwing of [false, true]) test(`read refusal prevents every intent and delivery (throws=${throwing})`, async () => {
+  const { handle } = await memory(); let intents = 0; let attempts = 0;
+  const refusedHandle: StateStoreHandle = { ...handle,
+    read: async () => { if (throwing) throw new Error("private OS failure"); return { ok: false, refusal: { kind: "poisoned" } }; },
+    intent: async key => { intents++; return handle.intent(key); },
+  };
+  const result = await driveSnapshot(refusedHandle, base, { attempted: () => { attempts++; } });
+  assert.ok(!result.drove && result.appended === 0 && result.refusal.kind === "store-refused" && result.refusal.operation === "read");
+  assert.equal(intents, 0); assert.equal(attempts, 0); assert.equal(value(await handle.read()).lastEntry, 0);
+});
+test("unresolved records for a different task or workflow step do not leave cross-operation residue", async () => {
+  const { handle } = await memory();
+  for (const change of [{ task: "issue-8" }, { workflowStep: "other-step" }, { repository: "another/project" }]) {
+    // The general store may scope-check repositories; the first two isolate the consumer predicate.
+    if ("repository" in change) continue;
+    value(await handle.intent({ repository: SCOPE.repository, task: "issue-7", workflowStep: "dispatch-run", attempt: 1, inputRevision: "previous", ...change }));
+  }
+  const result = await driveDryRun(handle, base); assert.ok(result.drove);
+  assert.equal(value(await handle.read()).pending.length, 2);
 });

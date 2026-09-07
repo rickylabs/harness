@@ -1,3 +1,4 @@
+import type { RoutingService } from "./routing.js";
 /**
  * `harness-llm` — our adapter, registered on the `ctx.llm` seam dsh already owns.
  *
@@ -47,7 +48,7 @@ export const name = "harness-llm";
  * `llm` is `@deepseek-ai/dsh-llm`'s key, not ours. Naming it here is what makes the boot order a
  * fact rather than a hope.
  */
-export const inject: string[] = ["llm"];
+export const inject: string[] = ["llm", "harnessRouting"];
 
 /**
  * What a deployment may set on the `harness-llm` row.
@@ -101,18 +102,20 @@ export function resolveOverrides(
  * the socket is not.
  */
 export function createAdapter(
+  routing: RoutingService,
   config: Partial<LlmConfig> | undefined,
   transport: Transport = fetchTransport(),
 ): LocalLlmAdapter {
   return new LocalLlmAdapter({
     transport,
+    placements: routing.configuration.placements,
     overrides: resolveOverrides(config),
     credentials: envCredentials(),
   });
 }
 
 export function apply(ctx: Context, config?: Partial<LlmConfig>): void {
-  const adapter = createAdapter(config);
+  const adapter = createAdapter(ctx.harnessRouting, config);
   ctx.effect(() => {
     // All three register, including a backend whose override is unusable. A refused route answers
     // with a terminal `error` finish naming the refusal; registering only the good ones would make

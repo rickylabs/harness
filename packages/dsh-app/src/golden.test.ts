@@ -43,6 +43,7 @@ const OUR_ROWS = [
   "harness-board",
   "harness-coordinator",
   "harness-telemetry",
+  "harness-routing",
   "harness-llm",
 ] as const;
 

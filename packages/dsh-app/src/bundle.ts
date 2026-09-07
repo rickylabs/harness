@@ -18,7 +18,7 @@
  * A bundle patch states **what this bundle adds**, not what its plugins default to. Every knob our
  * plugins accept already has a default declared next to the code that reads it; restating those
  * defaults here would create a second copy that no test compares. So the rows carry `id` and `name`
- * and nothing else, and a deployment that wants to override something writes it in the *profile's*
+ * plus required document selections, and a deployment that wants to override something writes it in the *profile's*
  * `cordis.patch.yml`, which applies after ours.
  *
  * ## Ordering
@@ -36,6 +36,8 @@ export interface BundleRow {
   readonly name: string;
   /** Why the row exists. Rendered as a comment above it, one array element per line. */
   readonly why: readonly string[];
+  /** Required selections only; plugin defaults remain with their plugin. */
+  readonly config?: Readonly<Record<string, string>>;
 }
 
 /** Name of the file this module renders. Read by dsh through `dsh.bundle.patch` in the manifest. */
@@ -117,12 +119,19 @@ export const BUNDLE_ROWS: readonly BundleRow[] = [
     ],
   },
   {
+    id: "harness-routing",
+    name: "@rickylabs/dsh-app/plugins/routing",
+    config: { document: "@rickylabs/routing/config/routing.v1.json" },
+    why: ["The explicit routing document selection (#271). A deployment may replace this whole",
+      "document in its profile patch. No missing-document fallback exists."],
+  },
+  {
     id: "harness-llm",
     name: "@rickylabs/dsh-app/plugins/llm",
     why: [
       "The three token-metered destinations — lm-studio, llama-rocm, openrouter (E2 · #176) —",
       "registered on `ctx.llm`, which `@deepseek-ai/dsh-llm` owns and the composed profile",
-      "already mounts. This row claims no key; it injects `llm` and stays PENDING without it.",
+      "already mounts. It injects `llm` and `harnessRouting`, staying PENDING without either.",
       "",
       "Base URLs only. A credential is never a profile key: a profile is committed and a",
       "credential must not be, so `OPENROUTER_API_KEY` is read from the daemon's environment at",
@@ -172,6 +181,13 @@ export function renderPatch(rows: readonly BundleRow[] = BUNDLE_ROWS): string {
     for (const line of row.why) out.push(comment(line, "    "));
     out.push(`    - id: ${row.id}`);
     out.push(`      name: '${row.name}'`);
+    if (row.config !== undefined) {
+      out.push("      config:");
+      for (const [key, value] of Object.entries(row.config)) {
+        if (!ID_PATTERN.test(key)) throw new RangeError("patch config key must be lowercase-hyphenated");
+        out.push(`        ${key}: ${JSON.stringify(value)}`);
+      }
+    }
   });
   out.push("");
   return out.join("\n");

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+const routingText = readFileSync(new URL(import.meta.resolve("@rickylabs/routing/config/routing.v1.json")), "utf8");
 import assert from "node:assert/strict";
 import { evidenceName, MILESTONE_WORKFLOW, prerequisites, settle, type StepState } from "@rickylabs/coordinator";
 import type { StoreResult } from "@rickylabs/harness-contracts";
@@ -15,7 +17,7 @@ export function fixture(): DryRunPlan {
     assert.ok(result.settled);
     states = result.states;
   }
-  return { scope: SCOPE, workflow: "milestone", states, lane: "complex_implementation", attempt: 1,
+  return { routing: { source: "compatibility-fixture", text: routingText }, scope: SCOPE, workflow: "milestone", states, lane: "complex_implementation", attempt: 1,
     source: { kind: "issue", state: "open", repository: SCOPE.repository, number: 7,
       url: "https://github.com/example/project/issues/7", title: "Synthetic issue", body: "Perform synthetic work.", updatedAt: AT, labels: ["task"] },
     dispatch: { harness: "codex", model: "gpt-6-astra", effort: "medium", prompt: "Perform synthetic work." }, cwd: "/synthetic/project",

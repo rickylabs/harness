@@ -51,3 +51,62 @@ The architecture matrix calls for escalation at a second plan-review round. The 
 ## D-017 — new-key redispatch is guarded by the consumer
 
 Same-session review at2a4a09f verified all four earlier fixes, then returned FAIL_FIX for the state-store test. A changed input revision is a distinct key and existing per-key fencing does not prevent that new intent. Replaced S4/T-C7/R6 with an explicit consumer obligation: serialized handle operations, state read before intent, pending/unknown operation refusal across revisions and attempts, no automatic operator reauthorization, and real FileStateStore plus memory/concurrency tests. The store contract stays unchanged. Second verdict retained in plan-eval-round2.md. No product mutation. Continued bounded repair is surfaced to the owner under the standing autonomous direction; no gate waiver or model downgrade.
+
+## D-018 — implementation inventory corrections (2026-09-07)
+
+The bounded implementation follows the final S-4/T-C7 obligation; no owner fork or route change.
+Three source-derived inventory corrections were needed within the single PR:
+
+- `packages/dsh-app/src/profile.test.ts` also asserts the complete row list. Add the selected routing
+  row; its first post-change execution failed on exactly that missing expectation. This supplements
+  M-21 rather than changing a behavioral expectation unrelated to the manifest.
+- No repository command previously invoked `renderPatch` to write the patch, despite its generated
+  header referring to build. Add `bundle:render` to the existing dsh-app manifest, calling that
+  renderer. Render the patch and use the existing `golden:bless` script; do not hand-edit either.
+- The D-18 AST scan found additional assignments with structural meanings: the board projection's
+  synthetic smoke identity, the forge label color named `lane`, the teardown empty-harness sentinel,
+  and subagents' requested/observed diagnostic paths. Their exact files and identifiers are documented
+  in the script allowlist with owning issues; no excluded package's runtime behavior was changed.
+
+`requirePlacements` is a small composition helper in the already authorized capability module: it
+checks mechanism problems, then clones/freezes the typed placement array before the adapter can
+expose it. Model/backend references and explicit totality remain with routing. No dependency added.
+
+The packed-asset regression executes both `npm pack --dry-run` and a real scratch tarball extraction,
+then resolves the exported document from an isolated consumer. This strengthens T-L1c's dry-run-only
+inventory check to satisfy the disposition's actual packed-layout requirement.
+
+[source: packages/dsh-app/src/profile.test.ts, topic: plannedRowIds; inspected 2026-09-07]
+[source: packages/dsh-app/src/bundle.ts and package.json, topic: renderer and script inventory; inspected 2026-09-07]
+[source: scripts/check-compiled-policy.mjs allowlist, topic: structural assignments versus routing policy; inspected 2026-09-07]
+
+## D-019 — full-build row projections (2026-09-07)
+
+The first clean full build passed compilation, CLI reference generation checks and the unchanged
+contract publishing gate, then found two tutorial output blocks reflecting the old five-row bundle.
+The full test sweep also found the independent `OUR_ROWS` list in `golden.test.ts`. Extend M-21/M-23
+with these two files: update that list to include the required row; regenerate only the tutorial's
+install transcript from the real profile CLI in scratch and the appended-row excerpt from the
+script-generated golden. Preserve its `verify: exact` and `verify: contains` checks and update the
+two adjacent plugin counts. The resulting output delta is the new routing row and its selection.
+No expectation is waived, no generated file is hand-edited, and no live profile is installed.
+
+[source: packages/dsh-app/src/golden.test.ts, topic: independent bundle ordering assertion; inspected 2026-09-07]
+[source: scripts/check-tutorial.mjs and docs/tutorials/01-from-clone-to-board.md, topic: executable transcript and excerpt checks; executed 2026-09-07]
+
+## D-020 — document-derived consumer diagnostics (2026-09-07)
+
+Making names and placement explanations external data exposed two previously trusted diagnostic
+inputs. Admission now withholds credential-shaped configured names from messages and expected
+choices; the placement refusal uses its validated mechanism/reason code and refers to document
+evidence instead of copying arbitrary model/why text. The loader still preserves data unchanged
+and keeps its own diagnostics code/path-only. A regression supplies a valid document whose model
+id is credential-shaped and verifies admission cannot print it. This implements the existing
+credential diagnostic constraint rather than expanding routing semantics.
+
+[source: packages/routing/src/admit.ts and packages/dsh-app/src/llm/adapter.ts, topic: document-derived diagnostic inputs; inspected 2026-09-07]
+
+The AST gate also checks direct assignments and conditional/nullish default expressions, with a
+self-test for a late `route.model` assignment. This found presentation-only fallback strings in
+contracts, coordinator, forge and telemetry. Exact literal exceptions in the allowlist distinguish
+those missing-value display strings from new model/effort selections; those packages are unchanged.

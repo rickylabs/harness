@@ -1,3 +1,4 @@
+import type { PlacementConfiguration } from "@rickylabs/routing";
 /**
  * The `LlmAdapter` registered on `ctx.llm` for our three destinations.
  *
@@ -54,7 +55,8 @@ import type {
 } from "@deepseek-ai/dsh-llm";
 import {
   type Backend,
-  PLACEMENTS,
+  requirePlacements,
+  type Placement,
   describeEndpoint,
   isBackend,
   placementOf,
@@ -131,6 +133,7 @@ export function envCredentials(env: NodeJS.ProcessEnv = process.env): Credential
 
 /** Everything the adapter needs that is not a fact about a backend. */
 export interface AdapterOptions {
+  readonly placements: PlacementConfiguration;
   /** The socket. `fetchTransport()` in the daemon, a canned exchange in the suite. */
   readonly transport: Transport;
   /** Per-backend base-URL overrides from the profile. Blank or absent uses the table default. */
@@ -189,8 +192,11 @@ export class LocalLlmAdapter extends LlmAdapter {
   private readonly overrides: Readonly<Partial<Record<Backend, string>>>;
   private readonly credentials: CredentialReader;
 
+  private readonly placements: readonly Placement[];
+
   constructor(options: AdapterOptions) {
     super();
+    this.placements = requirePlacements(options.placements);
     this.transport = options.transport;
     this.overrides = options.overrides ?? {};
     this.credentials = options.credentials ?? ((): undefined => undefined);
@@ -220,7 +226,7 @@ export class LocalLlmAdapter extends LlmAdapter {
    * repository knows about the pair, and a picker that shows it beats one that shows an id twice.
    */
   override listModels(provider: string): Promise<readonly LlmModelInfo[]> {
-    const models = PLACEMENTS.filter(
+    const models = this.placements.filter(
       (placement) => placement.backend === provider && placement.verdict === "runs",
     ).map(
       (placement): LlmModelInfo => ({
@@ -275,11 +281,11 @@ export class LocalLlmAdapter extends LlmAdapter {
     }
     const endpoint = resolved.endpoint;
 
-    const placement = placementOf(options.model, backend);
+    const placement = placementOf(this.placements, options.model, backend);
     if (placement !== null && placement.verdict === "refused") {
       yield errorFinish(
         "MODEL_REFUSED",
-        `${options.model} must not be sent to ${backend} (${placement.reason}). ${placement.why}`,
+        `the selected placement refuses ${backend} (${placement.reason}); consult the routing document for evidence`,
       );
       return;
     }

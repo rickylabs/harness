@@ -14,8 +14,8 @@
 #     pnpm run golden:bless -- "what moved, and why that is expected"
 #
 # dsh    0.1.2-rc.1
-# rows   90
-# why    harness-llm joins the bundle: the three token-metered destinations register on ctx.llm (#176)
+# rows   91
+# why    harness-routing joins the bundle with an explicit document selection (#271)
 #
 # ---- composed entry list below, provenance above ----
 # == @deepseek-ai/dsh-base
@@ -363,5 +363,9 @@
   name: '@rickylabs/dsh-app/plugins/coordinator'
 - id: harness-telemetry
   name: '@rickylabs/dsh-app/plugins/telemetry'
+- id: harness-routing
+  name: '@rickylabs/dsh-app/plugins/routing'
+  config:
+    document: '@rickylabs/routing/config/routing.v1.json'
 - id: harness-llm
   name: '@rickylabs/dsh-app/plugins/llm'
