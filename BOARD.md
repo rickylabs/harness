@@ -2,19 +2,17 @@
 
 # rickylabs/harness
 
-`[################----]` **209/257 done · 16 running · 15 queued · 4 blocked · 12 abandoned · 1 invisible**
+`[################----]` **209/258 done · 16 running · 18 queued · 2 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T09:56:07Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T10:34:39Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (4)
+## Waiting on you (2)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
-| [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
-| [#244 the tutorial hedges twice where the repository should decide: Node 24-vs-22, and which platforms it supports](https://github.com/rickylabs/harness/issues/244) | `triage` | `e10` |
 | [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
 ## Moving now (16)
@@ -44,15 +42,15 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 169/203 done · 15 running · 13 queued · 3 blocked · 3 abandoned
+`[#########---]` 169/204 done · 15 running · 16 queued · 1 blocked · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
-| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 27/30 done · 2 blocked · 1 abandoned | `impl` |
+| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 27/30 done · 2 queued · 1 abandoned | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[########----]` 17/24 done · 5 running · 2 queued | `triage` |
-| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 blocked | `triage` |
+| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 blocked | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
@@ -72,14 +70,17 @@ Something could be acting on these right now.
 ## Waiting to start
 
 <details>
-<summary>15 filed, nothing started</summary>
+<summary>18 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
+| [#269 fix(routing): adopt fleet Muse Spark 1.3 tier and role lanes](https://github.com/rickylabs/harness/issues/269) | `triage` | `e4` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
 | [#264 E6 — Define creation capability ownership before exposing P2 actions](https://github.com/rickylabs/harness/issues/264) | `triage` | `e6` |
+| [#148 E10.8 — Publish the public documentation site](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life](https://github.com/rickylabs/harness/issues/225) | `triage` | `e7` |
 | [#234 17 labels live on the repo and in no taxonomy, including the dispatch label](https://github.com/rickylabs/harness/issues/234) | `triage` | `e7` |
+| [#244 docs(runtime): enforce Node 24 floor and validate Node 26 target](https://github.com/rickylabs/harness/issues/244) | `triage` | `e10` |
 | [#249 `KNOWN_TYPES` in the Claude backfill reads as exhaustive and is not — five record types on a real store are unrecognised](https://github.com/rickylabs/harness/issues/249) | `triage` | — |
 | [#255 fix(forge): skill install --dry-run reports a file as created that it does not create](https://github.com/rickylabs/harness/issues/255) | `triage` | — |
 | [#47 E2.2 — Fork deepseek-harness-docker, keeping the upstream remote](https://github.com/rickylabs/harness/issues/47) | `triage` | `e2` |
@@ -100,9 +101,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  209/257 done · 16 running · 15 queued · 4 blocked · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  209/258 done · 16 running · 18 queued · 2 blocked · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  169/203 done · 15 running · 13 queued · 3 blocked · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  169/204 done · 15 running · 16 queued · 1 blocked · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -124,7 +125,7 @@ Something could be acting on these right now.
     shipped              PR185 chore(scripts): keep the scratchpad out of the link check and out of git (p3)
 
   E10 — Docs: the front door, the reference, and the check that keeps them honest #140  [impl]
-    [##############--] 27/30 done · 2 blocked · 1 abandoned
+    [##############--] 27/30 done · 2 queued · 1 abandoned
     shipped              #141 E10.1 — Rewrite the root README from scratch (p1)
     shipped              #142 E10.2 — docs/ skeleton and the explanation set (p1)
     shipped              #143 E10.3 — Generated CLI reference with a drift test (p2)
@@ -132,7 +133,7 @@ Something could be acting on these right now.
     shipped              #145 E10.5 — Getting started: one tutorial that runs (p1)
     shipped              #146 E10.6 — Community and contribution files, issue and PR templates (p2)
     shipped              #147 E10.7 — Docs CI: link check, generated-doc drift check, repo description (p2)
-    triage               #148 E10.8 — The published docs site (owner fork — do not start) (p3, waiting on owner)
+    triage               #148 E10.8 — Publish the public documentation site (p3)
     shipped              PR149 chore(labels): open the docs lane — eject epic:e10 and the gate/ci rows
     shipped              PR150 docs: rewrite the root README as a front door (E10.1, #141)
     shipped              PR151 docs: create docs/ and write the explanation layer (E10.2, #142)
@@ -154,7 +155,7 @@ Something could be acting on these right now.
     shipped              #231 docs: clarify example evidence and public boundaries (p1)
     shipped              PR235 docs: make example evidence and public boundaries explicit (p1)
     shipped              PR243 feat(docs): gate the tutorial's pasted output instead of trusting it (p2)
-    triage               #244 the tutorial hedges twice where the repository should decide: Node 24-vs-22, and which platforms it supports (p3, waiting on owner)
+    triage               #244 docs(runtime): enforce Node 24 floor and validate Node 26 target (p3)
 
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]
     [#############---] 12/14 done · 2 queued
@@ -201,7 +202,7 @@ Something could be acting on these right now.
     shipped              PR238 feat(route-identity--e35): refuse mismatched Codex routes before task submission
 
   E4 — Model gateway and routing matrix #34  [triage]
-    [##############--] 12/13 done · 1 blocked
+    [#############---] 12/14 done · 1 queued · 1 blocked
     shipped              #57 E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters
     shipped              #58 E4.2 — routing: tiers, the family rule, and fallback chains
     shipped              #59 E4.3 — Capability probes instead of committed constants
@@ -215,6 +216,7 @@ Something could be acting on these right now.
     shipped              PR175 feat(llm-local): resolve endpoints and read readiness (#57) (p1)
     shipped              PR180 feat(routing): seat Astra on complex implementation, and check the row holds
     triage               #181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision) (waiting on owner)
+    triage               #269 fix(routing): adopt fleet Muse Spark 1.3 tier and role lanes (p1)
 
   E5 — Governance: tri-regime admission control #35  [triage]
     [######----------] 3/8 done · 5 queued
