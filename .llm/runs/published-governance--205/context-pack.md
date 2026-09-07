@@ -1,50 +1,15 @@
-# Published governance read — resume pack
+# Published governance read — coordinator resume pack
 
-**Implementation is committed at `e6c14d9`; local required gates passed. Independent implementation
-review remains coordinator-owned and has not been dispatched by this session.** Contracts 0.2.0
-remains an unpublished candidate, protocol 1. No live #205/#87 acceptance or #265 fix is claimed.
-Implementation-session attribution: 2026-09-08, the supplied task/run date.
+**Independent implementation evaluation PASS at `8185ea6394bbd0dc9006ffd04abe841122ccbbca`, product `e6c14d9`.** The receipt commit adds only run evidence. The next gate is exact-head PR CI; owner alone tags/publishes contracts 0.2.0, which remains a candidate. Protocol stays 1. Full live #205/#87 acceptance and recovery #265 remain open.
 
-## Authority and identity
+Read [implementation-eval.md](implementation-eval.md), including the targeted empty-log disposition. The generic decoder accepts internally consistent empty admission coverage with complete true; the current collector conservatively emits complete false for an observed empty log. No product repair was required. Never interpret empty coverage as a global admission or approval census.
 
-- Evaluated plan head: `01c523e894270700a8765d1bb0371cdaa7c0f1b8`.
-- Receipt-only baseline: `89933b6`; [plan-eval.md](plan-eval.md) says PASS with BI-1–BI-10 binding.
-- [coordinator-amendment.md](coordinator-amendment.md) governs the historical [plan.md](plan.md).
-- [implementation-identity.json](implementation-identity.json): actual native `gpt-6-astra` /
-  `openai` / `low`, matched before the initial turn; coordinator supplied after the initial stop.
-- Original [matrix-implementation.json](matrix-implementation.json) and fresh resumed
-  [matrix-implementation-resume.json](matrix-implementation-resume.json) retained. No agents/evaluators.
+The source-backed command is `node packages/telemetry/dist/cli.js governance --home <home> --observations-from <absolute-descriptor-path>`. It emits a standalone `GovernanceReadSnapshot`, consumed through root `readGovernanceSnapshot` from the actual installed contracts package. It does not serve or fold a RemoteSnapshot.
 
-## What exists
+[verification.md](verification.md) records 2,878 local workspace tests passing and the actual packed installed-consumer gate. The evaluator independently ran 184 contracts and 431 telemetry tests, whole-workspace typecheck, publish/docs checks, the installed root/server runtime and compiled-declaration fixture, 20 decoder probe groups and 9 actual CLI groups including over-cap output refusal. Three tutorial blocks remain declared untested. Executable temporary storage and POSIX shebang support are required by the sleeping-probe fixture.
 
-`dsh-telemetry governance --observations-from <absolute-descriptor-path>` produces one versioned
-JSON document on exits 0/3. Public installed `readGovernanceSnapshot` decodes strict coverage,
-envelope/state and recorded refusals. No transcript backfill, board snapshot or transport service.
-Existing status/tree public displays and protocol/RemoteSnapshot/fold/hub/client/dsh-app remain
-unchanged. Mutation inventory was honored without type/dependency-file expansion.
-[source: ../../../packages/telemetry/src/cli.ts:479;
-../../../packages/contracts/src/governance-read.ts:413;
-implementation.md (binding map)]
+Candidate tarball SHA-256: `cf3296949a8afbfabef7f6926d8ae732e831ec389453020c9fdd70bd07f27c1d`, 73 files, version 0.2.0, protocol 1. This is a packed-artifact identity, not a registry receipt or a downstream compatibility PASS.
 
-Read [implementation.md](implementation.md) for the binding map and [verification.md](verification.md)
-for actual results: contracts 184, telemetry 431, root 2,878 tests all passing, plus actual offline
-packed installation, root/server runtime imports and compiled declarations, CLI synthetic fixture,
-probe kill/reap proof, publish/docs/typecheck/build/diff and targeted public-artifact scan.
-Tarball `rickylabs-harness-contracts-0.2.0.tgz` SHA-256:
-`cf3296949a8afbfabef7f6926d8ae732e831ec389453020c9fdd70bd07f27c1d`.
+Fresh matrix queries and actual native reviewer identity are retained in [matrix-implementation-evaluation.json](matrix-implementation-evaluation.json), [matrix-implementation-evaluation-recheck.json](matrix-implementation-evaluation-recheck.json) and [implementation-evaluation-identity.json](implementation-evaluation-identity.json). No model substitution or provider-guard bypass occurred. The coordinator's task-specific estimate was accepted by the live guard; operational allowance readings remain private.
 
-## Re-run and remaining limits
-
-Use an executable `TMPDIR` on this host for `pnpm test` and `pnpm run check:installed`; the default
-temp filesystem rejected probe execution. The fixture requires POSIX shebang support. This is an
-explicit environment requirement, with no network install fallback. Raw logs/scratch are outside
-the tracked tree; committed evidence contains no operational scratch paths or credential values.
-
-The installed check proves the synthetic producer-to-installed-package boundary only. Independent
-implementation evaluation, live governance acceptance and downstream consumer compatibility have no
-PASS receipt here. The build tutorial checker reports three declared untested blocks. Portable Proxy
-inspection limits and inherited log input-size behavior are documented; approval census, policy,
-GPU/dispatch-host capacity, windows/ceilings and reconnect #265 remain outside the claim.
-
-Coordinator performs independent review and subsequent gates/PR. Owner alone tags/publishes after
-merge. This implementation session performed no push, PR, merge, tag, board or publication action.
+[source: implementation-eval.md and verification.md; topic: tested source, declared limitations and installed boundary; consulted 2026-09-08]
