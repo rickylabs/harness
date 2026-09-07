@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **200/241 done · 9 running · 13 queued · 5 blocked · 12 abandoned · 2 invisible**
+`[################----]` **201/244 done · 11 running · 14 queued · 5 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T04:40:51Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T04:59:31Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (5)
 
@@ -18,7 +18,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
-## Moving now (9)
+## Moving now (11)
 
 Something could be acting on these right now.
 
@@ -27,6 +27,8 @@ Something could be acting on these right now.
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
+| [#253 E6.C — drive a dispatch through the durable store against fakes, with no live effect](https://github.com/rickylabs/harness/issues/253) | `plan-eval` | `e6` |
+| [PR254 docs(how-to): add the first how-to guide, installing the board process](https://github.com/rickylabs/harness/pull/254) | `impl-eval` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -34,27 +36,19 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Not on the board (1)
-
-Open, and carrying no `status:` label — real work no column can see.
-
-| item | column | epic |
-| --- | --- | --- |
-| [PR252 docs: complete the Stage B discovery run with its external and document legs](https://github.com/rickylabs/harness/pull/252) | — | — |
-
 ## Anomalies (1)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
-**`no-status`**
+**`closed-but-unshipped`**
 
-- **#252** — open item has no status label, so it appears in no column
+- **#254** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 162/189 done · 8 running · 12 queued · 4 blocked · 3 abandoned
+`[##########--]` 162/190 done · 9 running · 12 queued · 4 blocked · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -64,7 +58,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[########----]` 17/24 done · 5 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 blocked | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 5 queued · 1 blocked | `triage` |
-| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 27/30 done · 1 running · 2 abandoned | `impl` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 27/31 done · 2 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 2 running | `impl` |
@@ -72,17 +66,17 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 38/52 done · 1 running · 1 queued · 1 blocked · 9 abandoned · 2 invisible
+`[########----]` 39/54 done · 2 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
-| _(no epic)_ | `[########----]` 34/47 done · 1 queued · 1 blocked · 9 abandoned · 2 invisible | — |
+| _(no epic)_ | `[########----]` 35/49 done · 1 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>13 filed, nothing started</summary>
+<summary>14 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -90,6 +84,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life](https://github.com/rickylabs/harness/issues/225) | `triage` | `e7` |
 | [#234 17 labels live on the repo and in no taxonomy, including the dispatch label](https://github.com/rickylabs/harness/issues/234) | `triage` | `e7` |
 | [#249 `KNOWN_TYPES` in the Claude backfill reads as exhaustive and is not — five record types on a real store are unrecognised](https://github.com/rickylabs/harness/issues/249) | `triage` | — |
+| [#255 fix(forge): skill install --dry-run reports a file as created that it does not create](https://github.com/rickylabs/harness/issues/255) | `triage` | — |
 | [#47 E2.2 — Fork deepseek-harness-docker, keeping the upstream remote](https://github.com/rickylabs/harness/issues/47) | `triage` | `e2` |
 | [#49 E2.4 — Register the stack on the N5 and verify it comes up](https://github.com/rickylabs/harness/issues/49) | `triage` | `e2` |
 | [#53 E3.3 — provider-codex against the running app-server daemon](https://github.com/rickylabs/harness/issues/53) | `triage` | `e3` |
@@ -108,9 +103,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  200/241 done · 9 running · 13 queued · 5 blocked · 12 abandoned · 2 invisible
+# rickylabs/harness  [################----]  201/244 done · 11 running · 14 queued · 5 blocked · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [#################---]  162/189 done · 8 running · 12 queued · 4 blocked · 3 abandoned
+## M1 — dsh coordinator foundation  [#################---]  162/190 done · 9 running · 12 queued · 4 blocked · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -235,7 +230,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR173 docs(doctrine): ADR 0002 - the sandboxctl execution channel (proposed) (p1)
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
-    [##############--] 27/30 done · 1 running · 2 abandoned
+    [#############---] 27/31 done · 2 running · 2 abandoned
     shipped              #68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation
     shipped              #69 E6.2 — coordinator: the workflow definitions
     shipped              #70 E6.3 — Emit one dispatch payload in the /swarm wire format
@@ -266,6 +261,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR236 feat(coordinator): make a citation refer to something (#203) (p2)
     shipped              #245 E6.A — durable state store: one writer, a crash-safe checkpoint, and refusal on corruption (p1)
     shipped              PR247 feat(durable-state--e6a): persist intents and checkpoints under one writer (p1)
+    plan-eval            #253 E6.C — drive a dispatch through the durable store against fakes, with no live effect (p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
     [##############--] 23/26 done · 3 queued
@@ -333,7 +329,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [##############------]  38/52 done · 1 running · 1 queued · 1 blocked · 9 abandoned · 2 invisible
+## (no milestone)  [##############------]  39/54 done · 2 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -390,7 +386,9 @@ Open, and carrying no `status:` label — real work no column can see.
     triage               #249 `KNOWN_TYPES` in the Claude backfill reads as exhaustive and is not — five record types on a real store are unrecognised (p3)
     shipped              PR250 docs: record the MVP acceptance verdicts and a runnable board+telemetry preview
     shipped              PR251 docs: retain the review evidence and owner corrections from the public docs relaunch
-    no status            PR252 docs: complete the Stage B discovery run with its external and document legs (p3)
+    shipped              PR252 docs: complete the Stage B discovery run with its external and document legs (p3)
+    impl-eval            PR254 docs(how-to): add the first how-to guide, installing the board process (p2)
+    triage               #255 fix(forge): skill install --dry-run reports a file as created that it does not create (p3)
 ```
 
 </details>
