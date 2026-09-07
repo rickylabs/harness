@@ -20,4 +20,3 @@
 3. **`startToken` source:** §1 makes it adapter-owned and non-caller-supplied; state it is injected (test fake) / OS-derived at runtime, outside any digest, so tests stay deterministic with no host values in the diff — consistent with §6 test hygiene and the clarification's host-identity rule.
 
 Subject to those three lines plus their gate assertions, the plan is implementable as written.
-

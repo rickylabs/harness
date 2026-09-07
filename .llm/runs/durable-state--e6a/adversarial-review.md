@@ -41,4 +41,3 @@ A6 puts intent/receipt "types + constructors" in `packages/coordinator/src/journ
 ## Re-entry criteria
 
 Re-submit with: (a) `open` vs `recover()` split per finding 1; (b) reachable `initialize()` precondition + crash-before-genesis gate per finding 2; (c) fork rule per finding 3; (d) checkpoint-cut replay rule + straddling gate per finding 4; (e) IntentKey owned by `contracts` per finding 5; (f) `check:graph` + enumerated manifest per finding 6. Then `PASS` / `PASS AFTER NARROW FIXES` is reachable without rescope.
-
