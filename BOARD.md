@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **179/219 done · 12 running · 15 queued · 12 abandoned · 1 invisible**
+`[################----]` **181/221 done · 13 running · 14 queued · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T01:05:31Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T01:24:41Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (12)
+## Moving now (13)
 
 Something could be acting on these right now.
 
@@ -15,6 +15,7 @@ Something could be acting on these right now.
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
+| [#231 docs: clarify example evidence and public boundaries](https://github.com/rickylabs/harness/issues/231) | `impl` | `e10` |
 | [#203 the coordinator's citation gate checks that a citation exists, not that it refers to anything](https://github.com/rickylabs/harness/issues/203) | `research` | `e6` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
@@ -29,12 +30,12 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 147/175 done · 11 running · 14 queued · 3 abandoned
+`[##########--]` 147/176 done · 12 running · 14 queued · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
-| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 23/26 done · 2 queued · 1 abandoned | `impl` |
+| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 23/27 done · 1 running · 2 queued · 1 abandoned | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 15/23 done · 6 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 queued | `triage` |
@@ -47,21 +48,20 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 32/44 done · 1 running · 1 queued · 9 abandoned · 1 invisible
+`[#########---]` 34/45 done · 1 running · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
-| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[######------]` 2/4 done · 1 running · 1 queued | `impl` |
+| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
 | _(no epic)_ | `[#########---]` 30/40 done · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>15 filed, nothing started</summary>
+<summary>14 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
-| [#202 board and forge disagree on what an epic is, and one of the labels does not exist](https://github.com/rickylabs/harness/issues/202) | `triage` | `e0` |
 | [#212 the tutorial's pasted output is stale at step 4, and no gate in the repo can catch that](https://github.com/rickylabs/harness/issues/212) | `triage` | `e10` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
@@ -85,9 +85,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  179/219 done · 12 running · 15 queued · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  181/221 done · 13 running · 14 queued · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  147/175 done · 11 running · 14 queued · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  147/176 done · 12 running · 14 queued · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -109,7 +109,7 @@ Something could be acting on these right now.
     shipped              PR185 chore(scripts): keep the scratchpad out of the link check and out of git (p3)
 
   E10 — Docs: the front door, the reference, and the check that keeps them honest #140  [impl]
-    [##############--] 23/26 done · 2 queued · 1 abandoned
+    [#############---] 23/27 done · 1 running · 2 queued · 1 abandoned
     shipped              #141 E10.1 — Rewrite the root README from scratch (p1)
     shipped              #142 E10.2 — docs/ skeleton and the explanation set (p1)
     shipped              #143 E10.3 — Generated CLI reference with a drift test (p2)
@@ -136,6 +136,7 @@ Something could be acting on these right now.
     no status            PR227 docs: finish the public relaunch review corrections (draft, p1)
     shipped              PR228 docs: correct what the forge exit codes actually promise (p1)
     shipped              PR229 fix(forge): refuse writes into a mismatched checkout (p1)
+    impl                 #231 docs: clarify example evidence and public boundaries (p1)
 
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]
     [#############---] 12/14 done · 2 queued
@@ -296,14 +297,15 @@ Something could be acting on these right now.
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [##############------]  32/44 done · 1 running · 1 queued · 9 abandoned · 1 invisible
+## (no milestone)  [###############-----]  34/45 done · 1 running · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
-    [########--------] 2/4 done · 1 running · 1 queued
+    [############----] 4/5 done · 1 running
     shipped              PR97 docs(root): state the four ratified decisions from #30 in README/AGENTS
     impl                 #182 Consolidation pass — the Astra medium review of the shipped ground work (p1)
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
-    triage               #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
+    shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
+    shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
