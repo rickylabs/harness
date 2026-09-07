@@ -1,5 +1,10 @@
 # Published governance read — verification
 
+**CI correction:** the original local build below ran before the seven JSON fixtures were tracked.
+`git ls-files` excluded them. CI `34170219400` correctly failed `check:snapshots` and skipped tests.
+That local build was not verification of the final tracked tree. The repair receipt at the end of
+this document supersedes that build-scope claim; original execution/reviewer history is retained.
+
 **Local required gates passed for implementation `e6c14d9`: 2,878 root tests, zero failures,
 skips, cancellations or todos, plus the actual packed installed-consumer gate.** This is a local
 verification receipt, not independent implementation evaluation, live acceptance or publication.
@@ -163,3 +168,92 @@ fixtures are synthetic and excluded from the tarball.
 ../../../packages/contracts/README.md:291;
 ../../../packages/telemetry/README.md:565;
 plan-eval.md:209,260]
+
+
+## CI repair verification — committed source 459afc6
+
+Repair baseline `fe77c9e8b6fdf7fbc914299e6ad55402a0543e5e` preserves independent implementation
+PASS on source `8185ea6` in [implementation-eval.md](implementation-eval.md). That review is historical;
+repair review is pending with the same evaluator session, coordinator-owned. No new evaluator was
+dispatched. Task/run attribution: 2026-09-08; raw operational logs and paths remain outside git.
+
+CI run `34170219400` on PR #278 failed build: `check:snapshots` listed all seven governance fixtures
+and rejected `observedAt`; `pnpm test` was skipped. The original implementation build had run while
+these files were untracked, making its `git ls-files` scan incomplete. This was a local verification
+gap, not flaky CI. No CI PASS or CI test result is claimed by this repair.
+[source: coordinator-supplied CI build log, inspected in this repair; drift.md D-9;
+../../../scripts/check-snapshots.mjs:96]
+
+The bounded repair is **459afc6**, committed before all gates below. Only the snapshot checker, its
+new isolated test script and root check:snapshots chain changed. All seven fixture bytes and all
+contracts/telemetry product behavior remain unchanged. The checker pins exact paths and SHA-256
+digests; only both matching permits an exception. Missing, unreadable or changed inventoried files
+fail even without snapshot keys. No directory/marker exemption or workflow change was introduced.
+[source: ../../../scripts/check-snapshots.mjs:82,116;
+../../../scripts/check-snapshots.test.mjs:14; ../../../package.json:21]
+
+| Post-commit command | Actual result |
+| --- | --- |
+| `pnpm run typecheck` | exit 0 |
+| `pnpm run build` | exit 0; tracked-file snapshot gate and 7 isolated guard tests passed |
+| `pnpm test` | exit 0; 2,878 workspace tests passed, 0 failed/skipped/cancelled/todo; actual installed-consumer hook passed |
+| `pnpm run check:installed` | exit 0; separate real offline tarball install, root/server runtime and compiled declarations, real CLI sleeping-probe kill/reap fixture |
+| `pnpm run check:snapshots` | exit 0; separate tracked-tree scan and 7/7 guard tests, no failures/skips/cancellations/todos |
+| `pnpm run check:publish` | exit 0; contracts 0.2.0, protocol 1, 73 files, no tests |
+| `pnpm run check:docs` | exit 0; 6 generated pages match binaries |
+| `git diff --check` | exit 0 |
+| Independent temporary offline pack and targeted archive scan | exit 0; same digest, 73 files, no excluded matches, no test artifacts |
+
+All gates used an owned executable temporary directory, cleaned after execution. No real git index
+was changed by the guard probes. The seven guard scenarios were: unchanged seven pass; whitespace
+byte change fails; replacement with empty JSON fails despite removed snapshot keys; missing fixture
+fails; new snapshot file in the same directory fails; identical fixture copied elsewhere fails;
+operator snapshot outside the inventory fails. Negative tests also assert values are not echoed.
+[source: ../../../scripts/check-snapshots.test.mjs:42]
+
+Workspace totals remain contracts 184, telemetry 431, subagents 227, provider-codex 44, board 272,
+provider-opencode 151, provider-claude 107, forge 513, routing 205, llm-local 95, coordinator 317,
+dsh-app 332. The 7 guard tests run through build/check:snapshots and are additional to the 2,878
+workspace tests; repeated execution is not counted as additional unique tests.
+
+The actual packed candidate receipt (unchanged digest):
+
+```json
+{
+  "check": "installed-governance",
+  "status": "PASS",
+  "version": "0.2.0",
+  "protocol": 1,
+  "tarball": "rickylabs-harness-contracts-0.2.0.tgz",
+  "sha256": "cf3296949a8afbfabef7f6926d8ae732e831ec389453020c9fdd70bd07f27c1d",
+  "exports": {
+    "rootRuntime": true,
+    "serverRuntime": true,
+    "rootTypesCompiled": true,
+    "serverTypesCompiled": true
+  },
+  "install": "npm install --offline --ignore-scripts --no-audit --no-fund <tarball>",
+  "command": "node packages/telemetry/dist/cli.js governance --home <synthetic-home> --observations-from <synthetic-descriptor>",
+  "fixtures": [
+    "mixed-timeout",
+    "all-unconfigured"
+  ],
+  "timeout": {
+    "actualSleepingProbe": true,
+    "terminatedAndReaped": true,
+    "grandchildren": 0
+  },
+  "assertions": "version/protocol, root/server runtime and compiled declarations, source coverage, admission refusal and original stamps, memory readings, privacy, unavailable",
+  "limitations": [
+    "synthetic only; no live acceptance or downstream compatibility claim",
+    "sleeping executable fixture requires POSIX shebang support and executable TMPDIR",
+    "candidate only; no publication"
+  ]
+}
+```
+
+The build still reports four tutorial blocks verified and three explicitly untested; those three
+remain unverified. The existing POSIX/executable-TMPDIR fixture requirement, portable Proxy limits,
+synthetic-only acceptance, and targeted-scan limits remain. Contracts 0.2.0 is **not published**.
+No push, PR update, merge, board action, tag, publication, workflow change or agent dispatch occurred.
+The coordinator will send the same evaluator session the repair candidate.

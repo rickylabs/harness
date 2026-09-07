@@ -1,0 +1,18 @@
+{
+  "source": "coordinator-supplied native repair launch receipt",
+  "requested": {
+    "provider": "openai",
+    "model": "gpt-6-astra",
+    "effort": "low"
+  },
+  "observed": {
+    "threadId": "01a07e12-ba1e-7d13-9b61-320314f9c984",
+    "model": "gpt-6-astra",
+    "provider": "openai",
+    "effort": "low"
+  },
+  "status": "matched",
+  "mismatches": [],
+  "ownedWorktreeMatched": true,
+  "validatedBeforeTurn": true
+}

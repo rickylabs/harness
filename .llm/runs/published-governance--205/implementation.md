@@ -1,5 +1,10 @@
 # Published governance read — implementation
 
+**Repair update:** CI `34170219400` exposed a tracked-file verification gap after the historical
+source/review below. Snapshot guard repair `459afc6` pins the exact seven fixture paths and byte
+digests; see [verification.md](verification.md) and [drift.md](drift.md) D-9. No contracts/telemetry
+semantics or fixture bytes changed. Independent review of this repair remains coordinator-owned.
+
 Implemented the reviewed standalone read slice in **`e6c14d9`**, on receipt head `89933b6`.
 The evaluated authority is `01c523e894270700a8765d1bb0371cdaa7c0f1b8`, governed by
 [plan-eval.md](plan-eval.md) and [coordinator-amendment.md](coordinator-amendment.md).

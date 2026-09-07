@@ -20,3 +20,23 @@ pairing is checked when a state exists. This is the unavailable union's existing
 not a claim that a read source yielded no evidence.
 
 | D-8 | Executable synthetic fixture environment | Default temporary filesystem assumed executable | Initial installed check reached fixture setup but the host rejected probe exec with EACCES; configure TMPDIR to an executable scratch filesystem | Environment constraint, not a skipped gate or install fallback. Offline pack/install and real root/server declaration compilation succeeded before that failure; full installed fixture subsequently passed. Public script documents POSIX/executable-temp limits. |
+
+## D-9 — CI exposed tracked-file verification gap; bounded repair
+
+CI run `34170219400` on PR #278 failed build at `check:snapshots`: all seven new governance
+fixtures carried `observedAt`; `pnpm test` was skipped. The original local build ran before those
+fixtures were tracked, so `git ls-files` omitted them. Earlier local exit-0 build receipts were real
+but did not cover the final tracked tree. This is a verification gap, not flaky CI. Independent
+implementation PASS on `8185ea6` remains historical evidence, not a repair-review receipt.
+[source: coordinator-supplied CI build log, inspected this repair; scripts/check-snapshots.mjs:85;
+implementation-eval.md]
+
+Before repair mutation, the coordinator authorized precisely `scripts/check-snapshots.mjs`, new
+`scripts/check-snapshots.test.mjs`, and root `package.json` check:snapshots wiring, plus run evidence.
+The checker will inventory the exact seven public synthetic fixture paths and SHA-256 byte digests.
+Only an exact path and digest match is exempt; missing/unreadable/changed inventoried files fail,
+even if a change removes snapshot keys. Every other file retains ordinary snapshot detection.
+No directory exemptions, filename evasion, magic markers, fixture content changes or workflow edits.
+The isolated guard creates its own scratch git repository and never changes the real index.
+Product repair is committed before full verification so tracked-file-sensitive gates see final files.
+[source: coordinator repair instruction in this thread; scope recorded before script/test edits]

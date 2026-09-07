@@ -52,3 +52,18 @@ Independent Muse Spark 1.3 xhigh (Meta), selected by fresh feature implementatio
 Coordinator independently exercised 616 schema-path mutations against the final built decoder: zero uncaught throws, diagnostic-canary leaks or ordinary getter invocations; 15 accepted mutations were legal values, not rejection failures. Output ownership and false-fresh rejection passed. A targeted scan of all 37 changed files found no operational-path, private consumer issue-link or common credential-pattern matches; this is bounded pattern evidence, not universal secrecy proof. Board checks before and after phase update were clean. Issue #205 now records implementation evaluation at comment 5576633371.
 
 [source: implementation-eval.md, fresh CLI/native receipts and coordinator final decoder/path scans; topic: reviewed code and publication hygiene; consulted 2026-09-08]
+
+- CI repair session, run attribution 2026-09-08 — Resumed the same implementation thread/worktree
+  at clean `fe77c9e`. Verified coordinator-supplied native Astra/OpenAI/low identity and fresh matrix;
+  retained sanitized identity and matrix in this run. Read CI failure log: build's snapshot gate
+  rejected seven tracked `observedAt` fixtures and CI tests were skipped. Earlier local build had
+  excluded those then-untracked files. This corrects its scope claim; it was not a flaky CI failure.
+- CI repair session, run attribution 2026-09-08 — Recorded bounded script/test/root-script expansion
+  in D-9 before edits. Committed repair `459afc6` before full gates: exact seven path-and-byte-digest
+  inventory, fail-closed on unexpected inventory changes, isolated scratch-git negative guard wired
+  through existing check:snapshots. No fixture, product semantics or workflow changes.
+- CI repair session, run attribution 2026-09-08 — Post-commit typecheck/build/test/installed/snapshots/
+  publish/docs/diff and targeted public archive scan all exited 0. Workspace tests: 2,878/2,878;
+  isolated guard: 7/7. Actual installed tarball root/server runtime and declaration compilation and
+  probe termination/reaping passed. Candidate digest unchanged; no publication or remote actions.
+  Corrected verification and resume pack; same evaluator repair review remains coordinator-owned.
