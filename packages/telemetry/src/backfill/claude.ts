@@ -12,7 +12,27 @@
  * Tolerant is not the same as silent. Every line this function declines to read is counted and
  * returned, because "nothing else happened in this session" and "I could not read the rest of this
  * session" are different answers and the operator is the one who has to tell them apart.
+ *
+ * ## What a run is on this seam
+ *
+ * A transcript states a `sessionId` on every line, and the store names each file after a session.
+ * Those are not always the same session, and the difference is the subagent tree.
+ *
+ * A subagent is filed as its own transcript, named after itself, and every line inside it carries
+ * the id of the session that *spawned* it. So reading the run id off the line — which is the only
+ * thing this parser used to do — files every subagent under its parent's id, as a root, with the
+ * parent's branch and the parent's issue links. On a store of 161 transcripts, 154 of them were
+ * sidechains shaped exactly that way; the six roots were the only files whose stated id was their
+ * own. That is not a rounding error in the board, it is the board.
+ *
+ * The rule below reads both shapes. A transcript whose lines are sidechains and whose stated id is
+ * somebody else's is a subagent: its id is its own file's, and the stated id is its parent. Anything
+ * else is a root and keeps the stated id, which covers a session that carries its subagents inline
+ * and a session resumed into a second file — the latter deliberately, because both files are that
+ * session and `snapshot.ts` is written to expect the repeat.
  */
+
+import { basename } from "node:path";
 
 import { linkedIssuesOf, type LaunchIdentity, type RunRecord, type RunUsage } from "../model.js";
 import {
@@ -100,6 +120,7 @@ export function parseClaudeTranscript(
 ): ParsedTranscript<RunRecord> {
   const tally = new NoteTally();
   let sessionId: string | null = null;
+  let sidechain = false;
   let firstAt: string | null = null;
   let lastAt: string | null = null;
   // Read, used, and dropped: the title is the operator's own words, and all this function wants
@@ -120,6 +141,10 @@ export function parseClaudeTranscript(
     const line = parsed.line as Line;
 
     sessionId ??= str(line.sessionId);
+    // Any line, not every line: a transcript that holds a sidechain turn at all was written by a
+    // subagent, and requiring unanimity would turn one unflagged housekeeping record into a run
+    // filed under the wrong id.
+    if (line.isSidechain === true) sidechain = true;
     branch = str(line.gitBranch) ?? branch;
 
     // A record whose type this parser does not understand must not move the session's clock. It is
@@ -162,6 +187,13 @@ export function parseClaudeTranscript(
   const notes = tally.notes();
   if (sessionId === null || firstAt === null || lastAt === null) return { run: null, notes };
 
+  // The store names each transcript after the session it records, so the file is the identity when
+  // the lines inside are talking about somebody else. `.jsonl` is the whole test: the scan hands
+  // this function nothing else, and a caller that passed a label rather than a path has no child
+  // name to give, so it gets the stated id rather than a run filed under a word.
+  const own = origin.endsWith(".jsonl") ? basename(origin, ".jsonl") : "";
+  const subagent = sidechain && own.length > 0 && own !== sessionId;
+
   const identity: LaunchIdentity = {
     model,
     effort,
@@ -171,12 +203,12 @@ export function parseClaudeTranscript(
   };
   return {
     run: {
-      id: sessionId,
+      id: subagent ? own : sessionId,
       source: "claude",
-      // The Claude store keeps subagents inline, flagged rather than filed separately, so a
-      // transcript is always a root. The subagent tree on this seam is recovered from `isSidechain`
-      // within the file, which is a different shape from opencode's and is reported as such.
-      parentId: null,
+      // The sidechain flag plus the file's own name is this seam's subagent tree. It is weaker
+      // evidence than opencode's `parent_id` column — it is two facts read together rather than one
+      // stated — but it is a fact the store wrote, not an inference from prose.
+      parentId: subagent ? sessionId : null,
       startedAt: firstAt,
       updatedAt: lastAt,
       branch,

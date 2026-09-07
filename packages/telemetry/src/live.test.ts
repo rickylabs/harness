@@ -329,6 +329,23 @@ describe("mergeLiveRuns", () => {
     for (const record of merged.runs) assert.equal(record.outcome, "complete");
   });
 
+  it("counts the runs it resolved, not the records it wrote", () => {
+    // One session, three transcripts, one statement from the log. The note is a claim about how
+    // much the log knew, so reporting three would credit that one statement with two it never
+    // made — and on a real store, where a session id can be held by a dozen records, the note
+    // reads as an order-of-magnitude more knowledge than arrived.
+    const merged = mergeLiveRuns(
+      [
+        run({ id: "r1", origin: "/a.jsonl" }),
+        run({ id: "r1", origin: "/b.jsonl" }),
+        run({ id: "r1", origin: "/c.jsonl" }),
+      ],
+      [live({ id: "r1", outcome: "complete" })],
+    );
+    assert.equal(merged.runs.length, 3);
+    assert.match(merged.notes[0] ?? "", /outcome supplied for 1 run\(s\)/);
+  });
+
   it("leaves the disk record's transcript as the file to open", () => {
     const merged = mergeLiveRuns([run({ origin: "/store/r1.jsonl" })], [live({ outcome: "failed" })]);
     assert.equal(merged.runs[0]?.origin, "/store/r1.jsonl");

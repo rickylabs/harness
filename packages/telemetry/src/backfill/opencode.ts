@@ -1,9 +1,11 @@
 /**
  * Backfill from the opencode store: `~/.local/share/opencode/opencode.db`.
  *
- * This is the only seam that records the subagent tree as data — `session.parent_id` — which is
- * what makes the milestone -> epic -> task -> subagent view recoverable rather than reconstructed
- * from prose. It is also the seam that reports cost, because the relay bills per call.
+ * This is the seam that *states* the subagent tree — `session.parent_id`, one column, one fact —
+ * which is what makes the milestone -> epic -> task -> subagent view recoverable rather than
+ * reconstructed from prose. The Claude store carries the same tree, but implied across two facts
+ * rather than stated in one, so `backfill/claude.ts` has to read a file name against a flag to get
+ * here. It is also the seam that reports cost, because the relay bills per call.
  *
  * Two constraints shape this file:
  *

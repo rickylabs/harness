@@ -195,6 +195,10 @@ export function buildSnapshot(input: SnapshotInput): TelemetrySnapshot {
     // session that was resumed or compacted is written to more than one transcript — so the same id
     // legitimately arrives several times, each carrying a different slice of the work. Nothing is
     // dropped and nothing is merged; the operator is told that `why <id>` will be ambiguous.
+    //
+    // That is the legitimate cause, and it used to be the minority one: most of what this note
+    // reported was `backfill/claude.ts` filing every subagent under the id of the session that
+    // spawned it. Fixing that upstream is why the counts here are now small enough to read.
     const worst = [...repeated.entries()]
       .sort(([aId, a], [bId, b]) => b - a || compareStrings(aId, bId))
       .slice(0, 3)

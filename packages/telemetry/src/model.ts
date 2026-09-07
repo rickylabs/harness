@@ -113,8 +113,10 @@ export interface IssueLink {
  * One recovered run.
  *
  * `id` is the vendor's own session identifier, so a record can always be traced back to the file it
- * came from. `parentId` is what makes the subagent tree recoverable: opencode records it directly,
- * and the Claude transcript's sidechain flag stands in for it.
+ * came from. `parentId` is what makes the subagent tree recoverable, and each seam states it
+ * differently: opencode records it in a column, and the Claude store records it by writing the
+ * parent's id on every line of a file it named after the child. Reading only the line — which this
+ * package used to do — files a subagent under its parent, as a root. See `backfill/claude.ts`.
  *
  * There is deliberately no `title` and no `cwd`. Both used to be here, and both carried the
  * operator's own words: a Claude or Codex title was the first 120 characters of the first user

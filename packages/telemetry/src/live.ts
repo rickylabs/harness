@@ -364,7 +364,10 @@ export function mergeLiveRuns(
 
   const runs = [...disk];
   const notes: string[] = [];
-  let resolved = 0;
+  // Runs, not records. One session read from several transcripts is several records, and one live
+  // statement about it resolves all of them at once — counting the writes would report that single
+  // statement as a dozen, which is the note claiming more knowledge than the log supplied.
+  const resolved = new Set<string>();
   let added = 0;
   let anonymous = 0;
 
@@ -374,7 +377,7 @@ export function mergeLiveRuns(
       for (const index of at) {
         const before = runs[index] as RunRecord;
         const after = fill(before, run);
-        if (before.outcome !== after.outcome) resolved += 1;
+        if (before.outcome !== after.outcome) resolved.add(run.id);
         runs[index] = after;
       }
       continue;
@@ -403,8 +406,10 @@ export function mergeLiveRuns(
     });
   }
 
-  if (resolved > 0) {
-    notes.push(`live log: outcome supplied for ${resolved} run(s) whose transcript could not say`);
+  if (resolved.size > 0) {
+    notes.push(
+      `live log: outcome supplied for ${resolved.size} run(s) whose transcript could not say`,
+    );
   }
   if (added > 0) {
     notes.push(`live log: ${added} run(s) known only to the log, with no transcript on this box`);
