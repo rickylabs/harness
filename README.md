@@ -163,8 +163,8 @@ zoom controls or read the walkthrough below.
 
 ## Local proof first
 
-What a clone can do, offline, is prove the deterministic half. Node 24 or
-newer, and [pnpm](https://pnpm.io) 11:
+What a clone can do, offline, is prove the deterministic half. Node 24 is the
+declared and recommended baseline, alongside [pnpm](https://pnpm.io) 11:
 
 ```bash
 pnpm install
@@ -254,9 +254,9 @@ fifteen minutes and needs no server.
 
 Scope first, so the rest is readable: this repository is the `dsh` plugin
 layer, the doctrine those plugins encode, and the run artifacts they produce
-— nothing else. The cockpits that consume it are separate products in their
-own repositories, reaching this layer over a published contract package
-(ratified decision 4, below).
+— nothing else. Private external consumers live in separate repositories (such
+as a cockpit and a mobile client we run against it), reaching this layer over a
+published contract package (ratified decision 4, below).
 
 Four commitments shape every package. Each is summarized once here and owned
 in full by exactly one page, because a fact in two places is a future
@@ -309,15 +309,14 @@ reversing one is a change to #30 first.
    build-time dependency.
 3. **GitHub is the source of truth for the board**; `dsh` projects the live
    view.
-4. **This repo is the `dsh` layer only.** No cockpit is built here. The two
-   that consume this layer are separate products in their own repositories —
-   `rickylabs/atelier-cockpit`, the engineering cockpit, and
-   `rickylabs/atelier-mobile`, the Expo companion. Consequence: `contracts`
-   must be a *published* package, not a workspace import.
+4. **This repo is the `dsh` layer only.** No cockpit is built here. Private
+   external consumers live in separate repositories (such as a cockpit and a
+   mobile client we run against it). Consequence: `contracts` must be a
+   *published* package, not a workspace import.
 
-Decision 4 originally placed both cockpits inside `rickylabs/netscript` and
+Decision 4 originally placed external consumers inside `rickylabs/netscript` and
 was amended on
-[#30](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579)
+[#30](https://github.com/rickylabs/harness/issues/30)
 once they became products in their own right; the published contract package
 is still the only thing this repository owes them. Two further decisions —
 the MIT licence with a public npm scope, and the divybot/herdr strangler-fig
@@ -344,8 +343,8 @@ list is the orientation, at the baseline above.
   are Implemented; the profile Composes the adapter for all three routes;
   each destination stays Host-dependent.
 - **Compose and publish** — [`dsh-app`](packages/dsh-app) is the profile and
-  bundle patch; [`contracts`](packages/contracts) is the wire protocol the
-  cockpits consume and the only publishable package;
+  bundle patch; [`contracts`](packages/contracts) is the wire protocol external
+  consumers consume and the only publishable package;
   [`forge`](packages/forge) installs the board process into any repository
   and is CLI-only — it needs no profile row.
 - **Reserved** — [`governance`](packages/governance) and
