@@ -113,3 +113,7 @@ Issue231 tracks this addendum correction;212 remains open for its automated gate
 ## Implementation review repair
 
 Independent GLM source review at6044541 returned FAIL_FIX for a duplicated telemetry explanation. Gemini removed only the second unlabeled copy (six lines); the labeled explanation remains. No command block changed, verified against the SHA256 in local-example-receipts.md, so the executed-example proof still applies. All other reviewed content/evidence/privacy checks were clean. See implementation-eval-1.md; the same independent session re-evaluates this correction.
+
+## Final implementation verdict
+
+The same independent GLM session returned PASS at8428c98019504799d8a4597dd3998923d27dbf20 after the bounded deletion; implementation-eval.md preserves the verdict. This commit adds text evidence only. Final-head reviewer attestation and CI remain the merge gates on PR235. #212 remains open for its separate automated gate; #231 completes this correction when merged.
