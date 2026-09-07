@@ -185,12 +185,12 @@
   <g class="node" id="n-client">
     <rect x="28" y="632" width="199" height="44" rx="3"/>
     <text class="t" x="128" y="651" text-anchor="middle">generated client</text>
-    <text class="s" x="128" y="666" text-anchor="middle">OpenAPILink over expo/fetch</text>
+    <text class="s" x="128" y="666" text-anchor="middle">transport candidate · receipt required</text>
   </g>
   <g class="node" id="n-stream">
     <rect x="243" y="632" width="199" height="44" rx="3"/>
     <text class="t" x="343" y="651" text-anchor="middle">native stream adapter</text>
-    <text class="s" x="343" y="666" text-anchor="middle">same stream resource contracts</text>
+    <text class="s" x="343" y="666" text-anchor="middle">backend resource contracts only</text>
   </g>
   <g class="node" id="n-tabs">
     <rect x="458" y="632" width="199" height="44" rx="3"/>
@@ -212,7 +212,7 @@
   <g class="node" id="n-evidence">
     <rect x="243" y="686" width="199" height="44" rx="3"/>
     <text class="t" x="343" y="705" text-anchor="middle">evidence vocabulary</text>
-    <text class="s" x="343" y="720" text-anchor="middle">stale · unavailable · always dated</text>
+    <text class="s" x="343" y="720" text-anchor="middle">original time · unavailable has no time</text>
   </g>
   <g class="node" id="n-cert">
     <rect x="458" y="686" width="199" height="44" rx="3"/>

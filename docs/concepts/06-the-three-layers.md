@@ -150,12 +150,15 @@ type is never exported across the boundary; the artifact is.
 
 An Expo native application on bun and React Native, routed with expo-router.
 
-**generated client.** Consumes the captured OpenAPI artifact over an
-OpenAPILink bound to `expo/fetch`. It does not consume the coordination layer's
-mux — that would be the second reducer this architecture exists to avoid.
+**generated client.** Consumes the backend-owned captured OpenAPI artifact and
+the client generated from that capture. OpenAPILink over `expo/fetch` is a
+candidate transport until the exact generated package and native execution
+receipt establish compatibility. The native client consumes backend resources
+only: no Harness mux, direct Harness dependency or duplicate fold.
 
-**native stream adapter.** Speaks the same stream resource contracts as the
-backend, on a transport appropriate to a phone.
+**native stream adapter.** Consumes the backend's published stream resource
+contracts on a transport verified for the native runtime. It does not consume
+Harness stream frames or reconstruct the Harness fold.
 
 **expo-router tabs.** Chat, projects, activity, settings.
 
@@ -163,13 +166,20 @@ backend, on a transport appropriate to a phone.
 graph *and* scans the exported bundle. It refuses Node built-ins, Prisma, Deno
 globals, AppHost and worker or daemon runtimes, any `/server` leaf, and every
 private backend runtime package. The generated product client is the phone
-boundary; the phone does not import the Harness contracts package directly. A phone bundle that can reach
+boundary; the phone does not import the Harness contracts package directly.
+Before the first generated-package import, publication must establish the exact
+allowed package names and exports and enforce both source-import and exported-
+bundle rules against that artifact. A phone bundle that can reach
 a backend runtime is a leak, and the gate is what makes that statement testable
 rather than aspirational.
 
 **three vocabularies, kept apart.** *Execution* is queued, running, finished,
-failed, and **state unknown**. *Evidence* is stale or unavailable, and always
-dated. *Certification* is uncertified or outdated. Merging them produces the
+failed, and **state unknown**. *Evidence* retains its original observation time
+when available; unavailable evidence has no invented timestamp. *Certification*
+is uncertified or outdated. These describe semantic distinctions, not a second
+set of native wire enums. Before live data arrives, local illustrative vocabulary
+fixtures must yield to the generated backend contract. Connection synchronization
+is separate from all three dimensions. Merging them produces the
 specific bug this product exists to eliminate: an interface that reports missing
 evidence as failure. **"State unknown" never triggers an automatic redispatch.**
 
@@ -198,7 +208,11 @@ boundary. A resync supplies a current snapshot, not a journal replay.
 **Backend → client: the generated client package.**
 A captured, versioned OpenAPI artifact and the client generated from it. The
 capture is the contract; the running server is not. This is what lets the phone
-be built against a version rather than against a host.
+be built against a version rather than against a host. Closure requires the
+backend source identity, captured OpenAPI digest, generated package version and
+exports, and matching native transport, authorization/error and bundle receipts.
+This architecture diagram proves none of those artifacts or their compatibility;
+absence of an adapter call site is not a no-schema-impact receipt.
 
 ---
 
@@ -293,3 +307,11 @@ at line 350 (`defineJobHandler`, `createWorkersRuntime`) and
 `packages/plugin-triggers-core/src/runtime/trigger-processor.ts`
 at line 81 (`dispatchAction` default). These examples establish composition obligations,
 not a deployment receipt.
+
+
+Source marker: anonymized native architecture review supplied to the Harness
+coordinator; topic: generated-artifact boundary, transport verification and
+unavailable evidence; date: 2026-09-07. These are consumer acceptance requirements,
+not claims of delivered runtime behavior. Harness source
+`packages/contracts/src/runs.ts:148` permits a null evidence timestamp. Private
+consumer identifiers and links are deliberately excluded.
