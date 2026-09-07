@@ -22,12 +22,13 @@
     "check:snapshots": "node scripts/check-snapshots.mjs",
     "check:metadata": "node scripts/check-metadata.mjs",
     "docs:cli": "pnpm -r run build && node scripts/cli-reference.mjs --write",
-    "build": "pnpm run check:graph && pnpm run check:lifecycle && pnpm run check:links && pnpm run check:forms && pnpm run check:snapshots && pnpm -r run build && pnpm run check:publish && pnpm run check:label-registry && pnpm run check:docs && pnpm run check:skill && pnpm run check:tutorial",
+    "build": "pnpm run check:graph && pnpm run check:lifecycle && pnpm run check:links && pnpm run check:forms && pnpm run check:snapshots && pnpm run check:compiled-policy && pnpm -r run build && pnpm run check:publish && pnpm run check:label-registry && pnpm run check:docs && pnpm run check:skill && pnpm run check:tutorial",
     "typecheck": "pnpm run check:graph && pnpm run check:lifecycle && pnpm -r run typecheck",
     "test": "pnpm -r run test",
     "skill:install": "pnpm --filter @rickylabs/forge run build && node packages/forge/dist/cli.js skill install --dispatch-label harness",
     "golden:bless": "pnpm --filter @rickylabs/dsh-app run build && node packages/dsh-app/dist/bless.js",
-    "clean": "pnpm -r run clean"
+    "clean": "pnpm -r run clean",
+    "check:compiled-policy": "node scripts/check-compiled-policy.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",

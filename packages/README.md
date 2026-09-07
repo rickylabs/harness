@@ -17,7 +17,7 @@ names what is blocking it. Do not add behaviour to a stub before its epic has de
 | `provider-codex` | partial | E3 · #33 | app-server route-identity and pre-turn protocol prerequisite; no composed provider (#195/#53) |
 | `provider-acp` | — | E3 · #33 | the same seam, over ACP |
 | `llm-local` | ✅ | E4 · #34 | `ctx.llm` / `LlmAdapter` — API-key and local models, metered per token |
-| `routing` | ✅ | E4 · #34 | delegation matrix |
+| `routing` | ✅ | E4 · #34, E11 · #271 | explicit routing document loader and immutable matrix queries |
 | `governance` | — | E5 · #35 | tri-regime admission control; blocked behind #62 |
 | `board`, `coordinator` | ✅ | E6 · #36 | task DAG, kanban projection, MASTER workflows |
 | `forge` | ✅ | E7 · #37 | GitHub bridge: taxonomy and process skill, installable into any repository |

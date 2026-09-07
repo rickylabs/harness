@@ -1,35 +1,10 @@
-/**
- * Reading the matrix: which step a lane starts on, where it goes when that fails, and what any
- * of it looks like on the wire.
- *
- * `policy.ts` is the data and this is the only sanctioned way to ask it a question. Everything
- * here returns a verdict rather than throwing, for the same reason `family.ts` does: at the
- * coordinator a refusal is a routing fact to record and act on, not an exception to unwind a run
- * around.
- *
- * Two refusals in particular are features and not gaps:
- *
- * - **An undeclared effort escalation is refused, never inferred.** No implicit higher-effort
- *   escalation is a harness invariant, and the only way to keep it is for the discretion to be
- *   written down on the step. `docs_audit` may go to `high` on a large changeset because it says
- *   so; nothing else may, however reasonable it would look.
- * - **A step outside the plan needs explicit approval.** No step in the current matrix declares
- *   `outside_plan`, so today this guard never fires. It exists so that the day one does, adding
- *   the row cannot quietly start spending money on a fallback nobody approved.
+/** Pure route resolution over a caller-selected document. Fallbacks walk forward, require
+ * a turn boundary and explicit paid approval, and never infer an effort escalation.
  */
-
 import type { DispatchRequest } from "@rickylabs/subagents";
 
-import { EFFORTS, familyOf, isApprovedOpenEvaluator, isPinnedModel } from "./models.js";
-import type { Effort, ModelFamily } from "./models.js";
-import {
-  LANE_CONSTRAINTS,
-  LANES,
-  ROUTE_POLICY,
-  TIER_LANES,
-  lanePolicy,
-} from "./policy.js";
-import type { Certifies, FallbackTrigger, Lane, Route, RouteStep, Tier } from "./policy.js";
+import { familyOf, isApprovedOpenEvaluator, lanePolicy, tierLanes, maxFallbackDepth, effortIndex } from "./configuration.js";
+import type { RoutingConfiguration, Effort, ModelFamily, Certifies, FallbackTrigger, Lane, Route, RouteStep, Tier } from "./schema.js";
 
 /**
  * The one author family a step certifies, or `null` when it does not name one.
@@ -50,24 +25,13 @@ function certifiedFamily(certifies: Certifies | undefined): ModelFamily | null {
  * cannot supply and the work is done. Exported so `checkPolicy` is a caller rather than the only
  * place the rule lives — a chain nobody has committed yet can be asked the same question.
  */
-export function selfCertifies(step: RouteStep): boolean {
+export function selfCertifies(configuration: RoutingConfiguration, step: RouteStep): boolean {
   const certified = certifiedFamily(step.certifies);
-  return certified !== null && familyOf(step.route.model) === certified;
+  return certified !== null && familyOf(configuration, step.route.model) === certified;
 }
 
-/**
- * The indexes in `implement` whose author family no step in `review` will certify.
- *
- * Every step of an implementation lane needs a reviewer, not just its primary. `tierPlan` resolves
- * a review lane against `openai` on the stated grounds that every implementation tier is
- * Codex-authored; that was prose, and prose does not fail a build. Add one cross-family fallback to
- * an implementation lane and the tier still resolves, still dispatches, and only refuses at
- * `checkEvaluator` — after the work is done, with no reviewer left to fall back to.
- *
- * A step whose model is not pinned is skipped rather than reported: `checkPolicy` already calls that
- * out as an unpinned model, and an unknown family is not evidence of a missing reviewer.
- */
-export function unreviewedSteps(
+/** Every implementation step needs a declared certification seat; checkEvaluator enforces independence at use. */
+export function unreviewedSteps(configuration: RoutingConfiguration,
   implement: readonly RouteStep[],
   review: readonly RouteStep[],
 ): readonly number[] {
@@ -75,7 +39,7 @@ export function unreviewedSteps(
   for (let index = 0; index < implement.length; index += 1) {
     const step = implement[index];
     if (step === undefined) continue;
-    const family = familyOf(step.route.model);
+    const family = familyOf(configuration, step.route.model);
     if (family === null) continue;
     const reviewed = review.some(
       (candidate) => candidate.certifies === "any" || certifiedFamily(candidate.certifies) === family,
@@ -86,8 +50,8 @@ export function unreviewedSteps(
 }
 
 /** The lane's ordered chain, or `null` for a lane the matrix does not route. */
-export function laneChain(lane: string): readonly RouteStep[] | null {
-  return lanePolicy(lane)?.chain ?? null;
+export function laneChain(configuration: RoutingConfiguration, lane: string): readonly RouteStep[] | null {
+  return lanePolicy(configuration, lane)?.chain ?? null;
 }
 
 /** What a lane resolves to before anything has failed. */
@@ -133,8 +97,8 @@ function certifiesMatches(step: RouteStep, authorFamily: ModelFamily): boolean {
  * and picking between them without being told the author family is exactly the mistake the
  * generator-is-not-evaluator invariant exists to prevent, so it refuses instead of guessing.
  */
-export function resolveRoute(lane: string, authorFamily?: ModelFamily): RouteResolution {
-  const policy = lanePolicy(lane);
+export function resolveRoute(configuration: RoutingConfiguration, lane: string, authorFamily?: ModelFamily): RouteResolution {
+  const policy = lanePolicy(configuration, lane);
   if (policy === null) return { ok: false, reason: "unknown-lane", lane };
 
   const primaries = primaryIndexes(policy.chain);
@@ -189,8 +153,6 @@ export type FallbackOutcome =
   | { readonly ok: true; readonly step: RouteStep; readonly index: number }
   | { readonly ok: false; readonly reason: FallbackRefusal };
 
-/** How many fallbacks a run may take before the answer is "ask a human". */
-export const DEFAULT_MAX_FALLBACK_DEPTH = 2;
 
 /**
  * The next step for a lane whose current step failed.
@@ -198,14 +160,14 @@ export const DEFAULT_MAX_FALLBACK_DEPTH = 2;
  * Walks the chain forward from `from`, which is why chain order is data here rather than a
  * `filter` predicate over condition strings.
  */
-export function resolveFallback(request: FallbackRequest): FallbackOutcome {
-  const policy = lanePolicy(request.lane);
+export function resolveFallback(configuration: RoutingConfiguration, request: FallbackRequest): FallbackOutcome {
+  const policy = lanePolicy(configuration, request.lane);
   if (policy === null) return { ok: false, reason: "unknown-lane" };
 
   if (!request.atTurnBoundary) return { ok: false, reason: "turn-boundary-required" };
 
   const depth = request.depth ?? 0;
-  const maxDepth = request.maxDepth ?? DEFAULT_MAX_FALLBACK_DEPTH;
+  const maxDepth = request.maxDepth ?? maxFallbackDepth(configuration);
   if (depth >= maxDepth) return { ok: false, reason: "depth-exceeded" };
 
   let sawUnapprovedPaidStep = false;
@@ -236,7 +198,7 @@ export type EffortResolution =
  * Without a condition this is the step's own effort. With one, the step must have declared that
  * condition; an undeclared escalation is refused rather than approximated upward.
  */
-export function resolveEffort(step: RouteStep, condition?: string): EffortResolution {
+export function resolveEffort(_configuration: RoutingConfiguration, step: RouteStep, condition?: string): EffortResolution {
   if (condition === undefined) return { ok: true, effort: step.route.effort };
   const declared = step.effortEscalations?.find((escalation) => escalation.condition === condition);
   if (declared === undefined) return { ok: false, reason: "undeclared-escalation", condition };
@@ -250,19 +212,15 @@ export interface TierPlan {
   readonly review: { readonly lane: Lane; readonly step: RouteStep };
 }
 
-/**
- * The implement-then-review pair for a tier.
- *
- * Returns `null` only if the tables disagree, which `checkPolicy` makes a test failure. The
- * review lane is resolved against `openai` because every implementation tier is Codex-authored;
- * that is not an assumption, it is what the four implementation lanes say — and `checkPolicy` now
- * holds them to it, step by step, so the day one of them stops being Codex-authored the table
- * fails rather than this line quietly becoming wrong.
- */
-export function tierPlan(tier: Tier): TierPlan | null {
-  const lanes = TIER_LANES[tier];
-  const implement = resolveRoute(lanes.implement);
-  const review = resolveRoute(lanes.review, "openai");
+/** The review lane is resolved against the configured implementation primary family. */
+export function tierPlan(configuration: RoutingConfiguration, tier: Tier): TierPlan | null {
+  const lanes = tierLanes(configuration, tier);
+  if (lanes === null) return null;
+  const implement = resolveRoute(configuration, lanes.implement);
+  if (!implement.ok) return null;
+  const authorFamily = familyOf(configuration, implement.step.route.model);
+  if (authorFamily === null) return null;
+  const review = resolveRoute(configuration, lanes.review, authorFamily);
   if (!implement.ok || !review.ok) return null;
   return {
     tier,
@@ -282,7 +240,7 @@ export type RoutedDispatch = Pick<DispatchRequest, "harness" | "model" | "effort
  * ends here — the prompt, the timeout and the token budget belong to whoever is launching, not
  * to the table that decided where.
  */
-export function toDispatch(route: Route, effort?: Effort): RoutedDispatch {
+export function toDispatch(_configuration: RoutingConfiguration, route: Route, effort?: Effort): RoutedDispatch {
   const base = {
     harness: route.harness,
     model: route.model,
@@ -292,134 +250,66 @@ export function toDispatch(route: Route, effort?: Effort): RoutedDispatch {
   return route.profile === undefined ? withRouter : { ...withRouter, profile: route.profile };
 }
 
-/** Something in `policy.ts` that violates an invariant this package is supposed to hold. */
+/** Structural locations only: a document's lane identifier is never a diagnostic. */
+export type PolicyCode = "self-certifies" | "evaluation-without-certifies" | "certifies-outside-evaluation" |
+  "relay-evaluator-unapproved" | "first-step-not-primary" | "duplicate-primary" | "no-primary" |
+  "opencode-without-router" | "router-outside-opencode" | "relay-without-profile" |
+  "escalation-not-raising" | "escalation-not-comparable" | "constraint-violated" | "tier-unresolved" |
+  "unreviewed-step" | "duplicate-lane" | "lane-unrouted";
 export interface PolicyProblem {
+  readonly code: PolicyCode;
   readonly lane: string;
   readonly index?: number;
-  readonly message: string;
 }
-
-/**
- * Every invariant the matrix must satisfy, checked against the table itself.
- *
- * The table is hand-maintained and ported from another system, so the invariants that make it
- * trustworthy have to be executable or they are just more prose. This is what the suite runs, and
- * what a `doctor` command can run later against a matrix somebody has edited.
- */
-export function checkPolicy(): readonly PolicyProblem[] {
+export function checkPolicy(configuration: RoutingConfiguration): readonly PolicyProblem[] {
   const problems: PolicyProblem[] = [];
   const seen = new Set<string>();
-
-  for (const policy of ROUTE_POLICY) {
-    if (seen.has(policy.lane)) {
-      problems.push({ lane: policy.lane, message: "lane appears more than once" });
-    }
+  configuration.lanes.forEach((policy, laneIndex) => {
+    const lane = `lanes[${laneIndex}]`;
+    const add = (code: PolicyCode, index?: number) => { problems.push({ code, lane, ...(index === undefined ? {} : { index }) }); };
+    if (seen.has(policy.lane)) add("duplicate-lane");
     seen.add(policy.lane);
-
-    const constraint = LANE_CONSTRAINTS[policy.lane];
-    const primaryFamilies = new Set<string>();
+    const constraint = Object.hasOwn(configuration.constraints, policy.lane) ? configuration.constraints[policy.lane] : undefined;
+    const primaryFamilies = new Set<string | undefined>();
     let primaries = 0;
-
-    for (let index = 0; index < policy.chain.length; index += 1) {
-      const step = policy.chain[index];
-      if (step === undefined) continue;
+    policy.chain.forEach((step, index) => {
       const { route } = step;
-      const at = { lane: policy.lane, index };
-
-      if (!isPinnedModel(route.model)) {
-        problems.push({ ...at, message: `model ${route.model} is not pinned in models.ts` });
-      }
-
-      const isEvaluation = policy.purpose === "evaluation";
-      if (isEvaluation && step.certifies === undefined) {
-        problems.push({ ...at, message: "evaluation step does not say what it certifies" });
-      }
-      if (!isEvaluation && step.certifies !== undefined) {
-        problems.push({ ...at, message: "only evaluation steps may declare certifies" });
-      }
-
-      const isGate = step.certifies !== undefined && step.certifies !== "none";
-      if (isGate && route.transport === "openrouter" && !isApprovedOpenEvaluator(route.model)) {
-        problems.push({ ...at, message: `relay evaluator ${route.model} is not an approved open evaluator` });
-      }
-
-      if (selfCertifies(step)) {
-        problems.push({ ...at, message: `${route.model} certifies its own family (${step.certifies})` });
-      }
-
-      if (index === 0 && step.when.length > 0) {
-        problems.push({ ...at, message: "the first step of a chain must be a primary" });
-      }
+      const evaluation = policy.purpose === "evaluation";
+      if (evaluation && step.certifies === undefined) add("evaluation-without-certifies", index);
+      if (!evaluation && step.certifies !== undefined) add("certifies-outside-evaluation", index);
+      if (step.certifies !== undefined && step.certifies !== "none" && route.transport === "openrouter" && !isApprovedOpenEvaluator(configuration, route.model)) add("relay-evaluator-unapproved", index);
+      if (selfCertifies(configuration, step)) add("self-certifies", index);
+      if (index === 0 && step.when.length > 0) add("first-step-not-primary", index);
       if (step.when.length === 0) {
-        primaries += 1;
-        const family = step.certifies ?? "unbound";
-        if (primaryFamilies.has(family)) {
-          problems.push({ ...at, message: `two primaries certify the same thing (${family})` });
-        }
-        primaryFamilies.add(family);
+        primaries++;
+        if (primaryFamilies.has(step.certifies)) add("duplicate-primary", index);
+        primaryFamilies.add(step.certifies);
       }
-
-      const isOpencode = route.harness === "opencode" || route.harness === "opencode-run";
-      if (isOpencode && route.router === undefined) {
-        problems.push({ ...at, message: "an opencode route must name its router" });
-      }
-      if (!isOpencode && route.router !== undefined) {
-        problems.push({ ...at, message: "only opencode routes carry a router" });
-      }
-      if (route.transport === "openrouter" && !isOpencode && route.profile === undefined) {
-        problems.push({ ...at, message: "a relay route must name the profile that binds its credential" });
-      }
-
+      const opencode = route.harness === "opencode" || route.harness === "opencode-run";
+      if (opencode && route.router === undefined) add("opencode-without-router", index);
+      if (!opencode && route.router !== undefined) add("router-outside-opencode", index);
+      if (route.transport === "openrouter" && !opencode && route.profile === undefined) add("relay-without-profile", index);
       for (const escalation of step.effortEscalations ?? []) {
-        if (EFFORTS.indexOf(escalation.effort) <= EFFORTS.indexOf(route.effort)) {
-          problems.push({ ...at, message: `escalation ${escalation.condition} does not raise effort` });
-        }
+        const from = effortIndex(configuration, route.effort);
+        const to = effortIndex(configuration, escalation.effort);
+        if (from < 0 || to < 0) add("escalation-not-comparable", index);
+        else if (to <= from) add("escalation-not-raising", index);
       }
-
-      if (constraint !== undefined) {
-        if (constraint.transports !== undefined && !constraint.transports.includes(route.transport)) {
-          problems.push({ ...at, message: `transport ${route.transport} violates: ${constraint.why}` });
-        }
-        if (constraint.harnesses !== undefined && !constraint.harnesses.includes(route.harness)) {
-          problems.push({ ...at, message: `harness ${route.harness} violates: ${constraint.why}` });
-        }
-        const family = familyOf(route.model);
-        if (constraint.families !== undefined && (family === null || !constraint.families.includes(family))) {
-          problems.push({ ...at, message: `family ${family ?? "unknown"} violates: ${constraint.why}` });
-        }
-        if (constraint.models !== undefined && !constraint.models.includes(route.model)) {
-          problems.push({ ...at, message: `model ${route.model} violates: ${constraint.why}` });
-        }
+      if (constraint) {
+        const family = familyOf(configuration, route.model);
+        if ((constraint.transports && !constraint.transports.includes(route.transport)) ||
+            (constraint.harnesses && !constraint.harnesses.includes(route.harness)) ||
+            (constraint.families && (family === null || !constraint.families.includes(family))) ||
+            (constraint.models && !constraint.models.includes(route.model))) add("constraint-violated", index);
       }
+    });
+    if (primaries === 0) add("no-primary");
+  });
+  configuration.tiers.forEach((tier, i) => {
+    if (tierPlan(configuration, tier.tier) === null) problems.push({ code: "tier-unresolved", lane: `tiers[${i}]` });
+    for (const index of unreviewedSteps(configuration, laneChain(configuration, tier.implement) ?? [], laneChain(configuration, tier.review) ?? [])) {
+      problems.push({ code: "unreviewed-step", lane: `lanes[${configuration.lanes.findIndex(l => l.lane === tier.implement)}]`, index });
     }
-
-    if (primaries === 0) {
-      problems.push({ lane: policy.lane, message: "chain has no primary" });
-    }
-  }
-
-  for (const lane of LANES) {
-    if (!seen.has(lane)) problems.push({ lane, message: "lane has no policy" });
-  }
-
-  for (const tier of Object.keys(TIER_LANES) as readonly Tier[]) {
-    const lanes = TIER_LANES[tier];
-    if (tierPlan(tier) === null) {
-      problems.push({ lane: lanes.implement, message: `tier ${tier} does not resolve` });
-    }
-
-    // Every step of an implementation lane must have a reviewer, not just its primary, so the
-    // table breaks at edit time rather than at `checkEvaluator` after the work is done.
-    const implementChain = laneChain(lanes.implement) ?? [];
-    for (const index of unreviewedSteps(implementChain, laneChain(lanes.review) ?? [])) {
-      const family = familyOf(implementChain[index]?.route.model ?? "");
-      problems.push({
-        lane: lanes.implement,
-        index,
-        message: `no step in ${lanes.review} certifies ${family ?? "unknown"}-authored work`,
-      });
-    }
-  }
-
+  });
   return problems;
 }

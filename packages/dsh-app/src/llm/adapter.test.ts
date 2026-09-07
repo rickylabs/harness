@@ -1,3 +1,5 @@
+import { loadRoutingConfiguration } from "@rickylabs/routing";
+import { fileURLToPath } from "node:url";
 /**
  * The adapter, with a canned socket.
  *
@@ -17,11 +19,14 @@ import { describe, it } from "node:test";
 import { createUserMessage } from "@deepseek-ai/dsh-llm";
 import type { GenerateOptions, LlmFailure, StreamChunk } from "@deepseek-ai/dsh-llm";
 import type { Backend } from "@rickylabs/llm-local";
-import { LOCAL_MODEL_IDS, OPENROUTER_MODEL_IDS } from "@rickylabs/routing";
+
 
 import { ADAPTER_FAILURE_CODES, CREDENTIAL_REF, LocalLlmAdapter, PROVIDER_NAMES, envCredentials } from "./adapter.js";
 import type { Transport, WireExchange, WireRequest } from "./transport.js";
 
+const loadedRouting = await loadRoutingConfiguration({ path: fileURLToPath(import.meta.resolve("@rickylabs/routing/config/routing.v1.json")) });
+assert.ok(loadedRouting.ok);
+const routing = loadedRouting.loaded;
 const PLANTED_KEY = "sk-planted-canary-000111222333";
 
 async function* from(parts: readonly string[]): AsyncIterable<string> {
@@ -74,6 +79,7 @@ function adapter(options: {
 }): LocalLlmAdapter {
   const { overrides, credential } = options;
   return new LocalLlmAdapter({
+    placements: routing.configuration.placements,
     transport: options.transport ?? unreachable,
     ...(overrides === undefined ? {} : { overrides }),
     ...(credential === undefined ? {} : { credentials: (): string => credential }),
@@ -83,7 +89,7 @@ function adapter(options: {
 function request(overrides: Partial<GenerateOptions> = {}): GenerateOptions {
   return {
     provider: "lm-studio",
-    model: LOCAL_MODEL_IDS.planEvaluator,
+    model: "n5air/qwen3.8-27b",
     messages: [createUserMessage({ content: [{ type: "text", text: "hi" }], source: { kind: "user" } })],
     ...overrides,
   };
@@ -132,14 +138,14 @@ describe("what the adapter says about itself", () => {
   it("lists only the pairs the matrix says run", async () => {
     const listed = await adapter({}).listModels("lm-studio");
     const ids = listed.map((model) => model.id);
-    assert.equal(ids.includes(LOCAL_MODEL_IDS.planEvaluator), true, "a runs pair is listed");
+    assert.equal(ids.includes("n5air/qwen3.8-27b"), true, "a runs pair is listed");
     assert.equal(
-      ids.includes(OPENROUTER_MODEL_IDS.planEvaluator),
+      ids.includes("qwen/qwen3.8-flash"),
       false,
       "an unverified pair is not offered beside one that is known good",
     );
     assert.equal(
-      ids.includes(OPENROUTER_MODEL_IDS.implEvaluator),
+      ids.includes("z-ai/glm-5.3-flash"),
       false,
       "a refused pair is not listed",
     );
@@ -220,7 +226,7 @@ describe("refusing before the wire", () => {
   it("refuses a pair the matrix refuses, and says why", async () => {
     const chunks = await run(
       adapter({}),
-      request({ provider: "lm-studio", model: OPENROUTER_MODEL_IDS.implEvaluator }),
+      request({ provider: "lm-studio", model: "z-ai/glm-5.3-flash" }),
     );
     const reported = failure(chunks);
     assert.equal(reported.code, "MODEL_REFUSED");
@@ -231,7 +237,7 @@ describe("refusing before the wire", () => {
     const wire = canned(reached(200, sse('{"choices":[{"delta":{},"finish_reason":"stop"}]}')));
     const chunks = await run(
       adapter({ transport: wire.transport }),
-      request({ provider: "lm-studio", model: OPENROUTER_MODEL_IDS.planEvaluator }),
+      request({ provider: "lm-studio", model: "qwen/qwen3.8-flash" }),
     );
     assert.equal(wire.sent.length, 1, "an unverified pair is dispatchable, just not advertised");
     assert.deepEqual(finish(chunks).reason, { kind: "stop" });
@@ -240,7 +246,7 @@ describe("refusing before the wire", () => {
   it("names the variable to set when a credentialed route has no credential", async () => {
     const chunks = await run(
       adapter({}),
-      request({ provider: "openrouter", model: OPENROUTER_MODEL_IDS.grok }),
+      request({ provider: "openrouter", model: "x-ai/grok-4.5" }),
     );
     const reported = failure(chunks);
     assert.equal(reported.code, "MISSING_CREDENTIAL");
@@ -258,7 +264,7 @@ describe("what came back", () => {
     const wire = canned(reached(200, sse('{"choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}')));
     const chunks = await run(
       adapter({ transport: wire.transport, credential: PLANTED_KEY }),
-      request({ provider: "openrouter", model: OPENROUTER_MODEL_IDS.grok }),
+      request({ provider: "openrouter", model: "x-ai/grok-4.5" }),
     );
     const [only] = wire.sent;
     assert.equal(only?.headers["authorization"], `Bearer ${PLANTED_KEY}`);
@@ -273,7 +279,7 @@ describe("what came back", () => {
     const wire = canned(reached(401, '{"error":{"message":"invalid key"}}'));
     const chunks = await run(
       adapter({ transport: wire.transport, credential: PLANTED_KEY }),
-      request({ provider: "openrouter", model: OPENROUTER_MODEL_IDS.grok }),
+      request({ provider: "openrouter", model: "x-ai/grok-4.5" }),
     );
     const reported = failure(chunks);
     assert.equal(reported.code, "AUTH");
@@ -286,7 +292,7 @@ describe("what came back", () => {
     const wire = canned(reached(429, "{}"));
     const chunks = await run(
       adapter({ transport: wire.transport, credential: PLANTED_KEY }),
-      request({ provider: "openrouter", model: OPENROUTER_MODEL_IDS.grok }),
+      request({ provider: "openrouter", model: "x-ai/grok-4.5" }),
     );
     assert.equal(failure(chunks).code, "RATE_LIMIT");
   });
@@ -411,4 +417,15 @@ describe("what came back", () => {
     const chunks = await run(adapter({ transport: wire.transport }));
     assert.equal(chunks.filter((chunk) => chunk.type === "finish").length, 1);
   });
+});
+
+
+it("lists only the supplied project's placements and detaches later caller mutation", async () => {
+  const supplied = { backends: ["lm-studio"], entries: [{ model: "isolated-project-model", backend: "lm-studio", verdict: "runs", why: "synthetic" }] };
+  const adapter = new LocalLlmAdapter({ placements: supplied, transport: async () => { throw new Error("catalog must not call transport"); } });
+  supplied.entries[0]!.model = "mutated";
+  assert.deepEqual((await adapter.listModels("lm-studio")).map(m => m.id), ["isolated-project-model"]);
+  assert.deepEqual(await adapter.listModels("openrouter"), []);
+  const empty = new LocalLlmAdapter({ placements: { backends: [], entries: [] }, transport: async () => { throw new Error("catalog must not call transport"); } });
+  assert.deepEqual(await empty.listModels("lm-studio"), []);
 });

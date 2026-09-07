@@ -1,3 +1,8 @@
+import routingPlugin, { CONTEXT_KEY as ROUTING_KEY, createService as createRouting } from "./plugins/routing.js";
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { loadRoutingConfiguration } from "@rickylabs/routing";
+import { fileURLToPath } from "node:url";
 /**
  * The half of #46's third acceptance criterion that `--dump-config` cannot show.
  *
@@ -85,6 +90,9 @@ function fakeSeam(): FakeSeam {
   return seam;
 }
 
+const loadedRouting = await loadRoutingConfiguration({ path: fileURLToPath(import.meta.resolve("@rickylabs/routing/config/routing.v1.json")) });
+assert.ok(loadedRouting.ok);
+const routing = loadedRouting.loaded;
 describe("each plugin claims its service and gives it back", () => {
   it("harness-subagents, once its telemetry dependency is on the context", async () => {
     const ctx = new Context();
@@ -141,6 +149,7 @@ describe("each plugin claims its service and gives it back", () => {
     const seam = fakeSeam();
     const ctx = new Context();
     const host = await ctx.plugin(seam.plugin);
+    const routingFiber = await ctx.plugin(routingPlugin, { document: "@rickylabs/routing/config/routing.v1.json" });
     const fiber = await ctx.plugin(llm);
 
     assert.equal(seam.registered.length, 1, "the three routes register in one call, or not at all");
@@ -150,6 +159,7 @@ describe("each plugin claims its service and gives it back", () => {
     await fiber.dispose();
     assert.equal(seam.released, 1, "the registration outlived the fiber that made it");
     await host.dispose();
+    await routingFiber.dispose();
   });
 
   it("harness-llm waits for the seam instead of failing without it", async () => {
@@ -162,7 +172,10 @@ describe("each plugin claims its service and gives it back", () => {
     assert.equal(seam.registered.length, 0, "something registered with no runtime to register on");
 
     const host = await ctx.plugin(seam.plugin);
+    assert.equal(seam.registered.length, 0, "routing must also be available");
+    const routingFiber = await ctx.plugin(routingPlugin, { document: "@rickylabs/routing/config/routing.v1.json" });
     assert.equal(seam.registered.length, 1, "the waiting fiber never activated");
+    await routingFiber.dispose();
 
     await fiber.dispose();
     await host.dispose();
@@ -190,24 +203,26 @@ describe("the bundle as a whole", () => {
       await ctx.plugin(subagents),
       await ctx.plugin(board),
       await ctx.plugin(coordinator),
+      await ctx.plugin(routingPlugin, { document: "@rickylabs/routing/config/routing.v1.json" }),
     ];
-    for (const key of [SUBAGENTS_KEY, BOARD_KEY, COORDINATOR_KEY, TELEMETRY_KEY] as const) {
+    for (const key of [SUBAGENTS_KEY, BOARD_KEY, COORDINATOR_KEY, TELEMETRY_KEY, ROUTING_KEY] as const) {
       assert.notEqual(ctx.get(key), undefined, `${key} is not on the context`);
     }
     for (const fiber of fibers) await fiber.dispose();
-    for (const key of [SUBAGENTS_KEY, BOARD_KEY, COORDINATOR_KEY, TELEMETRY_KEY] as const) {
+    for (const key of [SUBAGENTS_KEY, BOARD_KEY, COORDINATOR_KEY, TELEMETRY_KEY, ROUTING_KEY] as const) {
       assert.equal(ctx.get(key), undefined, `${key} outlived its fiber`);
     }
   });
 
   it("names each plugin, so a fiber diagnostic says which one", () => {
     assert.deepEqual(
-      [subagents.name, board.name, coordinator.name, telemetry.name, llm.name],
+      [subagents.name, board.name, coordinator.name, telemetry.name, routingPlugin.name, llm.name],
       [
         "harness-subagents",
         "harness-board",
         "harness-coordinator",
         "harness-telemetry",
+        "harness-routing",
         "harness-llm",
       ],
     );
@@ -286,7 +301,7 @@ describe("the configured half, without a context", () => {
   });
 
   it("llm builds an adapter that answers about the routes it was configured for", async () => {
-    const adapter = createAdapter({ lmStudioUrl: "http://box:1234/v1" });
+    const adapter = createAdapter(routing, { lmStudioUrl: "http://box:1234/v1" });
     assert.deepEqual(adapter.providerInfo("lm-studio"), { id: "lm-studio", name: "LM Studio" });
     assert.notEqual((await adapter.listModels("lm-studio")).length, 0);
   });
@@ -298,5 +313,45 @@ describe("the configured half, without a context", () => {
     // The point of resolving once: moving the variable afterwards cannot move the service.
     env.DSH_TELEMETRY_DIR = "/somewhere/else";
     assert.equal(service.observability.directory, "/var/log/harness");
+  });
+});
+
+
+describe("explicit routing composition", () => {
+  it("requires document selection at the service boundary, even without schema validation", async () => {
+    for (const config of [undefined, {}, { document: "" }, { document: " " }]) {
+      await assert.rejects(createRouting(config), { name: "RangeError", message: "routing-document-not-configured" });
+    }
+  });
+  it("provides immutable configuration and provenance, and releases its key", async () => {
+    const ctx = new Context();
+    const fiber = await ctx.plugin(routingPlugin, { document: "@rickylabs/routing/config/routing.v1.json" });
+    assert.ok(Object.isFrozen(ctx.harnessRouting));
+    assert.ok(Object.isFrozen(ctx.harnessRouting.configuration.lanes[0]?.chain));
+    assert.match(ctx.harnessRouting.source.digest, /^sha256:[a-f0-9]{64}$/);
+    await fiber.dispose(); assert.equal(ctx.get(ROUTING_KEY), undefined);
+  });
+  it("loads an explicit temp path and refuses malformed content safely while llm stays pending", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "routing-plugin-"));
+    const path = join(directory, "routing.json");
+    const ctx = new Context(); const seam = fakeSeam();
+    const host = await ctx.plugin(seam.plugin); const waiting = await ctx.plugin(llm);
+    try {
+      await writeFile(path, JSON.stringify(routing.configuration));
+      assert.deepEqual((await createRouting({ document: path })).configuration, routing.configuration);
+      const secret = "sk-or-v1-" + "a".repeat(40);
+      await writeFile(path, "{" + secret);
+      await assert.rejects(createRouting({ document: path }), { name: "RangeError", message: "malformed: not-json" });
+      assert.equal(seam.registered.length, 0); assert.equal(ctx.get(ROUTING_KEY), undefined);
+    } finally { await waiting.dispose(); await host.dispose(); await rm(directory, { recursive: true, force: true }); }
+  });
+  it("refuses an unsupported placement mechanism before registering any adapter", async () => {
+    const configuration = structuredClone(routing.configuration);
+    Object.assign(configuration, { placements: { backends: ["future-backend"], entries: [] } });
+    const ctx = new Context(); const seam = fakeSeam(); const host = await ctx.plugin(seam.plugin);
+    ctx.provide(ROUTING_KEY, { ...routing, configuration });
+    assert.throws(() => llm.apply(ctx), /placement-backend-unsupported/);
+    assert.equal(seam.registered.length, 0);
+    await host.dispose();
   });
 });

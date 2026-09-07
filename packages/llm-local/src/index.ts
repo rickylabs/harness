@@ -58,7 +58,7 @@ export type {
 } from "./backends.js";
 
 export {
-  PLACEMENTS,
+  requirePlacements,
   REFUSALS,
   backendsFor,
   canRun,

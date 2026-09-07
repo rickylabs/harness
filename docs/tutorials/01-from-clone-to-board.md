@@ -298,7 +298,7 @@ profile   rickylabs
 surface   tui
 directory /tmp/dsh-home/profiles/rickylabs
 bundles   @deepseek-ai/dsh-base, @rickylabs/dsh-app
-rows      harness-subagents, harness-board, harness-coordinator, harness-telemetry, harness-llm
+rows      harness-subagents, harness-board, harness-coordinator, harness-telemetry, harness-routing, harness-llm
 link      node_modules/@rickylabs/dsh-app -> /path/to/harness/packages/dsh-app
 
 wrote  package.json
@@ -306,7 +306,7 @@ wrote  pnpm-workspace.yaml
 wrote  cordis.patch.yml
 wrote  node_modules/@rickylabs/dsh-app
 
-5 rows will be inserted. Verify with:
+6 rows will be inserted. Verify with:
   dsh --profile rickylabs --dump-config
 ```
 
@@ -332,11 +332,15 @@ bottom, after the whole base bundle (excerpted below to show only the appended b
   name: '@rickylabs/dsh-app/plugins/coordinator'
 - id: harness-telemetry
   name: '@rickylabs/dsh-app/plugins/telemetry'
+- id: harness-routing
+  name: '@rickylabs/dsh-app/plugins/routing'
+  config:
+    document: '@rickylabs/routing/config/routing.v1.json'
 - id: harness-llm
   name: '@rickylabs/dsh-app/plugins/llm'
 ```
 
-Five rows, appended after the base bundle rather than replacing anything in it. That is the profile
+Six rows, appended after the base bundle rather than replacing anything in it. That is the profile
 doing its one job. To confirm later that it is still installed and unmodified:
 
 ```bash
@@ -452,7 +456,7 @@ Five things, none of which needed a server:
 1. Built the workspace, with its own consistency checks running as part of the build.
 2. Installed a board taxonomy and an agent-readable process into a repository, additively.
 3. Moved an item through a column and saw the projection change, with nothing running in between.
-4. Registered five plugins into a `dsh` profile and confirmed they land where they should.
+4. Registered six plugins into a `dsh` profile and confirmed they land where they should.
 5. Recorded a run and read back both its state and the ordered list of places to look when one fails.
 
 ## Where to go next

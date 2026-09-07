@@ -30,8 +30,8 @@
  * workstation; it needs one real run on the box, which is #49's.
  *
  * The model id itself is passed **verbatim**, with no table in between. `@rickylabs/routing` owns
- * every pin and says so: *do not add a second spelling to this table until something can [verify
- * it]*. A translation layer here would be a second, unverified spelling in a second place.
+ * the selected document's wire ids. A translation layer here would be a second, unverified
+ * spelling in a second place.
  */
 
 import {

@@ -1,0 +1,874 @@
+{
+  "schemaVersion": 1,
+  "name": "harness-compiled-table-transcription",
+  "provenance": {
+    "description": "Compatibility transcription of packages/routing/src/{models,policy}.ts and packages/llm-local/src/capability.ts at 4c813fe10218e471f5d78a2dc45bd805ec260749; source/topic/date: repository compiled routing and observed placement data, consulted 2026-09-07. Wire model ids, not CLI keys. Not a fleet instance or parity result. sonnet-5, z-ai/glm-5.2, x-ai/grok-4.5 and gemini-3.6-flash-high have no key in the fresh full matrix export; later schema/parity steps own that gap."
+  },
+  "families": [
+    "anthropic",
+    "openai",
+    "google",
+    "open"
+  ],
+  "efforts": {
+    "ordered": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "unordered": []
+  },
+  "purposes": [
+    "orchestration",
+    "implementation",
+    "analysis",
+    "design",
+    "documentation",
+    "claude_workflow",
+    "research_extraction",
+    "evaluation",
+    "docs_audit",
+    "docs_polish"
+  ],
+  "models": {
+    "gpt-5.6-sol": {
+      "family": "openai"
+    },
+    "gpt-6-astra": {
+      "family": "openai"
+    },
+    "gpt-5.6-luna": {
+      "family": "openai"
+    },
+    "fable-5": {
+      "family": "anthropic"
+    },
+    "opus-5": {
+      "family": "anthropic"
+    },
+    "sonnet-5": {
+      "family": "anthropic"
+    },
+    "gemini-3.6-flash-high": {
+      "family": "google"
+    },
+    "n5air/qwen3.8-27b": {
+      "family": "open"
+    },
+    "n5air/ling-3.0-flash": {
+      "family": "open"
+    },
+    "qwen/qwen3.8-flash": {
+      "family": "open",
+      "approvedRelayEvaluator": true
+    },
+    "z-ai/glm-5.3-flash": {
+      "family": "open",
+      "approvedRelayEvaluator": true
+    },
+    "z-ai/glm-5.2": {
+      "family": "open"
+    },
+    "x-ai/grok-4.5": {
+      "family": "open"
+    },
+    "moonshotai/kimi-k3": {
+      "family": "open"
+    }
+  },
+  "profiles": [
+    "claude-openrouter"
+  ],
+  "presets": [
+    "claude-design-glm-5-2",
+    "claude-evaluator-qwen-3-8-flash",
+    "claude-evaluator-glm-5-3-flash"
+  ],
+  "lanes": [
+    {
+      "lane": "light_implementation",
+      "purpose": "implementation",
+      "chain": [
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-sol",
+            "effort": "low"
+          },
+          "when": [],
+          "note": "small_scoped_slices"
+        }
+      ]
+    },
+    {
+      "lane": "normal_implementation",
+      "purpose": "implementation",
+      "chain": [
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-sol",
+            "effort": "medium"
+          },
+          "when": []
+        }
+      ]
+    },
+    {
+      "lane": "complex_implementation",
+      "purpose": "implementation",
+      "chain": [
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "when": [],
+          "note": "large_or_cross_cutting_slices"
+        },
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-sol",
+            "effort": "high"
+          },
+          "when": [
+            "model-unavailable"
+          ],
+          "note": "astra_is_gated_on_codex_cli_version"
+        }
+      ]
+    },
+    {
+      "lane": "fast_iteration",
+      "purpose": "implementation",
+      "chain": [
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-luna",
+            "effort": "max"
+          },
+          "when": []
+        }
+      ]
+    },
+    {
+      "lane": "deep_analysis",
+      "purpose": "analysis",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "fable-5",
+            "effort": "medium"
+          },
+          "when": [],
+          "subscription": "included",
+          "note": "default_complex_decision_subagent"
+        },
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-sol",
+            "effort": "high"
+          },
+          "when": [
+            "token-limit"
+          ]
+        }
+      ]
+    },
+    {
+      "lane": "planning_decisions",
+      "purpose": "orchestration",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "opus-5",
+            "effort": "high"
+          },
+          "when": [],
+          "subscription": "included",
+          "note": "default_orchestrator"
+        },
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-sol",
+            "effort": "high"
+          },
+          "when": [
+            "token-limit"
+          ]
+        }
+      ]
+    },
+    {
+      "lane": "major_ui_ux_design",
+      "purpose": "design",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "z-ai/glm-5.2",
+            "effort": "xhigh",
+            "profile": "claude-openrouter",
+            "preset": "claude-design-glm-5-2"
+          },
+          "when": [],
+          "note": "lead_route_for_major_ui_ux_work"
+        }
+      ]
+    },
+    {
+      "lane": "major_ui_ux_adversarial_review",
+      "purpose": "design",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "z-ai/glm-5.2",
+            "effort": "xhigh",
+            "profile": "claude-openrouter",
+            "preset": "claude-design-glm-5-2"
+          },
+          "when": [],
+          "note": "required_before_merge_when_glm_not_lead"
+        }
+      ]
+    },
+    {
+      "lane": "adversarial_design_eval",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "opencode",
+            "transport": "openrouter",
+            "model": "moonshotai/kimi-k3",
+            "effort": "high",
+            "router": "openrouter"
+          },
+          "when": [],
+          "certifies": "none",
+          "note": "vision_evidence_complements_required_glm_design_review"
+        }
+      ]
+    },
+    {
+      "lane": "documentation_review",
+      "purpose": "documentation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "sonnet-5",
+            "effort": "high"
+          },
+          "when": [],
+          "subscription": "included",
+          "note": "docs_cleanup_easy_chores"
+        },
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-luna",
+            "effort": "high"
+          },
+          "when": [
+            "token-limit"
+          ]
+        }
+      ]
+    },
+    {
+      "lane": "documentation_authoring",
+      "purpose": "documentation",
+      "chain": [
+        {
+          "route": {
+            "harness": "agy",
+            "transport": "native",
+            "model": "gemini-3.6-flash-high",
+            "effort": "low"
+          },
+          "when": [],
+          "note": "documentation_generation"
+        }
+      ]
+    },
+    {
+      "lane": "docs_audit",
+      "purpose": "docs_audit",
+      "chain": [
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-sol",
+            "effort": "medium"
+          },
+          "when": [],
+          "effortEscalations": [
+            {
+              "condition": "large_changeset",
+              "effort": "high"
+            }
+          ],
+          "note": "single_pass_opposite_family_audit_of_generated_docs_changeset"
+        }
+      ]
+    },
+    {
+      "lane": "docs_polish",
+      "purpose": "docs_polish",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "fable-5",
+            "effort": "medium"
+          },
+          "when": [],
+          "subscription": "included",
+          "note": "edit_only_prose_polish_after_audit"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "opus-5",
+            "effort": "xhigh"
+          },
+          "when": [
+            "token-limit"
+          ]
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "z-ai/glm-5.2",
+            "effort": "xhigh",
+            "profile": "claude-openrouter",
+            "preset": "claude-design-glm-5-2"
+          },
+          "when": [
+            "no-claude-surface"
+          ]
+        }
+      ]
+    },
+    {
+      "lane": "chore_code",
+      "purpose": "implementation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "opus-5",
+            "effort": "medium"
+          },
+          "when": [],
+          "subscription": "included",
+          "note": "delegated_code_chores"
+        },
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-luna",
+            "effort": "max"
+          },
+          "when": [
+            "token-limit"
+          ]
+        }
+      ]
+    },
+    {
+      "lane": "claude_workflow",
+      "purpose": "claude_workflow",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "opus-5",
+            "effort": "low"
+          },
+          "when": []
+        }
+      ]
+    },
+    {
+      "lane": "research_extraction",
+      "purpose": "research_extraction",
+      "chain": [
+        {
+          "route": {
+            "harness": "agy",
+            "transport": "native",
+            "model": "gemini-3.6-flash-high",
+            "effort": "low"
+          },
+          "when": []
+        }
+      ]
+    },
+    {
+      "lane": "formal_plan_evaluation",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "fable-5",
+            "effort": "medium"
+          },
+          "when": [],
+          "certifies": "openai",
+          "subscription": "included"
+        },
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-sol",
+            "effort": "high"
+          },
+          "when": [],
+          "certifies": "anthropic"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "qwen/qwen3.8-flash",
+            "effort": "max",
+            "profile": "claude-openrouter",
+            "preset": "claude-evaluator-qwen-3-8-flash"
+          },
+          "when": [
+            "third-opinion",
+            "native-quota-limit"
+          ],
+          "certifies": "any",
+          "note": "open_model_route"
+        },
+        {
+          "route": {
+            "harness": "agy",
+            "transport": "native",
+            "model": "gemini-3.6-flash-high",
+            "effort": "high"
+          },
+          "when": [
+            "openrouter-limit"
+          ],
+          "certifies": "any"
+        }
+      ]
+    },
+    {
+      "lane": "formal_impl_evaluation",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "fable-5",
+            "effort": "medium"
+          },
+          "when": [],
+          "certifies": "openai",
+          "subscription": "included"
+        },
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-sol",
+            "effort": "xhigh"
+          },
+          "when": [],
+          "certifies": "anthropic"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "z-ai/glm-5.3-flash",
+            "effort": "max",
+            "profile": "claude-openrouter",
+            "preset": "claude-evaluator-glm-5-3-flash"
+          },
+          "when": [
+            "third-opinion",
+            "native-quota-limit"
+          ],
+          "certifies": "any",
+          "note": "open_model_route"
+        },
+        {
+          "route": {
+            "harness": "agy",
+            "transport": "native",
+            "model": "gemini-3.6-flash-high",
+            "effort": "high"
+          },
+          "when": [
+            "openrouter-limit"
+          ],
+          "certifies": "any"
+        }
+      ]
+    },
+    {
+      "lane": "review_claude",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-5.6-sol",
+            "effort": "xhigh"
+          },
+          "when": [],
+          "certifies": "anthropic"
+        }
+      ]
+    },
+    {
+      "lane": "review_codex_light",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "opus-5",
+            "effort": "high"
+          },
+          "when": [],
+          "certifies": "openai",
+          "note": "pairs_with_light_implementation"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "sonnet-5",
+            "effort": "high"
+          },
+          "when": [
+            "token-limit"
+          ],
+          "certifies": "openai"
+        }
+      ]
+    },
+    {
+      "lane": "review_codex",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "fable-5",
+            "effort": "low"
+          },
+          "when": [],
+          "certifies": "openai",
+          "subscription": "included"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "opus-5",
+            "effort": "low"
+          },
+          "when": [
+            "token-limit"
+          ],
+          "certifies": "openai"
+        }
+      ]
+    },
+    {
+      "lane": "review_codex_complex",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "fable-5",
+            "effort": "medium"
+          },
+          "when": [],
+          "certifies": "openai",
+          "subscription": "included"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "opus-5",
+            "effort": "medium"
+          },
+          "when": [
+            "token-limit"
+          ],
+          "certifies": "openai"
+        }
+      ]
+    },
+    {
+      "lane": "review_codex_fast",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "opus-5",
+            "effort": "medium"
+          },
+          "when": [],
+          "certifies": "openai",
+          "note": "pairs_with_fast_iteration"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "sonnet-5",
+            "effort": "high"
+          },
+          "when": [
+            "token-limit"
+          ],
+          "certifies": "openai"
+        }
+      ]
+    }
+  ],
+  "tiers": [
+    {
+      "tier": "light",
+      "implement": "light_implementation",
+      "review": "review_codex_light"
+    },
+    {
+      "tier": "normal",
+      "implement": "normal_implementation",
+      "review": "review_codex"
+    },
+    {
+      "tier": "complex",
+      "implement": "complex_implementation",
+      "review": "review_codex_complex"
+    },
+    {
+      "tier": "fast",
+      "implement": "fast_iteration",
+      "review": "review_codex_fast"
+    }
+  ],
+  "constraints": {
+    "research_extraction": {
+      "transports": [
+        "native"
+      ],
+      "harnesses": [
+        "agy",
+        "codex",
+        "codex-run"
+      ],
+      "why": "deep research runs on native agy or native Codex transport only"
+    },
+    "docs_audit": {
+      "families": [
+        "openai"
+      ],
+      "why": "the audit is defined by being opposite-family to the Claude generators; it fails closed"
+    },
+    "major_ui_ux_design": {
+      "models": [
+        "z-ai/glm-5.2"
+      ],
+      "why": "major UI/UX work is led by GLM 5.2"
+    },
+    "major_ui_ux_adversarial_review": {
+      "models": [
+        "z-ai/glm-5.2"
+      ],
+      "why": "major UI/UX review is GLM 5.2, required before merge when GLM did not lead"
+    }
+  },
+  "deepResearchLanes": [
+    "research_extraction"
+  ],
+  "policy": {
+    "maxFallbackDepth": 2
+  },
+  "placements": {
+    "backends": [
+      "lm-studio",
+      "llama-rocm",
+      "openrouter"
+    ],
+    "entries": [
+      {
+        "model": "n5air/qwen3.8-27b",
+        "backend": "lm-studio",
+        "verdict": "runs",
+        "why": "The good local model on the Vulkan path, around 40 tok/s, and the seat the local smoke and plan-evaluation lanes are meant to use. Fast enough that routing here is a real choice rather than a fallback."
+      },
+      {
+        "model": "n5air/qwen3.8-27b",
+        "backend": "llama-rocm",
+        "verdict": "unverified",
+        "why": "Nothing has run this pair. Treat it as a probe to perform, not as a route to take."
+      },
+      {
+        "model": "n5air/qwen3.8-27b",
+        "backend": "openrouter",
+        "verdict": "refused",
+        "reason": "not-served-here",
+        "why": "The `n5air/` prefix names a model served from this box. The relay has no id under that namespace, so this is a fact about what the destination is rather than a configuration gap."
+      },
+      {
+        "model": "n5air/ling-3.0-flash",
+        "backend": "llama-rocm",
+        "verdict": "runs",
+        "requires": {
+          "env": {
+            "GGML_HIP_ENABLE_UNIFIED_MEMORY": "1"
+          },
+          "args": [
+            "--load-mode",
+            "none"
+          ]
+        },
+        "why": "ROCm is the only accelerator this model runs on, and it needs unified memory enabled and the model left unloaded at start. Both conditions are part of the placement: without them the server comes up and the first request fails, which reads as a model fault."
+      },
+      {
+        "model": "n5air/ling-3.0-flash",
+        "backend": "lm-studio",
+        "verdict": "refused",
+        "reason": "unusably-slow",
+        "why": "It segfaults on Vulkan, and LM Studio's answer to that is a CPU fallback at roughly 3 tok/s — which is worse than a refusal, because it succeeds. A lane routed here does not fail; it takes an hour and looks like a hung agent."
+      },
+      {
+        "model": "n5air/ling-3.0-flash",
+        "backend": "openrouter",
+        "verdict": "refused",
+        "reason": "not-served-here",
+        "why": "The `n5air/` prefix names a model served from this box. The relay has no id under that namespace, so this is a fact about what the destination is rather than a configuration gap."
+      },
+      {
+        "model": "z-ai/glm-5.3-flash",
+        "backend": "openrouter",
+        "verdict": "runs",
+        "why": "The relay implementation evaluator. It reasons before it answers, which is where the token budget floor in `budget.ts` comes from: 71 reasoning tokens consumed a 10-token budget entirely and the call returned HTTP 200 with empty content."
+      },
+      {
+        "model": "z-ai/glm-5.3-flash",
+        "backend": "lm-studio",
+        "verdict": "refused",
+        "reason": "absent-from-build",
+        "why": "`glm5next` is not in this box's llama.cpp build, so the weights cannot be loaded by either local backend. This model is relay-only until that build gains the architecture."
+      },
+      {
+        "model": "z-ai/glm-5.3-flash",
+        "backend": "llama-rocm",
+        "verdict": "refused",
+        "reason": "absent-from-build",
+        "why": "Same missing `glm5next` architecture. The accelerator is not the obstacle here, which is why swapping to ROCm does not help and the refusal is not `crashes-on-backend`."
+      },
+      {
+        "model": "qwen/qwen3.8-flash",
+        "backend": "openrouter",
+        "verdict": "runs",
+        "why": "The relay plan evaluator, and the seat the local plan evaluator mirrors."
+      },
+      {
+        "model": "qwen/qwen3.8-flash",
+        "backend": "lm-studio",
+        "verdict": "unverified",
+        "why": "Nothing has run this pair. Treat it as a probe to perform, not as a route to take."
+      },
+      {
+        "model": "qwen/qwen3.8-flash",
+        "backend": "llama-rocm",
+        "verdict": "unverified",
+        "why": "Nothing has run this pair. Treat it as a probe to perform, not as a route to take."
+      },
+      {
+        "model": "z-ai/glm-5.2",
+        "backend": "openrouter",
+        "verdict": "runs",
+        "why": "Leads design work over the relay. Not an evaluator seat; see `routing`'s approval list."
+      },
+      {
+        "model": "z-ai/glm-5.2",
+        "backend": "lm-studio",
+        "verdict": "unverified",
+        "why": "Untried. The `glm5next` gap that rules out GLM-5.3-Flash is a fact about that architecture and does not carry over to this one, so it is not evidence either way."
+      },
+      {
+        "model": "z-ai/glm-5.2",
+        "backend": "llama-rocm",
+        "verdict": "unverified",
+        "why": "Nothing has run this pair. Treat it as a probe to perform, not as a route to take."
+      },
+      {
+        "model": "x-ai/grok-4.5",
+        "backend": "openrouter",
+        "verdict": "runs",
+        "why": "Relay-only by construction: the weights are not published, so there is nothing to serve locally."
+      },
+      {
+        "model": "x-ai/grok-4.5",
+        "backend": "lm-studio",
+        "verdict": "refused",
+        "reason": "not-served-here",
+        "why": "Closed weights. No local backend can serve them, regardless of build or accelerator."
+      },
+      {
+        "model": "x-ai/grok-4.5",
+        "backend": "llama-rocm",
+        "verdict": "refused",
+        "reason": "not-served-here",
+        "why": "Closed weights, as above."
+      }
+    ]
+  }
+}

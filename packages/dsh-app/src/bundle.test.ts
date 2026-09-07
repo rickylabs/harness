@@ -1,3 +1,4 @@
+import { CONTEXT_KEY as ROUTING_KEY, name as routingName } from "./plugins/routing.js";
 /**
  * The committed `cordis.patch.yml` against the module it is rendered from, plus the two facts a
  * YAML string cannot state about itself: that every row names a subpath the manifest publishes,
@@ -82,14 +83,14 @@ describe("BUNDLE_ROWS", () => {
   it("carries one row per plugin module, ids matching the plugin names", () => {
     assert.deepEqual(
       BUNDLE_ROWS.map((entry) => entry.id),
-      [subagentsName, boardName, coordinatorName, telemetryName, llmName],
+      [subagentsName, boardName, coordinatorName, telemetryName, routingName, llmName],
     );
   });
 
-  it("claims four distinct context keys, one fewer than it has rows", () => {
-    // Five rows, four keys. `harness-llm` registers on `ctx.llm`, which dsh owns, and claims none of
-    // its own — so a fifth entry here would be asserting a key that must not exist.
-    const keys = [SUBAGENTS_KEY, BOARD_KEY, COORDINATOR_KEY, TELEMETRY_KEY];
+  it("claims five distinct context keys, one fewer than it has rows", () => {
+    // Six rows, five keys. `harness-llm` registers on `ctx.llm`, which dsh owns, and claims none of
+    // its own.
+    const keys = [SUBAGENTS_KEY, BOARD_KEY, COORDINATOR_KEY, TELEMETRY_KEY, ROUTING_KEY];
     assert.equal(new Set(keys).size, keys.length, "two plugins would claim one service name");
     assert.equal(BUNDLE_ROWS.length, keys.length + 1);
   });
@@ -136,4 +137,13 @@ describe("subpathOf", () => {
   it("does not treat a package with a longer name as a subpath", () => {
     assert.equal(subpathOf("@rickylabs/dsh-application", "@rickylabs/dsh-app"), null);
   });
+});
+
+it("renders the portable explicit selection as row config", () => {
+  assert.equal(BUNDLE_ROWS.length, 6);
+  const row = BUNDLE_ROWS.find(r => r.id === routingName)!;
+  assert.deepEqual(row.config, { document: "@rickylabs/routing/config/routing.v1.json" });
+  const patch = renderPatch();
+  assert.ok(patch.includes('config:\n        document: "@rickylabs/routing/config/routing.v1.json"'));
+  assert.doesNotMatch(patch, /\/home\/|[A-Z]:\\/);
 });

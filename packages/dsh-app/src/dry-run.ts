@@ -1,7 +1,7 @@
 /** Offline composition only. There is deliberately no executor callback or provider registry. */
 import { FileStateStore, type AdmissionFailure, type StepState } from "@rickylabs/coordinator";
 import type { EffectStatus, IntentKey, SessionPending, StateStore, StateStoreHandle, StoreRefusal, StoreScope } from "@rickylabs/harness-contracts";
-import type { AdmissionProblem } from "@rickylabs/routing";
+import type { LoadRefusal, AdmissionProblem } from "@rickylabs/routing";
 import type { DispatchRequest, RouteField, RouteStatus } from "@rickylabs/subagents";
 import { driveSnapshot, snapshotData } from "./dry-run-internal.js";
 
@@ -24,6 +24,8 @@ export interface FakeExecutor {
   readonly result: { readonly kind: "accepted" | "refused" | "unknown" | "throws"; readonly reason?: string };
 }
 export interface DryRunPlan {
+  /** Exact document text plus caller-owned provenance; no caller-supplied digest is trusted. */
+  readonly routing: { readonly source: string; readonly text: string };
   /** The caller must use the scope of its store. Handles do not expose milestone scope. */
   readonly scope: StoreScope;
   readonly source: GithubSourceRef;
@@ -36,6 +38,9 @@ export interface DryRunPlan {
   readonly fake: FakeExecutor;
 }
 export type DriveRefusal =
+  | { readonly kind: "routing-unusable"; readonly refusal: LoadRefusal }
+  | { readonly kind: "unresolved-prior-effect"; readonly status: "pending" | "unknown" }
+  | { readonly kind: "store-refused"; readonly operation: "read"; readonly refusal: StoreRefusal }
   | { readonly kind: "source-unusable"; readonly detail: string }
   | { readonly kind: "admission-failed"; readonly failure: AdmissionFailure }
   | { readonly kind: "dispatch-inadmissible"; readonly problems: readonly AdmissionProblem[]; readonly detail: string }

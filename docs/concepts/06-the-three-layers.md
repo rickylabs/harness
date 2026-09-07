@@ -26,8 +26,10 @@ milestones are the record; columns, lanes and anomalies are projections computed
 from that record and never written back as a second source. The `harness` label
 is a dispatch trigger; the other taxonomy labels are inert board metadata.
 
-**delegation matrix.** The single routing authority. It maps a lane to a tier, a
-tier to a provider order, and a refusal to the next candidate. Dispatch names a
+**delegation matrix.** The single routing authority is an explicit, wholly replaced document.
+Version 1 holds lane chains and tier implement/review pairs; configuration-first resolvers
+read those selections without a compiled fallback. The shipped document is a compatibility
+transcription, not fleet parity. Dispatch names a
 lane through the matrix, which owns model selection. Requested and observed
 model identities still belong in contracts and receipts. Two
 rules earn their keep: an author may not be its own evaluator, and a quota
@@ -222,8 +224,9 @@ Everything in orange: the whole of layer 1, and the contracts package that
 leaves it. Concretely:
 
 1. The board projections, and the discipline that keeps them projections.
-2. The delegation matrix as the sole routing authority, with a closed trigger
-   union and the two rules that make fallback meaningful.
+2. The delegation loader and immutable resolvers that load and resolve an explicit document
+   whose data is the routing authority, with a closed trigger union and the two rules that
+   make fallback meaningful.
 3. Admission, and the record that a decision was made before anything launched.
 4. The two seams, kept apart, and the sandbox boundary that makes the seat seam
    enforceable where it is actually enforceable.

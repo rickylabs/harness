@@ -33,6 +33,13 @@ for (const phase of ["assembled", "attempted"] as const) test(`SIGKILL after ${p
     assert.deepEqual(state.terminal.map(s => s.status).sort(), ["sent", "unknown", "unsent"]);
     const orphan = state.terminal.find(s => s.status === "unknown")!;
     assert.deepEqual(orphan.key, reached.key);
+    const before = value(await recovered.read()); const files = await readdir(directory); let deliveries = 0;
+    const plan = fixture();
+    const outcomes = await Promise.all([1, 2, 99].map(attempt => driveSnapshot(recovered,
+      { ...plan, attempt, routing: { ...plan.routing, text: plan.routing.text + " ".repeat(attempt) } },
+      { attempted: () => { deliveries++; } })));
+    for (const outcome of outcomes) assert.deepEqual(outcome, { drove: false, appended: 0, refusal: { kind: "unresolved-prior-effect", status: "unknown" } });
+    assert.equal(deliveries, 0); assert.deepEqual(value(await recovered.read()), before); assert.deepEqual(await readdir(directory), files);
     const forged: SessionPending = { ...orphan, status: "pending" };
     const denied = await recovered.receipt(forged, { delivered: false, reason: "synthetic-guess" });
     assert.ok(!denied.ok && denied.refusal.kind === "receipt-after-orphan");
@@ -85,3 +92,24 @@ test("malformed setup data never constructs an acknowledged setup", () => {
     assert.ok(!result.ok && result.refusal.kind === "source-unusable");
   }
 });
+
+test("real FileStateStore pending effect refuses every changed-document/attempt drive without a new journal entry", () => withDriverDirectory(async directory => {
+  const handle = value(await storeAt(directory).open()); value(await handle.initialize());
+  const prior = value(await handle.intent({ repository: SCOPE.repository, task: "issue-7", workflowStep: "dispatch-run", attempt: 1, inputRevision: "before-routing-document-identity" }));
+  const before = value(await handle.read()); const files = await readdir(directory); let deliveries = 0;
+  const plan = fixture();
+  const outcomes = await Promise.all([1, 2, 100].map(attempt => driveSnapshot(handle,
+    { ...plan, attempt, routing: { ...plan.routing, text: plan.routing.text + " ".repeat(attempt) } }, { attempted: () => { deliveries++; } })));
+  for (const outcome of outcomes) assert.deepEqual(outcome, { drove: false, appended: 0, refusal: { kind: "unresolved-prior-effect", status: "pending" } });
+  assert.equal(deliveries, 0); assert.deepEqual(value(await handle.read()), before); assert.deepEqual(await readdir(directory), files);
+  assert.deepEqual(before.pending[0], prior); value(await handle.close());
+}));
+test("real handle serializes concurrent new-key drives around an undetermined fake effect", () => withDriverDirectory(async directory => {
+  const handle = value(await storeAt(directory).open()); value(await handle.initialize()); let deliveries = 0; const plan = fixture();
+  const outcomes = await Promise.all([1, 2, 3].map(attempt => driveSnapshot(handle,
+    { ...plan, attempt, routing: { ...plan.routing, text: plan.routing.text + " ".repeat(attempt) }, fake: { ...plan.fake, result: { kind: "unknown" } } },
+    { attempted: () => { deliveries++; } })));
+  assert.equal(outcomes.filter(o => o.drove).length, 1); assert.equal(deliveries, 1);
+  for (const outcome of outcomes.slice(1)) assert.deepEqual(outcome, { drove: false, appended: 0, refusal: { kind: "unresolved-prior-effect", status: "pending" } });
+  assert.equal(value(await handle.read()).lastEntry, 1); value(await handle.close());
+}));

@@ -8,7 +8,7 @@ Owned by epic E2 · #32. See [`packages/README.md`](../README.md) for workspace 
 
 Every other package in this repository is a library with a CLI bolted on, which is a fine way to
 build the pieces and no way at all to run them. This one is the place they become a running system:
-a dsh profile that composes `@deepseek-ai/dsh-base` with our four services and our LLM adapter, and
+a dsh profile that composes `@deepseek-ai/dsh-base` with our five services and our LLM adapter, and
 a bundle that says which rows go onto the entry list.
 
 **We depend on published `@deepseek-ai/dsh`. There is no core fork** — decision 1 of #30. The only
@@ -24,7 +24,7 @@ the YAML, and `bundle.test.ts` re-renders it and compares bytes — so an edit t
 fails the test rather than reaching a daemon. Two failures move from boot time to test time that
 way: a row naming a subpath the `exports` map does not publish, and two rows sharing an id.
 
-Five rows, one `insert` with no `id`, so cordis appends them at the root of the entry list:
+Six rows, one `insert` with no `id`, so cordis appends them at the root of the entry list:
 
 | row | claims | epic |
 | --- | --- | --- |
@@ -32,6 +32,7 @@ Five rows, one `insert` with no `id`, so cordis appends them at the root of the 
 | `harness-board` | `ctx.harnessBoard` | E6 · #36 |
 | `harness-coordinator` | `ctx.harnessCoordinator` | E6 · #36 |
 | `harness-telemetry` | `ctx.harnessTelemetry` | E9 · #39 |
+| `harness-routing` | `ctx.harnessRouting` | E11 · #271 |
 | `harness-llm` | nothing — registers on `ctx.llm` | E2 · #176 |
 
 Nothing here addresses a base row. This bundle *adds* services; it does not reconfigure dsh's own,
@@ -43,7 +44,7 @@ because a patch that reaches into `@deepseek-ai/dsh-base`'s rows is a fork weari
 [`docs/concepts/02-the-two-seams.md`](../../docs/concepts/02-the-two-seams.md) owns that argument.
 What matters here is the composition consequence: **this package claims the first and leaves the
 second to dsh.** `harness-llm` is not a walk-back of that. It provides no service and takes no key;
-it injects `llm`, waits for dsh's runtime to mount, and calls `registerAdapter` for the three
+it injects `llm` and `harnessRouting`, waits for both to mount, and calls `registerAdapter` for the three
 token-metered destinations — so the meters stay separate while the routes become reachable. Base
 URLs are configuration; `OPENROUTER_API_KEY` is not, and is read from the daemon's environment at
 dispatch, because a profile is committed and a credential must not be.
@@ -217,6 +218,17 @@ even when every row in it is correct.
 
 ## Configuration
 
+The bundle explicitly selects `@rickylabs/routing/config/routing.v1.json` in the
+`harness-routing` row. This is a packaged compatibility transcription, not a fleet-parity result.
+To replace it, set `config.document` in your profile patch to your complete routing JSON path
+(use `./` for a relative path) or a package subpath. There is no merge or hidden fallback.
+`createService` always throws `RangeError: routing-document-not-configured` for absent/empty
+selection; load refusals contain fixed safe codes. `harness-llm` stays pending until routing is
+available and refuses an unsupported placement backend before registering any adapter.
+
+Render changes to the bundle rows with `pnpm --filter @rickylabs/dsh-app run bundle:render`, then
+run `pnpm run golden:bless -- "reason"` and inspect the resulting row diff.
+
 Each row takes its options from the profile's own patch layer, in the ordinary cordis way:
 
 ```yaml
@@ -234,6 +246,8 @@ Each row takes its options from the profile's own patch layer, in the ordinary c
 - **`harness-telemetry`** — `home` (default: this user's). `DSH_TELEMETRY_DIR` and friends are read
   once, at construction, so a snapshot taken after a rotation reads the directory the sink was
   writing to.
+- **`harness-routing`** — `document`, a required explicit path or package subpath. Provides frozen
+  `configuration` and raw-byte `source` provenance.
 - **`harness-llm`** — `lmStudioUrl`, `llamaRocmUrl`, `openrouterUrl`, all defaulting to `""`, which
   means "use `@rickylabs/llm-local`'s backend table". Base URLs and nothing else. There is no
   credential key and there will not be one: the profile is committed, so `OPENROUTER_API_KEY` is
@@ -306,7 +320,7 @@ observation and one configured result. It launches no provider and makes no netw
 it is not a production storage choice.
 
 The caller supplies an offline open GitHub issue (including body and update timestamp), existing
-workflow states, a dispatch request, lane, absolute cwd, attempt and fake. The source URL must name
+workflow states, `routing: { source, text }`, a dispatch request, lane, absolute cwd, attempt and fake. The source URL must name
 that repository and issue on `github.com`. URLs and citations are checked as references; their
 existence, authority and approval are not attested. The helper replays every done prerequisite
 through the existing `settle`, including read steps, before assembling anything. Fabricated
@@ -319,7 +333,7 @@ already recorded by its caller. It does not manufacture gate evidence:
 import { setupDryRun } from "@rickylabs/dsh-app";
 import type { StepState } from "@rickylabs/coordinator";
 
-async function simulate(directory: string, states: readonly StepState[]) {
+async function simulate(directory: string, states: readonly StepState[], routingText: string) {
   const setup = setupDryRun({
     directory,
     scope: { repository: "example/project", milestone: "synthetic" },
@@ -333,6 +347,7 @@ async function simulate(directory: string, states: readonly StepState[]) {
     const initialized = await handle.initialize(); // Only for a fresh store.
     if (!initialized.ok) return initialized;
     const outcome = await setup.drive(handle, {
+      routing: { source: "caller-captured-document", text: routingText },
       workflow: "milestone", states, lane: "complex_implementation", attempt: 1,
       source: {
         kind: "issue", state: "open", repository: "example/project", number: 7,
@@ -369,7 +384,9 @@ accessors, cyclic values and non-plain objects are refused.
 
 The task is derived as `issue-<number>`. The revision digest binds the source/body, complete
 request/prompt, lane, cwd, provider, fake outcome and reconstructed admission evidence, plus the
-scope and `mode: "dry-run"`. Attempt is a separate key field. Accepted results produce a `sent`
+scope, `mode: "dry-run"` and the full raw-byte routing digest computed by the driver. Parsing is
+in-memory; no file is read within the drive and no asserted loaded-object digest is trusted.
+Changing only `routing.source` changes provenance, not identity. Attempt is a separate key field. Accepted results produce a `sent`
 receipt branded `dry-run:<fake-name>@<digest>`; that is a synthetic delivery, not evidence that a
 provider ran. Names, provider identifiers and definitive refusal reasons are 1–48 character
 lowercase codes using letters, digits and hyphens, starting with a letter. A configured `refused`
@@ -378,12 +395,18 @@ non-delivery proof. `unknown`, `throws` and malformed outcomes produce no receip
 intent becomes terminal `unknown` on subsequent ownership recovery.
 
 A pre-intent refusal has `appended: 0`, meaning this invocation appended nothing even if the store
-already held records. A store refusal has `appended: "unknown"`, the failed `intent` or `receipt`
+already held records. A write refusal has `appended: "unknown"`, the failed `intent` or `receipt`
 operation and the port's named refusal. A failed publication may already be durable. The driver
 never acknowledges before receipt durability and never automatically checkpoints, retries,
 reopens or recovers. Checkpoint and clean close/open are explicit caller operations; stale recovery
 requires the expected holder identity and adapter-established death. A live or poisoned owner
 cannot be treated as dead merely because a write refused.
+
+Calls serialize per store handle and read current state before intent. Any pending or terminal
+unknown effect for the same repository/task/workflow step returns `unresolved-prior-effect`,
+regardless of revision or attempt. A read refusal also appends nothing and prevents delivery.
+Changing configuration or another caller field cannot authorize a retry. This API introduces no
+operator reauthorization or reconciliation bypass; store contracts and lease fencing are unchanged.
 
 This proves the existing durable record shape and recovery behavior against synthetic effects.
 Live channel selection, provider attestation, hub lifecycle, production storage and the step F

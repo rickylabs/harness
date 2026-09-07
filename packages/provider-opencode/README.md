@@ -108,7 +108,7 @@ The translation is an assignment — `router` is `providerID`, `model` is `model
 in between — because `routing` pins opencode models **unprefixed** and a table here would be a second
 spelling of every pin in a second place.
 
-The one check that is not an assignment: `LOCAL_MODEL_IDS` are pinned *with* their `n5air/` prefix,
+The one check that is not an assignment: the shipped compatibility document’s local model ids include their `n5air/` prefix,
 and `n5air` is also a router, so `router: n5air` with either of them would name the provider twice.
 Stripping the prefix and sending it doubled are both guesses, and a guess that lands wrong runs the
 job against a model nobody asked for — the house's most expensive bug shape, and the one
