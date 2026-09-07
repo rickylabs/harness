@@ -2,18 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **209/258 done · 16 running · 18 queued · 2 blocked · 12 abandoned · 1 invisible**
+`[################----]` **209/258 done · 16 running · 20 queued · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T10:34:39Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
-
-## Waiting on you (2)
-
-Stopped on a decision only a person can make. No agent will pick these up.
-
-| item | column | epic |
-| --- | --- | --- |
-| [#237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
-| [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
+_Latest board activity: 2026-09-07T10:44:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (16)
 
@@ -42,7 +33,7 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 169/204 done · 15 running · 16 queued · 1 blocked · 3 abandoned
+`[#########---]` 169/204 done · 15 running · 17 queued · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -50,7 +41,7 @@ Something could be acting on these right now.
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 27/30 done · 2 queued · 1 abandoned | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[########----]` 17/24 done · 5 running · 2 queued | `triage` |
-| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 blocked | `triage` |
+| [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
@@ -60,22 +51,23 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 40/54 done · 1 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible
+`[########----]` 40/54 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
-| _(no epic)_ | `[########----]` 36/49 done · 2 queued · 1 blocked · 9 abandoned · 1 invisible | — |
+| _(no epic)_ | `[########----]` 36/49 done · 3 queued · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>18 filed, nothing started</summary>
+<summary>20 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#269 fix(routing): adopt fleet Muse Spark 1.3 tier and role lanes](https://github.com/rickylabs/harness/issues/269) | `triage` | `e4` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
+| [#237 docs: restore approved consumer repository names and direct architecture citation](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
 | [#264 E6 — Define creation capability ownership before exposing P2 actions](https://github.com/rickylabs/harness/issues/264) | `triage` | `e6` |
 | [#148 E10.8 — Publish the public documentation site](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life](https://github.com/rickylabs/harness/issues/225) | `triage` | `e7` |
@@ -92,6 +84,7 @@ Something could be acting on these right now.
 | [#65 E5.4 — Local-capacity regime: the third regime, which has no owner today](https://github.com/rickylabs/harness/issues/65) | `triage` | `e5` |
 | [#66 E5.5 — Wire the gate at the sandbox boundary](https://github.com/rickylabs/harness/issues/66) | `triage` | `e5` |
 | [#67 E5.6 — Boot-parameter verification after every kernel update](https://github.com/rickylabs/harness/issues/67) | `triage` | `e5` |
+| [#181 fix(routing): resolve complex evaluators across both implementer families](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
 </details>
 
@@ -101,9 +94,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  209/258 done · 16 running · 18 queued · 2 blocked · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  209/258 done · 16 running · 20 queued · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  169/204 done · 15 running · 16 queued · 1 blocked · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  169/204 done · 15 running · 17 queued · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -202,7 +195,7 @@ Something could be acting on these right now.
     shipped              PR238 feat(route-identity--e35): refuse mismatched Codex routes before task submission
 
   E4 — Model gateway and routing matrix #34  [triage]
-    [#############---] 12/14 done · 1 queued · 1 blocked
+    [#############---] 12/14 done · 2 queued
     shipped              #57 E4.1 — llm-local: LM Studio, llama-rocm and OpenRouter adapters
     shipped              #58 E4.2 — routing: tiers, the family rule, and fallback chains
     shipped              #59 E4.3 — Capability probes instead of committed constants
@@ -215,7 +208,7 @@ Something could be acting on these right now.
     shipped              PR174 feat(routing): availability is probed, and a constant may never permit (p1)
     shipped              PR175 feat(llm-local): resolve endpoints and read readiness (#57) (p1)
     shipped              PR180 feat(routing): seat Astra on complex implementation, and check the row holds
-    triage               #181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision) (waiting on owner)
+    triage               #181 fix(routing): resolve complex evaluators across both implementer families
     triage               #269 fix(routing): adopt fleet Muse Spark 1.3 tier and role lanes (p1)
 
   E5 — Governance: tri-regime admission control #35  [triage]
@@ -341,7 +334,7 @@ Something could be acting on these right now.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  40/54 done · 1 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  40/54 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -392,7 +385,7 @@ Something could be acting on these right now.
     shipped              #189 docs: the repository is public — correct every false claim, then polish (p0)
     shipped              PR190 docs: correct every claim the repository going public made false (p0)
     no status            #201 E10 - Documentation and the public front door
-    triage               #237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way (p2, waiting on owner)
+    triage               #237 docs: restore approved consumer repository names and direct architecture citation (p2)
     shipped              PR242 docs(board): a half-gated item is not an owner-gated one
     shipped              PR248 fix(telemetry): a dispatch the provider refused is not a run
     triage               #249 `KNOWN_TYPES` in the Claude backfill reads as exhaustive and is not — five record types on a real store are unrecognised (p3)
