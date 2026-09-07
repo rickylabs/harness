@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **206/247 done · 10 running · 14 queued · 4 blocked · 12 abandoned · 1 invisible**
+`[################----]` **206/254 done · 16 running · 15 queued · 4 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T07:14:35Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T08:09:48Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (4)
 
@@ -17,7 +17,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#244 the tutorial hedges twice where the repository should decide: Node 24-vs-22, and which platforms it supports](https://github.com/rickylabs/harness/issues/244) | `triage` | `e10` |
 | [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
-## Moving now (10)
+## Moving now (16)
 
 Something could be acting on these right now.
 
@@ -27,6 +27,12 @@ Something could be acting on these right now.
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
+| [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
+| [#260 E6 — Publish checked run-steer semantics over sender ownership](https://github.com/rickylabs/harness/issues/260) | `research` | `e6` |
+| [#261 E6 — Define command receipt lookup and unknown reconciliation boundaries](https://github.com/rickylabs/harness/issues/261) | `research` | `e6` |
+| [#262 E9 — Specify projection revision, observation coverage and census authority](https://github.com/rickylabs/harness/issues/262) | `research` | `e9` |
+| [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
+| [#265 E9 — Retain the board without false freshness across connection loss and restart](https://github.com/rickylabs/harness/issues/265) | `plan` | `e9` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -38,7 +44,7 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 166/193 done · 9 running · 12 queued · 3 blocked · 3 abandoned
+`[#########---]` 166/200 done · 15 running · 13 queued · 3 blocked · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -48,10 +54,10 @@ Something could be acting on these right now.
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[########----]` 17/24 done · 5 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 blocked | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
-| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 29/33 done · 2 running · 2 abandoned | `impl` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 2 running | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 17/21 done · 4 running | `impl` |
 | _(no epic)_ | `[############]` 2/2 done | — |
 
 ### (no milestone)
@@ -66,11 +72,12 @@ Something could be acting on these right now.
 ## Waiting to start
 
 <details>
-<summary>14 filed, nothing started</summary>
+<summary>15 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
+| [#264 E6 — Define creation capability ownership before exposing P2 actions](https://github.com/rickylabs/harness/issues/264) | `triage` | `e6` |
 | [#225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life](https://github.com/rickylabs/harness/issues/225) | `triage` | `e7` |
 | [#234 17 labels live on the repo and in no taxonomy, including the dispatch label](https://github.com/rickylabs/harness/issues/234) | `triage` | `e7` |
 | [#249 `KNOWN_TYPES` in the Claude backfill reads as exhaustive and is not — five record types on a real store are unrecognised](https://github.com/rickylabs/harness/issues/249) | `triage` | — |
@@ -93,9 +100,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  206/247 done · 10 running · 14 queued · 4 blocked · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  206/254 done · 16 running · 15 queued · 4 blocked · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [#################---]  166/193 done · 9 running · 12 queued · 3 blocked · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  166/200 done · 15 running · 13 queued · 3 blocked · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -221,7 +228,7 @@ Something could be acting on these right now.
     shipped              PR257 docs: sidecar-ratification--e5 accepts owner decision
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
-    [##############--] 29/33 done · 2 running · 2 abandoned
+    [############----] 29/38 done · 6 running · 1 queued · 2 abandoned
     shipped              #68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation
     shipped              #69 E6.2 — coordinator: the workflow definitions
     shipped              #70 E6.3 — Emit one dispatch payload in the /swarm wire format
@@ -255,6 +262,11 @@ Something could be acting on these right now.
     shipped              #253 E6.C — drive a dispatch through the durable store against fakes, with no live effect (p1)
     shipped              PR256 feat(dry-run-driver--e6c): drive checked offline dispatch through durable state (p1)
     research             #258 E6.C — Live driver adapter after sidecar ratification (p1)
+    research             #259 E6 — Define a capability-gated run-stop contract (p1)
+    research             #260 E6 — Publish checked run-steer semantics over sender ownership (p1)
+    research             #261 E6 — Define command receipt lookup and unknown reconciliation boundaries (p1)
+    research             #263 E6 — Clarify correlation-group identity versus execution ancestry (p1)
+    triage               #264 E6 — Define creation capability ownership before exposing P2 actions (p2)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
     [##############--] 23/26 done · 3 queued
@@ -297,7 +309,7 @@ Something could be acting on these right now.
     shipped              PR135 feat(contracts): publish as @rickylabs/harness-contracts, with a checked release pipeline
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
-    [##############--] 17/19 done · 2 running
+    [############----] 17/21 done · 4 running
     shipped              #83 E9.1 — SessionTelemetrySink on every run, on both seams
     shipped              #84 E9.2 — Push over /api/remote.mux, never poll
     shipped              #85 E9.3 — The hierarchy view: milestone → epic → task → subagent
@@ -317,6 +329,8 @@ Something could be acting on these right now.
     shipped              #240 the board cannot say "waiting on a human", so owner-gated work reads as running (p1)
     shipped              PR241 feat(board): let the board say a person is holding the work (p1)
     shipped              PR246 fix(telemetry): read the Claude store's subagent tree instead of assuming there isn't one (p1)
+    research             #262 E9 — Specify projection revision, observation coverage and census authority (p1)
+    plan                 #265 E9 — Retain the board without false freshness across connection loss and restart (p1)
 
   (no epic)
     shipped              PR219 fix(board): say so when a column is a lie
