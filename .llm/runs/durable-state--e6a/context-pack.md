@@ -1,3 +1,3 @@
 # durable-state--e6a — context
 
-Planning issue 245. No product mutation authorized until independent plan evaluation PASS. Build contract, local filesystem store, pure reducer, and real crash tests. Unknown is terminal and cannot become unsent. Corruption refuses; no silent repair. Production store choice and live rollout remain #191 F1/F2. Leave #237, #62, #148, #181 and #244 untouched. Deliver one ready PR and do not merge.
+Issue 245 is ready for implementation after Stage G PASS (plan-eval.md). Worktree branch feat/245-durable-state--e6a. Read plan-corrections.md, nonconflicting plan-amendment.md and plan-eval.md; original plan.md is rejected history. Implement contracts port, coordinator local filesystem store, pure reducer, memory fake and actual child crash tests. No production store activation or dispatch. Leave protected owner issues untouched. One PR will be left ready; owner merges.
