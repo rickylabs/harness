@@ -7,17 +7,22 @@ assumes competence, states prerequisites once, and stops when the goal is reache
 tutorial — nobody is being taught here — and it is not reference, because it covers one path rather
 than every option.
 
-**This directory is empty today.** That is a fact, not an oversight, and saying so is more useful
-than an index of pages that do not exist. Until it fills, the equivalent material lives in the
-package READMEs, which are the deepest documents in the repository.
+**One guide exists so far.** The rest of the table below is honest about where its material actually
+lives today — package READMEs, which are the deepest documents in the repository — rather than
+indexing pages that do not exist.
 
-## What belongs here
+## Guides
+
+- **[Install the board process into an existing repository](install-the-board-process.md)** — take
+  the label taxonomy and the agent-facing skill into a repository that is not this one, without
+  taking that repository over.
+
+## What else belongs here
 
 Tasks a person actually performs, each with a real starting condition:
 
 | Guide | Where the material is today |
 | --- | --- |
-| Install the board process into another repository | [`packages/forge`](../../packages/forge) — `dsh-forge init` |
 | Regenerate the board skill after changing the taxonomy | [`packages/forge`](../../packages/forge) — `pnpm run skill:install` |
 | Eject labels and review the diff | [`packages/forge`](../../packages/forge) — `dsh-forge labels eject` |
 | Re-bless the composed-profile snapshot | [`packages/dsh-app`](../../packages/dsh-app) — `pnpm run golden:bless` |
