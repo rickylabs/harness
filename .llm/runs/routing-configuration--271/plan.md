@@ -716,11 +716,14 @@ Consumers:
 - T-C6 `dsh-app` composition refuses, never drops: a document whose placement names a backend
   outside `BACKENDS` makes `harness-llm`'s boot throw with the code
   `placement-backend-unsupported`, and no adapter is registered.
-- T-C7 durable identity regression: with a pending or unknown effect recorded for a task and
-  attempt, driving the same plan with changed document text produces a different intent key and
-  the store's existing admission and fencing for the earlier effect are unchanged; no receipt is
-  synthesised and no second delivery is attempted for the earlier key. The exact fencing rule
-  asserted is the store's own (S-4).
+- T-C7 durable consumer safeguard: initialize a real FileStateStore, record a pending effect
+  for the repository/task/workflow step, and drive a changed-document plan for that same
+  operation. Assert no new intent entry, no fake delivery and an explicit unresolved-prior-effect
+  refusal. Repeat after recovery orphans that effect to terminal unknown, and with a changed
+  attempt number; changing a caller field is not operator reauthorization. Retain the original
+  effect unchanged. Run equivalent MemoryStateStore tests and concurrent calls on the same
+  handle; one unresolved effect must prevent every competing new-key attempt. Read failure also
+  refuses before intent/delivery. This slice supplies no operator reauthorization bypass.
 - T-C2 `dsh-app` dry-run: the fixture plan carries A's text; `dispatch-inadmissible` for lane
   `normal_implementation` with the Astra dispatch still holds; a plan whose `routing` is absent,
   not data, or fails to parse is refused before assembly (`source-unusable` or
@@ -782,10 +785,16 @@ consumes `loadRoutingConfiguration` directly. #148 and #181 wait on #273 as thei
   authoritative shape that step 2's schema and step 5's parity must neither deduplicate nor
   reject; only duplicate model definitions, lane identities and placement pairs are invalid
   (`coordinator-disposition.md:31`). Owner: #272.
-- S-4 The store's admission and fencing rule for a pending or unknown effect under a new input
-  revision is `coordinator`'s (`FileStateStore`), not this plan's; T-C7 asserts whatever that rule
-  is by reading it at implementation time and must not weaken it. Owner: implementer, with the
-  `dry-run-driver--e6c` run's validation notes as the reference.
+- S-4 Resolved identity consequence: coordinator's intentIdentity includes inputRevision.
+  A changed document yields a different key that the store may accept despite an earlier pending
+  or unknown effect. The root executed this characterization against MemoryStateStore; production
+  FileStateStore semantics must be checked too. The dry-run consumer must therefore serialize its
+  operations per store handle and read current state before writing any intent. Pending or unknown
+  for the same repository/task/workflow step causes unresolved-prior-effect refusal, independent
+  of inputRevision or attempt. A read refusal stops the operation. Existing lease/fencing remains
+  intact, and no store contract is changed. T-C7 must prove the consumer guard, not merely earlier-
+  key fencing. No explicit reauthorization/reconciliation API is introduced in this slice; such
+  an unresolved operation remains refused. Owner: implementer.
 - G-1 Golden re-bless is an implementation-time action that runs the real `dsh` binary from
   `node_modules`; it is executable here (`golden.ts:33-42`) and in CI.
 - G-2 `npm pack --dry-run` for T-L1c needs `npm` on the path; CI's setup-node provides it, and
@@ -800,7 +809,7 @@ consumes `loadRoutingConfiguration` directly. #148 and #181 wait on #273 as thei
 | R-3 | A future edit re-introduces a literal in `routing` | high over time | medium | T-R1 AST gate and executable self-test |
 | R-4 | `check:snapshots` refuses the shipped JSON on a key name | low | low | The schema has no time-sliding key; T-L1 runs under `pnpm run build` |
 | R-5 | Per-configuration `LONGEST_NAME` computed on every call is slow | low | low | WeakMap cache in M-8 |
-| R-6 | The dry-run key input gains the document digest, so existing durable records (which may exist outside tests) hold keys computed without it | certain | medium: a stale pending or unknown effect must stay fenced | Nothing asserts their absence; T-C7 proves a changed configuration cannot bypass or resend an earlier effect; protocol 1 and unknown semantics untouched |
+| R-6 | The dry-run key input gains the document digest, so existing durable records (which may exist outside tests) hold keys computed without it | certain | medium: a stale pending or unknown effect must stay fenced | Nothing asserts their absence; Earlier-key fencing remains unchanged; T-C7 proves the driver refuses new-key redispatch while a prior operation is pending/unknown, without an implicit reauthorization bypass; protocol 1 and unknown semantics untouched |
 | R-7 | Reviewer reads L2/L12/L13 as forbidden literals | medium | low: contained change | Boundary table names the three code sites; D-4 states the alternative |
 | R-8 | D-8's family derivation is mistaken for #181's fix | medium | medium: a false closure | D-8 and the research section say what is not done; #181 stays open on #273 |
 | R-9 | The golden re-bless masks an unrelated dsh composition change | low | medium | `bless.ts` requires a reason and the diff shows exactly one added row |
