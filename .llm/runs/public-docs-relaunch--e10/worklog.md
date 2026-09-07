@@ -179,7 +179,7 @@ Append-only. Times are UTC where it matters; session-relative otherwise.
 - Eval verdict: `PASS AFTER NARROW FIXES` (2H/2M/3L), fully emitted with
   step_finish; wrapper later returned 143 — verdict stands as emitted, fresh
   exact-head re-review owned by parent. Visual W5 (Gemini 3.8 Flash, 375 px):
-  PASS, screenshots under `receipts/review-1/`.
+  PASS, screenshots retained host-local (see visual-receipts.md).
 - Rebase: `origin/main` had moved to `a4693bd` (#222 subagents telemetry
   guarantee checked at dispatch; board publish). Branch re-based (stash of the
   coordinator's m1 worklog edit around the rebase; popped intact). Docs commit
@@ -208,7 +208,7 @@ Append-only. Times are UTC where it matters; session-relative otherwise.
   dropped) all fixed.
 - Dispositions: [`implementation-disposition-1.md`](implementation-disposition-1.md).
 - Coordinator evidence kept and committed with this pass: `vision-eval-1.md`,
-  `receipts/review-1/` (375 px screenshots), `transport-fallback.md`,
+  host-local 375 px screenshots (see visual-receipts.md), `transport-fallback.md`,
   `m1-dsh-coordinator--orchestration/steer-4-closeout.md` + modified worklog.
   No review verdict text edited.
 - Gates at final text: see final receipt table appended below this entry.
@@ -269,3 +269,8 @@ The coordinator asserted the worktree head 94438ff, then ran check:links and che
 PR223 merged externally at 033da73 with owner commit bc5cac6’s #212 link correction before the review fixes were pushed. The protected push refused stale history. The coordinator created docs/209-review-corrections on c98fbeb and cherry-picked only the review-fix/evidence commits; the owner’s link and #224/#226 code remain. Maturity was re-resolved from the source delta and stub/composition declarations and pinned to c98fbeb. The safe forge proof still applies: forge/src/cli.ts has no delta from a4693bd. The final branch receives fresh local aggregate checks, CI and restricted independent review.
 
 Coordinator integration validation on the c98fbeb-based correction branch: typecheck, build and full tests each exited 0 through an && chain with individual complete logs. The new run-artifact relative-target audit found zero missing files; git diff --check passed. Forge CLI and the board/LLM/subagent composition sources remain unchanged from the safe proof baseline.
+
+
+## Final reconciliation after owner PR228
+
+Owner PR228 merged as 99d48de while PR227 was draft and rewrote the old worktree onto a separate owner branch. The coordinator opened a fresh worktree and merged origin/main, retaining README, tutorial and BOARD verbatim from 99d48de. The remaining PR227 delta is text evidence only; all binary screenshots were removed before squash merge, honoring PR228. The owner caught an error missed by our content reviews: a refused label propagates exit 1; only unavailable/skipped apply maps to success. Historical PASS receipts are scoped and do not override this correction. Fresh exact-head integration review checks the corrected source. Issue217 was externally closed; the origin/target guard is still absent and is not claimed implemented.

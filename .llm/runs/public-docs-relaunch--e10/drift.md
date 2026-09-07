@@ -121,3 +121,8 @@ network instruction in the tutorial, with a stop-if-fails rule.
 ## D11 — Externally merged PR and correction follow-up
 
 PR223 merged externally at 033da73 while the seven required content fixes were still local. A lease-protected push correctly refused to replace the changed/deleted branch. The coordinator preserved the owner’s #212 link correction and carried only the two correction commits onto c98fbeb as a follow-up branch. Owner PR224’s liveness rename and PR226’s title bounds were retained. Registry/profile/forge/projection source and four stub declarations were checked; maturity conclusions did not change, and the README/inventory pin now names c98fbeb. The prior source-only PASS at fd27035 is retained as evidence, with final integration/visual review still required.
+
+
+## Final reconciliation after owner PR228
+
+Owner PR228 merged as 99d48de while PR227 was draft and rewrote the old worktree onto a separate owner branch. The coordinator opened a fresh worktree and merged origin/main, retaining README, tutorial and BOARD verbatim from 99d48de. The remaining PR227 delta is text evidence only; all binary screenshots were removed before squash merge, honoring PR228. The owner caught an error missed by our content reviews: a refused label propagates exit 1; only unavailable/skipped apply maps to success. Historical PASS receipts are scoped and do not override this correction. Fresh exact-head integration review checks the corrected source. Issue217 was externally closed; the origin/target guard is still absent and is not claimed implemented.

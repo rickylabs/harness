@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **172/214 done · 13 running · 17 queued · 11 abandoned · 1 invisible**
+`[################----]` **173/215 done · 13 running · 17 queued · 11 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T00:09:06Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T00:25:30Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (13)
 
@@ -26,44 +26,33 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (2)
-
-`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`epic-milestone-conflict`**
-
-- **#224** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
-- **#225** — is in milestone (none) but its epic #37 is in M1 — dsh coordinator foundation; the epic appears under both
-
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 139/168 done · 12 running · 15 queued · 2 abandoned
+`[#########---]` 141/171 done · 12 running · 16 queued · 2 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[#########---]` 19/23 done · 1 running · 3 queued | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[#########---]` 10/13 done · 3 queued | `triage` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 14/22 done · 6 running · 2 queued | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 15/23 done · 6 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 23/27 done · 2 running · 2 abandoned | `impl` |
-| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[###########-]` 21/22 done · 1 queued | `impl` |
+| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 21/23 done · 2 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 13/15 done · 2 running | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 14/16 done · 2 running | `impl` |
 | _(no epic)_ | `[############]` 2/2 done | — |
 
 ### (no milestone)
 
-`[########----]` 33/46 done · 1 running · 2 queued · 9 abandoned · 1 invisible
+`[########----]` 32/44 done · 1 running · 1 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[######------]` 2/4 done · 1 running · 1 queued | `impl` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[############]` 1/1 done | `triage` |
-| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[------------]` 0/1 done · 1 queued | `impl` |
 | _(no epic)_ | `[#########---]` 30/40 done · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
@@ -99,9 +88,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  172/214 done · 13 running · 17 queued · 11 abandoned · 1 invisible
+# rickylabs/harness  [################----]  173/215 done · 13 running · 17 queued · 11 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  139/168 done · 12 running · 15 queued · 2 abandoned
+## M1 — dsh coordinator foundation  [################----]  141/171 done · 12 running · 16 queued · 2 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -165,7 +154,7 @@ Something could be acting on these right now.
     triage               #220 The cockpit projection carries phase and drops anomalies (p1)
 
   E3 — Subagent providers over structured protocols #33  [triage]
-    [##########------] 14/22 done · 6 running · 2 queued
+    [##########------] 15/23 done · 6 running · 2 queued
     shipped              #51 E3.1 — DispatchRequest and the SubagentProvider contract
     shipped              #52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk
     triage               #53 E3.3 — provider-codex against the running app-server daemon
@@ -188,6 +177,7 @@ Something could be acting on these right now.
     shipped              #208 the `ctx.subagents` telemetry guarantee is prose, not construction: the only way to register a provider bypasses it (p1)
     shipped              #210 `release` is the one lease door that does not check the fence: an evicted holder can delete the live holder's lease (p1)
     shipped              PR222 fix(subagents): make the telemetry guarantee something a dispatch checks (p1)
+    shipped              PR224 refactor(subagents,telemetry,contracts): give the two liveness concepts two names (p2)
 
   E4 — Model gateway and routing matrix #34  [triage]
     [##############--] 12/13 done · 1 queued
@@ -246,7 +236,7 @@ Something could be acting on these right now.
     shipped              #218 `columns` and `status` hide the anomalies that `digest` renders — the two views a human actually runs (p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
-    [###############-] 21/22 done · 1 queued
+    [##############--] 21/23 done · 2 queued
     shipped              #74 E7.1 — forge: the issue/PR bridge and label→target mapping
     shipped              #75 E7.2 — PR supervision loop
     shipped              #76 E7.3 — Dispatch selector: provider or divybot, per target
@@ -269,6 +259,7 @@ Something could be acting on these right now.
     shipped              PR170 feat(forge): supervise agent PRs by difference, not by state (p1)
     shipped              PR171 feat(forge): tear a run down on its artefacts, never on its exit code (p1)
     triage               #215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type (p2)
+    triage               #225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life (p3)
 
   E8 — Contracts: published package for the netscript UIs #38  [shipped]
     [################] 8/8 done
@@ -282,7 +273,7 @@ Something could be acting on these right now.
     shipped              PR135 feat(contracts): publish as @rickylabs/harness-contracts, with a checked release pipeline
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
-    [#############---] 13/15 done · 2 running
+    [##############--] 14/16 done · 2 running
     shipped              #83 E9.1 — SessionTelemetrySink on every run, on both seams
     shipped              #84 E9.2 — Push over /api/remote.mux, never poll
     shipped              #85 E9.3 — The hierarchy view: milestone → epic → task → subagent
@@ -298,12 +289,13 @@ Something could be acting on these right now.
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
     impl                 #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
     shipped              PR216 feat(telemetry): display governance observations beside progress
+    shipped              PR226 fix(telemetry): bound every title, and stop restating the item under it (p1)
 
   (no epic)
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [##############------]  33/46 done · 1 running · 2 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  32/44 done · 1 running · 1 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [########--------] 2/4 done · 1 running · 1 queued
@@ -311,14 +303,6 @@ Something could be acting on these right now.
     impl                 #182 Consolidation pass — the Astra medium review of the shipped ground work (p1)
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     triage               #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
-
-  E3 — Subagent providers over structured protocols #33  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [################] 1/1 done
-    shipped              PR224 refactor(subagents,telemetry,contracts): give the two liveness concepts two names (p2)
-
-  E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]  (epic is in M1 — dsh coordinator foundation)
-    [----------------] 0/1 done · 1 queued
-    triage               #225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life (p3)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
