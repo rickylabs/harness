@@ -1,16 +1,19 @@
 # ADR 0002 — how the coordinator reaches `sandboxctl`
 
-**Status:** proposed · **Date:** 2026-09-06 · **Supersedes:** nothing · **Issue:** #62
+**Status:** accepted · **Date:** 2026-09-06 · **Ratified:** 2026-09-07 · **Supersedes:** nothing · **Issue:** #62
 
 ---
 
-## Recommendation
+## Decision
 
 **A privileged sidecar exposing four verbs over HTTP. Not an ssh executor holding `root@n5`.**
 
-Written under principle 4: this is an owner fork, so it is filed with a recommendation and the cost
-of being wrong, and it is **proposed** until the owner ratifies it. Nothing in E5 · #35 builds
-against it before then.
+The owner approved the authenticated sidecar and the authority limits below on 2026-09-07.
+[Owner ratification](https://github.com/rickylabs/harness/issues/62#issuecomment-5566218913).
+This authorizes implementation of this channel; it does not certify a deployed sidecar or
+authorize production activation or a live canary.
+
+[observed - owner decision on issue 62; topic: sidecar authority ratification; retrieved 2026-09-07]
 
 ## Context
 
@@ -125,4 +128,4 @@ to ssh would delete the entire benefit of choosing the sidecar**, so there is no
   owner has ratified the sequencing.
 - Nothing here is enforced mechanically yet. Until the sidecar exists, the coordinator's authority
   over `sandboxctl` is *none*, which is the correct default and should stay the default while this
-  record is proposed.
+  sidecar is implemented and its gates are verified.
