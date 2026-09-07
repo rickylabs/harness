@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "mode": "role",
+  "role": "implementation_evaluation",
+  "tiers": [
+    {
+      "tier": "architecture",
+      "description": "Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.",
+      "routes": [
+        {
+          "model": "grok_4_6",
+          "effort": "xhigh"
+        },
+        {
+          "model": "muse_spark_1_3",
+          "effort": "max"
+        }
+      ],
+      "policy": {
+        "maxRounds": 3,
+        "notifyOwnerAfter": 2,
+        "reSteerSameSession": true
+      }
+    }
+  ]
+}

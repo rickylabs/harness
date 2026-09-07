@@ -15,3 +15,14 @@ The fresh matrix CLI selects Grok4.6 xhigh for architecture implementation evalu
 [source: scripts/check-metadata.mjs; topic: actual coordinator metadata comparison; executed2026-09-07]
 [source: NetScript matrix CLI at8ba53bc50ca02aab29e99ba5362728839b8f1713, matrix-implementation-evaluation.json and matrix-evaluation-full.json; topic: exact evaluator, loop and transport ordering; queried2026-09-07]
 [source: NetScript inspect-only Copilot catalog preflight; topic: model and effort presence, no inference; queried2026-09-07]
+
+## Primary capacity and declared evaluator fallback
+
+The primary evaluator produced no inference or verdict. Copilot advertised the exact route but its launch guard refused usage_unproven. OpenCode Go refused the primary launch estimate with allowance_exhausted. Authenticated OpenRouter account/key checks proved that the account did not cover that primary estimate; no primary OpenRouter inference was launched.
+
+A fresh architecture implementation-evaluator query retains Muse Spark1.3 max as the explicit fallback, familymeta and independent of the OpenAI generator. The fallback model’s current public pricing supports the estimate used for preflight; this is an estimate, not a token or scope cap. Its live OpenCode Go expense preflight returned allowed. Full evaluation scope and coordinator identity remain unchanged.
+
+[source: NetScript native launch expense guard; topic: primary Copilot/Go pre-inference refusals; observed2026-09-07]
+[source: authenticated OpenRouter credits/key endpoints; topic: primary account allowance coverage, values retained privately; checked2026-09-07]
+[source: matrix-evaluation-fallback.json at NetScript8ba53bc; topic: declared different-family evaluator fallback; queried2026-09-07]
+[source: https://openrouter.ai/api/v1/models and NetScript live Go expense preflight; topic: fallback pricing estimate and launch allowance; checked2026-09-07]
