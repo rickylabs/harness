@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **183/224 done · 12 running · 16 queued · 12 abandoned · 1 invisible**
+`[################----]` **183/225 done · 12 running · 16 queued · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-07T01:41:25Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T01:48:52Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (12)
 
@@ -24,6 +24,22 @@ Something could be acting on these right now.
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
+
+## Not on the board (1)
+
+Open, and carrying no `status:` label — real work no column can see.
+
+| item | column | epic |
+| --- | --- | --- |
+| [PR236 feat(coordinator): make a citation refer to something (#203)](https://github.com/rickylabs/harness/pull/236) | — | — |
+
+## Anomalies (1)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`no-status`**
+
+- **#236** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -47,12 +63,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 34/45 done · 1 running · 9 abandoned · 1 invisible
+`[########----]` 34/46 done · 1 running · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
-| _(no epic)_ | `[#########---]` 30/40 done · 9 abandoned · 1 invisible | — |
+| _(no epic)_ | `[########----]` 30/41 done · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -86,7 +102,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  183/224 done · 12 running · 16 queued · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  183/225 done · 12 running · 16 queued · 12 abandoned · 2 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  149/179 done · 11 running · 16 queued · 3 abandoned
 
@@ -301,7 +317,7 @@ Something could be acting on these right now.
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [###############-----]  34/45 done · 1 running · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  34/46 done · 1 running · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -352,6 +368,7 @@ Something could be acting on these right now.
     shipped              #189 docs: the repository is public — correct every false claim, then polish (p0)
     shipped              PR190 docs: correct every claim the repository going public made false (p0)
     no status            #201 E10 - Documentation and the public front door
+    no status            PR236 feat(coordinator): make a citation refer to something (#203)
 ```
 
 </details>
