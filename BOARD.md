@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **181/221 done · 13 running · 14 queued · 12 abandoned · 1 invisible**
+`[################----]` **183/224 done · 12 running · 16 queued · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T01:24:41Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T01:41:25Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (13)
+## Moving now (12)
 
 Something could be acting on these right now.
 
@@ -15,7 +15,6 @@ Something could be acting on these right now.
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
-| [#231 docs: clarify example evidence and public boundaries](https://github.com/rickylabs/harness/issues/231) | `impl` | `e10` |
 | [#203 the coordinator's citation gate checks that a citation exists, not that it refers to anything](https://github.com/rickylabs/harness/issues/203) | `research` | `e6` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
@@ -30,18 +29,18 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 147/176 done · 12 running · 14 queued · 3 abandoned
+`[#########---]` 149/179 done · 11 running · 16 queued · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
-| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 23/27 done · 1 running · 2 queued · 1 abandoned | `impl` |
+| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 25/28 done · 2 queued · 1 abandoned | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 15/23 done · 6 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 queued | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 1 running · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 23/27 done · 2 running · 2 abandoned | `impl` |
-| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 21/23 done · 2 queued | `impl` |
+| [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 21/25 done · 4 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 14/16 done · 2 running | `impl` |
 | _(no epic)_ | `[############]` 2/2 done | — |
@@ -58,14 +57,16 @@ Something could be acting on these right now.
 ## Waiting to start
 
 <details>
-<summary>14 filed, nothing started</summary>
+<summary>16 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#212 the tutorial's pasted output is stale at step 4, and no gate in the repo can catch that](https://github.com/rickylabs/harness/issues/212) | `triage` | `e10` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
+| [#233 nothing detects a label the code branches on that the taxonomy never creates](https://github.com/rickylabs/harness/issues/233) | `triage` | `e7` |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life](https://github.com/rickylabs/harness/issues/225) | `triage` | `e7` |
+| [#234 17 labels live on the repo and in no taxonomy, including the dispatch label](https://github.com/rickylabs/harness/issues/234) | `triage` | `e7` |
 | [#47 E2.2 — Fork deepseek-harness-docker, keeping the upstream remote](https://github.com/rickylabs/harness/issues/47) | `triage` | `e2` |
 | [#49 E2.4 — Register the stack on the N5 and verify it comes up](https://github.com/rickylabs/harness/issues/49) | `triage` | `e2` |
 | [#53 E3.3 — provider-codex against the running app-server daemon](https://github.com/rickylabs/harness/issues/53) | `triage` | `e3` |
@@ -85,9 +86,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  181/221 done · 13 running · 14 queued · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  183/224 done · 12 running · 16 queued · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  147/176 done · 12 running · 14 queued · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  149/179 done · 11 running · 16 queued · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -109,7 +110,7 @@ Something could be acting on these right now.
     shipped              PR185 chore(scripts): keep the scratchpad out of the link check and out of git (p3)
 
   E10 — Docs: the front door, the reference, and the check that keeps them honest #140  [impl]
-    [#############---] 23/27 done · 1 running · 2 queued · 1 abandoned
+    [##############--] 25/28 done · 2 queued · 1 abandoned
     shipped              #141 E10.1 — Rewrite the root README from scratch (p1)
     shipped              #142 E10.2 — docs/ skeleton and the explanation set (p1)
     shipped              #143 E10.3 — Generated CLI reference with a drift test (p2)
@@ -136,7 +137,8 @@ Something could be acting on these right now.
     no status            PR227 docs: finish the public relaunch review corrections (draft, p1)
     shipped              PR228 docs: correct what the forge exit codes actually promise (p1)
     shipped              PR229 fix(forge): refuse writes into a mismatched checkout (p1)
-    impl                 #231 docs: clarify example evidence and public boundaries (p1)
+    shipped              #231 docs: clarify example evidence and public boundaries (p1)
+    shipped              PR235 docs: make example evidence and public boundaries explicit (p1)
 
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]
     [#############---] 12/14 done · 2 queued
@@ -238,7 +240,7 @@ Something could be acting on these right now.
     shipped              #218 `columns` and `status` hide the anomalies that `digest` renders — the two views a human actually runs (p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
-    [##############--] 21/23 done · 2 queued
+    [#############---] 21/25 done · 4 queued
     shipped              #74 E7.1 — forge: the issue/PR bridge and label→target mapping
     shipped              #75 E7.2 — PR supervision loop
     shipped              #76 E7.3 — Dispatch selector: provider or divybot, per target
@@ -262,6 +264,8 @@ Something could be acting on these right now.
     shipped              PR171 feat(forge): tear a run down on its artefacts, never on its exit code (p1)
     triage               #215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type (p2)
     triage               #225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life (p3)
+    triage               #233 nothing detects a label the code branches on that the taxonomy never creates (p2)
+    triage               #234 17 labels live on the repo and in no taxonomy, including the dispatch label (p3)
 
   E8 — Contracts: published package for the netscript UIs #38  [shipped]
     [################] 8/8 done
