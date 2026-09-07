@@ -109,3 +109,7 @@ All changes strictly adhere to the exact implementation manifest from `plan.md`,
 ## Coordinator verification
 
 Issue231 tracks this addendum correction;212 remains open for its automated gate. Final literal-command proof passed: eight blocks, four normalized transcript matches, fresh homes cleaned; see local-example-receipts.md. Current tracked and proposed-text privacy scan returned zero identifier matches across 488 files. Repository build exited0; final link/diff checks and independent GLM review follow. No real forge write, auth/default-home read, binary, BOARD edit, or history rewrite. GLM transport uses the same logical model through opencode after the preferred opencode-go route previously timed out with zero response in this coordinator session; that observed fallback is retained rather than substituting a model.
+
+## Implementation review repair
+
+Independent GLM source review at6044541 returned FAIL_FIX for a duplicated telemetry explanation. Gemini removed only the second unlabeled copy (six lines); the labeled explanation remains. No command block changed, verified against the SHA256 in local-example-receipts.md, so the executed-example proof still applies. All other reviewed content/evidence/privacy checks were clean. See implementation-eval-1.md; the same independent session re-evaluates this correction.

@@ -432,12 +432,6 @@ and `outcome` one of `running`, `complete`, `failed` or `unknown`. An `outcome` 
 read as unknown, which is why the run in your first attempt may have come back as `unknown`
 (source-derived illustrative explanation).
 
-The first is not an error — it is telemetry declining to claim it saw everything when it did not.
-The second is: an event without `detail.source` cannot be joined to a seam, so it is counted and
-reported rather than silently guessed at. `source` must be one of `claude`, `codex` or `opencode`,
-and `outcome` one of `running`, `complete`, `failed` or `unknown`. An `outcome` outside that set is
-read as unknown, which is why the run in your first attempt may have come back as `unknown`.
-
 ## What you just did
 
 Five things, none of which needed a server:
