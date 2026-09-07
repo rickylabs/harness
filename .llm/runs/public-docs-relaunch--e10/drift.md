@@ -117,3 +117,7 @@ injected-transport check (`CliOverrides.probeTransport → none`, four
 asserted calls, zero GitHub contact). All forge/gh execution in this lane is
 now permanently stopped; live verification remains documented-but-unexecuted
 network instruction in the tutorial, with a stop-if-fails rule.
+
+## D11 — Externally merged PR and correction follow-up
+
+PR223 merged externally at 033da73 while the seven required content fixes were still local. A lease-protected push correctly refused to replace the changed/deleted branch. The coordinator preserved the owner’s #212 link correction and carried only the two correction commits onto c98fbeb as a follow-up branch. Owner PR224’s liveness rename and PR226’s title bounds were retained. Registry/profile/forge/projection source and four stub declarations were checked; maturity conclusions did not change, and the README/inventory pin now names c98fbeb. The prior source-only PASS at fd27035 is retained as evidence, with final integration/visual review still required.

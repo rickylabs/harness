@@ -263,3 +263,9 @@ itself (`EXIT=$?` with no intermediate pipe).
 The documentation model returned exact patches when the process-local file-path permissions rejected its final three edits. The coordinator applied those patches mechanically: the remaining matrix transport wording now names the verification requirement without a generic exit claim; the diagram hint names the observed zoom controls; and the H1 disposition table is structurally intact, with the incident note below it. The complete incident receipt records both rejected placeholder attempts. No product code changed.
 
 The coordinator asserted the worktree head 94438ff, then ran check:links and check:docs in that worktree after the wording edits; both exited 0. The author's final typecheck/build/test receipts remain recorded above, and CI plus a restricted source/receipt review gate the resulting commit.
+
+## Correction follow-up after external merge
+
+PR223 merged externally at 033da73 with owner commit bc5cac6’s #212 link correction before the review fixes were pushed. The protected push refused stale history. The coordinator created docs/209-review-corrections on c98fbeb and cherry-picked only the review-fix/evidence commits; the owner’s link and #224/#226 code remain. Maturity was re-resolved from the source delta and stub/composition declarations and pinned to c98fbeb. The safe forge proof still applies: forge/src/cli.ts has no delta from a4693bd. The final branch receives fresh local aggregate checks, CI and restricted independent review.
+
+Coordinator integration validation on the c98fbeb-based correction branch: typecheck, build and full tests each exited 0 through an && chain with individual complete logs. The new run-artifact relative-target audit found zero missing files; git diff --check passed. Forge CLI and the board/LLM/subagent composition sources remain unchanged from the safe proof baseline.

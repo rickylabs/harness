@@ -129,7 +129,7 @@ auditable at all.
 regenerated from GitHub every half hour, and the
 [E0 roadmap](https://github.com/rickylabs/harness/issues/30) is what is built
 and what is not. What follows is a snapshot — every row resolved from source
-at commit `a4693bd` (2026-09-07, then `main`), meant to be re-resolved, not
+at commit `c98fbeb` (2026-09-07, then `main`), meant to be re-resolved, not
 remembered; [the board](BOARD.md) carries whatever moved since.
 The labels are exact: **Implemented** — source and meaningful tests exist
 here; **Composed** — the `dsh-app` profile actually registers it;
