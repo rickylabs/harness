@@ -156,7 +156,8 @@ options
   --repo <owner/name>   target repository (default: the origin remote)
   --cwd <path>          repository root (default: the working directory)
   --no-detect           portable core only; derive nothing from this repository
-  --force               settle conflicts and overwrite files this tool did not generate
+  --force               settle conflicts, overwrite foreign generated files, and accept a
+                        detected --repo / checkout-origin mismatch
   --dispatch-label <n>  the label that starts an agent run here; teaches the skill to be careful
                         with it (default: none — most repositories have no dispatcher)
   --ending <how>        status settle only: ${ENDINGS.join(" | ")}
@@ -220,6 +221,7 @@ interface Context {
 
 class UsageError extends Error {}
 class TransportError extends Error {}
+class CheckoutMismatchError extends Error {}
 
 /**
  * A file in the repository the tool could read and could not use.
@@ -243,6 +245,47 @@ const LABELS_HINT = `fix the row(s) above, or delete ${LABELS_FILE} and re-run '
 const out = (line = ""): void => {
   process.stdout.write(`${line}\n`);
 };
+
+const REPO_SLUG = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
+const isLocalWriter = (group: string | undefined, sub: string | undefined): boolean =>
+  group === "init" ||
+  (group === "labels" && sub === "eject") ||
+  (group === "skill" && (sub === undefined || sub === "install"));
+
+/**
+ * Stop a local writer when its two independently supplied target identities contradict each other.
+ * This runs before context/transport resolution. An absent or non-GitHub origin is no evidence of a
+ * mismatch and preserves eject/install use in portable directories.
+ */
+async function guardCheckoutTarget(options: {
+  repoRoot: string;
+  repo: string | undefined;
+  group: string | undefined;
+  sub: string | undefined;
+  force: boolean;
+  dryRun: boolean;
+  json: boolean;
+}): Promise<void> {
+  if (options.repo === undefined || !isLocalWriter(options.group, options.sub)) return;
+  const checkoutRepo = await detectRepoSlug(options.repoRoot);
+  if (checkoutRepo === null || checkoutRepo.toLowerCase() === options.repo.toLowerCase()) return;
+
+  const mismatch =
+    `--repo ${options.repo} does not match checkout origin ${checkoutRepo} at ${options.repoRoot}`;
+  if (!options.force) {
+    const override = options.dryRun ? "--force --dry-run" : "--force";
+    throw new CheckoutMismatchError(
+      `refusing local repository writes: ${mismatch}.\n` +
+        "  run 'dsh-forge doctor' with the same --repo and --cwd to inspect the target.\n" +
+        `  if this mismatch is intentional, rerun with ${override}.`,
+    );
+  }
+
+  const warning = `warning: --force accepts repository mismatch: ${mismatch}`;
+  if (options.json) process.stderr.write(`${warning}\n`);
+  else out(warning);
+}
 
 /**
  * Resolve everything a command might need, once. Detection is cheap next to the network round
@@ -1568,6 +1611,20 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
       );
     }
 
+    if (values.repo !== undefined && !REPO_SLUG.test(values.repo)) {
+      throw new UsageError("--repo must be an owner/name slug");
+    }
+
+    await guardCheckoutTarget({
+      repoRoot,
+      repo: values.repo,
+      group,
+      sub,
+      force,
+      dryRun,
+      json,
+    });
+
     const ctx = await resolveContext({
       repoRoot,
       repo: values.repo,
@@ -1597,6 +1654,10 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
         throw new UsageError(`unknown command: ${positionals.join(" ")}`);
     }
   } catch (error) {
+    if (error instanceof CheckoutMismatchError) {
+      out(error.message);
+      return EXIT.usage;
+    }
     if (error instanceof UsageError) {
       out(USAGE);
       out();

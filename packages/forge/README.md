@@ -91,8 +91,13 @@ output instead of failing the run:
 2. **It never silently overwrites an authored description.** That becomes a reported `conflict`
    the operator settles with `--force`, not an update that happens while they are not looking.
    GitHub's own stock descriptions are exempt: overwriting those is housekeeping.
+3. **Its local writers refuse a contradictory checkout target.** `init`, `labels eject` and
+   `skill install` compare an explicit `--repo` with the GitHub origin enclosing `--cwd` before they
+   probe GitHub or write. A mismatch exits `2`; correct either argument, inspect with `doctor`, or use
+   `--force` when the cross-repository write is deliberate. A missing or non-GitHub origin is unknown,
+   not a mismatch, so portable offline eject and install workflows still work.
 
-The skill it installs carries the third rule, the one aimed at humans and agents rather than at the
+The skill it installs carries a separate rule, aimed at humans and agents rather than at the
 tool: **exactly one `status:` label on an open item at a time.** The `status:` label *is* the board
 column, so two of them means the column is a lie and none means the item is invisible.
 

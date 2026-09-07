@@ -9,17 +9,20 @@
  */
 
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { after, before, beforeEach, describe, it } from "node:test";
+import { after, afterEach, before, beforeEach, describe, it } from "node:test";
+import { promisify } from "node:util";
 
 import { main } from "./cli.js";
 import { LABELS_FILE } from "./labels/file.js";
-import type { ExistingLabel, IssueRef, TransportProbe } from "./labels/github.js";
+import { detectRepoSlug, type ExistingLabel, type IssueRef, type TransportProbe } from "./labels/github.js";
 
 interface Recorder {
   readonly mutations: { kind: "create" | "update"; name: string }[];
+  probes: number;
   labels: ExistingLabel[];
   probe(): Promise<TransportProbe>;
 }
@@ -30,22 +33,26 @@ function recorder(
 ): Recorder {
   const rec: Recorder = {
     mutations: [],
+    probes: 0,
     labels: [...initial],
-    probe: async () => ({
-      kind: "gh" as const,
-      authNote: "in-memory fixture",
-      listLabels: async () => rec.labels,
-      createLabel: async (_repo: string, label: ExistingLabel) => {
-        rec.mutations.push({ kind: "create", name: label.name });
-        rec.labels.push(label);
-      },
-      updateLabel: async (_repo: string, name: string, label: ExistingLabel) => {
-        rec.mutations.push({ kind: "update", name });
-        rec.labels = rec.labels.map((l) => (l.name === name ? label : l));
-      },
-      listMilestones: async () => [],
-      searchIssues: async () => issues,
-    }),
+    probe: async () => {
+      rec.probes += 1;
+      return {
+        kind: "gh" as const,
+        authNote: "in-memory fixture",
+        listLabels: async () => rec.labels,
+        createLabel: async (_repo: string, label: ExistingLabel) => {
+          rec.mutations.push({ kind: "create", name: label.name });
+          rec.labels.push(label);
+        },
+        updateLabel: async (_repo: string, name: string, label: ExistingLabel) => {
+          rec.mutations.push({ kind: "update", name });
+          rec.labels = rec.labels.map((l) => (l.name === name ? label : l));
+        },
+        listMilestones: async () => [],
+        searchIssues: async () => issues,
+      };
+    },
   };
   return rec;
 }
@@ -53,6 +60,8 @@ function recorder(
 let root: string;
 let silence: () => void;
 let restore: () => void;
+let previousGlobalConfig: string | undefined;
+let previousSystemConfig: string | undefined;
 
 before(() => {
   const write = process.stdout.write.bind(process.stdout);
@@ -71,6 +80,19 @@ after(() => {
 beforeEach(async () => {
   if (root) await rm(root, { recursive: true, force: true });
   root = await mkdtemp(join(tmpdir(), "dsh-forge-"));
+  previousGlobalConfig = process.env["GIT_CONFIG_GLOBAL"];
+  previousSystemConfig = process.env["GIT_CONFIG_SYSTEM"];
+  // Both fixture construction and the real `detectRepoSlug` subprocess inherit these. Do not
+  // replace HOME: these two Git-specific inputs are enough to exclude ambient URL rewrites/policy.
+  process.env["GIT_CONFIG_GLOBAL"] = join(root, "no-global-gitconfig");
+  process.env["GIT_CONFIG_SYSTEM"] = join(root, "no-system-gitconfig");
+});
+
+afterEach(() => {
+  if (previousGlobalConfig === undefined) delete process.env["GIT_CONFIG_GLOBAL"];
+  else process.env["GIT_CONFIG_GLOBAL"] = previousGlobalConfig;
+  if (previousSystemConfig === undefined) delete process.env["GIT_CONFIG_SYSTEM"];
+  else process.env["GIT_CONFIG_SYSTEM"] = previousSystemConfig;
 });
 
 /** Run the real entry point with output suppressed, so a failing assert stays readable. */
@@ -90,6 +112,195 @@ const exists = async (path: string): Promise<boolean> =>
     () => true,
     () => false,
   );
+
+const exec = promisify(execFile);
+
+/** A local Git fixture isolated from user/system rewrites and policy. Never changes HOME or auth. */
+async function gitFixture(origin: string, at = root): Promise<void> {
+  await exec("git", ["init", "-q", at]);
+  await exec("git", ["-C", at, "remote", "add", "origin", origin]);
+}
+
+async function captureWith(
+  argv: readonly string[],
+  rec: Recorder,
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const previousOut = process.stdout.write.bind(process.stdout);
+  const previousErr = process.stderr.write.bind(process.stderr);
+  process.stdout.write = ((chunk: unknown) => {
+    stdout.push(String(chunk));
+    return true;
+  }) as typeof process.stdout.write;
+  process.stderr.write = ((chunk: unknown) => {
+    stderr.push(String(chunk));
+    return true;
+  }) as typeof process.stderr.write;
+  try {
+    return {
+      code: await main(argv, { probeTransport: rec.probe }),
+      stdout: stdout.join(""),
+      stderr: stderr.join(""),
+    };
+  } finally {
+    process.stdout.write = previousOut;
+    process.stderr.write = previousErr;
+  }
+}
+
+describe("checkout target guard", () => {
+  const args = (command: readonly string[], cwd = root): readonly string[] => [
+    ...command,
+    "--repo", "owner/repo",
+    "--cwd", cwd,
+    "--no-detect",
+  ];
+
+  it("refuses every local writer before transport probing or files", async () => {
+    await gitFixture("https://github.com/other/project.git");
+    const labels = join(root, LABELS_FILE);
+    const skill = join(root, ".claude", "skills", "board-process", "SKILL.md");
+    await mkdir(join(root, ".github"), { recursive: true });
+    await mkdir(join(root, ".claude", "skills", "board-process"), { recursive: true });
+    await writeFile(labels, "sentinel labels\n", "utf8");
+    await writeFile(skill, "sentinel skill\n", "utf8");
+
+    for (const command of [["init"], ["labels", "eject"], ["skill", "install"]] as const) {
+      const rec = recorder();
+      const result = await captureWith(args(command), rec);
+      assert.equal(result.code, 2, command.join(" "));
+      assert.equal(rec.probes, 0, `${command.join(" ")} probed a transport`);
+      assert.deepEqual(rec.mutations, []);
+      assert.match(result.stdout, /--repo owner\/repo does not match checkout origin other\/project/);
+      assert.doesNotMatch(result.stdout, /dsh-forge —/);
+    }
+
+    assert.equal(await readFile(labels, "utf8"), "sentinel labels\n");
+    assert.equal(await readFile(skill, "utf8"), "sentinel skill\n");
+  });
+
+  it("finds the enclosing mismatch for an existing nested directory", async () => {
+    await gitFixture("git@github.com:other/project.git");
+    const nested = join(root, "generated", "board");
+    await mkdir(nested, { recursive: true });
+    const rec = recorder();
+
+    assert.equal((await captureWith(args(["labels", "eject"], nested), rec)).code, 2);
+    assert.equal(rec.probes, 0);
+    assert.equal(await exists(join(nested, LABELS_FILE)), false);
+  });
+
+  it("walks from a nonexistent nested output path to the enclosing mismatch", async () => {
+    await gitFixture("https://github.com/other/project.git");
+    const nested = join(root, "not-created", "yet");
+    const rec = recorder();
+
+    assert.equal((await captureWith(args(["init"], nested), rec)).code, 2);
+    assert.equal(rec.probes, 0);
+    assert.equal(await exists(nested), false);
+  });
+
+  it("preserves portable writes when no enclosing GitHub origin supplies contradictory evidence", async () => {
+    const rec = recorder();
+    assert.equal(await run(args(["labels", "eject"]), rec), 0);
+    assert.equal(rec.probes, 1);
+    assert.equal(await exists(join(root, LABELS_FILE)), true);
+  });
+
+  it("accepts equivalent mixed-case GitHub identities", async () => {
+    await gitFixture("ssh://git@github.com/OWNER/Repo.git");
+    const rec = recorder();
+    const result = await captureWith(args(["labels", "eject"]), rec);
+    assert.equal(result.code, 0);
+    assert.equal(rec.probes, 1);
+    assert.doesNotMatch(result.stdout, /repository mismatch/);
+    assert.equal(result.stderr, "");
+  });
+
+  it("preserves origin inference through the real Git lookup", async () => {
+    await gitFixture("git@github.com:Owner/Repo.git");
+    assert.equal(await detectRepoSlug(root), "Owner/Repo");
+    const rec = recorder();
+    const result = await captureWith(["doctor", "--cwd", root, "--no-detect"], rec);
+    assert.equal(result.code, 0);
+    assert.match(result.stdout, /repository\s+Owner\/Repo/);
+  });
+
+  it("makes a forced mismatch visible in plain mode", async () => {
+    await gitFixture("https://github.com/other/project.git");
+    const rec = recorder();
+    const result = await captureWith([...args(["labels", "eject"]), "--force"], rec);
+    assert.equal(result.code, 0);
+    assert.match(result.stdout, /warning: --force accepts repository mismatch/);
+    assert.match(result.stdout, /owner\/repo/);
+    assert.match(result.stdout, /other\/project/);
+    assert.equal(result.stderr, "");
+  });
+
+  it("keeps JSON stdout parseable and sends the forced warning to stderr", async () => {
+    await gitFixture("https://user:secret@github.com/other/project.git");
+    const rec = recorder();
+    const result = await captureWith([...args(["labels", "eject"]), "--force", "--json"], rec);
+    assert.equal(result.code, 0);
+    assert.equal((JSON.parse(result.stdout) as { written: boolean }).written, true);
+    assert.match(result.stderr, /owner\/repo/);
+    assert.match(result.stderr, /other\/project/);
+    assert.doesNotMatch(`${result.stdout}${result.stderr}`, /secret/);
+  });
+
+  it("preserves preview intent in mismatch advice", async () => {
+    await gitFixture("https://github.com/other/project.git");
+    const rec = recorder();
+    const result = await captureWith([...args(["init"]), "--dry-run"], rec);
+    assert.equal(result.code, 2);
+    assert.match(result.stdout, /--force --dry-run/);
+    assert.match(result.stdout, /dsh-forge doctor/);
+    assert.equal(rec.probes, 0);
+  });
+
+  it("lets force preview the mismatch without writing or sending", async () => {
+    await gitFixture("https://github.com/other/project.git");
+    const rec = recorder();
+    const result = await captureWith([...args(["init"]), "--force", "--dry-run"], rec);
+    assert.equal(result.code, 0);
+    assert.match(result.stdout, /warning: --force accepts repository mismatch/);
+    assert.equal(await exists(join(root, LABELS_FILE)), false);
+    assert.deepEqual(rec.mutations, []);
+  });
+
+  it("does not guard remote-only label apply", async () => {
+    await gitFixture("https://github.com/other/project.git");
+    const rec = recorder();
+    assert.equal(await run(args(["labels", "apply"]), rec), 0);
+    assert.equal(rec.probes, 1);
+    assert.ok(rec.mutations.length > 0);
+  });
+
+  it("reports an unknown skill subcommand before considering it a writer", async () => {
+    await gitFixture("https://github.com/other/project.git");
+    const result = await captureWith(args(["skill", "garbage"]), recorder());
+    assert.equal(result.code, 2);
+    assert.match(result.stdout, /unknown command: skill garbage/);
+    assert.doesNotMatch(result.stdout, /does not match checkout origin/);
+  });
+
+  it("rejects explicit repositories outside the documented owner/name grammar", async () => {
+    for (const repo of ["owner/repo/", "OWNER", "owner/repo/extra", "https://user:secret@github.com/owner/repo"]) {
+      const result = await captureWith(["doctor", "--repo", repo, "--cwd", root], recorder());
+      assert.equal(result.code, 2, repo);
+      assert.match(result.stdout, /--repo must be an owner\/name slug/);
+      assert.doesNotMatch(result.stdout, /secret/);
+    }
+  });
+
+  it("treats a terminal .git in explicit input as a literal repository-name suffix", async () => {
+    await gitFixture("https://github.com/owner/repo.git.git");
+    const result = await captureWith(["labels", "eject", "--repo", "owner/repo.git", "--cwd", root], recorder());
+    assert.equal(result.code, 0);
+    assert.doesNotMatch(result.stdout, /repository mismatch/);
+  });
+});
 
 describe("--dry-run", () => {
   it("makes init write nothing and send nothing", async () => {
