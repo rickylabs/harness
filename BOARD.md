@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **172/214 done · 13 running · 17 queued · 11 abandoned · 1 invisible**
+`[################----]` **173/215 done · 13 running · 17 queued · 11 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T00:09:06Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T00:23:55Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (13)
 
@@ -26,12 +26,13 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (2)
+## Anomalies (3)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`epic-milestone-conflict`**
 
+- **#226** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#224** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#225** — is in milestone (none) but its epic #37 is in M1 — dsh coordinator foundation; the epic appears under both
 
@@ -57,13 +58,14 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 33/46 done · 1 running · 2 queued · 9 abandoned · 1 invisible
+`[########----]` 34/47 done · 1 running · 2 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[######------]` 2/4 done · 1 running · 1 queued | `impl` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[############]` 1/1 done | `triage` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[------------]` 0/1 done · 1 queued | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[############]` 1/1 done | `impl` |
 | _(no epic)_ | `[#########---]` 30/40 done · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
@@ -99,7 +101,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  172/214 done · 13 running · 17 queued · 11 abandoned · 1 invisible
+# rickylabs/harness  [################----]  173/215 done · 13 running · 17 queued · 11 abandoned · 1 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  139/168 done · 12 running · 15 queued · 2 abandoned
 
@@ -303,7 +305,7 @@ Something could be acting on these right now.
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [##############------]  33/46 done · 1 running · 2 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  34/47 done · 1 running · 2 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [########--------] 2/4 done · 1 running · 1 queued
@@ -319,6 +321,10 @@ Something could be acting on these right now.
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]  (epic is in M1 — dsh coordinator foundation)
     [----------------] 0/1 done · 1 queued
     triage               #225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life (p3)
+
+  E9 — Telemetry: the "status ?" killer #39  [impl]  (epic is in M1 — dsh coordinator foundation)
+    [################] 1/1 done
+    shipped              PR226 fix(telemetry): bound every title, and stop restating the item under it (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
