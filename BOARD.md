@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **192/231 done · 9 running · 13 queued · 4 blocked · 12 abandoned · 1 invisible**
+`[################----]` **193/233 done · 9 running · 13 queued · 5 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T03:00:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T03:32:15Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (4)
+## Waiting on you (5)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
@@ -14,6 +14,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | --- | --- | --- |
 | [#237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
+| [#244 the tutorial hedges twice where the repository should decide: Node 24-vs-22, and which platforms it supports](https://github.com/rickylabs/harness/issues/244) | `triage` | `e10` |
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
@@ -33,24 +34,29 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (1)
+## Anomalies (3)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#212** — closed on GitHub but sits in triage; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
 - **#241** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#243** — is in milestone (none) but its epic #140 is in M1 — dsh coordinator foundation; the epic appears under both
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 156/183 done · 8 running · 13 queued · 3 blocked · 3 abandoned
+`[##########--]` 156/184 done · 8 running · 13 queued · 4 blocked · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
-| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 25/28 done · 1 queued · 1 blocked · 1 abandoned | `impl` |
+| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 25/29 done · 1 queued · 2 blocked · 1 abandoned | `impl` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[########----]` 17/24 done · 5 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 blocked | `triage` |
@@ -63,11 +69,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 36/48 done · 1 running · 1 blocked · 9 abandoned · 1 invisible
+`[#########---]` 37/49 done · 1 running · 1 blocked · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
+| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[############]` 1/1 done | `impl` |
 | _(no epic)_ | `[########----]` 31/42 done · 1 blocked · 9 abandoned · 1 invisible | — |
 
@@ -100,9 +107,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  192/231 done · 9 running · 13 queued · 4 blocked · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  193/233 done · 9 running · 13 queued · 5 blocked · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [#################---]  156/183 done · 8 running · 13 queued · 3 blocked · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  156/184 done · 8 running · 13 queued · 4 blocked · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -124,7 +131,7 @@ Something could be acting on these right now.
     shipped              PR185 chore(scripts): keep the scratchpad out of the link check and out of git (p3)
 
   E10 — Docs: the front door, the reference, and the check that keeps them honest #140  [impl]
-    [##############--] 25/28 done · 1 queued · 1 blocked · 1 abandoned
+    [#############---] 25/29 done · 1 queued · 2 blocked · 1 abandoned
     shipped              #141 E10.1 — Rewrite the root README from scratch (p1)
     shipped              #142 E10.2 — docs/ skeleton and the explanation set (p1)
     shipped              #143 E10.3 — Generated CLI reference with a drift test (p2)
@@ -153,6 +160,7 @@ Something could be acting on these right now.
     shipped              PR229 fix(forge): refuse writes into a mismatched checkout (p1)
     shipped              #231 docs: clarify example evidence and public boundaries (p1)
     shipped              PR235 docs: make example evidence and public boundaries explicit (p1)
+    triage               #244 the tutorial hedges twice where the repository should decide: Node 24-vs-22, and which platforms it supports (p3, waiting on owner)
 
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]
     [#############---] 12/14 done · 2 queued
@@ -319,7 +327,7 @@ Something could be acting on these right now.
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [###############-----]  36/48 done · 1 running · 1 blocked · 9 abandoned · 1 invisible
+## (no milestone)  [###############-----]  37/49 done · 1 running · 1 blocked · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -328,6 +336,10 @@ Something could be acting on these right now.
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
+
+  E10 — Docs: the front door, the reference, and the check that keeps them honest #140  [impl]  (epic is in M1 — dsh coordinator foundation)
+    [################] 1/1 done
+    shipped              PR243 feat(docs): gate the tutorial's pasted output instead of trusting it (p2)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]  (epic is in M1 — dsh coordinator foundation)
     [################] 1/1 done
