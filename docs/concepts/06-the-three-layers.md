@@ -10,7 +10,9 @@ seams between them — and a seam is only visible when both sides are drawn.
 
 Orange marks what **this repository** builds. Everything else in the drawing is
 somebody else's deployment, described here only so that the interface can be
-argued about honestly.
+argued about honestly. This is the owner-locked responsibility model, not a
+claim that these deployments or their integration gates have already shipped.
+The GitHub board and executable receipts establish delivery status.
 
 ---
 
@@ -21,12 +23,13 @@ what may run, who may certify it, and what actually ran.
 
 **board.** GitHub is the store, not a cache of one. Issues, labels and
 milestones are the record; columns, lanes and anomalies are projections computed
-from that record and never written back as a second source. A label is the
-protocol — applying one is an act, not an annotation.
+from that record and never written back as a second source. The `harness` label
+is a dispatch trigger; the other taxonomy labels are inert board metadata.
 
 **delegation matrix.** The single routing authority. It maps a lane to a tier, a
 tier to a provider order, and a refusal to the next candidate. Dispatch names a
-lane, never a model, so the matrix stays the only place a model id appears. Two
+lane through the matrix, which owns model selection. Requested and observed
+model identities still belong in contracts and receipts. Two
 rules earn their keep: an author may not be its own evaluator, and a quota
 trigger never falls back to a sibling model on the same subscription — that
 would be a fallback in name only. The trigger union is closed at six members;
@@ -42,8 +45,9 @@ has to be able to say so without inventing a state.
 
 **the two seams.** This is the layer's central distinction and the reason it
 exists at all. `ctx.subagents` buys a **seat**, metered by a refill window;
-`ctx.llm` buys **tokens**, metered by a balance. When a seat is exhausted you
-*wait*; when a balance is exhausted you *pay*. Collapsing them into one
+`ctx.llm` serves API-key and local models. Paid API tokens consume a balance;
+local models consume local capacity without a per-token bill. A subscription
+window refills, while a depleted paid balance requires funding. Collapsing them into one
 "capacity" concept makes both meters wrong. The union is closed at two members.
 
 **sandbox boundary.** The seat seam cannot be gated inside a vendor CLI's child
@@ -53,8 +57,8 @@ where the process actually starts. This is an admission about where control is
 real, not a preference.
 
 **forge.** Bootstraps a target repository's label taxonomy and emits the process
-skill that reads it. Planning and ejection are safe; applying a taxonomy mutates
-somebody's repository and stays an owner action.
+skill that reads it. Planning computes changes; applying or ejecting a taxonomy
+can mutate the target repository and requires authorization for those writes.
 
 ---
 
@@ -64,20 +68,17 @@ A NetScript application on Deno and Fresh: one operator-managed stack of
 independently restartable processes. It is not a client of the backend. **It is
 the backend.**
 
-That distinction is the whole reason this document exists. NetScript ships
-*definition* builders — `defineJobHandler`, saga step declarations, trigger
-providers, stream resources. The definitions are real and the types are good,
-but the execution semantics they imply are the consumer's to implement. A
-handler registered with `defineJobHandler` runs; it does not thereby acquire
-retry, timeout, lease or dead-letter behaviour. `SagaOutboxPort` is an interface
-with no implementation, and a compensating step is terminal unless someone
-writes the runner that resumes it. `dispatchAction` can complete successfully
-without anything having been dispatched. Task retry metadata is accepted and
-unread. The node and temporal cron providers throw.
+NetScript supplies definition builders, runtime primitives and ports. The
+application owns composing and configuring those primitives into working,
+durable services and proving their behavior. It does not have to reimplement
+every runtime. For example, `defineJobHandler` returns a handler and the same
+workers package provides `createWorkersRuntime`; neither fact alone proves the
+application's lease, retry or dead-letter policy. A trigger processor can use a
+no-op `dispatchAction` default until real dispatch is supplied.
 
-None of that is a defect upstream. It is the boundary: core defines, the
-application executes. Which means the work below is **owned engineering**, not
-glue.
+The work below is **owned engineering**: persistence, authorization, recovery
+and delivery evidence belong to this application, including when an upstream
+runtime supplies part of the implementation.
 
 **HTTPS gateway.** One entry point in front of the whole stack. Every process
 behind it restarts independently; none of them is a singleton whose death takes
@@ -95,7 +96,8 @@ The fold happens here, once.
 
 **worker runner.** Dispatcher, payload validation, attempt policy with backoff,
 lease acquisition and renewal under compare-and-swap, cancellation, dead-letter
-routing, and an idempotency store. Every one of these is written here.
+routing, and an idempotency store. This application owns their composition,
+configuration and executable guarantees.
 
 **saga runner + outbox.** A transactional outbox with claim, commit and recovery
 paths; a durable step-and-compensation journal; and a recovery runner that can
@@ -160,7 +162,8 @@ backend, on a transport appropriate to a phone.
 **bundle boundary gate.** A build-time gate that walks the application import
 graph *and* scans the exported bundle. It refuses Node built-ins, Prisma, Deno
 globals, AppHost and worker or daemon runtimes, any `/server` leaf, and every
-private package except the one contracts package. A phone bundle that can reach
+private backend runtime package. The generated product client is the phone
+boundary; the phone does not import the Harness contracts package directly. A phone bundle that can reach
 a backend runtime is a leak, and the gate is what makes that statement testable
 rather than aspirational.
 
@@ -182,16 +185,15 @@ Between the layers sit two published surfaces. They are the only sanctioned way
 across, and their rules are deliberate.
 
 **Coordination → backend: the contracts package (protocol 1).**
-The command half is all-POST, *including the read* — a GET is retried by
-proxies, browsers and phones on a hunch, and a retried read that the caller
-believes was singular is how phantom state appears. Idempotency keys are
-required, not optional: an optional safety property is one that is absent
-exactly when someone was in a hurry. The read half is a WebSocket mux carrying
-**whole-value deltas, never patches**, with a `generation` per connection and a
-`seq` that increments by one within a generation, so a gap is detectable rather
-than plausible. Connecting is subscribing. An unknown kind is a third outcome,
-not an error and not a silent drop. The envelope is validated; the payload
-deliberately is not, so an unknown payload shape survives the hop.
+Protocol 1 specifies POST for `snapshot`, `dispatch` and `approve`. Mutating
+`dispatch` and `approve` requests require idempotency keys; the snapshot request
+does not. The method alone does not establish idempotency or authorization.
+The read half is a WebSocket mux carrying **whole-value deltas, never patches**,
+with a `generation` per connection and a `seq` that increments by one within a
+generation. Connecting is subscribing. An unknown kind is a third decode
+outcome, distinct from malformed input. The decoder validates the envelope,
+not the full payload schema; it is not an authorization or payload-validation
+boundary. A resync supplies a current snapshot, not a journal replay.
 
 **Backend → client: the generated client package.**
 A captured, versioned OpenAPI artifact and the client generated from it. The
@@ -223,8 +225,9 @@ not render, schedule product work, or hold product state.
 consumer that needs a private package is a consumer that has been handed the
 wrong boundary.
 
-**A model id outside the matrix.** Dispatch names a lane. The moment a model id
-appears at a call site, the matrix stops being the routing authority.
+**An independent model-selection policy outside the matrix.** Dispatch resolves
+a lane through the matrix. Recording the requested and observed model identities
+is necessary evidence, not a second routing authority.
 
 ---
 
@@ -235,12 +238,28 @@ against a specification rather than an installed artifact. This is the single
 highest-leverage unblock in the chain: nothing below layer 1 can be integration-
 tested against a version until the tag exists.
 
-**One fidelity gap in the read half.** Provider liveness is modelled in five
-states; the mux exposes four freshness states. A consumer currently maps the
-difference, which means a distinction this layer considers meaningful is not
-observable two layers down. Either the projection is lossless, or the loss is
-documented as intentional. Right now it is neither, and the choice belongs to
-this repository because this repository owns the protocol.
+**Fidelity decision — documented loss in v0.1.0, protocol 1.** Provider
+`RunLiveness` is execution state (`queued`, `running`, `finished`, `failed`,
+`unknown`). Wire `RunView.liveness.state` is evidence freshness (`live`,
+`recent`, `stalled`, `quiet`), computed from dated evidence and a running claim.
+They are independent dimensions, not five values being converted to four.
+Wire `RunView.outcome` separately supports `running`, `complete`, `failed` and
+`unknown`; it cannot express the provider's `queued` state.
+
+For this first release, the exact provider lifecycle is intentionally not a
+lossless public surface. Consumers must not infer it from freshness, present
+admission as execution, or map unknown to failed. A provider-only queued
+observation is not sufficient to invent a started run record or its `startedAt`.
+Its absence from run observations does not prove that no work was admitted.
+Board queue membership remains a separate fact. This decision does not assert
+that a provider-to-wire adapter has shipped.
+
+The alternative is a versioned structured provider-state field with its own
+observation time. That would preserve queued separately, but requires producer
+implementation and downstream adapter, captured OpenAPI and generated-client
+evidence. It is deferred from v0.1.0. The cost of the selected loss is that a
+consumer cannot offer exact provider-queue status from this release. Connection
+freshness recovery is an additional, separately tracked limitation in #265.
 
 ---
 
@@ -251,3 +270,26 @@ deliberate while the question of which consumer names may appear in public
 documentation remains an open owner decision. The roles — *the product backend*,
 *the client* — are the load-bearing part; the repository names are not, and
 adding them later costs nothing.
+
+## Consulted sources
+
+Source marker: Harness source; topic: protocol, execution and freshness fidelity;
+date: 2026-09-07. At release candidate `684840b61d4cbccec69f0ff015d2715941ca16b8`,
+see `packages/contracts/src/routes.ts:37,82,121`,
+`packages/contracts/src/runs.ts:46,132,160`,
+`packages/subagents/src/provider.ts:126`, and
+`packages/telemetry/src/liveness.ts:121`:
+[commands](../../packages/contracts/src/routes.ts),
+[run views](../../packages/contracts/src/runs.ts),
+[provider observations](../../packages/subagents/src/provider.ts),
+[freshness classifier](../../packages/telemetry/src/liveness.ts), and
+[the two seams](02-the-two-seams.md). The fidelity decision above is made by
+the protocol owner under the architecture-lock directive of 2026-09-07.
+
+Source marker: NetScript source; topic: supplied runtime versus application
+composition; date: 2026-09-07; source commit
+`08f581e8334485c29c845b39615276c59b48cc35`. Consulted `packages/plugin-workers-core/src/public/root.ts`
+at line 350 (`defineJobHandler`, `createWorkersRuntime`) and
+`packages/plugin-triggers-core/src/runtime/trigger-processor.ts`
+at line 81 (`dispatchAction` default). These examples establish composition obligations,
+not a deployment receipt.

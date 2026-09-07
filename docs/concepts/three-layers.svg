@@ -46,7 +46,7 @@
   <g class="node" id="n-board">
     <rect x="28" y="98" width="199" height="44" rx="3"/>
     <text class="t" x="128" y="117" text-anchor="middle">board</text>
-    <text class="s" x="128" y="132" text-anchor="middle">GitHub is the store · labels are protocol</text>
+    <text class="s" x="128" y="132" text-anchor="middle">GitHub truth · harness label dispatches</text>
   </g>
   <g class="node" id="n-matrix">
     <rect x="243" y="98" width="199" height="44" rx="3"/>
@@ -72,7 +72,7 @@
   <g class="node" id="n-llm">
     <rect x="243" y="152" width="199" height="44" rx="3"/>
     <text class="t" x="343" y="171" text-anchor="middle">ctx.llm</text>
-    <text class="s" x="343" y="186" text-anchor="middle">token seam · metered by a balance</text>
+    <text class="s" x="343" y="186" text-anchor="middle">API balance · local model capacity</text>
   </g>
   <g class="node" id="n-sandbox">
     <rect x="458" y="152" width="199" height="44" rx="3"/>
@@ -205,8 +205,9 @@
 
   <g class="node" id="n-exec">
     <rect x="28" y="686" width="199" height="44" rx="3"/>
-    <text class="t" x="128" y="705" text-anchor="middle">execution vocabulary</text>
-    <text class="s" x="128" y="720" text-anchor="middle">queued · running · finished · failed</text>
+    <text class="t" x="128" y="700" text-anchor="middle">execution vocabulary</text>
+    <text class="s" x="128" y="713" text-anchor="middle">queued · running · finished</text>
+    <text class="s" x="128" y="725" text-anchor="middle">failed · state unknown</text>
   </g>
   <g class="node" id="n-evidence">
     <rect x="243" y="686" width="199" height="44" rx="3"/>
@@ -227,6 +228,6 @@
   <!-- legend -->
   <rect x="28" y="770" width="22" height="11" rx="2" fill="#FFFFFF" stroke="#9FB2AF"/>
   <text class="lg" x="58" y="779">elsewhere in the chain</text>
-  <rect x="196" y="770" width="22" height="11" rx="2" fill="none" stroke="#A8500B" stroke-dasharray="4 3"/>
+  <rect x="196" y="770" width="22" height="11" rx="2" fill="#FDF2E7" stroke="#A8500B" stroke-width="1.5"/>
   <text class="lg" x="226" y="779" fill="#A8500B">This repository builds this</text>
 </svg>
