@@ -8,6 +8,7 @@
  */
 
 import assert from "node:assert/strict";
+import { readGovernanceSnapshot } from "@rickylabs/harness-contracts";
 import { mkdir, mkdtemp, readFile, readdir, stat, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -949,7 +950,7 @@ describe("live governance CLI and services", () => {
     assert.equal(invalid.code, 2);
     assert.equal(invalid.out, "governance source: invalid-descriptor\n");
     assert.throws(() => parseFlags(["status", "--observations", path, "--observations-from", path]), /mutually exclusive/);
-    assert.throws(() => parseFlags(["runs", "--observations-from", path]), /requires tree or status/);
+    assert.throws(() => parseFlags(["runs", "--observations-from", path]), /requires governance, tree or status/);
   });
   it("bounds regular file reads and real subprocess output, timeout, stderr and malformed output without Deno", async () => {
     const path = join(home, "bounded.json");
@@ -963,5 +964,89 @@ describe("live governance CLI and services", () => {
     }
     await assert.rejects(runUsageProbe({ ...command, args: ["-e", "setInterval(()=>{}, 1000)"], timeoutMs: 30 }), (e: unknown) => e instanceof SourceError && e.code === "timeout");
     await assert.rejects(runUsageProbe({ ...command, bin: join(home, "absent") }), (e: unknown) => e instanceof SourceError && e.code === "spawn-failed");
+  });
+});
+
+describe("published governance one-shot command", () => {
+  async function invoke(descriptor: unknown, overrides: Partial<SourceServices> = {}, extra: string[] = []) {
+    const path = join(home, "source.json");
+    const services = fakeServices({ ...overrides, readText: async (file, cap) => file === path
+      ? JSON.stringify(descriptor) : overrides.readText ? overrides.readText(file, cap) : file.endsWith("memory.current") ? "1024" : "4096" });
+    return run(["governance", "--home", home, "--observations-from", path, ...extra], services);
+  }
+  async function admissions(events: unknown[]) {
+    const file = livePath(resolveObservability(home, {}));
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, events.map(e => JSON.stringify(e)).join("\n") + "\n");
+  }
+  it("T1/T2 emits one decodable mixed-timeout document with no private source bytes", async () => {
+    const d = liveDescriptor();
+    d.capacity.scopeLabel = "synthetic-cgroup";
+    const e = admissionEvent(); e.detail.item.number = 7;
+    await admissions([e]);
+    const { code, out } = await invoke({ ...d, spend: null }, { usage: async () => { throw new SourceError("timeout"); } });
+    assert.equal(code, EXIT.incomplete); assert.ok(out.endsWith("\n"));
+    const read = readGovernanceSnapshot(JSON.parse(out)); assert.equal(read.ok, true);
+    if (!read.ok) return;
+    assert.deepEqual(read.snapshot.sources.usage, { status: "failed", reason: "timeout" });
+    assert.equal(read.snapshot.sources.capacity.status, "read");
+    assert.equal(read.snapshot.admissions[0]?.item, 7);
+    assert.equal(read.snapshot.admissions[0]?.accepted, false);
+    for (const canary of [USAGE_CANARY, SPEND_CANARY, PRIVATE_CANARY, d.usage.denoBin, d.usage.model, d.usage.credentialEnv, d.capacity.cgroupRoot]) assert.ok(!out.includes(canary));
+    assert.ok(!out.includes('"detail"'));
+    assert.equal(out, await readFile(new URL("../../contracts/test-fixtures/governance-read/mixed-timeout.json", import.meta.url), "utf8"));
+  });
+  it("T3 rejects every unsupported flag and malformed time before source effects", async () => {
+    let calls = 0;
+    const effect = async (): Promise<never> => { calls++; throw new Error("must not run"); };
+    const services = fakeServices({ readText: effect, usage: effect, fetch: effect });
+    const base = ["governance", "--observations-from", join(home, "descriptor")];
+    for (const args of [
+      ["governance"], ["governance", "--observations-from", `file:${home}/file`],
+      ...["--observations", "--items", "--run", "--kind", "--since"].map(flag => [...base, flag, LIVE_NOW]),
+      [...base, "--limit", "500"], [...base, "--unknown"], [...base, "positional"],
+      [...base, "--now", "2026-02-30T00:00:00Z"], [...base, "--now", "PRIVATE_CANARY"],
+    ]) { const result = await run(args, services); assert.equal(result.code, EXIT.usage); assert.equal(result.out, ""); }
+    assert.equal(calls, 0);
+  });
+  it("T4 and BI2 preserve all-unconfigured and complete without admissions", async () => {
+    const none = { ...liveDescriptor(), usage: null, spend: null, capacity: null, admissions: null };
+    const result = await invoke(none); assert.equal(result.code, EXIT.incomplete);
+    assert.equal(JSON.parse(result.out).unavailableReason, "not-configured");
+    const complete = await invoke({ ...liveDescriptor(), admissions: null });
+    assert.equal(complete.code, EXIT.ok); assert.equal(JSON.parse(complete.out).complete, true);
+    assert.equal(readGovernanceSnapshot(JSON.parse(complete.out)).ok, true);
+    const fixture = await readFile(new URL("../../contracts/test-fixtures/governance-read/unavailable-not-configured.json", import.meta.url), "utf8");
+    assert.equal(result.out, fixture);
+  });
+  it("T5–T8 expose unbound, degraded, conflicting, stale and invalid envelope outcomes", async () => {
+    const d = liveDescriptor();
+    const unbound = await invoke(d, { env: {} });
+    assert.equal(JSON.parse(unbound.out).sources.usage.reason, "credential-unbound");
+    const file = livePath(resolveObservability(home, {})); await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, "invalid-json\n");
+    const degraded = await invoke(d); assert.equal(degraded.code, EXIT.incomplete);
+    assert.deepEqual(JSON.parse(degraded.out).sources.admissions, { status: "failed", reason: "log-unreadable" });
+    const e = admissionEvent(), other = admissionEvent(); other.detail.state = "pause";
+    await admissions([e, other]);
+    const conflict = await invoke(d); assert.equal(conflict.code, EXIT.incomplete);
+    assert.deepEqual(JSON.parse(conflict.out).sources.admissions.dropped, ["admission-conflict"]);
+    await admissions([e]);
+    const stale = await invoke(d, {}, ["--now", "2026-09-07T13:00:00Z"]);
+    assert.equal(JSON.parse(stale.out).availability, "stale");
+    assert.equal(JSON.parse(stale.out).admissions[0].freshness, "stale");
+    const future = await invoke(d, {}, ["--now", "2026-09-07T11:00:00Z"]);
+    assert.equal(future.code, EXIT.incomplete); assert.equal(JSON.parse(future.out).unavailableReason, "envelope-invalid");
+  });
+  it("BI9 refuses over-cap evidence with exit 1 and no stdout", async () => {
+    await admissions(Array.from({ length: 1001 }, (_, i) => { const e = admissionEvent(); e.detail.item.number = i + 1; return e; }));
+    const result = await invoke(liveDescriptor()); assert.equal(result.code, EXIT.failed); assert.equal(result.out, "");
+  });
+  it("governance scans no transcripts: actual CLI succeeds with a regular file as home", async () => {
+    const path = await seedLive({ ...liveDescriptor(), usage: null, spend: null, admissions: null });
+    const fakeHome = join(home, "not-a-home"); await writeFile(fakeHome, "synthetic");
+    const result = await cliProcess(["governance", "--home", fakeHome, "--observations-from", path]);
+    assert.equal(result.code, EXIT.ok); assert.equal(result.err, "");
+    assert.equal(readGovernanceSnapshot(JSON.parse(result.out)).ok, true);
   });
 });

@@ -252,3 +252,11 @@ export {
 } from "./client.js";
 
 export type * from "./state-store.js";
+
+export {
+  GOVERNANCE_READ_SCHEMA, GOVERNANCE_SOURCE_NAMES, SOURCE_FAILURE_REASONS, SOURCE_DISCARD_REASONS,
+  ADMISSION_DROP_REASONS, UNAVAILABLE_REASONS, readGovernanceSnapshot,
+  type GovernanceSourceName, type SourceFailureReason, type SourceDiscardReason, type AdmissionDropReason,
+  type UnavailableReason, type MeterCoverage, type AdmissionCoverage, type GovernanceSourceCoverage,
+  type RecordedAdmission, type GovernanceReadSnapshot, type GovernanceReading,
+} from "./governance-read.js";

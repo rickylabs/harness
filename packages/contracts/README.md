@@ -287,3 +287,65 @@ The contract carries no storage directory path or effect prompt.
 settlement. `unknown` is terminal and cannot become `unsent`; the latter requires a branded proof
 constructed from a validated negative receipt. Callers await durable intent success before attempting
 an effect and durable receipt success before acknowledging it. No result grants retry authority.
+
+## Governance read document (0.2.0 candidate)
+
+`GovernanceReadSnapshot` is a standalone schema-1, protocol-1 document produced by
+`dsh-telemetry governance --observations-from <absolute-descriptor-path>`. Import
+`readGovernanceSnapshot` and the document/coverage/admission types from the package root:
+
+```ts
+import { readGovernanceSnapshot } from "@rickylabs/harness-contracts";
+
+const reading = readGovernanceSnapshot(JSON.parse(stdout));
+if (reading.ok) {
+  const { availability, complete, sources, state, admissions } = reading.snapshot;
+  // Inspect typed coverage. Notes are informational; never parse them for status.
+}
+```
+
+The command emits one JSON object on exits 0 (complete) and 3 (incomplete or unavailable).
+Exit 1 emits no document; exit 2 is invalid usage/input configuration. Check the exit status
+and decode stdout before using evidence. The decoder performs no I/O and reads no clock.
+`evaluatedAt` records the producer's evaluation clock; consumers judging freshness later must
+compare their own clock with `validUntil`. Freshness is not completeness.
+
+`complete` means all configured requested evidence was successfully read and valid, preserving
+collector distinctions. Failed/discarded meters, failed admissions and dropped/conflicting
+admissions force incomplete. Unconfigured admissions alone do not make successful meters
+incomplete. An observed empty log reports `read`, `records:0`, `empty:true`, with collection
+provenance/time and no invented decision timestamp; the current collector still marks that
+result incomplete. This describes only the configured log scope. `approvals: not-observed`
+and empty `state.pending` never claim an approval census.
+
+Every read meter retains its source `observedAt`, `validUntil`, freshness and safe reader/scope
+provenance. Admission coverage has a separate `collectedAt`; each recorded refusal retains its
+original decision interval and provenance. Admission is not execution evidence. Producer-selected
+provenance identifies a reader/scope, not an account, a path or cryptographic trust. An unavailable
+union carries null state/envelope fields and no admission payload; coverage may still report read
+sources if the overall envelope was invalid. For available envelopes, non-read sources have empty,
+noted regimes, read sources have nonempty leaves, and the envelope expires at the earliest retained
+source/admission expiry.
+
+The pure, dependency-free decoder is specified for JSON-derived values. It rejects unknown fields,
+unsafe code identifiers, invalid calendars, nonfinite or inconsistent numbers, inconsistent clocks,
+wrong prototypes, accessor properties and sparse arrays. Output consists of independently owned
+readonly typed data. It accepts no defaults for missing schema/protocol metadata. Diagnostics name
+schema-owned fields and never echo unknown keys or values. Limits are 1000 admissions, 256 leaves
+per array, 64 notes per list, 128-character identifiers, 256-character labels and 4096-character
+notes. The producer applies these limits before serialization and refuses over-cap evidence without
+truncation or invented drop reasons. Transport byte limits remain the caller's concern.
+
+Portable JavaScript cannot inspect arbitrary Proxies without executing traps. Inspection throws
+are contained, and ordinary getters are not invoked; no trap-free, side-effect-free or bounded-time
+claim is made for hostile Proxy traps that themselves loop or allocate. Schema traversal is bounded
+for JSON input. Accessors may also have run before the decoder receives a value.
+
+Consumers on 0.1.0 have no governance read decoder and need the 0.2.0 candidate (or a later release
+that supports this schema). This additive candidate removes no exports and changes no wire behavior:
+`PROTOCOL_VERSION` and `dsh.protocol` remain 1. The document is not a `RemoteSnapshot`, is not folded,
+is not served by the hub, and does not implement reconnect freshness (#265).
+
+Source merge, tests and `npm pack` are not publication. **0.2.0 remains unpublished until the owner
+releases it** with `harness-contracts-v0.2.0` on a merged `main` commit. No downstream API/client
+compatibility, upgrade receipt or live #205/#87 acceptance is implied.

@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "protocol": 1,
+  "producer": "dsh-telemetry",
+  "evaluatedAt": "2026-09-07T12:00:00.000Z",
+  "sources": {
+    "usage": {
+      "status": "not-configured"
+    },
+    "spend": {
+      "status": "not-configured"
+    },
+    "capacity": {
+      "status": "not-configured"
+    },
+    "admissions": {
+      "status": "not-configured"
+    },
+    "approvals": {
+      "status": "not-observed"
+    }
+  },
+  "notes": [
+    "pending approvals unobserved",
+    "usage: not-configured",
+    "spend: not-configured",
+    "capacity: not-configured",
+    "admissions: not-configured"
+  ],
+  "availability": "unavailable",
+  "observedAt": null,
+  "validUntil": null,
+  "provenance": null,
+  "complete": false,
+  "state": null,
+  "admissions": [],
+  "unavailableReason": "not-configured"
+}

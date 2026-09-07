@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "protocol": 1,
+  "producer": "dsh-telemetry",
+  "evaluatedAt": "2026-09-07T12:10:00.000Z",
+  "sources": {
+    "usage": {
+      "status": "read",
+      "observedAt": "2026-09-07T12:00:00.000Z",
+      "validUntil": "2026-09-07T12:01:00.000Z",
+      "freshness": "stale",
+      "provenance": "reader:opencode-usage"
+    },
+    "spend": {
+      "status": "read",
+      "observedAt": "2026-09-07T12:00:00.000Z",
+      "validUntil": "2026-09-07T12:01:00.000Z",
+      "freshness": "stale",
+      "provenance": "reader:openrouter-key"
+    },
+    "capacity": {
+      "status": "read",
+      "observedAt": "2026-09-07T12:00:00.000Z",
+      "validUntil": "2026-09-07T12:01:00.000Z",
+      "freshness": "stale",
+      "provenance": "reader:cgroup-memory"
+    },
+    "admissions": {
+      "status": "read",
+      "records": 1,
+      "empty": false,
+      "dropped": [],
+      "provenance": "reader:recorded-admission",
+      "collectedAt": "2026-09-07T12:00:00.000Z"
+    },
+    "approvals": {
+      "status": "not-observed"
+    }
+  },
+  "notes": [
+    "pending approvals unobserved"
+  ],
+  "availability": "stale",
+  "observedAt": "2026-09-07T12:00:00.000Z",
+  "validUntil": "2026-09-07T12:01:00.000Z",
+  "provenance": "reader:composed",
+  "complete": true,
+  "state": {
+    "generatedAt": "2026-09-07T12:00:00.000Z",
+    "regimes": [
+      {
+        "regime": "subscription",
+        "state": "allow",
+        "accounts": [
+          {
+            "seam": "opencode_go",
+            "account": "synthetic",
+            "state": "allow",
+            "windows": [
+              {
+                "label": "month",
+                "windowMinutes": 43200,
+                "usedPercent": 42,
+                "resetsAt": null,
+                "binding": false
+              },
+              {
+                "label": "short",
+                "windowMinutes": 300,
+                "usedPercent": 42,
+                "resetsAt": null,
+                "binding": false
+              },
+              {
+                "label": "week",
+                "windowMinutes": 10080,
+                "usedPercent": 42,
+                "resetsAt": null,
+                "binding": false
+              }
+            ],
+            "observedAt": "2026-09-07T12:00:00.000Z"
+          }
+        ],
+        "note": "reader:opencode-usage; reader-stamped after response (provider capture time unobserved); binding unobserved; one configured credential binding, fleet completeness unknown"
+      },
+      {
+        "regime": "metered",
+        "state": "allow",
+        "providers": [
+          {
+            "provider": "openrouter",
+            "spentUsd": 2,
+            "ceilingUsd": null,
+            "windowLabel": "total",
+            "observedAt": "2026-09-07T12:00:00.000Z"
+          }
+        ],
+        "note": "reader:openrouter-key; reader-stamped after response; ceiling unobserved"
+      },
+      {
+        "regime": "capacity",
+        "state": "allow",
+        "hosts": [
+          {
+            "host": "synthetic-cgroup",
+            "vramUsedBytes": null,
+            "vramTotalBytes": null,
+            "ramUsedBytes": 1024,
+            "ramTotalBytes": 4096,
+            "observedAt": "2026-09-07T12:00:00.000Z"
+          }
+        ],
+        "note": "reader:cgroup-memory; scope is configured cgroup v2, not a verified dispatch host; GPU unknown"
+      }
+    ],
+    "pending": [],
+    "notes": [
+      "pending approvals unobserved"
+    ]
+  },
+  "admissions": [
+    {
+      "item": 7,
+      "regime": "subscription",
+      "state": "throttle",
+      "observedAt": "2026-09-07T12:00:00.000Z",
+      "validUntil": "2026-09-07T12:05:00.000Z",
+      "freshness": "stale",
+      "provenance": "reader:recorded-admission",
+      "reason": "quota-paced",
+      "accepted": false
+    }
+  ],
+  "unavailableReason": null
+}

@@ -44,13 +44,14 @@ import { renderSnapshot, renderTree } from "./render.js";
 import type { TelemetryEvent } from "./sink.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
-import { parseSource, SourceError, type GovernanceSource, type UsageSource, type Leg } from "./source.js";
+import { instant, parseSource, SourceError, type GovernanceSource, type UsageSource, type Leg } from "./source.js";
 import type { RegimeStatus } from "@rickylabs/harness-contracts";
 import type { LiveLog } from "./live.js";
 import { mapUsage } from "./governance/usage.js";
 import { mapSpend } from "./governance/spend.js";
 import { mapCapacity } from "./governance/capacity.js";
-import { composeGovernance } from "./governance/compose.js";
+import { composeGovernance, type ComposedGovernance } from "./governance/compose.js";
+import { governanceRead } from "./governance/read.js";
 
 /**
  * What the command exited with, and what a caller should do about it.
@@ -90,6 +91,7 @@ const EXIT_BLOCK = Object.entries(EXIT)
 const USAGE = `dsh-telemetry — board activity, read from disk, with no agent awake
 
 usage:
+  dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
   dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
   dsh-telemetry status [options]     runs grouped by epic
   dsh-telemetry runs [options]       one line per run, newest first
@@ -117,7 +119,7 @@ admissions. The file is read again on every invocation. No flag is explicit UNKN
 a requested unreadable or invalid file is incomplete (exit 3). Stale values stay visible as STALE,
 and missing measurements stay unknown rather than becoming zero.
 
-"--observations-from" applies only to tree/status and excludes "--observations". A descriptor
+"--observations-from" applies to governance/tree/status and excludes "--observations". A descriptor
 configures independent usage, spend, configured-cgroup-v2 and recorded-admission readers.
 Model IDs, window durations and safe labels are runtime configuration. No model is dispatched.
 Live readings use collection completion time unless --now explicitly sets the evaluation clock.
@@ -125,6 +127,11 @@ A failed requested leg is unread, keeps successful legs visible, and returns inc
 All-unconfigured is UNAVAILABLE/exit 3. Unlimited cgroup total/headroom and pending approvals are
 unknown. File mode retains stale values and its existing exit behavior. See telemetry README
 for descriptor fields, the env-only service dependency and public-safe admission reason codes.
+
+"governance" emits one versioned JSON document (also without --json). It requires a descriptor,
+refuses file: and --observations/--items/--run/--kind/--limit/--since, and scans no transcripts.
+Exit 0 means configured evidence is complete; exit 3 means incomplete or unavailable.
+Exit 1 emits no document and a fixed diagnostic. Pending approvals remain not-observed.
 
 "record" reads JSONL on stdin — one {"runId","kind","at","detail"} object per line, "at"
 and "detail" optional. A bad line loses that line and is named; an empty batch is not an
@@ -264,7 +271,7 @@ export function parseFlags(argv: readonly string[]): Flags {
   if (observationsFrom !== null) {
     const path = observationsFrom.startsWith("file:") ? observationsFrom.slice(5) : observationsFrom;
     if (!isAbsolute(path) || /[\x00-\x1f\x7f]/.test(path)) throw new Error("observation source requires an absolute path");
-    if (rest[0] !== "status" && rest[0] !== "tree" && !help) throw new Error("--observations-from requires tree or status");
+    if (rest[0] !== "status" && rest[0] !== "tree" && rest[0] !== "governance" && !help) throw new Error("--observations-from requires governance, tree or status");
   }
   return { home, items, observations, observationsFrom, nowExplicit, limit, since, sinceMs, now, json, help, run, kind, rest };
 }
@@ -451,10 +458,12 @@ function whereItWrites(flags: Flags): number {
 
 export async function main(argv: readonly string[], services: SourceServices = defaultSourceServices()): Promise<number> {
   let flags: Flags;
+  const governanceCommand = argv.includes("governance");
   try {
     flags = parseFlags(argv);
   } catch (error) {
-    process.stdout.write(`${String(error instanceof Error ? error.message : error)}\n\n${USAGE}`);
+    if (governanceCommand) process.stderr.write("governance: invalid command line\n");
+    else process.stdout.write(`${String(error instanceof Error ? error.message : error)}\n\n${USAGE}`);
     return EXIT.usage;
   }
   if (flags.help || flags.rest.length === 0) {
@@ -467,6 +476,24 @@ export async function main(argv: readonly string[], services: SourceServices = d
   // Dispatched before the scan, and deliberately. `record` and `why` answer different questions, but
   // `record` must land a line when every transcript store on the box is unreadable — reading three
   // of them to append one event would make the writer as fragile as the thing it exists to explain.
+  if (command === "governance") {
+    if (flags.rest.length !== 1 || flags.observationsFrom === null || flags.observationsFrom.startsWith("file:") ||
+        ["--observations", "--items", "--run", "--kind", "--limit", "--since"].some(flag => argv.includes(flag))) {
+      process.stderr.write("governance: invalid command line\n"); return EXIT.usage;
+    }
+    try { instant(flags.now); } catch { process.stderr.write("governance: invalid command line\n"); return EXIT.usage; }
+    let configured: GovernanceSource;
+    try { configured = parseSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
+    catch { process.stderr.write("governance: invalid descriptor\n"); return EXIT.usage; }
+    try {
+      const log = configured.admissions === null ? { files: [], notes: [], degraded: false }
+        : await readLiveLog(logPaths(resolveObservability(flags.home, services.env)), flags.now);
+      const { observed, completion } = await collectGovernance(configured, log, services, flags.nowExplicit ? flags.now : undefined);
+      const document = governanceRead(observed, flags.nowExplicit ? flags.now : completion);
+      process.stdout.write(`${JSON.stringify(document, null, 2)}\n`);
+      return document.complete ? EXIT.ok : EXIT.incomplete;
+    } catch { process.stderr.write("governance: document unavailable\n"); return EXIT.failed; }
+  }
   if (command === "record") return await recordEvents(flags);
   if (command === "where") return whereItWrites(flags);
 
@@ -712,7 +739,7 @@ async function isolatedLeg(read: () => Promise<Leg<RegimeStatus>>, fallback: "re
   try { return await read(); }
   catch (error) { return { ok: false, code: error instanceof SourceError ? error.code : fallback }; }
 }
-export async function collectGovernance(source: GovernanceSource, log: LiveLog, services: SourceServices, now?: string): Promise<{ observed: ParsedGovernance; completion: string }> {
+export async function collectGovernance(source: GovernanceSource, log: LiveLog, services: SourceServices, now?: string): Promise<{ observed: ComposedGovernance; completion: string }> {
   const missing: Leg<RegimeStatus> = { ok: false, code: "not-configured" };
   const [usage, spend, capacity] = await Promise.all([
     isolatedLeg(async () => {

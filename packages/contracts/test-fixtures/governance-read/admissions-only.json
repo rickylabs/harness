@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "protocol": 1,
+  "producer": "dsh-telemetry",
+  "evaluatedAt": "2026-09-07T12:00:00.000Z",
+  "sources": {
+    "usage": {
+      "status": "not-configured"
+    },
+    "spend": {
+      "status": "not-configured"
+    },
+    "capacity": {
+      "status": "not-configured"
+    },
+    "admissions": {
+      "status": "read",
+      "records": 1,
+      "empty": false,
+      "dropped": [],
+      "provenance": "reader:recorded-admission",
+      "collectedAt": "2026-09-07T12:00:00.000Z"
+    },
+    "approvals": {
+      "status": "not-observed"
+    }
+  },
+  "notes": [
+    "pending approvals unobserved",
+    "usage: not-configured",
+    "spend: not-configured",
+    "capacity: not-configured"
+  ],
+  "availability": "fresh",
+  "observedAt": "2026-09-07T12:00:00.000Z",
+  "validUntil": "2026-09-07T12:05:00.000Z",
+  "provenance": "reader:composed",
+  "complete": true,
+  "state": {
+    "generatedAt": "2026-09-07T12:00:00.000Z",
+    "regimes": [
+      {
+        "regime": "subscription",
+        "state": "allow",
+        "accounts": [],
+        "note": "usage: not-configured"
+      },
+      {
+        "regime": "metered",
+        "state": "allow",
+        "providers": [],
+        "note": "spend: not-configured"
+      },
+      {
+        "regime": "capacity",
+        "state": "allow",
+        "hosts": [],
+        "note": "capacity: not-configured"
+      }
+    ],
+    "pending": [],
+    "notes": [
+      "capacity: not-configured",
+      "pending approvals unobserved",
+      "spend: not-configured",
+      "usage: not-configured"
+    ]
+  },
+  "admissions": [
+    {
+      "item": 7,
+      "regime": "subscription",
+      "state": "throttle",
+      "observedAt": "2026-09-07T12:00:00.000Z",
+      "validUntil": "2026-09-07T12:05:00.000Z",
+      "freshness": "fresh",
+      "provenance": "reader:recorded-admission",
+      "reason": "quota-paced",
+      "accepted": false
+    }
+  ],
+  "unavailableReason": null
+}

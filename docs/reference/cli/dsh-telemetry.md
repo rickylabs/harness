@@ -27,6 +27,7 @@ and the number the process actually returns cannot disagree.
 dsh-telemetry — board activity, read from disk, with no agent awake
 
 usage:
+  dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
   dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
   dsh-telemetry status [options]     runs grouped by epic
   dsh-telemetry runs [options]       one line per run, newest first
@@ -54,7 +55,7 @@ admissions. The file is read again on every invocation. No flag is explicit UNKN
 a requested unreadable or invalid file is incomplete (exit 3). Stale values stay visible as STALE,
 and missing measurements stay unknown rather than becoming zero.
 
-"--observations-from" applies only to tree/status and excludes "--observations". A descriptor
+"--observations-from" applies to governance/tree/status and excludes "--observations". A descriptor
 configures independent usage, spend, configured-cgroup-v2 and recorded-admission readers.
 Model IDs, window durations and safe labels are runtime configuration. No model is dispatched.
 Live readings use collection completion time unless --now explicitly sets the evaluation clock.
@@ -62,6 +63,11 @@ A failed requested leg is unread, keeps successful legs visible, and returns inc
 All-unconfigured is UNAVAILABLE/exit 3. Unlimited cgroup total/headroom and pending approvals are
 unknown. File mode retains stale values and its existing exit behavior. See telemetry README
 for descriptor fields, the env-only service dependency and public-safe admission reason codes.
+
+"governance" emits one versioned JSON document (also without --json). It requires a descriptor,
+refuses file: and --observations/--items/--run/--kind/--limit/--since, and scans no transcripts.
+Exit 0 means configured evidence is complete; exit 3 means incomplete or unavailable.
+Exit 1 emits no document and a fixed diagnostic. Pending approvals remain not-observed.
 
 "record" reads JSONL on stdin — one {"runId","kind","at","detail"} object per line, "at"
 and "detail" optional. A bad line loses that line and is named; an empty batch is not an
