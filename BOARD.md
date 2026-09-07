@@ -4,7 +4,7 @@
 
 `[###############-----]` **210/264 done · 17 running · 23 queued · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-07T18:33:23Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T18:58:33Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (17)
 
@@ -14,7 +14,7 @@ Something could be acting on these right now.
 | --- | --- | --- |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
-| [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
+| [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl-eval` | `e9` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
 | [#260 E6 — Publish checked run-steer semantics over sender ownership](https://github.com/rickylabs/harness/issues/260) | `research` | `e6` |
@@ -22,7 +22,7 @@ Something could be acting on these right now.
 | [#262 E9 — Specify projection revision, observation coverage and census authority](https://github.com/rickylabs/harness/issues/262) | `research` | `e9` |
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
 | [#265 E9 — Retain the board without false freshness across connection loss and restart](https://github.com/rickylabs/harness/issues/265) | `plan-eval` | `e9` |
-| [#271 Routing configuration 1/5 — Load a wholly replaceable routing configuration](https://github.com/rickylabs/harness/issues/271) | `plan-eval` | `e11` |
+| [#271 Routing configuration 1/5 — Load a wholly replaceable routing configuration](https://github.com/rickylabs/harness/issues/271) | `impl` | `e11` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -157,7 +157,7 @@ Something could be acting on these right now.
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]
     [----------------] 0/5 done · 1 running · 4 queued
-    plan-eval            #271 Routing configuration 1/5 — Load a wholly replaceable routing configuration (p1)
+    impl                 #271 Routing configuration 1/5 — Load a wholly replaceable routing configuration (p1)
     triage               #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p1)
     triage               #273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator (p1)
     triage               #274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration (p1)
@@ -333,7 +333,7 @@ Something could be acting on these right now.
     shipped              PR129 feat(telemetry): read the observability log back and merge it into the backfill
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
-    impl                 #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
+    impl-eval            #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
     shipped              PR216 feat(telemetry): display governance observations beside progress
     shipped              PR226 fix(telemetry): bound every title, and stop restating the item under it (p1)
     shipped              #240 the board cannot say "waiting on a human", so owner-gated work reads as running (p1)
