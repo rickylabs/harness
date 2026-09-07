@@ -41,3 +41,9 @@ D-014.
 `max` (fallback `grok_4_6` at `xhigh`) per the architecture tier's plan-evaluation cell.
 Findings from that evaluation are to be appended here as D-016 onward, not edited into
 `plan.md`.
+
+## D-016 — first independent plan verdict and bounded repairs
+
+Muse Spark1.3 max independently reviewed daf974d and returned FAIL_FIX. The scope and architecture held; four contradictions required repair. Removed the stray default-document accessor export from the manifest; made unreadable-path tests require fixed safe diagnostics; required createService's missing-document RangeError regardless of schema support; clarified optional root keys, the AST gate description, same-family certifies:any refusal, and the test-only fixture allowance. Changes are recorded here and in git history rather than erasing the original reviewed plan. No product mutation.
+
+The architecture matrix calls for escalation at a second plan-review round. The coordinator has surfaced and recorded that escalation, and uses the owner's standing direction to keep progressing autonomously for this bounded same-session repair. No model/effort substitution, no independence waiver, and no PASS inferred.

@@ -367,7 +367,7 @@ or variable named `model`, `effort`, `tier`, `lane`, `family`, `profile`, `prese
 outside an allowlist. The allowlist is a table in the script: each entry names a file, the
 identifiers it may assign, the reason and the owning issue. Initial entries: the structural
 vocabularies in `packages/routing/src/schema.ts` and `packages/subagents/src/dispatch.ts`; the
-dry-run test fixture (`dry-run-test-fixtures.ts`, test support); the telemetry provider
+dry-run test fixture (`dry-run-test-fixtures.ts`, test support only: synthetic document text and fake dispatch expectations, never imported by production entry points; M-20 moves its fixture to document text, not to production configuration); the telemetry provider
 inference (`backfill/claude.ts:200`, E9, research L27) until E9 disposes of it. Comments and
 JSDoc cannot trip it because it reads the AST. The script runs a self-test on every invocation:
 it writes a temporary file containing a fresh assignment (`{ model: "never-seen", effort: "medium" }`),
@@ -466,7 +466,7 @@ boot until it is set, visibly.
 
 Validation rules, all producing `invalid` problems with dotted paths:
 
-- Root: exactly the keys above; `provenance` optional; everything else required, `placements`
+- Root: the allowed key set is exactly the keys above; `provenance` is optional; every other listed key is required, including `placements`
   included (an empty `backends` and `entries` is the way to say none). Unknown key anywhere:
   problem. Before any of this: byte, depth and size bounds and the plain-data walk (D-16).
 - `schemaVersion` must be the integer `1` (checked before anything else; a different value is the
@@ -556,7 +556,7 @@ on the failure path.
 - M-9 modify `src/family.ts`: `checkEvaluator(configuration, assignment)`, `familyOfRun(configuration, run)`;
   `Certifies` is `string`.
 - M-10 modify `src/index.ts`: remove every constant export listed in research L1, L3 to L9, L11,
-  L16 to L18; add loader, validator, schema types and `DEFAULT_ROUTING_DOCUMENT_URL`; keep
+  L16 to L18; add loader, validator and schema types; no default-document accessor is exported; keep
   structural vocabularies and the probe surface.
 - M-11 modify `src/family.test.ts`, `src/resolve.test.ts`, `src/admit.test.ts` (T-R below);
   `src/probe.test.ts` untouched.
@@ -642,7 +642,7 @@ Loader and schema (`load.test.ts`, `schema.test.ts`):
 - T-L1c runs `npm pack --dry-run --json` in `packages/routing` and asserts the tarball lists
   `config/routing.v1.json`, proving the `files` entry; this is the packed-layout check the
   disposition asks for and it mirrors `scripts/check-publish.mjs:27,100-103`.
-- T-L2 `unreadable`: absent path; a directory. Message names the path as given.
+- T-L2 `unreadable`: absent path; a directory. Both the refusal and describeLoadRefusal expose only fixed codes and structural field paths; the supplied location appears only in explicit caller-side provenance. Include a credential-shaped path canary.
 - T-L3 `malformed`: invalid JSON; a JSON array root; a JSON string root.
 - T-L4 `unsupported-schema-version`: `schemaVersion: 2`, `"1"`, absent. `seen` and `supported`
   reported.
@@ -704,7 +704,7 @@ Re-targeted routing suites (`family.test.ts`, `resolve.test.ts`, `admit.test.ts`
   resolves the review lane against the family of B's implementation primary, and a B variant
   whose primary is family `beta` selects the `beta`-certifying seat.
 - T-R4 `checkEvaluator(B, ...)` with families `alpha`/`beta` reproduces every verdict of the
-  current suite, proving the rule has no compiled family names in it.
+  current suite, proving the rule has no compiled family names in it. Explicitly assert that same-family evaluation with certifies:any is refused before any certification allowance is considered.
 
 Consumers:
 
@@ -764,10 +764,11 @@ consumes `loadRoutingConfiguration` directly. #148 and #181 wait on #273 as thei
 
 ## Spikes and integration gates
 
-- S-1 schemastery required fields. The `harness-routing` row needs `path` with no default.
-  Whether `@deepseek-ai/schemastery` expresses "required, no default" or whether the check must
-  live in `createService` as a thrown `RangeError` is decided by reading the installed package at
-  implementation time; either satisfies D-9. Owner: implementer.
+- S-1 schemastery required fields. The `harness-routing` row requires `document` with no default.
+  Read the installed schemastery API to express that requirement where supported. Regardless of
+  schema expressiveness, createService must always enforce a RangeError with fixed code
+  routing-document-not-configured for absent or empty input. Schema-only rejection cannot replace
+  this runtime backstop. Owner: implementer.
 - S-2 CLI key namespace (research C-3, U-4). Step 2 must add the CLI key to the model record or
   define the mapping; step 5 cannot compare candidates until it does. The full export gives the
   seventeen keys and makes four compiled pins visibly orphaned. Recorded here so the v1
@@ -796,7 +797,7 @@ consumes `loadRoutingConfiguration` directly. #148 and #181 wait on #273 as thei
 |---|---|---|---|---|
 | R-1 | The transcription drifts from the deleted table (a step, a `when`, a note) | medium | high: silent route change | T-R2 runs every existing behavioural expectation against the transcription; reviewer diffs JSON against the deleted TypeScript in the PR |
 | R-2 | OF-1 answered late, blocking the llm-local half | medium | medium: PR cannot merge as one | DAG orders llm-local after routing; the plan carries both A and B manifests |
-| R-3 | A future edit re-introduces a literal in `routing` | high over time | medium | T-R1 grep gate in the suite |
+| R-3 | A future edit re-introduces a literal in `routing` | high over time | medium | T-R1 AST gate and executable self-test |
 | R-4 | `check:snapshots` refuses the shipped JSON on a key name | low | low | The schema has no time-sliding key; T-L1 runs under `pnpm run build` |
 | R-5 | Per-configuration `LONGEST_NAME` computed on every call is slow | low | low | WeakMap cache in M-8 |
 | R-6 | The dry-run key input gains the document digest, so existing durable records (which may exist outside tests) hold keys computed without it | certain | medium: a stale pending or unknown effect must stay fenced | Nothing asserts their absence; T-C7 proves a changed configuration cannot bypass or resend an earlier effect; protocol 1 and unknown semantics untouched |
