@@ -2,22 +2,23 @@
 
 # rickylabs/harness
 
-`[################----]` **206/254 done · 16 running · 15 queued · 4 blocked · 12 abandoned · 1 invisible**
+`[################----]` **206/257 done · 18 running · 15 queued · 5 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T08:29:09Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T09:40:39Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (4)
+## Waiting on you (5)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
 | item | column | epic |
 | --- | --- | --- |
+| [#267 Release contracts v0.1.0: owner push of prepared tag](https://github.com/rickylabs/harness/issues/267) | `impl-eval` | `e8` |
 | [#237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
 | [#148 E10.8 — The published docs site (owner fork — do not start)](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#244 the tutorial hedges twice where the repository should decide: Node 24-vs-22, and which platforms it supports](https://github.com/rickylabs/harness/issues/244) | `triage` | `e10` |
 | [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
-## Moving now (16)
+## Moving now (18)
 
 Something could be acting on these right now.
 
@@ -39,12 +40,14 @@ Something could be acting on these right now.
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
+| [PR266 docs: record the locked three-layer architecture](https://github.com/rickylabs/harness/pull/266) | `ready-merge` | — |
+| [PR268 docs: prepare contracts v0.1.0 release handoff](https://github.com/rickylabs/harness/pull/268) | `ready-merge` | `e8` |
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 166/200 done · 15 running · 13 queued · 3 blocked · 3 abandoned
+`[#########---]` 166/203 done · 17 running · 13 queued · 4 blocked · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -56,9 +59,9 @@ Something could be acting on these right now.
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
-| [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
+| [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[#########---]` 8/10 done · 1 running · 1 blocked | `impl-eval` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 17/21 done · 4 running | `impl` |
-| _(no epic)_ | `[############]` 2/2 done | — |
+| _(no epic)_ | `[########----]` 2/3 done · 1 running | — |
 
 ### (no milestone)
 
@@ -100,9 +103,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  206/254 done · 16 running · 15 queued · 4 blocked · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  206/257 done · 18 running · 15 queued · 5 blocked · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  166/200 done · 15 running · 13 queued · 3 blocked · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  166/203 done · 17 running · 13 queued · 4 blocked · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -297,8 +300,8 @@ Something could be acting on these right now.
     triage               #234 17 labels live on the repo and in no taxonomy, including the dispatch label (p3)
     shipped              PR239 feat(board): check the labels the code reads against the ones forge creates (p2)
 
-  E8 — Contracts: published package for the netscript UIs #38  [shipped]
-    [################] 8/8 done
+  E8 — Contracts: published package for the netscript UIs #38  [impl-eval]
+    [############----] 8/10 done · 1 running · 1 blocked
     shipped              #79 E8.1 — contracts: route, payload and event types
     shipped              #80 E8.2 — Snapshot and delta shapes designed for replay
     shipped              #81 E8.3 — Publish @rickylabs/harness-contracts to npm
@@ -307,6 +310,8 @@ Something could be acting on these right now.
     shipped              PR132 contracts: fold, reconnect and auth for the mux stream (E8.2)
     shipped              PR134 feat(contracts): reference cockpit binding shared by both surfaces
     shipped              PR135 feat(contracts): publish as @rickylabs/harness-contracts, with a checked release pipeline
+    impl-eval            #267 Release contracts v0.1.0: owner push of prepared tag (p0, waiting on owner)
+    ready-merge          PR268 docs: prepare contracts v0.1.0 release handoff
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
     [############----] 17/21 done · 4 running
@@ -335,6 +340,7 @@ Something could be acting on these right now.
   (no epic)
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
+    ready-merge          PR266 docs: record the locked three-layer architecture
 
 ## (no milestone)  [##############------]  40/54 done · 1 running · 2 queued · 1 blocked · 9 abandoned · 1 invisible
 
