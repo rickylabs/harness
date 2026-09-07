@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[###############-----]` **209/263 done · 16 running · 24 queued · 12 abandoned · 2 invisible**
+`[###############-----]` **209/264 done · 17 running · 24 queued · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-07T13:16:16Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T14:07:56Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (16)
+## Moving now (17)
 
 Something could be acting on these right now.
 
@@ -14,7 +14,7 @@ Something could be acting on these right now.
 | --- | --- | --- |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
-| [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
+| [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl-eval` | `e9` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
 | [#260 E6 — Publish checked run-steer semantics over sender ownership](https://github.com/rickylabs/harness/issues/260) | `research` | `e6` |
@@ -22,6 +22,7 @@ Something could be acting on these right now.
 | [#262 E9 — Specify projection revision, observation coverage and census authority](https://github.com/rickylabs/harness/issues/262) | `research` | `e9` |
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
 | [#265 E9 — Retain the board without false freshness across connection loss and restart](https://github.com/rickylabs/harness/issues/265) | `plan-eval` | `e9` |
+| [PR276 feat(telemetry): read live governance sources beside progress](https://github.com/rickylabs/harness/pull/276) | `impl-eval` | `e9` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -33,7 +34,7 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 169/209 done · 15 running · 21 queued · 3 abandoned · 1 invisible
+`[#########---]` 169/210 done · 16 running · 21 queued · 3 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -47,7 +48,7 @@ Something could be acting on these right now.
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 10/10 done | `shipped` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 17/21 done · 4 running | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 17/22 done · 5 running | `impl` |
 | _(no epic)_ | `[############]` 3/3 done | — |
 
 ### (no milestone)
@@ -99,9 +100,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  209/263 done · 16 running · 24 queued · 12 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  209/264 done · 17 running · 24 queued · 12 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [################----]  169/209 done · 15 running · 21 queued · 3 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [################----]  169/210 done · 16 running · 21 queued · 3 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -319,7 +320,7 @@ Something could be acting on these right now.
     shipped              PR268 docs: prepare contracts v0.1.0 release handoff
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
-    [############----] 17/21 done · 4 running
+    [############----] 17/22 done · 5 running
     shipped              #83 E9.1 — SessionTelemetrySink on every run, on both seams
     shipped              #84 E9.2 — Push over /api/remote.mux, never poll
     shipped              #85 E9.3 — The hierarchy view: milestone → epic → task → subagent
@@ -333,7 +334,7 @@ Something could be acting on these right now.
     shipped              PR129 feat(telemetry): read the observability log back and merge it into the backfill
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
-    impl                 #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
+    impl-eval            #205 fix(telemetry): surface live capacity and admission reasons beside progress (p1)
     shipped              PR216 feat(telemetry): display governance observations beside progress
     shipped              PR226 fix(telemetry): bound every title, and stop restating the item under it (p1)
     shipped              #240 the board cannot say "waiting on a human", so owner-gated work reads as running (p1)
@@ -341,6 +342,7 @@ Something could be acting on these right now.
     shipped              PR246 fix(telemetry): read the Claude store's subagent tree instead of assuming there isn't one (p1)
     research             #262 E9 — Specify projection revision, observation coverage and census authority (p1)
     plan-eval            #265 E9 — Retain the board without false freshness across connection loss and restart (p1)
+    impl-eval            PR276 feat(telemetry): read live governance sources beside progress (p1)
 
   (no epic)
     shipped              PR219 fix(board): say so when a column is a lie
