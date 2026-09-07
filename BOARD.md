@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **194/235 done · 11 running · 12 queued · 5 blocked · 12 abandoned · 1 invisible**
+`[################----]` **196/237 done · 11 running · 12 queued · 5 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T03:58:42Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T04:11:40Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (5)
 
@@ -27,8 +27,8 @@ Something could be acting on these right now.
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
-| [#245 E6.A — durable state store: one writer, a crash-safe checkpoint, and refusal on corruption](https://github.com/rickylabs/harness/issues/245) | `plan-eval` | `e6` |
-| [PR246 fix(telemetry): read the Claude store's subagent tree instead of assuming there isn't one](https://github.com/rickylabs/harness/pull/246) | `impl` | `e9` |
+| [#245 E6.A — durable state store: one writer, a crash-safe checkpoint, and refusal on corruption](https://github.com/rickylabs/harness/issues/245) | `impl` | `e6` |
+| [PR247 feat(durable-state--e6a): persist intents and checkpoints under one writer](https://github.com/rickylabs/harness/pull/247) | `impl` | `e6` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -36,19 +36,11 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (1)
-
-`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#246** — closed on GitHub but sits in impl; the issue wins, the column is stale
-
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[##########--]` 159/188 done · 10 running · 12 queued · 4 blocked · 3 abandoned
+`[##########--]` 160/189 done · 10 running · 12 queued · 4 blocked · 3 abandoned
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -58,20 +50,20 @@ Something could be acting on these right now.
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[########----]` 17/24 done · 5 running · 2 queued | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[###########-]` 12/13 done · 1 blocked | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[#-----------]` 1/7 done · 5 queued · 1 blocked | `triage` |
-| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 25/29 done · 2 running · 2 abandoned | `impl` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[##########--]` 25/30 done · 3 running · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 8/8 done | `shipped` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 16/19 done · 3 running | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 2 running | `impl` |
 | _(no epic)_ | `[############]` 2/2 done | — |
 
 ### (no milestone)
 
-`[########----]` 35/47 done · 1 running · 1 blocked · 9 abandoned · 1 invisible
+`[#########---]` 36/48 done · 1 running · 1 blocked · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
-| _(no epic)_ | `[########----]` 31/42 done · 1 blocked · 9 abandoned · 1 invisible | — |
+| _(no epic)_ | `[########----]` 32/43 done · 1 blocked · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
@@ -101,9 +93,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  194/235 done · 11 running · 12 queued · 5 blocked · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  196/237 done · 11 running · 12 queued · 5 blocked · 12 abandoned · 1 invisible
 
-## M1 — dsh coordinator foundation  [################----]  159/188 done · 10 running · 12 queued · 4 blocked · 3 abandoned
+## M1 — dsh coordinator foundation  [################----]  160/189 done · 10 running · 12 queued · 4 blocked · 3 abandoned
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -228,7 +220,7 @@ Something could be acting on these right now.
     shipped              PR173 docs(doctrine): ADR 0002 - the sandboxctl execution channel (proposed) (p1)
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
-    [#############---] 25/29 done · 2 running · 2 abandoned
+    [#############---] 25/30 done · 3 running · 2 abandoned
     shipped              #68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation
     shipped              #69 E6.2 — coordinator: the workflow definitions
     shipped              #70 E6.3 — Emit one dispatch payload in the /swarm wire format
@@ -257,7 +249,8 @@ Something could be acting on these right now.
     shipped              PR214 fix(board): publish the hierarchy through dsh projections and todos
     shipped              #218 `columns` and `status` hide the anomalies that `digest` renders — the two views a human actually runs (p1)
     shipped              PR236 feat(coordinator): make a citation refer to something (#203) (p2)
-    plan-eval            #245 E6.A — durable state store: one writer, a crash-safe checkpoint, and refusal on corruption (p1)
+    impl                 #245 E6.A — durable state store: one writer, a crash-safe checkpoint, and refusal on corruption (p1)
+    impl                 PR247 feat(durable-state--e6a): persist intents and checkpoints under one writer (draft, p1)
 
   E7 — Forge: GitHub bridge, Orchid absorption #37  [impl]
     [##############--] 23/26 done · 3 queued
@@ -300,7 +293,7 @@ Something could be acting on these right now.
     shipped              PR135 feat(contracts): publish as @rickylabs/harness-contracts, with a checked release pipeline
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
-    [#############---] 16/19 done · 3 running
+    [##############--] 17/19 done · 2 running
     shipped              #83 E9.1 — SessionTelemetrySink on every run, on both seams
     shipped              #84 E9.2 — Push over /api/remote.mux, never poll
     shipped              #85 E9.3 — The hierarchy view: milestone → epic → task → subagent
@@ -319,13 +312,13 @@ Something could be acting on these right now.
     shipped              PR226 fix(telemetry): bound every title, and stop restating the item under it (p1)
     shipped              #240 the board cannot say "waiting on a human", so owner-gated work reads as running (p1)
     shipped              PR241 feat(board): let the board say a person is holding the work (p1)
-    impl                 PR246 fix(telemetry): read the Claude store's subagent tree instead of assuming there isn't one (p1)
+    shipped              PR246 fix(telemetry): read the Claude store's subagent tree instead of assuming there isn't one (p1)
 
   (no epic)
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [##############------]  35/47 done · 1 running · 1 blocked · 9 abandoned · 1 invisible
+## (no milestone)  [###############-----]  36/48 done · 1 running · 1 blocked · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -378,6 +371,7 @@ Something could be acting on these right now.
     no status            #201 E10 - Documentation and the public front door
     triage               #237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way (p2, waiting on owner)
     shipped              PR242 docs(board): a half-gated item is not an owner-gated one
+    shipped              PR248 fix(telemetry): a dispatch the provider refused is not a run
 ```
 
 </details>
