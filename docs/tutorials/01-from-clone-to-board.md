@@ -70,7 +70,9 @@ itself prove installation failed. (Owner testing recorded on
 tests under Node 22.20.0 after an engine warning, but that is a version-specific historical observation
 rather than a supported baseline or guarantee.) If `pnpm install` fails with an engine error, check
 `node --version`. A failure in `pnpm run build` that names `check:docs` means a CLI changed without its
-generated reference page being regenerated; run `pnpm run docs:cli` and commit the result. A test
+generated reference page being regenerated; run `pnpm run docs:cli` and commit the result. One that
+names `check:tutorial` means an output block on *this* page no longer matches what the command
+prints — the check names the file, the line and the first differing line. A test
 failure on a clean clone is a real bug, and worth an issue.
 
 ## Step 2 — Install the board process into your repository
@@ -238,6 +240,7 @@ node packages/board/dist/cli.js check --repo owner/scratch
 On a healthy board that is one line and exit `0`:
 
 *(Illustrative output — source-derived; unexecuted against a live GitHub repository)*
+<!-- verify: none - writes to and reads from a live GitHub repository -->
 ```text
 no anomalies — every item has exactly one status label
 ```
@@ -246,6 +249,7 @@ no anomalies — every item has exactly one status label
 common ones read like this:
 
 *(Illustrative output — source-derived; unexecuted)*
+<!-- verify: none - a synthetic contradiction a healthy board never produces -->
 ```text
 ## closed-but-unshipped
   #46: closed on GitHub but sits in ready-merge; the issue wins, the column is stale
@@ -264,17 +268,21 @@ Steps 2 and 3 used the CLIs directly. The same code also loads into `dsh` as plu
 profile is what registers them.
 
 > [!NOTE]
-> **Output evidence, runtime, and normalization.** Output blocks in steps 4 and 5 fall into two
-> categories:
-> 1. **Executed transcripts (normalized)**: Tested on Linux, Node 26.8.1, and pnpm 11.25.0 at commit
->    `7f6aed8` (the repository CI and recommended baseline is Node 24). Machine-specific paths are
->    normalized using deliberate display placeholders: `/tmp/dsh-home` represents `$PROFILE_HOME`,
->    `/tmp/tel-home` represents `$TELEMETRY_HOME`, and `/path/to/harness` represents the absolute
->    checkout path. These are display placeholders, not the actual temporary paths used during
->    execution. Excerpts are explicitly identified, and trailing line whitespace or terminal blank
->    lines are trimmed for Markdown formatting.
-> 2. **Illustrative output (unexecuted)**: Derived from source contracts rather than executed in this
->    verification (such as live GitHub responses or synthetic failure messages).
+> **Which output blocks are checked.** Every output block on this page carries a machine-readable
+> `verify:` directive in an HTML comment above it, and `pnpm run check:tutorial` — part of
+> `pnpm run build` — reads all of them. So each block is one of two things, and which one is never a
+> matter of trust:
+> 1. **Executed transcripts (normalized).** Re-run on every build and compared against what the
+>    command above actually prints. Machine-specific paths are normalized to display placeholders
+>    first: `/tmp/dsh-home` stands for `$PROFILE_HOME`, `/tmp/tel-home` for `$TELEMETRY_HOME`, and
+>    `/path/to/harness` for your checkout path — none of which are the real temporary paths. Where a
+>    block shows only part of a long output it is marked as an excerpt, and the check requires those
+>    lines to appear together and in order rather than to be the whole of it. Trailing whitespace and
+>    terminal blank lines are trimmed on both sides of the comparison.
+> 2. **Illustrative output (unexecuted).** Derived from source contracts rather than run here: live
+>    GitHub responses, and the synthetic failures a healthy run never produces. The check prints this
+>    list with its reasons on every run, so the boundary between what is proved and what is trusted
+>    is something you can read rather than assume.
 
 Create a unique temporary profile home directory with `mktemp -d` so nothing touches your real one:
 
@@ -284,6 +292,7 @@ node packages/dsh-app/dist/cli.js install --home "$PROFILE_HOME"
 ```
 
 *(Executed transcript — normalized; see note above)*
+<!-- verify: exact -->
 ```text
 profile   rickylabs
 surface   tui
@@ -312,6 +321,7 @@ The output is long — it is the entire plugin graph. The part you are looking f
 bottom, after the whole base bundle (excerpted below to show only the appended bundle rows):
 
 *(Executed excerpt — normalized, base bundle omitted; see note above)*
+<!-- verify: contains -->
 ```text
 # == @rickylabs/dsh-app
 - id: harness-subagents
@@ -376,6 +386,7 @@ printf '%s\n' \
 ```
 
 *(Executed transcript — normalized; see note above)*
+<!-- verify: exact -->
 ```text
 recorded 2 event(s) to /tmp/tel-home/observability/dsh-telemetry.jsonl
 ```
@@ -398,6 +409,7 @@ env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u 
 ```
 
 *(Executed transcript — normalized, terminal blank lines omitted; see note above)*
+<!-- verify: exact -->
 ```text
 demo-1 (claude, complete) — look here, in this order:
 
@@ -420,6 +432,7 @@ rm -rf "$PROFILE_HOME" "$TELEMETRY_HOME"
 exactly which part is missing. Two are worth recognising, because you will hit both:
 
 *(Illustrative output — source-derived; unexecuted)*
+<!-- verify: none - an exit-3 path that needs a second machine's store -->
 ```text
   claude: no store on this box — nothing has run here
   live log: 1 run(s) named no seam and were left out — add "source" to the event
