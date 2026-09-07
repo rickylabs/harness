@@ -173,9 +173,11 @@ pnpm run build
 it. Two of them guard documents: every generated CLI reference page is
 byte-compared against its binary, and every relative link and anchor is
 resolved. What they check is exactly what they check — generated pages and
-links, not hand-written prose ([#212](docs/README.md#the-rule-these-docs-are-held-to)
-is the standing counter-example, and the reason this README pastes almost no
-command output).
+links, not hand-written prose. Pasted output in prose is checked by nobody —
+[#212](https://github.com/rickylabs/harness/issues/212) is the standing
+counter-example, and the reason this README pastes almost none. The rule the
+gap is measured against lives on the
+[docs index](docs/README.md#the-rule-these-docs-are-held-to).
 
 Then the first proof. It needs nothing but the build — no network, no
 credentials, no home directory:
