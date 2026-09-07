@@ -2,12 +2,13 @@
 
 ## Resume here
 
-Stage G passed and the bounded #195 implementation is complete in the working tree for draft PR
-#238. It adds a pure provider/model/effort/cwd gate in `subagents`, optional typed evidence plus
-`isRouteVerified`, and Codex thread/start plus pre-turn orchestration behind an injected initialized
-raw-response port. It does not implement a provider or transport. Focused tests, workspace
-typecheck, and build pass. The next gate is the implementation commit followed by the coordinator's
-independent exact-head GLM 5.3 Flash review and CI; no implementation-review verdict exists yet.
+The #195 implementation is committed and independently reviewed PASS at
+`febfef79f62114323c2f81dd830e7325b77ce7d2`. It adds a pure four-field route gate, optional typed
+DispatchResult evidence, and a callable Codex pre-turn protocol helper. Focused tests, workspace
+typecheck and CI passed. Route code stayed identical through rebase onto main including #239;
+the updated-base build also passed. The root README finding was corrected in `b1aaeb94c1accfd202247513eae0c2dbc9b1d86f`.
+The final receipt head requires a last exact-head attestation and CI before merge. Consult PR #238
+and issue #195 for terminal receipts; this context pack records the pre-merge handoff.
 
 ## Fixed contract
 
@@ -29,7 +30,7 @@ independent exact-head GLM 5.3 Flash review and CI; no implementation-review ver
 
 ## Honest boundary
 
-`provider-codex` is a stub (`packages/provider-codex/README.md:6`). #53 owns attach-only transport,
+`provider-codex` ships the protocol prerequisite only (`packages/provider-codex/README.md:5`). #53 owns attach-only transport,
 initialization, live binding, reconnection, and eventual durable evidence integration. The #195
 slice makes the gate callable and unit-tested; it does not prove production deployment. Current
 telemetry returns `DispatchResult` intact but persists only clipped detail, so structured durability
@@ -43,7 +44,7 @@ is also a later integration gate (`packages/dsh-app/src/instrument.ts:223`).
 - Matrix pin: `8ba53bc50ca02aab29e99ba5362728839b8f1713`
 - Coordinator: Astra medium; author: Sol medium; fallback: none.
 - Plan evaluator: Opus 5 medium, independent.
-- Intended implementer: Sol medium; implementation reviewer: GLM 5.3 Flash provider default.
+- Implementer: Sol medium; implementation reviewer: GLM 5.3 Flash provider default via opencode-go.
 - Stage G: `PASS` after binding amendments; evaluator Opus 5 medium session
   `0570aa7e-058e-4e5e-91e7-a0acf6d02745`.
 - Stage H: Sol medium implementation; draft PR #238; no fallback.
@@ -62,8 +63,10 @@ is also a later integration gate (`packages/dsh-app/src/instrument.ts:223`).
 
 ## Outstanding gates
 
-1. Commit the green manifest with the required co-author trailer and report exact HEAD.
-2. Obtain independent implementation review at exact HEAD.
-3. Let coordinator/CI run the full suite and PR gates.
-4. Report the prerequisite as callable/tested, never as live or deployed; #53 remains the transport
-   and production integration gate.
+1. Obtain final-head attestation and CI after the receipt/documentation commit.
+2. Merge PR #238, mark #195/#238 shipped, check board zero anomalies, retain actual merge SHA on the PR.
+3. Keep #53 transport/composition/vocabulary/version/durability/live gates explicitly unverified.
+
+## Independent review and terminal evidence
+
+Implementation review is PASS at `febfef79f62114323c2f81dd830e7325b77ce7d2`; see `implementation-review.md` and `implementation-eval.md`. Root README correction is committed as `b1aaeb94c1accfd202247513eae0c2dbc9b1d86f`; the updated-base build passed. No route code changed after the review. The final exact-head attestation, CI and merge/closeout receipts belong to the live [PR #238](https://github.com/rickylabs/harness/pull/238) and [issue #195](https://github.com/rickylabs/harness/issues/195), which are the terminal source of truth. This file captures the pre-merge handoff, not an unverified claim that a merge already occurred. #53 and #237 remain outside this leaf's completion claim.
