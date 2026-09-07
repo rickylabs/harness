@@ -49,7 +49,7 @@ pnpm test
 
 Each package prints its own totals — a `pass` line and a `fail` line per
 package, prefixed with its path, like `packages/dsh-app test: … pass …`.
-The counts grow as the project does. The number that matters is `# fail 0`,
+The counts grow as the project does. The number that matters is `fail 0`,
 on every package, and `pnpm test` exiting `0`.
 
 **If it fails.** A failure in `pnpm install` about the Node version means you are below 24 — check
@@ -59,8 +59,9 @@ test failure on a clean clone is a real bug, and worth an issue.
 
 ## Step 2 — Install the board process into your repository
 
-The tools reach GitHub through `gh`, and they write *files* into a checkout.
-Both facts decide how you invoke them here.
+This step's tools do two different things: they read and write GitHub, and
+they write *files* into a checkout. Both facts decide how you invoke them
+here.
 
 A warning first, because it is the one way to lose work in this step: the
 `--cwd` flag decides which checkout gets the files, and it defaults to the
@@ -73,7 +74,7 @@ clone, with its binaries, and **every one passes `--cwd ../scratch`
 explicitly** — the scratch clone you made before you started. The generated
 files belong in the scratch checkout, where you can review and commit them.
 
-The tools reach GitHub through `gh`. Ask them what they can see first:
+Ask them what they can see first:
 
 ```bash
 node packages/forge/dist/cli.js doctor --repo owner/scratch --cwd ../scratch
@@ -113,10 +114,49 @@ them there, in the usual way. `init` **never deletes a label** — deleting one 
 the record of everything that ever carried it. Where the file and the live repository disagree,
 `init` reports the conflict and exits `1` rather than guessing which is right.
 
-**If it fails.** Exit `3` means no usable transport: `gh` is missing, not authenticated, or GitHub
-is unreachable — `gh auth status` tells you which. Exit `1` is not a crash; it is drift, and the
-output names each conflicting label. A conflict on a fresh scratch repository usually means the
-repository was not as empty as you thought.
+One trap to know before you trust the exit code: `init` exits `0` when it
+wrote the local files, even if the GitHub half of its work was skipped or
+failed — with no usable transport it says `skipped apply` and still exits
+`0`, and a label that GitHub refuses is reported and then swallowed the same
+way. Exit `0` from `init` means *the files were written*; it does not mean
+the labels exist on GitHub. Three readbacks close that gap, in increasing
+strength. The first is local file review — the files really are in the
+scratch checkout:
+
+```bash
+git -C ../scratch status --short
+```
+
+which should show `.github/` and `.claude/` as new. That confirms what `init`
+wrote locally and nothing more. The other two read GitHub, so they need the
+transport — and neither has been executed by this tutorial's author; they are
+instructions, not receipts. First a raw readback: list what GitHub actually
+has, and compare it against the ejected file yourself:
+
+```bash
+gh label list --repo owner/scratch --limit 100
+```
+
+Then the strict comparison — the ejected file against the live repository,
+naming every drift:
+
+```bash
+node packages/forge/dist/cli.js labels check --repo owner/scratch --cwd ../scratch
+```
+
+On a repository where `init` fully succeeded, that prints `nothing to do —
+the repository already carries this taxonomy` and exits `0`. **If either
+GitHub command fails or shows missing labels, stop there and fix the cause
+before continuing** — later steps only make sense if the labels are real.
+
+**If it fails.** `labels check` — and `labels plan` and `labels apply` — are the commands that
+exit `3` with no usable transport: `gh` is missing, not authenticated, or GitHub is unreachable —
+`gh auth status` tells you which. `labels check` also exits non-zero when the live repository and
+the ejected file disagree, naming each drifted label; on a fresh scratch repository that usually
+means the apply never actually landed, and re-running `init` resumes it — it never deletes a
+label, so re-running is safe. `doctor` and `init` do not exit `3`: `doctor` reports what it could
+see and exits `0`, and `init`'s exit code says nothing about GitHub, which is exactly why the
+readbacks above exist.
 
 ## Step 3 — File something, move it, and watch the column change
 
@@ -286,8 +326,8 @@ Read it back:
 node packages/telemetry/dist/cli.js runs --home /tmp/tel-home
 ```
 
-One line, newest first: the finish time, the seam (`source`), the outcome, and the model, padded
-into columns — trailing spaces included, so compare content rather than bytes.
+One line, newest first: the finish time, the seam (`source`), the outcome, and the model,
+padded into columns.
 
 And ask what you would open first if that run had gone wrong:
 
