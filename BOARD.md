@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **191/231 done · 10 running · 13 queued · 4 blocked · 12 abandoned · 1 invisible**
+`[################----]` **192/231 done · 9 running · 13 queued · 4 blocked · 12 abandoned · 1 invisible**
 
-_Latest board activity: 2026-09-07T03:00:04Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T03:00:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (4)
 
@@ -17,7 +17,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#62 E5.1 — DECISION: the sandboxctl execution channel (blocks this epic)](https://github.com/rickylabs/harness/issues/62) | `plan-eval` | `e5` |
 | [#181 routing: the complex tier has no reviewer for anthropic-authored work (owner decision)](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
 
-## Moving now (10)
+## Moving now (9)
 
 Something could be acting on these right now.
 
@@ -32,15 +32,10 @@ Something could be acting on these right now.
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
-| [PR242 docs(board): a half-gated item is not an owner-gated one](https://github.com/rickylabs/harness/pull/242) | `impl-eval` | — |
 
-## Anomalies (2)
+## Anomalies (1)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#242** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
@@ -68,13 +63,13 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 35/48 done · 2 running · 1 blocked · 9 abandoned · 1 invisible
+`[#########---]` 36/48 done · 1 running · 1 blocked · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[############]` 1/1 done | `impl` |
-| _(no epic)_ | `[########----]` 30/42 done · 1 running · 1 blocked · 9 abandoned · 1 invisible | — |
+| _(no epic)_ | `[########----]` 31/42 done · 1 blocked · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
@@ -105,7 +100,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  191/231 done · 10 running · 13 queued · 4 blocked · 12 abandoned · 1 invisible
+# rickylabs/harness  [################----]  192/231 done · 9 running · 13 queued · 4 blocked · 12 abandoned · 1 invisible
 
 ## M1 — dsh coordinator foundation  [#################---]  156/183 done · 8 running · 13 queued · 3 blocked · 3 abandoned
 
@@ -324,7 +319,7 @@ Something could be acting on these right now.
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
 
-## (no milestone)  [##############------]  35/48 done · 2 running · 1 blocked · 9 abandoned · 1 invisible
+## (no milestone)  [###############-----]  36/48 done · 1 running · 1 blocked · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -380,7 +375,7 @@ Something could be acting on these right now.
     shipped              PR190 docs: correct every claim the repository going public made false (p0)
     no status            #201 E10 - Documentation and the public front door
     triage               #237 the private-consumer names are scrubbed from docs but still public on #30 — decide which way (p2, waiting on owner)
-    impl-eval            PR242 docs(board): a half-gated item is not an owner-gated one
+    shipped              PR242 docs(board): a half-gated item is not an owner-gated one
 ```
 
 </details>
