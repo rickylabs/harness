@@ -12,7 +12,7 @@
  * - No colour, no cursor control. This gets pasted into issues and read over ssh.
  */
 
-import type { Liveness } from "./liveness.js";
+import type { LivenessVerdict } from "./liveness.js";
 import {
   sumUsage,
   type AttributedRun,
@@ -285,7 +285,7 @@ export function renderItemState(item: BoardItemRef): string {
  * reader who cannot tell them apart cannot weigh the answer: `live (turn, 2m ago)` is an agent
  * working, `live (item, 2m ago)` may be nothing but a label somebody just changed.
  */
-export function renderLiveness(state: Liveness, now: string): string {
+export function renderLiveness(state: LivenessVerdict, now: string): string {
   if (state.at === null) return `${state.state} (nothing recorded)`;
   return `${state.state} (${state.evidence}, ${humanAge(state.at, now)} ago)`;
 }

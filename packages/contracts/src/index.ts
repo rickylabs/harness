@@ -109,7 +109,7 @@ export {
   type IssueLink,
   type LivenessState,
   type LivenessEvidence,
-  type Liveness,
+  type LivenessVerdict,
   type RunView,
   type RunViewField,
 } from "./runs.js";

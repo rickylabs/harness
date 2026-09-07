@@ -136,7 +136,12 @@ export type LivenessState = (typeof LIVENESS_STATES)[number];
 export const LIVENESS_EVIDENCE = ["turn", "item", "none"] as const;
 export type LivenessEvidence = (typeof LIVENESS_EVIDENCE)[number];
 
-export interface Liveness {
+/**
+ * The wire form of the verdict. Mirrors `@rickylabs/telemetry`'s `LivenessVerdict`, the way
+ * `LivenessState` and `LivenessEvidence` above mirror theirs — one concept, published once and
+ * implemented once, which is a different thing from two concepts wearing one name. See #206.
+ */
+export interface LivenessVerdict {
   readonly state: LivenessState;
   readonly evidence: LivenessEvidence;
   /** When the evidence was produced, or `null` when there is none. */
@@ -167,7 +172,7 @@ export interface RunView {
   readonly item: number | null;
   /** Everything the evidence linked, each with the class of evidence that linked it. */
   readonly linkedIssues: readonly IssueLink[];
-  readonly liveness: Liveness;
+  readonly liveness: LivenessVerdict;
   /** The meter reading nearest this run, when the source reports one. */
   readonly quota: QuotaReading | null;
 }

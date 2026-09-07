@@ -13,7 +13,7 @@ import { describe, it } from "node:test";
 import type {
   DispatchRequest,
   DispatchResult,
-  Liveness,
+  RunLiveness,
   Observation,
   ProviderCapabilities,
   RunRef,
@@ -195,7 +195,7 @@ describe("which seam a run is billed to", () => {
 describe("observation, which is a poll and not an event", () => {
   it("writes when the liveness changed and stays quiet when it did not", async () => {
     const sink = createMemorySink();
-    let liveness: Liveness = "queued";
+    let liveness: RunLiveness = "queued";
     const wrapped = instrumentProvider(
       stub({
         async observe(run) {
@@ -392,7 +392,7 @@ describe("the mark that makes the refusal mean something", () => {
 });
 
 describe("what the observation memory costs", () => {
-  const pollable = (liveness: () => Liveness): SubagentProvider =>
+  const pollable = (liveness: () => RunLiveness): SubagentProvider =>
     stub({
       async observe(run) {
         return { run, liveness: liveness(), observedAt: AT, detail: "", artifacts: [] };
