@@ -271,3 +271,19 @@ that dangles is worse than no map at all.
 - `run.removed`. The union has `task.removed` and no counterpart for runs, so a run that vanishes
   from the coordinator's view can only be communicated by a snapshot. That is a protocol gap, not an
   export gap: closing it is a `PROTOCOL_VERSION` bump, and therefore a major here.
+
+## Coordinator storage port
+
+[`state-store.ts`](src/state-store.ts) owns the durable coordinator store interfaces, full intent
+identity, terminal effect statuses and named refusals. The coordinator imports these types; this
+published package still has no dependency on private coordinator code. Constructors, validators,
+the local filesystem implementation and the memory fake live in `coordinator`.
+
+This is an internal storage boundary, not a cockpit event or mux projection. Owner PID and opaque
+start/host identity are local ownership metadata and are not added to transport frames or snapshots.
+The contract carries no storage directory path or effect prompt.
+
+`SessionPending` is distinct from terminal `EffectStatus`. Only pending can be supplied to receipt
+settlement. `unknown` is terminal and cannot become `unsent`; the latter requires a branded proof
+constructed from a validated negative receipt. Callers await durable intent success before attempting
+an effect and durable receipt success before acknowledging it. No result grants retry authority.

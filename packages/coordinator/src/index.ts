@@ -7,7 +7,7 @@
  * review, land — passes through gates, and a workflow engine whose gates are advisory is an
  * automation engine wearing a governance hat.
  *
- * The package deliberately depends on nothing else in this workspace. The board projects GitHub,
+ * The package imports only the published contracts types from this workspace. The board projects GitHub,
  * telemetry says what ran, and the coordinator decides; the two places those meet are a JSON roster
  * coming in and a telemetry event going out, both of them structural shapes rather than imports.
  * That is what lets the gate run in CI with no credentials and no network, which is exactly when
@@ -187,3 +187,8 @@ export {
   type Run,
   type WorktreeFact,
 } from "./worktree.js";
+
+export { intentEntryOf, receiptEntryOf, proofFromReceipt } from "./journal.js";
+export { foldStore, settlePending, orphanPending, checkpointOf, genesisOf, readStoreRecord } from "./state-store.js";
+export { FileStateStore, type FileStateStoreOptions, type StoreIOPoint } from "./state-store-fs.js";
+export { MemoryStateStore } from "./state-store-memory.js";

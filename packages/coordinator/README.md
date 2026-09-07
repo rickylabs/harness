@@ -24,10 +24,11 @@ behind them.
 ## What it is for
 
 `board` says what the state of the work is. `telemetry` says what ran. This package decides — and
-the reason it is a separate package with no workspace dependencies is that deciding must keep
-working when the other two cannot run.
+its only workspace dependency is the published contracts types. Deciding must keep working when
+the other two cannot run.
 
-It reads JSON on stdin and writes JSON or prose on stdout. No credentials, no network, no clock.
+The CLI reads JSON on stdin and writes JSON or prose on stdout. Its pure decision functions need
+no credentials, network or clock.
 That is what lets the gate run inside CI, on a laptop, and inside a container with no GitHub token,
 which is precisely the set of situations where skipping the gate is most tempting and least visible.
 
@@ -159,9 +160,8 @@ list, never a longer one.
 
 - **It does not perform steps.** Deciding what may run and doing it are kept apart, and that
   separation is what makes the deciding replayable at all. Performing is the daemon's job (E7 · #37).
-- **It does not import another workspace package.** The two places it meets the rest of the system
-  are a JSON roster coming in and a telemetry event going out — structural shapes, not imports. That
-  is why the gate is affordable to run everywhere.
+- **Its workspace dependency is type-only.** The durable store port lives in published `contracts`;
+  the gate still consumes a JSON roster and emits a telemetry event without runtime package imports.
 - **It does not resolve owner forks.** It names them so they can be routed to the issue bridge.
 - **It does not know what a model is.** Model ids, families, effort tiers and availability are
   `routing`'s, and arrive as roster fields.
@@ -183,3 +183,48 @@ supplied by whoever runs the command. `worktrees` is not yet called on a schedul
 a command someone runs rather than a guard that stands. `normalizePath` is POSIX-only by design,
 which is correct for the N5 and wrong for a Windows worktree. Each of those is tracked against
 E6 · [#36](https://github.com/rickylabs/harness/issues/36).
+
+## Durable effect state
+
+`FileStateStore` implements the published `StateStore` port for one repository/milestone in one
+configured directory. `MemoryStateStore` implements the same port for consumer tests, with an
+explicit simulated crash. Neither is wired into the planner, a dispatcher or a provider.
+
+Supply an existing directory and an injected clock to the filesystem constructor. It resolves the
+directory once. All processes coordinating a repository/milestone must use that same directory;
+independent copies are independent stores. The claim also binds the scope, so opening that directory
+for another scope refuses. This is a local, single-host reference implementation; shared/network
+volumes and multi-host ownership are unsupported, and it makes no global ownership claim.
+
+`open()` contests one immutable successor claim. A second writer refuses with the holder identity;
+a dead but unclosed holder produces `stale-lock`. Only `recover(expectedHolder)` can advance from
+that condition, after checking identity and observing PID death itself. A PID that has been reused
+can conservatively block recovery. There are no leases, timeout steals, force flags or permanent
+claim deletions. Adapter-generated PID/start/host identity belongs to local storage metadata, not
+intent evidence or cockpit projection.
+
+A newly created store is uninitialised until `initialize()` writes genesis. Reopening existing
+history does not require another initialization. Await a successful `intent(key)`
+before attempting an effect, and await a successful `receipt(pending, delivery)` before acknowledging
+it. This ordering records evidence; it does not authorize retrying anything. `read()` returns terminal
+`sent`, proven `unsent`, or `unknown`, separately from pending intents in the current session. Recovery
+replays all receipts beyond the checkpoint cut before making unresolved old intents terminal unknown.
+Unknown has no receipt or retry transition, including after another checkpoint and reopen.
+
+The implementation is in [`state-store-fs.ts`](src/state-store-fs.ts), and the pure fold and strict
+validators are in [`state-store.ts`](src/state-store.ts). It publishes complete, synced candidates by
+hard link for numbered entries and ownership claims. Checkpoints use a same-directory candidate,
+file sync, rename, then directory sync. Any post-publication uncertainty poisons the handle. `close()`
+drains earlier calls and seals the handle before publishing a clean marker; a poisoned close never
+publishes that marker. Further acquisition then requires actual process death and explicit recovery.
+
+All claims and entries are retained. Every authoritative record is version/schema/digest checked;
+missing history, malformed data and inconsistent generations refuse. There is no truncation, repair,
+compaction or start-empty fallback. `cand.*` files are unpublished debris and ignored. The strict
+reader does not use the older diagnostic journal reader's tolerant malformed-line policy.
+
+The real-child suite in [`state-store-crash.test.ts`](src/state-store-crash.test.ts) uses IPC to reach
+each boundary, then asserts a SIGKILL exit and reopens through explicit recovery. These tests prove
+local process-crash behavior, not power-loss, hardware-cache or production filesystem flush behavior.
+Production store selection, runtime wiring, dispatch and external reconciliation remain #191's
+integration work and owner decisions F1/F2.

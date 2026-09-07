@@ -20,6 +20,7 @@
  * the fastest way to teach everybody to ignore it.
  */
 
+import type { IntentKey, IntentEntry, SessionPending, DeliveryReceipt, ReceiptEntry, StoreResult, NonDeliveryProof } from "@rickylabs/harness-contracts";
 import { canonicalJson, differences, digest } from "./canonical.js";
 
 export interface PersistedDecision {
@@ -215,4 +216,57 @@ export function compareJournals(
     changes,
     unexplained: changes.filter((c) => c.kind === "unexplained").length,
   };
+}
+
+/** Durable effect evidence shares the decision journal's semantic digests, not its tolerant reader. */
+export function intentEntryOf(
+  key: IntentKey,
+  sequence: number,
+  generation: number,
+  at: string,
+): IntentEntry {
+  const detached = structuredClone(key);
+  const body = { version: 1 as const, kind: "intent" as const, sequence, generation, key: detached,
+    inputDigest: digest(detached), outputDigest: digest({ kind: "intent" }) };
+  return { ...body, at, digest: digest(body) };
+}
+
+export function receiptEntryOf(
+  pending: SessionPending,
+  receipt: DeliveryReceipt,
+  sequence: number,
+  at: string,
+): ReceiptEntry {
+  const body = { version: 1 as const, kind: "receipt" as const, sequence, generation: pending.generation,
+    key: structuredClone(pending.key), intentSequence: pending.sinceEntry, receipt: structuredClone(receipt),
+    inputDigest: digest({ key: pending.key, intentSequence: pending.sinceEntry }), outputDigest: digest(receipt) };
+  return { ...body, at, digest: digest(body) };
+}
+
+/** Only negative, integrity-checked receipts can supply the branded non-delivery evidence. */
+export function proofFromReceipt(
+  entry: ReceiptEntry & { readonly receipt: { readonly delivered: false; readonly reason: string } },
+): StoreResult<NonDeliveryProof> {
+  try {
+    const { at: _at, digest: stored, ...body } = entry;
+    const k = entry.key;
+    const keyFields = ["attempt", "inputRevision", "repository", "task", "workflowStep"];
+    if (entry.version !== 1 || entry.kind !== "receipt" || entry.receipt.delivered !== false ||
+        typeof entry.at !== "string" || !entry.at.trim() ||
+        !Number.isSafeInteger(entry.sequence) || !Number.isSafeInteger(entry.intentSequence) ||
+        entry.intentSequence < 1 || entry.sequence <= entry.intentSequence ||
+        !Number.isSafeInteger(entry.generation) || entry.generation < 1 ||
+        canonicalJson(Object.keys(k).sort()) !== canonicalJson(keyFields) ||
+        ![k.repository, k.task, k.workflowStep, k.inputRevision].every(v => typeof v === "string" && v.trim().length > 0) ||
+        !Number.isSafeInteger(k.attempt) || k.attempt < 1 ||
+        typeof entry.receipt.reason !== "string" || !entry.receipt.reason.trim() ||
+        canonicalJson(Object.keys(entry.receipt).sort()) !== canonicalJson(["delivered", "reason"]) ||
+        digest(body) !== stored ||
+        canonicalJson(entry) !== canonicalJson(receiptEntryOf({ status: "pending", key: k,
+          generation: entry.generation, sinceEntry: entry.intentSequence }, entry.receipt, entry.sequence, entry.at))) {
+      return { ok: false, refusal: { kind: "invalid-input" } };
+    }
+    return { ok: true, value: { receiptSequence: entry.sequence, receiptDigest: entry.digest,
+      reason: entry.receipt.reason } as NonDeliveryProof };
+  } catch { return { ok: false, refusal: { kind: "invalid-input" } }; }
 }

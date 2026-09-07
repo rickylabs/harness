@@ -96,9 +96,11 @@ The loop, arrow by arrow:
 **What this repository supplies, and what it does not.** Harness is the
 deterministic decisions and services in that diagram: the projection, the
 gates, the seam contracts, the record and the replay. It does not by itself
-supply a continuously running, fully wired dispatcher — nothing here
-schedules these services or writes the coordinator's state file yet; a
-durable loop is an open lane, not a shipped one. `dsh-board` only reads and
+supply a continuously running, fully wired dispatcher. The coordinator has a
+local store for durable effect intents, receipts and checkpoints, with explicit
+recovery after a writer dies. Nothing schedules these services or produces the
+planner CLI's state input yet; the durable orchestration loop remains open
+([#191](https://github.com/rickylabs/harness/issues/191)). `dsh-board` only reads and
 projects GitHub; every terminal view flags a board that contradicts itself,
 and its check names the detail. `dsh-forge` is the separate, explicit
 mutation boundary, scoped to label and process setup, with named create/update calls

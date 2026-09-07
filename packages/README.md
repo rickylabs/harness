@@ -66,3 +66,8 @@ without either depending on the other.
 
 Adding a package: copy any stub directory, rename, add it to the root `tsconfig.json`
 `references` list, and (if the app composes it) to `dsh-app`'s dependencies and references.
+
+`coordinator` has a type-only dependency on published `contracts` for its durable state-store port.
+The filesystem reference driver and memory fake live in `coordinator`; neither adds a runtime import
+from the published contract back into a private workspace package. See the
+[coordinator storage boundary](coordinator/README.md#durable-effect-state) for lifecycle and limits.
