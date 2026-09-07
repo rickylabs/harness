@@ -32,7 +32,7 @@ Node 24 or newer and [pnpm](https://pnpm.io) 11. The pnpm version is pinned by `
 the root `package.json`, and CI reads that same line rather than pinning a second one — so upgrading
 pnpm is a one-line change, not a two-file dance.
 
-`build` is not only a compile. It runs eight repository-wide checks around the per-package builds,
+`build` is not only a compile. It runs nine repository-wide checks around the per-package builds,
 in this order:
 
 | Check | What it refuses to let through |
@@ -43,22 +43,27 @@ in this order:
 | `check:forms` | an issue form that does not parse, or that applies a label the taxonomy does not declare |
 | `check:snapshots` | a committed allowance snapshot — a quota, a spend balance, a serialised probe |
 | `check:publish` | the publishable package not publishing what it claims to |
+| `check:label-registry` | a label the board branches on that `dsh-forge init` would never create |
 | `check:docs` | a generated CLI reference page that no longer matches its binary |
 | `check:skill` | a committed `SKILL.md` that is not what the generator would write today |
 
 Each one exists because the failure it catches is silent. None of them are optional, and running
-`pnpm -r run build` directly skips all eight.
+`pnpm -r run build` directly skips all nine.
 
 The first five need nothing but the tree, so they run before the compile and a docs-only change
-fails in seconds. The last three read `dist/`, so they run after it.
+fails in seconds. The last four read `dist/`, so they run after it.
 
-Three notes on what these checks deliberately do *not* do. `check:links` never fetches an external
+Four notes on what these checks deliberately do *not* do. `check:links` never fetches an external
 URL — a link check that goes over the network fails when someone else's server is down, and a gate
 that fails for a reason unrelated to the change under review teaches people to skip the gate.
 `check:forms` reads `.github/labels.yml` rather than asking GitHub, so it needs no token and runs in
 the same CI job as everything else. `check:snapshots` reads only tracked `.json` and `.yaml`, never
 prose: the docs discuss quotas and allowances at length and must keep being able to, because a
-paragraph explaining why a quota is not committable is not a committed quota.
+paragraph explaining why a quota is not committable is not a committed quota. And
+`check:label-registry` reads only labels the code branches on — declared in
+`packages/board/src/labels.ts` — not every label the taxonomy defines. Whether a label nobody reads
+should still exist is a curation question with a legitimate answer either way, and folding it in
+here would give people a reason to argue with the half that is not a judgement call.
 
 ### One check that is not a gate
 

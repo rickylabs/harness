@@ -13,6 +13,12 @@
  */
 
 import { closingKeywordTargets } from "./closing.js";
+import {
+  DEFAULT_LANE_PREFIX,
+  DEFAULT_PRIORITY_ORDER,
+  EPIC_LABEL,
+  SINGLE_VALUE_FAMILIES,
+} from "./labels.js";
 import { DEFAULT_LIFECYCLE, phaseOf, statusLabelsOf, unknownStatusLabels } from "./lifecycle.js";
 import type { Lifecycle } from "./lifecycle.js";
 import { labelValue, labelValues, sourceSaysDelivered } from "./model.js";
@@ -44,24 +50,6 @@ export interface ProjectOptions {
    */
   readonly completeness?: Completeness;
 }
-
-/** The default urgency ordering; unlisted priorities sort after all listed ones. */
-export const DEFAULT_PRIORITY_ORDER = ["p0", "p1", "p2", "p3"] as const;
-
-/** Label families where a second value on one item is a contradiction, not extra information. */
-const SINGLE_VALUE_FAMILIES = ["epic", "priority", "type"] as const;
-
-/**
- * The bare label that marks an issue as an epic.
- *
- * Exported because two packages have to agree on it. `forge` derives the `epic:<slug>` family by
- * searching GitHub for epics, and when the two packages each held their own literal they disagreed:
- * this file accepted `{epic, type:epic}` and `detect.ts` searched `{epic, type:umbrella}`, so an
- * item labelled one way and not the other was an epic to one package and a child to the other (#202).
- * One exported constant is the whole fix; the alternative is two literals that agree until someone
- * edits one.
- */
-export const EPIC_LABEL = "epic";
 
 /**
  * An item is an epic when it carries the bare `epic` label. Exactly that, and nothing else.
@@ -374,7 +362,7 @@ export function projectBoard(
   options: ProjectOptions,
 ): BoardSnapshot {
   const lifecycle = options.lifecycle ?? DEFAULT_LIFECYCLE;
-  const lanePrefix = options.lanePrefix ?? "lane";
+  const lanePrefix = options.lanePrefix ?? DEFAULT_LANE_PREFIX;
   const priorityOrder = options.priorityOrder ?? DEFAULT_PRIORITY_ORDER;
 
   const items = issues.map((issue) => toItem(issue, lifecycle, lanePrefix));

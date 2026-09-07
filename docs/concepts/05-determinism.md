@@ -54,11 +54,23 @@ generated *and* readable without a network call.
 ## Invariants that live between packages
 
 Some facts are true of the workspace and of no single package in it, so they are checked by scripts
-the build runs before anything else — `check:graph`, `check:lifecycle`, `check:publish`.
+the build runs around the per-package compiles — `check:graph`, `check:lifecycle`, `check:publish`,
+`check:label-registry`.
 
 The lifecycle check is the one from the story above. Neither package could catch it: `board` must not
 depend on `forge`, because a projector that imports its own installer is no longer projecting
 anything. So the invariant is asserted from outside both, where it is actually true.
+
+The label-registry check is the same shape one level out. The lifecycle check compares two lists of
+*phases*; this one compares the labels the projector branches on against the labels the taxonomy
+creates. That comparison had no home for as long as the vocabulary lived as literals scattered
+through the projection: `type:epic` sat in an epic predicate for the life of the file and was never
+once true, because nothing creates that label. Types could not catch it — `labels.includes` takes a
+string and every string is well-typed — and a fixture that manufactured the label gave the dead
+branch a passing test. So the literals became exported data in `packages/board/src/labels.ts`, which
+is what makes the set comparable at all, and the check runs it in both directions: a label the code
+reads and the taxonomy never creates is a branch that cannot be taken, and a value the taxonomy
+creates and the code never enumerates sorts silently to the end of every column.
 
 The graph check exists for a similar reason. `pnpm -r run build` exits 0 with a missing TypeScript
 project reference, because pnpm builds from the manifest graph and TypeScript resolves through the
