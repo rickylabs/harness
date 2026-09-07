@@ -69,6 +69,7 @@ export {
   foldLiveEvents,
   mergeLiveRuns,
   readLiveLog,
+  type LiveDispatchVerdict,
   type LiveFile,
   type LiveLog,
   type LiveMerge,

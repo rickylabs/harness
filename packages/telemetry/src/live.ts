@@ -24,6 +24,11 @@
  * 3. A live-only run with no stated seam is counted and named, never invented. `RunSource` carries
  *    governance meaning — two of its three values are subscription seams with a window that can be
  *    exhausted — so guessing at one would put a fabricated fact into a quota report.
+ * 4. A dispatch is not yet a run. A `refused` verdict with no transcript behind it is counted and
+ *    named like rule 3, not turned into a row: a refused dispatch launched nothing, and a board
+ *    that shows it as an agent is inventing one. `accepted`, `unknown` and a dispatch that died
+ *    before any verdict all still become rows — an agent may be running somewhere, and that is
+ *    exactly what the pre-dispatch line exists to preserve.
  *
  * Nothing here reads a clock or an environment variable; `readLiveLog` takes the paths and the
  * reference time, the same way the backfill readers do.
@@ -118,12 +123,52 @@ export interface LiveRun {
   readonly identity: LaunchIdentity;
   readonly outcome: RunOutcome | null;
   readonly linkedIssues: readonly IssueLink[];
+  /**
+   * What the last dispatch line said about whether this id became a run at all.
+   *
+   * `null` for a run nothing dispatched through an instrumented seam, which is most of them — a
+   * transcript recovered off disk says nothing about a dispatch. Only a `subagent.dispatch` line can
+   * set it; see `DISPATCH_KIND` for why a steer's verdict is not this one.
+   */
+  readonly verdict: LiveDispatchVerdict | null;
   /** The newest log file that carried a line for this run — the one to open. */
   readonly origin: string;
   readonly events: number;
 }
 
+/**
+ * The three things a writer can say about a dispatch.
+ *
+ * A local mirror of `DispatchVerdict` in `@rickylabs/subagents`, spelled out here rather than
+ * imported, because this package has no workspace dependencies and importing the provider contract
+ * would make the observability log a subagent-only log. The union is validated the way `source` and
+ * `outcome` are: a word this reader does not know is not read, so a fourth verdict appearing
+ * upstream degrades to "said nothing" rather than to a wrong answer.
+ */
+export type LiveDispatchVerdict = "accepted" | "refused" | "unknown";
+
+/**
+ * The one event kind whose `verdict` is about whether a run exists.
+ *
+ * Four of the instrument's five verbs write a `verdict` detail, and three of those unions also spell
+ * `refused` — `SteerVerdict` and `StopVerdict` both carry it. A steer the provider refused is a
+ * statement about one message, not about the run: reading `verdict` off any kind would let a refused
+ * steer erase a run that had been happily working for an hour, which is the same class of mistake
+ * this rule exists to prevent, pointed the other way.
+ *
+ * A literal rather than an import, for the reason `LiveDispatchVerdict` is a local mirror. A kind is
+ * a free string on the sink, so this name is a convention both sides have to keep; the fallback if
+ * `dsh-app` ever renames it is that no verdict is read at all, and every dispatch becomes a row —
+ * the behaviour before this rule, which is over- rather than under-reporting.
+ */
+const DISPATCH_KIND = "subagent.dispatch";
+
 const SOURCES: ReadonlySet<string> = new Set<RunSource>(["claude", "codex", "opencode"]);
+const VERDICTS: ReadonlySet<string> = new Set<LiveDispatchVerdict>([
+  "accepted",
+  "refused",
+  "unknown",
+]);
 const OUTCOMES: ReadonlySet<string> = new Set<RunOutcome>([
   "running",
   "complete",
@@ -142,6 +187,7 @@ const OUTCOMES: ReadonlySet<string> = new Set<RunOutcome>([
 const DETAIL_KEYS = [
   "source",
   "outcome",
+  "verdict",
   "parentId",
   "branch",
   "model",
@@ -186,6 +232,7 @@ function later(a: string, b: string): string {
 
 interface Fold {
   source: Stated<RunSource> | null;
+  verdict: Stated<LiveDispatchVerdict> | null;
   parentId: Stated<string> | null;
   branch: Stated<string> | null;
   model: Stated<string> | null;
@@ -229,6 +276,7 @@ export function foldLiveEvents(files: readonly LiveFile[]): readonly LiveRun[] {
     const held = folds.get(id);
     const fold: Fold = held ?? {
       source: null,
+      verdict: null,
       parentId: null,
       branch: null,
       model: null,
@@ -244,10 +292,19 @@ export function foldLiveEvents(files: readonly LiveFile[]): readonly LiveRun[] {
 
     const rawSource = detailString(event, "source");
     const rawOutcome = detailString(event, "outcome");
+    const rawVerdict = event.kind === DISPATCH_KIND ? detailString(event, "verdict") : null;
     fold.source = state(fold.source, SOURCES.has(rawSource ?? "") ? (rawSource as RunSource) : null, order);
     fold.outcome = state(
       fold.outcome,
       OUTCOMES.has(rawOutcome ?? "") ? (rawOutcome as RunOutcome) : null,
+      order,
+    );
+    // Last statement wins, the same as every other field, but only among dispatch lines. A refused
+    // dispatch retried under the same id is the case that needs it: the second line's `accepted` has
+    // to overwrite the first line's `refused`, or a run that really launched stays invisible.
+    fold.verdict = state(
+      fold.verdict,
+      VERDICTS.has(rawVerdict ?? "") ? (rawVerdict as LiveDispatchVerdict) : null,
       order,
     );
     fold.parentId = state(fold.parentId, detailString(event, "parentId"), order);
@@ -281,6 +338,7 @@ export function foldLiveEvents(files: readonly LiveFile[]): readonly LiveRun[] {
         profile: fold.profile?.value ?? null,
       },
       outcome: fold.outcome?.value ?? null,
+      verdict: fold.verdict?.value ?? null,
       // The same rule the transcript readers use, and deliberately no second class of evidence: a
       // branch name is the dispatcher's own statement about what a run is for.
       linkedIssues: linkedIssuesOf(branch, null),
@@ -370,6 +428,7 @@ export function mergeLiveRuns(
   const resolved = new Set<string>();
   let added = 0;
   let anonymous = 0;
+  let refused = 0;
 
   for (const run of live) {
     const at = positions.get(run.id);
@@ -380,6 +439,18 @@ export function mergeLiveRuns(
         if (before.outcome !== after.outcome) resolved.add(run.id);
         runs[index] = after;
       }
+      continue;
+    }
+    // A dispatch the provider refused never became a run, and there is no transcript above to say
+    // otherwise. Synthesising a row for it is the instrument's own stated gap — *"the fold has no
+    // idea a dispatch is not yet a run"* — and it is a fabricated agent on the board, which is the
+    // one thing this package must never produce. Counted rather than dropped: a refused dispatch is
+    // a real event an operator may well be looking for, and it is not degradation.
+    //
+    // Checked ahead of the seam question deliberately. A refused dispatch that named no seam is not
+    // an under-reported run, so counting it as one would raise `degraded` on a log that is fine.
+    if (run.verdict === "refused") {
+      refused += 1;
       continue;
     }
     if (run.source === null) {
@@ -413,6 +484,9 @@ export function mergeLiveRuns(
   }
   if (added > 0) {
     notes.push(`live log: ${added} run(s) known only to the log, with no transcript on this box`);
+  }
+  if (refused > 0) {
+    notes.push(`live log: ${refused} dispatch(es) the provider refused — never became a run`);
   }
   if (anonymous > 0) {
     notes.push(
