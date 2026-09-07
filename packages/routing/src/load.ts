@@ -6,6 +6,8 @@ import { deepFreeze, fieldPath, MAX_DEPTH, MAX_DOCUMENT_BYTES, validateRoutingCo
 import type { InvalidProblem, RoutingConfiguration } from "./schema.js";
 import type { PolicyProblem } from "./resolve.js";
 
+const MAX_SOURCE_ID_BYTES = 4096;
+
 export type LoadRefusal =
   | { readonly kind: "unreadable"; readonly code: "absent" | "not-a-file" | "permission" | "too-large" }
   | { readonly kind: "malformed"; readonly code: "not-json" | "not-utf8" | "root-not-object" }
@@ -62,6 +64,10 @@ function duplicateKeys(text: string): InvalidProblem[] {
 }
 
 export function parseRoutingDocument(text: string, sourceId: string): LoadOutcome {
+  // Source metadata is untrusted too. Check the primitive type before any inspection or freeze.
+  if (typeof sourceId !== "string") return { ok: false, refusal: { kind: "invalid", problems: [{ code: "wrong-type", path: "source.id" }] } };
+  if (sourceId.length > MAX_SOURCE_ID_BYTES || Buffer.byteLength(sourceId, "utf8") > MAX_SOURCE_ID_BYTES) return { ok: false, refusal: { kind: "invalid", problems: [{ code: "size-exceeded", path: "source.id" }] } };
+  if (!sourceId.trim()) return { ok: false, refusal: { kind: "invalid", problems: [{ code: "empty", path: "source.id" }] } };
   if (typeof text !== "string") return { ok: false, refusal: { kind: "malformed", code: "not-json" } };
   const bytes = Buffer.byteLength(text, "utf8");
   if (bytes > MAX_DOCUMENT_BYTES) return { ok: false, refusal: { kind: "invalid", problems: [{ code: "size-exceeded", path: "$" }] } };
@@ -84,6 +90,8 @@ export function parseRoutingDocument(text: string, sourceId: string): LoadOutcom
 export async function loadRoutingConfiguration({ path }: { readonly path: string }): Promise<LoadOutcome> {
   let file;
   try {
+    // A FIFO read-open can block before stat. Open nonblocking, then inspect this descriptor;
+    // a path-based pre-stat alone leaves a replacement race before a blocking open.
     file = await open(path, constants.O_RDONLY | constants.O_NONBLOCK);
     const stat = await file.stat();
     if (!stat.isFile()) return { ok: false, refusal: { kind: "unreadable", code: "not-a-file" } };

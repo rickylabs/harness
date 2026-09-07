@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, writeFile, rm, mkdir } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, rm, mkdir, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -63,6 +63,32 @@ async function scratch(run: (directory: string) => Promise<void>) {
   const directory = await mkdtemp(join(tmpdir(), "routing-271-"));
   try { await run(directory); } finally { await rm(directory, { recursive: true, force: true }); }
 }
+/** A blocked fs open cannot be cancelled by a Promise timeout. Kill and reap an isolated child. */
+function refuseNonFileInChild(path: string, replacement?: string): void {
+  const output = execFileSync(process.execPath, ["--input-type=module", "--eval", `
+    import assert from "node:assert/strict";
+    import fs from "node:fs/promises";
+    import { syncBuiltinESMExports } from "node:module";
+    const [moduleUrl, path, replacement] = process.argv.slice(1);
+    if (replacement) {
+      const open = fs.open;
+      fs.open = async (...args) => {
+        // Replace the ordinary file exactly at open, after any path-based pre-stat.
+        if (args[0] === path) await fs.rename(replacement, path);
+        return open(...args);
+      };
+      syncBuiltinESMExports();
+    }
+    const { loadRoutingConfiguration } = await import(moduleUrl);
+    assert.deepEqual(await loadRoutingConfiguration({ path }), {
+      ok: false, refusal: { kind: "unreadable", code: "not-a-file" },
+    });
+    process.stdout.write("non-file refused");
+  `, new URL("./load.js", import.meta.url).href, path, ...(replacement ? [replacement] : [])], {
+    encoding: "utf8", timeout: 2_000, killSignal: "SIGKILL", maxBuffer: 16_384,
+  });
+  assert.equal(output, "non-file refused");
+}
 
 describe("explicit document loader and identity", () => {
   it("loads the exported data asset with an independent raw-byte digest and freezes every depth", async () => {
@@ -99,6 +125,53 @@ describe("explicit document loader and identity", () => {
     const path = join(directory, "document.json"); await writeFile(path, raw);
     assert.deepEqual(await loadRoutingConfiguration({ path }), parseRoutingDocument(raw, path));
   }));
+  it("refuses non-string source identifiers without coercion or diagnostic values", () => {
+    for (const source of [undefined, null, false, 0, 1n, Symbol("secret-source"), [], {}, new String("secret-source"), () => "secret-source"]) {
+      const result = parseRoutingDocument(textA, source as unknown as string);
+      assert.deepEqual(result, { ok: false, refusal: { kind: "invalid", problems: [{ code: "wrong-type", path: "source.id" }] } });
+      assert.ok(!result.ok);
+      assert.equal(describeLoadRefusal(result.refusal), "invalid: wrong-type at source.id");
+    }
+  });
+  it("refuses accessor and proxy source identifiers with zero invocations", () => {
+    let calls = 0;
+    const accessor = { get secret() { calls++; return "secret-source"; } };
+    const coercible = { toString() { calls++; return "secret-source"; }, [Symbol.toPrimitive]() { calls++; return "secret-source"; } };
+    const trap = () => { calls++; throw new Error("secret-source"); };
+    const proxy = new Proxy({}, { get: trap, ownKeys: trap, getPrototypeOf: trap, getOwnPropertyDescriptor: trap, preventExtensions: trap });
+    const revoked = Proxy.revocable({}, {}); revoked.revoke();
+    for (const source of [accessor, coercible, proxy, revoked.proxy]) {
+      const result = parseRoutingDocument(textA, source as unknown as string);
+      assert.equal(calls, 0);
+      assert.deepEqual(result, { ok: false, refusal: { kind: "invalid", problems: [{ code: "wrong-type", path: "source.id" }] } });
+      assert.ok(!Object.isFrozen(accessor), "caller data must never reach the freeze operation");
+    }
+  });
+  it("bounds source identifiers by UTF-8 bytes and rejects blanks with fixed diagnostics", () => {
+    for (const [source, code] of [
+      ["", "empty"], [" \t\n", "empty"], ["\u2003", "empty"],
+      ["x".repeat(4097), "size-exceeded"], ["é".repeat(2049), "size-exceeded"],
+      ["🔒".repeat(1024) + "a", "size-exceeded"], ["Bearer private-source-" + "x".repeat(4096), "size-exceeded"],
+    ]) {
+      const result = parseRoutingDocument(textA, source!);
+      assert.deepEqual(result, { ok: false, refusal: { kind: "invalid", problems: [{ code, path: "source.id" }] } });
+      assert.ok(!result.ok);
+      assert.equal(describeLoadRefusal(result.refusal), `invalid: ${code} at source.id`);
+    }
+  });
+  it("preserves valid source identifiers including the byte limit without changing the document digest", () => {
+    for (const text of [textA, JSON.stringify(documentB())]) {
+      const expected = loaded(parseRoutingDocument(text, "fixture"));
+      for (const source of ["project/document.json", "  é/🔒  ", "a".repeat(4096), "é".repeat(2048), "🔒".repeat(1024)]) {
+        const actual = loaded(parseRoutingDocument(text, source));
+        assert.equal(actual.source.id, source);
+        assert.equal(actual.source.digest, `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`);
+        assert.equal(actual.source.bytes, Buffer.byteLength(text, "utf8"));
+        assert.deepEqual(actual.configuration, expected.configuration);
+        frozen(actual);
+      }
+    }
+  });
   it("refuses missing, directory, oversized and non-UTF-8 files without exposing OS diagnostics", async () => scratch(async directory => {
     refused(await loadRoutingConfiguration({ path: join(directory, "absent") }), "unreadable", "absent");
     refused(await loadRoutingConfiguration({ path: directory }), "unreadable", "not-a-file");
@@ -106,6 +179,19 @@ describe("explicit document loader and identity", () => {
     refused(await loadRoutingConfiguration({ path }), "unreadable", "too-large");
     await writeFile(path, Buffer.from([0xc0, 0xaf]));
     refused(await loadRoutingConfiguration({ path }), "malformed", "not-utf8");
+  }));
+  it("refuses a non-regular FIFO without a writer, directly and through a symlink, before a child deadline", async () => scratch(async directory => {
+    const fifo = join(directory, "document.fifo");
+    execFileSync("mkfifo", [fifo], { timeout: 2_000, killSignal: "SIGKILL" });
+    const link = join(directory, "document-link.json"); await symlink(fifo, link);
+    refuseNonFileInChild(fifo);
+    refuseNonFileInChild(link);
+  }));
+  it("refuses a non-regular replacement at open before a child deadline", async () => scratch(async directory => {
+    const path = join(directory, "document.json"); await writeFile(path, textA);
+    const fifo = join(directory, "replacement.fifo");
+    execFileSync("mkfifo", [fifo], { timeout: 2_000, killSignal: "SIGKILL" });
+    refuseNonFileInChild(path, fifo);
   }));
   for (const [text, code] of [["{", "not-json"], ["[]", "root-not-object"], ['"root"', "root-not-object"], ["null", "root-not-object"]]) {
     it(`refuses malformed document ${code}`, () => { refused(parseRoutingDocument(text!, "input"), "malformed", code); });

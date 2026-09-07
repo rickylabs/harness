@@ -494,3 +494,31 @@ merge commit.
 - U-5 Whether the owner reads "subscription literals" to include the `included`/`outside_plan`
   keyword vocabulary (L13). Step 1 treats it as a schema keyword; the reviewer should say if that
   reading is wrong.
+
+## Implementation continuation findings (2026-09-07)
+
+The coordinator requested two loader repairs against implementation head `b15cad62`. The fresh
+`matrix-implementation-followup.json:11` retains Astra at `xhigh`; no fallback or agent dispatch.
+Historical planning findings above retain their original baseline.
+
+- F-1 Source metadata was outside the runtime validation boundary. The coordinator reported one
+  accessor invocation and an accepted result; a new regression reproduced that exact count. Before
+  repair, the expanded routing suite had 202 passes and three source-identifier failures. Validate
+  the primitive type first, then the 4,096-byte UTF-8 bound and nonblank content, before inspection
+  or freezing. Fixed codes at `source.id` suffice; no value belongs in a refusal. Sources:
+  `packages/routing/src/load.ts:66`, `packages/routing/src/load.test.ts:128`; topic: untyped source
+  boundary; inspected and executed 2026-09-07; original observation attributed to coordinator.
+- F-2 The coordinator reported a no-writer FIFO hanging until its owned child was killed at two
+  seconds. Both source and emitted loader at `b15cad62` already use `O_NONBLOCK` and descriptor
+  `stat`. The new isolated tests pass against that baseline for a FIFO, its symlink, and replacement
+  of an ordinary file at open. The supplied receipt does not identify the probed revision, so the
+  reason for the discrepancy is unknown. Preserve the original report and retain the existing
+  safeguard. In scratch copies, removing nonblocking mode fails both deadline tests; adding a
+  pre-stat before that blocking open still fails the replacement case. Both mutant test processes
+  finish, and the child deadlines kill/reap blocked readers. Sources:
+  `packages/routing/src/load.ts:90`, `packages/routing/src/load.test.ts:66` and `:183`; topic: regular
+  file admission, replacement race and bounded test execution; inspected/executed 2026-09-07.
+- F-3 The scope list called the compiled loader/resolvers the routing authority. The requested
+  correction distinguishes mechanisms that load/resolve the explicit document from its authoritative
+  routing data. Source: `docs/concepts/06-the-three-layers.md:227`; topic: configured authority;
+  inspected/corrected 2026-09-07 under the coordinator's continuation directive.

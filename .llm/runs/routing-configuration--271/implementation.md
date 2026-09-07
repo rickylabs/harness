@@ -52,3 +52,20 @@ provider/account detection and generator-relative evaluator selection remain out
 `packages/routing/README.md:118`.
 
 [source: repository files cited above; topic: E11 step 1 implementation and limits; inspected 2026-09-07]
+
+## Continuation from b15cad62 (2026-09-07)
+
+Applied the coordinator's bounded loader followup with Astra/xhigh from
+`matrix-implementation-followup.json:11`. Source identifiers now reject non-string, blank and
+over-4,096-byte input using fixed codes and `source.id`, before inspecting or freezing metadata.
+Valid labels remain exact and do not affect the raw-document digest. The existing nonblocking
+descriptor check is retained and covered by killable FIFO/symlink/replacement tests. Both a blocking
+open and a pre-stat followed by blocking open are detected in isolated mutation experiments.
+The three-layers scope wording now identifies document data as the routing authority.
+
+Root findings and the baseline FIFO receipt discrepancy are disposed in D-021 and the appended
+research findings; final continuation commands/results are in `verification.md`. Historical
+receipts are preserved. Independent evaluation remains with the coordinator.
+
+[source: packages/routing/src/load.ts:66 and :90, packages/routing/src/load.test.ts:128 and :183,
+docs/concepts/06-the-three-layers.md:227; topic: coordinator-requested loader repairs; inspected/executed 2026-09-07]

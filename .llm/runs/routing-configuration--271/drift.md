@@ -110,3 +110,16 @@ The AST gate also checks direct assignments and conditional/nullish default expr
 self-test for a late `route.model` assignment. This found presentation-only fallback strings in
 contracts, coordinator, forge and telemetry. Exact literal exceptions in the allowlist distinguish
 those missing-value display strings from new model/effort selections; those packages are unchanged.
+
+## D-021 — coordinator loader findings and authority wording (2026-09-07)
+
+Continuation from `b15cad62`, with the supplied followup matrix's unchanged Astra/xhigh selection.
+F-1 is accepted and repaired: source identifiers now receive bounded primitive-string validation
+before reaching provenance freezing, with zero-invocation hostile-object regressions. F-2 is
+accepted as a required regression: the nonblocking open was already present at this head; retain
+it and add isolated FIFO, symlink and replacement tests whose blocking-open mutations fail within
+owned child deadlines. The original coordinator timeout remains recorded; its revision is unknown.
+F-3 is corrected in the scope list and the loader README documents both boundaries. No policy,
+protocol, generated asset or E11 scope change. Research and source/topic/date citations are in
+`research.md`, “Implementation continuation findings”; verification records the actual gates and
+keeps coordinator metadata/sample receipts distinct from implementer execution.

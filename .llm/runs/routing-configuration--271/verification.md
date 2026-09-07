@@ -75,3 +75,52 @@ To perform the permitted read without credentials, a Node `fetch` GET of
 
 No known local implementation defect remains. Live dispatch, fleet parity and later E11 semantics
 were not tested or claimed. Exact-head independent implementation review remains outstanding.
+
+## Continuation verification from b15cad62 (2026-09-07)
+
+The repaired tree passes full clean build/typecheck and **2,797 tests**, zero failures, cancellations
+or skips. This section records the continuation; earlier command receipts remain historical.
+
+| Implementer command | Actual result |
+| --- | --- |
+| `pnpm --filter @rickylabs/routing run test`, new regressions before repair | Exit 1; 202 pass, three source-identifier failures, including one getter invocation; FIFO and replacement cases already pass at baseline |
+| Same routing command after repair | Exit 0; 205 pass, zero failures/skips; includes real packed-asset resolution and strict UTF-8/size checks |
+| `node --input-type=module`, isolated emitted-loader mutation runner | Exit 0 for mutation detection; blocking-open mutant has two deadline failures; pre-stat-plus-blocking-open mutant has one pass and one replacement deadline failure. Mutant test processes each exit 1, complete and reap their owned readers; workspace output unchanged and scratch removed |
+| `pnpm run clean` | Exit 0 |
+| `pnpm run typecheck` | Exit 0; all 15 packages and graph/lifecycle checks |
+| `pnpm run build` | Exit 0; all package builds and required generated/document/publish gates |
+| `pnpm test` | Exit 0; 2,797 pass, zero failures/cancellations/skips/todos across 12 tested packages |
+| `pnpm run check:links`, after evidence updates | Exit 0; zero broken relative links |
+| `git diff --check` and `git diff --cached --check` | Exit 0 |
+
+Routing increases from 199 to 205 tests; all other package totals match the earlier receipt.
+The final sweep includes the memory/filesystem pending/unknown and concurrent changed-revision/
+attempt safeguards, ordinary and extracted packed document loading, and the existing golden
+comparison. Build checks report 71 tracked data files, 281 runtime sources plus the compiled-policy
+mutation self-test, unchanged contracts 0.1.0/protocol 1,
+six matching CLI pages, one matching generated skill, and four matching executable tutorial blocks.
+The same three tutorial claims remain explicitly unexecuted. No generated patch, golden or CLI
+reference changed in this continuation, so no re-render or re-bless was needed.
+
+[source: packages/routing/src/load.test.ts:66, :102 and :128; topic: source boundary, packed files,
+isolated FIFO/replacement deadlines; executed 2026-09-07]
+[source: package.json:14, packages/dsh-app/src/dry-run.test.ts:175 and packages/dsh-app/src/dry-run-crash.test.ts:36,
+packages/dsh-app/src/golden.test.ts:1; topic: workspace and retained safety/golden gates; executed 2026-09-07]
+
+Coordinator verification, supplied in the continuation directive on 2026-09-07, is separate:
+`pnpm run check:metadata` exited **0** and reported “check:metadata — rickylabs/harness describes
+itself the way package.json does (via gh)”. This is the coordinator's normal-transport execution;
+the implementer's earlier credential-free **exit 3** remains unavailable, not retroactively PASS.
+No credential access or metadata rerun was performed by the implementer in this continuation.
+[source: coordinator continuation receipt; scripts/check-metadata.mjs:75 and :113;
+topic: attributed metadata verification; supplied/inspected 2026-09-07]
+
+The coordinator also reported **1,400 malformed field substitutions with zero validator throws**.
+This is an attributed sampled review, not exhaustive coverage or an implementer-executed gate.
+[source: coordinator continuation receipt; packages/routing/src/schema.ts:181;
+topic: sampled validator robustness; supplied/inspected 2026-09-07]
+
+No known repaired-tree defect remains. The original FIFO probe's revision is unspecified, so its
+discrepancy with the already-nonblocking baseline remains an evidence limitation (research F-2).
+Exact-head independent implementation evaluation is pending with the coordinator. No live dispatch,
+fleet parity or E11 steps 2–5 completion is claimed.

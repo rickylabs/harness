@@ -224,8 +224,9 @@ Everything in orange: the whole of layer 1, and the contracts package that
 leaves it. Concretely:
 
 1. The board projections, and the discipline that keeps them projections.
-2. The delegation document loader and immutable resolvers as the sole routing authority,
-   with a closed trigger union and the two rules that make fallback meaningful.
+2. The delegation loader and immutable resolvers that load and resolve an explicit document
+   whose data is the routing authority, with a closed trigger union and the two rules that
+   make fallback meaningful.
 3. Admission, and the record that a decision was made before anything launched.
 4. The two seams, kept apart, and the sandbox boundary that makes the seat seam
    enforceable where it is actually enforceable.

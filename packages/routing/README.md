@@ -30,7 +30,8 @@ answers from a previously loaded configuration. There is no hot reload or global
 `source` contains `id`, `name`, `schemaVersion`, `bytes` and the full `sha256:` digest computed from
 the exact UTF-8 document bytes. Whitespace changes the digest; changing only the source label does
 not. A caller-provided digest is never an input to parsing. The filesystem loader delegates to the
-same parser after a bounded read and strict UTF-8 decoding.
+same parser after a bounded read and strict UTF-8 decoding. It opens nonblocking and checks the
+opened descriptor for a regular file, so a FIFO cannot block before that check.
 
 | Refusal | Meaning |
 | --- | --- |
@@ -44,6 +45,8 @@ Refusals contain fixed codes and structural paths, never raw JSON/OS exceptions,
 document values or the caller's source location. `describeLoadRefusal` preserves that boundary.
 Source locations belong to successful provenance or the caller's own input, not a boot error.
 Limits are 1 MiB of document bytes, nesting depth 16 and 4,096 members in each collection.
+Source identifiers must be primitive strings, nonblank and at most 4,096 UTF-8 bytes; valid labels
+are preserved exactly. Invalid identifiers produce only a code at the fixed path `source.id`.
 Accessors, proxies, cycles, non-plain objects and reserved prototype keys are refused before
 validation reads their values. Duplicate JSON keys are rejected before they can overwrite data.
 
