@@ -59,6 +59,42 @@ describe("board session projection composition", () => {
     await fiber.dispose();
   });
 
+  it("carries board anomalies, item marks, and fetch coverage through the composition", async () => {
+    const ctx = registryContext(true);
+    const fiber = await ctx.plugin(boardPlugin);
+    const service = ctx.get(CONTEXT_KEY);
+    if (service === undefined) throw new Error("board service missing");
+    const session = ctx.sessions.create();
+    const input = smokeInput();
+    const disputed = {
+      ...input.issues[1]!,
+      number: 304,
+      title: "Two columns at once",
+      labels: ["epic:board", "status:impl", "status:ci-fail"],
+    };
+    const board = service.refresh(session, {
+      ...input,
+      issues: [...input.issues, disputed],
+    }).values.harnessBoard;
+
+    // The fixture's #303 carries an epic and no status label; #304 above carries two.
+    assert.deepEqual(
+      board?.anomalies.filter((a) => a.item === 304).map((a) => a.kind),
+      ["multiple-status"],
+    );
+    assert.equal(board?.anomalies.some((a) => a.item === 303 && a.kind === "no-status"), true);
+    assert.deepEqual(board?.completeness, { limit: 100, capped: [] });
+
+    // The phase and the fact that it is disputed have to arrive on the same object, or a pane
+    // renders the column with the confidence of a settled fact.
+    const tasks = board?.milestones.flatMap((m) => m.epics.flatMap((e) => e.tasks)) ?? [];
+    const node = tasks.find((t) => t.item.number === 304);
+    assert.notEqual(node?.item.phase, null);
+    assert.deepEqual(node?.item.anomalies, ["multiple-status"]);
+    assert.equal(tasks.find((t) => t.item.number === 301)?.item.anomalies, undefined);
+    await fiber.dispose();
+  });
+
   it("preserves a fresh refused admission through the composed harnessBoard service", async () => {
     const ctx = registryContext(true);
     const fiber = await ctx.plugin(boardPlugin);
@@ -152,6 +188,8 @@ describe("board projection wire schema", () => {
     generatedAt: "2026-09-07T00:00:00.000Z",
     now: "2026-09-07T00:00:00.000Z",
     complete: true,
+    completeness: { limit: 100, capped: [] },
+    anomalies: [],
     milestones: [{
       milestone: "E6",
       epics: [],
@@ -188,6 +226,34 @@ describe("board projection wire schema", () => {
       boardProjectionSchema.safeParse({
         ...valid,
         governance: { ...valid.governance, surprise: true },
+      }).success,
+      false,
+    );
+  });
+
+  it("requires the anomaly channel rather than defaulting it to clean", () => {
+    const { anomalies: _anomalies, ...withoutAnomalies } = valid;
+    assert.equal(boardProjectionSchema.safeParse(withoutAnomalies).success, false);
+    const { completeness: _completeness, ...withoutCompleteness } = valid;
+    assert.equal(boardProjectionSchema.safeParse(withoutCompleteness).success, false);
+  });
+
+  it("accepts a null completeness but not an invented anomaly kind", () => {
+    assert.equal(
+      boardProjectionSchema.safeParse({ ...valid, completeness: null }).success,
+      true,
+    );
+    assert.equal(
+      boardProjectionSchema.safeParse({
+        ...valid,
+        anomalies: [{ kind: "multiple-status", item: 204, detail: "two status labels" }],
+      }).success,
+      true,
+    );
+    assert.equal(
+      boardProjectionSchema.safeParse({
+        ...valid,
+        anomalies: [{ kind: "not-a-real-kind", item: 204, detail: "invented" }],
       }).success,
       false,
     );

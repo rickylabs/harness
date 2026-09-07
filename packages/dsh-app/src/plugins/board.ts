@@ -190,7 +190,9 @@ export function createService(
         input.telemetryComplete &&
         board.completeness !== null &&
         board.completeness.capped.length === 0;
-      const projection = toBoardProjection(publicTree(tree, complete));
+      // `board` satisfies BoardEvidence structurally; the snapshot carries the anomalies and the
+      // fetch coverage that the activity tree never sees.
+      const projection = toBoardProjection(publicTree(tree, complete), board);
       const todos = todosFromBoard(board);
 
       // Session.append and the projection drive are synchronous. Keep this method synchronous so
