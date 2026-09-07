@@ -1,0 +1,233 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 800" width="900" height="800" role="img" aria-label="Three-layer architecture. GitHub is board truth. Layer 1, coordination, publishes one contracts package. Layer 2, the product backend, consumes it and derives a generated client. Layer 3, the native client, consumes that generated client. Layer 1 and the contracts package are highlighted as this repository build scope.">
+  <style>
+    .bg    { fill: #FBFCFC; }
+    .band  { fill: none; stroke: #C9D6D4; stroke-width: 1; }
+    .node rect { fill: #FFFFFF; stroke: #9FB2AF; stroke-width: 1; }
+    .node .t   { fill: #11201E; font: 600 11.5px system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .node .s   { fill: #5E7370; font: 400 8.8px system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .carrier rect { fill: #106E68; stroke: none; }
+    .carrier .t   { fill: #FBFCFC; font: 700 13px ui-monospace, Menlo, Consolas, monospace; }
+    .carrier .s   { fill: #CFE4E1; font: 400 9.5px system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .lbl   { fill: #5E7370; font: 400 10px ui-monospace, Menlo, Consolas, monospace; }
+    .edge  { stroke: #7C8F8C; stroke-width: 1.2; fill: none; }
+    .cap   { fill: #7C8F8C; font: 400 9px system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .lg    { fill: #5E7370; font: 400 9.5px system-ui, -apple-system, "Segoe UI", sans-serif; }
+    /* --- build scope for this repository --- */
+    #n-board rect, #n-matrix rect, #n-coord rect, #n-telemetry rect, #n-subagents rect, #n-llm rect, #n-sandbox rect, #n-forge rect { fill: #FDF2E7; stroke: #A8500B; stroke-width: 1.5; }
+    #n-board .t, #n-matrix .t, #n-coord .t, #n-telemetry .t, #n-subagents .t, #n-llm .t, #n-sandbox .t, #n-forge .t { fill: #8A4409; }
+    #n-board .s, #n-matrix .s, #n-coord .s, #n-telemetry .s, #n-subagents .s, #n-llm .s, #n-sandbox .s, #n-forge .s { fill: #A8500B; }
+    #band1 { stroke: #A8500B; stroke-width: 1.5; }
+    #n-carrier1 rect { fill: #A8500B; }
+    #n-carrier1 .s { fill: #F7E3D0; }
+  </style>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#7C8F8C"/>
+    </marker>
+    <marker id="ao" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#A8500B"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" x="0" y="0" width="900" height="800"/>
+
+  <!-- GitHub -->
+  <g class="node" id="n-github">
+    <rect x="330" y="18" width="240" height="36" rx="3"/>
+    <text class="t" x="450" y="36" text-anchor="middle">GitHub</text>
+    <text class="s" x="450" y="48" text-anchor="middle">issues · labels · milestones — board truth</text>
+  </g>
+  <line class="edge" x1="450" y1="54" x2="450" y2="72" marker-end="url(#a)"/>
+
+  <!-- BAND 1 : coordination -->
+  <rect class="band" id="band1" x="14" y="72" width="872" height="146" rx="4"/>
+  <text class="lbl" x="26" y="90">LAYER 1 — coordination · harness deployment (Node + pnpm, its own host)</text>
+
+  <g class="node" id="n-board">
+    <rect x="28" y="98" width="199" height="44" rx="3"/>
+    <text class="t" x="128" y="117" text-anchor="middle">board</text>
+    <text class="s" x="128" y="132" text-anchor="middle">GitHub truth · harness label dispatches</text>
+  </g>
+  <g class="node" id="n-matrix">
+    <rect x="243" y="98" width="199" height="44" rx="3"/>
+    <text class="t" x="343" y="117" text-anchor="middle">delegation matrix</text>
+    <text class="s" x="343" y="132" text-anchor="middle">lanes · tiers · fallback chains · family rule</text>
+  </g>
+  <g class="node" id="n-coord">
+    <rect x="458" y="98" width="199" height="44" rx="3"/>
+    <text class="t" x="558" y="117" text-anchor="middle">coordinator</text>
+    <text class="s" x="558" y="132" text-anchor="middle">admission · the closed two-seam union</text>
+  </g>
+  <g class="node" id="n-telemetry">
+    <rect x="673" y="98" width="199" height="44" rx="3"/>
+    <text class="t" x="773" y="117" text-anchor="middle">telemetry</text>
+    <text class="s" x="773" y="132" text-anchor="middle">run observations · dispatch receipts</text>
+  </g>
+
+  <g class="node" id="n-subagents">
+    <rect x="28" y="152" width="199" height="44" rx="3"/>
+    <text class="t" x="128" y="171" text-anchor="middle">ctx.subagents</text>
+    <text class="s" x="128" y="186" text-anchor="middle">seat seam · metered by a refill window</text>
+  </g>
+  <g class="node" id="n-llm">
+    <rect x="243" y="152" width="199" height="44" rx="3"/>
+    <text class="t" x="343" y="171" text-anchor="middle">ctx.llm</text>
+    <text class="s" x="343" y="186" text-anchor="middle">API balance · local model capacity</text>
+  </g>
+  <g class="node" id="n-sandbox">
+    <rect x="458" y="152" width="199" height="44" rx="3"/>
+    <text class="t" x="558" y="171" text-anchor="middle">sandbox boundary</text>
+    <text class="s" x="558" y="186" text-anchor="middle">where the seat seam is actually gated</text>
+  </g>
+  <g class="node" id="n-forge">
+    <rect x="673" y="152" width="199" height="44" rx="3"/>
+    <text class="t" x="773" y="171" text-anchor="middle">forge</text>
+    <text class="s" x="773" y="186" text-anchor="middle">label taxonomy · generated process skill</text>
+  </g>
+
+  <line class="edge" x1="450" y1="218" x2="450" y2="240" marker-end="url(#a)"/>
+  <text class="cap" x="458" y="233">publishes exactly one outward surface</text>
+
+  <!-- CARRIER 1 -->
+  <g class="carrier" id="n-carrier1">
+    <rect x="180" y="240" width="540" height="50" rx="3"/>
+    <text class="t" x="450" y="262" text-anchor="middle">@rickylabs/harness-contracts</text>
+    <text class="s" x="450" y="278" text-anchor="middle">protocol 1 · POST /api/{snapshot,dispatch,approve} · WS /api/remote.mux</text>
+  </g>
+
+  <line class="edge" x1="450" y1="290" x2="450" y2="312" marker-end="url(#a)"/>
+  <text class="cap" x="458" y="305">consumed across a service boundary</text>
+
+  <!-- BAND 2 : product backend -->
+  <rect class="band" id="band2" x="14" y="312" width="872" height="200" rx="4"/>
+  <text class="lbl" x="26" y="330">LAYER 2 — product backend · NetScript application (Deno + Fresh), one operator-managed stack</text>
+
+  <g class="node" id="n-gateway">
+    <rect x="28" y="338" width="199" height="44" rx="3"/>
+    <text class="t" x="128" y="357" text-anchor="middle">HTTPS gateway</text>
+    <text class="s" x="128" y="372" text-anchor="middle">independently restartable processes</text>
+  </g>
+  <g class="node" id="n-fresh">
+    <rect x="243" y="338" width="199" height="44" rx="3"/>
+    <text class="t" x="343" y="357" text-anchor="middle">Fresh frontend + API</text>
+    <text class="s" x="343" y="372" text-anchor="middle">service and feature plugin routes</text>
+  </g>
+  <g class="node" id="n-adapter">
+    <rect x="458" y="338" width="199" height="44" rx="3"/>
+    <text class="t" x="558" y="357" text-anchor="middle">harness adapter</text>
+    <text class="s" x="558" y="372" text-anchor="middle">folds the mux · exactly one projection</text>
+  </g>
+  <g class="node" id="n-plugins">
+    <rect x="673" y="338" width="199" height="44" rx="3"/>
+    <text class="t" x="773" y="357" text-anchor="middle">plugin host + doctor</text>
+    <text class="s" x="773" y="372" text-anchor="middle">order · axis · collision · per-plugin receipt</text>
+  </g>
+
+  <g class="node" id="n-workers">
+    <rect x="28" y="392" width="199" height="44" rx="3"/>
+    <text class="t" x="128" y="411" text-anchor="middle">worker runner</text>
+    <text class="s" x="128" y="426" text-anchor="middle">leases · attempt policy · DLQ · dedupe</text>
+  </g>
+  <g class="node" id="n-sagas">
+    <rect x="243" y="392" width="199" height="44" rx="3"/>
+    <text class="t" x="343" y="411" text-anchor="middle">saga runner + outbox</text>
+    <text class="s" x="343" y="426" text-anchor="middle">journal · compensation · recovery runner</text>
+  </g>
+  <g class="node" id="n-triggers">
+    <rect x="458" y="392" width="199" height="44" rx="3"/>
+    <text class="t" x="558" y="411" text-anchor="middle">trigger scheduler</text>
+    <text class="s" x="558" y="426" text-anchor="middle">leader fencing · delivery receipts</text>
+  </g>
+  <g class="node" id="n-streams">
+    <rect x="673" y="392" width="199" height="44" rx="3"/>
+    <text class="t" x="773" y="411" text-anchor="middle">durable-stream service</text>
+    <text class="s" x="773" y="426" text-anchor="middle">tenant paths · await receipt completion</text>
+  </g>
+
+  <g class="node" id="n-postgres">
+    <rect x="28" y="446" width="199" height="44" rx="3"/>
+    <text class="t" x="128" y="465" text-anchor="middle">PostgreSQL</text>
+    <text class="s" x="128" y="480" text-anchor="middle">intents · receipts · grants · schedules</text>
+  </g>
+  <g class="node" id="n-kv">
+    <rect x="243" y="446" width="199" height="44" rx="3"/>
+    <text class="t" x="343" y="465" text-anchor="middle">Deno KV queue</text>
+    <text class="s" x="343" y="480" text-anchor="middle">explicitly selected queue storage</text>
+  </g>
+  <g class="node" id="n-features">
+    <rect x="458" y="446" width="199" height="44" rx="3"/>
+    <text class="t" x="558" y="465" text-anchor="middle">feature plugins</text>
+    <text class="s" x="558" y="480" text-anchor="middle">pure core package + thin plugin</text>
+  </g>
+  <g class="node" id="n-shell">
+    <rect x="673" y="446" width="199" height="44" rx="3"/>
+    <text class="t" x="773" y="465" text-anchor="middle">Fresh islands + desktop shell</text>
+    <text class="s" x="773" y="480" text-anchor="middle">the only thin part of the cockpit</text>
+  </g>
+
+  <line class="edge" x1="450" y1="512" x2="450" y2="534" marker-end="url(#a)"/>
+  <text class="cap" x="458" y="527">defineService derives REST and OpenAPI</text>
+
+  <!-- CARRIER 2 -->
+  <g class="carrier" id="n-carrier2">
+    <rect x="180" y="534" width="540" height="50" rx="3"/>
+    <text class="t" x="450" y="556" text-anchor="middle">generated product client</text>
+    <text class="s" x="450" y="572" text-anchor="middle">captured, versioned OpenAPI artifact · no backend router is ever exported</text>
+  </g>
+
+  <line class="edge" x1="450" y1="584" x2="450" y2="606" marker-end="url(#a)"/>
+  <text class="cap" x="458" y="599">the phone consumes this, never the mux</text>
+
+  <!-- BAND 3 : client -->
+  <rect class="band" id="band3" x="14" y="606" width="872" height="146" rx="4"/>
+  <text class="lbl" x="26" y="624">LAYER 3 — client · Expo native application (bun, React Native, expo-router)</text>
+
+  <g class="node" id="n-client">
+    <rect x="28" y="632" width="199" height="44" rx="3"/>
+    <text class="t" x="128" y="651" text-anchor="middle">generated client</text>
+    <text class="s" x="128" y="666" text-anchor="middle">transport candidate · receipt required</text>
+  </g>
+  <g class="node" id="n-stream">
+    <rect x="243" y="632" width="199" height="44" rx="3"/>
+    <text class="t" x="343" y="651" text-anchor="middle">native stream adapter</text>
+    <text class="s" x="343" y="666" text-anchor="middle">backend resource contracts only</text>
+  </g>
+  <g class="node" id="n-tabs">
+    <rect x="458" y="632" width="199" height="44" rx="3"/>
+    <text class="t" x="558" y="651" text-anchor="middle">expo-router tabs</text>
+    <text class="s" x="558" y="666" text-anchor="middle">chat · projects · activity · settings</text>
+  </g>
+  <g class="node" id="n-boundary">
+    <rect x="673" y="632" width="199" height="44" rx="3"/>
+    <text class="t" x="773" y="651" text-anchor="middle">bundle boundary gate</text>
+    <text class="s" x="773" y="666" text-anchor="middle">import graph + exported bundle scan</text>
+  </g>
+
+  <g class="node" id="n-exec">
+    <rect x="28" y="686" width="199" height="44" rx="3"/>
+    <text class="t" x="128" y="700" text-anchor="middle">execution vocabulary</text>
+    <text class="s" x="128" y="713" text-anchor="middle">queued · running · finished</text>
+    <text class="s" x="128" y="725" text-anchor="middle">failed · state unknown</text>
+  </g>
+  <g class="node" id="n-evidence">
+    <rect x="243" y="686" width="199" height="44" rx="3"/>
+    <text class="t" x="343" y="705" text-anchor="middle">evidence vocabulary</text>
+    <text class="s" x="343" y="720" text-anchor="middle">original time · unavailable has no time</text>
+  </g>
+  <g class="node" id="n-cert">
+    <rect x="458" y="686" width="199" height="44" rx="3"/>
+    <text class="t" x="558" y="705" text-anchor="middle">certification vocabulary</text>
+    <text class="s" x="558" y="720" text-anchor="middle">uncertified · review outdated</text>
+  </g>
+  <g class="node" id="n-offline">
+    <rect x="673" y="686" width="199" height="44" rx="3"/>
+    <text class="t" x="773" y="705" text-anchor="middle">offline notebook</text>
+    <text class="s" x="773" y="720" text-anchor="middle">dated state + unsent drafts, never a controller</text>
+  </g>
+
+  <!-- legend -->
+  <rect x="28" y="770" width="22" height="11" rx="2" fill="#FFFFFF" stroke="#9FB2AF"/>
+  <text class="lg" x="58" y="779">elsewhere in the chain</text>
+  <rect x="196" y="770" width="22" height="11" rx="2" fill="#FDF2E7" stroke="#A8500B" stroke-width="1.5"/>
+  <text class="lg" x="226" y="779" fill="#A8500B">This repository builds this</text>
+</svg>
