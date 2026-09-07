@@ -9,9 +9,12 @@ provider, no API key, and nothing that costs money.
 
 ## Before you start
 
-You need five things, and you will not be asked for a sixth later:
+You need six things, and you will not be asked for a seventh later:
 
-- **Node 24 or newer** and **[pnpm](https://pnpm.io) 11**.
+- **A POSIX-compatible shell** (such as `bash` or `zsh`). The paths, inline environment assignments,
+  line continuations, and pipes shown below use POSIX syntax and require translation for PowerShell
+  or `cmd.exe`.
+- **Node 24 or newer** (the declared and recommended baseline) and **[pnpm](https://pnpm.io) 11**.
 - **The [`gh`](https://cli.github.com) CLI, authenticated** — `gh auth status` should print a
   logged-in account. Steps 2 and 3 read and write GitHub through it.
 - **A scratch repository you own**, empty, that you do not mind changing. Call it `owner/scratch`
@@ -21,6 +24,14 @@ You need five things, and you will not be asked for a sixth later:
   working tree to write into — and writing into this checkout would be a mistake explained at
   step 2.
 - About 500 MB of disk for `node_modules`.
+
+> [!NOTE]
+> **Platform and shell boundaries.** The commands in this tutorial target a POSIX shell. Owner
+> testing recorded on [#212](https://github.com/rickylabs/harness/issues/212) at commit `4ff50fe`
+> under Node 22.20.0 confirmed that build, tests, the offline profile and telemetry path, and
+> read-only `forge doctor` succeeded on Windows; that record does not establish the GitHub-write half
+> of step 2 or step 3 on Windows. CI currently exercises Ubuntu with Node 24; this historical
+> observation does not establish current Windows CI coverage.
 
 > [!WARNING]
 > **Do not use `rickylabs/harness` as your scratch repository.** In that repository the `harness`
@@ -48,14 +59,19 @@ pnpm test
 ```
 
 Each package prints its own totals — a `pass` line and a `fail` line per
-package, prefixed with its path, like `packages/dsh-app test: … pass …`.
+package, prefixed with its path, like `packages/dsh-app test: … pass …`
+(illustrative expectation — source-derived; counts vary as packages change).
 The counts grow as the project does. The number that matters is `fail 0`,
 on every package, and `pnpm test` exiting `0`.
 
-**If it fails.** A failure in `pnpm install` about the Node version means you are below 24 — check
-`node --version`. A failure in `pnpm run build` that names `check:docs` means a CLI changed without
-its generated reference page being regenerated; run `pnpm run docs:cli` and commit the result. A
-test failure on a clean clone is a real bug, and worth an issue.
+**If it fails.** Node 24 is the declared and recommended baseline. An engine warning does not by
+itself prove installation failed. (Owner testing recorded on
+[#212](https://github.com/rickylabs/harness/issues/212) at `4ff50fe` completed install, build, and
+tests under Node 22.20.0 after an engine warning, but that is a version-specific historical observation
+rather than a supported baseline or guarantee.) If `pnpm install` fails with an engine error, check
+`node --version`. A failure in `pnpm run build` that names `check:docs` means a CLI changed without its
+generated reference page being regenerated; run `pnpm run docs:cli` and commit the result. A test
+failure on a clean clone is a real bug, and worth an issue.
 
 ## Step 2 — Install the board process into your repository
 
@@ -96,9 +112,12 @@ invocation from a fresh clone, and it is what this repository's own scripts do. 
 
 </details>
 
-`doctor` writes nothing. It reports the repository it resolved, how it reaches GitHub, how many
-labels are already there (`labels present`), how many it proposes (`labels proposed`), the lane
-prefix it detected (`lane prefix`), and the skill directories it found (`skill dirs`).
+`doctor` writes nothing. (It inspects the target checkout and GitHub context without invoking create or
+write operations; capability-isolated transport remains tracked under
+[#215](https://github.com/rickylabs/harness/issues/215).) It reports the repository it resolved, how
+it reaches GitHub, how many labels are already there (`labels present`), how many it proposes
+(`labels proposed`), the lane prefix it detected (`lane prefix`), and the skill directories it found
+(`skill dirs`).
 
 Next, see what it would do without doing it:
 
@@ -134,11 +153,11 @@ really are in the scratch checkout:
 git -C ../scratch status --short
 ```
 
-which should show `.github/` and `.claude/` as new. That confirms what `init`
-wrote locally and nothing more. The other two read GitHub, so they need the
-transport — and neither has been executed by this tutorial's author; they are
-instructions, not receipts. First a raw readback: list what GitHub actually
-has, and compare it against the ejected file yourself:
+which should show `.github/` and `.claude/` as new (illustrative expectation — source-derived; confirms what `init`
+wrote locally and nothing more). The other two read GitHub, so they need the transport — and neither
+has been executed by this tutorial's author; they are instructions, not receipts. First a raw
+readback: list what GitHub actually has, and compare it against the ejected file yourself (instruction;
+live readback not executed by the author):
 
 ```bash
 gh label list --repo owner/scratch --limit 100
@@ -152,7 +171,8 @@ node packages/forge/dist/cli.js labels check --repo owner/scratch --cwd ../scrat
 ```
 
 On a repository where `init` fully succeeded, that prints `nothing to do —
-the repository already carries this taxonomy` and exits `0`. **If either
+the repository already carries this taxonomy` and exits `0` (illustrative expectation —
+source-derived; unexecuted against a live GitHub repository). **If either
 GitHub command fails or shows missing labels, stop there and fix the cause
 before continuing** — later steps only make sense if the labels are real.
 
@@ -163,8 +183,10 @@ the ejected file disagree, naming each drifted label; on a fresh scratch reposit
 means the apply never actually landed, and re-running `init` resumes it — it never deletes a
 label, so re-running is safe. `doctor` and `init` do not exit `3`: `doctor` reports what it could
 see and exits `0`, and `init` turns a missing transport into `0` after writing its files. A
-non-zero from `init` means a label was refused or a conflict was found — never that GitHub was
-simply out of reach, which is exactly why the readbacks above exist.
+non-zero from `init` reflects an explicit refusal or error: exit `1` means a label was refused
+by GitHub or conflicted with the live repository, while exit `2` means `--repo` mismatched
+`--cwd` or invocation arguments were malformed — never that GitHub was simply out of reach (which
+exits `0` with skipped apply), which is exactly why the readbacks above exist.
 
 ## Step 3 — File something, move it, and watch the column change
 
@@ -190,7 +212,7 @@ Project the board:
 node packages/board/dist/cli.js columns --repo owner/scratch
 ```
 
-Your issue is under `## triage`. Now move it one column, exactly as an agent would:
+Your issue is under `## triage` (illustrative expectation — source-derived). Now move it one column, exactly as an agent would:
 
 ```bash
 gh issue edit <number> --repo owner/scratch \
@@ -203,7 +225,7 @@ And project it again:
 node packages/board/dist/cli.js columns --repo owner/scratch
 ```
 
-The issue is now under `## impl`, and the triage count went down by one. That is the whole
+The issue is now under `## impl`, and the triage count went down by one (illustrative expectation — source-derived). That is the whole
 mechanism. There is no database, no sync job and no daemon: GitHub holds the truth, and `dsh-board`
 projects it on demand. Nothing had to be running for the column to be correct.
 
@@ -215,14 +237,16 @@ node packages/board/dist/cli.js check --repo owner/scratch
 
 On a healthy board that is one line and exit `0`:
 
-```
+*(Illustrative output — source-derived; unexecuted against a live GitHub repository)*
+```text
 no anomalies — every item has exactly one status label
 ```
 
 **If it fails.** `check` exits `1` when the board contradicts itself, and names every case. The
 common ones read like this:
 
-```
+*(Illustrative output — source-derived; unexecuted)*
+```text
 ## closed-but-unshipped
   #46: closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
@@ -239,13 +263,28 @@ because it did not ship.
 Steps 2 and 3 used the CLIs directly. The same code also loads into `dsh` as plugins, and the
 profile is what registers them.
 
-Install it into a scratch home directory so nothing touches your real one:
+> [!NOTE]
+> **Output evidence, runtime, and normalization.** Output blocks in steps 4 and 5 fall into two
+> categories:
+> 1. **Executed transcripts (normalized)**: Tested on Linux, Node 26.8.1, and pnpm 11.25.0 at commit
+>    `7f6aed8` (the repository CI and recommended baseline is Node 24). Machine-specific paths are
+>    normalized using deliberate display placeholders: `/tmp/dsh-home` represents `$PROFILE_HOME`,
+>    `/tmp/tel-home` represents `$TELEMETRY_HOME`, and `/path/to/harness` represents the absolute
+>    checkout path. These are display placeholders, not the actual temporary paths used during
+>    execution. Excerpts are explicitly identified, and trailing line whitespace or terminal blank
+>    lines are trimmed for Markdown formatting.
+> 2. **Illustrative output (unexecuted)**: Derived from source contracts rather than executed in this
+>    verification (such as live GitHub responses or synthetic failure messages).
+
+Create a unique temporary profile home directory with `mktemp -d` so nothing touches your real one:
 
 ```bash
-node packages/dsh-app/dist/cli.js install --home /tmp/dsh-home
+PROFILE_HOME=$(mktemp -d)
+node packages/dsh-app/dist/cli.js install --home "$PROFILE_HOME"
 ```
 
-```
+*(Executed transcript — normalized; see note above)*
+```text
 profile   rickylabs
 surface   tui
 directory /tmp/dsh-home/profiles/rickylabs
@@ -265,14 +304,15 @@ wrote  node_modules/@rickylabs/dsh-app
 Take it up on that. `dsh` is resolvable from the package that depends on it:
 
 ```bash
-DSH_HOME=/tmp/dsh-home \
+DSH_HOME="$PROFILE_HOME" \
   packages/dsh-app/node_modules/.bin/dsh --profile rickylabs --dump-config
 ```
 
 The output is long — it is the entire plugin graph. The part you are looking for is at the very
-bottom, after the whole base bundle:
+bottom, after the whole base bundle (excerpted below to show only the appended bundle rows):
 
-```
+*(Executed excerpt — normalized, base bundle omitted; see note above)*
+```text
 # == @rickylabs/dsh-app
 - id: harness-subagents
   name: '@rickylabs/dsh-app/plugins/subagents'
@@ -290,10 +330,11 @@ Five rows, appended after the base bundle rather than replacing anything in it. 
 doing its one job. To confirm later that it is still installed and unmodified:
 
 ```bash
-node packages/dsh-app/dist/cli.js check --home /tmp/dsh-home
+node packages/dsh-app/dist/cli.js check --home "$PROFILE_HOME"
 ```
 
-which prints `installed and matching.` and exits `0`.
+which prints `installed and matching.` (preceded by the profile configuration summary) and exits `0`
+(executed expectation, normalized; see note above).
 
 **If it fails.** `check` exits non-zero when the installed profile has drifted from what this
 repository would generate — usually because the working tree moved after `install` wrote the link.
@@ -305,15 +346,24 @@ its own prerequisites, and it belongs in a how-to rather than here.
 Telemetry answers one question: *what has been running, and where do I look when one of them went
 wrong.* It reads from disk. No agent needs to be awake, and nothing here reaches the network.
 
+Create a separate unique temporary telemetry home with `mktemp -d`. Each telemetry invocation passes
+`--home "$TELEMETRY_HOME"` and explicitly removes the four telemetry environment overrides
+(`DSH_TELEMETRY_DIR`, `DSH_TELEMETRY_ARCHIVE`, `DSH_TELEMETRY_MAX_BYTES`, and
+`DSH_TELEMETRY_GENERATIONS`) via `env -u` so no outer environment variables can redirect telemetry
+paths away from `--home`.
+
 Start by asking where it writes:
 
 ```bash
-node packages/telemetry/dist/cli.js where --home /tmp/tel-home
+TELEMETRY_HOME=$(mktemp -d)
+env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js where --home "$TELEMETRY_HOME"
 ```
 
 It prints the live log path, the rotation policy behind it, and — the useful part — the ordered list
-of places a failing run hides, each with the string to grep for. That list is the answer to "the run
-died and the transcript says nothing", which is the normal case rather than the exceptional one.
+of places a failing run hides, each with the string to grep for (executed expectation, verified in test
+receipts; no live daemon or background queue required; see note above). That list is the answer to "the
+run died and the transcript says nothing", which is the normal case rather than the exceptional one.
 
 Nothing has run yet, so write one event. `record` reads JSONL on stdin, one event per line:
 
@@ -321,29 +371,34 @@ Nothing has run yet, so write one event. `record` reads JSONL on stdin, one even
 printf '%s\n' \
   '{"runId":"demo-1","kind":"run.started","at":"2026-09-05T10:00:00Z","detail":{"source":"claude","model":"claude-opus-5"}}' \
   '{"runId":"demo-1","kind":"run.finished","at":"2026-09-05T10:04:00Z","detail":{"source":"claude","outcome":"complete"}}' \
-  | node packages/telemetry/dist/cli.js record --home /tmp/tel-home
+  | env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js record --home "$TELEMETRY_HOME"
 ```
 
-```
+*(Executed transcript — normalized; see note above)*
+```text
 recorded 2 event(s) to /tmp/tel-home/observability/dsh-telemetry.jsonl
 ```
 
 Read it back:
 
 ```bash
-node packages/telemetry/dist/cli.js runs --home /tmp/tel-home
+env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js runs --home "$TELEMETRY_HOME"
 ```
 
 One line, newest first: the finish time, the seam (`source`), the outcome, and the model,
-padded into columns.
+padded into columns (e.g. `2026-09-05T10:04:00Z  claude    complete claude-opus-5`; executed expectation, normalized; see note above).
 
 And ask what you would open first if that run had gone wrong:
 
 ```bash
-node packages/telemetry/dist/cli.js why demo-1 --home /tmp/tel-home
+env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  node packages/telemetry/dist/cli.js why demo-1 --home "$TELEMETRY_HOME"
 ```
 
-```
+*(Executed transcript — normalized, terminal blank lines omitted; see note above)*
+```text
 demo-1 (claude, complete) — look here, in this order:
 
   the run's own transcript
@@ -355,10 +410,17 @@ demo-1 (claude, complete) — look here, in this order:
     why: a run that never appears is not a failed run; the dispatcher deferred it, and only its log says so
 ```
 
+Clean up the two temporary directories when you are done:
+
+```bash
+rm -rf "$PROFILE_HOME" "$TELEMETRY_HOME"
+```
+
 **If it fails.** Exit `3` means the picture is incomplete rather than wrong, and the output says
 exactly which part is missing. Two are worth recognising, because you will hit both:
 
-```
+*(Illustrative output — source-derived; unexecuted)*
+```text
   claude: no store on this box — nothing has run here
   live log: 1 run(s) named no seam and were left out — add "source" to the event
 ```
@@ -367,7 +429,8 @@ The first is not an error — it is telemetry declining to claim it saw everythi
 The second is: an event without `detail.source` cannot be joined to a seam, so it is counted and
 reported rather than silently guessed at. `source` must be one of `claude`, `codex` or `opencode`,
 and `outcome` one of `running`, `complete`, `failed` or `unknown`. An `outcome` outside that set is
-read as unknown, which is why the run in your first attempt may have come back as `unknown`.
+read as unknown, which is why the run in your first attempt may have come back as `unknown`
+(source-derived illustrative explanation).
 
 ## What you just did
 

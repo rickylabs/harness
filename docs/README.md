@@ -41,6 +41,12 @@ A document that repeats a fact owned elsewhere is a fact that will eventually di
 and the failure is silent: nothing goes red, the page just becomes a lie that the next agent reads
 first. In a repository whose product is a coordinator for agents, that is a correctness bug.
 
+Where documents present hand-written terminal output rather than generated reference pages, command
+blocks remain instructions, not receipts. Any output-shaped block must declare its evidence class
+honestly: either an **executed transcript** tied to an explicit tested commit and runtime with
+machine-specific paths normalized, or an **illustrative output** derived from source and not executed in
+that run. Output must not imply live execution where live forge, GitHub, or failure conditions were not run.
+
 ## Concepts
 
 | Page | What it settles |
