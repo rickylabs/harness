@@ -26,7 +26,11 @@ importers:
 
   packages/contracts: {}
 
-  packages/coordinator: {}
+  packages/coordinator:
+    dependencies:
+      '@rickylabs/harness-contracts':
+        specifier: workspace:*
+        version: link:../contracts
 
   packages/dsh-app:
     dependencies:

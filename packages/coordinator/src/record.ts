@@ -13,7 +13,7 @@
  * is a decision that can be checked, and re-derived, and disagreed with.
  *
  * The transport is a telemetry event rather than a call into `@rickylabs/telemetry`. Coordinator
- * depends on no other workspace package, and this is why that is affordable: the boundary is one
+ * imports only the published contracts types; this telemetry boundary remains the boundary is one
  * line of JSON on a pipe, which the telemetry writer already accepts from the Go dispatcher and the
  * shell hooks. A structural shape, not an import.
  */

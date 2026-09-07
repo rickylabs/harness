@@ -250,3 +250,5 @@ export {
   type WaitEffect,
   type InFlight,
 } from "./client.js";
+
+export type * from "./state-store.js";
