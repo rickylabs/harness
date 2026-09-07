@@ -105,11 +105,18 @@ and conventions decay silently, which is the failure this page opened with.
 Documentation was the largest such gap, which is why the docs lane treats it as an engineering
 problem rather than a writing one. The [CLI reference](../reference/cli/README.md) is generated
 from the CLIs and byte-compared by `pnpm run check:docs`, and relative links and anchors are
-resolved by `pnpm run check:links` — both inside the same `pnpm run build` CI already runs. What
-no gate compares yet is output pasted into hand-written prose: a tutorial block that has drifted
-from the command's real output still fails silently,
-[#212](https://github.com/rickylabs/harness/issues/212) being the recorded instance. The rule that
-work serves is the one stated on the [docs index](../README.md#the-rule-these-docs-are-held-to):
+resolved by `pnpm run check:links` — both inside the same `pnpm run build` CI already runs.
+
+Output pasted into hand-written prose was the last piece, and the hardest, because the page cannot
+be generated: a tutorial's value is the prose around the output, so it stays hand-written and drifts
+like anything else. It did, in four places, and nothing went red —
+[#212](https://github.com/rickylabs/harness/issues/212) is the recorded instance. `pnpm run
+check:tutorial` closes it from the other side: rather than generate the page, it re-runs the command
+above each block and compares. What that leaves is a smaller and much better-behaved gap — output
+that genuinely cannot be re-run here, such as a live GitHub response. Those blocks are marked, and
+the check prints them with their reasons on every pass, so the boundary between what is proved and
+what is trusted is a list rather than an assumption. The rule all of this serves is the one stated
+on the [docs index](../README.md#the-rule-these-docs-are-held-to):
 
 > Every document either states facts it owns, or is generated from the code that owns them.
 
