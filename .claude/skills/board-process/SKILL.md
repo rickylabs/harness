@@ -58,7 +58,7 @@ reasoning goes in a comment on the item rather than in the label.
 - `ci:` — `full`, `skip-release-contracts`. `ci:full` wins over every skip label.
 - `epic:` — `e9`, `e8`, `e7`, `e6`, `e5`, `e4`, `e3`, `e2`, `e1`, `e0`, `e10`. Groups everything under one program epic.
 - `eval:` — `skip`, `third-opinion`. Evaluator routing, as data on the issue rather than prose in a brief.
-- flags — `rfc`, `breaking`, `flag:close-gate-override`. Cross-cutting and additive; never the board column.
+- flags — `epic`, `rfc`, `breaking`, `flag:close-gate-override`. Cross-cutting and additive; never the board column.
 
 `eval:skip` is the only label here that turns a gate off. Applying it without saying, in the PR,
 what evidence stands in for the evaluation is how a false green reaches the default branch.

@@ -51,9 +51,34 @@ export const DEFAULT_PRIORITY_ORDER = ["p0", "p1", "p2", "p3"] as const;
 /** Label families where a second value on one item is a contradiction, not extra information. */
 const SINGLE_VALUE_FAMILIES = ["epic", "priority", "type"] as const;
 
-/** An item is an epic when it carries the `epic` type label or an `epic` bare label. */
-const detectIsEpic = (labels: readonly string[]): boolean =>
-  labels.includes("epic") || labels.includes("type:epic");
+/**
+ * The bare label that marks an issue as an epic.
+ *
+ * Exported because two packages have to agree on it. `forge` derives the `epic:<slug>` family by
+ * searching GitHub for epics, and when the two packages each held their own literal they disagreed:
+ * this file accepted `{epic, type:epic}` and `detect.ts` searched `{epic, type:umbrella}`, so an
+ * item labelled one way and not the other was an epic to one package and a child to the other (#202).
+ * One exported constant is the whole fix; the alternative is two literals that agree until someone
+ * edits one.
+ */
+export const EPIC_LABEL = "epic";
+
+/**
+ * An item is an epic when it carries the bare `epic` label. Exactly that, and nothing else.
+ *
+ * `type:epic` used to be a second alternative here and never once evaluated true against a real
+ * repository: the label does not exist, and `forge`'s taxonomy has never created it. It survived
+ * because a fixture invented it — `board-smoke-fixture.ts` stamped `type:epic` on its epic, so the
+ * branch had a passing test standing behind data that cannot occur.
+ *
+ * `type:umbrella`, which `forge` used to accept here, is deliberately *not* a second alternative.
+ * It is specified as "Coordinating PR for a multi-slice effort" and belongs to the `type:` family,
+ * which answers what kind of change something is. An epic is not a kind of change; it is a board
+ * object with its own `epic:` slug family. Accepting it here would also reclassify live items: #182
+ * carries `type:umbrella` *and* `epic:e0`, so it would become an epic whose slug is already claimed
+ * by #30 — a `duplicate-epic-slug` anomaly manufactured by the predicate that was meant to fix one.
+ */
+export const isEpicLabels = (labels: readonly string[]): boolean => labels.includes(EPIC_LABEL);
 
 function toItem(source: SourceIssue, lifecycle: Lifecycle, lanePrefix: string): BoardItem {
   return {
@@ -63,7 +88,7 @@ function toItem(source: SourceIssue, lifecycle: Lifecycle, lanePrefix: string): 
     lane: labelValue(source.labels, lanePrefix),
     priority: labelValue(source.labels, "priority"),
     type: labelValue(source.labels, "type"),
-    isEpic: detectIsEpic(source.labels),
+    isEpic: isEpicLabels(source.labels),
   };
 }
 

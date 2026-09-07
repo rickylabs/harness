@@ -162,6 +162,17 @@ export const EVAL_LABELS: readonly LabelSpec[] = [
 
 /** Cross-cutting, and additive: a flag never decides which column an item is in. */
 export const FLAG_LABELS: readonly LabelSpec[] = [
+  // The marker `projectBoard` reads to decide an issue is an epic, and the label `detectEpics`
+  // searches for. It is core because without it a freshly forged repository has no way to mark an
+  // epic at all: the taxonomy would create the `epic:<slug>` children and nothing that identifies a
+  // parent, so `detect` would search for a label its own `init` never made (#202).
+  //
+  // The family is `flag`, not `epic`, and that is deliberate rather than convenient. `epic` is the
+  // *detected* family — `epicLabel` stamps `epic:<slug>` from real issues — and `CORE_FAMILIES` is
+  // derived from whatever families appear in the core, so a core row in family `epic` would silently
+  // reclassify every derived slug as portable. `flag` is also the accurate description: this label
+  // is additive and never decides a column, which is exactly what this list promises.
+  spec("epic", c.umbrella, "Epic — tracked work stream", "flag"),
   spec("rfc", c.umbrella, "Request for Comments — substantial or breaking design change", "flag"),
   spec("breaking", c.danger, "Introduces a breaking change", "flag"),
   spec(CLOSE_GATE_OVERRIDE, c.danger, "Audited exception to the closing-keyword acceptance gate", "flag"),

@@ -52,7 +52,10 @@ export function smokeInput(
 ): BoardRefreshInput {
   return {
     issues: [
-      issue({ number: 68, title: "Board epic", labels: ["type:epic", "epic:board", "status:impl"] }),
+      // `epic`, not `type:epic`. The latter is a label this repository has never had and `forge`
+      // has never created; stamping it here gave board's dead second alternative a passing test to
+      // stand behind, which is how the predicate divergence in #202 survived review.
+      issue({ number: 68, title: "Board epic", labels: ["epic", "epic:board", "status:impl"] }),
       issue({
         number: 204,
         title,

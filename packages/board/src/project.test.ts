@@ -17,7 +17,7 @@ import {
   sourceSaysDelivered,
 } from "./model.js";
 import type { SourceIssue } from "./model.js";
-import { projectBoard, slugOfEpicTitle } from "./project.js";
+import { EPIC_LABEL, isEpicLabels, projectBoard, slugOfEpicTitle } from "./project.js";
 
 const AT = "2026-09-05T00:00:00.000Z";
 
@@ -224,6 +224,47 @@ describe("slugOfEpicTitle", () => {
 
   it("returns null when there is no identifier", () => {
     assert.equal(slugOfEpicTitle("Coordinator work"), null);
+  });
+});
+
+describe("isEpicLabels", () => {
+  it("reads the bare epic label", () => {
+    assert.equal(isEpicLabels([EPIC_LABEL]), true);
+    assert.equal(isEpicLabels(["status:impl", "epic", "epic:e6"]), true);
+  });
+
+  it("is not fooled by a label that merely starts with epic", () => {
+    // `epic:e6` declares which epic an item belongs to. An item carrying only that is a child.
+    assert.equal(isEpicLabels(["epic:e6"]), false);
+    assert.equal(isEpicLabels(["epically-hard"]), false);
+  });
+
+  it("does not accept type:umbrella", () => {
+    // `forge` used to search for `{epic, type:umbrella}` while this file accepted `{epic,
+    // type:epic}`, so an item carrying one and not the other was an epic to one package and a
+    // child to the other (#202). The two agree now, and they agree on the bare label: an epic is
+    // a board object with its own `epic:` slug family, not a kind of change.
+    assert.equal(isEpicLabels(["type:umbrella"]), false);
+  });
+
+  it("does not accept type:epic, a label that has never existed", () => {
+    // This was the second alternative here, and it never once evaluated true against a real
+    // repository: `forge`'s taxonomy has never created it. It survived because a fixture invented
+    // it, giving a dead branch a passing test to stand behind.
+    assert.equal(isEpicLabels(["type:epic"]), false);
+  });
+
+  it("keeps an umbrella PR under its epic instead of making it a rival epic", () => {
+    // The concrete item this decision was checked against: #182 carries `type:umbrella` *and*
+    // `epic:e0`, and #30 already owns the `e0` slug. Accepting `type:umbrella` as an epic marker
+    // would promote it to an epic whose slug its parent holds — manufacturing the very
+    // `duplicate-epic-slug` anomaly the predicate was being fixed to avoid.
+    const snapshot = project([
+      issue({ number: 30, title: "E0 — Roadmap", labels: ["epic", "epic:e0"] }),
+      issue({ number: 182, labels: ["type:umbrella", "epic:e0", "status:impl"] }),
+    ]);
+    assert.equal(snapshot.items.find((i) => i.source.number === 182)?.isEpic, false);
+    assert.ok(!snapshot.anomalies.some((a) => a.kind === "duplicate-epic-slug"));
   });
 });
 
