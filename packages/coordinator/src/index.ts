@@ -192,3 +192,4 @@ export { intentEntryOf, receiptEntryOf, proofFromReceipt } from "./journal.js";
 export { foldStore, settlePending, orphanPending, checkpointOf, genesisOf, readStoreRecord } from "./state-store.js";
 export { FileStateStore, type FileStateStoreOptions, type StoreIOPoint } from "./state-store-fs.js";
 export { MemoryStateStore } from "./state-store-memory.js";
+export { admissibleDispatch, type AdmissionFailure, type DispatchAdmission } from "./dispatch-admission.js";

@@ -190,3 +190,5 @@ export {
 export const PACKAGE_NAME = "@rickylabs/dsh-app" as const;
 
 export type PackageName = typeof PACKAGE_NAME;
+export { driveDryRun, setupDryRun, type DryRunSetup, type DryRunPlan, type FakeExecutor,
+  type GithubSourceRef, type DriveRefusal, type DriveOutcome } from "./dry-run.js";

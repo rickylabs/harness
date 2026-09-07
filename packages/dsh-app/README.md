@@ -296,3 +296,96 @@ each failure path alike.
 The CLI tests run `main()` against a fake filesystem with a failure switch, so the exit statuses
 above are asserted rather than described — including the two that only show up when something is
 wrong, `check` on a drifted managed file and `install` onto a home it cannot write.
+
+## Offline durable dispatch
+
+`driveDryRun` composes the canonical milestone admission, routing admission and checked route
+identity with the existing intent/receipt store port. Its executor is plain data: one synthetic
+observation and one configured result. It launches no provider and makes no network request.
+`setupDryRun` explicitly chooses the existing local filesystem **reference adapter** for a dry run;
+it is not a production storage choice.
+
+The caller supplies an offline open GitHub issue (including body and update timestamp), existing
+workflow states, a dispatch request, lane, absolute cwd, attempt and fake. The source URL must name
+that repository and issue on `github.com`. URLs and citations are checked as references; their
+existence, authority and approval are not attested. The helper replays every done prerequisite
+through the existing `settle`, including read steps, before assembling anything. Fabricated
+`admitted` or route `status` properties confer no permission.
+
+For a fresh, existing temporary directory, this public API example takes the admission evidence
+already recorded by its caller. It does not manufacture gate evidence:
+
+```ts
+import { setupDryRun } from "@rickylabs/dsh-app";
+import type { StepState } from "@rickylabs/coordinator";
+
+async function simulate(directory: string, states: readonly StepState[]) {
+  const setup = setupDryRun({
+    directory,
+    scope: { repository: "example/project", milestone: "synthetic" },
+    at: "2000-01-01T00:00:00.000Z",
+  });
+  if (!setup.ok) return setup;
+  const opened = await setup.store.open();
+  if (!opened.ok) return opened;
+  const handle = opened.value;
+  try {
+    const initialized = await handle.initialize(); // Only for a fresh store.
+    if (!initialized.ok) return initialized;
+    const outcome = await setup.drive(handle, {
+      workflow: "milestone", states, lane: "complex_implementation", attempt: 1,
+      source: {
+        kind: "issue", state: "open", repository: "example/project", number: 7,
+        url: "https://github.com/example/project/issues/7", title: "Synthetic issue",
+        body: "Perform synthetic work.", updatedAt: "2000-01-01T00:00:00.000Z",
+        labels: ["task"],
+      },
+      dispatch: { harness: "codex", model: "gpt-6-astra", effort: "medium",
+        prompt: "Perform synthetic work." },
+      cwd: "/synthetic/project",
+      fake: {
+        name: "fixture", provider: "synthetic",
+        observation: { provider: "synthetic", model: "gpt-6-astra",
+          effort: "medium", cwd: "/synthetic/project" },
+        result: { kind: "accepted" },
+      },
+    });
+    return outcome;
+  } finally {
+    const closed = await handle.close();
+    if (!closed.ok) {
+      // Surface a poisoned/revoked release; it does not authorize recovery or retry.
+      throw new Error(`dry-run close refused: ${closed.refusal.kind}`);
+    }
+  }
+}
+```
+
+`setup.drive` accepts only handles acquired through its own `setup.store`, and captures one scope
+for both store and plan. The lower-level `driveDryRun(handle, plan)` accepts any conforming handle;
+its caller must ensure that `plan.scope` is that store's scope. A handle does not expose its
+milestone scope. All plan data is detached synchronously before the first await; callbacks,
+accessors, cyclic values and non-plain objects are refused.
+
+The task is derived as `issue-<number>`. The revision digest binds the source/body, complete
+request/prompt, lane, cwd, provider, fake outcome and reconstructed admission evidence, plus the
+scope and `mode: "dry-run"`. Attempt is a separate key field. Accepted results produce a `sent`
+receipt branded `dry-run:<fake-name>@<digest>`; that is a synthetic delivery, not evidence that a
+provider ran. Names, provider identifiers and definitive refusal reasons are 1–48 character
+lowercase codes using letters, digits and hyphens, starting with a letter. A configured `refused`
+with a valid reason code means definitive non-delivery and produces `unsent` with the store's
+non-delivery proof. `unknown`, `throws` and malformed outcomes produce no receipt; their pending
+intent becomes terminal `unknown` on subsequent ownership recovery.
+
+A pre-intent refusal has `appended: 0`, meaning this invocation appended nothing even if the store
+already held records. A store refusal has `appended: "unknown"`, the failed `intent` or `receipt`
+operation and the port's named refusal. A failed publication may already be durable. The driver
+never acknowledges before receipt durability and never automatically checkpoints, retries,
+reopens or recovers. Checkpoint and clean close/open are explicit caller operations; stale recovery
+requires the expected holder identity and adapter-established death. A live or poisoned owner
+cannot be treated as dead merely because a write refused.
+
+This proves the existing durable record shape and recovery behavior against synthetic effects.
+Live channel selection, provider attestation, hub lifecycle, production storage and the step F
+restart acceptance proof remain outside this API. See the
+[coordinator storage boundary](../coordinator/README.md#durable-effect-state).
