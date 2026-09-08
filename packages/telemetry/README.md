@@ -592,7 +592,7 @@ No `RemoteSnapshot`, protocol, hub, fold or client change is part of this slice.
 
 ### Installed consumer verification
 
-After a workspace build, `pnpm run check:installed` packs contracts 0.2.0, installs the actual tarball
+After a workspace build, `pnpm run check:installed` packs the contracts workspace package, installs the actual tarball
 with `npm install --offline` in an isolated consumer, imports both root and `/server` runtime exports,
 and actually compiles a TypeScript consumer of both installed declaration entry points. It then
 records a synthetic admission using the real CLI and invokes the real governance command with a
@@ -606,3 +606,92 @@ If the default temp mount is `noexec`, configure `TMPDIR` to an operator-selecte
 location before running the gate/root tests. A failure is reported as failure; there is no network
 install fallback. Scratch trees and child processes are owned and cleaned by the script. No live
 provider access, host-capacity measurement, downstream compatibility or publication is tested.
+
+## Selected repository run observation
+
+`dsh-telemetry run-observation --source <absolute descriptor path>` emits the standalone
+contracts `RepositoryRunObservation` document. This command accepts only those arguments;
+unrelated flags fail before file access (exit 2, fixed diagnostic). A missing, oversized or
+invalid descriptor exits 1 with no document and a fixed diagnostic. A valid binding with unread
+or incomplete evidence emits coverage-only JSON and exits 3. A read emits JSON and exits 0.
+
+The local descriptor has exactly this shape (all paths below are illustrative):
+
+```json
+{
+  "schema": 1,
+  "binding": {
+    "namespace": "enrollment-authority",
+    "id": "repository-association",
+    "revision": "revision-1",
+    "sourceScopeId": "native-store-1",
+    "repo": { "owner": "example", "name": "repository" }
+  },
+  "source": {
+    "kind": "codex",
+    "root": "/absolute/native-store",
+    "file": "/absolute/native-store/selected.jsonl",
+    "nativeId": "selected-native-session-id"
+  },
+  "worktree": "/absolute/repository-worktree",
+  "gitCommonDirectory": "/absolute/repository-common-git-directory"
+}
+```
+
+Enrollment is trusted configuration. All paths must be absolute, bounded to 4096 characters
+without control characters. The source file must canonicalize inside source.root, which is
+separate from worktree. Fixed-argv local `git rev-parse` checks the enrolled worktree and common
+directory with inherited Git redirections/config cleared; no network, hooks or provider calls.
+At least one session_meta cwd must resolve within worktree. Every present session_meta or
+turn_context cwd must resolve within it; absent cwd is neutral. Outside cwd rejects the whole
+run, including later conflicting metadata. All session_meta id/session_id aliases must be valid,
+equal and match selected nativeId. Turn IDs do not supply session identity.
+
+The descriptor is limited to 64 KiB, the regular source file to 32 MiB, each line to 1 MiB.
+Opened/path identities and bounded reads detect growth or replacement. Descriptor bytes and
+identity, source root, worktree, common-directory and Git association are checked again before
+serialization. Binding changes emit `incomplete/binding-changed` under the ORIGINAL snapshot
+binding. Source-only changes emit `incomplete/source-changed`. No partial payload survives a
+malformed line or tail, unknown envelope, bad timestamp or invalid supported evidence.
+Known envelopes are session_meta, turn_context, event_msg, response_item, compacted,
+world_state and token_usage_record;
+unknown payload kinds within them supply no state. Each envelope requires a real canonical UTC
+millisecond timestamp in nondecreasing file order. Identity fields keep their own supplying
+event times; provider is from session_meta, model/effort from turn_context (including nested
+collaboration settings). Accounting comes only from event_msg/token_count.info.total_token_usage.
+A present total replaces the supported counter snapshot; missing fields are not zeros.
+Only event_msg task_complete/error/stream_error/turn_aborted markers supply execution evidence;
+a later task_started resets to unknown.
+
+Collection/verification times are separate from native evidence. Public output carries no paths,
+prompts, messages, raw errors, remote URLs or source notes. Allowlisted identity labels are not a
+universal secret sanitizer: source storage must be trusted. There is no home scan, enrollment or
+auth integration. Backend fencing/retention obligations and the strict portable encoding are
+specified in [the contracts README](../contracts/README.md#standalone-repository-run-observation-030-candidate-protocol-1).
+Tests use temporary synthetic Git repositories/native files. Real-source acceptance is a separate,
+privately authorized coordinator gate; this command does not certify backend authorization.
+
+
+The supplemental native envelopes have deliberately narrow support:
+
+- `world_state` requires `payload.full === true`, object `payload.state`, object
+  `state.environments`, and a nonempty object `state.environments.environments`. Every map value
+  must be an object with an absolute `cwd` resolving within the selected worktree. Malformed,
+  missing, empty or partial (`full:false`) layouts yield `invalid-evidence`; unresolved cwd yields
+  `scope-unverified`, and outside cwd yields `scope-mismatch`. The existing positive session_meta
+  cwd remains mandatory. Environment IDs, instructions, model/settings and all other world-state
+  fields are ignored and never output. There is no recursive cwd mining or partial-update support.
+- `token_usage_record` requires both `payload.thread_id` and `payload.session_id` to be valid R1
+  identifiers equal to the selected session_meta/native ID. Missing/malformed/wrong IDs yield
+  `identity-mismatch`; a token-only source still yields `identity-missing`. Every other payload
+  field is ignored, including all supplemental token blocks, turn/root-turn/response IDs, inner
+  timestamps and any embedded settings. Supplemental numeric blocks are not shape-validated or
+  compared with token_count totals. Only event_msg/token_count supplies accounting; supplemental
+  records cannot double-count totals, refresh leaf clocks or create ancestry.
+
+Both supplemental envelope timestamps must satisfy the same canonical/order rules and can extend
+first/lastObservedAt. Only the outer envelope timestamp participates. Neither envelope changes
+provider/model/effort/usage/execution observation times or implies current liveness. All other
+unknown envelope types still withhold. This is support for two specifically reviewed source forms,
+not a claim of vendor-wide format completeness. The coordinator retains any initial real-source
+refusal and retries the unchanged source only under its separate private-read authorization.

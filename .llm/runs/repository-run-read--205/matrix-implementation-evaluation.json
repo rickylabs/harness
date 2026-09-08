@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "mode": "role",
+  "role": "implementation_evaluation",
+  "tiers": [
+    {
+      "tier": "complex",
+      "description": "Complex implementations, fixes, and features; medium temperature and high complexity.",
+      "routes": [
+        {
+          "model": "muse_spark_1_3",
+          "effort": "max"
+        },
+        {
+          "model": "muse_spark_1_3",
+          "effort": "max"
+        }
+      ],
+      "policy": {
+        "maxRounds": 5,
+        "notifyOwnerAfter": 3,
+        "reSteerSameSession": true
+      }
+    }
+  ]
+}

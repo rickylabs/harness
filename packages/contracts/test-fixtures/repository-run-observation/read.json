@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "protocol": 1,
+  "binding": {"namespace":"synthetic-issuer","id":"binding-1","revision":"r1","sourceScopeId":"store-a","repo":{"owner":"synthetic","name":"repo"}},
+  "capturedAt":"2026-09-08T12:00:05.000Z",
+  "coverage":{"status":"read","reason":null},
+  "verification":{"basis":"enrollment-and-local-worktree","verifiedAt":"2026-09-08T12:00:04.000Z"},
+  "run":{
+    "source":"codex","nativeId":"native-1",
+    "firstObservedAt":"2026-09-08T12:00:00.000Z","lastObservedAt":"2026-09-08T12:00:03.000Z",
+    "identity":{"provider":{"value":"synthetic-provider","observedAt":"2026-09-08T12:00:00.000Z"},"model":{"value":"synthetic/model","observedAt":"2026-09-08T12:00:01.000Z"},"effort":null},
+    "usage":{"observedAt":"2026-09-08T12:00:02.000Z","inputTokens":17},
+    "execution":{"status":"source-reported-complete","observedAt":"2026-09-08T12:00:03.000Z"},
+    "relationships":{"parent":"unavailable","agent":"unavailable","task":"unavailable","messages":"unavailable","certification":"unavailable"}
+  }
+}

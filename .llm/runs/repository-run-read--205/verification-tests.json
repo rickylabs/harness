@@ -1,0 +1,21 @@
+{
+  "command": "TMPDIR=/var/tmp pnpm test",
+  "exitCode": 0,
+  "packageTestCounts": {
+    "packages/contracts": 187,
+    "packages/subagents": 227,
+    "packages/board": 272,
+    "packages/provider-codex": 44,
+    "packages/provider-claude": 107,
+    "packages/provider-opencode": 151,
+    "packages/forge": 513,
+    "packages/routing": 205,
+    "packages/llm-local": 95,
+    "packages/coordinator": 317,
+    "packages/telemetry": 433,
+    "packages/dsh-app": 332
+  },
+  "total": 2883,
+  "snapshotGuardTestsInBuild": 9,
+  "installedGate": "verification-gates.json"
+}

@@ -51,6 +51,7 @@ import { mapUsage } from "./governance/usage.js";
 import { mapSpend } from "./governance/spend.js";
 import { mapCapacity } from "./governance/capacity.js";
 import { composeGovernance, type ComposedGovernance } from "./governance/compose.js";
+import { collectRepositoryRunObservation, type RepositoryRunReadOptions } from "./repository-run-observation.js";
 import { governanceRead } from "./governance/read.js";
 
 /**
@@ -91,6 +92,7 @@ const EXIT_BLOCK = Object.entries(EXIT)
 const USAGE = `dsh-telemetry — board activity, read from disk, with no agent awake
 
 usage:
+  dsh-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
   dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
   dsh-telemetry status [options]     runs grouped by epic
@@ -132,6 +134,11 @@ for descriptor fields, the env-only service dependency and public-safe admission
 refuses file: and --observations/--items/--run/--kind/--limit/--since, and scans no transcripts.
 Exit 0 means configured evidence is complete; exit 3 means incomplete or unavailable.
 Exit 1 emits no document and a fixed diagnostic. Pending approvals remain not-observed.
+
+"run-observation" accepts only --source and one absolute local descriptor path.
+It reads one selected Codex native file, with source-root and enrolled worktree checks.
+Exit 0 means the selected source was read; exit 3 withholds the run with typed coverage.
+Invalid descriptors exit 1 with a fixed diagnostic and no JSON. No home scan or network.
 
 "record" reads JSONL on stdin — one {"runId","kind","at","detail"} object per line, "at"
 and "detail" optional. A bad line loses that line and is named; an empty batch is not an
@@ -456,7 +463,21 @@ function whereItWrites(flags: Flags): number {
   return complete ? EXIT.ok : EXIT.incomplete;
 }
 
-export async function main(argv: readonly string[], services: SourceServices = defaultSourceServices()): Promise<number> {
+export async function main(argv: readonly string[], services: SourceServices = defaultSourceServices(), observationOptions: RepositoryRunReadOptions = {}): Promise<number> {
+  if (argv.includes("run-observation")) {
+    if (argv.length !== 3 || argv[0] !== "run-observation" || argv[1] !== "--source" || !argv[2] || !isAbsolute(argv[2]) || /[\x00-\x1f\x7f]/.test(argv[2])) {
+      process.stderr.write("run-observation: invalid command line\n");
+      return EXIT.usage;
+    }
+    try {
+      const observation = await collectRepositoryRunObservation(argv[2], observationOptions);
+      process.stdout.write(`${JSON.stringify(observation)}\n`);
+      return observation.coverage.status === "read" ? EXIT.ok : EXIT.incomplete;
+    } catch {
+      process.stderr.write("run-observation: invalid descriptor or collection failed\n");
+      return EXIT.failed;
+    }
+  }
   let flags: Flags;
   const governanceCommand = argv.includes("governance");
   try {

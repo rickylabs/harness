@@ -82,6 +82,7 @@ const SKIP = [/(^|\/)node_modules\//, /(^|\/)dist\//, /(^|\/)pnpm-lock\.yaml$/];
 // This is an exact path AND byte-digest inventory, never a directory or marker exemption.
 // Changing even non-snapshot bytes requires deliberate review of this inventory.
 const SYNTHETIC_CONTRACT_FIXTURES = {
+  "packages/contracts/test-fixtures/repository-run-observation/read.json": "07753dfa40a2b006721c5a4442506da15f9df9e385650cc88973d8666b28796e",
   "packages/contracts/test-fixtures/governance-read/admissions-only.json": "ee401d61aebaf06cec5d5d5da887d6677bb0bebdf4af488f7cdd6fbe2ce28860",
   "packages/contracts/test-fixtures/governance-read/complete-without-admissions.json": "2a50ba3a6acce838288141f6954362b7dbeb0fcc6ce0d0b3a2ebb3a0a823bf52",
   "packages/contracts/test-fixtures/governance-read/conflicting-admissions.json": "b187d17b5c60e53c08ce363e724a65b129abc1c5199e90c7e6689679c3ec0814",

@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { runObservationMatrix } from "../packages/telemetry/test-fixtures/run-observation/matrix.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
 const cli = join(root, "packages/telemetry/dist/cli.js");
@@ -72,7 +73,7 @@ try {
   const packed = await run(npm, ["pack", contracts, "--json", "--pack-destination", packDir, "--ignore-scripts"], { cwd: scratch, env });
   assert.equal(packed.code, 0);
   const metadata = JSON.parse(packed.stdout)[0];
-  assert.equal(metadata.version, "0.2.0");
+  assert.equal(metadata.version, "0.3.0");
   const tarball = join(packDir, metadata.filename);
   const digest = createHash("sha256").update(readFileSync(tarball)).digest("hex");
   assert.ok(!metadata.files.some(f => /test|fixture|tsbuildinfo/.test(f.path)));
@@ -86,7 +87,7 @@ try {
   assert.equal(installed.code, 0);
   const installedRoot = join(consumer, "node_modules/@rickylabs/harness-contracts");
   const pkg = JSON.parse(readFileSync(join(installedRoot, "package.json"), "utf8"));
-  assert.equal(pkg.version, "0.2.0"); assert.equal(pkg.dsh.protocol, 1);
+  assert.equal(pkg.version, "0.3.0"); assert.equal(pkg.dsh.protocol, 1);
   assert.ok(existsSync(join(installedRoot, "dist/index.d.ts")) && existsSync(join(installedRoot, "dist/server.d.ts")));
   stage = "installed root/server runtime exports";
   writeFileSync(join(consumer, "runtime.mjs"), `import assert from 'node:assert/strict';
@@ -98,8 +99,13 @@ console.log(JSON.stringify({ root: true, server: true, protocol: PROTOCOL_VERSIO
   const runtime = await run(process.execPath, [join(consumer, "runtime.mjs")], { cwd: consumer, env });
   assert.equal(runtime.code, 0); assert.deepEqual(JSON.parse(runtime.stdout), { root: true, server: true, protocol: 1 });
   stage = "installed root/server declaration compilation";
-  writeFileSync(join(consumer, "consumer.ts"), `import { readGovernanceSnapshot, PROTOCOL_VERSION, type GovernanceReadSnapshot, type GovernanceReading } from '@rickylabs/harness-contracts';
+  writeFileSync(join(consumer, "consumer.ts"), `import { readRepositoryRunObservation, type RepositoryRunObservation, type RepositoryRunObservationReading, readGovernanceSnapshot, PROTOCOL_VERSION, type GovernanceReadSnapshot, type GovernanceReading } from '@rickylabs/harness-contracts';
 import { openHub, type Hub, type Delivery } from '@rickylabs/harness-contracts/server';
+const observationReading: RepositoryRunObservationReading = readRepositoryRunObservation({});
+function acceptObservation(o: RepositoryRunObservation): string { return o.binding.namespace; }
+if (observationReading.ok) acceptObservation(observationReading.observation);
+// @ts-expect-error standalone decoder declarations reject unrelated shapes
+acceptObservation({schema: 1});
 const protocol: 1 = PROTOCOL_VERSION;
 const read: GovernanceReading = readGovernanceSnapshot({});
 function consume(snapshot: GovernanceReadSnapshot): boolean { return snapshot.complete; }
@@ -178,6 +184,38 @@ void protocol; void server; void acceptHub;\n`);
   assert.equal(absent.code, 3); assert.equal(absent.stderr, "");
   const unavailable = decoder.readGovernanceSnapshot(JSON.parse(absent.stdout));
   assert.equal(unavailable.ok, true); assert.equal(unavailable.snapshot.unavailableReason, "not-configured");
+  stage = "installed run observation CLI and deterministic race matrix";
+  const { collectRepositoryRunObservation } = await import(pathToFileURL(join(root, "packages/telemetry/dist/repository-run-observation.js")).href);
+  const runFixtures = await runObservationMatrix({ scratch, collect: collectRepositoryRunObservation,
+    decode: decoder.readRepositoryRunObservation,
+    cli: descriptorPath => run(process.execPath, [cli, "run-observation", "--source", descriptorPath], {
+      env: { PATH: env.PATH, GIT_DIR: "/synthetic-unrelated-git", GIT_WORK_TREE: "/synthetic-unrelated-worktree" },
+    }),
+    raceCli: async (fixture, point, action) => {
+      const harness = join(scratch, "observation-race.mjs");
+      writeFileSync(harness, `import { main } from ${JSON.stringify(pathToFileURL(cli).href)};
+import { mkdir, writeFile, readFile, rm, rename } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process'; import { join } from 'node:path';
+const git = path => execFileSync('git', ['init','--quiet',path], {env:{PATH:process.env.PATH,GIT_CONFIG_NOSYSTEM:'1',GIT_CONFIG_GLOBAL:'/dev/null'},stdio:'pipe'});
+const f = ${JSON.stringify(fixture)}; const action = ${action}; let invoked = 0;
+process.exitCode = await main(['run-observation','--source',f.descriptorPath], undefined, {checkpoint:async p => {if(p === ${JSON.stringify(point)}) {invoked++; await action(f);}}});
+if(invoked !== 1) throw new Error('checkpoint not reached');`);
+      return await run(process.execPath, [harness], { env: { PATH: env.PATH } });
+    },
+  });
+  assert.ok(runFixtures.length === 108 && runFixtures.includes("race-descriptor-revision"));
+  // Public package must stay portable, dependency-free and exclude all synthetic fixtures.
+  assert.equal(Object.keys(pkg.dependencies ?? {}).length, 0);
+  for (const file of metadata.files.filter(f => /\.(?:js|ts)$/.test(f.path))) {
+    const body = readFileSync(join(installedRoot, file.path), "utf8");
+    assert.ok(!/from ["']node:|import\(["']node:|require\(/.test(body));
+    assert.ok(!body.includes("synthetic-private-message-canary"));
+  }
+  console.log(JSON.stringify({ check: "installed-repository-run-observation", status: "PASS", version: pkg.version, protocol: 1,
+    tarball: metadata.filename, sha256: digest, fixtures: runFixtures, fixtureCount: runFixtures.length,
+    exports: { rootRuntime: true, rootTypesCompiled: true, serverTypesCompiled: true },
+    assertions: "actual CLI -> offline installed strict decoder; deterministic CLI-main races; identity, scope, clocks, coverage, carrier fence, privacy; no Node imports or dependencies",
+    limitations: ["synthetic only; no real-source acceptance", "carrier fence model only; no backend authorization claim", "trusted local storage; no adversarial ABA proof", "candidate only; no publication"] }));
   console.log(JSON.stringify({ check: "installed-governance", status: "PASS", version: pkg.version, protocol: 1,
     tarball: metadata.filename, sha256: digest, exports: { rootRuntime: true, serverRuntime: true, rootTypesCompiled: true, serverTypesCompiled: true },
     install: "npm install --offline --ignore-scripts --no-audit --no-fund <tarball>",
