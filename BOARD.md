@@ -2,18 +2,17 @@
 
 # rickylabs/harness
 
-`[###############-----]` **214/268 done · 18 running · 22 queued · 12 abandoned · 2 invisible**
+`[################----]` **215/268 done · 17 running · 22 queued · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-08T09:22:59Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-08T09:32:43Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (18)
+## Moving now (17)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
-| [PR280 feat(telemetry): publish repository-bound run observations](https://github.com/rickylabs/harness/pull/280) | `ready-merge` | `e9` |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
@@ -31,23 +30,11 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (2)
-
-`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#280** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
-
-**`epic-milestone-conflict`**
-
-- **#280** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
-
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 174/213 done · 16 running · 19 queued · 3 abandoned · 1 invisible
+`[#########---]` 175/214 done · 16 running · 19 queued · 3 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -61,17 +48,16 @@ Something could be acting on these right now.
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 19/23 done · 4 running | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 20/24 done · 4 running | `impl` |
 | _(no epic)_ | `[############]` 3/3 done | — |
 
 ### (no milestone)
 
-`[########----]` 40/55 done · 2 running · 3 queued · 9 abandoned · 1 invisible
+`[########----]` 40/54 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[------------]` 0/1 done · 1 running | `impl` |
 | _(no epic)_ | `[########----]` 36/49 done · 3 queued · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
@@ -112,9 +98,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  214/268 done · 18 running · 22 queued · 12 abandoned · 2 invisible
+# rickylabs/harness  [################----]  215/268 done · 17 running · 22 queued · 12 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [################----]  174/213 done · 16 running · 19 queued · 3 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [################----]  175/214 done · 16 running · 19 queued · 3 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -334,7 +320,7 @@ Something could be acting on these right now.
     shipped              #279 chore(contracts): owner release of the reviewed governance read boundary as 0.2.0 (p0)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
-    [#############---] 19/23 done · 4 running
+    [#############---] 20/24 done · 4 running
     shipped              #83 E9.1 — SessionTelemetrySink on every run, on both seams
     shipped              #84 E9.2 — Push over /api/remote.mux, never poll
     shipped              #85 E9.3 — The hierarchy view: milestone → epic → task → subagent
@@ -358,13 +344,14 @@ Something could be acting on these right now.
     plan-eval            #265 E9 — Retain the board without false freshness across connection loss and restart (p1)
     shipped              PR276 feat(telemetry): read live governance sources beside progress (p1)
     shipped              PR278 fix(contracts): expose configured governance through an installed read boundary (p0)
+    shipped              PR280 feat(telemetry): publish repository-bound run observations (p0)
 
   (no epic)
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  40/55 done · 2 running · 3 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  40/54 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -373,10 +360,6 @@ Something could be acting on these right now.
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
-
-  E9 — Telemetry: the "status ?" killer #39  [impl]  (epic is in M1 — dsh coordinator foundation)
-    [----------------] 0/1 done · 1 running
-    ready-merge          PR280 feat(telemetry): publish repository-bound run observations (p0)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
