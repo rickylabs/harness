@@ -592,7 +592,7 @@ No `RemoteSnapshot`, protocol, hub, fold or client change is part of this slice.
 
 ### Installed consumer verification
 
-After a workspace build, `pnpm run check:installed` packs contracts 0.2.0, installs the actual tarball
+After a workspace build, `pnpm run check:installed` packs the contracts workspace package, installs the actual tarball
 with `npm install --offline` in an isolated consumer, imports both root and `/server` runtime exports,
 and actually compiles a TypeScript consumer of both installed declaration entry points. It then
 records a synthetic admission using the real CLI and invokes the real governance command with a
