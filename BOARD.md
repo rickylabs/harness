@@ -2,9 +2,17 @@
 
 # rickylabs/harness
 
-`[################----]` **219/270 done · 16 running · 21 queued · 12 abandoned · 2 invisible**
+`[################----]` **219/271 done · 16 running · 21 queued · 1 blocked · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-08T18:33:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-08T18:36:18Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+
+## Waiting on you (1)
+
+Stopped on a decision only a person can make. No agent will pick these up.
+
+| item | column | epic |
+| --- | --- | --- |
+| [#283 Contracts 0.4.0 — authorize publication of reviewed synchronization recovery](https://github.com/rickylabs/harness/issues/283) | `impl-eval` | `e9` |
 
 ## Moving now (16)
 
@@ -33,7 +41,7 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 178/216 done · 15 running · 19 queued · 3 abandoned · 1 invisible
+`[#########---]` 178/217 done · 15 running · 19 queued · 1 blocked · 3 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -47,7 +55,7 @@ Something could be acting on these right now.
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 22/25 done · 3 running | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 22/26 done · 3 running · 1 blocked | `impl` |
 | _(no epic)_ | `[############]` 3/3 done | — |
 
 ### (no milestone)
@@ -96,9 +104,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  219/270 done · 16 running · 21 queued · 12 abandoned · 2 invisible
+# rickylabs/harness  [################----]  219/271 done · 16 running · 21 queued · 1 blocked · 12 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [################----]  178/216 done · 15 running · 19 queued · 3 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [################----]  178/217 done · 15 running · 19 queued · 1 blocked · 3 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -319,7 +327,7 @@ Something could be acting on these right now.
     shipped              #279 chore(contracts): owner release of the reviewed governance read boundary as 0.2.0 (p0)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
-    [##############--] 22/25 done · 3 running
+    [#############---] 22/26 done · 3 running · 1 blocked
     shipped              #83 E9.1 — SessionTelemetrySink on every run, on both seams
     shipped              #84 E9.2 — Push over /api/remote.mux, never poll
     shipped              #85 E9.3 — The hierarchy view: milestone → epic → task → subagent
@@ -345,6 +353,7 @@ Something could be acting on these right now.
     shipped              PR278 fix(contracts): expose configured governance through an installed read boundary (p0)
     shipped              PR280 feat(telemetry): publish repository-bound run observations (p0)
     shipped              PR282 fix(contracts): retain boards without false synchronization after connection loss (p1)
+    impl-eval            #283 Contracts 0.4.0 — authorize publication of reviewed synchronization recovery (p1, waiting on owner)
 
   (no epic)
     shipped              PR219 fix(board): say so when a column is a lie
