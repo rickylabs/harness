@@ -11,6 +11,8 @@ import type { RunOutcome, RunView } from "./runs.js";
 import { openHub, publish, subscribe, type Hub, type HubStep } from "./server.js";
 import {
   board,
+  boardStatus,
+  type BoardStatus,
   cockpitStatus,
   openCockpit,
   stepCockpit,
@@ -20,6 +22,11 @@ import {
   type CockpitStep,
   type Effect,
 } from "./client.js";
+
+import * as root from "./index.js";
+import { emptyFold, foldFromSnapshot, foldValue, resyncFrame, type EventFold } from "./fold.js";
+import { resync as receiveHub } from "./server.js";
+import { createServer } from "node:http";
 
 const REPO = { owner: "rickylabs", name: "harness" } as const;
 
@@ -542,4 +549,390 @@ test("nothing in a bearer status line is the bearer token", () => {
 
   assert.ok(!line.includes("tokentokentoken"));
   assert.ok(line.includes("2 pins"));
+});
+
+// Recovery gates use deliberately unrelated HTTP/socket generations, and source clocks older
+// than receipt clocks. None of these fixtures is a backend authorization implementation.
+function wire(kind: string, generation: number, seq: number, payload: unknown): unknown {
+  return { kind, generation, seq, at: NOW, payload };
+}
+function greet(generation: number): unknown {
+  return wire("hello", generation, 0, { protocol: PROTOCOL_VERSION, repo: REPO });
+}
+function message(c: Cockpit, value: unknown, link = c.loop.link): CockpitStep {
+  return stepCockpit(c, { kind: "message", link, value }, 20_000);
+}
+function liveAt(generation = 90_000, state = projection({ tasks: [task(265)], runs: [run("unknown", "unknown")] })): Cockpit {
+  let c = stepCockpit(openCockpit(LAN), { kind: "start" }, 0).cockpit;
+  c = message(c, greet(generation)).cockpit;
+  return message(c, wire("snapshot", generation, 1, { ...state, generation })).cockpit;
+}
+function answerSnapshot(c: Cockpit, key = "cold", generation = 900_000): CockpitStep {
+  return stepCockpit(c, { kind: "answered", key, command: "snapshot", result: {
+    ok: true, value: { ...projection({ tasks: [task(7)], runs: [run("unknown", "unknown")] }), generation },
+  } }, 25_000);
+}
+function retained(before: Cockpit, after: Cockpit): void {
+  assert.equal(boardStatus(after), "retained");
+  assert.equal(after.fold.bound, false);
+  assert.equal(after.fold.lastSeq, null);
+  assert.equal(after.fold.needsResync, true);
+  assert.deepEqual(board(after), board(before));
+  assert.equal(after.fold.tasks, before.fold.tasks);
+  assert.equal(after.fold.runs, before.fold.runs);
+  assert.equal(after.fold.counts, before.fold.counts);
+  assert.equal(after.fold.snapshotAt, before.fold.snapshotAt);
+  assert.equal(after.fold.appliedAt, before.fold.appliedAt);
+  assert.equal(after.inFlight, before.inFlight);
+}
+
+for (const signal of [
+  { kind: "dropped", link: 1, detail: "synthetic loss" },
+  { kind: "rejected", detail: "synthetic refusal" },
+  { kind: "stop" },
+] as const) {
+  test(`recovery: ${signal.kind} immediately retains board, clocks, unknown run and counters`, () => {
+    const c = liveAt();
+    const asked = stepCockpit(c, { kind: "dispatch", command: {
+      item: 265, lane: "impl", prompt: "synthetic", idempotencyKey: "unknown-effect",
+    } }, 0).cockpit;
+    const lost = stepCockpit(asked, signal, 1000, { jitter: 1 });
+    retained(asked, lost.cockpit);
+    assert.equal(board(lost.cockpit)?.runs[0]?.outcome, "unknown");
+    assert.equal(lost.effects.some(e => e.kind === "post" || e.kind === "send"), false);
+    // Late frames on the lost current link must be fenced even before retry increments link.
+    for (const value of [greet(900_001), wire("snapshot", 90_000, 2, projection()), "unreadable"]) {
+      const late = message(lost.cockpit, value);
+      assert.equal(late.cockpit, lost.cockpit);
+      assert.deepEqual(late.effects, []);
+    }
+    const tick = stepCockpit(lost.cockpit, { kind: "tick" }, 1200);
+    assert.equal(tick.cockpit.fold, lost.cockpit.fold);
+    assert.equal(boardStatus(tick.cockpit), "retained");
+    assert.deepEqual(tick.effects, []);
+  });
+}
+
+test("recovery: new lower-generation host requires both hello and snapshot; glance has three phases", () => {
+  const c = liveAt();
+  assert.equal(boardStatus(c), "synchronized");
+  assert.ok(!cockpitStatus(c).includes("(stale)"));
+  const lost = stepCockpit(c, { kind: "dropped", link: 1, detail: "restart" }, 0).cockpit;
+  assert.ok(cockpitStatus(lost).includes("(stale)"));
+  assert.equal(board(lost)?.tasks[0]?.number, 265);
+  const retry = stepCockpit(lost, { kind: "tick" }, 60_000);
+  retained(c, retry.cockpit);
+  assert.equal(only(retry, "open").link, 2);
+  const hello = message(retry.cockpit, greet(1));
+  assert.equal(hello.cockpit.fold.bound, true);
+  assert.equal(hello.cockpit.loop.generation, 1);
+  assert.equal(boardStatus(hello.cockpit), "retained");
+  assert.ok(cockpitStatus(hello.cockpit).includes("(stale)"));
+  assert.equal(hello.cockpit.fold.snapshotAt, T0);
+  const next = { ...projection({ tasks: [task(7)], generatedAt: LATER }), generation: 1 };
+  const ready = message(hello.cockpit, wire("snapshot", 1, 1, next));
+  assert.equal(boardStatus(ready.cockpit), "synchronized");
+  assert.ok(!cockpitStatus(ready.cockpit).includes("(stale)"));
+  assert.deepEqual(board(ready.cockpit), next);
+  assert.equal(ready.effects.length, 0);
+  for (const generation of [1, 0]) {
+    const repeat = message(ready.cockpit, greet(generation));
+    assert.deepEqual(board(repeat.cockpit), next);
+    assert.equal(repeat.cockpit.fold.bound, true);
+    assert.equal(repeat.cockpit.fold.lastSeq, 1);
+    assert.equal(repeat.cockpit.fold.counts.discarded, ready.cockpit.fold.counts.discarded + 1);
+    assert.equal(boardStatus(repeat.cockpit), "synchronized");
+  }
+});
+
+test("recovery: pre-hello snapshot, delta, unknown and malformed-payload frames only increment discards", () => {
+  const c = liveAt();
+  const stopped = stepCockpit(c, { kind: "stop" }, 0).cockpit;
+  const retry = stepCockpit(stopped, { kind: "start" }, 1).cockpit;
+  for (const value of [
+    wire("snapshot", 90_000, 99, { ...projection(), generation: 90_000 }),
+    wire("task.removed", 90_000, 99, { number: 265 }),
+    wire("future.kind", 90_000, 99, {}),
+    wire("task.upserted", 90_000, 99, {}),
+  ]) {
+    const result = message(retry, value);
+    assert.deepEqual(board(result.cockpit), board(c));
+    assert.deepEqual(result.cockpit.fold, { ...retry.fold, counts: {
+      ...retry.fold.counts, discarded: retry.fold.counts.discarded + 1,
+    } });
+    assert.deepEqual(result.effects, []);
+    assert.equal(boardStatus(result.cockpit), "retained");
+  }
+  const invalidHello = message(retry, wire("hello", 1, 0, { protocol: 99, repo: REPO }));
+  assert.equal(invalidHello.cockpit.fold.bound, false);
+  assert.equal(invalidHello.cockpit.loop.state, "connecting");
+  assert.equal(boardStatus(invalidHello.cockpit), "retained");
+});
+
+test("recovery: all old-link frame kinds, opened and dropped leave a healthy fold and counters untouched", () => {
+  const c = liveAt();
+  const lost = stepCockpit(c, { kind: "dropped", link: 1, detail: "restart" }, 0).cockpit;
+  const retry = stepCockpit(lost, { kind: "tick" }, 60_000).cockpit;
+  const bound = message(retry, greet(1)).cockpit;
+  const ready = message(bound, wire("snapshot", 1, 1, { ...projection(), generation: 1 })).cockpit;
+  for (const current of [retry, ready]) {
+    for (const value of [greet(999_999), wire("snapshot", 1, 2, projection()),
+      wire("task.removed", 1, 2, { number: 265 }), wire("future.kind", 1, 2, {}), null]) {
+      const late = message(current, value, 1);
+      assert.equal(late.cockpit, current);
+      assert.deepEqual(late.effects, []);
+    }
+    for (const input of [{ kind: "dropped", link: 1, detail: "late" }, { kind: "opened", link: 1 }] as const) {
+      const late = stepCockpit(current, input, 60_001);
+      assert.equal(late.cockpit.fold, current.fold);
+      assert.equal(late.cockpit.loop, current.loop);
+      assert.deepEqual(late.effects, []);
+    }
+  }
+});
+
+for (const phase of ["idle", "connecting", "waiting", "stopped"] as const) {
+  test(`recovery: cold HTTP during ${phase} stays unbound with far-apart generations and original clocks`, () => {
+    let c = openCockpit(LAN);
+    if (phase !== "idle") c = stepCockpit(c, { kind: "start" }, 0).cockpit;
+    if (phase === "waiting") c = stepCockpit(c, { kind: "dropped", link: 1, detail: "loss" }, 1).cockpit;
+    if (phase === "stopped") c = stepCockpit(c, { kind: "stop" }, 1).cockpit;
+    c = stepCockpit(c, { kind: "ask", key: "cold", reason: "cold-start" }, 2).cockpit;
+    const fetched = answerSnapshot(c).cockpit;
+    assert.equal(boardStatus(fetched), "retained");
+    assert.equal(fetched.fold.generation, 900_000);
+    assert.equal(fetched.fold.bound, false);
+    assert.equal(fetched.fold.lastSeq, null);
+    assert.equal(fetched.fold.needsResync, true);
+    assert.equal(fetched.fold.snapshotAt, T0);
+    assert.equal(fetched.fold.appliedAt, T0);
+    assert.equal(board(fetched)?.governance.generatedAt, T0);
+    assert.equal(board(fetched)?.tasks[0]?.updatedAt, T0);
+    assert.equal(board(fetched)?.runs[0]?.outcome, "unknown");
+    const connecting = phase === "connecting" ? fetched : stepCockpit(fetched, { kind: "start" }, 3).cockpit;
+    const hello = message(connecting, greet(1)).cockpit;
+    assert.equal(hello.fold.generation, 1);
+    assert.equal(boardStatus(hello), "retained");
+    const done = message(hello, wire("snapshot", 1, 1, { ...projection(), generation: 1 })).cockpit;
+    assert.equal(boardStatus(done), "synchronized");
+  });
+}
+
+for (const order of ["request-before-loss", "request-during-loss"] as const) {
+  for (const answer of ["before-hello", "after-hello", "after-snapshot"] as const) {
+    test(`recovery: HTTP race ${order}, answer ${answer}`, () => {
+      let c = liveAt();
+      const ask = (current: Cockpit) => stepCockpit(current, { kind: "ask", key: "race", reason: "manual" }, 0).cockpit;
+      if (order === "request-before-loss") c = ask(c);
+      c = stepCockpit(c, { kind: "dropped", link: 1, detail: "loss" }, 1).cockpit;
+      if (order === "request-during-loss") c = ask(c);
+      c = stepCockpit(c, { kind: "tick" }, 60_000).cockpit;
+      if (answer === "before-hello") c = answerSnapshot(c, "race").cockpit;
+      c = message(c, greet(1)).cockpit;
+      if (answer === "after-hello") {
+        const result = answerSnapshot(c, "race");
+        assert.equal(result.cockpit.fold, c.fold);
+        assert.equal(boardStatus(result.cockpit), "retained");
+        c = result.cockpit;
+      }
+      c = message(c, wire("snapshot", 1, 1, { ...projection({ tasks: [task(1)] }), generation: 1 })).cockpit;
+      if (answer === "after-snapshot") {
+        const result = answerSnapshot(c, "race");
+        assert.equal(result.cockpit.fold, c.fold);
+        c = result.cockpit;
+      }
+      assert.equal(c.inFlight.size, 0);
+      assert.equal(boardStatus(c), "synchronized");
+      assert.equal(board(c)?.tasks[0]?.number, 1);
+    });
+  }
+}
+
+test("recovery: actual HTTP unauthorized command refusal unbinds; late HTTP board grants no permission", async () => {
+  const server = createServer((req, res) => {
+    assert.equal(req.method, "POST");
+    assert.equal(req.url, "/api/dispatch");
+    req.resume();
+    res.writeHead(401, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "unauthorized", detail: "synthetic revocation", retryable: false }));
+  });
+  await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const address = server.address();
+    assert.ok(address && typeof address !== "string");
+    const c = { ...liveAt(), endpoint: { ...LAN, origin: `http://127.0.0.1:${address.port}` } };
+    const asking = stepCockpit(c, { kind: "ask", key: "late", reason: "manual" }, 0).cockpit;
+    const sent = stepCockpit(asking, { kind: "dispatch", command: {
+      item: 265, lane: "impl", prompt: "synthetic", idempotencyKey: "refused",
+    } }, 1);
+    const post = only(sent, "post");
+    const response = await fetch(post.url, { method: post.method, body: JSON.stringify(post.body) });
+    assert.equal(response.status, 401);
+    const error = await response.json() as import("./routes.js").CommandError;
+    const refused = stepCockpit(sent.cockpit, { kind: "answered", key: post.key,
+      command: "dispatch", result: { ok: false, error } }, 2);
+    assert.equal(refused.cockpit.loop.state, "stopped");
+    assert.equal(boardStatus(refused.cockpit), "retained");
+    assert.equal(refused.cockpit.fold.bound, false);
+    assert.equal(refused.cockpit.fold.lastSeq, null);
+    assert.equal(refused.cockpit.fold.counts, c.fold.counts);
+    assert.deepEqual(board(refused.cockpit), board(c));
+    assert.equal(only(refused, "close").link, 1);
+    const late = answerSnapshot(refused.cockpit, "late");
+    assert.equal(late.cockpit.loop.state, "stopped");
+    assert.equal(boardStatus(late.cockpit), "retained");
+    assert.equal(late.cockpit.fold.bound, false);
+    assert.deepEqual(late.effects, []);
+    // Only transport state is represented. Backend display/persistence/command grants are absent.
+    assert.deepEqual(Object.keys(late.cockpit).sort(), ["endpoint", "fold", "inFlight", "loop"]);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve, reject) => server.close(e => e ? reject(e) : resolve()));
+  }
+});
+
+for (const failure of ["http", "network"] as const) {
+  test(`recovery: ordinary ${failure} command failure does not demote healthy synchronization or resend`, () => {
+    const c = liveAt();
+    const sent = stepCockpit(c, { kind: "dispatch", command: {
+      item: 265, lane: "impl", prompt: "synthetic", idempotencyKey: "unknown",
+    } }, 0).cockpit;
+    const input: CockpitInput = failure === "network"
+      ? { kind: "failed", key: "unknown", detail: "synthetic timeout" }
+      : { kind: "answered", key: "unknown", command: "dispatch", result: {
+        ok: false, error: { error: "unavailable", detail: "synthetic", retryable: true },
+      } };
+    const result = stepCockpit(sent, input, 1);
+    assert.equal(result.cockpit.fold, c.fold);
+    assert.equal(result.cockpit.loop, c.loop);
+    assert.equal(boardStatus(result.cockpit), "synchronized");
+    assert.equal(board(result.cockpit)?.runs[0]?.outcome, "unknown");
+    assert.deepEqual(result.effects, []);
+  });
+}
+
+test("recovery: absent, hello-only, empty, partial, mismatch, gap and resync have explicit derived statuses", () => {
+  const absent = openCockpit(LAN);
+  assert.equal(boardStatus(absent), "absent");
+  const started = stepCockpit(absent, { kind: "start" }, 0).cockpit;
+  const hello = message(started, greet(1)).cockpit;
+  assert.equal(boardStatus(hello), "absent");
+  for (const complete of [true, false]) {
+    const state = projection({ complete, anomalies: complete ? [] : [{ kind: "missing-phase", item: 265, detail: "synthetic" }] });
+    const c = liveAt(1, state);
+    assert.equal(boardStatus(c), "synchronized");
+    assert.equal(board(c)?.complete, complete);
+    assert.deepEqual(board(c)?.tasks, []);
+    assert.equal(boardStatus({ ...c, loop: { ...c.loop, generation: null } }), "retained");
+    assert.equal(boardStatus({ ...c, loop: { ...c.loop, generation: 2 } }), "retained");
+    assert.equal(boardStatus({ ...c, fold: { ...c.fold, bound: false } }), "retained");
+    const bad = message(c, wire("snapshot", 1, 2, { ...state, generation: 2 })).cockpit;
+    assert.deepEqual(board(bad), board(c));
+    const gap = message(c, wire("task.removed", 1, 3, { number: 265 }));
+    assert.equal(boardStatus(gap.cockpit), "retained");
+    assert.deepEqual(only(gap, "send").frame, { kind: "resync", generation: 1, lastSeq: 3 });
+    const fixed = message(gap.cockpit, wire("snapshot", 1, 4, { ...state, generation: 1 })).cockpit;
+    assert.equal(boardStatus(fixed), "synchronized");
+    assert.equal(board(fixed)?.complete, complete);
+    assert.equal(board(fixed)?.generatedAt, state.generatedAt);
+  }
+});
+
+test("recovery: legacy old-shaped folds compile and preserve hello/event/count/helper behavior", () => {
+  const { bound: omitted, ...oldShape } = liveAt(8).fold;
+  void omitted;
+  const legacy: EventFold = oldShape;
+  assert.equal(Object.hasOwn(legacy, "bound"), false);
+  assert.deepEqual(resyncFrame(legacy), { kind: "resync", generation: 8, lastSeq: 1 });
+  assert.equal(boardStatus({ ...liveAt(8), fold: legacy }), "synchronized");
+  for (const generation of [7, 8]) assert.equal(foldValue(legacy, greet(generation)).outcome, "discarded");
+  assert.equal(foldValue(legacy, greet(9)).outcome, "applied");
+  assert.equal(foldValue(legacy, wire("task.removed", 8, 2, { number: 265 })).outcome, "applied");
+  assert.equal(foldValue(legacy, wire("future.kind", 8, 2, {})).outcome, "counted");
+  assert.equal(foldValue(legacy, wire("future.kind", 9, 2, {})).outcome, "discarded");
+  const nullLegacy: EventFold = { ...oldShape, generation: null };
+  assert.equal(foldValue(nullLegacy, wire("future.kind", 8, 2, {})).outcome, "discarded");
+  assert.equal(foldValue(nullLegacy, wire("task.removed", 8, 2, { number: 265 })).outcome, "discarded");
+  assert.equal(foldValue(nullLegacy, greet(1)).outcome, "applied");
+  assert.deepEqual(resyncFrame({ ...legacy, lastSeq: null }), { kind: "resync", generation: 8 });
+});
+
+test("recovery: unbound resync uses zero sentinel and hub closes it without treating it as recovery", () => {
+  assert.deepEqual(resyncFrame(emptyFold()), { kind: "resync", generation: 0 });
+  const fetched = foldFromSnapshot({ ...projection(), generation: 900_000 });
+  assert.deepEqual(resyncFrame(fetched), { kind: "resync", generation: 0 });
+  const c = liveAt();
+  const lost = stepCockpit(c, { kind: "stop" }, 0).cockpit;
+  assert.deepEqual(resyncFrame(lost.fold), { kind: "resync", generation: 0 });
+  assert.deepEqual(resyncFrame(c.fold), { kind: "resync", generation: 90_000, lastSeq: 1 });
+  const hub = subscribe(openHub(projection()), "synthetic", NOW).hub;
+  assert.ok((hub.subscribers.get("synthetic")?.generation ?? 0) > 0);
+  const closed = receiveHub(hub, "synthetic", resyncFrame(lost.fold), NOW);
+  assert.deepEqual(closed.closed, ["synthetic"]);
+  assert.deepEqual(closed.deliveries, []);
+  assert.equal(closed.hub.subscribers.has("synthetic"), false);
+});
+
+test("recovery: root exports only the public status query, with a closed status type", () => {
+  assert.equal(root.boardStatus, boardStatus);
+  for (const name of ["isBound", "bound", "boundTo", "rebind", "openHub"]) assert.equal(name in root, false);
+  const statuses: BoardStatus[] = ["absent", "retained", "synchronized"];
+  assert.equal(statuses.length, 3);
+  // @ts-expect-error authorization is not a synchronization state
+  const unauthorized: BoardStatus = "authorized";
+  void unauthorized;
+});
+
+test("recovery: invalid and replayed snapshots after restart cannot clear pending synchronization", () => {
+  const c = liveAt();
+  const stopped = stepCockpit(c, { kind: "stop" }, 0).cockpit;
+  const retry = stepCockpit(stopped, { kind: "start" }, 1).cockpit;
+  const hello = message(retry, greet(1)).cockpit;
+  for (const value of [
+    wire("snapshot", 90_000, 1, { ...projection(), generation: 90_000 }),
+    wire("snapshot", 1, 1, { ...projection(), generation: 90_000 }),
+    wire("snapshot", 1, 0, { ...projection(), generation: 1 }),
+    wire("snapshot", 1, 1, {}),
+  ]) {
+    const invalid = message(hello, value);
+    assert.equal(boardStatus(invalid.cockpit), "retained");
+    assert.equal(invalid.cockpit.fold.needsResync, true);
+    assert.deepEqual(board(invalid.cockpit), board(hello));
+  }
+});
+
+test("recovery: same-generation new link binds, with unknown in-flight effects retained and never resent", () => {
+  const c = stepCockpit(liveAt(1), { kind: "dispatch", command: {
+    item: 265, lane: "impl", prompt: "synthetic", idempotencyKey: "unknown-effect",
+  } }, 0).cockpit;
+  const stopped = stepCockpit(c, { kind: "stop" }, 1).cockpit;
+  const retry = stepCockpit(stopped, { kind: "start" }, 2).cockpit;
+  const hello = message(retry, greet(1));
+  assert.equal(boardStatus(hello.cockpit), "retained");
+  const ready = message(hello.cockpit, wire("snapshot", 1, 1, {
+    ...projection({ runs: [run("unknown", "unknown")] }), generation: 1,
+  }));
+  assert.equal(boardStatus(ready.cockpit), "synchronized");
+  assert.equal(ready.cockpit.inFlight, c.inFlight);
+  assert.equal(board(ready.cockpit)?.runs[0]?.outcome, "unknown");
+  assert.deepEqual(hello.effects, []);
+  assert.deepEqual(ready.effects, []);
+});
+
+test("recovery: each connect clears an inherited legacy binding; a held live start does not", () => {
+  const healthy = liveAt(8);
+  const { bound: omitted, ...legacy } = healthy.fold;
+  void omitted;
+  for (const state of ["idle", "stopped", "waiting"] as const) {
+    // A consumer upgrading an old-shaped retained value has not passed through the new loss path.
+    const inherited: Cockpit = { ...healthy, fold: legacy,
+      loop: { ...healthy.loop, state, retryAt: state === "waiting" ? 1000 : null } };
+    const result = stepCockpit(inherited, { kind: state === "waiting" ? "tick" : "start" }, 1000);
+    assert.equal(only(result, "open").link, 2);
+    retained(inherited, result.cockpit);
+  }
+  const held = stepCockpit(healthy, { kind: "start" }, 1000);
+  assert.equal(held.cockpit.fold, healthy.fold);
+  assert.equal(boardStatus(held.cockpit), "synchronized");
+  assert.deepEqual(held.effects, []);
 });

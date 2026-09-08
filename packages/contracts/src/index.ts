@@ -234,6 +234,8 @@ export {
   openCockpit,
   stepCockpit,
   board,
+  boardStatus,
+  type BoardStatus,
   waitingOn,
   cockpitStatus,
   type Cockpit,

@@ -114,6 +114,46 @@ subscription filter that can change mid-stream quietly breaks the property the p
 stale row no future event will ever correct. One repository's board is small enough that filtering
 is a client-side concern.
 
+## Connection recovery in the 0.4.0 candidate
+
+This source prepares 0.4.0 over published 0.3.0; protocol remains 1 and no wire shape changes.
+Packing or merging it is not publication or consumer adoption. The 0.x minor discloses changed
+client behavior: `EventFold.bound` is optional for source compatibility, and old-shaped folds use
+`bound ?? (generation !== null)`. New empty folds explicitly start unbound.
+
+`generation` alone is a display value, not proof of a current connection. `foldFromSnapshot`
+retains a cold HTTP board and its original timestamps with `bound: false`, `lastSeq: null` and
+`needsResync: true`. HTTP answers are taken only outside live; answers racing a live stream are
+discarded. Every connect and accepted live-to-non-live transition clears binding and sequence
+immediately while retaining board and counters. A lower-generation hello can bind an unbound
+current link after a host restart. Bound hello checks remain strictly increasing. Non-hello
+frames before binding are discarded; abandoned-link messages never reach the fold, even counters.
+Direct fold callers must supply that link fence themselves.
+
+Use `boardStatus(cockpit): BoardStatus` for the derived `absent | retained | synchronized` query.
+`absent` means `board(cockpit)` is null. Synchronization requires a present board, live loop,
+non-null loop generation matching the bound fold, and no pending resync. Hello alone does not
+restore it: a valid subsequent snapshot must land. The existing `cockpitStatus` glance line adds
+`(stale)` while a board is retained and removes it after recovery. Here stale describes stream
+synchronization, not source evidence age; an empty or partial board can be synchronized.
+
+It says only that this connection's board is the one the currently bound stream last sent.
+It is not completeness — that is RemoteSnapshot.complete and the anomalies beside it.
+It is not evidence recency — generatedAt is when the board was produced, not when it was received.
+It is not run execution: admitted is not running, and pending or unknown effects stay their own dimension.
+It is not certification or capability — nothing about authority, approval or what a caller may do is expressed here.
+
+A retained or synchronized board grants no display, persistence or command right. Backend authorization
+and revocation remain separate; late HTTP answers do not restore revoked permission.
+Revocation overrides retention. This package does not implement backend authorization or an
+authorization epoch. It refreshes no observation timestamps and never turns unknown outcomes into
+failed outcomes or automatically resends commands on recovery.
+
+`resyncFrame` on an unbound fold returns generation 0, the existing no-generation sentinel.
+Hubs never assign 0. A mismatched resync closes the link, so sending the unbound frame is a
+transport fault, not a recovery request. Bound and legacy no-`bound` folds retain their former
+generation/lastSeq behavior. Reconnect and await hello before requesting in-band repair.
+
 ## Reading a frame has three verdicts, not two
 
 ```ts

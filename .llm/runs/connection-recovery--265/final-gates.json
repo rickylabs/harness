@@ -1,0 +1,136 @@
+{
+  "node": "v26.8.1",
+  "pnpm": "11.25.0",
+  "npmConfig": "explicit empty user/global config; offline; executable temp outside Git",
+  "results": [
+    {
+      "command": "pnpm run typecheck",
+      "exitCode": 0,
+      "logSha256": "0aee9c9c756dbbe307e597a256e4fadeaedd03eb1aac0e4b3fdac282e1785a93"
+    },
+    {
+      "command": "pnpm run build",
+      "exitCode": 0,
+      "logSha256": "63fd3dbe563f6e42a1af1e179729ae350c4c01941f84ac357c99696af0bfdf07",
+      "limitation": "Tutorial checker declares three existing cases untested; no live execution inferred."
+    },
+    {
+      "command": "pnpm run test",
+      "exitCode": 1,
+      "logSha256": "ed24e4faab9dfdcca0fe84ef85cca5894042356c319e4d333d973bdc871e2d82",
+      "packages": {
+        "packages/subagents": {
+          "tests": 227,
+          "pass": 227,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/contracts": {
+          "tests": 213,
+          "pass": 213,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/provider-codex": {
+          "tests": 44,
+          "pass": 44,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/board": {
+          "tests": 272,
+          "pass": 272,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/provider-opencode": {
+          "tests": 151,
+          "pass": 151,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/provider-claude": {
+          "tests": 107,
+          "pass": 107,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/forge": {
+          "tests": 513,
+          "pass": 513,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/routing": {
+          "tests": 205,
+          "pass": 205,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/llm-local": {
+          "tests": 95,
+          "pass": 95,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/coordinator": {
+          "tests": 317,
+          "pass": 317,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/telemetry": {
+          "tests": 433,
+          "pass": 433,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "packages/dsh-app": {
+          "tests": 332,
+          "pass": 332,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        }
+      },
+      "totals": {
+        "tests": 2909,
+        "pass": 2909,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0,
+        "todo": 0
+      },
+      "limitation": "Unmodified installed gate asserts 0.3.0 at offline pack; candidate manifest is 0.4.0. Package suites completed; root command failed."
+    },
+    {
+      "command": "pnpm run check:publish",
+      "exitCode": 0,
+      "logSha256": "b9d101d6227f49db7c3aa06eb2c4cd915b633a52dc6ce226cb9d8dc26cec9458"
+    }
+  ],
+  "phase": "Before coordinator-owned gate amendment; historical root test failure retained"
+}
