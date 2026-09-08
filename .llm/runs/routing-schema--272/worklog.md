@@ -73,3 +73,45 @@ manifest (4 routing sources modified, 2 created; 1 test created, 2 modified; 2 f
 sources and 3 tests; 4 documents). The `capability-unsatisfied` row now says coordinator candidates
 are not checked. No decision changed direction; recorded here rather than in `drift.md` because the
 plan was not yet handed to evaluation.
+
+## 2026-09-08 — plan repair session (same author seat)
+
+Resumed session `e2ca9e1a-1a8f-452c-8d98-9e433c973bd6` with product baseline `9b120d2` and
+planning commit `324a3de`; the coordinator committed `1d5df95` (run artifacts only) while this session ran; the locked plan is preserved at
+`324a3de`. Read `AGENTS.md` and the doctrine (retained from the planning session),
+`plan.md`, `research.md`, `drift.md`, `supervisor.md`, `resume-amendment.md`, `context-pack.md`,
+`plan-eval.md`, `plan-eval-routing.md`, the fresh matrix files, the three issue comments the
+evaluator cites (#272 5591550877, #273 5591323350, #274 5591325380, read-only via `gh api`),
+the current `docs/concepts/06-the-three-layers.md:24-42`, `packages/README.md:16-24`, and the
+`scripts/check-snapshots.mjs` diff since baseline.
+
+Checks executed, all read-only: `git diff --stat 8fd096d..HEAD` over the schema consumer paths
+(empty), `git diff 8fd096d..HEAD -- docs/concepts/06-the-three-layers.md` (changes only in the
+contracts and consumer-naming sections), `cmp` of `matrix-full-resume.json` against
+`matrix-full.json` (identical). Read-only shell and authenticated GitHub API reads ran as named above. No build, test, provider
+network effect, credential-file read, board mutation, host/service change or product edit occurred;
+no reviewer launched.
+
+Written: `plan-amendment.md` (A-1: repairs for F1 to F4 with amended types, validation rules,
+eleven effort-evidence contradiction diagnostics, the single-launch feasibility predicate, the
+restated invariant table with precedence, fixture changes, T-F5/T-F6 rows, new T-F15 and T-F16,
+manifest delta and complete mutation surface), `drift.md` D-010 to D-017, this entry, and
+`context-pack.md` rewritten as the resume file.
+
+Not claimed: PASS, implementation readiness, any live-dispatch or capability fact. The loop's one
+round is consumed; a second review is an owner escalation for the coordinator.
+
+[source: files named above at `9b120d2`; topic: repair inputs and executed checks; consulted and executed 2026-09-08]
+
+## 2026-09-08 — coordinator handoff check
+
+Author repair exited0 in the preserved session; native init confirmed claude-fable-5-1 and the
+fresh query selected xhigh. Read A-1 in full and checked its disposition and mutation inventory.
+Corrected the branch name, distinguished product baseline from planning commits, made the
+empty-supported-list wording match the explicit unknown semantics, and corrected the worklog's
+over-broad no-CLI/no-network claim to acknowledge the stated read-only shell/GitHub API checks.
+These are recorded in D-018; they do not independently approve the plan.
+
+Coordinator baseline command passed205/205 routing tests; see baseline-verification.md.
+[observed — native repair result, git branch/head, A-1 and author worklog; topic: exact receipt
+and unknown semantics; inspected2026-09-08]
