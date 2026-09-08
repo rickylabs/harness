@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-08",
+  "status": "PASS",
+  "commands": [
+    {
+      "command": "TMPDIR=<executable-scratch> pnpm run check:installed",
+      "exitCode": 0,
+      "logSha256": "8ba421c3dc2670c5fd9773107979287a2429d6328f1e7c03d21d5f306e92befe"
+    },
+    {
+      "command": "TMPDIR=<executable-scratch> pnpm run test",
+      "exitCode": 0,
+      "logSha256": "3189a4eb485049513b3fbeafa6587b06c77668592d4c683ff212f328798a5b34"
+    }
+  ],
+  "limitations": [
+    "Local candidate only; no registry publication or downstream adoption",
+    "Synthetic fixtures; no live-source, backend authorization or native-client acceptance"
+  ]
+}

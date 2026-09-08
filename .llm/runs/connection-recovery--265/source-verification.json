@@ -1,0 +1,32 @@
+{
+  "baseline": "4cdf23c424634e5cbff29dcecca69c465b88882a",
+  "checkedAt": "2026-09-08T18:00:41.851404+00:00",
+  "productSourceSha256": {
+    "packages/contracts/src/fold.ts": "730a13cc51a9a0cd4aebc899c607eeed5c4a9d6dedab50c42dca68892dc562f3",
+    "packages/contracts/src/client.ts": "b46daeea42cc205fa7e7d30cb33c264327d6629ed00aeba2b152c3f21f6da1f6",
+    "packages/contracts/src/index.ts": "d239c7c02a1e36ae93869c53916051b2ddb98ec8960620322e99a8ddc39df7a5",
+    "packages/contracts/src/client.test.ts": "20cd46f0545a8b0a0df452d5a0ff97f6ca8bd62cb13083a390864c343700bf7e",
+    "packages/contracts/README.md": "d2d105f7dd106d3b3fdd7da21f00507019aadc73c68626765f12eed904d5d751",
+    "packages/contracts/package.json": "67929aef60878f70f642bf9bccac9cdc535349b985a59f4daa704d7066b9784e"
+  },
+  "unchangedSha256": {
+    "packages/contracts/src/connection.ts": "9a6d7237851f822c3aeb0f3de2524af4e2d72ac70d6d66813ec0dc34a8a1423f",
+    "packages/contracts/src/server.ts": "003710eba9bebc45ab9f121328f14cfee485ea29346c3ec0ddbafc7a90431c4e",
+    "packages/contracts/src/events.ts": "27b911c43c0cbfcf6e7bf275dad9feac8fd7a3d7a5fb2d5961b381fab675aba5",
+    "pnpm-lock.yaml": "91be18ee682bface51e3794c178e5b3e024863719ca50facf188287d5f1e42b7"
+  },
+  "producerSourceDiff": "git diff -- packages/telemetry: empty",
+  "requiredQueryDocumentation": "verbatim comparison PASS",
+  "targeted": {
+    "command": "pnpm --filter @rickylabs/harness-contracts test",
+    "exitCode": 0,
+    "tests": 213,
+    "pass": 213,
+    "fail": 0,
+    "skipped": 0,
+    "logSha256": "33da984f11a1cac8b9120771b81dcb3d8d28b93d131955045ad04380a907dc9e"
+  },
+  "historicalInstalledGateSha256": "b2530fd9c1db6f61687dd627ebc85c1712e2ad1a208121d297e09e40124ea038",
+  "coordinatorAmendedGateSha256": "83022ddca6e072868813465ed8f21d7f0daed0dda15fede1c5a0c87db5f4b072",
+  "gateAmendment": "Coordinator-authored after original checks; see coordinator-gate-amendment.md and amended-gates.json"
+}

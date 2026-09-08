@@ -40,8 +40,9 @@
  * the link is live would rebind the fold to a generation no frame will ever carry, and every delta
  * after that is discarded as stale — the board stops moving, the socket stays open, and nothing
  * reports a fault. So a fetched board is taken only while the link is *not* live: at a cold start,
- * or when the socket is down and something still wants to show a board. On a live link the repair
- * for a gap is `resync`, in band, in the current generation.
+ * or when the socket is down and something still wants to show a board. Such a board remains
+ * unbound and retained, with its original timestamps; it cannot establish synchronization.
+ * On a live link the repair for a gap is `resync`, in band, in the current generation.
  *
  * ## The caller mints the idempotency key
  *
@@ -75,7 +76,7 @@ import {
 import type { Credential, Endpoint } from "./auth.js";
 import { acceptsFrom, idleLink, stepLink } from "./connection.js";
 import type { ConnectionLoop, LinkSignal, StepOptions } from "./connection.js";
-import { emptyFold, foldFromSnapshot, foldValue, snapshotOf } from "./fold.js";
+import { emptyFold, foldFromSnapshot, foldValue, isBound, snapshotOf } from "./fold.js";
 import type { EventFold } from "./fold.js";
 import { COMMAND_METHOD } from "./routes.js";
 import type {
@@ -292,6 +293,31 @@ export function board(cockpit: Cockpit): RemoteSnapshot | null {
   return snapshotOf(cockpit.fold);
 }
 
+/** The board's relationship to this connection, derived without a second projection. */
+export type BoardStatus = "absent" | "retained" | "synchronized";
+
+/**
+ * Return absent when no board exists, synchronized only for a live matching bound stream with
+ * no resync pending, and retained otherwise. A hello alone cannot synchronize a retained board.
+ *
+ * It says only that this connection's board is the one the currently bound stream last sent.
+ * It is not completeness — that is RemoteSnapshot.complete and the anomalies beside it.
+ * It is not evidence recency — generatedAt is when the board was produced, not when it was received.
+ * It is not run execution: admitted is not running, and pending or unknown effects stay their own dimension.
+ * It is not certification or capability — nothing about authority, approval or what a caller may do is expressed here.
+ *
+ * A retained or synchronized board grants no display, persistence or command right. Backend authorization
+ * and revocation remain separate; late HTTP answers do not restore revoked permission.
+ */
+export function boardStatus(cockpit: Cockpit): BoardStatus {
+  if (board(cockpit) === null) return "absent";
+  const { loop, fold } = cockpit;
+  return loop.state === "live" && loop.generation !== null &&
+    loop.generation === fold.generation && isBound(fold) && !fold.needsResync
+    ? "synchronized"
+    : "retained";
+}
+
 /** What is waiting on a person right now. */
 export function waitingOn(cockpit: Cockpit): readonly PendingApproval[] {
   return cockpit.fold.governance?.pending ?? [];
@@ -305,7 +331,7 @@ export function cockpitStatus(cockpit: Cockpit): string {
   return [
     describeEndpoint(cockpit.endpoint),
     `${loop.state}, ${bound}`,
-    `${fold.tasks.size} tasks, ${fold.runs.size} runs`,
+    `${fold.tasks.size} tasks, ${fold.runs.size} runs${boardStatus(cockpit) === "retained" ? " (stale)" : ""}`,
     `${counts.applied} applied, ${counts.gapped} lost, ${counts.resyncs} resyncs`,
     `${inFlight.size} in flight`,
   ].join(" · ");
@@ -489,7 +515,16 @@ function drive(
     effects.push({ kind: "wait", untilMs: stepped.loop.retryAt });
   }
 
-  return { cockpit: { ...cockpit, loop: stepped.loop }, effects, notes: [stepped.detail] };
+  const fold = stepped.command === "connect" ||
+    (cockpit.loop.state === "live" && stepped.loop.state !== "live")
+    ? rebind(cockpit.fold)
+    : cockpit.fold;
+  return { cockpit: { ...cockpit, loop: stepped.loop, fold }, effects, notes: [stepped.detail] };
+}
+
+/** Drop only stream bookkeeping; keep the last board, its source clocks and counters. */
+function rebind(fold: EventFold): EventFold {
+  return { ...fold, bound: false, lastSeq: null, needsResync: true };
 }
 
 /**

@@ -24,7 +24,7 @@
  *
  * ## Deltas are an optimisation; the snapshot is the truth
  *
- * A snapshot always overwrites, and it always clears `needsResync` even when it arrives after a gap.
+ * A valid snapshot on a bound stream overwrites and clears `needsResync`, even after a gap.
  * Deltas never *establish* state: one arriving before any snapshot is discarded and provokes a
  * resync rather than seeding a fold with a single task in it, because a fold seeded that way looks
  * complete and is not.
@@ -76,8 +76,10 @@ export interface FoldCounts {
 export interface EventFold {
   readonly protocol: number | null;
   readonly repo: RepoRef | null;
-  /** The server generation this fold is bound to. Set by `hello`, never by anything else. */
+  /** Last display generation, from `hello` or a cold HTTP snapshot; not proof of binding. */
   readonly generation: number | null;
+  /** Current-stream binding. Omitted legacy values use `generation !== null`. */
+  readonly bound?: boolean;
   /** The last seq applied or counted in this generation. Null before the first frame. */
   readonly lastSeq: number | null;
   /** `generatedAt` of the last applied snapshot. Null means this fold has no state yet. */
@@ -121,6 +123,7 @@ export function emptyFold(): EventFold {
     protocol: null,
     repo: null,
     generation: null,
+    bound: false,
     lastSeq: null,
     snapshotAt: null,
     appliedAt: null,
@@ -139,8 +142,9 @@ export function emptyFold(): EventFold {
 /**
  * Seed a fold from a snapshot fetched over `POST /api/snapshot` rather than over the socket.
  *
- * `lastSeq` is left null, which means the first frame off the socket is accepted whatever its seq
- * without being reported as a gap — there is no sequence to be contiguous with yet.
+ * Retains the display generation and original timestamps, but binds no stream. `bound` is false,
+ * `lastSeq` is null and `needsResync` is true. Only a current-link hello followed by a valid
+ * snapshot restores synchronization; pre-hello frames cannot modify this retained board.
  */
 export function foldFromSnapshot(snapshot: RemoteSnapshot): EventFold {
   const base = emptyFold();
@@ -148,14 +152,27 @@ export function foldFromSnapshot(snapshot: RemoteSnapshot): EventFold {
     ...base,
     ...stateOfSnapshot(snapshot),
     generation: snapshot.generation,
+    needsResync: true,
     appliedAt: snapshot.generatedAt,
     counts: plus(base.counts, { applied: 1 }),
   };
 }
 
-/** The frame to send when the fold has lost track. */
+/** Internal binding predicate; not part of the package root API. */
+export function isBound(fold: EventFold): boolean {
+  return fold.bound ?? (fold.generation !== null);
+}
+
+/**
+ * The frame to send when a bound fold has lost track.
+ *
+ * An unbound fold returns generation 0, the existing no-generation sentinel; hubs never assign 0.
+ * A mismatched resync closes the link, so sending the unbound frame is a transport fault, not a
+ * recovery request. Bound folds, including legacy values without `bound`, retain their generation
+ * and optional lastSeq. Reconnect and wait for hello before requesting in-band recovery.
+ */
 export function resyncFrame(fold: EventFold): ResyncFrame {
-  const generation = fold.generation ?? 0;
+  const generation = isBound(fold) ? (fold.generation ?? 0) : 0;
   return fold.lastSeq === null
     ? { kind: "resync", generation }
     : { kind: "resync", generation, lastSeq: fold.lastSeq };
@@ -181,9 +198,9 @@ export function foldFrame(fold: EventFold, reading: FrameReading): FoldStep {
  * strings rather than `localeCompare`, because a client's locale must not change what "the same
  * state" means.
  *
- * `generation` is the connection the fold is bound to now; `generatedAt` is when the data was
- * produced. Between a `hello` and the snapshot answering it those are two different moments, and
- * `needsResync` is the field that says so.
+ * `generation` is the last display generation, which may be retained while unbound;
+ * `generatedAt` is when the data was produced. Between a `hello` and the snapshot answering it
+ * those are two different moments, and `needsResync` is the field that says so.
  */
 export function snapshotOf(fold: EventFold): RemoteSnapshot | null {
   if (
@@ -299,11 +316,11 @@ function sequence(fold: EventFold, seq: number): Sequencing {
 }
 
 function boundTo(fold: EventFold): string {
-  return fold.generation === null ? "no generation" : `generation ${fold.generation}`;
+  return !isBound(fold) || fold.generation === null ? "no generation" : `generation ${fold.generation}`;
 }
 
 function count(fold: EventFold, kind: string, generation: number, seq: number): FoldStep {
-  if (fold.generation === null || generation !== fold.generation) {
+  if (!isBound(fold) || fold.generation === null || generation !== fold.generation) {
     return discard(fold, kind, `frame from generation ${generation}; bound to ${boundTo(fold)}`);
   }
   const seen = sequence(fold, seq);
@@ -333,7 +350,7 @@ function count(fold: EventFold, kind: string, generation: number, seq: number): 
 function applyEvent(fold: EventFold, event: ServerEvent): FoldStep {
   if (event.kind === "hello") return applyHello(fold, event);
 
-  if (fold.generation === null || event.generation !== fold.generation) {
+  if (!isBound(fold) || fold.generation === null || event.generation !== fold.generation) {
     return discard(
       fold,
       event.kind,
@@ -412,16 +429,10 @@ function applyEvent(fold: EventFold, event: ServerEvent): FoldStep {
 }
 
 /**
- * `hello` is the only frame that may change the generation, and it may only move it forward.
- *
- * That single rule is the generation binding. A socket the client abandoned can still deliver its
- * queued frames — including its own `hello` — after a newer socket has been established, and a
- * `hello` accepted from that dead connection would reset a correct fold to empty and then leave it
- * empty, because the snapshot answering it was sent to a socket nobody is reading. Requiring the
- * generation to increase makes that frame identifiable as data rather than as a timing accident.
- *
- * A repeat of the *current* generation is discarded for the same reason: it carries no new state and
- * accepting it would throw away state that is correct.
+ * `hello` binds the current stream. While bound, only a strictly greater generation is accepted.
+ * An unbound fold may accept a lower generation after a server restart, regardless of its retained
+ * display generation. The caller must fence abandoned links before folding any frame; generation
+ * numbers alone cannot identify a connection across restarts. `stepCockpit` supplies that fence.
  *
  * What `hello` deliberately does *not* do is clear the board. A phone walking out of range
  * reconnects constantly, and a fold that emptied itself on every bind would blank the screen each
@@ -439,7 +450,7 @@ function applyHello(fold: EventFold, event: HelloEvent): FoldStep {
       `server speaks protocol ${protocol}; this client speaks ${PROTOCOL_VERSION}`,
     );
   }
-  if (fold.generation !== null && event.generation <= fold.generation) {
+  if (isBound(fold) && fold.generation !== null && event.generation <= fold.generation) {
     return discard(
       fold,
       "hello",
@@ -451,6 +462,7 @@ function applyHello(fold: EventFold, event: HelloEvent): FoldStep {
     protocol,
     repo,
     generation: event.generation,
+    bound: true,
     lastSeq: event.seq,
     appliedAt: event.at,
     needsResync: true,
