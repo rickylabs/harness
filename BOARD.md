@@ -2,16 +2,25 @@
 
 # rickylabs/harness
 
-`[################----]` **213/266 done · 16 running · 22 queued · 1 blocked · 12 abandoned · 2 invisible**
+`[###############-----]` **213/267 done · 17 running · 22 queued · 1 blocked · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-07T23:44:23Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-07T23:46:26Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (16)
+## Waiting on you (1)
+
+Stopped on a decision only a person can make. No agent will pick these up.
+
+| item | column | epic |
+| --- | --- | --- |
+| [#279 chore(contracts): owner release of the reviewed governance read boundary as 0.2.0](https://github.com/rickylabs/harness/issues/279) | `impl-eval` | `e8` |
+
+## Moving now (17)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
+| [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
@@ -29,19 +38,11 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Stuck (1)
-
-Not moving, and not waiting on anything that will start on its own.
-
-| item | column | epic |
-| --- | --- | --- |
-| [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `ci-fail` | `e9` |
-
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 173/212 done · 15 running · 19 queued · 1 blocked · 3 abandoned · 1 invisible
+`[#########---]` 173/213 done · 16 running · 19 queued · 1 blocked · 3 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -54,8 +55,8 @@ Not moving, and not waiting on anything that will start on its own.
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
-| [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 10/10 done | `shipped` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 19/23 done · 3 running · 1 blocked | `impl` |
+| [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[##########--]` 10/11 done · 1 blocked | `impl-eval` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 19/23 done · 4 running | `impl` |
 | _(no epic)_ | `[############]` 3/3 done | — |
 
 ### (no milestone)
@@ -105,9 +106,9 @@ Not moving, and not waiting on anything that will start on its own.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  213/266 done · 16 running · 22 queued · 1 blocked · 12 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  213/267 done · 17 running · 22 queued · 1 blocked · 12 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [################----]  173/212 done · 15 running · 19 queued · 1 blocked · 3 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [################----]  173/213 done · 16 running · 19 queued · 1 blocked · 3 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -312,8 +313,8 @@ Not moving, and not waiting on anything that will start on its own.
     triage               #234 17 labels live on the repo and in no taxonomy, including the dispatch label (p3)
     shipped              PR239 feat(board): check the labels the code reads against the ones forge creates (p2)
 
-  E8 — Contracts: published package for the netscript UIs #38  [shipped]
-    [################] 10/10 done
+  E8 — Contracts: published package for the netscript UIs #38  [impl-eval]
+    [##############--] 10/11 done · 1 blocked
     shipped              #79 E8.1 — contracts: route, payload and event types
     shipped              #80 E8.2 — Snapshot and delta shapes designed for replay
     shipped              #81 E8.3 — Publish @rickylabs/harness-contracts to npm
@@ -324,9 +325,10 @@ Not moving, and not waiting on anything that will start on its own.
     shipped              PR135 feat(contracts): publish as @rickylabs/harness-contracts, with a checked release pipeline
     shipped              #267 Release contracts v0.1.0: owner push of prepared tag (p0)
     shipped              PR268 docs: prepare contracts v0.1.0 release handoff
+    impl-eval            #279 chore(contracts): owner release of the reviewed governance read boundary as 0.2.0 (p0, waiting on owner)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
-    [#############---] 19/23 done · 3 running · 1 blocked
+    [#############---] 19/23 done · 4 running
     shipped              #83 E9.1 — SessionTelemetrySink on every run, on both seams
     shipped              #84 E9.2 — Push over /api/remote.mux, never poll
     shipped              #85 E9.3 — The hierarchy view: milestone → epic → task → subagent
@@ -340,7 +342,7 @@ Not moving, and not waiting on anything that will start on its own.
     shipped              PR129 feat(telemetry): read the observability log back and merge it into the backfill
     shipped              PR133 E9.2 — push over /api/remote.mux, never poll
     shipped              PR164 feat(telemetry): write run evidence at the subagent seam (p1)
-    ci-fail              #205 fix(telemetry): surface live capacity and admission reasons beside progress (p0)
+    impl                 #205 fix(telemetry): surface live capacity and admission reasons beside progress (p0)
     shipped              PR216 feat(telemetry): display governance observations beside progress
     shipped              PR226 fix(telemetry): bound every title, and stop restating the item under it (p1)
     shipped              #240 the board cannot say "waiting on a human", so owner-gated work reads as running (p1)
