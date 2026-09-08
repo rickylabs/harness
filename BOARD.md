@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **215/268 done · 17 running · 22 queued · 12 abandoned · 2 invisible**
+`[################----]` **215/268 done · 18 running · 21 queued · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-08T09:32:43Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-08T17:11:05Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (17)
+## Moving now (18)
 
 Something could be acting on these right now.
 
@@ -23,6 +23,7 @@ Something could be acting on these right now.
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
 | [#265 E9 — Retain the board without false freshness across connection loss and restart](https://github.com/rickylabs/harness/issues/265) | `plan-eval` | `e9` |
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `plan` | `e11` |
+| [#237 docs: restore approved consumer repository names and direct architecture citation](https://github.com/rickylabs/harness/issues/237) | `impl` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -53,17 +54,17 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 40/54 done · 1 running · 3 queued · 9 abandoned · 1 invisible
+`[########----]` 40/54 done · 2 running · 2 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
-| _(no epic)_ | `[########----]` 36/49 done · 3 queued · 9 abandoned · 1 invisible | — |
+| _(no epic)_ | `[########----]` 36/49 done · 1 running · 2 queued · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>22 filed, nothing started</summary>
+<summary>21 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -71,7 +72,6 @@ Something could be acting on these right now.
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `triage` | `e11` |
 | [#275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON](https://github.com/rickylabs/harness/issues/275) | `triage` | `e11` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
-| [#237 docs: restore approved consumer repository names and direct architecture citation](https://github.com/rickylabs/harness/issues/237) | `triage` | — |
 | [#264 E6 — Define creation capability ownership before exposing P2 actions](https://github.com/rickylabs/harness/issues/264) | `triage` | `e6` |
 | [#148 E10.8 — Publish the public documentation site](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
 | [#225 Two public types are named `Evidence`: forge's label justification and telemetry's sign of life](https://github.com/rickylabs/harness/issues/225) | `triage` | `e7` |
@@ -98,7 +98,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  215/268 done · 17 running · 22 queued · 12 abandoned · 2 invisible
+# rickylabs/harness  [################----]  215/268 done · 18 running · 21 queued · 12 abandoned · 2 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  175/214 done · 16 running · 19 queued · 3 abandoned · 1 invisible
 
@@ -351,7 +351,7 @@ Something could be acting on these right now.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  40/54 done · 1 running · 3 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  40/54 done · 2 running · 2 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -402,7 +402,7 @@ Something could be acting on these right now.
     shipped              #189 docs: the repository is public — correct every false claim, then polish (p0)
     shipped              PR190 docs: correct every claim the repository going public made false (p0)
     no status            #201 E10 - Documentation and the public front door
-    triage               #237 docs: restore approved consumer repository names and direct architecture citation (p2)
+    impl                 #237 docs: restore approved consumer repository names and direct architecture citation (p2)
     shipped              PR242 docs(board): a half-gated item is not an owner-gated one
     shipped              PR248 fix(telemetry): a dispatch the provider refused is not a run
     triage               #249 `KNOWN_TYPES` in the Claude backfill reads as exhaustive and is not — five record types on a real store are unrecognised (p3)
