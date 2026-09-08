@@ -7,7 +7,7 @@
   "tarball": "rickylabs-harness-contracts-0.4.0.tgz",
   "sha256": "2fea5d3d8775be73b83c5f618ae7e0c260ae31a816f8ae4a55afda222af33ccb",
   "fileCount": 78,
-  "probeSourceSha256": "f0a85ab21af5d31d2348c3260caaf6adba9a9b01cb3b79afac361be218a71da8",
+  "probeSourceSha256": "fadabea58977a5f4bbb8fb7a68d12b93131b07b10b42ece6503e9480c11aa302",
   "runtimeSourceSha256": "9001d870f095b18d4eb0a28e5c775c1e715f2653c7fddaaded7bcd28dc9b169a",
   "declarationSourceSha256": "1d61593216d4a89d46b348469ae3ad499d6d493ff808b1389a1b4512d6a15ba2",
   "gates": [

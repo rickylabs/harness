@@ -4,12 +4,13 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const root = process.cwd();
 const runDir = join(root, '.llm/runs/connection-recovery--265');
 const contracts = join(root, 'packages/contracts');
-const scratch = mkdtempSync('/home/agent/recovery265-pack-');
+const scratch = mkdtempSync(join(tmpdir(), 'recovery265-pack-'));
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 // Only this explicit environment reaches npm. Empty config files prevent operator-config access.
 for (const dir of ['consumer', 'pack', 'home']) mkdirSync(join(scratch, dir));

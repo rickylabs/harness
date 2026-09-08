@@ -1,4 +1,6 @@
-/** Supplemental gate, not a PASS for the unmodified `pnpm run test` command.
+/** Historical supplemental gate for the pre-maintenance source at a749aca.
+ * It intentionally rejects the maintained gate at a72f820 and later; use pnpm run check:installed
+ * there. This is not a PASS for the formerly unmodified `pnpm run test` command.
  * Preserve the existing source-built producer and existing installed-gate source. Execute a
  * temp copy with its two immutable 0.3.0 expectations adapted to the 0.4.0 candidate. Relocate
  * only its root and fixture import so its complete synthetic matrix still runs outside Git.
@@ -8,11 +10,12 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 const root = process.cwd();
 const sourcePath = join(root, 'scripts/check-installed-contracts.mjs');
 const source = readFileSync(sourcePath, 'utf8');
-const scratch = mkdtempSync('/home/agent/recovery265-installed-');
+const scratch = mkdtempSync(join(tmpdir(), 'recovery265-installed-'));
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const replacements = [
   ['assert.equal(metadata.version, "0.3.0");', 'assert.equal(metadata.version, "0.4.0");'],
