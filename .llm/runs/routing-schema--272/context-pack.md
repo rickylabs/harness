@@ -1,0 +1,7 @@
+# Context — routing-schema--272
+
+Current stage: existing plan resumed for independent architecture plan evaluation. No schema product code exists. Original Fable5.1/xhigh planning session and source history are preserved in supervisor.md/worklog.md. Read the complete plan.md, research.md and drift.md, then resume-amendment.md for current baseline and coordinator questions. Fresh matrix files are attached; no route from old prose is launch authority.
+
+Scope: E11 step2 strict complete configuration schema, prerequisite for273 resolver;274 detection and275 parity remain separate. Preserve loaded v1 consumers through an explicit typed/refusal boundary until resolver support exists. Do not represent synthetic family/capability fixture data as fleet authority. The three product coordinators agree the first live read already has a sufficient published0.3.0 reader; this foundation can advance independently. Further requested relationships/messages must have explicit published coverage, not inferred linkage.
+
+No implementation or plan verdict yet. Source branch9b120d2; full workspace tests not rerun for this planning checkpoint. Previous planning tests are historical, not current implementation proof. Next: evaluate the preserved plan and coordinator questions under a fresh matrix-selected different-family reviewer, then repair in the original author session if needed, preserving evaluator session and loop policy.
