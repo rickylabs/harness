@@ -2,17 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **213/267 done · 17 running · 22 queued · 1 blocked · 12 abandoned · 2 invisible**
+`[################----]` **214/267 done · 17 running · 22 queued · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-07T23:46:26Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
-
-## Waiting on you (1)
-
-Stopped on a decision only a person can make. No agent will pick these up.
-
-| item | column | epic |
-| --- | --- | --- |
-| [#279 chore(contracts): owner release of the reviewed governance read boundary as 0.2.0](https://github.com/rickylabs/harness/issues/279) | `impl-eval` | `e8` |
+_Latest board activity: 2026-09-08T06:47:35Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (17)
 
@@ -42,7 +34,7 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 173/213 done · 16 running · 19 queued · 1 blocked · 3 abandoned · 1 invisible
+`[#########---]` 174/213 done · 16 running · 19 queued · 3 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -55,7 +47,7 @@ Something could be acting on these right now.
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
-| [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[##########--]` 10/11 done · 1 blocked | `impl-eval` |
+| [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 19/23 done · 4 running | `impl` |
 | _(no epic)_ | `[############]` 3/3 done | — |
 
@@ -106,9 +98,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  213/267 done · 17 running · 22 queued · 1 blocked · 12 abandoned · 2 invisible
+# rickylabs/harness  [################----]  214/267 done · 17 running · 22 queued · 12 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [################----]  173/213 done · 16 running · 19 queued · 1 blocked · 3 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [################----]  174/213 done · 16 running · 19 queued · 3 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -313,8 +305,8 @@ Something could be acting on these right now.
     triage               #234 17 labels live on the repo and in no taxonomy, including the dispatch label (p3)
     shipped              PR239 feat(board): check the labels the code reads against the ones forge creates (p2)
 
-  E8 — Contracts: published package for the netscript UIs #38  [impl-eval]
-    [##############--] 10/11 done · 1 blocked
+  E8 — Contracts: published package for the netscript UIs #38  [shipped]
+    [################] 11/11 done
     shipped              #79 E8.1 — contracts: route, payload and event types
     shipped              #80 E8.2 — Snapshot and delta shapes designed for replay
     shipped              #81 E8.3 — Publish @rickylabs/harness-contracts to npm
@@ -325,7 +317,7 @@ Something could be acting on these right now.
     shipped              PR135 feat(contracts): publish as @rickylabs/harness-contracts, with a checked release pipeline
     shipped              #267 Release contracts v0.1.0: owner push of prepared tag (p0)
     shipped              PR268 docs: prepare contracts v0.1.0 release handoff
-    impl-eval            #279 chore(contracts): owner release of the reviewed governance read boundary as 0.2.0 (p0, waiting on owner)
+    shipped              #279 chore(contracts): owner release of the reviewed governance read boundary as 0.2.0 (p0)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
     [#############---] 19/23 done · 4 running
