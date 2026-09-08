@@ -4,7 +4,7 @@
 
 `[###############-----]` **214/268 done · 18 running · 22 queued · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-08T09:07:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-08T09:22:59Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (18)
 
@@ -13,7 +13,7 @@ Something could be acting on these right now.
 | item | column | epic |
 | --- | --- | --- |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl` | `e9` |
-| [PR280 feat(telemetry): publish repository-bound run observations](https://github.com/rickylabs/harness/pull/280) | `impl-eval` | `e9` |
+| [PR280 feat(telemetry): publish repository-bound run observations](https://github.com/rickylabs/harness/pull/280) | `ready-merge` | `e9` |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
@@ -31,9 +31,13 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (1)
+## Anomalies (2)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#280** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
@@ -372,7 +376,7 @@ Something could be acting on these right now.
 
   E9 — Telemetry: the "status ?" killer #39  [impl]  (epic is in M1 — dsh coordinator foundation)
     [----------------] 0/1 done · 1 running
-    impl-eval            PR280 feat(telemetry): publish repository-bound run observations (p0)
+    ready-merge          PR280 feat(telemetry): publish repository-bound run observations (p0)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
