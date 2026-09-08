@@ -57,12 +57,19 @@ The full rules, generated from the taxonomy actually installed here, are in
 [`.claude/skills/board-process/SKILL.md`](.claude/skills/board-process/SKILL.md). Read it before
 your first board mutation, not after.
 
+## Runtime
+
+Node 24 is the supported floor and Node 26 is the development target. CI currently
+runs Ubuntu with Node 24; local release checks also passed on Linux with Node 26.8.1.
+Issue [#244](https://github.com/rickylabs/harness/issues/244) owns engine enforcement,
+the development pin and dual-version CI. Use pnpm as declared in package.json.
+
 ## Workspace layout, and the two seams
 
 A pnpm workspace: one package per Cordis plugin under [`packages/`](packages/), each owned by a
 numbered epic, plus `dsh-app` which composes them. [`packages/README.md`](packages/README.md)
 holds the authoritative table of package → owning epic → what it attaches to, and the
-conventions every package inherits. Most directories are still **empty, buildable stubs**; do
+conventions every package inherits. Packages marked **stub** reserve dependency shape; do
 not add behaviour to one before the epic that owns it has defined its contract.
 
 ```
@@ -98,12 +105,14 @@ one, raise it as a change to #30 rather than resolving it inside a run.
    upstream remote kept for updates.
 2. **Node + pnpm.** netscript stays a service behind an adapter, not a build-time dependency.
 3. **GitHub is the source of truth for the board**; dsh projects the live view.
-4. **This repo is the dsh layer only.** No cockpit is built here. Private external consumers live in
-   separate repositories (such as a cockpit and a mobile client we run against it). Consequence:
+4. **This repo is the dsh layer only.** No cockpit is built here. The two that consume this
+   layer are separate products in their own repositories — `rickylabs/atelier-cockpit`, the
+   engineering cockpit and backend, and `rickylabs/atelier-mobile`, the native companion.
+   The backend adapts Harness; the native client uses the backend-generated API/client. Consequence:
    `contracts` must be a *published* package, not a workspace import. Decision 4 originally placed
-   external consumers in netscript and was amended on
-   [#30](https://github.com/rickylabs/harness/issues/30) once they became products in their own
-   right; the consequence is the half the amendment left standing.
+   external consumers in netscript and was
+   [amended](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579) once they
+   became products in their own right; the consequence is the half the amendment left standing.
 
 Decisions 2 and 4 are load-bearing for [E2](https://github.com/rickylabs/harness/issues/32) and
 [E8](https://github.com/rickylabs/harness/issues/38). A design that adds NetScript as a

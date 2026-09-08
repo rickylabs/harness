@@ -11,9 +11,17 @@ Owned by epic E8 · #38. See [`packages/README.md`](../README.md) for workspace 
 
 ## Why this is the one published package
 
-Both user interfaces live outside this repository — a phone-sized cockpit for glancing and
-approving, and a full web workhorse with no complexity limit. Neither can import a private workspace
-package, so the only way they can share a definition is for that definition to be on npm.
+The consumers of this layer are separate products: the product backend that
+adapts the Harness feed, and the native client it serves. A native client
+cannot import a private workspace package any more than it can import this
+repository — and under the locked three-layer architecture it does not import
+this package at all: the backend is the one deployment that consumes the
+published contracts directly and runs the fold, and the native client
+consumes the backend-generated API/client package
+([06 — The three layers](../../docs/concepts/06-the-three-layers.md) owns that
+boundary). Publication is what makes the boundary a versioned artifact rather
+than a workspace import, which is why it is the only package here that is not
+`private: true`.
 
 That is also why this package has **no dependencies**, workspace or otherwise. A `workspace:*` edge
 to a private package makes it unpublishable, so where a shape here mirrors one in `board` or
@@ -177,13 +185,20 @@ socket.addEventListener("message", (e) => {
 ## Two entry points
 
 ```ts
-import { openCockpit, stepCockpit } from "@rickylabs/harness-contracts";        // both cockpits
+import { openCockpit, stepCockpit } from "@rickylabs/harness-contracts";        // root entry — backend-side fold
 import { openHub, publish } from "@rickylabs/harness-contracts/server";         // the coordinator
 ```
 
+The root entry carries the pure connection-and-fold bindings. Under the
+three-layer architecture the deployment that imports them and runs the fold
+is the product backend's Harness adapter — exactly one reducer owns a run
+card there. A native client consumes the backend-generated API/client package
+and never imports this package directly; these names remain the shipped API
+for the backend-side consumer, not native adoption instructions.
+
 `Hub` produces the frames `EventFold` consumes, so both halves live in one package — the property
 that matters, that folding what the hub sent reproduces the board the hub holds, is only assertable
-where both exist. But only the coordinator runs a hub, and a phone bundle should not carry one. So
+where both exist. But only the coordinator runs a hub, and a client bundle should not carry one. So
 the hub is reachable **only** from `/server`, and nothing on the root entry imports it. That is not a
 convention; `pnpm run check:publish` fails the build if `dist/index.js` ever names `server.js`.
 
@@ -237,10 +252,19 @@ description of what already happened.
 pnpm run check:publish     # what the release pipeline asserts, runnable locally
 ```
 
-Releases are cut by tag, never by merge:
+Releases are cut by tag, never by merge. First prepare a new, unpublished manifest
+version, complete review and CI, and merge its release preparation. The owner then
+authorizes publication of that exact source. Never recreate an existing release
+tag or reuse a published version.
+
+From the authorized release checkout, derive the tag from its manifest
+(instructions, not an execution receipt):
 
 ```bash
-git tag harness-contracts-v0.1.0 && git push origin harness-contracts-v0.1.0
+set -e
+release_version=$(node -p "JSON.parse(require('node:fs').readFileSync('packages/contracts/package.json', 'utf8')).version")
+git tag -a "harness-contracts-v${release_version}" -m "harness-contracts ${release_version}"
+git push origin "harness-contracts-v${release_version}"
 ```
 
 That tag triggers [`release-contracts.yml`](../../.github/workflows/release-contracts.yml), which
@@ -251,13 +275,18 @@ pull request cannot ship, and that the tag and the manifest name the same versio
 publish, with npm provenance: signed with an OIDC token minted per run, so the tarball is traceable
 to that workflow at that commit rather than to whoever held a token.
 
-**One thing still gates the first publish, and only the owner can supply it: the tag.** The
-`NPM_TOKEN` repository secret was added on 2026-09-06; until a `harness-contracts-v*` tag exists the
-workflow can be read and reviewed but cannot publish. To exercise it without releasing, dispatch it
-manually — the manual path defaults to a dry run and prints the tarball contents instead of
+**Published releases.** The first publication no longer awaits anything:
+0.2.0 shipped as the owner release of the reviewed governance read boundary
+([#279](https://github.com/rickylabs/harness/issues/279)), and 0.3.0 —
+protocol 1, adding the repository run observation — is published at source
+`97e9d058`. The owner's public receipt records the registry artifacts and the
+publishing workflow run:
+[issue #39 comment](https://github.com/rickylabs/harness/issues/39#issuecomment-5582710963).
+To exercise the pipeline without releasing, dispatch it manually — the manual
+path defaults to a dry run and prints the tarball contents instead of
 uploading them.
 
-`check:publish` runs as the last step of `pnpm run build`, so the things that have no undo are caught
+`check:publish` runs as part of `pnpm run build`, so the things that have no undo are caught
 in the ordinary loop: the manifest name against the compiled `PACKAGE_NAME`, the protocol against
 `dsh.protocol`, the export map against what the build actually emitted, the hub against the root
 entry, and the tarball against itself — no test artefacts, and no source map naming a file the
@@ -288,7 +317,7 @@ settlement. `unknown` is terminal and cannot become `unsent`; the latter require
 constructed from a validated negative receipt. Callers await durable intent success before attempting
 an effect and durable receipt success before acknowledging it. No result grants retry authority.
 
-## Governance read document (0.2.0 candidate)
+## Governance read document (0.2.0)
 
 `GovernanceReadSnapshot` is a standalone schema-1, protocol-1 document produced by
 `dsh-telemetry governance --observations-from <absolute-descriptor-path>`. Import
@@ -341,16 +370,25 @@ are contained, and ordinary getters are not invoked; no trap-free, side-effect-f
 claim is made for hostile Proxy traps that themselves loop or allocate. Schema traversal is bounded
 for JSON input. Accessors may also have run before the decoder receives a value.
 
-Consumers on 0.1.0 have no governance read decoder and need the 0.2.0 candidate (or a later release
-that supports this schema). This additive candidate removes no exports and changes no wire behavior:
-`PROTOCOL_VERSION` and `dsh.protocol` remain 1. The document is not a `RemoteSnapshot`, is not folded,
-is not served by the hub, and does not implement reconnect freshness (#265).
+This decoder released in 0.2.0
+([#279](https://github.com/rickylabs/harness/issues/279)) and ships unchanged
+in 0.3.0. It was additive: no exports were removed and no wire behavior
+changed — `PROTOCOL_VERSION` and `dsh.protocol` remain 1. The document is not
+a `RemoteSnapshot`, is not folded, is not served by the hub, and does not
+implement reconnect freshness (#265).
 
-Source merge, tests and `npm pack` are not publication. The current 0.3.0 candidate includes
-this decoder; its release remains a separate owner/coordinator operation. No downstream
-API/client compatibility, upgrade receipt or live #205/#87 acceptance is implied.
+The producer half — the CLI that collects configured sources and emits the
+document — is built from this repository's source and documented in the
+[telemetry README](../telemetry/README.md#published-governance-read-command).
+The consumer half decodes with the decoder published to npm, so a consumer
+pins a released decoder version instead of rebuilding one from source.
+Source merge, tests and `npm pack` are not publication; publication is the
+owner's tag-triggered release (see [Releasing](#releasing)). A release
+implies no downstream API/client compatibility, no upgrade receipt and no
+live #205/#87 acceptance; real-source and live acceptance remain separate
+gates.
 
-## Standalone repository run observation (0.3.0 candidate, protocol 1)
+## Standalone repository run observation (0.3.0, protocol 1)
 
 `readRepositoryRunObservation(unknown)` validates a `RepositoryRunObservation` independently
 of snapshots, folds, hubs and transport. It returns `{ok:true, observation}` with owned nested
@@ -409,5 +447,6 @@ package does not implement those backend fences or an offline revocation guarant
 This observes one selected native file, not a repository census, decision certification or
 liveness signal. Whole-run withholding includes malformed tails. The reader detects observed
 before/after changes in trusted local storage, not hostile ABA changes or an atomic filesystem
-snapshot. Candidate 0.3.0 has not been published by this implementation; packed synthetic gates
-do not establish real-source or downstream API/client compatibility.
+snapshot. This document released in 0.3.0 (receipt under
+[Releasing](#releasing)); packed synthetic gates do not establish real-source or downstream
+API/client compatibility — real-source acceptance remains a separately authorized coordinator gate.

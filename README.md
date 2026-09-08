@@ -93,22 +93,18 @@ The loop, arrow by arrow:
    chooses** the update — a comment, a label move, a pull request — and that
    choice is what lands on the board.
 
-**What this repository supplies, and what it does not.** Harness is the
-deterministic decisions and services in that diagram: the projection, the
-gates, the seam contracts, the record and the replay. It does not by itself
-supply a continuously running, fully wired dispatcher. The coordinator has a
-local store for durable effect intents, receipts and checkpoints, with explicit
-recovery after a writer dies. Nothing schedules these services or produces the
-planner CLI's state input yet; the durable orchestration loop remains open
-([#191](https://github.com/rickylabs/harness/issues/191)). `dsh-board` only reads and
-projects GitHub; every terminal view flags a board that contradicts itself,
-and its check names the detail. `dsh-forge` is the separate, explicit
-mutation boundary, scoped to label and process setup, with named create/update calls
-in its GitHub transport. The two seams stay distinct: the profile currently
-composes an **empty** subagent registry — a dispatch into it returns a named
-`no-providers` refusal rather than a crash — while the local LLM routes are
-registered but remain dependent on reachable backends and credentials at
-dispatch time.
+Harness owns the deterministic mechanism in this loop: board projections,
+routing and admission, execution gates, provider adapters, telemetry, and durable
+intents and receipts. GitHub holds the work graph; Harness coordinates the work
+and records evidence that can be replayed and inspected without interrupting an
+agent. Autonomous agent tasks and token-metered calls keep their separate seams.
+
+The product backend turns that mechanism into an authenticated, persistent
+application. It owns enrollment, access control, commands and projections, and
+publishes its captured OpenAPI artifact and generated client. The native client
+uses that product boundary for daily observation, decisions and steering.
+[The three layers](docs/concepts/06-the-three-layers.md) explains each layer's
+responsibilities and the relationships between them.
 
 ## Who decides what
 
@@ -125,57 +121,41 @@ theirs, agents keep the work that is theirs, and the layer in between never
 improvises — it is pure functions over declared data, which is what makes it
 auditable at all.
 
-## What exists at this baseline
+## Status
 
-**Status** moves on the board, not in this file: [BOARD.md](BOARD.md) is
-regenerated from GitHub every half hour, and the
-[E0 roadmap](https://github.com/rickylabs/harness/issues/30) is what is built
-and what is not. What follows is a snapshot — every row resolved from source
-at commit `c98fbeb` (2026-09-07, then `main`), meant to be re-resolved, not
-remembered; [the board](BOARD.md) carries whatever moved since.
-The labels are exact: **Implemented** — source and meaningful tests exist
-here; **Composed** — the `dsh-app` profile actually registers it;
-**Host-dependent** — use needs a live provider, server, credential or
-transport a clone does not supply; **Stub** — a placeholder reserving
-dependency shape. Nothing in this matrix is a running swarm, and no row
-claims one. On a narrow screen, tables scroll sideways. Use the diagram's
-zoom controls or read the walkthrough below.
+This README and the concept pages describe the intended product. Delivery progress
+lives on [the board](BOARD.md) and the [roadmap](https://github.com/rickylabs/harness/issues/30);
+issues are authoritative when a generated board page lags a change.
 
-| Surface | Status | What that means here |
-| --- | --- | --- |
-| Five CLIs: `dsh-board`, `dsh-coordinator`, `dsh-telemetry`, `dsh-forge`, `dsh-profile` | Implemented | built and tested; each `--help` is byte-compared into the generated reference |
-| The `dsh` profile | Composed | five plugin rows registered; the profile is bound to this checkout and not published |
-| `ctx.subagents` seam | Composed — empty | zero registered providers; a dispatch returns the named `no-providers` refusal |
-| `provider-claude`, `provider-opencode` | Implemented — not composed | the profile registers neither; running them is Host-dependent (an injected SDK with credentials; a live `opencode serve`) |
-| `ctx.llm` seam | Composed | the adapter registers all three routes — `lm-studio`, `llama-rocm`, `openrouter`; every destination is Host-dependent at dispatch |
-| Board session projection | Composed | strict public projection plus todo writes over published `dsh` session services, proven by a synthetic composition smoke, not a daemon boot; carries task phase, run completeness, and — since [#220](https://github.com/rickylabs/harness/issues/220) — every board anomaly with its detail, the kinds naming each item, and the fetch coverage, so a pane can say a column is disputed without shelling out to `check` |
-| Governance display | Implemented | `dsh-telemetry tree`/`status` reads a typed observation file — quota, spend, capacity, refusals, each with its age; absent input reads UNKNOWN, never "all clear". The live host adapter is blocked on [#62](https://github.com/rickylabs/harness/issues/62) |
-| `provider-codex` protocol prerequisite | Implemented — not composed | exact four-field route verification and pre-turn gating ship; the full provider and live transport remain blocked on #53. No Codex provider is composed into `ctx.subagents` |
-| `provider-acp`, `governance`, `netscript-bridge` | Stub | each README opens with `Status: stub` and names its blocking epic |
-| `contracts` | Implemented | the only publishable package; release is tag-triggered, and no registry release is claimed here |
-| GitHub transports; `deploy/` stack | Host-dependent | GitHub board reads and label checks need a working transport; verify `init` with `labels check` and a live readback. The compose stack targets one specific box |
+For interfaces you can use today, follow the [package guides](packages/README.md),
+[generated CLI reference](docs/reference/cli/README.md), and
+[published contracts and release guidance](packages/contracts/README.md#releasing).
+These operational references distinguish implemented behavior from planned work.
 
 ## Choose your path
 
 | You are… | Go | First outcome |
 | --- | --- | --- |
 | evaluating or reviewing | the diagram above → [doctrine/WORKFLOW.md](doctrine/WORKFLOW.md) → [concepts](docs/concepts/) | how work is staged, gated and independently reviewed, and what counts as evidence |
-| contributing | the status matrix → [packages/README.md](packages/README.md) → [CONTRIBUTING.md](CONTRIBUTING.md) | the current implementation truth and a safe change surface |
+| contributing | the [status](#status) section → [packages/README.md](packages/README.md) → [CONTRIBUTING.md](CONTRIBUTING.md) | the current implementation truth and a safe change surface |
 | adopting locally | [local proof](#local-proof-first) → the [tutorial](docs/tutorials/01-from-clone-to-board.md) | deterministic behavior proven on your machine, without a daemon |
-| operating a live host | the status matrix → [deploy/README.md](deploy/README.md) → [dsh-app](packages/dsh-app/README.md) and provider docs | profile wiring and every external prerequisite, named |
+| operating a live host | the [status](#status) section → [deploy/README.md](deploy/README.md) → [dsh-app](packages/dsh-app/README.md) and provider docs | profile wiring and every external prerequisite, named |
 
 ## Local proof first
 
-What a clone can do, offline, is prove the deterministic half. Node 24 is the
-declared and recommended baseline, alongside [pnpm](https://pnpm.io) 11:
+The local proof uses Node 24 or newer and [pnpm](https://pnpm.io) 11. Node 24
+is the supported floor; Node 26 is the development target. CI currently proves
+Ubuntu on Node 24, and release checks have also passed locally on Linux with
+Node 26.8.1. Engine enforcement and dual-version CI are tracked in
+[#244](https://github.com/rickylabs/harness/issues/244).
 
 ```bash
 pnpm install
 pnpm run build
 ```
 
-`build` is not only a compile — it runs eight repository-wide checks around
-it. Two of them guard documents: every generated CLI reference page is
+`build` is not only a compile — it runs a chain of repository-wide checks
+around it. Two of them guard documents: every generated CLI reference page is
 byte-compared against its binary, and every relative link and anchor is
 resolved. What they check is exactly what they check — generated pages and
 links, not hand-written prose. Pasted output in prose is checked by nobody —
@@ -257,8 +237,9 @@ fifteen minutes and needs no server.
 
 Scope first, so the rest is readable: this repository is the `dsh` plugin
 layer, the doctrine those plugins encode, and the run artifacts they produce
-— nothing else. Private external consumers live in separate repositories (such
-as a cockpit and a mobile client we run against it), reaching this layer over a
+— nothing else. The two products that consume it are separate repositories —
+`rickylabs/atelier-cockpit`, the engineering cockpit, and
+`rickylabs/atelier-mobile`, the Expo companion — reaching this layer over a
 published contract package (ratified decision 4, below).
 
 Four commitments shape every package. Each is summarized once here and owned
@@ -312,14 +293,15 @@ reversing one is a change to #30 first.
    build-time dependency.
 3. **GitHub is the source of truth for the board**; `dsh` projects the live
    view.
-4. **This repo is the `dsh` layer only.** No cockpit is built here. Private
-   external consumers live in separate repositories (such as a cockpit and a
-   mobile client we run against it). Consequence: `contracts` must be a
-   *published* package, not a workspace import.
+4. **This repo is the `dsh` layer only.** No cockpit is built here. The two
+   that consume this layer are separate products in their own repositories —
+   `rickylabs/atelier-cockpit`, the engineering cockpit, and
+   `rickylabs/atelier-mobile`, the Expo companion. Consequence: `contracts`
+   must be a *published* package, not a workspace import.
 
 Decision 4 originally placed external consumers inside `rickylabs/netscript` and
 was amended on
-[#30](https://github.com/rickylabs/harness/issues/30)
+[#30](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579)
 once they became products in their own right; the published contract package
 is still the only thing this repository owes them. Two further decisions —
 the MIT licence with a public npm scope, and the divybot/herdr strangler-fig
@@ -327,36 +309,23 @@ the MIT licence with a public npm scope, and the divybot/herdr strangler-fig
 
 ## Packages
 
-Fifteen packages, grouped by what they are for. The authoritative package →
-epic → attachment table is [packages/README.md](packages/README.md); this
-list is the orientation, at the baseline above.
+Packages are grouped by responsibility. The [package guide](packages/README.md)
+owns the complete package-to-epic table and implementation status.
 
-- **Decide, project, record** — [`coordinator`](packages/coordinator),
-  [`board`](packages/board), [`telemetry`](packages/telemetry). Implemented,
-  and Composed as profile rows. The five CLIs above are their faces.
-- **The subagents seam** — [`subagents`](packages/subagents) holds the
-  contract itself; [`provider-claude`](packages/provider-claude) and
-  [`provider-opencode`](packages/provider-opencode) are Implemented against
-  it and not registered by the profile;
-  [`provider-codex`](packages/provider-codex) ships only its route-identity and
-  pre-turn protocol prerequisite, while its full provider remains blocked on
-  #53; [`provider-acp`](packages/provider-acp) is a Stub. No Codex provider is
-  composed into `ctx.subagents`, and the composed registry is empty.
-- **The llm seam** — [`llm-local`](packages/llm-local) (destinations,
-  capabilities, budgets) and [`routing`](packages/routing) (the explicit routing document loader)
-  are Implemented; the profile Composes the adapter for all three routes;
-  each destination stays Host-dependent.
-- **Compose and publish** — [`dsh-app`](packages/dsh-app) is the profile and
-  bundle patch; [`contracts`](packages/contracts) is the wire protocol external
-  consumers consume and the only publishable package;
-  [`forge`](packages/forge) installs the board process into any repository
-  and is CLI-only — it needs no profile row.
-- **Reserved** — [`governance`](packages/governance) and
-  [`netscript-bridge`](packages/netscript-bridge) are Stubs waiting on their
-  epics, and say so in their first lines. A stub is a `package.json`, a
-  tsconfig and a placeholder: enough to hold its place in the project graph
-  so the dependency shape is decided before the code is written, and not
-  enough to pretend it works.
+- **Project, decide and observe:** [`board`](packages/board),
+  [`coordinator`](packages/coordinator), [`governance`](packages/governance),
+  and [`telemetry`](packages/telemetry) connect the work graph, admission rules,
+  execution evidence and progress.
+- **Run work through two seams:** [`subagents`](packages/subagents) and the
+  provider packages handle autonomous agent tasks; [`llm-local`](packages/llm-local)
+  handles API and local-model calls. [`routing`](packages/routing) resolves
+  configured choices and evaluator independence.
+- **Compose and connect:** [`dsh-app`](packages/dsh-app) assembles the profile,
+  [`forge`](packages/forge) installs the board process, and
+  [`netscript-bridge`](packages/netscript-bridge) owns the outbound service adapter.
+- **Publish the boundary:** [`contracts`](packages/contracts) defines portable
+  mechanism data and readers for the product backend. The native client consumes
+  the backend's generated API/client.
 
 ### Repository map
 

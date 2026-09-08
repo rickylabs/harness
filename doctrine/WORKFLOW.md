@@ -119,12 +119,35 @@ Used identically in Stage F and Stage G so that automation can read them.
 
 ---
 
-## Default evaluation models
+## Evaluation routing
 
-Independent evaluation stages use a model that did not author the artifact under review.
-Current defaults (operator-set 2026-08-29; override per run in the /swarm block or run docs):
+Evaluation uses a separate session and preserves evaluator independence from the
+selected author. Model and effort choices belong to the project's routing authority,
+not a table copied into this doctrine.
 
-| Evaluation | Hosted default (OpenRouter) | Local default (N5 Air) |
-|---|---|---|
-| Plan evaluation (Stage G) | `qwen/qwen3.8-flash` (Qwen3.8-Flash-Next) | `n5air/qwen3.8-27b` (Qwen 3.8 27B) |
-| Implementation evaluation (post-Stage-H review) | `z-ai/glm-5.3-flash` | `n5air/ling-3.0-flash` (Ling 3.0 Flash, Q5_K_S — run on ROCm `n5air-rocm`, segfaults on Vulkan) |
+For the Atelier fleet, query the NetScript matrix CLI before **every dispatch**.
+Run it from the NetScript checkout; these are inspect-only instructions, not
+commands supplied by this repository:
+
+```bash
+deno task agentic:matrix --tier <tier> --json
+deno task agentic:matrix --tier <tier> --plan-evaluator --json
+deno task agentic:matrix --tier <tier> --impl-evaluator --json
+```
+
+The CLI renders the typed fleet authority. Retain its output, source identity,
+selected route and effort, and any evidenced fallback in the run. Use the exact
+configured provider/model identity and declared effort; a physical route mismatch
+needs a verified mapping correction, not an approximate effort or model choice.
+An exhausted subscription cannot be recovered by choosing a sibling model on that
+same subscription. Follow the selected row's evaluation loop and repair policy.
+
+Harness itself consumes wholly replaceable project routing configuration. Its
+packaged compatibility transcription is not proof of fleet parity; the
+[routing guide](../packages/routing/README.md) owns the configuration behavior and
+remaining parity work. Using the fleet CLI operationally introduces no NetScript
+build dependency into Harness.
+
+Owner overrides require an explicit worklog entry and never waive evaluator
+independence. Neither remembered routes nor examples in a brief replace the fresh
+query that authorizes a dispatch.

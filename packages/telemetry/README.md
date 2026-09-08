@@ -569,7 +569,7 @@ collects the explicitly configured sources once and emits one schema-1/protocol-
 object. `--json` is accepted but unnecessary. The installed
 `@rickylabs/harness-contracts` root export `readGovernanceSnapshot` decodes it losslessly into typed
 source coverage, envelope/state and recorded admission refusals. See the
-[contracts document](../contracts/README.md#governance-read-document-020-candidate).
+[contracts document](../contracts/README.md#governance-read-document-020).
 
 The command rejects missing descriptors, `file:`, `--observations`, `--items`, `--run`, `--kind`,
 `--limit`, `--since`, extra positional arguments and unknown flags before collection. It scans no
@@ -667,7 +667,7 @@ Collection/verification times are separate from native evidence. Public output c
 prompts, messages, raw errors, remote URLs or source notes. Allowlisted identity labels are not a
 universal secret sanitizer: source storage must be trusted. There is no home scan, enrollment or
 auth integration. Backend fencing/retention obligations and the strict portable encoding are
-specified in [the contracts README](../contracts/README.md#standalone-repository-run-observation-030-candidate-protocol-1).
+specified in [the contracts README](../contracts/README.md#standalone-repository-run-observation-030-protocol-1).
 Tests use temporary synthetic Git repositories/native files. Real-source acceptance is a separate,
 privately authorized coordinator gate; this command does not certify backend authorization.
 

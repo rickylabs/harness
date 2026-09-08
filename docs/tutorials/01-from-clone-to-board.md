@@ -14,7 +14,9 @@ You need six things, and you will not be asked for a seventh later:
 - **A POSIX-compatible shell** (such as `bash` or `zsh`). The paths, inline environment assignments,
   line continuations, and pipes shown below use POSIX syntax and require translation for PowerShell
   or `cmd.exe`.
-- **Node 24 or newer** (the declared and recommended baseline) and **[pnpm](https://pnpm.io) 11**.
+- **Node 24 or newer** — Node 24 is the declared supported floor and Node 26 the owner-selected
+  target ([#244](https://github.com/rickylabs/harness/issues/244), which owns enforcement and
+  any dual-version matrix and remains open) — and **[pnpm](https://pnpm.io) 11**.
 - **The [`gh`](https://cli.github.com) CLI, authenticated** — `gh auth status` should print a
   logged-in account. Steps 2 and 3 read and write GitHub through it.
 - **A scratch repository you own**, empty, that you do not mind changing. Call it `owner/scratch`
@@ -64,7 +66,8 @@ package, prefixed with its path, like `packages/dsh-app test: … pass …`
 The counts grow as the project does. The number that matters is `fail 0`,
 on every package, and `pnpm test` exiting `0`.
 
-**If it fails.** Node 24 is the declared and recommended baseline. An engine warning does not by
+**If it fails.** Node 24 is the declared supported floor; Node 26 is the owner-selected target.
+An engine warning does not by
 itself prove installation failed. (Owner testing recorded on
 [#212](https://github.com/rickylabs/harness/issues/212) at `4ff50fe` completed install, build, and
 tests under Node 22.20.0 after an engine warning, but that is a version-specific historical observation
