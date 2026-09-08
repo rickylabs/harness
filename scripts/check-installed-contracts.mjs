@@ -69,11 +69,14 @@ try {
     npm_config_userconfig: npmConfig, npm_config_globalconfig: npmGlobal, npm_config_cache: join(scratch, "npm-cache"),
     npm_config_offline: "true", npm_config_audit: "false", npm_config_fund: "false", npm_config_ignore_scripts: "true" };
   const npm = process.platform === "win32" ? "npm.cmd" : "npm";
+  const sourcePackage = JSON.parse(readFileSync(join(contracts, "package.json"), "utf8"));
+  assert.equal(typeof sourcePackage.version, "string");
+  assert.ok(sourcePackage.version.length > 0, "source package version is required");
   stage = "offline pack";
   const packed = await run(npm, ["pack", contracts, "--json", "--pack-destination", packDir, "--ignore-scripts"], { cwd: scratch, env });
   assert.equal(packed.code, 0);
   const metadata = JSON.parse(packed.stdout)[0];
-  assert.equal(metadata.version, "0.3.0");
+  assert.equal(metadata.version, sourcePackage.version);
   const tarball = join(packDir, metadata.filename);
   const digest = createHash("sha256").update(readFileSync(tarball)).digest("hex");
   assert.ok(!metadata.files.some(f => /test|fixture|tsbuildinfo/.test(f.path)));
@@ -87,7 +90,7 @@ try {
   assert.equal(installed.code, 0);
   const installedRoot = join(consumer, "node_modules/@rickylabs/harness-contracts");
   const pkg = JSON.parse(readFileSync(join(installedRoot, "package.json"), "utf8"));
-  assert.equal(pkg.version, "0.3.0"); assert.equal(pkg.dsh.protocol, 1);
+  assert.equal(pkg.version, sourcePackage.version); assert.equal(pkg.dsh.protocol, 1);
   assert.ok(existsSync(join(installedRoot, "dist/index.d.ts")) && existsSync(join(installedRoot, "dist/server.d.ts")));
   stage = "installed root/server runtime exports";
   writeFileSync(join(consumer, "runtime.mjs"), `import assert from 'node:assert/strict';
