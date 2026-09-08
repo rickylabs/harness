@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **217/269 done · 17 running · 21 queued · 12 abandoned · 2 invisible**
+`[################----]` **219/270 done · 16 running · 21 queued · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-08T18:12:10Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-08T18:33:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (17)
+## Moving now (16)
 
 Something could be acting on these right now.
 
@@ -21,7 +21,6 @@ Something could be acting on these right now.
 | [#261 E6 — Define command receipt lookup and unknown reconciliation boundaries](https://github.com/rickylabs/harness/issues/261) | `research` | `e6` |
 | [#262 E9 — Specify projection revision, observation coverage and census authority](https://github.com/rickylabs/harness/issues/262) | `research` | `e9` |
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
-| [#265 E9 — Retain the board without false freshness across connection loss and restart](https://github.com/rickylabs/harness/issues/265) | `impl-eval` | `e9` |
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `plan` | `e11` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
@@ -34,7 +33,7 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 176/215 done · 16 running · 19 queued · 3 abandoned · 1 invisible
+`[#########---]` 178/216 done · 15 running · 19 queued · 3 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -48,7 +47,7 @@ Something could be acting on these right now.
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 20/24 done · 4 running | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 22/25 done · 3 running | `impl` |
 | _(no epic)_ | `[############]` 3/3 done | — |
 
 ### (no milestone)
@@ -97,9 +96,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  217/269 done · 17 running · 21 queued · 12 abandoned · 2 invisible
+# rickylabs/harness  [################----]  219/270 done · 16 running · 21 queued · 12 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [################----]  176/215 done · 16 running · 19 queued · 3 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [################----]  178/216 done · 15 running · 19 queued · 3 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -320,7 +319,7 @@ Something could be acting on these right now.
     shipped              #279 chore(contracts): owner release of the reviewed governance read boundary as 0.2.0 (p0)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
-    [#############---] 20/24 done · 4 running
+    [##############--] 22/25 done · 3 running
     shipped              #83 E9.1 — SessionTelemetrySink on every run, on both seams
     shipped              #84 E9.2 — Push over /api/remote.mux, never poll
     shipped              #85 E9.3 — The hierarchy view: milestone → epic → task → subagent
@@ -341,10 +340,11 @@ Something could be acting on these right now.
     shipped              PR241 feat(board): let the board say a person is holding the work (p1)
     shipped              PR246 fix(telemetry): read the Claude store's subagent tree instead of assuming there isn't one (p1)
     research             #262 E9 — Specify projection revision, observation coverage and census authority (p1)
-    impl-eval            #265 E9 — Retain the board without false freshness across connection loss and restart (p1)
+    shipped              #265 E9 — Retain the board without false freshness across connection loss and restart (p1)
     shipped              PR276 feat(telemetry): read live governance sources beside progress (p1)
     shipped              PR278 fix(contracts): expose configured governance through an installed read boundary (p0)
     shipped              PR280 feat(telemetry): publish repository-bound run observations (p0)
+    shipped              PR282 fix(contracts): retain boards without false synchronization after connection loss (p1)
 
   (no epic)
     shipped              PR219 fix(board): say so when a column is a lie
