@@ -27,6 +27,7 @@ and the number the process actually returns cannot disagree.
 dsh-telemetry — board activity, read from disk, with no agent awake
 
 usage:
+  dsh-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
   dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
   dsh-telemetry status [options]     runs grouped by epic
@@ -68,6 +69,11 @@ for descriptor fields, the env-only service dependency and public-safe admission
 refuses file: and --observations/--items/--run/--kind/--limit/--since, and scans no transcripts.
 Exit 0 means configured evidence is complete; exit 3 means incomplete or unavailable.
 Exit 1 emits no document and a fixed diagnostic. Pending approvals remain not-observed.
+
+"run-observation" accepts only --source and one absolute local descriptor path.
+It reads one selected Codex native file, with source-root and enrolled worktree checks.
+Exit 0 means the selected source was read; exit 3 withholds the run with typed coverage.
+Invalid descriptors exit 1 with a fixed diagnostic and no JSON. No home scan or network.
 
 "record" reads JSONL on stdin — one {"runId","kind","at","detail"} object per line, "at"
 and "detail" optional. A bad line loses that line and is named; an empty batch is not an

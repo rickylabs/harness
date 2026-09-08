@@ -1,0 +1,5 @@
+2026-09-08 Reviewed plan copied into isolated implementation branch. StageG PASS plus narrow identifier repair bind implementation. Owner publication authorization recorded; no release attempted.
+
+2026-09-08T08:54:09+00:00 Implemented standalone reader/decoder, strict CLI dispatch, manifest candidate0.3.0/protocol1, generated docs and installed consumer gate. Final build/test/typecheck/check:publish/check:installed all exit0 with TMPDIR=/var/tmp. Workspace tests2883; exact synthetic matrix73. Earlier /tmp EACCES and in-repository TMPDIR fixture failure retained in verification.md. No real read, evaluator dispatch or publication.
+
+2026-09-08T09:02:10+00:00 Native-envelope amendment/R2-R4 implemented after discovering its coordinator-added PASS during staging audit. Expanded required matrix108; staged build/test/typecheck/check:publish/check:installed all exit0 with TMPDIR=/var/tmp, workspace tests2883 plus9 snapshot-guard tests. Exact-hash synthetic inventory updated, real empirical counts redacted from public amendment copies. Final receipts replace baseline-only receipts; baseline results remain recorded above.

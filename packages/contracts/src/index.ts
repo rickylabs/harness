@@ -260,3 +260,11 @@ export {
   type UnavailableReason, type MeterCoverage, type AdmissionCoverage, type GovernanceSourceCoverage,
   type RecordedAdmission, type GovernanceReadSnapshot, type GovernanceReading,
 } from "./governance-read.js";
+
+export {
+  REPOSITORY_RUN_OBSERVATION_SCHEMA, RUN_OBSERVATION_INCOMPLETE_REASONS,
+  RUN_OBSERVATION_UNAVAILABLE_REASONS, readRepositoryRunObservation,
+  type RepositoryRunBinding, type RunObservationCoverage, type RunIdentityObservation,
+  type RunTokenObservation, type ObservedRepositoryRun, type RepositoryRunObservation,
+  type RepositoryRunObservationReading,
+} from "./repository-run-observation.js";

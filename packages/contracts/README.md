@@ -346,6 +346,68 @@ that supports this schema). This additive candidate removes no exports and chang
 `PROTOCOL_VERSION` and `dsh.protocol` remain 1. The document is not a `RemoteSnapshot`, is not folded,
 is not served by the hub, and does not implement reconnect freshness (#265).
 
-Source merge, tests and `npm pack` are not publication. **0.2.0 remains unpublished until the owner
-releases it** with `harness-contracts-v0.2.0` on a merged `main` commit. No downstream API/client
-compatibility, upgrade receipt or live #205/#87 acceptance is implied.
+Source merge, tests and `npm pack` are not publication. The current 0.3.0 candidate includes
+this decoder; its release remains a separate owner/coordinator operation. No downstream
+API/client compatibility, upgrade receipt or live #205/#87 acceptance is implied.
+
+## Standalone repository run observation (0.3.0 candidate, protocol 1)
+
+`readRepositoryRunObservation(unknown)` validates a `RepositoryRunObservation` independently
+of snapshots, folds, hubs and transport. It returns `{ok:true, observation}` with owned nested
+data, `{ok:false, reason:"invalid"}`, or `{ok:false, reason:"unsupported-schema", schema, protocol}`.
+The root export and declarations require no dependencies, Node APIs or I/O. Unknown keys,
+accessors, wrong unions, unsafe counters and noncanonical/impossible dates are rejected. Dates
+are UTC ISO strings with exactly three fractional digits. No invalid input is echoed.
+
+The exact root is `{schema:1, protocol:1, binding, capturedAt, coverage, verification, run}`.
+Binding is `{namespace,id,revision,sourceScopeId,repo:{owner,name}}`. Each identifier, including
+`run.nativeId`, is case-sensitive, 1..128 characters and matches
+`^[A-Za-z0-9][A-Za-z0-9._:-]*$`. Identifiers are equality-only; no ordering is implied.
+Owner is 1..39 ASCII alphanumerics/hyphens with alphanumeric ends. Repository name is 1..100
+ASCII alphanumerics/dot/underscore/hyphen, excluding `.` and `..`. These are encoding checks,
+not proof that a repository exists.
+
+Coverage is exactly one of:
+
+- `{status:"read",reason:null}`: nonnull run and verification.
+- `{status:"incomplete",reason}`: `malformed-record`, `unknown-envelope`, `source-changed`,
+  `binding-changed`, `invalid-timestamp` or `invalid-evidence`; run and verification null.
+- `{status:"unavailable",reason}`: `source-missing`, `source-unreadable`, `source-too-large`,
+  `scope-unverified`, `scope-mismatch`, `identity-missing` or `identity-mismatch`; both null.
+
+Verification is `{basis:"enrollment-and-local-worktree",verifiedAt}` and requires
+`verifiedAt <= capturedAt`. It records local validation completion. Enrollment asserts the
+logical repository association; local Git identity and native cwd corroborate the selected
+worktree. This is neither cryptographic provenance nor durable historical membership.
+
+A run has `source:"codex"`, `nativeId`, `firstObservedAt`, `lastObservedAt`, `identity`, `usage`,
+`execution` and `relationships`. Identity contains independently timestamped nullable provider,
+model and effort leaves `{value,observedAt}` (1..200 ASCII letters/digits/underscore/dot/colon/
+slash/hyphen). Usage is null or `{observedAt,inputTokens?,outputTokens?,reasoningTokens?,cacheReadTokens?}`
+with at least one nonnegative safe integer count. These are cumulative source totals, never
+summed, and missing fields remain absent. No cost or quota is supported. Execution is
+`{status:"unknown",observedAt:null}` or a timestamped `source-reported-complete` /
+`source-reported-error`. A later native task start clears terminal evidence. Relationships
+`parent`, `agent`, `task`, `messages`, `certification` are all exactly `"unavailable"`.
+All source evidence timestamps lie within the first/last envelope interval. Collection and
+verification clocks do not refresh evidence; source clock skew past collection is permitted.
+
+The native identity tuple is `(namespace,sourceScopeId,source,nativeId)`, never bare nativeId.
+The enrollment authority allocates opaque namespace/binding/revision/store identifiers; none
+are derived from paths or prose. It must enforce uniqueness and never reuse a store identifier
+for a different store. Binding id remains stable for the association. Allocate a never-reused
+revision when the repository, selected run, store, source root/file, worktree, expected Git common
+directory or binding scope changes. File growth alone does not rotate the revision.
+
+The backend owns enrollment, authentication, authorization and revocation. Before persistence
+and protected delivery it must atomically compare current namespace/id/revision/sourceScopeId.
+A delayed observation for A cannot be relabeled as B. Prior authorized evidence may remain stale
+under its original binding/times per backend policy, but unavailable reads never extend grants,
+refresh native evidence or mint binding ownership. Revocation/expiry overrides retention. This
+package does not implement those backend fences or an offline revocation guarantee.
+
+This observes one selected native file, not a repository census, decision certification or
+liveness signal. Whole-run withholding includes malformed tails. The reader detects observed
+before/after changes in trusted local storage, not hostile ABA changes or an atomic filesystem
+snapshot. Candidate 0.3.0 has not been published by this implementation; packed synthetic gates
+do not establish real-source or downstream API/client compatibility.
