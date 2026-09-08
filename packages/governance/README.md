@@ -41,11 +41,14 @@ it could not read, rather than passing.
 
 ## Why it is empty
 
-E5 is blocked behind a decision, not behind effort:
-**[#62 — the sandboxctl execution channel](https://github.com/rickylabs/harness/issues/62)**.
-Admission control that cannot reach the thing it is admitting to is a ledger, not a gate, and which
-channel it reaches over changes what "capacity" can even be measured against. Building against a
-guess would mean building the readings twice.
+The decision E5 waited on is answered: the sandboxctl sidecar was ratified on
+**[#257](https://github.com/rickylabs/harness/issues/257)**, and the channel
+it names is what a live admission reading reaches through. The published
+governance *read* boundary already ships through `telemetry` and `contracts`
+(see the [telemetry README](../telemetry/README.md#published-governance-read-command));
+this package — the part that decides whether the system may spend — remains a
+stub until E5 implements it. Building it before the epic that owns it defines
+the contract would mean building the readings twice.
 
 ---
 

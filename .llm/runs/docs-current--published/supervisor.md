@@ -1,0 +1,1 @@
+Owner-authorized docs reconciliation. Baseline8cd6b36; owned isolated checkout; mutation surface and gates in plan.md. Existing root deno.lock modification excluded. Native route output retained per dispatch. No release operation.

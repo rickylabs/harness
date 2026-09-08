@@ -2,7 +2,7 @@
 
 *Why is it built this way?*
 
-Five pages, meant to be read in order. They are the only pages here no generator can produce —
+Six pages, meant to be read in order. They are the only pages here no generator can produce —
 reference is rendered from the code, but the reasoning behind a decision exists nowhere except in
 someone's head until it is written down, and then it is the most durable thing in the repository.
 
@@ -14,10 +14,13 @@ someone's head until it is written down, and then it is the most durable thing i
 4. [**What "run" means**](04-the-run.md) — the word names two different things. Both are correct.
 5. [**Determinism**](05-determinism.md) — generated files, golden snapshots, replay, and why drift
    is a bug rather than untidiness.
+6. [**The three layers**](06-the-three-layers.md) — the owner-locked responsibility model across
+   coordination, the product backend and the client, and the two published carriers between them.
 
 The order is not arbitrary: 2 explains the split the packages are cut along, 3 explains where state
 lives, and 4 and 5 are the two places a newcomer most reliably trips — an overloaded word and a
-guarantee that looks like ceremony until you have watched a board silently report itself empty.
+guarantee that looks like ceremony until you have watched a board silently report itself empty. 6
+draws the full deployment picture those five pages sit inside.
 
 ## What is not here
 

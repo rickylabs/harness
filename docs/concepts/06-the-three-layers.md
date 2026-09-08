@@ -250,10 +250,15 @@ is necessary evidence, not a second routing authority.
 
 ## Gaps, stated plainly
 
-**The contracts package is not published.** Both downstream layers are written
-against a specification rather than an installed artifact. This is the single
-highest-leverage unblock in the chain: nothing below layer 1 can be integration-
-tested against a version until the tag exists.
+**The contracts package is published.** `@rickylabs/harness-contracts` is
+on npm at 0.3.0, protocol 1, released by the owner with a public receipt
+([issue #39 comment](https://github.com/rickylabs/harness/issues/39#issuecomment-5582710963)).
+The gap this section tracks has therefore moved one step down the chain: what
+is not yet established is the downstream integration evidence — the backend
+adapter consuming a released version, the captured OpenAPI artifact, the
+generated client package, and the native receipts the two carriers above
+require. Publication unblocks those artifacts; it is not a substitute for
+them.
 
 **Fidelity decision — documented loss in v0.1.0, protocol 1.** Provider
 `RunLiveness` is execution state (`queued`, `running`, `finished`, `failed`,
@@ -278,15 +283,25 @@ evidence. It is deferred from v0.1.0. The cost of the selected loss is that a
 consumer cannot offer exact provider-queue status from this release. Connection
 freshness recovery is an additional, separately tracked limitation in #265.
 
+This decision is historical, made by the protocol owner under the
+architecture-lock directive of 2026-09-07 (see Consulted sources below).
+Protocol 1 is unchanged in the 0.3.0 release, so the documented loss and the
+consumer obligations above continue in 0.3.0; the structured provider-state
+alternative remains deferred.
+
 ---
 
 ## A note on naming
 
-This document describes two downstream deployments without naming them. That is
-deliberate while the question of which consumer names may appear in public
-documentation remains an open owner decision. The roles — *the product backend*,
-*the client* — are the load-bearing part; the repository names are not, and
-adding them later costs nothing.
+This document describes the two downstream deployments by role — *the product
+backend*, *the client* — and keeps the description architectural. The owner
+has since approved naming the consumer repositories in public documentation
+([#237](https://github.com/rickylabs/harness/issues/237)):
+`rickylabs/atelier-cockpit`, the engineering cockpit, and
+`rickylabs/atelier-mobile`, the Expo companion. The roles remain the
+load-bearing part; the names and the architectural relationship are recorded
+where that relationship is stated ([01 — What this is](01-what-this-is.md),
+the root README), and private consumer internals stay out of this page.
 
 ## Consulted sources
 

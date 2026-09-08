@@ -1,74 +1,83 @@
 # What this is
 
-A **coordinator layer**. It decides what may run next, records what ran, and projects both onto a
-board a human can read. It does not write code, and it does not hold state of its own.
+Harness is the **deterministic coordination layer for an agent fleet**. It turns
+human intent into governed work: what may run next, which route may perform it,
+who may evaluate it, and what evidence makes the result trustworthy. The owner
+can observe progress and intervene without interrupting an agent to ask for status.
 
-That is a narrow job, and the narrowness is the design. Everything below is what it deliberately is
-*not*, because each of those is a thing people reasonably expect a project with this name to be.
+The product combines a work graph, configurable routing, resource admission,
+durable execution records, independent evaluation and telemetry. This page
+explains those responsibilities. The [board](../../BOARD.md) and
+[package guides](../../packages/README.md) track their implementation.
 
-## It is not an agent
+## Coordinate the agents
 
-Nothing here calls a model to solve your problem. `dsh-coordinator` decides *who may* review a
-piece of work; it never reviews it. `dsh-board` renders what the board says; it never files an
-issue. The agents are Claude Code, Codex, opencode and agy — they already exist, they are already
-capable, and this layer's entire value is that it outlives whichever one you opened this morning.
+Agents perform research, planning, implementation and review. Harness coordinates
+those activities through explicit lanes, gates and evidence. A plan or artifact
+cannot certify itself, and a missing independent evaluator does not relax the rule.
 
-The consequence to notice: every binary in this repository is deterministic. Given the same inputs
-they produce the same output, which is why `dsh-coordinator replay` can re-run a journal's
-decisions and compare. A decision that comes back different from identical inputs is reported as
-nondeterminism, not as a change of plan.
+Claude Code, Codex, OpenCode and other agent clients perform autonomous work
+through the subagent seam. API and local-model calls use a separate seam, with
+different resource accounting. [Two seams](02-the-two-seams.md) explains why these
+remain distinct. Routing configuration chooses the legal model, effort and provider;
+resource observations inform admission before work starts.
 
-## It is not a task database
+Decisions are reproducible from their recorded inputs. The coordinator can replay
+a journal and report nondeterminism when the same inputs produce different decisions.
+The model's work is stochastic; coordination rules and their evidence are explicit.
 
-GitHub is the board ([03 — The board](03-the-board.md)). There is no second store of task state to
-reconcile, no sync job, and no window in which the two disagree. `dsh-board` reads issues, labels,
-milestones and pull requests, and renders a view.
+## Keep each kind of truth in its proper place
 
-## It is not a UI
+GitHub holds the work graph: issues, milestones, dependencies, labels and pull
+requests. [The board](03-the-board.md) projects that graph into useful views.
+It does not create a competing authoritative task database.
 
-Private external consumers — such as a cockpit and a mobile client we run against it — live in
-separate repositories, and were separated from netscript by an amendment on
-[#30](https://github.com/rickylabs/harness/issues/30) that left the
-rest of decision 4 standing. This repository owes them
-exactly one thing: [`@rickylabs/harness-contracts`](../../packages/contracts), a published package
-of route and type definitions, consumed over npm and never as a workspace import. That is ratified
-decision 4 on the [roadmap](https://github.com/rickylabs/harness/issues/30), and it is the reason
-`contracts` is the only package here that is not `private: true`.
+Harness also owns operational state: durable effect intents, receipts, checkpoints
+and telemetry. These records answer different questions from the GitHub board:
+what was attempted, what was observed, and what remains uncertain after an interruption.
+An admitted task is not proof of running execution, and an uncertain effect stays
+unknown until supported reconciliation evidence exists.
 
-## What it actually is, then
+Observation time, execution, certification and synchronization remain separate.
+A connected client may be showing incomplete observations; a completed run may still
+await evaluation. The product exposes those distinctions so a presentation layer
+does not invent certainty from missing evidence.
 
-Five binaries answer questions from a terminal, and a `dsh` profile composes
-five plugin rows — the board, coordinator and telemetry plugins plus one
-adapter per seam — into one `dsh` process:
+## Reach the owner through the product backend
 
-| | |
-| --- | --- |
-| **decide** | [`coordinator`](../../packages/coordinator) — who may review, what may run, and the gate that refuses |
-| **project** | [`board`](../../packages/board) — GitHub → columns, and the anomalies that mean the board contradicts itself |
-| **record** | [`telemetry`](../../packages/telemetry) — a bounded log of what ran, readable with nothing awake |
-| **install** | [`forge`](../../packages/forge) — put this whole process into another repository |
-| **compose** | [`dsh-app`](../../packages/dsh-app) — the profile and bundle patch that compose the plugins into one `dsh` |
+`rickylabs/atelier-cockpit` is the engineering cockpit and full application backend;
+`rickylabs/atelier-mobile` is the native companion. The
+[decision-4 amendment](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579)
+records their repository relationship. The
+[three-layer architecture](06-the-three-layers.md) owns the division of responsibilities.
 
-## Why `dsh`
+Harness publishes [`@rickylabs/harness-contracts`](../../packages/contracts) as the
+mechanism boundary. The backend consumes that package, owns persistence, enrollment,
+authorization, commands and application projections, and captures its OpenAPI artifact
+and generated client. The native client consumes that generated product boundary for
+observation, decisions and steering. No consumer uses cross-repository workspace imports.
 
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) is everything-is-a-plugin over
-Cordis: a `Context` is a service repository, a plugin claims `ctx.<key>`, and composition is
-declarative — profiles list bundles, and patches layer bundle → profile → home → `--patch`. That
-lets this project attach at almost any layer without forking anything, which is ratified decision 1:
-**plugin-only, no core fork.**
+## Compose the mechanism as plugins
 
-The declarative composition is not incidental. A coordinator whose own wiring required imperative
-setup code would be asking to be trusted on exactly the axis it exists to remove.
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) provides a Cordis
+plugin host: a `Context` holds services, plugins expose them, and profiles compose
+the application. Harness supplies the coordination plugins and profile over the
+published host package. Ratified decision 1 is **plugin-only, no core fork**.
 
-## Where the reasoning lives
+The [package guide](../../packages/README.md) maps responsibilities to owning epics:
+board projection, coordination, governance, telemetry, routing, provider adapters,
+service integration and the published contract. [`forge`](../../packages/forge)
+installs the board process into another repository; [`dsh-app`](../../packages/dsh-app)
+composes the runtime profile.
 
-- The method — how a piece of work is staged, reviewed and gated — is
-  [`doctrine/`](../../doctrine/). It is portable markdown with no runtime and it works in any
-  repository in any language.
-- The mechanics — the parts of that method a machine can enforce — are the packages here.
+## Carry the method between projects
+
+The method lives in [`doctrine/`](../../doctrine/): portable markdown describing
+how work is staged, reviewed and gated. The packages encode the parts a machine
+can enforce. Domain knowledge belongs to each project.
 
 > **Mechanics are portable. Knowledge is specific. Ship the mechanics; scaffold the knowledge.**
 
-That sentence came out of porting this harness to three unrelated stacks. The port transferred
-cleanly for mechanics and not at all for domain knowledge, and rather than treat the asymmetry as a
-defect, this project treats it as the seam the product is cut along.
+That distinction came from porting the method across unrelated stacks. The product
+makes the coordination method reusable while leaving each project's knowledge,
+routing configuration and priorities under its own control.

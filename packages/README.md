@@ -18,7 +18,7 @@ names what is blocking it. Do not add behaviour to a stub before its epic has de
 | `provider-acp` | — | E3 · #33 | the same seam, over ACP |
 | `llm-local` | ✅ | E4 · #34 | `ctx.llm` / `LlmAdapter` — API-key and local models, metered per token |
 | `routing` | ✅ | E4 · #34, E11 · #271 | explicit routing document loader and immutable matrix queries |
-| `governance` | — | E5 · #35 | tri-regime admission control; blocked behind #62 |
+| `governance` | — | E5 · #35 | tri-regime admission control; stub — sidecar decision answered (#257), implementation pending |
 | `board`, `coordinator` | ✅ | E6 · #36 | task DAG, kanban projection, MASTER workflows |
 | `forge` | ✅ | E7 · #37 | GitHub bridge: taxonomy and process skill, installable into any repository |
 | `netscript-bridge` | — | E7 · #37 | polyglot dispatch — the adapter decision 2 rests on |

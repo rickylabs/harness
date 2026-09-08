@@ -23,11 +23,14 @@ would have caught it does not exist because the import compiled fine on the mach
 
 ## The other direction is already solved, differently
 
-Private external consumers (such as a cockpit and a mobile client we run against it) are the inbound
-half and they do not come through here. They are separate products and they
-reach this layer over [`contracts`](../contracts/README.md), published to npm as
-`@rickylabs/harness-contracts` — which is *why* that package is published at all, and the only one
-that is. Two directions, two mechanisms, and neither is a workspace import.
+`rickylabs/atelier-cockpit`, the engineering cockpit and product backend, and
+`rickylabs/atelier-mobile`, the native companion, are separate products on the
+inbound side of the architecture. The backend consumes the published
+[`contracts`](../contracts/README.md) package; the native client consumes the
+backend's generated API/client. Neither imports this service adapter.
+The [decision-4 amendment](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579)
+records the repository relationship. Outbound service calls and inbound published
+contracts remain distinct mechanisms, with no cross-repository workspace imports.
 
 ## Why it is empty
 
