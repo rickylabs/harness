@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **219/272 done · 16 running · 20 queued · 3 blocked · 12 abandoned · 2 invisible**
+`[################----]` **219/273 done · 16 running · 20 queued · 3 blocked · 12 abandoned · 3 invisible**
 
-_Latest board activity: 2026-09-08T21:01:30Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-10T15:43:37Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (3)
 
@@ -39,6 +39,22 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
+## Not on the board (1)
+
+Open, and carrying no `status:` label — real work no column can see.
+
+| item | column | epic |
+| --- | --- | --- |
+| [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | — | — |
+
+## Anomalies (1)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`no-status`**
+
+- **#285** — open item has no status label, so it appears in no column
+
 ## Epics
 
 ### M1 — dsh coordinator foundation
@@ -62,12 +78,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 41/54 done · 1 running · 2 queued · 9 abandoned · 1 invisible
+`[########----]` 41/55 done · 1 running · 2 queued · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
-| _(no epic)_ | `[#########---]` 37/49 done · 2 queued · 9 abandoned · 1 invisible | — |
+| _(no epic)_ | `[########----]` 37/50 done · 2 queued · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -105,7 +121,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  219/272 done · 16 running · 20 queued · 3 blocked · 12 abandoned · 2 invisible
+# rickylabs/harness  [################----]  219/273 done · 16 running · 20 queued · 3 blocked · 12 abandoned · 3 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  178/218 done · 15 running · 18 queued · 3 blocked · 3 abandoned · 1 invisible
 
@@ -362,7 +378,7 @@ Something could be acting on these right now.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [###############-----]  41/54 done · 1 running · 2 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  41/55 done · 1 running · 2 queued · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -422,6 +438,7 @@ Something could be acting on these right now.
     shipped              PR252 docs: complete the Stage B discovery run with its external and document legs (p3)
     shipped              PR254 docs(how-to): add the first how-to guide, installing the board process (p2)
     triage               #255 fix(forge): skill install --dry-run reports a file as created that it does not create (p3)
+    no status            #285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision
 ```
 
 </details>
