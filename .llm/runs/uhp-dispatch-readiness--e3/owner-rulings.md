@@ -53,18 +53,32 @@ changed the routing after the ruling was given:
    identifier appears only as a reference inside retained transcripts on this host; no session file
    for it exists locally and it has no live entry in the peer listing. The authorized round must be
    a fresh independent evaluator.
-2. Both opposite-family routes are constrained at once. The plan's author was Claude Fable 5.1, so
-   the evaluator must be non-Claude. OpenCode Go is weekly rate-limited until
-   `2026-09-14T00:00:00Z`, measured by the Cockpit coordinator. Codex has roughly 7 percent
-   remaining and was paused on 2026-09-08 to conserve exactly that.
+2. Both opposite-family routes are down at once, for the rest of the weekend. The plan's author was
+   Claude Fable 5.1, so the evaluator must be non-Claude.
 
-The sharp edge is effort, not availability. The host Codex pin is `gpt-5.6-sol` at
-`model_reasoning_effort = "low"`, and a board dispatch cannot override it — divybot parses
-`harness:` and stops, so `model:` and `effort:` rows in a `/swarm` block fall through to the host
-config silently. A Codex dispatch today runs this gate three tiers under the `xhigh` the lane
-specifies. The recommendation put to the owner is to raise the pin to `high` for this one
-evaluation and restore it afterwards, coordinated with Seats 1 and 2, because a host-global pin
-change under two live peer seats needs their acknowledgement.
+The capacity picture was corrected mid-run by the Cockpit coordinator, and the correction changed
+the recommendation rather than refining it. Codex is not at roughly 7 percent remaining; it is at
+**95 percent used** on the weekly window, from the `rate_limits` snapshot in session
+`01a084e3-0aea-78d3-885c-05aee79fbcde` of 2026-09-09, with `has_credits: false` and a zero balance
+behind it. Treat 95 percent as a floor rather than a live reading, since it is a snapshot from the
+last session that ran and `agentic:codex-status` could not be run to confirm it.
+
+The ordering is the decision-relevant part. OpenCode Go returns `2026-09-14T00:00:00Z`, Monday;
+Codex returns `2026-09-15T01:23:04Z`, Tuesday. So this is not "one of two routes is blocked", it is
+nothing until Monday with Codex last.
+
+**The earlier recommendation to raise the host Codex effort pin is withdrawn.** It was written
+against the 7 percent figure. Raising the pin would spend the last 5 percent of a window that does
+not reset for about three days, on a gate routed into an almost empty quota. The revised
+recommendation on the issue is to wait for OpenCode Go on Monday rather than spend the single
+authorized round on a diff-only relay evaluator, since the relay tier may retain and train on
+prompts and so may receive the diff and nothing else. The same blackout applies to S10's own gate,
+which is Opus-generated and needs a non-Claude evaluator too.
+
+The effort-binding problem remains true and remains worth recording for Monday: the host Codex pin
+is `gpt-5.6-sol` at `model_reasoning_effort = "low"`, and a board dispatch cannot override it,
+because divybot parses `harness:` and stops while `model:` and `effort:` rows fall through to the
+host config silently.
 
 ## Ruling 3 — hold 0.4.0 at 0.3.0 until S10 contracts are ready
 
@@ -113,12 +127,23 @@ fixtures.
 ## Outstanding
 
 1. **#272 evaluator routing** — owner decision, recommendation on the issue.
-2. **S10 spawn is unconfirmed.** The `harness` label is applied to #288, which is this
-   coordinator's act and is done. Whether divybot has claimed it is a separate fact: divybot runs
-   on the `orchid` host, `/data/divybot.json` does not exist here, and `herdr agent list` returns
-   an empty agent set locally. No comment, branch or worker had appeared several minutes after
-   labelling. Per the W0 record the correct response is to check that divybot is polling, never to
-   re-apply the label.
+2. **S10 spawn is unconfirmed, and the evidence now points at the poller being down.** The
+   `harness` label is applied to #288. That is this coordinator's act and it is done. Whether
+   divybot has claimed it is a separate fact, and at twelve minutes after labelling the answer is
+   still no: no comment on the issue, no branch on origin matching the spike, no ephemeral work
+   directory, and `herdr agent list` returning an empty agent set. `AGENTS.md` documents a
+   thirty-second poll cycle, so twelve minutes is roughly twenty-four missed cycles rather than a
+   slow start.
+
+   divybot runs on the `orchid` host and `/data/divybot.json` does not exist in this filesystem, so
+   this seat cannot read the dispatcher's state directly and cannot restart it. The most likely
+   explanation is that the poller was stopped alongside the Codex seat on 2026-09-08 and was never
+   brought back, which would mean the dispatch trigger is set against no runner.
+
+   Per the W0 record the correct response is to check that divybot is polling, never to re-apply
+   the label. Re-applying produces no second dispatch and destroys the evidence of the first. The
+   label is therefore left in place and the spawn is reported as unconfirmed rather than as
+   started. **This needs someone with access to the `orchid` host to confirm divybot is running.**
 3. **#274 planner is resumable.** The preserved session `f8cf8218-6f61-4f67-aa82-84c536ebd295`
    exists on disk under the `seat3-capability274` worktree project directory. It was not resumed;
    S10 was the named priority. `research.md` and `plan.md` for #274 still do not exist.
