@@ -40,8 +40,26 @@ nothing on any board says so.
 
 This is the same defect class as the route-identity problem that `RouteIdentityEvidence` exists to
 solve, and as the `mismatch`-versus-`unknown` collapse corrected on #286 today: a signal that looks
-identical whether or not the underlying thing is true. It is worth naming as a pattern, because it
-has now appeared three times in one session at three different layers.
+identical whether or not the underlying thing is true.
+
+**It appeared four times in one day, at four different layers, and the pattern is the finding.**
+
+| Layer | What it looks like | What it is |
+|---|---|---|
+| Dispatch | label applied, no error, nothing happens | poller down since 2026-09-08 |
+| Route identity | `unknown` where `mismatch` belongs | a silently substituted model |
+| Quota, opencode_go | a job that hangs and returns nothing | subscription exhaustion, no quota error raised |
+| Effort binding | a brief declaring `xhigh` | a host pin running `low`, no warning |
+
+Each one reports absence the same way it reports slowness or success. Naming this as a class is
+worth more than fixing the four separately, because the same fix applies to all of them: make the
+negative case say something. The `usage_unproven` and `subscription_tier_unresolved` refusals in
+`subscription-expense.ts` are the counter-example already in the codebase and the shape to copy —
+they fail closed and name the reason.
+
+The silent-hang instance was measured by the Mobile seat, which lost about fifteen minutes to it
+before recognising it. Anyone dispatching to opencode_go before the October reset should treat
+silence as exhaustion rather than progress.
 
 ## The standing rule this implies
 

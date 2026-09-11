@@ -33,6 +33,42 @@ The endpoint does not answer. Checked, not assumed, and recorded so nobody re-ch
    other repository, and the one item that cannot be repeated because the owner authorized exactly
    one round.
 
+## Superseded: Monday is not a fresh window
+
+Everything below this section was written against the weekly limits and is kept because the
+reasoning about effort binding still holds. The scheduling conclusion does not.
+
+**The binding constraint is the monthly window, which does not reset until 2026-10-04T10:07Z.**
+Every opencode_go model sits at roughly 93 percent of monthly. `subscription-expense.ts` evaluates
+a `monthly` window alongside the rolling and weekly ones and blocks when any entry is not `ok` or
+reaches 100 percent, folding the pending request's estimated cost into the projection. So the
+weekly reset on Monday turns the weekly windows green and immediately exposes the monthly ceiling
+underneath. Remaining, shared across all three repositories until October: Muse Spark $4.20,
+Grok $1.05, GLM 5.3 and siblings $1.05.
+
+**The Ollama escape hatch does not reach #272.** Ollama cloud is separately metered with its own
+tiers and is refused today only for `usage_unproven`, needing a snapshot carrying `tier`,
+`monthlyUsedUsd` and `concurrentRequests` — one owner-readable fact away from being available. But
+#272 is **architecture**-tier plan evaluation, whose matrix cell is
+`[muse_spark_1_3 @ max, grok_4_6 @ xhigh]`. The feature-tier cell is
+`[glm_5_3 @ provider_default, fable_5_1 @ low]`, and GLM 5.3 is on ollama cloud while Muse Spark
+and Grok are not. So an Ollama snapshot reopens feature-tier plan evaluation and leaves
+architecture-tier plan evaluation exactly where it was.
+
+The general form, worth carrying: the question is not whether a model is on ollama cloud, it is
+whether the model in the lane's own matrix cell is. For the privileged tiers the answer is no by
+construction, because complex and architecture both route to Muse Spark first.
+
+**Plan for #272, both branches, so Monday needs no decision from absent people.** Attempt Muse
+Spark at max. The guard is fail-closed and prices the request before spending, so the attempt
+cannot half-run and a refusal does not consume the single authorized round. If it runs, the round
+is spent at matrix fidelity. If it refuses with `provider_rate_limited`, that is evidence rather
+than an estimate, and only then does it become an owner choice between waiting for the October
+reset, which stalls E11 for about three weeks, and authorizing an explicit one-tier-down deviation
+to GLM 5.3 over Ollama with a recorded rationale. That deviation must not be taken silently:
+deviating downward reduces the fidelity of the exact gate that exists to catch what the first round
+missed.
+
 ## Why #272 goes Monday rather than into the uncontended Tuesday window
 
 The first draft of this plan preferred a Tuesday Codex slot for #272, on the reasoning that an
