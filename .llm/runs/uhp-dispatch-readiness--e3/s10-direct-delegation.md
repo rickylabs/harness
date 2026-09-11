@@ -41,11 +41,33 @@ The steering described S10 as the "`@rickylabs/routing` UHP contract". The route
 is in **`packages/subagents`**, at `packages/subagents/src/route.ts`. `packages/routing` consumes
 the fleet matrix as data under E11 and is a different seam entirely.
 
-This is the third occurrence today: the seat brief had it, the Cockpit goal file had it, and now
-the steering has it. Three independent documents carrying the same error means the error is
-upstream of all three, not a transcription slip in any one of them. The correction was put at the
-top of the delegate's instructions rather than left to inference, noted on #288, and raised to the
-Cockpit seat as something worth fixing at its source rather than catching separately each time.
+This was the third occurrence today: the seat brief had it, the Cockpit goal file had it, and the
+steering had it. The correction was put at the top of the delegate's instructions rather than left
+to inference, noted on #288, and raised to the Cockpit seat.
+
+**Traced, and the earlier framing here was too pessimistic.** This file previously said three
+independent documents carrying one error put it "upstream of all three". That implied doctrine
+drift. It is not. The Cockpit coordinator traced it and the result was verified here: exactly two
+occurrences exist on this host, both in the brief layer outside any repository.
+
+    /home/agent/briefs/goal-shared.md:15
+    /home/agent/briefs/supervisor-harness.md:41
+
+Every occurrence inside the architecture documents is **correct** and must not be touched.
+`@rickylabs/routing` genuinely owns lane admission, model-family mapping, effort ladders, CAS
+leasing and the Generator != Evaluator rule; the RFC places `provider-uhp` under `packages/subagents`
+and names both packages accurately.
+
+So this is a compression error in a derived document, not drift propagating outward from the
+architecture: someone writing the weekend goal collapsed "the subagents adapter, under unchanged
+routing governance" into "the routing adapter", and both seats then inherited it from their own
+brief. That is the better of the two failures, because the authority documents are right and only
+the derived ones are wrong.
+
+**Neither seat is editing those files.** They are owner-authored steering documents outside any
+repository, and silently correcting the instructions one was given is not a coordinator's call even
+when the correction is obviously right. Both file-and-line references go to the owner instead, with
+the request that the fix land at that source.
 
 ## What this dispatch does not satisfy
 
