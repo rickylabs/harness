@@ -31,7 +31,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
-import { createUhpProvider, type UhpDiagnostic, type UhpProvider } from "./uhp-provider.js";
+import { UHP_UNRELATED_DRIFT, createUhpProvider, type UhpDiagnostic, type UhpProvider } from "./uhp-provider.js";
 import { createUhpTransport } from "./uhp-transport.js";
 import { parseHarnessManifest, type HarnessManifest } from "./uhp-harnesses.js";
 import { pathShapedStrings, isRedactedRouteEvidence } from "./uhp-redact.js";
@@ -43,6 +43,7 @@ import {
 import { observeUhpRoute, readUhpCwd, readUhpEffort, readUhpModel, readUhpProvider, uhpRouteNegatives, uhpRouteVerdict } from "./uhp-gate.js";
 import {
   conformanceProblems,
+  isRouteVerified,
   isSafeToRetry,
   markInstrumented,
   selectProvider,
@@ -93,6 +94,32 @@ function substitutionDetectedByStatus(evidence: RouteIdentityEvidence): boolean 
  */
 function verdictFromRouteEvidenceAlone(evidence: RouteIdentityEvidence): DispatchVerdict {
   return uhpRouteVerdict(uhpRouteNegatives(evidence));
+}
+
+/**
+ * THE GATE AS IT SHIPPED BEFORE THE OWNER RISK RULING of 2026-09-12, transcribed.
+ *
+ * It blocks on `unverified` and on any unreported field, both of which are true of every conformant UHP
+ * response, so this provider could not reach `accepted` over this transport whatever the server did. Run on
+ * the same evidence as the real gate, it is what shows the new accepted path is exercised.
+ */
+function verdictBeforeTheRuling(evidence: RouteIdentityEvidence): DispatchVerdict {
+  const negatives = uhpRouteNegatives(evidence);
+  if (negatives.contradicted.length > 0) return "refused";
+  if (negatives.unverified || negatives.unreported.length > 0) return "unknown";
+  return "accepted";
+}
+
+/**
+ * DEFECT: the ruling applied one bullet too far — absence swept into acceptance.
+ *
+ * "Unattested effort is not blocking" is not "nothing is blocking". This accepts anything not contradicted,
+ * so a response that never said what model ran is reported as a route that agreed.
+ */
+function verdictIgnoringModel(evidence: RouteIdentityEvidence): DispatchVerdict {
+  const negatives = uhpRouteNegatives(evidence);
+  if (negatives.contradicted.length > 0) return "refused";
+  return "accepted";
 }
 
 /* -------------------------------------------------------------------------------------------------
@@ -281,20 +308,53 @@ describe("the provider's own declarations", () => {
  * ---------------------------------------------------------------------------------------------- */
 
 describe("dispatch — a conformant response, which is the normal case over UHP", () => {
-  it("is unknown because three route fields are unreported, and says so", async () => {
+  it("accepts it because the model agreed, and says which three fields it could not attest", async () => {
     const { provider } = await harnessed();
     const result = await provider.dispatch(request, "run-benign");
 
-    // Not `accepted`, and the reason is the absence rather than a contradiction. This is the fail-closed
-    // default the owner ruling deliberately left in place; #286's F1 fork is whether a lane needing no
-    // route evidence may proceed here, and nothing in this provider decides that.
-    assert.equal(result.verdict, "unknown");
+    // The owner risk ruling of 2026-09-12. Before it this was `unknown` and this provider refused every
+    // conformant response; `verdictBeforeTheRuling` below runs that gate on the same evidence so the change
+    // is demonstrated rather than asserted.
+    assert.equal(result.verdict, "accepted");
+    assert.equal(verdictBeforeTheRuling(evidenceFor(response())), "unknown");
+    assert.notEqual(result.verdict, verdictBeforeTheRuling(evidenceFor(response())));
+
     assert.deepEqual(result.route?.mismatches, []);
     assert.equal(result.route?.status, "unknown");
-    assert.ok(result.detail.includes("provider, effort, cwd"));
+    assert.ok(result.detail.includes("provider, effort, cwd"), result.detail);
+
+    // What the acceptance is not. The route is still unverified, so `isRouteVerified` is false and F2 still
+    // bars certifying evaluator use: "may this turn proceed" and "may it certify" were fused in one verdict
+    // and are now two answers. A test asserting only `accepted` would pass for a provider that had quietly
+    // started certifying unattested routes.
     assert.equal(isRouteEvidenceVerified(result.route), false);
-    // The retry rule: an unknown dispatch may not be retried, because something may be running.
+    assert.equal(isRouteVerified(result), false);
+    // And the grounds are reported, so nobody later reads this acceptance as a route that was checked.
+    assert.ok(result.detail.includes("owner risk ruling of 2026-09-12"), result.detail);
+    assert.ok(result.detail.includes("not because the risk was shown to be absent"), result.detail);
+
+    // The retry rule is unchanged: an accepted dispatch launched something, so there is nothing to retry.
     assert.equal(isSafeToRetry(result), false);
+  });
+
+  it("is unknown, not accepted, when the response does not say what model ran", async () => {
+    // The third bullet of the ruling, on the provider rather than on the gate. The response is conformant in
+    // every respect except the one field UHP does report, so nothing attests what executed.
+    const { model: _absent, ...withoutModel } = response();
+    const { provider } = await harnessed({ task: () => ({ httpStatus: 200, response: withoutModel as UhpResponse }) });
+    const result = await provider.dispatch(request, "run-model-absent");
+
+    assert.equal(result.verdict, "unknown");
+    assert.notEqual(result.verdict, "accepted");
+    assert.ok(result.detail.includes("nothing about model that could be compared"), result.detail);
+    // The over-relaxed gate — the ruling applied one bullet too far — accepts this same evidence.
+    assert.equal(verdictIgnoringModel(evidenceFor(withoutModel as UhpResponse)), "accepted");
+
+    // Paired positive control, same provider shape, one field different: the response that does report the
+    // agreeing model is accepted. Without it this test would pass for a provider that refused everything,
+    // which is the state before the ruling.
+    const { provider: reporting } = await harnessed();
+    assert.equal((await reporting.dispatch(request, "run-model-present")).verdict, "accepted");
   });
 
   it("keys the run on runId and puts the UHP session id in RunRef.external", async () => {
@@ -391,7 +451,10 @@ describe("dispatch — a substituted model is refused, never unknown", () => {
     const evidence = evidenceFor(contradictory);
 
     assert.deepEqual(evidence.mismatches, []);
-    assert.equal(verdictFromRouteEvidenceAlone(evidence), "unknown");
+    // Since the owner risk ruling the defect is worse than it was, which is worth stating as an assertion
+    // rather than as prose: a gate reading only the route comparison now answers `accepted` here, not
+    // `unknown`. It would permit a turn on a response that states a substitution in writing.
+    assert.equal(verdictFromRouteEvidenceAlone(evidence), "accepted");
     assert.equal(result.verdict, "refused");
     assert.notEqual(result.verdict, verdictFromRouteEvidenceAlone(evidence));
     assert.ok(result.detail.includes("model_fallback"));
@@ -401,7 +464,7 @@ describe("dispatch — a substituted model is refused, never unknown", () => {
     const { provider: clean } = await harnessed({
       task: () => ({ httpStatus: 200, response: response({ model: MODEL }) }),
     });
-    assert.equal((await clean.dispatch(request, "run-fallback-clean")).verdict, "unknown");
+    assert.equal((await clean.dispatch(request, "run-fallback-clean")).verdict, "accepted");
   });
 
   it("refuses when the server says it was asked for a model this dispatch did not ask for", async () => {
@@ -528,6 +591,133 @@ describe("dispatch — console drift refuses before anything is sent", () => {
 });
 
 /* -------------------------------------------------------------------------------------------------
+ * dispatch — F1 narrowed: the owner decision of 2026-09-12
+ * ---------------------------------------------------------------------------------------------- */
+
+describe("dispatch — drift refuses the lane it affects, and reports the lanes it does not", () => {
+  /** The agreeing listing with one row edited: `codex` reports a base this manifest does not pin. */
+  function codexRebased(): UhpJsonReply {
+    return { httpStatus: 200, body: { harnesses: rows().map((row) => (row["id"] === PINNED_IDS.codex ? { ...row, base: "codex-next" } : row)) } };
+  }
+
+  /** The same edit on the row this suite's `request` selects. */
+  function claudeRebased(): UhpJsonReply {
+    return { httpStatus: 200, body: { harnesses: rows().map((row) => (row["id"] === PINNED_IDS.claude ? { ...row, base: "claude-next" } : row)) } };
+  }
+
+  function rows(): readonly Record<string, unknown>[] {
+    return (agreeingListing().body as { readonly harnesses: readonly Record<string, unknown>[] }).harnesses;
+  }
+
+  const toCodex: DispatchRequest = { ...request, harness: "codex" };
+
+  it("dispatches to a confirmed harness while another row is drifted, and refuses that other row", async () => {
+    // The operational surprise the owner narrowed away: one edited console row used to halt every lane. The
+    // two halves are asserted on ONE listing, because that is the only shape that distinguishes the narrowing
+    // from either a manifest-wide refusal (which fails the first) or a dropped check (which fails the second).
+    const { provider, tasks } = await harnessed({ listing: codexRebased });
+    const proceeded = await provider.dispatch(request, "run-unrelated-drift");
+    assert.equal(proceeded.verdict, "accepted");
+    assert.equal(tasks.length, 1);
+
+    const { provider: selecting, tasks: sentToCodex } = await harnessed({ listing: codexRebased });
+    const refused = await selecting.dispatch(toCodex, "run-selected-drift");
+    assert.equal(refused.verdict, "refused");
+    assert.ok(refused.detail.includes("base-changed"), refused.detail);
+    assert.ok(refused.detail.includes("drifted from the pinned manifest on codex"), refused.detail);
+    // Fail-closed, and before anything left the process. This is the assertion that a check running after the
+    // POST would not satisfy, and it is why it is counted rather than inferred.
+    assert.equal(sentToCodex.length, 0);
+    assert.equal(refused.run, null);
+    assert.equal(isSafeToRetry(refused), true);
+
+    // Same console, same manifest, two harnesses, opposite verdicts.
+    assert.notEqual(proceeded.verdict, refused.verdict);
+  });
+
+  it("refuses the dispatch whose own harness drifted, with the rest of the console agreeing", async () => {
+    // The narrowing must not become a hole. Here only the selected row disagrees, so a narrowing that
+    // swallowed selected-harness drift would send this task — and the mock would answer 200, which is exactly
+    // why the task count is the assertion rather than the verdict alone.
+    const { provider, tasks } = await harnessed({ listing: claudeRebased });
+    const result = await provider.dispatch(request, "run-own-drift");
+    assert.equal(result.verdict, "refused");
+    assert.equal(tasks.length, 0);
+    assert.ok(result.detail.includes("base-changed"), result.detail);
+
+    // Paired positive control: the same drifted console dispatches codex, whose row the console confirms. The
+    // refusal above is therefore about the selected row and not about this listing being unusable.
+    const { provider: other, tasks: sent } = await harnessed({ listing: claudeRebased });
+    const accepted = await other.dispatch(toCodex, "run-other-lane");
+    assert.equal(accepted.verdict, "accepted");
+    assert.equal(sent.length, 1);
+  });
+
+  it("blocks every lane on an unreadable listing, because it cleared no id at all", async () => {
+    // The exception the decision names and the one a narrowing would quietly take away. `listing-unreadable`
+    // carries `harness: null`; if that were read as "concerns another harness", an unreachable console would
+    // dispatch as an agreeing one.
+    const unreadable = () => ({ httpStatus: 200, body: { harnesses: "all of them" } });
+    for (const [harness, runId] of [[request, "run-unreadable-claude"], [toCodex, "run-unreadable-codex"]] as const) {
+      const { provider, tasks } = await harnessed({ listing: unreadable });
+      const result = await provider.dispatch(harness, runId);
+      assert.equal(result.verdict, "refused");
+      assert.ok(result.detail.includes("listing-unreadable"), result.detail);
+      assert.equal(tasks.length, 0);
+    }
+    // Paired positive control on the same lane: a readable listing lets codex through, so the two refusals
+    // above are about the unreadable body rather than about the harness.
+    const { provider: readable, tasks: sent } = await harnessed();
+    assert.equal((await readable.dispatch(toCodex, "run-readable-codex")).verdict, "accepted");
+    assert.equal(sent.length, 1);
+  });
+
+  it("reports the drifted row an operator did not dispatch to, on the result and to the sink", async () => {
+    // The other half of the decision. A narrowing that made unrelated drift silent would trade one failure for
+    // absence reported as normality, so the signal is asserted in both places it has to survive: the returned
+    // detail, which a caller keeps even with no diagnostic sink configured, and a diagnostic row with its own
+    // label, which is what an operator surface can select on.
+    const { provider, diagnostics } = await harnessed({ listing: codexRebased });
+    const result = await provider.dispatch(request, "run-drift-visible");
+    assert.equal(result.verdict, "accepted");
+
+    assert.ok(result.detail.includes("codex"), result.detail);
+    assert.ok(result.detail.includes("base-changed"), result.detail);
+    assert.ok(result.detail.includes("this dispatch did not select"), result.detail);
+
+    const signals = diagnostics.filter((entry) => entry.verdict === UHP_UNRELATED_DRIFT);
+    assert.equal(signals.length, 1);
+    assert.equal(signals[0]?.verb, "dispatch");
+    assert.equal(signals[0]?.runId, "run-drift-visible");
+    assert.ok(signals[0]?.detail.includes("codex-next"), signals[0]?.detail ?? "");
+
+    // Paired control on an agreeing console: no signal, and nothing about drift in the detail. Without it, a
+    // provider that appended the same sentence to every dispatch would pass everything above.
+    const { provider: clean, diagnostics: quiet } = await harnessed();
+    const ordinary = await clean.dispatch(request, "run-no-drift");
+    assert.equal(ordinary.verdict, "accepted");
+    assert.equal(quiet.filter((entry) => entry.verdict === UHP_UNRELATED_DRIFT).length, 0);
+    assert.equal(ordinary.detail.includes("did not select"), false);
+    assert.equal(ordinary.detail.includes("base-changed"), false);
+    assert.notEqual(ordinary.detail, result.detail);
+  });
+
+  it("still reports the unrelated row when the dispatch it rode along with failed for another reason", async () => {
+    // The signal is a fact about the console, not about the outcome of this dispatch. A server error after the
+    // check must not take it with it — that is the shape in which a warning goes missing precisely when
+    // somebody is already looking at something.
+    const { provider } = await harnessed({
+      listing: codexRebased,
+      task: () => ({ httpStatus: 503, error: { code: "harness_unavailable" } }),
+    });
+    const result = await provider.dispatch(request, "run-drift-and-503");
+    assert.equal(result.verdict, "unknown");
+    assert.ok(result.detail.includes("harness_unavailable"), result.detail);
+    assert.ok(result.detail.includes("this dispatch did not select"), result.detail);
+  });
+});
+
+/* -------------------------------------------------------------------------------------------------
  * dispatch — local refusals, and the transport outcomes
  * ---------------------------------------------------------------------------------------------- */
 
@@ -557,7 +747,7 @@ describe("dispatch — refusals that cost nothing, and unknowns that cost a retr
 
   it("refuses a second dispatch under one run id", async () => {
     const { provider, tasks } = await harnessed();
-    assert.equal((await provider.dispatch(request, "run-twice")).verdict, "unknown");
+    assert.equal((await provider.dispatch(request, "run-twice")).verdict, "accepted");
     const second = await provider.dispatch(request, "run-twice");
     assert.equal(second.verdict, "refused");
     assert.ok(second.detail.includes("two agents in one working directory"));
@@ -598,11 +788,11 @@ describe("dispatch — refusals that cost nothing, and unknowns that cost a retr
     assert.equal(result.run, null);
 
     // Paired control on the same provider shape: with the credential intact for both calls, the task is
-    // sent and the verdict is the ordinary unknown of a conformant UHP route.
+    // sent and the verdict is the ordinary acceptance of a conformant UHP route.
     const { provider: intact, tasks: sent } = await harnessed();
     const fine = await intact.dispatch(request, "run-not-revoked");
     assert.equal(sent.length, 1);
-    assert.equal(fine.verdict, "unknown");
+    assert.equal(fine.verdict, "accepted");
     assert.notEqual(fine.detail, result.detail);
   });
 
@@ -638,23 +828,37 @@ describe("dispatch — refusals that cost nothing, and unknowns that cost a retr
   });
 
   it("reports a refused stream as unknown, because an unreadable stream is not a failed run", async () => {
-    // A server that streams anyway, and whose stream stops before a terminal event. `consumeUhpStream`
+    // A server that streams at a client that asked for `stream: false` — permitted by Tasks §1.1 if it says
+    // so in `ignored_fields` — and whose stream then stops before a terminal event. `consumeUhpStream`
     // refuses it; the run may well be executing.
-    const truncating = await startUhpServer(() => ({ httpStatus: 200, response: response({ status: "completed" }), script: { terminal: "none" } }), {
-      harnesses: agreeingListing,
+    //
+    // THIS TEST USED TO PASS FOR THE WRONG REASON. The mock only streamed when the request asked it to, this
+    // provider never does, so the JSON path was exercised and the assertion was the disjunction
+    // `unknown || refused` — which the conformant JSON answer satisfied. The relaxation in #286 turned that
+    // answer into `accepted` and the test went red, which is how the false green was found. `stream: true` on
+    // the reply now forces the shape the test names, and the assertion is the verdict rather than a set.
+    const { provider, tasks } = await harnessed({
+      task: () => ({
+        httpStatus: 200,
+        response: response({ status: "completed" }),
+        stream: true,
+        script: { terminal: "none" },
+      }),
     });
-    servers.push(truncating);
-    const provider = createUhpProvider({
-      transport: createUhpTransport({ baseUrl: `${truncating.origin}/v1`, credentialProfile: PROFILE, env: { [PROFILE]: TOKEN } }),
-      manifest: manifest(),
-      modelProvider: MODEL_PROVIDER,
-      cwd: CWD,
-    });
-    // The mock streams only when the request asks for it, and this provider does not — so force the shape
-    // by asking the server for a stream through a second dispatch path: the provider must still cope if a
-    // server answers with an event stream it did not request.
     const result = await provider.dispatch(request, "run-stream");
-    assert.ok(result.verdict === "unknown" || result.verdict === "refused");
+    assert.equal(tasks.length, 1);
+    assert.equal(result.verdict, "unknown");
+    assert.notEqual(result.verdict, "accepted");
+    assert.ok(result.detail.includes("event stream"), result.detail);
+
+    // Paired positive control: the same forced stream, complete this time, is read and accepted. Without it
+    // the assertion above would hold for a provider that could not read a stream at all.
+    const { provider: complete } = await harnessed({
+      task: () => ({ httpStatus: 200, response: response({ status: "completed" }), stream: true }),
+    });
+    const readable = await complete.dispatch(request, "run-stream-complete");
+    assert.equal(readable.verdict, "accepted");
+    assert.notEqual(readable.verdict, result.verdict);
   });
 });
 

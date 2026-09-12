@@ -625,6 +625,17 @@ export interface UhpReply {
   readonly error?: { readonly code: string; readonly message?: string };
   /** The script used when the request asked for a stream. */
   readonly script?: UhpStreamScript;
+  /**
+   * Answer with an event stream even though the request did not ask for one.
+   *
+   * Tasks §1.1 lets a server decline to act on a request field provided it names the field in
+   * `metadata.ignored_fields`, so a server that streams at a client asking for `stream: false` is a shape
+   * this repository has to survive rather than a shape nobody will send. Without this switch a test aiming
+   * at the stream-reading path against a non-streaming client silently exercises the JSON path instead and
+   * passes for the wrong reason — which is exactly what one did until #286's relaxation made its
+   * disjunction go red.
+   */
+  readonly stream?: boolean;
 }
 
 function read(stream: NodeJS.ReadableStream): Promise<string> {
@@ -684,7 +695,7 @@ export async function startUhpServer(
         res.end(JSON.stringify({ error: reply.error ?? { code: "unknown" } }));
         return;
       }
-      if (body.stream === true) {
+      if (body.stream === true || reply.stream === true) {
         res.writeHead(reply.httpStatus, { "content-type": "text/event-stream", "cache-control": "no-cache" });
         res.end(
           reply.script === undefined
