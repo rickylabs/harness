@@ -217,3 +217,58 @@ since a skipped package at least shows as a smaller test count while an unrun ga
 [observed — protocol.ts branch ordering and the `unknown` helper's verdict at
  packages/provider-codex/src/protocol.ts:170-176 and 235-248; package.json script target census;
  verified 2026-09-12]
+
+## Two rules generalised out of the afternoon, and a doctrine candidate
+
+Both were sharpened by the Cockpit coordinator from instances found on each side of this boundary.
+Recorded here and written into #286, which is where an implementer will read them.
+
+**1. Derive the decision from the strongest available negative, and let the specific status explain
+rather than decide.** A ladder branching on `status` must enumerate every status correctly, on
+every transport, forever. A predicate refusing on not-verified is already correct for statuses that
+do not exist yet and transports nobody has written. `dry-run-internal.ts:97` is the instance; this
+is the thing to carry.
+
+**2. The weak assertion is the one that feels like it tests the thing.** `assert(!accepted)`,
+`assert(!verified)`, `grep -i verdict` — three different people wrote a version of this today, on
+three codebases, each reading like coverage of the distinction it sits next to, each passing while
+that distinction is broken, because both sides of the distinction fall outside what is asserted.
+If an assertion holds equally for the correct and the defective behaviour, it is not covering that
+behaviour however close the words are. Where a distinction is load-bearing, assert the distinction
+itself and then break it on purpose to confirm the test goes red.
+
+Rule 1 is doctrine-shaped and belongs in `doctrine/PRINCIPLES.md` rather than in one issue. It is
+**not** added here: doctrine is portable and changed deliberately, and a coordinator adding to it on
+the strength of one good afternoon is the wrong instinct. Raised as a candidate for the owner.
+
+## The absent-signal catalogue gains a second tier
+
+The Cockpit seat's `aspire` diagnosis forced a distinction the earlier catalogue missed. Everything
+in `dispatch-primitive-failure.md` was **silent absence**: the reader concludes nothing because
+nothing was said. The toolchain gate is **absence wearing a misleading signal**: it reported red,
+for a reason that was false, and so recruited two delegates into correctly recording a wrong
+diagnosis. Both wrote "pre-existing environmental failure" in their pull requests, which is accurate
+as a description and wrong as a cause.
+
+The second tier is worse, because a silence invites investigation and a confident wrong signal
+closes it.
+
+## #272 is unaffected by the evaluator amendment, checked rather than assumed
+
+The owner has chosen the upstream matrix amendment, filed as `rickylabs/netscript#2011`, adding
+`deepseek_v4_pro` at **complex** implementation evaluation rather than a flash-class model, on the
+reasoning that dropping to flash at the tier most needing a strong adversary is a real reduction in
+evaluator strength, and that `pro` already declares an Ollama capability so only the matrix edit is
+required. `muse_spark_1_3` stays first candidate, so nothing changes when its budget returns in
+October.
+
+**This does not reach #272.** That issue is architecture-tier plan evaluation, whose cell is
+`[muse_spark_1_3 @ max, grok_4_6 @ xhigh]`, read directly from `delegation-matrix.ts` earlier in
+this run. The amendment touches complex, not architecture. #272 remains on the 2026-10-04 wall and
+its two-branch Monday plan stands unchanged.
+
+It may move Cockpit's PR #98, which is complex implementation evaluation, off that wall. If it
+lands, the agreed Monday ordering changes and the Cockpit seat will say so.
+
+[source — netscript#2011 and the Mobile seat's verification, relayed by the Cockpit coordinator
+ 2026-09-12; architecture cell re-read here rather than taken on report]
