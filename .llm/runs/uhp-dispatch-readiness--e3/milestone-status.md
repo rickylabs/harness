@@ -7,10 +7,16 @@ single document to act from. Everything in it is cited in the sibling files of t
 
 Ordered by how much they unblock, not by effort.
 
-**1. Audit the labelled backlog, then restart divybot on the `orchid` host.** The `harness` dispatch
-label appears to have done nothing since roughly 2026-09-08. #288 held it for over an hour against a
-documented 30-second poll, with no comment, branch, work directory or agent in `herdr agent list`.
-Neither this seat nor Cockpit's can reach `orchid`.
+**1. Audit the labelled backlog, then restart divybot specifically — not the host.** The `harness`
+dispatch label appears to have done nothing since roughly 2026-09-08. #288 held it for over an hour
+against a documented 30-second poll, with no comment, branch, work directory or agent in
+`herdr agent list`. Neither this seat nor Cockpit's can reach `orchid`.
+
+  **Narrowed while writing this report: it is not a wholesale automation outage.** The board digest
+  is alive and current — `origin/main` carries a `chore(board): publish` commit at
+  2026-09-11T23:34Z, and the published `BOARD.md` reports activity through 23:32Z and already knows
+  about #286 through #292. So something is reading this board and writing back on schedule while
+  the dispatch poller does nothing. Look at the divybot process, not at the machine.
 
   **The restart is not a neutral recovery action.** Every issue labelled anywhere on the fleet since
   2026-09-08 is carrying an armed trigger that did nothing, and it will fire when the poller

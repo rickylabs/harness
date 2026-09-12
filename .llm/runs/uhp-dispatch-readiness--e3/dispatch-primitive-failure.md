@@ -86,3 +86,29 @@ those dispatches would have failed the same silent way.
 [observed — #288 label applied and unclaimed at 25 minutes; herdr empty; no divybot process or
  config on this host; verified 2026-09-12]
 [observed — Cockpit coordinator cannot reach the orchid host from its seat; reported 2026-09-12]
+
+## Narrowed: the board digest is alive, so this is not a host outage
+
+Established 2026-09-12 while writing the owner report, and it changes the recommended action.
+
+The earlier reading here was that the poller was probably stopped alongside the Codex seat on
+2026-09-08 and never brought back, with an implied remedy of restarting whatever runs on `orchid`.
+That was too broad.
+
+`origin/main` carries a `chore(board): publish` commit at **2026-09-11T23:34:04Z**, and the
+`BOARD.md` it published reports latest board activity at 23:32:38Z while already listing #286
+through #292. Publish commits also exist on 2026-09-08 at 21:07, on 2026-09-10 at 16:10, and twice
+on 2026-09-11 — so the projection pipeline kept running straight through the pause that stopped the
+Codex seat.
+
+**Something is reading this board and writing back on schedule while the dispatch poller does
+nothing.** So a wholesale automation outage is not the explanation, and "restart the host" is the
+wrong instruction. The fault is specific to divybot.
+
+Stated with its limit: this establishes that *a* board automation is current. It does not establish
+which host runs the digest, so it does not prove `orchid` itself is up. What it removes is the
+hypothesis that everything stopped together, which was the reading most likely to send someone to
+reboot a machine rather than inspect one process.
+
+[observed — `chore(board): publish` commit timestamps on origin/main and the published BOARD.md
+ activity line and issue coverage; verified 2026-09-12]
