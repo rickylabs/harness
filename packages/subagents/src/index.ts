@@ -45,11 +45,16 @@
  * #287, `uhp-gate.ts` decides whether the route the server reported permits a useful turn, and
  * `uhp-session.ts` chains turns on `previous_response_id` while keying runs on our `runId`.
  *
- * They are exported here because #286 will build `provider-uhp` on them. `uhp-mock.ts` is not: it is
- * the loopback server and fixture set those modules are tested against, and every claim any of them
- * supports today is a claim about a mock written from the specification. The live router round-trip is
- * #294. See the package README, and `.llm/runs/uhp-stream-adapter--s11/verification.md` for the split
- * between what was proven and what was not.
+ * Four more arrived with `provider-uhp` (#286), which composes them rather than restating any of them:
+ * `uhp-provider.ts` is the `SubagentProvider` itself, `uhp-harnesses.ts` pins the console's `chrn_` ids
+ * and refuses a dispatch on drift, `uhp-transport.ts` is the HTTP port and the only place a credential
+ * exists, and `uhp-redact.ts` is the publication boundary — no `detail` crosses it carrying a path.
+ *
+ * `uhp-mock.ts` is not exported: it is the loopback server and fixture set those modules are tested
+ * against, and every claim any of them supports today is a claim about a mock written from the
+ * specification. The live router round-trip is #294. See the package README, and the `verification.md`
+ * of `.llm/runs/uhp-stream-adapter--s11/` and `.llm/runs/provider-uhp--e37/` for the split between what
+ * was proven and what was not.
  */
 
 export {
@@ -142,6 +147,7 @@ export type {
 
 export {
   UHP_DELTA_EVENTS,
+  UHP_ERROR_CODES,
   UHP_ERROR_EVENT,
   UHP_EVENT_TYPES,
   UHP_INERT_EVENTS,
@@ -150,14 +156,21 @@ export {
   UHP_LIFECYCLE_STATUSES,
   UHP_TERMINAL_EVENTS,
   UHP_TERMINAL_STATUSES,
+  UHP_VERSION,
+  UHP_VERSION_HEADER,
   isUhpLifecycleStatus,
   isUhpTerminalEvent,
   isUhpTerminalStatus,
+  uhpErrorCode,
 } from "./uhp-wire.js";
 export type {
   UhpCreateRequest,
   UhpDeltaEvent,
+  UhpError,
+  UhpErrorCode,
+  UhpErrorEnvelope,
   UhpEventType,
+  UhpHarness,
   UhpItemEvent,
   UhpLifecycleEvent,
   UhpLifecycleStatus,
@@ -192,8 +205,57 @@ export type {
 export { mapUhpOutcome, uhpObservation } from "./uhp-lifecycle.js";
 export type { UhpLifecycleVerdict, UhpOutcome } from "./uhp-lifecycle.js";
 
-export { decideUhpRoute, uhpRouteNegatives, uhpRouteVerdict } from "./uhp-gate.js";
+export {
+  decideUhpRoute,
+  observeUhpRoute,
+  readUhpCwd,
+  readUhpEffort,
+  readUhpModel,
+  readUhpProvider,
+  uhpRouteNegatives,
+  uhpRouteVerdict,
+} from "./uhp-gate.js";
 export type { UhpRouteDecision, UhpRouteNegatives } from "./uhp-gate.js";
+
+export {
+  PINNED_HARNESSES_PATH,
+  describeHarnessDrift,
+  detectHarnessDrift,
+  isManifestReconciled,
+  loadPinnedHarnesses,
+  manifestHarnesses,
+  parseHarnessManifest,
+  pinnedHarness,
+  readUhpHarness,
+  readUhpHarnessList,
+} from "./uhp-harnesses.js";
+export type {
+  HarnessDrift,
+  HarnessDriftKind,
+  HarnessManifest,
+  ManifestFault,
+  ManifestProblem,
+  ManifestResult,
+  PinnedHarness,
+} from "./uhp-harnesses.js";
+
+export {
+  CWD_PRESENT,
+  CWD_REDUCED_TO_PRESENCE,
+  PATH_SHAPES,
+  REDACTED_PATH,
+  isRedactedRouteEvidence,
+  pathShapedStrings,
+  redactPaths,
+  redactRouteEvidence,
+} from "./uhp-redact.js";
+export type { PublishedRouteEvidence } from "./uhp-redact.js";
+
+export { CREDENTIAL_PROFILE, HARNESSROUTER_PROFILE, createUhpTransport } from "./uhp-transport.js";
+export type { UhpAnswer, UhpCall, UhpTransport, UhpTransportOptions } from "./uhp-transport.js";
+
+export { createUhpProvider } from "./uhp-provider.js";
+export type { UhpDiagnostic, UhpProvider, UhpProviderOptions } from "./uhp-provider.js";
 
 export {
   EMPTY_UHP_LEDGER,

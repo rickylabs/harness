@@ -248,3 +248,110 @@ export const UHP_EVENT_TYPES = [
 ] as const;
 
 export type UhpEventType = (typeof UHP_EVENT_TYPES)[number];
+
+/* -------------------------------------------------------------------------------------------------
+ * Version negotiation — Lifecycle §1
+ * ---------------------------------------------------------------------------------------------- */
+
+/**
+ * The protocol version this adapter was written against.
+ *
+ * Lifecycle §1: "UHP versions are dates […] A client MAY declare the version it was written against"
+ * with the `UHP-Version` header, and a server that cannot serve the named version "MUST fail the
+ * request with `400` and `code: "unsupported_protocol_version"` […] It MUST NOT silently serve a
+ * different version". Declaring it is therefore strictly better than omitting it: omission asks for the
+ * server's choice and gets it, which is a route decision taken by a deployment rather than by this
+ * repository.
+ */
+export const UHP_VERSION = "2026-08-11" as const;
+
+/** The request and response header carrying the version actually used (Lifecycle §1). */
+export const UHP_VERSION_HEADER = "uhp-version" as const;
+
+/* -------------------------------------------------------------------------------------------------
+ * The harness object — Harnesses §1 and §2
+ * ---------------------------------------------------------------------------------------------- */
+
+/**
+ * One configured harness, as `GET /v1/harnesses` returns it.
+ *
+ * `Harness.required` is `[id, name, base]` (`openapi.yaml`), `id` carries the pattern `^chrn_`, and the
+ * chapter is explicit that `base` is opaque, Harnesses §2:
+ *
+ *   > `base` values are not enumerated by this specification. A server MAY support bases this document
+ *   > has never heard of, and a client MUST treat `base` as an opaque string.
+ *
+ * Only the four fields the drift check compares are declared. The rest of the object — prompts, MCP
+ * servers, skills, budgets — is real and is deliberately not transcribed: a field this repository does
+ * not compare is a field it must not appear to depend on. `additionalProperties: true` is honoured by
+ * the index signature.
+ */
+export interface UhpHarness {
+  readonly id: string;
+  readonly name: string;
+  readonly base: string;
+  readonly defaultModel?: string;
+  readonly [extension: string]: unknown;
+}
+
+/* -------------------------------------------------------------------------------------------------
+ * The error envelope — Errors §1 and §3
+ * ---------------------------------------------------------------------------------------------- */
+
+/**
+ * `Error`. `required: [type, code, message]`.
+ *
+ * `code` is the machine-readable half and the only field this adapter branches on. `message` is
+ * human-readable and, per Errors §1, "MUST be safe to show a user. It MUST NOT contain credentials,
+ * internal hostnames, file paths, or stack traces" — which is a promise made by the server, not by us,
+ * so nothing here forwards it into anything durable a consumer reads.
+ */
+export interface UhpError {
+  readonly type?: string;
+  readonly code?: string;
+  readonly message?: string;
+  readonly param?: string | null;
+  readonly detail?: unknown;
+  readonly [extension: string]: unknown;
+}
+
+/** `ErrorEnvelope`: `required: [error]`. Every non-2xx response carries one (Errors §1). */
+export interface UhpErrorEnvelope {
+  readonly error?: UhpError;
+  readonly [extension: string]: unknown;
+}
+
+/**
+ * The error codes this adapter distinguishes, verbatim from Errors §3.
+ *
+ * Not the whole set — a code nothing branches on is a code this list would only pretend to handle. Each
+ * one below changes a verdict in `uhp-provider.ts`:
+ *
+ *   harness_not_found   404  the pinned console id resolves to nothing: drift, and the dispatch is refused
+ *   response_not_found  404  an unknown continuation id: unknown, never a synthesized terminal state
+ *   session_expired     404  the chain was forgotten: unknown, and the first turn may be retried
+ *   session_busy        409  a task is already running in this session, so the message did not land
+ *   harness_mismatch    409  the task named a different harness than the session it continues
+ *   model_unavailable   422  the requested model cannot be served and the server chose to fail
+ *   unsupported_base    422  the console's base is not one this server supports
+ */
+export const UHP_ERROR_CODES = [
+  "harness_not_found",
+  "response_not_found",
+  "session_expired",
+  "session_busy",
+  "harness_mismatch",
+  "model_unavailable",
+  "unsupported_base",
+] as const;
+
+export type UhpErrorCode = (typeof UHP_ERROR_CODES)[number];
+
+/** Read `error.code` from an envelope, or `null`. Only the code is machine-readable; the message is not. */
+export function uhpErrorCode(body: unknown): string | null {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return null;
+  const error = (body as UhpErrorEnvelope).error;
+  if (typeof error !== "object" || error === null) return null;
+  const code = (error as UhpError).code;
+  return typeof code === "string" && code.trim().length > 0 ? code : null;
+}
