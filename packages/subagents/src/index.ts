@@ -36,6 +36,20 @@
  * `lease.ts` is the third: single-writer ownership of a session, keyed on our run id rather than the
  * vendor's session id, because the vendor's changes under `--resume`. It is what stands between the
  * board and two live processes on one transcript.
+ *
+ * ## The UHP half
+ *
+ * Five more modules arrived with spikes S10 (#288) and S11 (#289), for runs hosted over the Unified
+ * Harness Protocol: `uhp-wire.ts` transcribes the protocol, `uhp-stream.ts` consumes its SSE and
+ * computes freshness from timestamps, `uhp-lifecycle.ts` maps its statuses onto `RunLiveness` per
+ * #287, `uhp-gate.ts` decides whether the route the server reported permits a useful turn, and
+ * `uhp-session.ts` chains turns on `previous_response_id` while keying runs on our `runId`.
+ *
+ * They are exported here because #286 will build `provider-uhp` on them. `uhp-mock.ts` is not: it is
+ * the loopback server and fixture set those modules are tested against, and every claim any of them
+ * supports today is a claim about a mock written from the specification. The live router round-trip is
+ * #294. See the package README, and `.llm/runs/uhp-stream-adapter--s11/verification.md` for the split
+ * between what was proven and what was not.
  */
 
 export {
@@ -125,6 +139,82 @@ export type {
   RouteStatus,
   RouteValueEvidence,
 } from "./route.js";
+
+export {
+  UHP_DELTA_EVENTS,
+  UHP_ERROR_EVENT,
+  UHP_EVENT_TYPES,
+  UHP_INERT_EVENTS,
+  UHP_ITEM_EVENTS,
+  UHP_LIFECYCLE_EVENTS,
+  UHP_LIFECYCLE_STATUSES,
+  UHP_TERMINAL_EVENTS,
+  UHP_TERMINAL_STATUSES,
+  isUhpLifecycleStatus,
+  isUhpTerminalEvent,
+  isUhpTerminalStatus,
+} from "./uhp-wire.js";
+export type {
+  UhpCreateRequest,
+  UhpDeltaEvent,
+  UhpEventType,
+  UhpItemEvent,
+  UhpLifecycleEvent,
+  UhpLifecycleStatus,
+  UhpResponse,
+  UhpResponseMetadata,
+  UhpTerminalEvent,
+  UhpTerminalStatus,
+} from "./uhp-wire.js";
+
+export {
+  DEFAULT_UHP_WINDOWS,
+  consumeUhpStream,
+  createUhpStreamReader,
+  readUhpStream,
+  uhpFreshness,
+} from "./uhp-stream.js";
+export type {
+  UhpFreshness,
+  UhpFreshnessEvidence,
+  UhpFreshnessKind,
+  UhpFreshnessVerdict,
+  UhpFreshnessWindows,
+  UhpStreamDone,
+  UhpStreamError,
+  UhpStreamOpen,
+  UhpStreamReader,
+  UhpStreamRefusal,
+  UhpStreamRefused,
+  UhpStreamState,
+} from "./uhp-stream.js";
+
+export { mapUhpOutcome, uhpObservation } from "./uhp-lifecycle.js";
+export type { UhpLifecycleVerdict, UhpOutcome } from "./uhp-lifecycle.js";
+
+export { decideUhpRoute, uhpRouteNegatives, uhpRouteVerdict } from "./uhp-gate.js";
+export type { UhpRouteDecision, UhpRouteNegatives } from "./uhp-gate.js";
+
+export {
+  EMPTY_UHP_LEDGER,
+  lastUhpTurn,
+  nextUhpRequest,
+  openUhpSession,
+  recordUhpTurn,
+  recordUhpTurnInLedger,
+  uhpRunRef,
+  uhpRunsInSession,
+  uhpSessionOf,
+  withUhpSession,
+} from "./uhp-session.js";
+export type {
+  UhpRequestResult,
+  UhpSession,
+  UhpSessionLedger,
+  UhpSessionRefusal,
+  UhpTurn,
+  UhpTurnResult,
+} from "./uhp-session.js";
 
 export {
   DEFAULT_STALE,
