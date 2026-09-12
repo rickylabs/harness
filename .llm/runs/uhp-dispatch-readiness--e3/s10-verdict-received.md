@@ -1,0 +1,161 @@
+# S10 returned FAIL, and the FAIL is the deliverable
+
+Delegate completed 2026-09-12. PR #292 on `chore/route-identity-uhp--s10`, CI green, #288 advanced
+to `status:impl-eval`. Run artifacts under `.llm/runs/route-identity-uhp--s10/`.
+
+## The answer
+
+Established from the published UHP 2026-08-11 specification, its OpenAPI document and its
+conformance suite. The delegate deliberately escalated past the rendered chapter pages, on the
+reasoning that those return through a summarising retrieval model and are a weak citation for a
+spike about not believing convenient answers. That is the right instinct and it is why the verdict
+is worth something.
+
+| Field | Requestable | Echoed | Verdict |
+|---|---|---|---|
+| `model` | yes | yes, required | observable |
+| `provider` | no | no | unobservable |
+| `effort` | no | no | unobservable |
+| `cwd` | no | no | unobservable and unrequestable |
+
+So `invalid[]` is always non-empty, `RouteStatus` is pinned to `unknown`, and
+`isRouteEvidenceVerified` is `false` on every UHP route, permanently. All eight lanes in
+`routing.v1.json` carrying `purpose: "evaluation"` declare an effort, so none may run over UHP. The
+ruling is preventive rather than a repair, since no `uhp` transport exists yet.
+
+**The gate fails and the repository's behaviour under that answer is refusal, which is proven.**
+That is the deliverable. A spike that returns FAIL with the fail-closed path demonstrated has done
+its whole job.
+
+## The finding that was not in the brief, and matters most
+
+`compareRouteIdentity` gives `unknown` precedence over `mismatch`. Because three fields are
+permanently absent over UHP, **a model substitution is collapsed into `unknown` by the missing
+fields.** The substitution signal does not survive in `evidence.status`; it survives in
+`evidence.mismatches`.
+
+A fail-closed gate keyed on `status === "mismatch"` will therefore never fire over UHP, and will
+look correct while never firing. Written into #286 as a requirement to read `mismatches`, and
+relayed to the Cockpit seat as the first thing to change on their side.
+
+The irony is worth recording. This run spent the day pinning `mismatch` apart from `unknown` at the
+consuming boundary, with assertions on both sides of the wire — while the producer's own status
+field merges them for UHP by design precedence. The boundary discipline was right and was aimed one
+layer too high.
+
+Corollary, so nobody optimises it away later: three unobservable fields are not merely three lost
+signals. **They suppress the fourth**, which is the only one the protocol reports and the only one
+the substitution gate depends on.
+
+## `RouteSource`, and why fixing it alone would have changed nothing
+
+The suspected defect is confirmed, and it is the **second** of two independent blockers rather than
+the first. With a perfect dialect map, three fields would still be `null` and the status check at
+`route.ts:176` returns false before the source comparison is reached.
+
+**Believing otherwise is precisely the error this spike existed to catch**, and the brief's framing
+invited it by naming `RouteSource` as deliverable two. The delegate caught it anyway.
+
+Decision: a narrow additive `uhp/responses.result.model` arm, and deliberately **no** `uhp` label
+for `effort`, `cwd` or `provider`, because a provenance label for a field the protocol cannot
+report is a name with no referent. Additive, breaking no published package, shipped as a proposal
+with acceptance criteria for #286 rather than applied.
+
+## `model_fallback` — the mid-run addition, answered as far as it can be
+
+**The specification is silent.** Typed `boolean`, no description, no default, not required, one
+prose mention inside the substitution example. Conformance check T-03 asserts it only inside the
+substitution branch, so a server that emits `false` unconditionally passes conformance, and so does
+one that omits it entirely. The suite authors do write the negative half when they mean one — T-10
+exists purely as the other half of T-09 — and wrote no equivalent here.
+
+Keep presence-as-signal: it errs toward refusal. The always-refuses risk the Cockpit seat raised is
+real and this run cannot retire it. But there is a better trigger available: the spec-endorsed
+substitution signal is `model` versus `metadata.requested_model`, which is exactly how T-03 models
+it, and presence there **is** spec-backed rather than a fail-closed guess.
+
+One detail relayed to Cockpit: the value they described as `model_fallback: "false"` is a string
+where the schema types the field `boolean`, so that shape is non-conformant, and it is truthy in
+JavaScript, tripping a presence test and a truthiness test alike.
+
+## Verification, and the drift approved
+
+`pnpm run build` and `pnpm run test` green, 252/252 in subagents, CI green on the exact head.
+
+Both new suites are **mutation-tested rather than asserted to cover**: collapsing `mismatch` into
+`unknown` fails 16 tests, making the adapter credulous fails 3, and nothing else in the repository
+notices either mutation — which is the argument for the suites existing. The mock ships two
+adapters, one conformant and one deliberately credulous, handed the same fixture and returning
+opposite verdicts. The "all three present and agreeing" fixture does **not** produce a verified
+route, and a test asserts that it must not.
+
+One out-of-scope change was declared and is approved: a single allowlist entry in
+`scripts/check-compiled-policy.mjs` for the mock, mirroring the existing `dry-run-test-fixtures.ts`
+precedent, with no guard logic changed. Verified here — `uhp-mock.ts` is not exported from
+`index.ts` and is imported only by its test, the branch is additive at 2031 insertions and no
+deletions, and neither `packages/routing` nor `packages/contracts` was touched.
+
+**What was rejected matters more than what was added.** The delegate declined to rename the mock to
+`*.test.ts` to slip past the guard's suffix check, on the grounds that it dodges the guard rather
+than answering it. That is the exact inverse of the pattern this run has been cataloguing: it would
+have produced a green check by arranging for nothing to look.
+
+## What this is not
+
+**It is not a passed gate.** The generator is Claude Opus 5, Generator != Evaluator requires a
+non-Claude independent evaluation, and every non-Anthropic privileged route is out of budget until
+2026-10-04T10:07Z. PR #292 stays at `status:impl-eval` and must not merge on green CI: CI proves
+the suites pass and says nothing about whether the specification was read correctly, which is the
+entire load-bearing content of a FAIL.
+
+Seven items the run could not prove are kept in a separate column of its `verification.md` rather
+than summed into the verdict, including whether a real router volunteers the three fields as
+extensions and which UHP version Community Edition actually serves. All seven concern whether UHP
+reports *more* than promised, so none could make the proven behaviour less safe.
+
+[observed — PR #292 labels and check conclusion, branch diffstat, allowlist entry, index.ts exports
+ and the mock import graph; verified 2026-09-12]
+
+## The precedence rule, named properly by the consuming seat
+
+The Cockpit coordinator sharpened the second finding into its general form, and the form is better
+than the instance: **absence outranks contradiction.**
+
+Three fields the protocol cannot report pin `status` to `unknown`, and that `unknown` then swallows
+a real, observed, contradicted model. The presence of a genuine contradiction is erased by the
+absence of unrelated fields. So **the more the wire fails to tell you, the more confidently the
+status reports that nothing is wrong.**
+
+That is one level deeper than every other instance catalogued in `dispatch-primitive-failure.md`.
+Those were surfaces rendering absence as normality. This is a comparison function *ranking* absence
+above a positive finding.
+
+Neither seat could have found it alone. The producing side sees the precedence rule and not the
+consumer's dependence on `status`; the consuming side sees the dependence and not the rule.
+
+## A correction to how this run stated the permanence, adopted from the consuming seat
+
+This run told Cockpit that their readers for `effort`, `provider` and `cwd` "are not landing", and
+the #286 amendment said "permanently" as settled fact. That overreaches, and the Cockpit seat
+declined to fully act on it for the right reason.
+
+The S10 verdict is **an unevaluated generator verdict**. It is Opus-generated, awaiting a non-Claude
+evaluator that cannot run before 2026-10-04. It is probably right and its citations are strong, and
+it remains a reading of a specification that no independent evaluator has checked.
+
+This is the same rule this run applied to itself earlier, about claims concerning code that had not
+been read, pointed now at a claim about a specification this coordinator has not read.
+
+The operative distinction, and the reason the correction is not merely cautious:
+
+- **Hardening a gate on an unchecked reading is reversible.** Reading `mismatches` rather than
+  `status`, and refusing certification while a route is unverified, are correct whether the three
+  fields are permanently absent, temporarily absent, or present tomorrow. They cost nothing if the
+  reading is wrong.
+- **Deleting capability on an unchecked reading is not reversible in practice.** A reader returning
+  `null` costs nothing; re-adding one after a comment declared the field dead costs another spike,
+  because nobody re-derives a capability that the code says does not exist.
+
+Both seats now keep their readers and record the finding with its provenance rather than as fact.
+#286 carries the same qualification, so an implementer building from that brief inherits the
+uncertainty rather than a confident sentence.
