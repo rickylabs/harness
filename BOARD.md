@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **219/279 done · 18 running · 25 queued · 3 blocked · 12 abandoned · 2 invisible**
+`[###############-----]` **219/280 done · 20 running · 24 queued · 3 blocked · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-11T23:32:38Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-12T00:17:42Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (3)
 
@@ -12,11 +12,11 @@ Stopped on a decision only a person can make. No agent will pick these up.
 
 | item | column | epic |
 | --- | --- | --- |
-| [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `plan-eval` | `e11` |
 | [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
+| [#289 Spike S11 — Workspace and PR round-trip on HarnessRouter CE](https://github.com/rickylabs/harness/issues/289) | `triage` | `e3` |
 | [PR291 docs(e3): hold the S10/S11/S12 dispatch — HarnessRouter CE is not deployed](https://github.com/rickylabs/harness/pull/291) | `impl-eval` | `e3` |
 
-## Moving now (18)
+## Moving now (20)
 
 Something could be acting on these right now.
 
@@ -31,9 +31,11 @@ Something could be acting on these right now.
 | [#261 E6 — Define command receipt lookup and unknown reconciliation boundaries](https://github.com/rickylabs/harness/issues/261) | `research` | `e6` |
 | [#262 E9 — Specify projection revision, observation coverage and census authority](https://github.com/rickylabs/harness/issues/262) | `research` | `e9` |
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
+| [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `plan-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `research` | `e11` |
 | [#283 Contracts 0.4.0 — authorize publication of reviewed synchronization recovery](https://github.com/rickylabs/harness/issues/283) | `impl-eval` | `e9` |
-| [#288 Spike S10 — Route identity over UHP: effort, cwd, and provider observation](https://github.com/rickylabs/harness/issues/288) | `research` | `e3` |
+| [#288 Spike S10 — Route identity over UHP: effort, cwd, and provider observation](https://github.com/rickylabs/harness/issues/288) | `impl-eval` | `e3` |
+| [PR292 chore(subagents): prove route identity fails closed over UHP (S10)](https://github.com/rickylabs/harness/pull/292) | `impl-eval` | `e3` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -41,27 +43,19 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (1)
-
-`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`epic-milestone-conflict`**
-
-- **#291** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
-
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 178/223 done · 17 running · 22 queued · 2 blocked · 3 abandoned · 1 invisible
+`[#########---]` 178/225 done · 19 running · 21 queued · 3 blocked · 3 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 28/31 done · 2 queued · 1 abandoned | `impl` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[###---------]` 2/7 done · 1 running · 2 queued · 2 blocked | `triage` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[###---------]` 2/7 done · 2 running · 2 queued · 1 blocked | `triage` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 17/29 done · 6 running · 6 queued | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[######------]` 17/31 done · 7 running · 5 queued · 2 blocked | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 invisible | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
@@ -72,18 +66,17 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 41/56 done · 1 running · 3 queued · 1 blocked · 9 abandoned · 1 invisible
+`[########----]` 41/55 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[------------]` 0/1 done · 1 blocked | `triage` |
 | _(no epic)_ | `[########----]` 37/50 done · 3 queued · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>25 filed, nothing started</summary>
+<summary>24 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -91,7 +84,6 @@ Something could be acting on these right now.
 | [#275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON](https://github.com/rickylabs/harness/issues/275) | `triage` | `e11` |
 | [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `triage` | `e3` |
 | [#287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts](https://github.com/rickylabs/harness/issues/287) | `triage` | `e3` |
-| [#289 Spike S11 — Workspace and PR round-trip on HarnessRouter CE](https://github.com/rickylabs/harness/issues/289) | `triage` | `e3` |
 | [#290 Spike S12 — Evidence path: transcript and quota meters for UHP runs](https://github.com/rickylabs/harness/issues/290) | `triage` | `e3` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
 | [#264 E6 — Define creation capability ownership before exposing P2 actions](https://github.com/rickylabs/harness/issues/264) | `triage` | `e6` |
@@ -121,9 +113,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  219/279 done · 18 running · 25 queued · 3 blocked · 12 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  219/280 done · 20 running · 24 queued · 3 blocked · 12 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [###############-----]  178/223 done · 17 running · 22 queued · 2 blocked · 3 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [###############-----]  178/225 done · 19 running · 21 queued · 3 blocked · 3 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -179,9 +171,9 @@ Something could be acting on these right now.
     shipped              PR281 docs: describe the intended product and update operational guidance (p1)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]
-    [####------------] 2/7 done · 1 running · 2 queued · 2 blocked
+    [####------------] 2/7 done · 2 running · 2 queued · 1 blocked
     shipped              #271 Routing configuration 1/5 — Load a wholly replaceable routing configuration (p1)
-    plan-eval            #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p1, waiting on owner)
+    plan-eval            #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p1)
     triage               #273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator (p1)
     research             #274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration (p1)
     triage               #275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON (p1)
@@ -206,7 +198,7 @@ Something could be acting on these right now.
     shipped              PR230 feat(dsh-app): carry board anomalies and fetch coverage in the projection (p1)
 
   E3 — Subagent providers over structured protocols #33  [triage]
-    [#########-------] 17/29 done · 6 running · 6 queued
+    [########--------] 17/31 done · 7 running · 5 queued · 2 blocked
     shipped              #51 E3.1 — DispatchRequest and the SubagentProvider contract
     shipped              #52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk
     triage               #53 E3.3 — provider-codex against the running app-server daemon
@@ -233,9 +225,11 @@ Something could be acting on these right now.
     shipped              PR238 feat(route-identity--e35): refuse mismatched Codex routes before task submission
     triage               #286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses (p1)
     triage               #287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts (p1)
-    research             #288 Spike S10 — Route identity over UHP: effort, cwd, and provider observation (p1)
-    triage               #289 Spike S11 — Workspace and PR round-trip on HarnessRouter CE (p1)
+    impl-eval            #288 Spike S10 — Route identity over UHP: effort, cwd, and provider observation (p1)
+    triage               #289 Spike S11 — Workspace and PR round-trip on HarnessRouter CE (p1, waiting on owner)
     triage               #290 Spike S12 — Evidence path: transcript and quota meters for UHP runs (p1)
+    impl-eval            PR291 docs(e3): hold the S10/S11/S12 dispatch — HarnessRouter CE is not deployed (p1, waiting on owner)
+    impl-eval            PR292 chore(subagents): prove route identity fails closed over UHP (S10) (p1)
 
   E4 — Model gateway and routing matrix #34  [triage]
     [#############---] 12/14 done · 1 queued · 1 invisible
@@ -383,7 +377,7 @@ Something could be acting on these right now.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  41/56 done · 1 running · 3 queued · 1 blocked · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  41/55 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -392,10 +386,6 @@ Something could be acting on these right now.
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
-
-  E3 — Subagent providers over structured protocols #33  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [----------------] 0/1 done · 1 blocked
-    impl-eval            PR291 docs(e3): hold the S10/S11/S12 dispatch — HarnessRouter CE is not deployed (p1, waiting on owner)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
