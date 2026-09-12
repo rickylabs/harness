@@ -140,6 +140,27 @@ export type SteerVerdict = "delivered" | "unsupported" | "refused" | "unknown";
 export interface SteerResult {
   readonly verdict: SteerVerdict;
   readonly detail: string;
+  /**
+   * Requested-versus-observed route evidence for **this turn**, when the provider can obtain it.
+   *
+   * Same field, same type and same fail-closed reading as `DispatchResult.route`, and it is here because
+   * the fact it carries is not a dispatch-time fact. A transport whose continuation is a new request —
+   * UHP chains on `previous_response_id`, so a long session is mostly steers — can honour the requested
+   * model on the opening turn and substitute on the fifth. Without this field that substitution can only
+   * be prose in `detail`, so the structured record for the session shows no substitution ever happened,
+   * and a gate that refuses on `DispatchResult.route` cannot refuse on the case that actually occurs
+   * (#287).
+   *
+   * Absence is unverified, never agreement. Read it with `isSteerRouteVerified`, or hand it to a
+   * transport's own gate — `decideUhpRoute` takes exactly this type and separates a server
+   * contradiction from a silence.
+   *
+   * `verdict: "delivered"` alongside a contradicted route is the honest combination and not a
+   * contradiction in terms: the message did land, the turn exists, and re-sending it would put two turns
+   * in one conversation. The route is a separate fact about the same turn, which is why it is a separate
+   * field rather than a verdict.
+   */
+  readonly route?: RouteIdentityEvidence;
 }
 
 /** `already-over` is a success: the run cannot be stopped because there is nothing left to stop. */
@@ -273,6 +294,18 @@ export function isSafeToRetry(result: DispatchResult): boolean {
 /** True only for an accepted dispatch with complete, matching route evidence. */
 export function isRouteVerified(result: DispatchResult): boolean {
   return result.verdict === "accepted" && isRouteEvidenceVerified(result.route);
+}
+
+/**
+ * True only for a delivered steer with complete, matching route evidence.
+ *
+ * The continuation-turn counterpart of `isRouteVerified`, and fail-closed the same way: a provider that
+ * carries no route evidence on a steer has not agreed to anything, so absence is `false`. A caller that
+ * needs the *reason* — a server contradiction against a silence — reads `result.route` itself, because
+ * this predicate answers `false` for both.
+ */
+export function isSteerRouteVerified(result: SteerResult): boolean {
+  return result.verdict === "delivered" && isRouteEvidenceVerified(result.route);
 }
 
 /** What to do about a dispatch that did not plainly succeed, in a sentence. */

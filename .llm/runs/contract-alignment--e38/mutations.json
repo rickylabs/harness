@@ -1,0 +1,750 @@
+{
+  "baseline": {
+    "killed": 0,
+    "compiled": true,
+    "leaves": [],
+    "tests": []
+  },
+  "results": [
+    {
+      "id": "N1",
+      "file": "route.ts",
+      "with": [],
+      "breaks": "the null-source rule: a UHP route with values written beside its three absent labels verifies",
+      "killed": 4,
+      "compiled": true,
+      "leaves": [
+        "verifies a codex route and refuses the identical values labelled as uhp",
+        "refuses a uhp route whose unreportable fields have been given values anyway",
+        "cannot be talked into a verified route by a credulous adapter once the dialect is honest",
+        "still refuses a codex label presented among UHP ones, and the reverse"
+      ],
+      "tests": [
+        "verifies a codex route and refuses the identical values labelled as uhp",
+        "refuses a uhp route whose unreportable fields have been given values anyway",
+        "the dialect argument — additive, and the codex path is byte-identical without it",
+        "cannot be talked into a verified route by a credulous adapter once the dialect is honest",
+        "route identity over UHP — extension fields cannot manufacture agreement",
+        "still refuses a codex label presented among UHP ones, and the reverse",
+        "RouteSource — the UHP provenance arm, and the guard it must not lose"
+      ]
+    },
+    {
+      "id": "N2",
+      "file": "route.ts",
+      "with": [],
+      "breaks": "an unexplainable labelling falls back to codex instead of refusing, so a mixed labelling verifies",
+      "killed": 3,
+      "compiled": true,
+      "leaves": [
+        "refuses a mixed labelling, so a codex label cannot ride in on a uhp route",
+        "refuses an observed side labelled with a requested-side source",
+        "still refuses a codex label presented among UHP ones, and the reverse"
+      ],
+      "tests": [
+        "refuses a mixed labelling, so a codex label cannot ride in on a uhp route",
+        "refuses an observed side labelled with a requested-side source",
+        "the dialect argument — additive, and the codex path is byte-identical without it",
+        "still refuses a codex label presented among UHP ones, and the reverse",
+        "RouteSource — the UHP provenance arm, and the guard it must not lose"
+      ]
+    },
+    {
+      "id": "N3",
+      "file": "route.ts",
+      "with": [],
+      "breaks": "one matching label is enough to claim a dialect, which is the forbidden any-label-in-the-union loosening",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "refuses an observed side labelled with a requested-side source"
+      ],
+      "tests": [
+        "refuses an observed side labelled with a requested-side source",
+        "the dialect argument — additive, and the codex path is byte-identical without it"
+      ]
+    },
+    {
+      "id": "N4",
+      "file": "route.ts",
+      "with": [],
+      "breaks": "the uhp row mints labels for the three fields UHP cannot report — the defect, reintroduced as vocabulary",
+      "killed": 10,
+      "compiled": true,
+      "leaves": [
+        "changes the labels and nothing else about the comparison",
+        "verifies a codex route and refuses the identical values labelled as uhp",
+        "refuses a mixed labelling, so a codex label cannot ride in on a uhp route",
+        "refuses a uhp route whose unreportable fields have been given values anyway",
+        "renders a missing source as an absence rather than as the word null",
+        "cannot be talked into a verified route by a credulous adapter once the dialect is honest",
+        "labels a UHP observation as UHP, where it used to claim a codex thread/start response",
+        "still refuses a codex label presented among UHP ones, and the reverse",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "republishes a missing provenance as an absence, and never as a codex label"
+      ],
+      "tests": [
+        "changes the labels and nothing else about the comparison",
+        "verifies a codex route and refuses the identical values labelled as uhp",
+        "refuses a mixed labelling, so a codex label cannot ride in on a uhp route",
+        "refuses a uhp route whose unreportable fields have been given values anyway",
+        "renders a missing source as an absence rather than as the word null",
+        "the dialect argument — additive, and the codex path is byte-identical without it",
+        "cannot be talked into a verified route by a credulous adapter once the dialect is honest",
+        "route identity over UHP — extension fields cannot manufacture agreement",
+        "labels a UHP observation as UHP, where it used to claim a codex thread/start response",
+        "still refuses a codex label presented among UHP ones, and the reverse",
+        "RouteSource — the UHP provenance arm, and the guard it must not lose",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "dispatch — a substituted model is refused, never unknown",
+        "republishes a missing provenance as an absence, and never as a codex label",
+        "route evidence, published — the leak on the success path"
+      ]
+    },
+    {
+      "id": "N5",
+      "file": "route.ts",
+      "with": [],
+      "breaks": "the dialect argument is accepted and then discarded for uhp, relabelling it as a codex thread/start response",
+      "killed": 11,
+      "compiled": true,
+      "leaves": [
+        "changes the labels and nothing else about the comparison",
+        "verifies a codex route and refuses the identical values labelled as uhp",
+        "refuses a uhp route whose unreportable fields have been given values anyway",
+        "renders a missing source as an absence rather than as the word null",
+        "cannot be talked into a verified route by a credulous adapter once the dialect is honest",
+        "labels a UHP observation as UHP, where it used to claim a codex thread/start response",
+        "decides a conformant response identically under either labelling",
+        "decides a substituted model identically under either labelling",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "republishes a missing provenance as an absence, and never as a codex label"
+      ],
+      "tests": [
+        "changes the labels and nothing else about the comparison",
+        "verifies a codex route and refuses the identical values labelled as uhp",
+        "refuses a uhp route whose unreportable fields have been given values anyway",
+        "renders a missing source as an absence rather than as the word null",
+        "the dialect argument — additive, and the codex path is byte-identical without it",
+        "cannot be talked into a verified route by a credulous adapter once the dialect is honest",
+        "route identity over UHP — extension fields cannot manufacture agreement",
+        "labels a UHP observation as UHP, where it used to claim a codex thread/start response",
+        "RouteSource — the UHP provenance arm, and the guard it must not lose",
+        "decides a conformant response identically under either labelling",
+        "decides a substituted model identically under either labelling",
+        "the UHP route gate — a provenance label never changes a verdict",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "dispatch — a substituted model is refused, never unknown",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "steer — continuation at a turn boundary, not injection into a live turn",
+        "republishes a missing provenance as an absence, and never as a codex label",
+        "route evidence, published — the leak on the success path"
+      ]
+    },
+    {
+      "id": "N6",
+      "file": "route.ts",
+      "with": [],
+      "breaks": "a missing provenance renders as the word null in a published diagnostic",
+      "killed": 2,
+      "compiled": true,
+      "leaves": [
+        "renders a missing source as an absence rather than as the word null",
+        "republishes a missing provenance as an absence, and never as a codex label"
+      ],
+      "tests": [
+        "renders a missing source as an absence rather than as the word null",
+        "the dialect argument — additive, and the codex path is byte-identical without it",
+        "republishes a missing provenance as an absence, and never as a codex label",
+        "route evidence, published — the leak on the success path"
+      ]
+    },
+    {
+      "id": "N7",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "dispatch stops naming its dialect, so its published route evidence claims a codex origin again",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "refuses where the codex ladder and the status-keyed gate both say unknown"
+      ],
+      "tests": [
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "dispatch — a substituted model is refused, never unknown"
+      ]
+    },
+    {
+      "id": "N8",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "a steer carries no route evidence, so a substitution on a continuation is prose again",
+      "killed": 4,
+      "compiled": true,
+      "leaves": [
+        "publishes no path from any verb, on a run whose cwd is an absolute path",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "reports a continuation that was honoured as delivered with no contradiction, which is what makes the test above a distinction",
+        "names a declared fallback on a continuation, and says plainly that the route cannot carry it"
+      ],
+      "tests": [
+        "publishes no path from any verb, on a run whose cwd is an absolute path",
+        "nothing published carries a path, and the diagnostic keeps one",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "reports a continuation that was honoured as delivered with no contradiction, which is what makes the test above a distinction",
+        "names a declared fallback on a continuation, and says plainly that the route cannot carry it",
+        "steer — continuation at a turn boundary, not injection into a live turn"
+      ]
+    },
+    {
+      "id": "N9",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "a steer publishes unredacted route evidence, so the requested cwd crosses the boundary",
+      "killed": 2,
+      "compiled": true,
+      "leaves": [
+        "publishes no path from any verb, on a run whose cwd is an absolute path",
+        "carries a substitution on a continuation as structured route evidence, not only as prose"
+      ],
+      "tests": [
+        "publishes no path from any verb, on a run whose cwd is an absolute path",
+        "nothing published carries a path, and the diagnostic keeps one",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "steer — continuation at a turn boundary, not injection into a live turn"
+      ]
+    },
+    {
+      "id": "N10",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "a steer ignores what the server said about itself, so a declared fallback with an agreeing model is missed",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "names a declared fallback on a continuation, and says plainly that the route cannot carry it"
+      ],
+      "tests": [
+        "names a declared fallback on a continuation, and says plainly that the route cannot carry it",
+        "steer — continuation at a turn boundary, not injection into a live turn"
+      ]
+    },
+    {
+      "id": "N11",
+      "file": "provider.ts",
+      "with": [],
+      "breaks": "a steer with no route evidence at all reads as verified, which is agreement inferred from absence",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "carries no route on a steer that never reached a response, and reads that as unverified"
+      ],
+      "tests": [
+        "carries no route on a steer that never reached a response, and reads that as unverified",
+        "steer — continuation at a turn boundary, not injection into a live turn"
+      ]
+    },
+    {
+      "id": "N12",
+      "file": "provider.ts",
+      "with": [],
+      "breaks": "a steer that never landed is verified by the route evidence of a turn that did not happen",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "carries no route on a steer that never reached a response, and reads that as unverified"
+      ],
+      "tests": [
+        "carries no route on a steer that never reached a response, and reads that as unverified",
+        "steer — continuation at a turn boundary, not injection into a live turn"
+      ]
+    },
+    {
+      "id": "C-S11-B",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "S11 defect B: a contradiction is read off status instead of mismatches, so it never fires over UHP",
+      "killed": 9,
+      "compiled": true,
+      "leaves": [
+        "reads the negatives from mismatches and from the observed side of invalid",
+        "refuses a substitution where the codex ladder would report unknown",
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "carries the status as an explanation and never as the decision",
+        "refuses the extension-field fixtures without inventing a contradiction",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "decides a substituted model identically under either labelling",
+        "carries a substitution on a continuation as structured route evidence, not only as prose"
+      ],
+      "tests": [
+        "reads the negatives from mismatches and from the observed side of invalid",
+        "the UHP route gate — B: the signal is in mismatches, not in status",
+        "refuses a substitution where the codex ladder would report unknown",
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "carries the status as an explanation and never as the decision",
+        "refuses the extension-field fixtures without inventing a contradiction",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "decides a substituted model identically under either labelling",
+        "the UHP route gate — a provenance label never changes a verdict",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "steer — continuation at a turn boundary, not injection into a live turn"
+      ]
+    },
+    {
+      "id": "C-M1",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "the ratified order: absence is checked before contradiction, which is the codex ladder reintroduced",
+      "killed": 15,
+      "compiled": true,
+      "leaves": [
+        "refuses a substitution where the codex ladder would report unknown",
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "derives the verdict from negatives that do not include a status",
+        "carries the status as an explanation and never as the decision",
+        "is still correct in the codex dialect, where all four fields are observable",
+        "refuses the extension-field fixtures without inventing a contradiction",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "decides a substituted model identically under either labelling",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "refuses a declared fallback even when the model field happens to agree",
+        "refuses when the server says it was asked for a model this dispatch did not ask for",
+        "refuses when the server names the model in ignored_fields",
+        "still explains a contradiction after redaction, rather than degrading to a notice",
+        "carries a substitution on a continuation as structured route evidence, not only as prose"
+      ],
+      "tests": [
+        "refuses a substitution where the codex ladder would report unknown",
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "derives the verdict from negatives that do not include a status",
+        "carries the status as an explanation and never as the decision",
+        "is still correct in the codex dialect, where all four fields are observable",
+        "refuses the extension-field fixtures without inventing a contradiction",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "decides a substituted model identically under either labelling",
+        "the UHP route gate — a provenance label never changes a verdict",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "refuses a declared fallback even when the model field happens to agree",
+        "refuses when the server says it was asked for a model this dispatch did not ask for",
+        "refuses when the server names the model in ignored_fields",
+        "dispatch — a substituted model is refused, never unknown",
+        "still explains a contradiction after redaction, rather than degrading to a notice",
+        "nothing published carries a path, and the diagnostic keeps one",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "steer — continuation at a turn boundary, not injection into a live turn"
+      ]
+    },
+    {
+      "id": "C-M2",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "the F10 gate reads only the route comparison, so a declared fallback with an agreeing model field is missed",
+      "killed": 3,
+      "compiled": true,
+      "leaves": [
+        "refuses a declared fallback even when the model field happens to agree",
+        "refuses when the server says it was asked for a model this dispatch did not ask for",
+        "refuses when the server names the model in ignored_fields"
+      ],
+      "tests": [
+        "refuses a declared fallback even when the model field happens to agree",
+        "refuses when the server says it was asked for a model this dispatch did not ask for",
+        "refuses when the server names the model in ignored_fields",
+        "dispatch — a substituted model is refused, never unknown"
+      ]
+    },
+    {
+      "id": "C-M3",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "a server that ignored the pinned harness selection is no longer refused",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "refuses when the server ran a harness this dispatch did not pin"
+      ],
+      "tests": [
+        "refuses when the server ran a harness this dispatch did not pin",
+        "dispatch — a substituted model is refused, never unknown"
+      ]
+    },
+    {
+      "id": "C-M4",
+      "file": "uhp-redact.ts",
+      "with": [],
+      "breaks": "the redactor stops redacting, leaving the provider's own fence as the only guard",
+      "killed": 5,
+      "compiled": true,
+      "leaves": [
+        "redacts a path that arrives from the transport rather than from the route",
+        "finds the other three shapes a path arrives in",
+        "removes a path from prose and leaves the rest readable",
+        "leaves an https url intact while removing a path beside it",
+        "leaves no tail when two shapes overlap on the same run of characters"
+      ],
+      "tests": [
+        "redacts a path that arrives from the transport rather than from the route",
+        "nothing published carries a path, and the diagnostic keeps one",
+        "finds the other three shapes a path arrives in",
+        "the fence — every string, any depth, any key",
+        "removes a path from prose and leaves the rest readable",
+        "leaves an https url intact while removing a path beside it",
+        "leaves no tail when two shapes overlap on the same run of characters",
+        "the redactor — and the control that proves the input was dirty"
+      ]
+    },
+    {
+      "id": "C-M5",
+      "file": "uhp-provider.ts",
+      "with": [
+        "C-M4"
+      ],
+      "breaks": "the boundary fence over a published result is removed (run together with C-M4 to let a path out)",
+      "killed": 5,
+      "compiled": true,
+      "leaves": [
+        "redacts a path that arrives from the transport rather than from the route",
+        "finds the other three shapes a path arrives in",
+        "removes a path from prose and leaves the rest readable",
+        "leaves an https url intact while removing a path beside it",
+        "leaves no tail when two shapes overlap on the same run of characters"
+      ],
+      "tests": [
+        "redacts a path that arrives from the transport rather than from the route",
+        "nothing published carries a path, and the diagnostic keeps one",
+        "finds the other three shapes a path arrives in",
+        "the fence — every string, any depth, any key",
+        "removes a path from prose and leaves the rest readable",
+        "leaves an https url intact while removing a path beside it",
+        "leaves no tail when two shapes overlap on the same run of characters",
+        "the redactor — and the control that proves the input was dirty"
+      ]
+    },
+    {
+      "id": "C-M6",
+      "file": "uhp-redact.ts",
+      "with": [],
+      "breaks": "published evidence reports every status as unknown, collapsing mismatch into it",
+      "killed": 5,
+      "compiled": true,
+      "leaves": [
+        "carries a path on the known branch before redaction, and none after",
+        "carries a path on the mismatch branch before redaction, and none after",
+        "carries the verification fact, because redaction makes it unrecomputable",
+        "preserves status, mismatches and invalid through redaction",
+        "does not let a mismatch serialise as an unknown"
+      ],
+      "tests": [
+        "carries a path on the known branch before redaction, and none after",
+        "carries a path on the mismatch branch before redaction, and none after",
+        "carries the verification fact, because redaction makes it unrecomputable",
+        "route evidence, published — the leak on the success path",
+        "preserves status, mismatches and invalid through redaction",
+        "does not let a mismatch serialise as an unknown",
+        "three statuses, not two — through serialisation"
+      ]
+    },
+    {
+      "id": "C-M7",
+      "file": "uhp-redact.ts",
+      "with": [],
+      "breaks": "cwd values are published verbatim, so the known-branch diagnostic carries the working directory",
+      "killed": 6,
+      "compiled": true,
+      "leaves": [
+        "publishes no path from any verb, on a run whose cwd is an absolute path",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "carries a path on the known branch before redaction, and none after",
+        "carries a path on the mismatch branch before redaction, and none after",
+        "carries the verification fact, because redaction makes it unrecomputable",
+        "refuses evidence that is marked redacted and is not"
+      ],
+      "tests": [
+        "publishes no path from any verb, on a run whose cwd is an absolute path",
+        "nothing published carries a path, and the diagnostic keeps one",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "steer — continuation at a turn boundary, not injection into a live turn",
+        "carries a path on the known branch before redaction, and none after",
+        "carries a path on the mismatch branch before redaction, and none after",
+        "carries the verification fact, because redaction makes it unrecomputable",
+        "route evidence, published — the leak on the success path",
+        "refuses evidence that is marked redacted and is not",
+        "the marker is checked against the thing it claims"
+      ]
+    },
+    {
+      "id": "C-M8",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "console drift is detected and then ignored, so a drifted harness is dispatched to",
+      "killed": 5,
+      "compiled": true,
+      "leaves": [
+        "refuses and sends no task when the pinned harness is gone",
+        "refuses and sends no task when the base changed",
+        "refuses and sends no task when the console volunteers a default model the manifest does not pin",
+        "refuses and sends no task when the listing is not a harness listing",
+        "refuses every dispatch through the unreconciled checked-in manifest"
+      ],
+      "tests": [
+        "refuses and sends no task when the pinned harness is gone",
+        "refuses and sends no task when the base changed",
+        "refuses and sends no task when the console volunteers a default model the manifest does not pin",
+        "refuses and sends no task when the listing is not a harness listing",
+        "refuses every dispatch through the unreconciled checked-in manifest",
+        "dispatch — console drift refuses before anything is sent"
+      ]
+    },
+    {
+      "id": "C-M9",
+      "file": "uhp-harnesses.ts",
+      "with": [],
+      "breaks": "an unreadable console listing is treated as agreement rather than as drift",
+      "killed": 2,
+      "compiled": true,
+      "leaves": [
+        "treats an unreadable listing as drift, not as agreement",
+        "refuses and sends no task when the listing is not a harness listing"
+      ],
+      "tests": [
+        "treats an unreadable listing as drift, not as agreement",
+        "console drift — every difference refuses, and agreement does not",
+        "refuses and sends no task when the listing is not a harness listing",
+        "dispatch — console drift refuses before anything is sent"
+      ]
+    },
+    {
+      "id": "C-M10",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "a 404 from the cancel endpoint is reported as a terminal state instead of unknown",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "reports a 404 or an expired session as unknown rather than a synthesized terminal state"
+      ],
+      "tests": [
+        "reports a 404 or an expired session as unknown rather than a synthesized terminal state",
+        "stop — cancelled, already-over and unknown stay three answers"
+      ]
+    },
+    {
+      "id": "C-M11",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "a task that was never sent is reported as unknown, which forbids the retry that is in fact safe",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "refuses when the credential is revoked between the drift check and the task"
+      ],
+      "tests": [
+        "refuses when the credential is revoked between the drift check and the task",
+        "dispatch — refusals that cost nothing, and unknowns that cost a retry"
+      ]
+    },
+    {
+      "id": "C-M12",
+      "file": "uhp-transport.ts",
+      "with": [],
+      "breaks": "a credential may be passed where a profile name belongs",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "refuses to be built with a token where a profile name belongs"
+      ],
+      "tests": [
+        "refuses to be built with a token where a profile name belongs",
+        "the transport owns the credential and the provider never sees it"
+      ]
+    },
+    {
+      "id": "C-M13",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "the route readers trust undefined-by-UHP extension keys in metadata",
+      "killed": 4,
+      "compiled": true,
+      "leaves": [
+        "refuses a route even when the server volunteers all three missing fields in agreement",
+        "does not see a contradiction on an undefined extension field either",
+        "refuses the extension-field fixtures without inventing a contradiction",
+        "refuses undefined-by-UHP extension keys rather than returning them"
+      ],
+      "tests": [
+        "refuses a route even when the server volunteers all three missing fields in agreement",
+        "does not see a contradiction on an undefined extension field either",
+        "route identity over UHP — extension fields cannot manufacture agreement",
+        "refuses the extension-field fixtures without inventing a contradiction",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "refuses undefined-by-UHP extension keys rather than returning them",
+        "the three readers that return null are still readers"
+      ]
+    },
+    {
+      "id": "C-M14",
+      "file": "uhp-lifecycle.ts",
+      "with": [],
+      "breaks": "a cancelled run is reported as failed, accusing an operator of breaking what they stopped",
+      "killed": 5,
+      "compiled": true,
+      "leaves": [
+        "maps cancelled to finished with a stopped stop verdict",
+        "separates cancelled from failed, in liveness and in the stop verdict",
+        "maps the streamed terminal status of a real exchange, reading the response and not the event",
+        "maps cancelled to finished",
+        "keeps cancelled apart from failed, which is the row most likely to be collapsed"
+      ],
+      "tests": [
+        "maps cancelled to finished with a stopped stop verdict",
+        "lifecycle mapping — the #287 table, row by row",
+        "separates cancelled from failed, in liveness and in the stop verdict",
+        "lifecycle mapping — the three distinctions that cost something when collapsed",
+        "maps the streamed terminal status of a real exchange, reading the response and not the event",
+        "lifecycle mapping over a real socket",
+        "maps cancelled to finished",
+        "keeps cancelled apart from failed, which is the row most likely to be collapsed",
+        "observe — the #287 mapping, read from the stored response"
+      ]
+    },
+    {
+      "id": "C-M15",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "the pinned harness id is left out of the payload, letting the server choose the harness",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "sends protocol fields only: the pinned harness id, and no credential anywhere"
+      ],
+      "tests": [
+        "sends protocol fields only: the pinned harness id, and no credential anywhere",
+        "dispatch — a conformant response, which is the normal case over UHP"
+      ]
+    },
+    {
+      "id": "C-M16",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "a steer is sent while the prior turn is still open, trading a local refusal for a remote one",
+      "killed": 6,
+      "compiled": true,
+      "leaves": [
+        "publishes no path from any verb, on a run whose cwd is an absolute path",
+        "refuses a second turn while the first is still running, without sending anything",
+        "delivers the next turn once the previous one is terminal, chaining on the response id",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "reports a continuation that was honoured as delivered with no contradiction, which is what makes the test above a distinction",
+        "names a declared fallback on a continuation, and says plainly that the route cannot carry it"
+      ],
+      "tests": [
+        "publishes no path from any verb, on a run whose cwd is an absolute path",
+        "nothing published carries a path, and the diagnostic keeps one",
+        "refuses a second turn while the first is still running, without sending anything",
+        "delivers the next turn once the previous one is terminal, chaining on the response id",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "reports a continuation that was honoured as delivered with no contradiction, which is what makes the test above a distinction",
+        "names a declared fallback on a continuation, and says plainly that the route cannot carry it",
+        "steer — continuation at a turn boundary, not injection into a live turn"
+      ]
+    },
+    {
+      "id": "C-M17",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "the model observation is read from metadata.requested_model, laundering a substitution into agreement",
+      "killed": 17,
+      "compiled": true,
+      "leaves": [
+        "records a substituted model as a difference, never as agreement",
+        "never reports metadata.requested_model as the observation, which would launder the swap",
+        "collapses the substitution's STATUS to unknown, so `mismatches` is what carries the signal",
+        "carries a streamed model substitution through to a recorded difference",
+        "shows the two evidence sets are indistinguishable by status",
+        "demonstrates that the status-keyed detector never fires, on evidence where it must",
+        "reads the negatives from mismatches and from the observed side of invalid",
+        "refuses a substitution where the codex ladder would report unknown",
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "carries the status as an explanation and never as the decision",
+        "refuses the extension-field fixtures without inventing a contradiction",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "decides a substituted model identically under either labelling",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "keeps the substitution visible over a transport where the status cannot carry it"
+      ],
+      "tests": [
+        "records a substituted model as a difference, never as agreement",
+        "never reports metadata.requested_model as the observation, which would launder the swap",
+        "collapses the substitution's STATUS to unknown, so `mismatches` is what carries the signal",
+        "route identity over UHP — model substitution is the one contradiction the wire reports",
+        "carries a streamed model substitution through to a recorded difference",
+        "mock UHP loopback server — the same verdicts over a real socket",
+        "shows the two evidence sets are indistinguishable by status",
+        "demonstrates that the status-keyed detector never fires, on evidence where it must",
+        "reads the negatives from mismatches and from the observed side of invalid",
+        "the UHP route gate — B: the signal is in mismatches, not in status",
+        "refuses a substitution where the codex ladder would report unknown",
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "carries the status as an explanation and never as the decision",
+        "refuses the extension-field fixtures without inventing a contradiction",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "decides a substituted model identically under either labelling",
+        "the UHP route gate — a provenance label never changes a verdict",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "dispatch — a substituted model is refused, never unknown",
+        "carries a substitution on a continuation as structured route evidence, not only as prose",
+        "steer — continuation at a turn boundary, not injection into a live turn",
+        "keeps the substitution visible over a transport where the status cannot carry it",
+        "three statuses, not two — through serialisation"
+      ]
+    },
+    {
+      "id": "C-M18",
+      "file": "uhp-redact.ts",
+      "with": [],
+      "breaks": "overlapping path spans are skipped instead of merged, leaving the tail of the second in the output",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "leaves no tail when two shapes overlap on the same run of characters"
+      ],
+      "tests": [
+        "leaves no tail when two shapes overlap on the same run of characters",
+        "the redactor — and the control that proves the input was dirty"
+      ]
+    },
+    {
+      "id": "C-M19",
+      "file": "uhp-redact.ts",
+      "with": [],
+      "breaks": "published evidence reports no route as verified, which is the transport-shaped branch #286 warns about",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "carries the verification fact, because redaction makes it unrecomputable"
+      ],
+      "tests": [
+        "carries the verification fact, because redaction makes it unrecomputable",
+        "route evidence, published — the leak on the success path"
+      ]
+    }
+  ],
+  "after": {
+    "killed": 0,
+    "compiled": true,
+    "leaves": [],
+    "tests": []
+  },
+  "at": "2026-09-12T21:28:09.658Z"
+}

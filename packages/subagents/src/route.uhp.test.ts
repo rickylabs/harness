@@ -33,6 +33,7 @@ import {
   compareRouteIdentity,
   describeRouteEvidence,
   isRouteEvidenceVerified,
+  type RouteDialect,
   type RouteIdentityEvidence,
   type RouteIdentityInput,
 } from "./route.js";
@@ -49,8 +50,16 @@ import {
 /** The three fields the specification cannot report. Named once so a regression cannot quietly drop one. */
 const UNOBSERVABLE_OVER_UHP = ["provider", "effort", "cwd"] as const;
 
-function compareAgainst(observed: RouteIdentityInput): RouteIdentityEvidence {
-  return compareRouteIdentity(UHP_REQUESTED, observed);
+/**
+ * The comparison this suite is about: a UHP observation, labelled as one.
+ *
+ * The dialect argument arrived with #287. Before it, every assertion in this file was made against
+ * evidence whose observed labels claimed a Codex `thread/start` response — which was the provenance
+ * defect, not a property of UHP, and which no assertion here could see. `dialect` is a parameter rather
+ * than a constant because two tests below need the same bytes compared under the other dialect.
+ */
+function compareAgainst(observed: RouteIdentityInput, dialect: RouteDialect = "uhp"): RouteIdentityEvidence {
+  return compareRouteIdentity(UHP_REQUESTED, observed, dialect);
 }
 
 describe("route identity over UHP — what the wire can and cannot report", () => {
@@ -138,17 +147,41 @@ describe("route identity over UHP — extension fields cannot manufacture agreem
     // typed "xhigh" twice.
     const fixture = UHP_FIXTURES.allThreeAgreeingExtended;
 
-    const credulous = compareAgainst(observeUhpRouteCredulous(fixture));
+    // Compared under the CODEX dialect, deliberately: that is the labelling under which all four fields
+    // have a provenance label, and it is the labelling this file's assertions were made under before #287.
+    // Keeping it here keeps the demonstration about the adapter's credulity and not about the dialect.
+    const credulous = compareAgainst(observeUhpRouteCredulous(fixture), "codex");
     assert.equal(credulous.status, "known");
     assert.equal(isRouteEvidenceVerified(credulous), true);
 
-    const honest = compareAgainst(observeUhpRoute(fixture));
+    const honest = compareAgainst(observeUhpRoute(fixture), "codex");
     assert.equal(honest.status, "unknown");
     assert.equal(isRouteEvidenceVerified(honest), false);
 
     // The contrast is the evidence: identical bytes, opposite verdicts. `observeUhpRoute` must stay
     // the one this repository uses, and this assertion fails the day someone widens it.
     assert.notEqual(credulous.status, honest.status);
+  });
+
+  it("cannot be talked into a verified route by a credulous adapter once the dialect is honest", () => {
+    // The same credulous adapter, the same bytes, labelled as what they are. #287's UHP row has no label
+    // for provider, effort or cwd, so the fabricated values arrive with `source: null` — and a value with
+    // no possible origin is refused whatever it says. `status` can still be talked into `known`; the
+    // predicate cannot, which is why the gate reads the predicate.
+    const fixture = UHP_FIXTURES.allThreeAgreeingExtended;
+    const credulous = compareAgainst(observeUhpRouteCredulous(fixture), "uhp");
+
+    assert.equal(credulous.status, "known");
+    assert.equal(isRouteEvidenceVerified(credulous), false);
+    for (const field of UNOBSERVABLE_OVER_UHP) {
+      assert.equal(credulous.observed[field].source, null);
+      // The control that keeps this from passing vacuously: the fabricated values really are there.
+      assert.ok(credulous.observed[field].value !== null, `${field} must carry the fabricated value`);
+    }
+
+    // And the pair that makes it a distinction rather than a blanket refusal: under the codex labelling
+    // the identical evidence verifies. One input, two vocabularies, opposite answers.
+    assert.equal(isRouteEvidenceVerified(compareAgainst(observeUhpRouteCredulous(fixture), "codex")), true);
   });
 });
 
@@ -282,36 +315,69 @@ describe("RouteStatus — `mismatch` must never be `unknown`", () => {
   });
 });
 
-describe("RouteSource — the UHP provenance defect, pinned", () => {
-  it("rejects UHP provenance labels under the current predicate", () => {
-    // Confirming the defect the brief suspected, at packages/subagents/src/route.ts:180-181.
-    //
-    // `isRouteEvidenceVerified` requires each observed field's `source` to equal its entry in the
-    // single module-level OBSERVED_SOURCES map, and every entry there is a `thread/start.result.*`
-    // label belonging to the in-tree codex protocol. A UHP provider's label is not in that map, so a
-    // UHP route cannot be verified under the current predicate whatever the server reports.
-    //
-    // The cast is deliberate: `RouteSource` is a closed union today, so the future label cannot be
-    // constructed type-safely. That is the defect, expressed.
-    const verified = compareRouteIdentity(UHP_REQUESTED, UHP_REQUESTED);
-    assert.equal(isRouteEvidenceVerified(verified), true);
+describe("RouteSource — the UHP provenance arm, and the guard it must not lose", () => {
+  // The S10 TRIPWIRE, updated deliberately rather than deleted, per
+  // `.llm/runs/route-identity-uhp--s10/proposal-routesource-uhp.md` §6. The original test asserted that a
+  // `uhp/responses.result.model` label was refused **because the label did not exist in the map**, which
+  // was the defect: `provider-uhp` was producing route evidence whose observed provenance claimed a Codex
+  // `thread/start` response for values that came from a UHP response body. #287 adds the label and makes
+  // the map dialect-keyed. What must survive the change is the cross-dialect guard, so that is what the
+  // replacement asserts — twice, in both directions.
 
-    const uhpLabelled = {
-      ...verified,
+  it("labels a UHP observation as UHP, where it used to claim a codex thread/start response", () => {
+    // The defect, and the fix, on identical bytes. No cast is needed now: the label exists.
+    const uhp = compareAgainst(observeUhpRoute(UHP_FIXTURES.conformant), "uhp");
+    const mislabelled = compareAgainst(observeUhpRoute(UHP_FIXTURES.conformant), "codex");
+
+    assert.equal(uhp.observed.model.source, "uhp/responses.result.model");
+    assert.equal(mislabelled.observed.model.source, "thread/start.result.model");
+    assert.notEqual(uhp.observed.model.source, mislabelled.observed.model.source);
+    // Same value in both: only the claim about where it came from differs, which is the whole finding.
+    assert.equal(uhp.observed.model.value, mislabelled.observed.model.value);
+    assert.equal(uhp.observed.model.value, "claude-opus-5");
+
+    // The three the protocol cannot report get no label at all, and the diagnostic says so in words
+    // rather than naming a Codex response that was never sent.
+    for (const field of UNOBSERVABLE_OVER_UHP) {
+      assert.equal(uhp.observed[field].source, null);
+      assert.notEqual(mislabelled.observed[field].source, null);
+    }
+    assert.doesNotMatch(uhp.detail, /thread\/start/);
+    assert.match(mislabelled.detail, /thread\/start/);
+  });
+
+  it("still refuses a codex label presented among UHP ones, and the reverse", () => {
+    // The guard the single map gave for free, kept. The forbidden loosening is "any label in the union":
+    // both fabrications below carry only real `RouteSource` members, so under that loosening both verify.
+    const codex = compareRouteIdentity(UHP_REQUESTED, UHP_REQUESTED, "codex");
+    assert.equal(isRouteEvidenceVerified(codex), true); // the positive control on the same values
+
+    const codexWithUhpModel: RouteIdentityEvidence = {
+      ...codex,
+      observed: { ...codex.observed, model: { value: codex.observed.model.value, source: "uhp/responses.result.model" } },
+    };
+    assert.equal(isRouteEvidenceVerified(codexWithUhpModel), false);
+
+    const uhpWithCodexProvider: RouteIdentityEvidence = {
+      ...codex,
       observed: {
-        ...verified.observed,
-        model: { value: "claude-opus-5", source: "uhp/responses.result.model" },
+        ...codex.observed,
+        model: { value: codex.observed.model.value, source: "uhp/responses.result.model" },
+        effort: { value: codex.observed.effort.value, source: null },
+        cwd: { value: codex.observed.cwd.value, source: null },
+        // provider keeps its codex label: a single foreign label is enough to refuse.
       },
-    } as unknown as RouteIdentityEvidence;
+    };
+    assert.equal(isRouteEvidenceVerified(uhpWithCodexProvider), false);
 
-    // Identical values. Only the provenance label differs. Still refused.
-    assert.equal(uhpLabelled.observed.model.value, verified.observed.model.value);
-    assert.equal(isRouteEvidenceVerified(uhpLabelled), false);
-
-    // TRIPWIRE. When issue #286 makes OBSERVED_SOURCES dialect-aware per
-    // `.llm/runs/route-identity-uhp--s10/proposal-routesource-uhp.md`, this assertion flips and this
-    // test must be UPDATED deliberately, not deleted. Its replacement must still assert that a
-    // codex-dialect label presented on a UHP route is refused, or the cross-dialect guard is lost.
+    // And with that last codex label replaced by the absence the UHP row actually declares, the labelling
+    // is a clean UHP row — which is still refused, on the null-source rule rather than on mixing. Both
+    // paths return false, and the pair above proves they are not the same path.
+    const cleanUhpRow: RouteIdentityEvidence = {
+      ...uhpWithCodexProvider,
+      observed: { ...uhpWithCodexProvider.observed, provider: { value: codex.observed.provider.value, source: null } },
+    };
+    assert.equal(isRouteEvidenceVerified(cleanUhpRow), false);
   });
 
   it("still refuses a UHP-labelled route that a dialect fix would have to leave unverified anyway", () => {

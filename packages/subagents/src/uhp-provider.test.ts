@@ -40,10 +40,11 @@ import {
   isRouteEvidenceVerified,
   type RouteIdentityEvidence,
 } from "./route.js";
-import { observeUhpRoute, readUhpCwd, readUhpEffort, readUhpModel, readUhpProvider, uhpRouteNegatives, uhpRouteVerdict } from "./uhp-gate.js";
+import { decideUhpRoute, observeUhpRoute, readUhpCwd, readUhpEffort, readUhpModel, readUhpProvider, uhpRouteNegatives, uhpRouteVerdict } from "./uhp-gate.js";
 import {
   conformanceProblems,
   isSafeToRetry,
+  isSteerRouteVerified,
   markInstrumented,
   selectProvider,
   type DispatchResult,
@@ -235,11 +236,18 @@ async function harnessed(options: HarnessOptions = {}): Promise<Harnessed> {
   return { provider, mock, tasks, diagnostics };
 }
 
-/** The route evidence a given served response produces against this suite's request. */
+/**
+ * The route evidence a given served response produces against this suite's request.
+ *
+ * Labelled `uhp`, as the provider labels it since #287: the observation came off a UHP response body, and
+ * a comparison that claimed `thread/start.result.*` here would be a reference the provider no longer
+ * matches.
+ */
 function evidenceFor(served: UhpResponse): RouteIdentityEvidence {
   return compareRouteIdentity(
     { provider: MODEL_PROVIDER, model: MODEL, effort: "xhigh", cwd: CWD },
     observeUhpRoute(served),
+    "uhp",
   );
 }
 
@@ -370,6 +378,13 @@ describe("dispatch — a substituted model is refused, never unknown", () => {
     // And what survives to an operator: the contradicted field, named.
     assert.ok(result.detail.includes("contradicted the requested route on model"));
     assert.deepEqual(result.route?.mismatches, ["model"]);
+    // The provenance of that evidence names the wire it came off, and not a Codex response this provider
+    // never sent (#287). A diagnostic whose origin claim is false is worse than one with no origin claim.
+    assert.equal(result.route?.observed.model.source, "uhp/responses.result.model");
+    assert.equal(result.route?.requested.model.source, "request.model");
+    for (const field of ["provider", "effort", "cwd"] as const) {
+      assert.equal(result.route?.observed[field].source, null, `${field} has no UHP wire field to be sourced from`);
+    }
     // A refusal is the one verdict that licenses a retry, because nothing useful was sent after it.
     assert.equal(isSafeToRetry(result), true);
   });
@@ -664,16 +679,26 @@ describe("dispatch — refusals that cost nothing, and unknowns that cost a retr
 
 describe("nothing published carries a path, and the diagnostic keeps one", () => {
   it("publishes no path from any verb, on a run whose cwd is an absolute path", async () => {
+    // Distinct response ids per turn, deliberately. With one id for both, `recordUhpTurn` refuses the
+    // continuation as a repeated response and `steer` returns `unknown` **before** it observes a route —
+    // so the steer row below would be asserting about a result that never carried route evidence, and
+    // mutation N9 (a steer publishing unredacted evidence) killed nothing here until this was fixed. The
+    // ledger's refusal is a real behaviour and is covered by its own test; it is not what this test is for.
     const { provider, diagnostics } = await harnessed({
-      task: () => ({ httpStatus: 200, response: response({ status: "completed" }) }),
-      read: () => ({ httpStatus: 200, body: response({ status: "completed" }) }),
-      cancel: () => ({ httpStatus: 200, body: response({ status: "completed" }) }),
+      task: (_body, index) => ({ httpStatus: 200, response: response({ id: `resp_boundary_${index}`, status: "completed" }) }),
+      read: () => ({ httpStatus: 200, body: response({ id: "resp_boundary_1", status: "completed" }) }),
+      cancel: () => ({ httpStatus: 200, body: response({ id: "resp_boundary_1", status: "completed" }) }),
     });
     const dispatched = await provider.dispatch(request, "run-boundary");
     const run = dispatched.run as RunRef;
     const observed = await provider.observe(run);
     const steered = await provider.steer(run, `look at ${CWD}/notes.md`);
     const stopped = await provider.stop(run, `the operator asked, from ${CWD}`);
+
+    // The precondition this test depends on and did not state: the steer has to have landed, or the fence
+    // is being run over a result with no route in it.
+    assert.equal(steered.verdict, "delivered");
+    assert.ok(steered.route !== undefined, "the steer must carry route evidence for the fence to mean anything");
 
     // The fence, over everything published, at any depth, under any key.
     for (const [name, published] of [
@@ -687,6 +712,7 @@ describe("nothing published carries a path, and the diagnostic keeps one", () =>
       assert.deepEqual(pathShapedStrings(JSON.parse(JSON.stringify(published))), [], `${name} serialised a path`);
     }
     assert.equal(isRedactedRouteEvidence(dispatched.route), true);
+    assert.equal(isRedactedRouteEvidence(steered.route), true);
 
     // The paired control, and the reason redaction is not a loss: the same run's unredacted diagnostics do
     // carry the working directory, on this host, for an operator. If this assertion fails, the fixture
@@ -910,7 +936,12 @@ describe("steer — continuation at a turn boundary, not injection into a live t
     assert.notEqual(busySteer.verdict, expiredSteer.verdict);
   });
 
-  it("names a substitution on a continuation while still reporting the turn as delivered", async () => {
+  it("carries a substitution on a continuation as structured route evidence, not only as prose", async () => {
+    // #287, work item 2. UHP continuation is `previous_response_id`, so a long session is mostly steers: a
+    // server that honours the model on turn one and substitutes on turn five produces exactly the shape
+    // `SteerResult` could not express. `delivered` is still correct — the message landed, and resending it
+    // would put two turns in one conversation — so the contradiction is carried in `route`, where a gate
+    // can read it, rather than only in a sentence a gate would have to grep.
     const first = response({ id: "resp_turn_a", status: "completed" });
     const substituted = response({
       id: "resp_turn_b",
@@ -923,10 +954,105 @@ describe("steer — continuation at a turn boundary, not injection into a live t
     });
     const run = (await provider.dispatch(request, "run-steer-sub")).run as RunRef;
     const steered = await provider.steer(run, "continue");
-    // `delivered` is a claim about the message, and the message landed. The contradiction is a different
-    // fact, and `SteerResult` has nowhere structured to carry it — recorded as a proposal in the run notes.
+
     assert.equal(steered.verdict, "delivered");
-    assert.ok(steered.detail.includes("contradiction of the requested route"));
+    assert.deepEqual(steered.route?.mismatches, ["model"]);
+    assert.equal(steered.route?.observed.model.value, SUBSTITUTE);
+    assert.equal(steered.route?.observed.model.source, "uhp/responses.result.model");
+    assert.ok(steered.detail.includes("contradicted the requested route on model"));
+
+    // The capability the field exists for: the dispatch-time gate, unchanged, refuses this steer's route.
+    // Before this field it had nothing to be handed and the session's structured record showed no
+    // substitution at all.
+    assert.equal(decideUhpRoute(steered.route).verdict, "refused");
+    assert.equal(isSteerRouteVerified(steered), false);
+    // Published, not raw: the same boundary the dispatch route crosses.
+    assert.equal(isRedactedRouteEvidence(steered.route), true);
+  });
+
+  it("reports a continuation that was honoured as delivered with no contradiction, which is what makes the test above a distinction", async () => {
+    // The positive control on the same path. Without it, every assertion above would hold for a provider
+    // that reported `["model"]` on every steer, and `decideUhpRoute` would refuse every continuation.
+    const first = response({ id: "resp_turn_a", status: "completed" });
+    const honoured = response({ id: "resp_turn_b", status: "in_progress", model: MODEL, metadata: { session_id: SESSION } });
+    const { provider } = await harnessed({
+      task: (_body, index) => ({ httpStatus: 200, response: (index === 0 ? first : honoured) }),
+    });
+    const run = (await provider.dispatch(request, "run-steer-honoured")).run as RunRef;
+    const steered = await provider.steer(run, "continue");
+
+    assert.equal(steered.verdict, "delivered");
+    assert.deepEqual(steered.route?.mismatches, []);
+    assert.ok(!steered.detail.includes("contradicted the requested route"));
+    // `unknown`, not `accepted`: three route fields have no UHP wire field, so a continuation is never
+    // verified either. The refusal above is a contradiction; this is a silence, and they are two facts.
+    assert.equal(decideUhpRoute(steered.route).verdict, "unknown");
+    assert.notEqual(decideUhpRoute(steered.route).verdict, "refused");
+    assert.equal(isSteerRouteVerified(steered), false);
+  });
+
+  it("names a declared fallback on a continuation, and says plainly that the route cannot carry it", async () => {
+    // The residual limit of work item 2, pinned rather than glossed. A server that reports
+    // `model_fallback: true` while `model` equals the requested id produces no value difference, so
+    // `mismatches` is empty and honest — nothing was contradicted in the comparison. The fact lives in the
+    // detail, exactly as it does for the dispatch path, whose verdict carries it and whose `route` does
+    // not either. Asserting the empty `mismatches` here is what keeps a later change from quietly
+    // fabricating a difference to make the structure look complete.
+    const first = response({ id: "resp_turn_a", status: "completed" });
+    const declared = response({
+      id: "resp_turn_b",
+      status: "in_progress",
+      model: MODEL,
+      metadata: { session_id: SESSION, model_fallback: true, model_fallback_reason: "a declared fallback that names the requested model" },
+    });
+    const { provider } = await harnessed({
+      task: (_body, index) => ({ httpStatus: 200, response: (index === 0 ? first : declared) }),
+    });
+    const run = (await provider.dispatch(request, "run-steer-declared")).run as RunRef;
+    const steered = await provider.steer(run, "continue");
+
+    assert.equal(steered.verdict, "delivered");
+    assert.ok(steered.detail.includes("contradicted the requested route on model"));
+    assert.ok(steered.detail.includes("model_fallback"));
+    // The honest structure: no value differed, so nothing is claimed to have.
+    assert.deepEqual(steered.route?.mismatches, []);
+    // And therefore the route alone reads this as a silence. The pair with the substitution test above is
+    // the point: `route` refuses what the wire contradicted, and the detail carries what only the server
+    // said about itself.
+    assert.equal(decideUhpRoute(steered.route).verdict, "unknown");
+  });
+
+  it("carries no route on a steer that never reached a response, and reads that as unverified", async () => {
+    // Fail-closed on absence, the same rule `DispatchResult.route` carries. An empty message is refused
+    // locally, before anything is sent, so there is no response to have observed a route from — and the
+    // field is absent rather than an empty object asserting agreement.
+    const { provider } = await harnessed({ task: () => ({ httpStatus: 200, response: response({ status: "completed" }) }) });
+    const run = (await provider.dispatch(request, "run-steer-empty")).run as RunRef;
+    const refused = await provider.steer(run, "   ");
+
+    assert.equal(refused.verdict, "refused");
+    assert.equal(refused.route, undefined);
+    assert.ok(!Object.hasOwn(refused, "route"), "an absent route must be an absent key, not an undefined value");
+    assert.equal(isSteerRouteVerified(refused), false);
+    // Found by mutation N11, which killed nothing until this line existed. The assertion above passes for a
+    // predicate that reads absence as agreement, because THIS result is also `refused` and the verdict half
+    // of the predicate refuses it for the other reason — a second path to the same answer, which is not
+    // coverage. Absence must be refused on its own, so it is asserted on a `delivered` result where the
+    // verdict cannot be doing the work. A provider that predates route evidence on a steer produces exactly
+    // this shape.
+    assert.equal(isSteerRouteVerified({ verdict: "delivered", detail: "delivered, with no route evidence at all" }), false);
+    // And the control: a provider that answers `false` for everything has proved nothing, so the same
+    // predicate must be capable of `true`. `isRouteEvidenceVerified` over a fully reported codex-dialect
+    // route is that capability — no UHP route can reach it, and the predicate is not the reason.
+    const fullyReported = compareRouteIdentity(
+      { provider: MODEL_PROVIDER, model: MODEL, effort: "xhigh", cwd: CWD },
+      { provider: MODEL_PROVIDER, model: MODEL, effort: "xhigh", cwd: CWD },
+      "codex",
+    );
+    assert.equal(isSteerRouteVerified({ verdict: "delivered", detail: "the positive control", route: fullyReported }), true);
+    // The verdict is half of the predicate: a message that did not land cannot be verified by the route
+    // evidence of a turn that did not happen, however complete that evidence looks.
+    assert.equal(isSteerRouteVerified({ verdict: "refused", detail: "the negative control", route: fullyReported }), false);
   });
 });
 
