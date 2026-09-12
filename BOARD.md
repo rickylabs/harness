@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **221/282 done · 21 running · 24 queued · 2 blocked · 12 abandoned · 2 invisible**
+`[###############-----]` **221/283 done · 22 running · 24 queued · 2 blocked · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-12T10:30:39Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-12T11:31:54Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (2)
 
@@ -15,7 +15,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 
-## Moving now (21)
+## Moving now (22)
 
 Something could be acting on these right now.
 
@@ -34,14 +34,23 @@ Something could be acting on these right now.
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `research` | `e11` |
 | [#283 Contracts 0.4.0 — authorize publication of reviewed synchronization recovery](https://github.com/rickylabs/harness/issues/283) | `impl-eval` | `e9` |
 | [#288 Spike S10 — Route identity over UHP: effort, cwd, and provider observation](https://github.com/rickylabs/harness/issues/288) | `impl-eval` | `e3` |
-| [#289 Spike S11 — Workspace and PR round-trip on HarnessRouter CE](https://github.com/rickylabs/harness/issues/289) | `impl` | `e3` |
+| [#289 Spike S11 — Workspace and PR round-trip on HarnessRouter CE](https://github.com/rickylabs/harness/issues/289) | `impl-eval` | `e3` |
 | [PR292 chore(subagents): prove route identity fails closed over UHP (S10)](https://github.com/rickylabs/harness/pull/292) | `impl-eval` | `e3` |
+| [PR295 feat(subagents): read UHP streams and continue sessions without guessing (S11)](https://github.com/rickylabs/harness/pull/295) | `impl-eval` | `e3` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
+
+## Anomalies (1)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`epic-milestone-conflict`**
+
+- **#295** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
 
 ## Epics
 
@@ -66,11 +75,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 41/55 done · 1 running · 3 queued · 9 abandoned · 1 invisible
+`[########----]` 41/56 done · 2 running · 3 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[#########---]` 4/5 done · 1 running | `impl` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[------------]` 0/1 done · 1 running | `triage` |
 | _(no epic)_ | `[########----]` 37/50 done · 3 queued · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
@@ -113,7 +123,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  221/282 done · 21 running · 24 queued · 2 blocked · 12 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  221/283 done · 22 running · 24 queued · 2 blocked · 12 abandoned · 2 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  180/227 done · 20 running · 21 queued · 2 blocked · 3 abandoned · 1 invisible
 
@@ -226,7 +236,7 @@ Something could be acting on these right now.
     triage               #286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses (p1)
     triage               #287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts (p1)
     impl-eval            #288 Spike S10 — Route identity over UHP: effort, cwd, and provider observation (p1)
-    impl                 #289 Spike S11 — Workspace and PR round-trip on HarnessRouter CE (p1)
+    impl-eval            #289 Spike S11 — Workspace and PR round-trip on HarnessRouter CE (p1)
     triage               #290 Spike S12 — Evidence path: transcript and quota meters for UHP runs (p1)
     shipped              PR291 docs(e3): hold the S10/S11/S12 dispatch — HarnessRouter CE is not deployed (p1)
     impl-eval            PR292 chore(subagents): prove route identity fails closed over UHP (S10) (p1)
@@ -379,7 +389,7 @@ Something could be acting on these right now.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  41/55 done · 1 running · 3 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  41/56 done · 2 running · 3 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [############----] 4/5 done · 1 running
@@ -388,6 +398,10 @@ Something could be acting on these right now.
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
+
+  E3 — Subagent providers over structured protocols #33  [triage]  (epic is in M1 — dsh coordinator foundation)
+    [----------------] 0/1 done · 1 running
+    impl-eval            PR295 feat(subagents): read UHP streams and continue sessions without guessing (S11) (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
