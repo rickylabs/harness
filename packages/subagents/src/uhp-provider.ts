@@ -44,15 +44,34 @@
  * `redactRouteEvidence`, and the unredacted form goes to the local diagnostic sink instead. The last act
  * of each verb is to run the fence over its own result.
  *
- * ## What is deliberately left where it is
+ * ## What the owner decided on 2026-09-12, and what is still open
  *
- * Over UHP, three of the four route fields are unreportable — S10's reading of the specification, which
- * is **owner-certified and not independently re-derived** — so a conformant response yields `unknown` and
- * nothing here ever returns `accepted`. Whether a lane that needs no route evidence may proceed on such a
- * route is an open owner question (F1 on #286), as is whether the verdict vocabulary should separate
- * "I cannot name this run" from "I can name it but cannot attest three fields". Both are left at their
- * fail-closed default. The forks are recorded in this run's `worklog.md`; they are not resolved by a
- * branch in this file, because implementing one side of an open question is how it stops being visible.
+ * Over UHP, three of the four route fields are unreportable — S10's reading of the specification, which is
+ * **owner-certified and not independently re-derived**. Until the risk ruling of 2026-09-12 that meant
+ * every conformant response yielded `unknown` and this provider refused everything.
+ *
+ * **The ruling: an unattested `effort`, `cwd` and `provider` do not block a turn.** UHP and DeepSeek are
+ * both written to guarantee the model and effort they are given, so their non-observability is an
+ * observability gap rather than a safety problem. A response whose `model` was reported and agreed is now
+ * `accepted`. Three qualifications travel with it and are enforced here rather than remembered:
+ *
+ * - it is accepted **by owner risk decision, not because the risk was measured** — the two substitution
+ *   cases the ruling names (Codex rerouting Astra to Sol, Fable 5.1 rerouting to Opus under security
+ *   policy) are deferred, not dismissed, and both occur on transports where these fields *are* observable;
+ * - a contradiction still refuses, still from the mismatch set widened by what the server states about
+ *   itself, and still before the absence branch;
+ * - `accepted` is not `verified`. `isRouteVerified` on the result stays `false` over UHP, so F2 still bars
+ *   certifying evaluator use. The two questions — may this run proceed, and may it certify — were fused in
+ *   one verdict and are now answered separately.
+ *
+ * **The drift refusal is narrowed to the harness being dispatched to**, with unrelated drift kept visible
+ * as a distinct non-blocking signal. `uhp-harnesses.ts` carries the reasoning.
+ *
+ * **Still open, and not resolved by any branch in this file:** whether the verdict vocabulary should
+ * separate "I cannot name this run" from "I can name it but cannot attest three fields". The gate grades
+ * that distinction internally (`UhpRouteAttestation`) and says which it found in the detail, because the
+ * accepted case had to be told from the genuinely uncorrelated one; `DispatchVerdict` is unchanged, since
+ * widening a shipped enum is how an open question stops being visible.
  *
  * ## What no test here proves
  *
@@ -78,9 +97,11 @@ import { decideUhpRoute, observeUhpRoute, uhpRouteNegatives, uhpRouteVerdict } f
 import {
   detectHarnessDrift,
   describeHarnessDrift,
+  describeUnrelatedHarnessDrift,
   manifestHarnesses,
   pinnedHarness,
   readUhpHarnessList,
+  selectHarnessDrift,
   type HarnessManifest,
   type PinnedHarness,
 } from "./uhp-harnesses.js";
@@ -174,6 +195,15 @@ interface RunState {
 }
 
 const DEFAULT_ID = "uhp";
+
+/**
+ * The diagnostic label for console drift that did not block the dispatch it was found on.
+ *
+ * A distinct label rather than a sentence inside a dispatch verdict, because it is a distinct event: the
+ * dispatch has its own outcome and this is a fact about the console that outlived it. Exported so an
+ * operator surface can select on it and so a test can assert the signal fired without matching prose.
+ */
+export const UHP_UNRELATED_DRIFT = "drift-unrelated";
 
 /* -------------------------------------------------------------------------------------------------
  * Small readers
@@ -315,6 +345,17 @@ export function createUhpProvider(options: UhpProviderOptions): UhpProvider {
 
   let ledger: UhpSessionLedger = EMPTY_UHP_LEDGER;
   const runs = new Map<string, RunState>();
+  /**
+   * Unrelated console drift seen while dispatching a run, by `runId`.
+   *
+   * It is kept here rather than threaded through a dozen return statements because every one of those
+   * returns has to carry it: the whole obligation is that the narrowing did not make the drift silent, and
+   * an obligation discharged at eleven of twelve exits is discharged at none. `publish` reads it, so the
+   * signal is appended to whatever the dispatch reports, redacted by the same fence as the rest of the
+   * detail, and it reaches a caller that supplied no diagnostic sink. Keyed on `runId` because a second
+   * dispatch under one run id is already refused, so the key cannot collide with a live entry.
+   */
+  const unrelatedByRun = new Map<string, string>();
 
   const diagnose = (
     verb: UhpDiagnostic["verb"],
@@ -335,8 +376,13 @@ export function createUhpProvider(options: UhpProviderOptions): UhpProvider {
    * that is the only way to stop it — the unredacted text is already with the diagnostic sink.
    */
   const publish = (verb: UhpDiagnostic["verb"], runId: string, verdict: string, detail: string): string => {
-    const redacted = redactPaths(detail);
-    diagnose(verb, runId, verdict, detail);
+    // Unrelated drift rides along on whatever the dispatch reports. It is joined *before* redaction and
+    // before the fence, so a console `base` or default model that happens to look like a path is handled by
+    // the same guard as everything else here rather than by nobody.
+    const unrelated = verb === "dispatch" ? unrelatedByRun.get(runId) : undefined;
+    const full = unrelated === undefined ? detail : `${detail}; ${unrelated}`;
+    const redacted = redactPaths(full);
+    diagnose(verb, runId, verdict, full);
     const found = pathShapedStrings(redacted);
     if (found.length === 0) return redacted;
     return `${verb} ${verdict}: the diagnostic for run ${runId} was withheld because ${found.length} path-shaped value(s) survived redaction; the unredacted form went to this deployment's diagnostic sink`;
@@ -470,11 +516,15 @@ export function createUhpProvider(options: UhpProviderOptions): UhpProvider {
     // F1. The console drift check, before anything is launched. A `GET` cannot start a task, so every
     // failure of this leg is a refusal: nothing ran, and a retry is safe once the cause is fixed.
     //
-    // The check is over the **whole manifest**, not only the harness being dispatched, because #286 asks
-    // for a refusal on "any detected console drift" and because the manifest is one artifact: if one pin is
-    // stale, the file is stale and the answer is to re-reconcile it. The cost is real and is accepted
-    // deliberately — a `base` change on a harness this dispatch does not use will refuse this dispatch —
-    // and it is the direction that cannot silently run work under a configuration nobody declared.
+    // The detection is over the whole manifest and the **refusal is narrowed to the harness this dispatch
+    // selected**, per the owner decision of 2026-09-12. The property being protected is never sending an
+    // identifier nobody verified, which needs only the identifier about to be sent; refusing on a row
+    // nobody is dispatching to bought that nothing and cost one edited console row halting every lane.
+    //
+    // Two halves of that decision are carried below and neither is optional. An unreadable listing still
+    // blocks — it cleared no id, including the selected one — and unrelated drift is still reported, on the
+    // dispatch result and to the diagnostic sink, because a narrowing that made it silent would trade one
+    // failure for absence reported as normality.
     const listing = await options.transport.call({ method: "GET", path: "harnesses" });
     if (!listing.sent) {
       return refusedDispatch(runId, `the console listing was not requested: ${listing.cause ?? "no cause given"}; nothing was sent`);
@@ -487,11 +537,24 @@ export function createUhpProvider(options: UhpProviderOptions): UhpProvider {
       );
     }
     const drift = detectHarnessDrift(options.manifest, readUhpHarnessList(parseJson(listing.body)));
-    if (drift.length > 0) {
+    const selected = selectHarnessDrift(drift, request.harness);
+    if (selected.blocking.length > 0) {
       return refusedDispatch(
         runId,
-        `the console has drifted from the pinned manifest, so no task was sent: ${describeHarnessDrift(options.manifest, drift)}`,
+        `the console has drifted from the pinned manifest on ${request.harness}, so no task was sent: ${
+          describeHarnessDrift(options.manifest, selected.blocking)
+        }`,
       );
+    }
+    // The non-blocking signal. Emitted before the task is sent so it exists even if the dispatch then fails
+    // for an unrelated reason, and emitted with its own verdict label rather than folded into the dispatch
+    // verdict, because it is a different event from whatever this dispatch turns out to be. It is also
+    // appended to the dispatch detail below, since the diagnostic sink is a local operator surface and the
+    // detail is what a caller keeps.
+    const unrelatedDrift = describeUnrelatedHarnessDrift(options.manifest, selected.unrelated);
+    if (unrelatedDrift !== null) {
+      diagnose("dispatch", runId, UHP_UNRELATED_DRIFT, unrelatedDrift);
+      unrelatedByRun.set(runId, unrelatedDrift);
     }
 
     // The requested route. `model` falls back to the pinned `defaultModel` because that is what the server
@@ -647,6 +710,11 @@ export function createUhpProvider(options: UhpProviderOptions): UhpProvider {
     const verdict = uhpRouteVerdict({
       contradicted,
       unreported: negatives.unreported,
+      // `unattested` is **not** widened by `stated.fields`, and that is deliberate rather than an oversight.
+      // Every stated field is already in `contradicted` above, and a contradiction decides first, so widening
+      // this list could not change an outcome — it would be unreachable code that reads like a safeguard, and
+      // the next person would maintain it as one. The contradiction is the single widening.
+      unattested: negatives.unattested,
       unverified: negatives.unverified,
     });
     const decision = decideUhpRoute(evidence);
@@ -657,9 +725,10 @@ export function createUhpProvider(options: UhpProviderOptions): UhpProvider {
       }; the comparison status is "${decision.status}" because the wire did not report ${
         negatives.unreported.join(", ") || "nothing"
       }, so the status cannot carry this; ${lifecycle}; ${evidence.detail}`
-      : verdict === "unknown"
-      ? `${decision.detail}; ${lifecycle}`
-      : `every route field was reported and agreed; ${lifecycle}; ${evidence.detail}`;
+      // Both remaining branches take the gate's own words. The accepted one especially: it names the fields
+      // that could not be attested and the owner risk ruling that accepts them anyway, and a second
+      // paraphrase here would be the place those grounds quietly stopped being reported.
+      : `${decision.detail}; ${lifecycle}`;
 
     return {
       verdict,

@@ -22,6 +22,7 @@ import { describe, it } from "node:test";
 import {
   PINNED_HARNESSES_PATH,
   describeHarnessDrift,
+  describeUnrelatedHarnessDrift,
   detectHarnessDrift,
   isManifestReconciled,
   loadPinnedHarnesses,
@@ -30,6 +31,7 @@ import {
   pinnedHarness,
   readUhpHarness,
   readUhpHarnessList,
+  selectHarnessDrift,
   type HarnessManifest,
 } from "./uhp-harnesses.js";
 import { HARNESSES } from "./dispatch.js";
@@ -221,6 +223,106 @@ describe("console drift — every difference refuses, and agreement does not", (
     // The two descriptions are different strings for the two different facts, which is the point: an
     // operator reading a refusal needs to know whether the ids were ever checked.
     assert.notEqual(described, describeHarnessDrift(manifest(), drift));
+  });
+});
+
+/* -------------------------------------------------------------------------------------------------
+ * The owner decision of 2026-09-12: a dispatch refuses only for the harness it selected
+ * ---------------------------------------------------------------------------------------------- */
+
+describe("console drift — narrowed to the selected harness, and still visible when it is not", () => {
+  /** Both rows disagree: one is the harness under dispatch in each test below, one never is. */
+  const claudeRebased = AGREEING.map((entry) => (entry.id === "chrn_aaa" ? { ...entry, base: "codex" } : entry));
+  const codexRebased = AGREEING.map((entry) => (entry.id === "chrn_bbb" ? { ...entry, base: "codex-next" } : entry));
+
+  it("blocks on drift for the selected harness and not on drift for another row", () => {
+    const drift = detectHarnessDrift(manifest(), codexRebased);
+    assert.deepEqual(drift.map((item) => item.harness), ["codex"]);
+
+    // Dispatching to codex: the same drift blocks.
+    const selectingCodex = selectHarnessDrift(drift, "codex");
+    assert.deepEqual(selectingCodex.blocking.map((item) => item.kind), ["base-changed"]);
+    assert.deepEqual(selectingCodex.unrelated, []);
+
+    // Dispatching to claude: the same drift does not block, and does not vanish. Same input, two selections,
+    // opposite answers — which is the decision, stated as the only assertion that can distinguish it from
+    // both a manifest-wide refusal and a narrowing that dropped the row.
+    const selectingClaude = selectHarnessDrift(drift, "claude");
+    assert.deepEqual(selectingClaude.blocking, []);
+    assert.deepEqual(selectingClaude.unrelated.map((item) => item.harness), ["codex"]);
+    assert.notDeepEqual(selectingCodex.blocking, selectingClaude.blocking);
+  });
+
+  it("blocks an unreadable listing for every harness, because it cleared no id at all", () => {
+    // The exception that must not be narrowed away. `listing-unreadable` carries `harness: null`, and reading
+    // that as "concerns no harness, therefore not this one" would turn an unreachable console into an
+    // agreeing one — the inversion this whole vocabulary exists to prevent.
+    const drift = detectHarnessDrift(manifest(), null);
+    assert.deepEqual(drift.map((item) => item.harness), [null]);
+    for (const harness of ["claude", "codex"] as const) {
+      const selection = selectHarnessDrift(drift, harness);
+      assert.deepEqual(selection.blocking.map((item) => item.kind), ["listing-unreadable"]);
+      assert.deepEqual(selection.unrelated, []);
+    }
+    // Paired control on the same function: a row-level drift on another harness is not blocking, so the
+    // assertion above is about the null arm and not about a selector that blocks on everything.
+    assert.deepEqual(selectHarnessDrift(detectHarnessDrift(manifest(), codexRebased), "claude").blocking, []);
+  });
+
+  it("names every unrelated row, not the first one and a count", () => {
+    // Two drifted rows, one dispatch. A signal that named one of them would read as complete and leave the
+    // other invisible, which is the same failure as no signal at all with better manners.
+    const parsedThree = parseHarnessManifest({
+      ...PINNED,
+      harnesses: [...PINNED.harnesses, { harness: "opencode", id: "chrn_ccc", base: "opencode", defaultModel: null }],
+    });
+    assert.equal(parsedThree.ok, true);
+    if (!parsedThree.ok) return;
+    const listing = [AGREEING[0] as UhpHarness];
+    const unrelated = selectHarnessDrift(detectHarnessDrift(parsedThree.manifest, listing), "claude").unrelated;
+    const described = describeUnrelatedHarnessDrift(parsedThree.manifest, unrelated);
+    assert.ok(described?.includes("codex (harness-absent)"), described ?? "");
+    assert.ok(described?.includes("opencode (harness-absent)"), described ?? "");
+    assert.ok(described?.includes("2 harness(es)"), described ?? "");
+  });
+
+  it("partitions a mixed listing without losing a row", () => {
+    const both = AGREEING.map((entry) =>
+      entry.id === "chrn_aaa" ? { ...entry, base: "codex" } : { ...entry, base: "codex-next" }
+    );
+    const drift = detectHarnessDrift(manifest(), both);
+    assert.equal(drift.length, 2);
+    const selection = selectHarnessDrift(drift, "claude");
+    assert.deepEqual(selection.blocking.map((item) => item.harness), ["claude"]);
+    assert.deepEqual(selection.unrelated.map((item) => item.harness), ["codex"]);
+    // Nothing is dropped and nothing is counted twice: the two halves reconstruct the input.
+    assert.equal(selection.blocking.length + selection.unrelated.length, drift.length);
+  });
+
+  it("names the unrelated rows in prose an operator can act on, and says nothing when there is nothing", () => {
+    const unrelated = selectHarnessDrift(detectHarnessDrift(manifest(), codexRebased), "claude").unrelated;
+    const described = describeUnrelatedHarnessDrift(manifest(), unrelated);
+    assert.notEqual(described, null);
+    // The row summary, asserted in the form it is written rather than as two substrings that also appear in
+    // the per-row detail further along the same sentence. A mutation replacing the summary with a count left
+    // those substrings intact and killed nothing, which is what this assertion exists to have caught.
+    assert.ok(described?.includes("codex (base-changed)"), described ?? "");
+    assert.ok(described?.includes("did not select"), described ?? "");
+    // It is a different string from the refusal wording, because it is a different event: this dispatch went
+    // ahead. A reader who sees refusal prose on a dispatch that proceeded learns to distrust both.
+    assert.notEqual(described, describeHarnessDrift(manifest(), unrelated));
+    assert.equal(describeUnrelatedHarnessDrift(manifest(), []), null);
+    // And it still says whether the ids were ever checked at all.
+    assert.ok(described?.includes("reconciled at 2026-09-12T09:00:00.000Z"), described ?? "");
+  });
+
+  it("keeps the manifest-wide answer available for the reconciliation path", () => {
+    // Narrowing is a property of a dispatch, not of the check. #294 has to see every stale row to repair the
+    // file, so `detectHarnessDrift` still reports all of them on the same listing that blocks only one.
+    const drift = detectHarnessDrift(manifest(), [claudeRebased[0] as UhpHarness]);
+    assert.deepEqual(drift.map((item) => item.kind), ["base-changed", "harness-absent"]);
+    assert.deepEqual(selectHarnessDrift(drift, "claude").blocking.map((item) => item.kind), ["base-changed"]);
+    assert.equal(drift.length, 2);
   });
 });
 

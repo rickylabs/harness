@@ -33,9 +33,30 @@
  * - `defaultModel` is changed, which silently re-routes every task that omits `model`.
  *
  * None of the three announces itself on the task endpoint. `detectHarnessDrift` compares the pinned
- * entries against `GET /v1/harnesses` (Harnesses §1) before a task is sent, and any difference refuses
- * the dispatch. Not warns: refuses. A drifted harness is a run executing under a configuration nobody
- * declared, which is the whole failure this repository exists to make impossible.
+ * entries against `GET /v1/harnesses` (Harnesses §1) before a task is sent. Drift on the harness a
+ * dispatch selected refuses it. Not warns: refuses. A drifted harness is a run executing under a
+ * configuration nobody declared, which is the whole failure this repository exists to make impossible.
+ *
+ * ## Which drift refuses which dispatch — owner decision of 2026-09-12
+ *
+ * The first cut refused a dispatch on drift anywhere in the manifest. That was the safe default and it
+ * was wrong in a way only operations would have found: one edited row in a console halts every lane.
+ * The owner narrowed it, and recorded the reasoning so it is not re-litigated — the property being
+ * protected is never sending an identifier nobody verified, and that needs only the identifier about to
+ * be sent. Whole-manifest refusal buys the dispatch in hand no additional protection.
+ *
+ * So the split is: `detectHarnessDrift` still reports **everything**, because a reconciliation or audit
+ * path wants everything; `selectHarnessDrift` says which of it blocks **this** dispatch. Two properties of
+ * that function are load-bearing and neither is polish:
+ *
+ * - **`listing-unreadable` blocks everything.** It carries `harness: null` because the fault is the
+ *   listing, not a row, and an unreadable console cannot clear the selected id either. An unreadable
+ *   console is not an unchanged console. Narrowing that away would turn "no answer" into "no drift",
+ *   which is the one thing this vocabulary exists to prevent.
+ * - **Unrelated drift stays visible.** It comes back as `unrelated` and the provider reports it on a
+ *   dispatch that proceeded. A narrowing that made it silent would trade one failure for the failure this
+ *   repository has spent the most effort cataloguing: absence reported as normality. It is half the
+ *   decision, not a nicety attached to it.
  *
  * `name` is deliberately **not** compared. The harness object's own field table calls it a
  * "Human-readable label; not an identifier" (Harnesses §2), so renaming one is a legitimate console
@@ -354,6 +375,12 @@ export function readUhpHarnessList(body: unknown): readonly UhpHarness[] | null 
  *
  * `listed` is the parsed result of `GET /v1/harnesses`, or `null` when the listing could not be read —
  * which is itself reported as drift rather than as agreement.
+ *
+ * **Manifest-wide, and deliberately so.** This is the reconciliation and audit view: #294 has to see every
+ * stale row to fix the file, and an audit that only checked the row someone happened to be dispatching to
+ * would report a clean console that is not. A *dispatch* narrows this through `selectHarnessDrift` rather
+ * than asking a narrower question here, so the wide answer stays available and the narrowing is one
+ * readable function instead of an argument nobody passes.
  */
 export function detectHarnessDrift(
   manifest: HarnessManifest,
@@ -405,6 +432,66 @@ export function detectHarnessDrift(
     }
   }
   return drift;
+}
+
+/**
+ * Drift split by whether it stands between this dispatch and the harness it selected.
+ *
+ * Two lists rather than a filtered one, because the discarded half is not discardable: `unrelated` is the
+ * signal that keeps the narrowing from becoming silence, and a function returning only `blocking` would
+ * make dropping it the path of least resistance at every call site.
+ */
+export interface HarnessDriftSelection {
+  /** Drift that refuses the dispatch: on the selected harness, or on the listing as a whole. */
+  readonly blocking: readonly HarnessDrift[];
+  /** Drift on a harness this dispatch did not select. Reported, never a refusal. */
+  readonly unrelated: readonly HarnessDrift[];
+}
+
+/**
+ * Decide which drift blocks a dispatch to `harness`.
+ *
+ * Blocking is `harness === selected` **or** `harness === null`. The null arm is the `listing-unreadable`
+ * case and it is not an edge: a listing this adapter could not read as harness objects has cleared no
+ * pinned id, including the selected one, so there is nothing to narrow to. Reading the null arm as
+ * "concerns no harness, therefore concerns not this one" is the inversion that would make an unreachable
+ * console look like an agreeing one.
+ *
+ * Everything else — a `base` change on a row nobody is dispatching to, a console default model moved on
+ * another lane — is `unrelated`. It does not refuse this dispatch and it does not disappear either.
+ */
+export function selectHarnessDrift(
+  drift: readonly HarnessDrift[],
+  harness: Harness,
+): HarnessDriftSelection {
+  const blocking = drift.filter((item) => item.harness === null || item.harness === harness);
+  const unrelated = drift.filter((item) => item.harness !== null && item.harness !== harness);
+  return { blocking, unrelated };
+}
+
+/**
+ * One sentence naming drift that did **not** block a dispatch, for a signal an operator reads.
+ *
+ * Separate prose from `describeHarnessDrift` on purpose. A refusal and a proceeding-with-a-warning are
+ * different events, and a reader who sees the refusal wording on a dispatch that went ahead learns to
+ * distrust both. This names the rows, says it did not block, and says what to do about it — the manifest
+ * is one artifact, so a stale row anywhere is a re-reconciliation even when it stopped nothing today.
+ *
+ * Returns `null` when there is nothing unrelated, so a caller cannot emit an empty warning: a signal that
+ * fires on every dispatch is one nobody reads by the end of the week.
+ */
+export function describeUnrelatedHarnessDrift(
+  manifest: HarnessManifest,
+  unrelated: readonly HarnessDrift[],
+): string | null {
+  if (unrelated.length === 0) return null;
+  const rows = unrelated.map((item) => `${item.harness ?? "(the listing)"} (${item.kind})`).join(", ");
+  const reconciled = manifest.reconciledAt === null
+    ? "this manifest has never been reconciled against a console (reconciledAt is null)"
+    : `this manifest was reconciled at ${manifest.reconciledAt}`;
+  return `the console has drifted from the pinned manifest on ${unrelated.length} harness(es) this dispatch did not select, so the dispatch was not refused for it: ${rows}; ${
+    unrelated.map((item) => `${item.kind}: ${item.detail}`).join("; ")
+  }; ${reconciled}, and one stale row means the file needs re-reconciling even though it blocked nothing here`;
 }
 
 /** One sentence naming every drift, for a refusal an operator has to act on. */

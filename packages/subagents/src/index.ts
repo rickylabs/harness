@@ -220,6 +220,7 @@ export type { UhpRouteDecision, UhpRouteNegatives } from "./uhp-gate.js";
 export {
   PINNED_HARNESSES_PATH,
   describeHarnessDrift,
+  describeUnrelatedHarnessDrift,
   detectHarnessDrift,
   isManifestReconciled,
   loadPinnedHarnesses,
@@ -228,10 +229,12 @@ export {
   pinnedHarness,
   readUhpHarness,
   readUhpHarnessList,
+  selectHarnessDrift,
 } from "./uhp-harnesses.js";
 export type {
   HarnessDrift,
   HarnessDriftKind,
+  HarnessDriftSelection,
   HarnessManifest,
   ManifestFault,
   ManifestProblem,
@@ -254,7 +257,7 @@ export type { PublishedRouteEvidence } from "./uhp-redact.js";
 export { CREDENTIAL_PROFILE, HARNESSROUTER_PROFILE, createUhpTransport } from "./uhp-transport.js";
 export type { UhpAnswer, UhpCall, UhpTransport, UhpTransportOptions } from "./uhp-transport.js";
 
-export { createUhpProvider } from "./uhp-provider.js";
+export { UHP_UNRELATED_DRIFT, createUhpProvider } from "./uhp-provider.js";
 export type { UhpDiagnostic, UhpProvider, UhpProviderOptions } from "./uhp-provider.js";
 
 export {

@@ -1,0 +1,510 @@
+{
+  "baseline": {
+    "killed": 0,
+    "compiled": true,
+    "leaves": [],
+    "tests": []
+  },
+  "results": [
+    {
+      "id": "R1",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "the gate accepts when the model itself is unreported — the ruling applied one bullet too far",
+      "killed": 10,
+      "compiled": true,
+      "leaves": [
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "derives the verdict from negatives that do not include a status",
+        "carries the status as an explanation and never as the decision",
+        "treats absent evidence as unknown rather than as agreement",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "still says unknown when the model itself is unreported, where the over-relaxed gate accepts",
+        "does not read an agreement off a model that was never requested",
+        "never lets a fabricated status decide the acceptance either",
+        "is unknown, not accepted, when the response does not say what model ran"
+      ],
+      "tests": [
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "derives the verdict from negatives that do not include a status",
+        "carries the status as an explanation and never as the decision",
+        "treats absent evidence as unknown rather than as agreement",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "still says unknown when the model itself is unreported, where the over-relaxed gate accepts",
+        "does not read an agreement off a model that was never requested",
+        "never lets a fabricated status decide the acceptance either",
+        "the UHP route gate — the ruling that made the accepted path reachable",
+        "is unknown, not accepted, when the response does not say what model ran",
+        "dispatch — a conformant response, which is the normal case over UHP"
+      ]
+    },
+    {
+      "id": "R2",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "the gate returns unknown when the model agreed — the pre-ruling gate, which refuses every UHP route",
+      "killed": 19,
+      "compiled": true,
+      "leaves": [
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "derives the verdict from negatives that do not include a status",
+        "carries the status as an explanation and never as the decision",
+        "grades a complete route apart from an unattested one, though both are accepted",
+        "treats absent evidence as unknown rather than as agreement",
+        "accepts a conformant response, where the gate as it shipped yesterday said unknown",
+        "still says unknown when the model itself is unreported, where the over-relaxed gate accepts",
+        "does not read an agreement off a model that was never requested",
+        "accepts it because the model agreed, and says which three fields it could not attest",
+        "is unknown, not accepted, when the response does not say what model ran",
+        "refuses a declared fallback even when the model field happens to agree",
+        "dispatches to a confirmed harness while another row is drifted, and refuses that other row",
+        "refuses the dispatch whose own harness drifted, with the rest of the console agreeing",
+        "blocks every lane on an unreadable listing, because it cleared no id at all",
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "refuses a second dispatch under one run id",
+        "refuses when the credential is revoked between the drift check and the task",
+        "reports a refused stream as unknown, because an unreadable stream is not a failed run"
+      ],
+      "tests": [
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "derives the verdict from negatives that do not include a status",
+        "carries the status as an explanation and never as the decision",
+        "grades a complete route apart from an unattested one, though both are accepted",
+        "treats absent evidence as unknown rather than as agreement",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "accepts a conformant response, where the gate as it shipped yesterday said unknown",
+        "still says unknown when the model itself is unreported, where the over-relaxed gate accepts",
+        "does not read an agreement off a model that was never requested",
+        "the UHP route gate — the ruling that made the accepted path reachable",
+        "accepts it because the model agreed, and says which three fields it could not attest",
+        "is unknown, not accepted, when the response does not say what model ran",
+        "dispatch — a conformant response, which is the normal case over UHP",
+        "refuses a declared fallback even when the model field happens to agree",
+        "dispatch — a substituted model is refused, never unknown",
+        "dispatches to a confirmed harness while another row is drifted, and refuses that other row",
+        "refuses the dispatch whose own harness drifted, with the rest of the console agreeing",
+        "blocks every lane on an unreadable listing, because it cleared no id at all",
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "dispatch — drift refuses the lane it affects, and reports the lanes it does not",
+        "refuses a second dispatch under one run id",
+        "refuses when the credential is revoked between the drift check and the task",
+        "reports a refused stream as unknown, because an unreadable stream is not a failed run",
+        "dispatch — refusals that cost nothing, and unknowns that cost a retry"
+      ]
+    },
+    {
+      "id": "R3",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "the ratified order: absence is checked before contradiction, which is the codex ladder reintroduced",
+      "killed": 11,
+      "compiled": true,
+      "leaves": [
+        "refuses a substitution where the codex ladder would report unknown",
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "derives the verdict from negatives that do not include a status",
+        "carries the status as an explanation and never as the decision",
+        "is still correct in the codex dialect, where all four fields are observable",
+        "lets the extension-field fixtures move nothing at all",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "keeps a contradiction refused even now that silence is accepted",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "still explains a contradiction after redaction, rather than degrading to a notice"
+      ],
+      "tests": [
+        "refuses a substitution where the codex ladder would report unknown",
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "derives the verdict from negatives that do not include a status",
+        "carries the status as an explanation and never as the decision",
+        "is still correct in the codex dialect, where all four fields are observable",
+        "lets the extension-field fixtures move nothing at all",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "keeps a contradiction refused even now that silence is accepted",
+        "the UHP route gate — the ruling that made the accepted path reachable",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "dispatch — a substituted model is refused, never unknown",
+        "still explains a contradiction after redaction, rather than degrading to a notice",
+        "nothing published carries a path, and the diagnostic keeps one"
+      ]
+    },
+    {
+      "id": "R4",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "a contradiction stops refusing at all, so the separately ratified ruling is regressed under the relaxation",
+      "killed": 14,
+      "compiled": true,
+      "leaves": [
+        "refuses a substitution where the codex ladder would report unknown",
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "derives the verdict from negatives that do not include a status",
+        "carries the status as an explanation and never as the decision",
+        "is still correct in the codex dialect, where all four fields are observable",
+        "lets the extension-field fixtures move nothing at all",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "keeps a contradiction refused even now that silence is accepted",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "refuses a declared fallback even when the model field happens to agree",
+        "refuses when the server says it was asked for a model this dispatch did not ask for",
+        "refuses when the server names the model in ignored_fields",
+        "still explains a contradiction after redaction, rather than degrading to a notice"
+      ],
+      "tests": [
+        "refuses a substitution where the codex ladder would report unknown",
+        "separates a contradicted route from a silent one, which the ladder cannot",
+        "shows why the weak assertions everyone writes are not coverage",
+        "derives the verdict from negatives that do not include a status",
+        "carries the status as an explanation and never as the decision",
+        "is still correct in the codex dialect, where all four fields are observable",
+        "lets the extension-field fixtures move nothing at all",
+        "refuses a substitution the same way when the model is absent rather than different",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "keeps a contradiction refused even now that silence is accepted",
+        "the UHP route gate — the ruling that made the accepted path reachable",
+        "refuses where the codex ladder and the status-keyed gate both say unknown",
+        "refuses a declared fallback even when the model field happens to agree",
+        "refuses when the server says it was asked for a model this dispatch did not ask for",
+        "refuses when the server names the model in ignored_fields",
+        "dispatch — a substituted model is refused, never unknown",
+        "still explains a contradiction after redaction, rather than degrading to a notice",
+        "nothing published carries a path, and the diagnostic keeps one"
+      ]
+    },
+    {
+      "id": "R5",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "attestation ignores the requested side, so a model nobody asked for counts as agreed",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "does not read an agreement off a model that was never requested"
+      ],
+      "tests": [
+        "does not read an agreement off a model that was never requested",
+        "the UHP route gate — the ruling that made the accepted path reachable"
+      ]
+    },
+    {
+      "id": "R6",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "the grade stops distinguishing a partly attested route from a complete one",
+      "killed": 4,
+      "compiled": true,
+      "leaves": [
+        "carries the status as an explanation and never as the decision",
+        "grades a complete route apart from an unattested one, though both are accepted",
+        "lets the extension-field fixtures move nothing at all",
+        "accepts it because the model agreed, and says which three fields it could not attest"
+      ],
+      "tests": [
+        "carries the status as an explanation and never as the decision",
+        "grades a complete route apart from an unattested one, though both are accepted",
+        "lets the extension-field fixtures move nothing at all",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "accepts it because the model agreed, and says which three fields it could not attest",
+        "dispatch — a conformant response, which is the normal case over UHP"
+      ]
+    },
+    {
+      "id": "R7",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "a contradiction is graded as a partly attested route, so a substitution reads as attested evidence",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "derives the verdict from negatives that do not include a status"
+      ],
+      "tests": [
+        "derives the verdict from negatives that do not include a status",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder"
+      ]
+    },
+    {
+      "id": "R8",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "the acceptance stops reporting the owner risk decision it rests on",
+      "killed": 2,
+      "compiled": true,
+      "leaves": [
+        "carries the status as an explanation and never as the decision",
+        "accepts it because the model agreed, and says which three fields it could not attest"
+      ],
+      "tests": [
+        "carries the status as an explanation and never as the decision",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "accepts it because the model agreed, and says which three fields it could not attest",
+        "dispatch — a conformant response, which is the normal case over UHP"
+      ]
+    },
+    {
+      "id": "R9",
+      "file": "uhp-harnesses.ts",
+      "with": [],
+      "breaks": "the drift narrowing swallows a drift on the harness being dispatched to",
+      "killed": 9,
+      "compiled": true,
+      "leaves": [
+        "blocks on drift for the selected harness and not on drift for another row",
+        "partitions a mixed listing without losing a row",
+        "keeps the manifest-wide answer available for the reconciliation path",
+        "refuses and sends no task when the pinned harness is gone",
+        "refuses and sends no task when the base changed",
+        "refuses and sends no task when the console volunteers a default model the manifest does not pin",
+        "refuses every dispatch through the unreconciled checked-in manifest",
+        "dispatches to a confirmed harness while another row is drifted, and refuses that other row",
+        "refuses the dispatch whose own harness drifted, with the rest of the console agreeing"
+      ],
+      "tests": [
+        "blocks on drift for the selected harness and not on drift for another row",
+        "partitions a mixed listing without losing a row",
+        "keeps the manifest-wide answer available for the reconciliation path",
+        "console drift — narrowed to the selected harness, and still visible when it is not",
+        "refuses and sends no task when the pinned harness is gone",
+        "refuses and sends no task when the base changed",
+        "refuses and sends no task when the console volunteers a default model the manifest does not pin",
+        "refuses every dispatch through the unreconciled checked-in manifest",
+        "dispatch — console drift refuses before anything is sent",
+        "dispatches to a confirmed harness while another row is drifted, and refuses that other row",
+        "refuses the dispatch whose own harness drifted, with the rest of the console agreeing",
+        "dispatch — drift refuses the lane it affects, and reports the lanes it does not"
+      ]
+    },
+    {
+      "id": "R10",
+      "file": "uhp-harnesses.ts",
+      "with": [],
+      "breaks": "the narrowing swallows listing-unreadable, so an unreachable console dispatches as an agreeing one",
+      "killed": 3,
+      "compiled": true,
+      "leaves": [
+        "blocks an unreadable listing for every harness, because it cleared no id at all",
+        "refuses and sends no task when the listing is not a harness listing",
+        "blocks every lane on an unreadable listing, because it cleared no id at all"
+      ],
+      "tests": [
+        "blocks an unreadable listing for every harness, because it cleared no id at all",
+        "console drift — narrowed to the selected harness, and still visible when it is not",
+        "refuses and sends no task when the listing is not a harness listing",
+        "dispatch — console drift refuses before anything is sent",
+        "blocks every lane on an unreadable listing, because it cleared no id at all",
+        "dispatch — drift refuses the lane it affects, and reports the lanes it does not"
+      ]
+    },
+    {
+      "id": "R11",
+      "file": "uhp-harnesses.ts",
+      "with": [],
+      "breaks": "unrelated drift is reported as nothing at all, which is the narrowing turned into silence",
+      "killed": 4,
+      "compiled": true,
+      "leaves": [
+        "names every unrelated row, not the first one and a count",
+        "names the unrelated rows in prose an operator can act on, and says nothing when there is nothing",
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "still reports the unrelated row when the dispatch it rode along with failed for another reason"
+      ],
+      "tests": [
+        "names every unrelated row, not the first one and a count",
+        "names the unrelated rows in prose an operator can act on, and says nothing when there is nothing",
+        "console drift — narrowed to the selected harness, and still visible when it is not",
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "still reports the unrelated row when the dispatch it rode along with failed for another reason",
+        "dispatch — drift refuses the lane it affects, and reports the lanes it does not"
+      ]
+    },
+    {
+      "id": "R12",
+      "file": "uhp-harnesses.ts",
+      "with": [],
+      "breaks": "the unrelated-drift signal stops naming which rows disagree",
+      "killed": 2,
+      "compiled": true,
+      "leaves": [
+        "names every unrelated row, not the first one and a count",
+        "names the unrelated rows in prose an operator can act on, and says nothing when there is nothing"
+      ],
+      "tests": [
+        "names every unrelated row, not the first one and a count",
+        "names the unrelated rows in prose an operator can act on, and says nothing when there is nothing",
+        "console drift — narrowed to the selected harness, and still visible when it is not"
+      ]
+    },
+    {
+      "id": "R13",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "the unrelated-drift signal is dropped entirely: neither the sink nor the result carries it",
+      "killed": 2,
+      "compiled": true,
+      "leaves": [
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "still reports the unrelated row when the dispatch it rode along with failed for another reason"
+      ],
+      "tests": [
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "still reports the unrelated row when the dispatch it rode along with failed for another reason",
+        "dispatch — drift refuses the lane it affects, and reports the lanes it does not"
+      ]
+    },
+    {
+      "id": "R14",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "the signal reaches the diagnostic sink but not the dispatch result, so a caller with no sink sees nothing",
+      "killed": 2,
+      "compiled": true,
+      "leaves": [
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "still reports the unrelated row when the dispatch it rode along with failed for another reason"
+      ],
+      "tests": [
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "still reports the unrelated row when the dispatch it rode along with failed for another reason",
+        "dispatch — drift refuses the lane it affects, and reports the lanes it does not"
+      ]
+    },
+    {
+      "id": "R15",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "the signal reaches the dispatch result but never the sink, so no operator surface can select on it",
+      "killed": 1,
+      "compiled": true,
+      "leaves": [
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink"
+      ],
+      "tests": [
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "dispatch — drift refuses the lane it affects, and reports the lanes it does not"
+      ]
+    },
+    {
+      "id": "R16",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "drift on the selected harness is detected and then dispatched to anyway",
+      "killed": 8,
+      "compiled": true,
+      "leaves": [
+        "refuses and sends no task when the pinned harness is gone",
+        "refuses and sends no task when the base changed",
+        "refuses and sends no task when the console volunteers a default model the manifest does not pin",
+        "refuses and sends no task when the listing is not a harness listing",
+        "refuses every dispatch through the unreconciled checked-in manifest",
+        "dispatches to a confirmed harness while another row is drifted, and refuses that other row",
+        "refuses the dispatch whose own harness drifted, with the rest of the console agreeing",
+        "blocks every lane on an unreadable listing, because it cleared no id at all"
+      ],
+      "tests": [
+        "refuses and sends no task when the pinned harness is gone",
+        "refuses and sends no task when the base changed",
+        "refuses and sends no task when the console volunteers a default model the manifest does not pin",
+        "refuses and sends no task when the listing is not a harness listing",
+        "refuses every dispatch through the unreconciled checked-in manifest",
+        "dispatch — console drift refuses before anything is sent",
+        "dispatches to a confirmed harness while another row is drifted, and refuses that other row",
+        "refuses the dispatch whose own harness drifted, with the rest of the console agreeing",
+        "blocks every lane on an unreadable listing, because it cleared no id at all",
+        "dispatch — drift refuses the lane it affects, and reports the lanes it does not"
+      ]
+    },
+    {
+      "id": "R17",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "the whole-manifest refusal is restored, so one edited console row halts every lane again",
+      "killed": 4,
+      "compiled": true,
+      "leaves": [
+        "dispatches to a confirmed harness while another row is drifted, and refuses that other row",
+        "refuses the dispatch whose own harness drifted, with the rest of the console agreeing",
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "still reports the unrelated row when the dispatch it rode along with failed for another reason"
+      ],
+      "tests": [
+        "dispatches to a confirmed harness while another row is drifted, and refuses that other row",
+        "refuses the dispatch whose own harness drifted, with the rest of the console agreeing",
+        "reports the drifted row an operator did not dispatch to, on the result and to the sink",
+        "still reports the unrelated row when the dispatch it rode along with failed for another reason",
+        "dispatch — drift refuses the lane it affects, and reports the lanes it does not"
+      ]
+    },
+    {
+      "id": "R18",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "the F10 gate reads only the route comparison, so a declared fallback with an agreeing model is accepted",
+      "killed": 3,
+      "compiled": true,
+      "leaves": [
+        "refuses a declared fallback even when the model field happens to agree",
+        "refuses when the server says it was asked for a model this dispatch did not ask for",
+        "refuses when the server names the model in ignored_fields"
+      ],
+      "tests": [
+        "refuses a declared fallback even when the model field happens to agree",
+        "refuses when the server says it was asked for a model this dispatch did not ask for",
+        "refuses when the server names the model in ignored_fields",
+        "dispatch — a substituted model is refused, never unknown"
+      ]
+    },
+    {
+      "id": "R19",
+      "file": "uhp-provider.ts",
+      "with": [],
+      "breaks": "the dispatch reports its own prose instead of the gate's, losing the grounds for the acceptance",
+      "killed": 2,
+      "compiled": true,
+      "leaves": [
+        "accepts it because the model agreed, and says which three fields it could not attest",
+        "is unknown, not accepted, when the response does not say what model ran"
+      ],
+      "tests": [
+        "accepts it because the model agreed, and says which three fields it could not attest",
+        "is unknown, not accepted, when the response does not say what model ran",
+        "dispatch — a conformant response, which is the normal case over UHP"
+      ]
+    },
+    {
+      "id": "R20",
+      "file": "uhp-gate.ts",
+      "with": [],
+      "breaks": "route evidence reports itself verified, which is the branch F2's certification bar hangs on",
+      "killed": 3,
+      "compiled": true,
+      "leaves": [
+        "reads the negatives from mismatches and from the observed side of invalid",
+        "carries the status as an explanation and never as the decision",
+        "accepts a conformant response, where the gate as it shipped yesterday said unknown"
+      ],
+      "tests": [
+        "reads the negatives from mismatches and from the observed side of invalid",
+        "the UHP route gate — B: the signal is in mismatches, not in status",
+        "carries the status as an explanation and never as the decision",
+        "the UHP route gate — C: the verdict comes from the strongest negative, not from a ladder",
+        "accepts a conformant response, where the gate as it shipped yesterday said unknown",
+        "the UHP route gate — the ruling that made the accepted path reachable"
+      ]
+    }
+  ],
+  "after": {
+    "killed": 0,
+    "compiled": true,
+    "leaves": [],
+    "tests": []
+  },
+  "at": "2026-09-12T20:33:17.487Z"
+}
