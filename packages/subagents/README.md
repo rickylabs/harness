@@ -142,6 +142,64 @@ is a key line to Go and prose to a JavaScript regex, which is how a prompt line 
 and replaced the matrix-selected model at launch. `dispatch.conformance.test.ts` holds that port to
 the original.
 
+## Consuming UHP
+
+Spike **S11 · #289**, over the wire contract spike **S10 · #288** established. Four modules, and the
+shape of each one is an argument:
+
+    uhp-wire.ts       the protocol, transcribed. Types and closed vocabularies, no behaviour
+    uhp-stream.ts     SSE consumption, and freshness computed from timestamps
+    uhp-lifecycle.ts  UHP status to RunLiveness, per #287
+    uhp-gate.ts       whether the route the server reported permits a useful turn
+    uhp-session.ts    multi-turn continuation on previous_response_id, keyed on runId
+
+**The status field is authoritative, never the event name.** Streaming §1 defines three terminal
+events and no `response.cancelled`: a cancelled task arrives as `response.failed` carrying
+`status: "cancelled"`, and the chapter says in as many words that the status decides. An adapter that
+switched on the event name would report every cancelled run as a failure — blaming an operator for a
+stop they asked for, and handing a failure-keyed retry policy a reason to relaunch.
+
+**A refused stream yields nothing.** Not the frames it understood, not the partial text: the refusal
+type has no field to reach them through. "The task finished" and "the stream stopped" are different
+facts, and a decoder that shares a representation between them reports a killed run as a short
+answer. A refusal is also not a failure — `mapUhpOutcome` maps it to `unknown`, because a dropped
+connection is a statement about the network and the spec is explicit that the work continues
+server-side.
+
+**Freshness cannot be derived from a lifecycle status.** `uhpFreshness` takes evidence, a clock
+reading and two window bounds. There is no status parameter, no response parameter and no boolean,
+so the violation is not expressible rather than merely discouraged. Only a delta or an output-item
+frame mints evidence, the brand on that evidence is module-private, and a hand-written object cast to
+the type is refused at runtime. A finished run that produced nothing is `quiet`; an unfinished run
+that produced a token a second ago is `live`; the status decided neither. `stalled` is deliberately
+unreachable here — it needs a *claim* that something is running, which is the executor's lifecycle
+and `@rickylabs/telemetry`'s join (#206).
+
+**A substitution is detected through `mismatches`, not through `status`.** `unknown` outranks
+`mismatch` in `compareRouteIdentity`, and over UHP three of the four route fields are never reported,
+so the status is pinned to `unknown` even when the server has said in writing that it substituted the
+model. A gate keyed on `status === "mismatch"` therefore never fires and looks correct while never
+firing. `uhpRouteVerdict` is handed the negatives — what was contradicted, what was unreported,
+whether the evidence verified — and its parameter type has no status field at all. A contradiction
+outranks a silence, and the status rides along only in the diagnostic, where it explains rather than
+decides. `uhp-gate.test.ts` carries both defective implementations by name and runs them on the same
+evidence, because `assert(!accepted)` passes for the correct gate and for both defects.
+
+**Runs are keyed on `runId`; the UHP `session_id` lives in `RunRef.external`.** The same rule
+`lease.ts` is built on, with a UHP-specific edge: the protocol leaves room for a server to branch a
+second chain from an earlier response, so one session id can legitimately cover two runs, and a
+ledger keyed on it would have one silently become the other. A continued chain that comes back
+reporting a *different* session id is refused: the specification requires the same one, and a
+different one means a different working directory.
+
+**What none of this proves.** No HarnessRouter has ever answered any of it. Every byte came from
+`uhp-mock.ts`, written from the published specification, on a host with no container runtime. The
+live clone/branch/commit/push/pull-request round-trip is [#294](https://github.com/rickylabs/harness/issues/294)
+and is blocked on infrastructure; `provider-uhp` itself is
+[#286](https://github.com/rickylabs/harness/issues/286) and depends on this. Read
+`.llm/runs/uhp-stream-adapter--s11/verification.md` for the split between what the mock proved and
+what remains unproven.
+
 ## Not here
 
 - **Model selection.** The routing matrix answers that; #61 validates model ids at the boundary.
@@ -149,4 +207,7 @@ the original.
   the decision binding belongs to whatever holds the file, and no such store exists yet.
 - **Any provider.** The four implementations are `provider-claude`, `provider-codex`,
   `provider-acp`, `provider-opencode`.
-- **Any I/O.** Nothing in this package touches a network, a clock or a filesystem.
+- **Any I/O, with two named exceptions.** Nothing here touches a filesystem. The UHP stream reader
+  takes its clock as a parameter and falls back to `new Date()` only when a caller supplies none, so
+  a test never sleeps. `uhp-mock.ts` binds a loopback socket on an ephemeral port — it is test
+  support, it is not exported from `index.ts`, and no production entry point imports it.

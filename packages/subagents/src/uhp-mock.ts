@@ -53,49 +53,30 @@ import { createServer, request as httpRequest, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 
 import type { RouteIdentityInput } from "./route.js";
+import { consumeUhpStream } from "./uhp-stream.js";
+import type {
+  UhpCreateRequest,
+  UhpResponse,
+  UhpResponseMetadata,
+  UhpTerminalEvent,
+} from "./uhp-wire.js";
 
 /* -------------------------------------------------------------------------------------------------
- * Wire types — a faithful subset of `uhp-2026-08-11.openapi.yaml`
+ * Wire types — moved, not deleted
  * ---------------------------------------------------------------------------------------------- */
 
 /**
- * `Response.metadata`. `additionalProperties: true` in the schema, so a server MAY volunteer keys
- * this protocol never defined. That permission is exactly why `observeUhpRoute` must not read them.
+ * `UhpResponse`, `UhpCreateRequest` and `UhpResponseMetadata` were declared here by spike S10 and now
+ * live in `./uhp-wire.ts`, with their clause citations intact and `previous_response_id` added for
+ * the session continuation S11 (#289) builds.
+ *
+ * They moved because S11 exports a real stream adapter from `index.ts`, and a production module must
+ * not import from a mock: `scripts/check-compiled-policy.mjs` permits the literal `model` and
+ * `effort` assignments in the fixtures below on the recorded grounds that no production entry point
+ * imports this file, and that sentence has to keep being true. The types are re-exported from here so
+ * every S10 importer keeps working unchanged.
  */
-export interface UhpResponseMetadata {
-  readonly session_id?: string;
-  /** Present when the server ran a different model than was requested (openapi.yaml:852-854). */
-  readonly requested_model?: string;
-  readonly model_fallback?: boolean;
-  readonly model_fallback_reason?: string;
-  /** Request fields the server did not act on, by name (Tasks 1.1). */
-  readonly ignored_fields?: readonly string[];
-  /** Undefined-by-UHP extension keys a non-conformant or vendor-extended server might add. */
-  readonly [extension: string]: unknown;
-}
-
-/** `Response`. `required: [id, object, created_at, status, output, model]` (openapi.yaml:823). */
-export interface UhpResponse {
-  readonly id: string;
-  readonly object: "response";
-  readonly created_at: number;
-  readonly status: "in_progress" | "completed" | "failed" | "incomplete" | "cancelled";
-  readonly output: readonly unknown[];
-  /** "The model that actually ran" (openapi.yaml:836). Required. */
-  readonly model?: string;
-  readonly metadata?: UhpResponseMetadata;
-  readonly [extension: string]: unknown;
-}
-
-/** `CreateResponseRequest` (openapi.yaml:778-819), narrowed to what route identity cares about. */
-export interface UhpCreateRequest {
-  readonly input: string;
-  readonly model?: string;
-  readonly stream?: boolean;
-  readonly metadata?: { readonly harness_id?: string; readonly [extension: string]: unknown };
-  /** Undefined-by-UHP keys. `additionalProperties: true` permits sending them; nothing honours them. */
-  readonly [extension: string]: unknown;
-}
+export type { UhpCreateRequest, UhpResponse, UhpResponseMetadata } from "./uhp-wire.js";
 
 /* -------------------------------------------------------------------------------------------------
  * The observation adapters
@@ -265,6 +246,10 @@ export type UhpFixtureName = keyof typeof UHP_FIXTURES;
  * every event carries `type` and `sequence_number`; `sequence_number` starts at 0 and increases by
  * exactly 1; `response.created` is the first event and carries the initial response with
  * `status: in_progress`; the stream ends with exactly one terminal event.
+ *
+ * This is the three-frame minimum S10 needed. `uhpStreamBody` below writes the fuller streams S11
+ * needs — deltas, output items, error events and the deliberately malformed shapes — and this
+ * function is kept because the tests that pinned S10's findings are written against it.
  */
 export function encodeUhpStream(final: UhpResponse): string {
   const created: UhpResponse = { ...final, status: "in_progress", output: [] };
@@ -277,46 +262,346 @@ export function encodeUhpStream(final: UhpResponse): string {
 }
 
 /**
+ * Which terminal *event* closes a stream for a given final status — and the reason this function is
+ * not the identity.
+ *
+ * Streaming §1 defines three terminal events, `response.completed`, `response.incomplete` and
+ * `response.failed`. **There is no `response.cancelled` event.** The chapter is explicit:
+ *
+ *   > "A cancelled task terminates with `response.failed` carrying `status: "cancelled"` in the
+ *   > response object."
+ *   > "The status field, not the event name, is authoritative."
+ *
+ * Retrieved 2026-09-12 against UHP `2026-08-11`. That is why the mock can produce a stream whose
+ * event name and status disagree without being malformed, and why `uhp-stream.ts` reads the status.
+ * An adapter that switched on the event name would report every cancelled task as failed.
+ *
+ * `in_progress` is not terminal, so it maps to `none`: the stream simply has not ended.
+ */
+export function terminalEventFor(status: UhpResponse["status"]): UhpTerminalEvent | "none" {
+  switch (status) {
+    case "completed":
+      return "response.completed";
+    case "incomplete":
+      return "response.incomplete";
+    case "failed":
+    case "cancelled":
+      return "response.failed";
+    case "in_progress":
+      return "none";
+  }
+}
+
+/** What a scripted stream should contain beyond its lifecycle frames. */
+export interface UhpStreamScript {
+  /** Each string becomes one `response.output_text.delta`. */
+  readonly deltas?: readonly string[];
+  /** Wrap the deltas in `response.output_item.added` / `.done` and a content part. */
+  readonly item?: boolean;
+  /** Each string becomes one `response.reasoning_summary_text.delta`. */
+  readonly reasoning?: readonly string[];
+  /** Emit an `error` event before the terminal event. Streaming §1 requires a terminal one after it. */
+  readonly error?: { readonly code: string; readonly message: string; readonly param?: string };
+  /** Override the terminal event. `none` writes a stream that stops without one. */
+  readonly terminal?: UhpTerminalEvent | "none";
+}
+
+/**
+ * Build the frames of a streaming task, in order, without sequence numbers.
+ *
+ * Numbering is applied by `encodeUhpFrames` so that a test can reorder, drop or duplicate frames and
+ * get the numbering a *server* would have produced — which is the only way to write an out-of-order
+ * stream that is wrong in the way a real dropped frame is wrong.
+ */
+export function uhpStreamFrames(
+  final: UhpResponse,
+  script: UhpStreamScript = {},
+): readonly Record<string, unknown>[] {
+  const created: UhpResponse = { ...final, status: "in_progress", output: [] };
+  const itemId = `${final.id}_msg`;
+  const frames: Record<string, unknown>[] = [
+    { type: "response.created", response: created },
+    { type: "response.in_progress", response: created },
+  ];
+  if (script.item === true) {
+    frames.push({
+      type: "response.output_item.added",
+      output_index: 0,
+      item: { id: itemId, type: "message", status: "in_progress", content: [] },
+    });
+    frames.push({ type: "response.content_part.added", item_id: itemId, output_index: 0, content_index: 0 });
+  }
+  for (const text of script.reasoning ?? []) {
+    frames.push({ type: "response.reasoning_summary_text.delta", item_id: itemId, output_index: 0, delta: text });
+  }
+  for (const text of script.deltas ?? []) {
+    frames.push({
+      type: "response.output_text.delta",
+      item_id: itemId,
+      output_index: 0,
+      content_index: 0,
+      delta: text,
+    });
+  }
+  if (script.item === true) {
+    frames.push({ type: "response.output_text.done", item_id: itemId, output_index: 0, content_index: 0 });
+    frames.push({ type: "response.content_part.done", item_id: itemId, output_index: 0, content_index: 0 });
+    frames.push({
+      type: "response.output_item.done",
+      output_index: 0,
+      item: { id: itemId, type: "message", status: "completed", content: [] },
+    });
+  }
+  if (script.error !== undefined) frames.push({ type: "error", ...script.error });
+  const terminal = script.terminal ?? terminalEventFor(final.status);
+  if (terminal !== "none") frames.push({ type: terminal, response: final });
+  return frames;
+}
+
+/** Number a frame list and render it as an SSE body. The numbering a conformant server would write. */
+export function encodeUhpFrames(frames: readonly Record<string, unknown>[]): string {
+  return frames
+    .map((frame, index) => `data: ${JSON.stringify({ ...frame, sequence_number: index })}\n\n`)
+    .join("");
+}
+
+/** Script and encode in one step: the streaming body a conformant server would send. */
+export function uhpStreamBody(final: UhpResponse, script: UhpStreamScript = {}): string {
+  return encodeUhpFrames(uhpStreamFrames(final, script));
+}
+
+/** Number frames the way a server would, then hand the list back for a fixture to damage. */
+function numbered(frames: readonly Record<string, unknown>[]): readonly Record<string, unknown>[] {
+  return frames.map((frame, index) => ({ ...frame, sequence_number: index }));
+}
+
+/** Render already-numbered frames verbatim, preserving whatever damage a fixture did to them. */
+function render(frames: readonly Record<string, unknown>[]): string {
+  return frames.map((frame) => `data: ${JSON.stringify(frame)}\n\n`).join("");
+}
+
+/**
  * Decode a UHP SSE body and return the response carried by the terminal event.
  *
  * Fail-closed by construction: a body with no terminal event yields `undefined` rather than the
  * last-seen response, because "the stream stopped early" and "the task finished" are different
  * facts and a decoder that conflates them reports a truncated run as a completed one.
+ *
+ * S11 made this a delegate to `readUhpStream` in `uhp-stream.ts` rather than a second decoder. Two
+ * decoders drift, and the one that drifts is always the one no test is looking at. Everything S10's
+ * tests pin is unchanged; the delegate is stricter, because it also enforces that `response.created`
+ * comes first, that a terminal frame carries a terminal status, and that an `error` event is followed
+ * by a terminal event.
  */
 export function decodeUhpStream(body: string): UhpResponse | undefined {
-  const terminal = new Set([
-    "response.completed",
-    "response.incomplete",
-    "response.failed",
-    "response.cancelled",
-  ]);
-  let expected = 0;
-  let result: UhpResponse | undefined;
-  for (const block of body.split("\n\n")) {
-    const line = block.trim();
-    if (!line.startsWith("data:")) continue;
-    const frame: unknown = JSON.parse(line.slice("data:".length).trim());
-    if (typeof frame !== "object" || frame === null) return undefined;
-    const event = frame as { type?: unknown; sequence_number?: unknown; response?: unknown };
-    // A dropped event is detectable, and detecting it is the whole point of the counter.
-    if (event.sequence_number !== expected) return undefined;
-    expected += 1;
-    if (typeof event.type === "string" && terminal.has(event.type)) {
-      result = event.response as UhpResponse;
-    }
-  }
-  return result;
+  const state = consumeUhpStream(body);
+  return state.ok && state.done ? state.response : undefined;
 }
+
+/* -------------------------------------------------------------------------------------------------
+ * S11 fixtures — the five lifecycle statuses, and the streams that are wrong on purpose
+ * ---------------------------------------------------------------------------------------------- */
+
+/**
+ * One response per lifecycle status, so the #287 mapping table can be exercised end to end.
+ *
+ * Separate from `UHP_FIXTURES` because that set is S10's evidence about route identity and is under
+ * independent evaluation. These are S11's, they are about lifecycle rather than route, and keeping
+ * them apart keeps each spike's fixtures legible as that spike's.
+ */
+export const UHP_LIFECYCLE_FIXTURES = {
+  /** Accepted and running: the only non-terminal status, and the one a stream opens with. */
+  running: response({
+    id: "resp_s11_running",
+    status: "in_progress",
+    model: "claude-opus-5",
+    metadata: { session_id: "sess_s11" },
+  }),
+
+  /** Finished the work and produced a result. */
+  completed: response({
+    id: "resp_s11_completed",
+    status: "completed",
+    model: "claude-opus-5",
+    metadata: { session_id: "sess_s11" },
+  }),
+
+  /** Could not be completed. `error` explains why; the liveness word is `failed`. */
+  failed: response({
+    id: "resp_s11_failed",
+    status: "failed",
+    model: "claude-opus-5",
+    metadata: { session_id: "sess_s11" },
+    error: { code: "harness_error", message: "the harness exited before producing a result" },
+  }),
+
+  /**
+   * The client cancelled it. Note the status on a stream closed by `response.failed`: that pairing is
+   * what the specification prescribes, not a fixture quirk.
+   */
+  cancelled: response({
+    id: "resp_s11_cancelled",
+    status: "cancelled",
+    model: "claude-opus-5",
+    metadata: { session_id: "sess_s11" },
+  }),
+
+  /** Stopped at a step or time limit with partial output. #287 maps this to failed with `budget`. */
+  incomplete: response({
+    id: "resp_s11_incomplete",
+    status: "incomplete",
+    model: "claude-opus-5",
+    metadata: { session_id: "sess_s11" },
+    incomplete_details: { reason: "max_step" },
+  }),
+} as const satisfies Readonly<Record<string, UhpResponse>>;
+
+export type UhpLifecycleFixtureName = keyof typeof UHP_LIFECYCLE_FIXTURES;
+
+/**
+ * A three-turn session, in order.
+ *
+ * Each response reports the same `metadata.session_id`, which Sessions §1 requires of a continued
+ * chain — "report the same `metadata.session_id`" — and each is continued by sending its `id` as the
+ * next request's `previous_response_id`.
+ */
+export const UHP_TURNS = [
+  response({ id: "resp_turn_1", model: "claude-opus-5", metadata: { session_id: "sess_chain" } }),
+  response({ id: "resp_turn_2", model: "claude-opus-5", metadata: { session_id: "sess_chain" } }),
+  response({ id: "resp_turn_3", model: "claude-opus-5", metadata: { session_id: "sess_chain" } }),
+] as const satisfies readonly UhpResponse[];
+
+/** The session id every turn of `UHP_TURNS` reports. */
+export const UHP_CHAIN_SESSION = "sess_chain" as const;
+
+/**
+ * Streams that are malformed, truncated or out of order — each one wrong in a specific way a lenient
+ * decoder would accept as "mostly fine".
+ *
+ * The numbering is applied *before* the damage wherever the damage is a reordering or a loss, because
+ * that is how a real stream arrives: the server numbered the frames it sent, and the network is what
+ * dropped, duplicated or reordered them. A fixture that renumbered after the damage would describe a
+ * server that cannot count, which is a different bug from the one being tested.
+ */
+export const UHP_BROKEN_STREAMS = {
+  /** The connection died between frames: no terminal event, but every frame it sent was valid. */
+  truncatedBetweenFrames: uhpStreamBody(UHP_LIFECYCLE_FIXTURES.completed, {
+    deltas: ["Sum", "mary"],
+    item: true,
+    terminal: "none",
+  }),
+
+  /** The connection died mid-frame. The last bytes never became an event at all. */
+  truncatedMidFrame: uhpStreamBody(UHP_LIFECYCLE_FIXTURES.completed, { deltas: ["Sum"], item: true })
+    .slice(0, -40),
+
+  /** Two frames delivered in the wrong order, with the numbering a server would have written. */
+  outOfOrder: (() => {
+    const frames = [
+      ...numbered(uhpStreamFrames(UHP_LIFECYCLE_FIXTURES.completed, { deltas: ["a", "b"], item: true })),
+    ];
+    const third = frames[3];
+    const fourth = frames[4];
+    if (third !== undefined && fourth !== undefined) {
+      frames[3] = fourth;
+      frames[4] = third;
+    }
+    return render(frames);
+  })(),
+
+  /** A frame lost in transit: the numbering skips, which is what the counter exists to reveal. */
+  droppedFrame: (() => {
+    const frames = numbered(uhpStreamFrames(UHP_LIFECYCLE_FIXTURES.completed, { deltas: ["a", "b"] }));
+    return render([...frames.slice(0, 2), ...frames.slice(3)]);
+  })(),
+
+  /** One frame delivered twice. The same sequence number arrives where the next one was due. */
+  duplicatedFrame: (() => {
+    const frames = numbered(uhpStreamFrames(UHP_LIFECYCLE_FIXTURES.completed, { deltas: ["a"] }));
+    const second = frames[1];
+    return render(second === undefined ? frames : [...frames.slice(0, 2), second, ...frames.slice(2)]);
+  })(),
+
+  /** A `data:` payload that is not JSON. A parser that throws here takes the whole process with it. */
+  malformedJson: 'data: {"type":"response.created","sequence_number":0,"response":{\n\n',
+
+  /** A `data:` payload that is JSON but not an object. */
+  jsonNotObject: 'data: ["response.created",0]\n\n',
+
+  /** A frame with no `type`, which Streaming §1 makes mandatory on every event. */
+  untypedFrame: 'data: {"sequence_number":0,"response":{"id":"resp_x"}}\n\n',
+
+  /** A stream that does not begin with `response.created`. */
+  createdNotFirst: render(numbered(uhpStreamFrames(UHP_LIFECYCLE_FIXTURES.completed, {}).slice(1))),
+
+  /** A frame after the terminal event, which must be last. */
+  frameAfterTerminal: encodeUhpFrames([
+    ...uhpStreamFrames(UHP_LIFECYCLE_FIXTURES.completed, { deltas: ["a"] }),
+    { type: "response.output_text.delta", item_id: "late", output_index: 0, content_index: 0, delta: "late" },
+  ]),
+
+  /**
+   * A terminal event whose response still reports `in_progress`. The status is authoritative, so this
+   * is a server contradicting itself rather than a finished run.
+   */
+  terminalStillRunning: encodeUhpFrames(
+    uhpStreamFrames(UHP_LIFECYCLE_FIXTURES.completed, { terminal: "response.completed" }).map((frame) =>
+      frame["type"] === "response.completed"
+        ? { ...frame, response: UHP_LIFECYCLE_FIXTURES.running }
+        : frame
+    ),
+  ),
+
+  /** An `error` event with no terminal event after it, which Streaming §1 calls malformed. */
+  errorWithoutTerminal: uhpStreamBody(UHP_LIFECYCLE_FIXTURES.failed, {
+    deltas: ["par", "tial"],
+    error: { code: "provider_error", message: "upstream refused the request" },
+    terminal: "none",
+  }),
+
+  /** A delta frame carrying no string `delta`. */
+  deltaWithoutText: encodeUhpFrames([
+    ...uhpStreamFrames(UHP_LIFECYCLE_FIXTURES.completed, {}).slice(0, 2),
+    { type: "response.output_text.delta", item_id: "m", output_index: 0, content_index: 0 },
+    { type: "response.completed", response: UHP_LIFECYCLE_FIXTURES.completed },
+  ]),
+} as const satisfies Readonly<Record<string, string>>;
+
+export type UhpBrokenStreamName = keyof typeof UHP_BROKEN_STREAMS;
 
 /* -------------------------------------------------------------------------------------------------
  * The loopback server
  * ---------------------------------------------------------------------------------------------- */
 
+/** One HTTP exchange, with the status code intact — which a decoded response cannot carry. */
+export interface UhpExchange {
+  readonly httpStatus: number;
+  readonly contentType: string;
+  readonly body: string;
+}
+
 export interface UhpMock {
   readonly origin: string;
   /** POST /v1/responses, returning the decoded terminal response, over JSON or SSE. */
   post(body: UhpCreateRequest): Promise<UhpResponse | undefined>;
+  /**
+   * The same call, undecoded. `post` cannot express a 404 — it returns `undefined` for an unreadable
+   * stream and for a missing response alike — and #287 maps a 404 to `unknown` rather than to
+   * `failed`, so a test for that row needs the status code.
+   */
+  send(body: UhpCreateRequest): Promise<UhpExchange>;
   close(): Promise<void>;
+}
+
+/** What the mock server should answer for one request. */
+export interface UhpReply {
+  readonly httpStatus: number;
+  /** The response to serve. Omitted for an error reply, which carries `error` instead. */
+  readonly response?: UhpResponse;
+  /** An error body, e.g. `{ code: "response_not_found" }`. */
+  readonly error?: { readonly code: string; readonly message?: string };
+  /** The script used when the request asked for a stream. */
+  readonly script?: UhpStreamScript;
 }
 
 function read(stream: NodeJS.ReadableStream): Promise<string> {
@@ -330,33 +615,43 @@ function read(stream: NodeJS.ReadableStream): Promise<string> {
 }
 
 /**
- * Start a UHP loopback server on an ephemeral port that answers `POST /v1/responses` with the named
- * fixture, as JSON or as `text/event-stream` depending on the request's `stream` flag.
+ * Start a UHP loopback server on an ephemeral port whose answers a handler decides.
  *
  * It binds `127.0.0.1` and port `0`, so tests never collide with each other or with anything on the
  * host, and it requires no container runtime — there is none on this host to require.
+ *
+ * A real deployment sends `Authorization: Bearer <token>`. The mock never reads one, and this
+ * repository is public, so no credential appears here or in any fixture.
  */
-export async function startUhpMock(fixture: UhpResponse): Promise<UhpMock> {
+export async function startUhpServer(
+  handler: (request: UhpCreateRequest) => UhpReply,
+): Promise<UhpMock> {
   const server: Server = createServer((req, res) => {
     void (async () => {
-      const body: unknown = JSON.parse((await read(req)) || "{}");
-      const wantsStream = typeof body === "object" && body !== null
-        && (body as { stream?: unknown }).stream === true;
+      const raw: unknown = JSON.parse((await read(req)) || "{}");
+      const body = (typeof raw === "object" && raw !== null ? raw : {}) as UhpCreateRequest;
       if (req.method !== "POST" || req.url !== "/v1/responses") {
         res.writeHead(404, { "content-type": "application/json" });
         res.end(JSON.stringify({ error: { code: "not_found" } }));
         return;
       }
-      if (wantsStream) {
-        res.writeHead(200, {
-          "content-type": "text/event-stream",
-          "cache-control": "no-cache",
-        });
-        res.end(encodeUhpStream(fixture));
+      const reply = handler(body);
+      if (reply.response === undefined) {
+        res.writeHead(reply.httpStatus, { "content-type": "application/json" });
+        res.end(JSON.stringify({ error: reply.error ?? { code: "unknown" } }));
         return;
       }
-      res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify(fixture));
+      if (body.stream === true) {
+        res.writeHead(reply.httpStatus, { "content-type": "text/event-stream", "cache-control": "no-cache" });
+        res.end(
+          reply.script === undefined
+            ? encodeUhpStream(reply.response)
+            : uhpStreamBody(reply.response, reply.script),
+        );
+        return;
+      }
+      res.writeHead(reply.httpStatus, { "content-type": "application/json" });
+      res.end(JSON.stringify(reply.response));
     })();
   });
 
@@ -364,33 +659,41 @@ export async function startUhpMock(fixture: UhpResponse): Promise<UhpMock> {
   const address = server.address() as AddressInfo;
   const origin = `http://127.0.0.1:${address.port}`;
 
+  async function send(payload: UhpCreateRequest): Promise<UhpExchange> {
+    const encoded = JSON.stringify(payload);
+    return await new Promise<UhpExchange>((resolve, reject) => {
+      const outbound = httpRequest(
+        `${origin}/v1/responses`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "content-length": Buffer.byteLength(encoded),
+          },
+        },
+        (res) => {
+          void read(res).then((text) =>
+            resolve({
+              httpStatus: res.statusCode ?? 0,
+              contentType: String(res.headers["content-type"] ?? ""),
+              body: text,
+            })
+          ).catch(reject);
+        },
+      );
+      outbound.on("error", reject);
+      outbound.end(encoded);
+    });
+  }
+
   return {
     origin,
+    send,
     async post(payload) {
-      const encoded = JSON.stringify(payload);
-      const raw = await new Promise<{ text: string; contentType: string }>((resolve, reject) => {
-        const req = httpRequest(
-          `${origin}/v1/responses`,
-          {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              "content-length": Buffer.byteLength(encoded),
-              // A real deployment sends `Authorization: Bearer <token>`. The mock never reads one,
-              // and this repository is public, so no credential appears here or in any fixture.
-            },
-          },
-          (res) => {
-            void read(res).then((text) =>
-              resolve({ text, contentType: String(res.headers["content-type"] ?? "") })
-            ).catch(reject);
-          },
-        );
-        req.on("error", reject);
-        req.end(encoded);
-      });
-      if (raw.contentType.startsWith("text/event-stream")) return decodeUhpStream(raw.text);
-      return JSON.parse(raw.text) as UhpResponse;
+      const exchange = await send(payload);
+      if (exchange.httpStatus !== 200) return undefined;
+      if (exchange.contentType.startsWith("text/event-stream")) return decodeUhpStream(exchange.body);
+      return JSON.parse(exchange.body) as UhpResponse;
     },
     close() {
       return new Promise<void>((resolve, reject) => {
@@ -398,4 +701,58 @@ export async function startUhpMock(fixture: UhpResponse): Promise<UhpMock> {
       });
     },
   };
+}
+
+/**
+ * Start a loopback server that answers every request with one fixture. S10's entry point, unchanged
+ * in behaviour and now one line over `startUhpServer`.
+ */
+export function startUhpMock(fixture: UhpResponse, script?: UhpStreamScript): Promise<UhpMock> {
+  return startUhpServer(() =>
+    script === undefined
+      ? { httpStatus: 200, response: fixture }
+      : { httpStatus: 200, response: fixture, script }
+  );
+}
+
+/**
+ * Start a loopback server that serves a scripted chain of turns, continuing on `previous_response_id`.
+ *
+ * The rules it enforces are the server's, from Sessions §1:
+ *
+ * - A request with no `previous_response_id` starts the chain and gets the first turn.
+ * - A request continuing turn *n* gets turn *n + 1*.
+ * - A request naming an id that is not in the chain gets `404 response_not_found`, the code the
+ *   chapter specifies for an unknown response id, which #287 maps to `unknown`.
+ * - A request continuing the last scripted turn also gets `404 response_not_found`: the script knows
+ *   no successor. Documented rather than smoothed over, because a mock that invented one would be
+ *   answering a question the fixture never asked.
+ *
+ * Every served turn reports the same `metadata.session_id`, because the specification requires it of a
+ * continued chain. The fixture that violates that rule on purpose lives in the test that needs it, not
+ * here: a mock whose default behaviour is non-conformant teaches the wrong lesson.
+ */
+export function startUhpTurnMock(
+  turns: readonly UhpResponse[] = UHP_TURNS,
+  script?: UhpStreamScript,
+): Promise<UhpMock> {
+  const serve = (served: UhpResponse): UhpReply =>
+    script === undefined
+      ? { httpStatus: 200, response: served }
+      : { httpStatus: 200, response: served, script };
+  const missing: UhpReply = {
+    httpStatus: 404,
+    error: { code: "response_not_found", message: "no such response id in this chain" },
+  };
+  return startUhpServer((request) => {
+    const previous = request.previous_response_id;
+    if (previous === undefined) {
+      const first = turns[0];
+      return first === undefined ? missing : serve(first);
+    }
+    const index = turns.findIndex((turn) => turn.id === previous);
+    if (index < 0) return missing;
+    const next = turns[index + 1];
+    return next === undefined ? missing : serve(next);
+  });
 }
