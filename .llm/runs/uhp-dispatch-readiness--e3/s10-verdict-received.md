@@ -159,3 +159,61 @@ The operative distinction, and the reason the correction is not merely cautious:
 Both seats now keep their readers and record the finding with its provenance rather than as fact.
 #286 carries the same qualification, so an implementer building from that brief inherits the
 uncertainty rather than a confident sentence.
+
+## The same defect, found here, in the file a UHP provider would be copied from
+
+Prompted by the Cockpit seat reporting that the precedence rule had caught a **second** defect on
+their side: their down-conversion refusal, the predicate deciding whether a UHP run may be
+published as a `RepositoryRunObservation`, was also keyed on `status`. Over UHP that refusal never
+fires, so a run with a contradicted model would have been **published as a readable observation**
+rather than refused — a false provenance claim in a published contract, arriving by a completely
+different route than the missing-verification-basis hole both seats were watching.
+
+Checking whether that had a mirror here found one, in the most natural place to copy from.
+
+`packages/provider-codex/src/protocol.ts` refuses in this order:
+
+- line 235, `if (evidence.status === "unknown")` returns `verdict: "unknown"`
+- line 238, `if (evidence.status === "mismatch")` returns `verdict: "refused"`
+
+Correct for the in-tree codex protocol, where all four fields are observable through
+`thread/start.result.*` and `mismatch` is reachable. **Over UHP the first branch always wins and
+the second is dead code**, so a substituted model returns `verdict: "unknown"` — "we could not
+tell" — rather than `verdict: "refused"` — "the server contradicted the request".
+
+Same defect as the status-keyed gate, relocated from the status into the verdict. Both sit outside
+`accepted` so neither certifies, but they are not interchangeable: one says the wire was silent and
+the other says the server contradicted us, and collapsing them discards the only thing UHP does
+report.
+
+**It is the version most likely to ship**, because adapting the existing provider is the obvious
+way to write a new one and that ladder looks transport-neutral. Filed on #286 as a requirement,
+with a test that fails if a substitution returns `unknown` — noted there for the third time that
+asserting the result is not `accepted` does not cover it, because it passes while the bug is
+present.
+
+The counter-example is already in this tree. `packages/dsh-app/src/dry-run-internal.ts:97` refuses
+on `!isRouteEvidenceVerified(route)`, failing closed for `unknown` and `mismatch` alike, and
+reports `status` only as refusal detail rather than branching on it.
+
+## Unrun gates: checked here, and this repository is clean of that shape
+
+The Cockpit seat diagnosed one of its two standing environment failures: `aspire` is pinned in
+`.mise.toml`, installed, and simply **not on `PATH`**, so `test:toolchain` has never executed in
+these sessions rather than failing on its merits. Their formulation is the sharper one: **an unrun
+gate and a failing gate are indistinguishable in the output.** It is the strongest instance of the
+class found today, because it was actively emitting a signal pointing at the wrong thing rather
+than merely staying silent.
+
+Checked here. Every script referenced from `package.json` resolves to a file that exists — all
+thirteen. An initial pass suggested three were missing; that was a wrong guess at their filenames,
+verified before it was reported anywhere.
+
+The hole this repository does have is the one already recorded in `boundary-answers.md`:
+`pnpm -r run test` silently skips any package declaring no `test` script, and `@rickylabs/governance`,
+`@rickylabs/netscript-bridge` and `@rickylabs/provider-acp` declare none. Same class, milder shape,
+since a skipped package at least shows as a smaller test count while an unrun gate shows as nothing.
+
+[observed — protocol.ts branch ordering and the `unknown` helper's verdict at
+ packages/provider-codex/src/protocol.ts:170-176 and 235-248; package.json script target census;
+ verified 2026-09-12]
