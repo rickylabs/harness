@@ -21,6 +21,7 @@ const allow = [
   { file: 'packages/routing/src/schema.ts', identifiers: ['harness'], reason: 'Structural schema vocabulary (#271).' },
   { file: 'packages/subagents/src/dispatch.ts', identifiers: ['harness'], reason: 'Executor harness vocabulary/default; E3 (#33), outside E11 step 1.' },
   { file: 'packages/dsh-app/src/dry-run-test-fixtures.ts', identifiers: [...identifiers], reason: 'Test-only fake dispatch fixture, not imported by production entry points (#271).' },
+  { file: 'packages/subagents/src/uhp-mock.ts', identifiers: ['model', 'effort'], reason: 'Test-only UHP wire fixtures for spike S10 (#288); mock server, not exported from index.ts and not imported by any production entry point; E3 (#33).' },
   { file: 'packages/telemetry/src/backfill/claude.ts', identifiers: ['harness'], reason: 'Observed provider inference, owned by E9 (#39), not routing policy.' },
 ];
 function strings(node) {
