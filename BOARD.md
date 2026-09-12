@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **221/284 done · 23 running · 24 queued · 2 blocked · 12 abandoned · 2 invisible**
+`[###############-----]` **222/284 done · 22 running · 24 queued · 2 blocked · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-12T11:41:29Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-12T14:22:49Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (2)
 
@@ -15,7 +15,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 
-## Moving now (23)
+## Moving now (22)
 
 Something could be acting on these right now.
 
@@ -37,7 +37,6 @@ Something could be acting on these right now.
 | [#289 Spike S11 — Workspace and PR round-trip on HarnessRouter CE](https://github.com/rickylabs/harness/issues/289) | `impl-eval` | `e3` |
 | [PR292 chore(subagents): prove route identity fails closed over UHP (S10)](https://github.com/rickylabs/harness/pull/292) | `impl-eval` | `e3` |
 | [PR295 feat(subagents): read UHP streams and continue sessions without guessing (S11)](https://github.com/rickylabs/harness/pull/295) | `impl-eval` | `e3` |
-| [PR296 docs(seat3): running the control is the mechanism, writing it is not](https://github.com/rickylabs/harness/pull/296) | `impl-eval` | `e0` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -68,11 +67,11 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 41/56 done · 2 running · 3 queued · 9 abandoned · 1 invisible
+`[#########---]` 42/56 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
-| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[########----]` 4/6 done · 2 running | `impl` |
+| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 running | `impl` |
 | _(no epic)_ | `[########----]` 37/50 done · 3 queued · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
@@ -115,7 +114,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  221/284 done · 23 running · 24 queued · 2 blocked · 12 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  222/284 done · 22 running · 24 queued · 2 blocked · 12 abandoned · 2 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  180/228 done · 21 running · 21 queued · 2 blocked · 3 abandoned · 1 invisible
 
@@ -382,16 +381,16 @@ Something could be acting on these right now.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  41/56 done · 2 running · 3 queued · 9 abandoned · 1 invisible
+## (no milestone)  [###############-----]  42/56 done · 1 running · 3 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
-    [##########------] 4/6 done · 2 running
+    [#############---] 5/6 done · 1 running
     shipped              PR97 docs(root): state the four ratified decisions from #30 in README/AGENTS
     impl                 #182 Consolidation pass — the Astra medium review of the shipped ground work (p1)
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
-    impl-eval            PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
+    shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
