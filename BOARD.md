@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **226/284 done · 19 running · 23 queued · 2 blocked · 12 abandoned · 2 invisible**
+`[###############-----]` **226/285 done · 20 running · 23 queued · 2 blocked · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-12T14:38:42Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-12T15:34:17Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (2)
 
@@ -15,7 +15,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 
-## Moving now (19)
+## Moving now (20)
 
 Something could be acting on these right now.
 
@@ -33,13 +33,22 @@ Something could be acting on these right now.
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `plan-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `research` | `e11` |
 | [#283 Contracts 0.4.0 — authorize publication of reviewed synchronization recovery](https://github.com/rickylabs/harness/issues/283) | `impl-eval` | `e9` |
-| [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl` | `e3` |
+| [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl-eval` | `e3` |
+| [PR297 feat(subagents): dispatch, observe, steer and stop a run over UHP (provider-uhp)](https://github.com/rickylabs/harness/pull/297) | `impl-eval` | `e3` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
+
+## Anomalies (1)
+
+`dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`epic-milestone-conflict`**
+
+- **#297** — is in milestone (none) but its epic #33 is in M1 — dsh coordinator foundation; the epic appears under both
 
 ## Epics
 
@@ -64,11 +73,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 42/56 done · 1 running · 3 queued · 9 abandoned · 1 invisible
+`[########----]` 42/57 done · 2 running · 3 queued · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 running | `impl` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[------------]` 0/1 done · 1 running | `triage` |
 | _(no epic)_ | `[########----]` 37/50 done · 3 queued · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
@@ -110,7 +120,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  226/284 done · 19 running · 23 queued · 2 blocked · 12 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  226/285 done · 20 running · 23 queued · 2 blocked · 12 abandoned · 2 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  184/228 done · 18 running · 20 queued · 2 blocked · 3 abandoned · 1 invisible
 
@@ -220,7 +230,7 @@ Something could be acting on these right now.
     shipped              PR222 fix(subagents): make the telemetry guarantee something a dispatch checks (p1)
     shipped              PR224 refactor(subagents,telemetry,contracts): give the two liveness concepts two names (p2)
     shipped              PR238 feat(route-identity--e35): refuse mismatched Codex routes before task submission
-    impl                 #286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses (p1)
+    impl-eval            #286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses (p1)
     triage               #287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts (p1)
     shipped              #288 Spike S10 — Route identity over UHP: effort, cwd, and provider observation (p1)
     shipped              #289 Spike S11 — Workspace and PR round-trip on HarnessRouter CE (p1)
@@ -377,7 +387,7 @@ Something could be acting on these right now.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [###############-----]  42/56 done · 1 running · 3 queued · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  42/57 done · 2 running · 3 queued · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [#############---] 5/6 done · 1 running
@@ -387,6 +397,10 @@ Something could be acting on these right now.
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
     shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
+
+  E3 — Subagent providers over structured protocols #33  [triage]  (epic is in M1 — dsh coordinator foundation)
+    [----------------] 0/1 done · 1 running
+    impl-eval            PR297 feat(subagents): dispatch, observe, steer and stop a run over UHP (provider-uhp) (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
