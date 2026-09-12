@@ -83,36 +83,26 @@ export type { UhpCreateRequest, UhpResponse, UhpResponseMetadata } from "./uhp-w
  * ---------------------------------------------------------------------------------------------- */
 
 /**
- * The conformant adapter: map a UHP response onto the four route fields, reading ONLY fields the
- * specification defines.
+ * The conformant adapter — MOVED, not deleted.
  *
- * Three of the four are hardcoded `undefined`. That is not laziness and it is not a stub. UHP
- * defines no wire field for `provider`, `effort` or `cwd`, so there is nothing to read, and
- * inventing a read would be the fabricated agreement this contract exists to refuse.
- * `compareRouteIdentity` renders an absent observation as `{ value: null }` and a status of
- * `unknown`, which is the correct and honest encoding of "the wire did not report this".
+ * `observeUhpRoute` and the four field readers it composes now live in `./uhp-gate.ts`, with their
+ * clause citations intact, because #286's `uhp-provider.ts` needs them and a production module must not
+ * import a mock. `scripts/check-compiled-policy.mjs` permits the literal `model` and `effort`
+ * assignments in the fixtures below on the recorded grounds that no production entry point imports this
+ * file, and that sentence has to keep being true. The re-export keeps every S10 and S11 importer working
+ * unchanged.
  *
- * `model` is read from `response.model` because the schema makes that field REQUIRED and defines it
- * as "The model that actually ran" (openapi.yaml:823, 836).
- *
- * Note what this function does NOT do with a substitution. Tasks 1.3 requires a substituting server
- * to report `metadata.requested_model` alongside the model that ran. This adapter reports the model
- * that ran, so `compareRouteIdentity` sees the substituted value against the requested one and
- * records a difference. Reading `requested_model` back in and reporting *that* as the observation
- * would launder a substitution into an agreement, which is precisely the measurement error Tasks 1.3
- * exists to prevent.
+ * The behaviour is unchanged apart from the three unreportable fields being observed as `null` rather
+ * than `undefined`; `compareRouteIdentity` renders both as `{ value: null }`, and
+ * `uhp-gate.test.ts` pins that the two inputs produce identical evidence.
  */
-export function observeUhpRoute(response: UhpResponse): RouteIdentityInput {
-  return {
-    // UHP defines no `provider` on request or response. See the module docblock.
-    provider: undefined,
-    model: response.model,
-    // UHP defines no reasoning-effort field anywhere in the protocol.
-    effort: undefined,
-    // UHP never names the working directory on the wire; the server owns it.
-    cwd: undefined,
-  };
-}
+export {
+  observeUhpRoute,
+  readUhpCwd,
+  readUhpEffort,
+  readUhpModel,
+  readUhpProvider,
+} from "./uhp-gate.js";
 
 /**
  * The credulous adapter — DELIBERATELY WRONG. Do not use it outside its one regression test.
@@ -593,6 +583,39 @@ export interface UhpMock {
   close(): Promise<void>;
 }
 
+/**
+ * One JSON answer: a status code and a body, serialised verbatim.
+ *
+ * Deliberately `unknown` rather than a protocol type. The endpoints below are the ones #286's provider
+ * calls, and half of what it must survive is a body that is *not* the shape the specification promises —
+ * a harness listing that is an object, a cancel that returns an error envelope. A typed body would make
+ * those fixtures unwritable.
+ */
+export interface UhpJsonReply {
+  readonly httpStatus: number;
+  readonly body: unknown;
+}
+
+/**
+ * The endpoints beyond `POST /v1/responses`, added for #286.
+ *
+ * Each one is a real path this repository calls, with the chapter that defines it:
+ *
+ *   harnesses  `GET /v1/harnesses`                     Harnesses §1 — the console drift check reads it
+ *   cancel     `POST /v1/responses/{id}/cancel`        Sessions §4 — the stop verb
+ *   read       `GET /v1/responses/{id}`                Tasks §4 — the observe verb
+ *
+ * All three are optional, and an absent one is served as `404` by the fall-through, which is how a test
+ * writes "this deployment does not answer that call" without a second server. This is the same mock S10
+ * and S11 used, extended: a second one would drift, and the one that drifts is always the one no test is
+ * looking at.
+ */
+export interface UhpEndpoints {
+  readonly harnesses?: () => UhpJsonReply;
+  readonly cancel?: (responseId: string) => UhpJsonReply;
+  readonly read?: (responseId: string) => UhpJsonReply;
+}
+
 /** What the mock server should answer for one request. */
 export interface UhpReply {
   readonly httpStatus: number;
@@ -625,12 +648,32 @@ function read(stream: NodeJS.ReadableStream): Promise<string> {
  */
 export async function startUhpServer(
   handler: (request: UhpCreateRequest) => UhpReply,
+  endpoints: UhpEndpoints = {},
 ): Promise<UhpMock> {
   const server: Server = createServer((req, res) => {
     void (async () => {
       const raw: unknown = JSON.parse((await read(req)) || "{}");
       const body = (typeof raw === "object" && raw !== null ? raw : {}) as UhpCreateRequest;
-      if (req.method !== "POST" || req.url !== "/v1/responses") {
+      const json = (reply: UhpJsonReply): void => {
+        res.writeHead(reply.httpStatus, { "content-type": "application/json" });
+        res.end(JSON.stringify(reply.body));
+      };
+      const url = req.url ?? "";
+      if (req.method === "GET" && url === "/v1/harnesses" && endpoints.harnesses !== undefined) {
+        json(endpoints.harnesses());
+        return;
+      }
+      const cancelling = /^\/v1\/responses\/([^/]+)\/cancel$/.exec(url);
+      if (req.method === "POST" && cancelling !== null && endpoints.cancel !== undefined) {
+        json(endpoints.cancel(decodeURIComponent(cancelling[1] ?? "")));
+        return;
+      }
+      const reading = /^\/v1\/responses\/([^/]+)$/.exec(url);
+      if (req.method === "GET" && reading !== null && endpoints.read !== undefined) {
+        json(endpoints.read(decodeURIComponent(reading[1] ?? "")));
+        return;
+      }
+      if (req.method !== "POST" || url !== "/v1/responses") {
         res.writeHead(404, { "content-type": "application/json" });
         res.end(JSON.stringify({ error: { code: "not_found" } }));
         return;
@@ -707,11 +750,17 @@ export async function startUhpServer(
  * Start a loopback server that answers every request with one fixture. S10's entry point, unchanged
  * in behaviour and now one line over `startUhpServer`.
  */
-export function startUhpMock(fixture: UhpResponse, script?: UhpStreamScript): Promise<UhpMock> {
-  return startUhpServer(() =>
-    script === undefined
-      ? { httpStatus: 200, response: fixture }
-      : { httpStatus: 200, response: fixture, script }
+export function startUhpMock(
+  fixture: UhpResponse,
+  script?: UhpStreamScript,
+  endpoints: UhpEndpoints = {},
+): Promise<UhpMock> {
+  return startUhpServer(
+    () =>
+      script === undefined
+        ? { httpStatus: 200, response: fixture }
+        : { httpStatus: 200, response: fixture, script },
+    endpoints,
   );
 }
 
@@ -735,6 +784,7 @@ export function startUhpMock(fixture: UhpResponse, script?: UhpStreamScript): Pr
 export function startUhpTurnMock(
   turns: readonly UhpResponse[] = UHP_TURNS,
   script?: UhpStreamScript,
+  endpoints: UhpEndpoints = {},
 ): Promise<UhpMock> {
   const serve = (served: UhpResponse): UhpReply =>
     script === undefined
@@ -754,5 +804,5 @@ export function startUhpTurnMock(
     if (index < 0) return missing;
     const next = turns[index + 1];
     return next === undefined ? missing : serve(next);
-  });
+  }, endpoints);
 }

@@ -1,0 +1,55 @@
+{
+  "$comment": [
+    "Pinned HarnessRouter console harness objects, reconciling the closed Harness vocabulary of",
+    "packages/subagents/src/dispatch.ts to the chrn_-prefixed ids UHP selects with",
+    "metadata.harness_id (Tasks 1.2).",
+    "",
+    "READ reconciledAt BEFORE READING ANY ID BELOW. It is null: no HarnessRouter console has ever",
+    "been read back into this file. There is no reachable HarnessRouter on the host that wrote it and",
+    "no container runtime to start one (issue 294 owns the live round-trip). Every id here is a",
+    "syntactically valid placeholder, deliberately written as an obvious one, and every one of them",
+    "will be reported absent by detectHarnessDrift the first time this file meets a real console —",
+    "which refuses the dispatch fail-closed rather than sending an id nobody verified.",
+    "",
+    "To reconcile: GET /v1/harnesses against the deployment, replace id, base and defaultModel for",
+    "each entry from the returned harness objects, and set reconciledAt to the instant it was read.",
+    "Do not set reconciledAt without doing the read; it is the only field in this file that claims",
+    "anything about a server."
+  ],
+  "version": 1,
+  "protocol": "2026-08-11",
+  "reconciledAt": null,
+  "reconciledAgainst": null,
+  "harnesses": [
+    {
+      "harness": "claude",
+      "id": "chrn_00000000000000000000000000000001",
+      "base": "claude-code",
+      "defaultModel": null
+    },
+    {
+      "harness": "codex",
+      "id": "chrn_00000000000000000000000000000002",
+      "base": "codex",
+      "defaultModel": null
+    },
+    {
+      "harness": "codex-run",
+      "id": "chrn_00000000000000000000000000000003",
+      "base": "codex",
+      "defaultModel": null
+    },
+    {
+      "harness": "opencode",
+      "id": "chrn_00000000000000000000000000000004",
+      "base": "opencode",
+      "defaultModel": null
+    },
+    {
+      "harness": "opencode-run",
+      "id": "chrn_00000000000000000000000000000005",
+      "base": "opencode",
+      "defaultModel": null
+    }
+  ]
+}

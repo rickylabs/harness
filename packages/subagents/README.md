@@ -195,19 +195,98 @@ different one means a different working directory.
 **What none of this proves.** No HarnessRouter has ever answered any of it. Every byte came from
 `uhp-mock.ts`, written from the published specification, on a host with no container runtime. The
 live clone/branch/commit/push/pull-request round-trip is [#294](https://github.com/rickylabs/harness/issues/294)
-and is blocked on infrastructure; `provider-uhp` itself is
-[#286](https://github.com/rickylabs/harness/issues/286) and depends on this. Read
+and is blocked on infrastructure. Read
 `.llm/runs/uhp-stream-adapter--s11/verification.md` for the split between what the mock proved and
 what remains unproven.
+
+## `provider-uhp`
+
+Issue **#286**, built on those five modules and composing them rather than restating any of them.
+Four more files, and again each shape is an argument:
+
+    uhp-provider.ts     the SubagentProvider: dispatch, observe, steer, stop
+    uhp-harnesses.ts    the pinned console manifest, and the drift that refuses a dispatch
+    uhp-transport.ts    the HTTP port, and the only place a credential exists
+    uhp-redact.ts       the publication boundary, and the fence that checks it
+    config/harnesses.v1.json   the pinned chrn_ ids, and their provenance
+
+**Runs are keyed on `runId`, the UHP `session_id` rides in `RunRef.external`**, and the turn chain
+lives in `uhp-session.ts`'s ledger — not in a second one here. What this provider keeps beyond that is
+the pinned harness and the requested route for each run, because a `RunRef` cannot carry either.
+
+**The harness is pinned, and the pin is checked before every dispatch.** `metadata.harness_id` selects
+the configured harness (Tasks §1.2), and omitting it lets the deployment choose — which means the run's
+own record could not say what executed it. So the id comes from `config/harnesses.v1.json`, and
+`GET /v1/harnesses` is read first: an absent id, a changed `base`, a changed `defaultModel` or a listing
+that cannot be read all refuse the dispatch before a task is sent. A rename is not drift; the chapter
+says `name` is not an identifier. **The checked-in manifest has `reconciledAt: null`** — no console has
+ever been read into it, its ids are obvious placeholders, and every dispatch through it will therefore
+refuse. That is the intended behaviour of an unreconciled pin, and #294 is where it stops being one.
+
+**A contradiction refuses, a silence is unknown, and the order is the whole rule.** The owner ratified
+the strongest-negative rule on 2026-09-12 and `uhpRouteVerdict` already implements it. This provider
+widens the *negatives* — `metadata.model_fallback`, a `requested_model` that disagrees, and `model`
+named in `metadata.ignored_fields` join `evidence.mismatches` in the contradicted set — and lets the
+gate decide. It never branches on `evidence.status` and it adds no status parameter to anything.
+A server that names the harness selector in `ignored_fields` is refused outright: the work ran somewhere
+this dispatch did not name.
+
+**Nothing published carries a path.** `RouteIdentityEvidence.detail` documents itself as unsafe, and
+`describeRouteEvidence` embeds field values verbatim on the `known` branch as well as the `mismatch`
+branch — so `cwd` leaks on success, not only on failure. Every string this provider returns goes through
+`redactPaths`, route evidence is published through `redactRouteEvidence` (which reduces `cwd` to
+presence and regenerates the diagnostic from the reduced values, rather than scrubbing it afterwards),
+and the unredacted form goes to a local diagnostic sink instead. `pathShapedStrings` is the independent
+finder, run over each result before it is returned; it and the redactor share a pattern list and neither
+calls the other, so breaking one does not silence the other.
+
+Published evidence carries `verifiedBeforeRedaction`, because reducing `cwd` to presence makes
+`isRouteEvidenceVerified` unrecomputable: the predicate needs an absolute path and an exact match, and a
+presence token is neither. A consumer re-deriving it would therefore read `false` forever — which is the
+"provider is uhp, therefore unverified" branch #286 warns would silently never accept a `known` after S10
+widens `RouteSource`. The field is that fact, measured where the values still existed. Read it rather than
+re-deriving it; the re-derivation fails closed, which is safe and is not the same as true.
+
+**`steer` is turn-boundary continuation, not injection into a live turn.** Lifecycle §5 refuses a second
+concurrent task in one session, so steering a running turn is refused locally rather than sent and
+refused remotely. **`stop` keeps three answers apart**: `stopped` for an observed `cancelled`,
+`already-over` for a task that was terminal before the request, and `unknown` for a 404, an expired
+session, or a task the server has accepted the cancellation of but not yet stopped. No terminal state is
+ever synthesized.
+
+**`dispatch` sends `background: true` and does not stream.** A dispatch returns once the executor has
+the run — streaming would hold the call open for the whole agent run — and Streaming §5 is explicit that
+a client should treat the stream as an optimisation and the stored response as the source of truth,
+which is why `observe` re-reads `GET /v1/responses/{id}`. A server that ignores `background` blocks and
+returns a terminal response, and that shape is handled too.
+
+**The credential is a profile name, never a value.** `uhp-transport.ts` resolves
+`HARNESSROUTER_API_KEY` from the environment at call time and attaches the bearer header; the provider
+never receives a token, so it cannot put one in a payload. `createUhpTransport` refuses a profile that
+is not shaped like an environment variable name, which is the mistake that shape exists to prevent.
+A call that never left the process is reported as `sent: false`, and only that produces a `refused`
+dispatch — everything sent and unanswered is `unknown`, because Errors §5 says a client that gives up
+must not assume the task stopped.
+
+**Still unknown on purpose.** A conformant UHP response yields `unknown`: three route fields are
+unreportable, so nothing here ever returns `accepted`. Whether a lane needing no route evidence may
+proceed anyway, and whether the verdict vocabulary should separate "I cannot name this run" from "I can
+name it but cannot attest three fields", are open owner questions (#286 F1). Both are left at their
+fail-closed default. `.llm/runs/provider-uhp--e37/` carries the forks, the mutation campaign and the
+split between what the mock proved and what only a live router could.
 
 ## Not here
 
 - **Model selection.** The routing matrix answers that; #61 validates model ids at the boundary.
 - **Storing the ledger.** `lease.ts` decides; nothing here writes. The compare-and-set that makes
   the decision binding belongs to whatever holds the file, and no such store exists yet.
-- **Any provider.** The four implementations are `provider-claude`, `provider-codex`,
-  `provider-acp`, `provider-opencode`.
-- **Any I/O, with two named exceptions.** Nothing here touches a filesystem. The UHP stream reader
-  takes its clock as a parameter and falls back to `new Date()` only when a caller supplies none, so
-  a test never sleeps. `uhp-mock.ts` binds a loopback socket on an ephemeral port — it is test
-  support, it is not exported from `index.ts`, and no production entry point imports it.
+- **Any provider over a vendor CLI.** Those four implementations are `provider-claude`,
+  `provider-codex`, `provider-acp`, `provider-opencode`. `provider-uhp` is the exception and it lives
+  here by the ownership boundary confirmed on #286: there is exactly one `SubagentProvider` for UHP and
+  exactly one harness object registry, and both are in this package.
+- **Any I/O, with three named exceptions.** The UHP stream reader takes its clock as a parameter and
+  falls back to `new Date()` only when a caller supplies none, so a test never sleeps. `uhp-mock.ts`
+  binds a loopback socket on an ephemeral port — it is test support, it is not exported from
+  `index.ts`, and no production entry point imports it. `uhp-provider.ts` speaks HTTP through an
+  injected port, and `loadPinnedHarnesses` reads one file from this package's own `config/`; neither
+  is called unless a composition root builds the provider.

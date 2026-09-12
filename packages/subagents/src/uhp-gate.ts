@@ -62,9 +62,91 @@ import {
   isRouteEvidenceVerified,
   type RouteField,
   type RouteIdentityEvidence,
+  type RouteIdentityInput,
   type RouteStatus,
 } from "./route.js";
 import type { DispatchVerdict } from "./provider.js";
+import type { UhpResponse } from "./uhp-wire.js";
+
+/* -------------------------------------------------------------------------------------------------
+ * Reading the route off the wire — four readers, three of which return null
+ * ---------------------------------------------------------------------------------------------- */
+
+/**
+ * `Response.model` — "The model that actually ran", REQUIRED by `Response.required` (`openapi.yaml`).
+ *
+ * The one route field UHP reports. Read as-is: Tasks §1.3 makes a substituting server report the model
+ * it ran here and the model that was asked for in `metadata.requested_model`, so reading
+ * `requested_model` back and calling *that* the observation would launder a substitution into an
+ * agreement — the exact measurement error the clause exists to prevent.
+ */
+export function readUhpModel(response: UhpResponse): string | null {
+  return typeof response.model === "string" && response.model.trim().length > 0 ? response.model : null;
+}
+
+/**
+ * The model provider of a completed task. Always `null`, and kept as a reader anyway.
+ *
+ * S10 read the specification as defining no `provider` field on `CreateResponseRequest` or `Response`;
+ * the token's only non-prose occurrence is the failure code `provider_error` (Errors §3.3). Three
+ * adjacent concepts exist — `Harness.base`, `Model.backend`, `ModelCatalog.backends` — and none of them
+ * is the provider that served a given task: `base` is which CLI ran, and the catalogue is
+ * discovery-time data the chapter says a server MUST compute live.
+ *
+ * That reading is **owner-certified and not independently re-derived** (#286; PR #292 sits at
+ * `status:impl-eval` awaiting a non-Claude evaluator). So the reader stays. It returns `null` today, it
+ * costs nothing, and re-adding one after a comment has declared the field dead costs another spike.
+ */
+export function readUhpProvider(_response: UhpResponse): null {
+  return null;
+}
+
+/**
+ * The reasoning effort a task ran at. Always `null`, and kept as a reader for the same reason.
+ *
+ * The Tasks §1.1 request table is complete at thirteen fields and carries no effort, reasoning-level or
+ * thinking-budget field; neither does `Response` or `Response.metadata`. The protocol's only reasoning
+ * surface is the reasoning *summary* stream (Streaming §2.4), which reports that the agent thought and
+ * not the setting it thought at. A summary is not a setting.
+ */
+export function readUhpEffort(_response: UhpResponse): null {
+  return null;
+}
+
+/**
+ * The working directory a task ran in. Always `null`, and unrequestable as well as unreported.
+ *
+ * Sessions §1 and Lifecycle §4: a session owns "the working directory and its files" and the client
+ * receives only an opaque `metadata.session_id`. There is no request field for it either, so this is the
+ * one route field this repository cannot even ask for.
+ */
+export function readUhpCwd(_response: UhpResponse): null {
+  return null;
+}
+
+/**
+ * Map a UHP response onto the four route fields, reading only what the specification defines.
+ *
+ * Moved here from `uhp-mock.ts` by #286, unchanged in behaviour apart from the three readers returning
+ * `null` where they previously returned `undefined` — `compareRouteIdentity` renders both as
+ * `{ value: null }`, and a test pins that the two inputs produce identical evidence. It moved because a
+ * production module must not import a mock: `scripts/check-compiled-policy.mjs` permits the literal
+ * `model` and `effort` assignments in `uhp-mock.ts` on the recorded grounds that no production entry
+ * point imports that file, and `uhp-provider.ts` needs this function. `uhp-mock.ts` re-exports it so
+ * every S10 and S11 importer keeps working unchanged.
+ *
+ * Three of the four readers return `null`. That is not a stub and not laziness: there is nothing on the
+ * wire to read, and inventing a read would be the fabricated agreement this whole contract exists to
+ * refuse.
+ */
+export function observeUhpRoute(response: UhpResponse): RouteIdentityInput {
+  return {
+    provider: readUhpProvider(response),
+    model: readUhpModel(response),
+    effort: readUhpEffort(response),
+    cwd: readUhpCwd(response),
+  };
+}
 
 /**
  * The negatives, and nothing else.

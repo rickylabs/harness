@@ -12,7 +12,7 @@ names what is blocking it. Do not add behaviour to a stub before its epic has de
 | Package | Ships | Owner | Attaches to |
 |---|---|---|---|
 | `dsh-app` | ✅ | E2 · #32 | our dsh profile + bundle (`cordis.patch.yml`); depends on every plugin below |
-| `subagents` | ✅ | E3 · #33 | the `ctx.subagents` contract itself: `DispatchRequest`, its `/swarm` wire format, and `SubagentProvider` |
+| `subagents` | ✅ | E3 · #33 | the `ctx.subagents` contract itself: `DispatchRequest`, its `/swarm` wire format, `SubagentProvider` — and `provider-uhp`, the one provider that lives beside the contract (#286) |
 | `provider-claude`, `provider-opencode` | ✅ | E3 · #33 | `ctx.subagents` / `SubagentProvider` — autonomous vendor CLIs, metered by quota window |
 | `provider-codex` | partial | E3 · #33 | app-server route-identity and pre-turn protocol prerequisite; no composed provider (#195/#53) |
 | `provider-acp` | — | E3 · #33 | the same seam, over ACP |
