@@ -30,7 +30,8 @@ either, and the `docker` on PATH is a client-only static binary. This is not a s
 
   S10 proceeded mock-first under your ruling and delivered. **S11 cannot**, because what it is asked
   to prove is a real round-trip. #289 was split accordingly: the session-continuation client surface
-  is buildable now, the round-trip gate is not, and **a PASS derived from a mock must not close #53**
+  is buildable now, the round-trip gate is not, and **a PASS derived from a mock must not close
+  issue 53** (written without the `#` deliberately; see the hazard note below)
   — that would retire a working in-tree path on evidence that never contacted the thing it stands
   in for. #289 carries `flag:owner-decision`.
 
