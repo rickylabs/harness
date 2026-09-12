@@ -61,11 +61,23 @@ versioned observation resource rather than becoming a new `RunView` field.
 
 Unknown until S10 reports, and it will be the first thing relayed.
 
-**One gap flagged in the meantime.** Cockpit's `wire.ts` reads `metadata.effort`, `.provider` and
-`.harness`. `ROUTE_FIELDS` is `provider`, `model`, `effort`, `cwd`. So `harness` and `cwd` are not
-the same field, and **`model` has no reader on the Cockpit side at all** — which is precisely the
-F10 substitution case going unobserved. Raised for them to confirm whether that is deliberate
-before S10 lands keys.
+**Gaps flagged in the meantime, with one of them corrected afterwards.** Cockpit's `wire.ts` read
+`metadata.effort`, `.provider` and `.harness`, against `ROUTE_FIELDS` of `provider`, `model`,
+`effort`, `cwd`.
+
+- `cwd` genuinely had no reader. Fixed on their side: it now reads `metadata.cwd`, redacted at
+  decode and projected as presence only.
+- `harness` was being read **as a route field**, which was wrong. It is now `routedHarness`, feeding
+  `LaunchIdentity.harness` alone.
+- `model` — **this flag was half wrong and the correction matters.** The claim recorded here was
+  that `model` had no reader at all and that the F10 substitution case was therefore going
+  unobserved. It was covered, by `response.model` rather than by a `metadata.*` key, so F10 was not
+  unobserved and that severity was overstated. The real defect was narrower: `model` was not
+  *labelled* as a route field, so it was liable to be dropped in a later edit by someone who could
+  not see it was load-bearing. All four route fields now carry a named reader and a test pinning it.
+
+The inference came from reading a three-key list as exhaustive. Recorded because carrying an
+inflated severity into #286 would have distorted that issue's scope.
 
 ## Two things taken from the other direction
 
@@ -91,3 +103,34 @@ the rest of today's list: green because nothing looked.
  main; per-package `test` script census across packages/*/package.json; 2026-09-12]
 [source — five questions and the freshness-signature idea from the Cockpit coordinator, draft PR
  atelier-cockpit#107, 2026-09-12]
+
+## A leak surface a key-name fence cannot see, found while checking their fence
+
+Cockpit's sanitization fence fired during their restructure: `RouteObservation.cwd` holds a
+`RouteStatus`, and `cwd` is a banned prose key, so publication threw. They resolved it with a
+value-checked exception — a key named `cwd` passes only while it holds `known`, `mismatch` or
+`unknown` — pinned by tests including non-string values and a lookalike `'Known'`. That is the
+right resolution and it is the one guard on today's list that caught a real conflict at the moment
+it was introduced, by rendering absence and normality distinctly.
+
+**But the fence is keyed on names, and this repository's type carries paths under a name it will
+not match.** `describeRouteEvidence` in `packages/subagents/src/route.ts` builds the `detail` string
+by embedding field values verbatim through `quote()`, for every mismatched field and, on the
+`known` branch, for every field. `cwd` is one of `ROUTE_FIELDS`. So `detail` contains the absolute
+working-directory path on both the `mismatch` and `known` branches.
+
+`RouteIdentityEvidence.detail` says so itself: it "may contain caller-supplied route strings,
+including absolute paths, so callers remain responsible for handling it."
+
+The consequence for the boundary: a consumer that redacts `observed.cwd.value` and then publishes
+`detail` unchanged has redacted the field and shipped the path. A fence that bans the key `cwd`
+does not fire, because the key is called `detail`. Raised to Cockpit to check whether `detail` is
+banned or carried.
+
+This is worth recording as a producer-side obligation rather than only a consumer-side warning.
+`detail` is designed as a human diagnostic and is documented as unsafe; if it crosses a published
+boundary at all, the safety has to come from the producer redacting before it is handed over, not
+from a consumer recognising a string it has no way to parse.
+
+[observed — `describeRouteEvidence` embedding `quote(value)` per field on the mismatch and known
+ branches, and the `detail` doc comment, at packages/subagents/src/route.ts; read 2026-09-12]
