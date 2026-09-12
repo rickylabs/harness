@@ -97,6 +97,7 @@ export {
   isInstrumented,
   isRouteVerified,
   isSafeToRetry,
+  isSteerRouteVerified,
   markInstrumented,
   registryProblems,
   retryGuidance,
@@ -128,6 +129,7 @@ export type {
 } from "./provider.js";
 
 export {
+  ROUTE_DIALECTS,
   ROUTE_FIELDS,
   compareRouteIdentity,
   describeRouteEvidence,
@@ -135,6 +137,7 @@ export {
 } from "./route.js";
 export type {
   InvalidRouteField,
+  RouteDialect,
   RouteField,
   RouteIdentityEvidence,
   RouteIdentityInput,

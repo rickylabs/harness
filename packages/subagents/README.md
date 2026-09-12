@@ -185,6 +185,28 @@ outranks a silence, and the status rides along only in the diagnostic, where it 
 decides. `uhp-gate.test.ts` carries both defective implementations by name and runs them on the same
 evidence, because `assert(!accepted)` passes for the correct gate and for both defects.
 
+**Provenance is per dialect, and three UHP labels deliberately do not exist.** `RouteSource` is a closed
+vocabulary so a diagnostic can say *where* a value came from, and `OBSERVED_SOURCES` is keyed on
+`RouteDialect` (`codex | uhp`) so a UHP observation is not labelled as a Codex `thread/start` response
+this repository never sent. The `uhp` row carries one label — `uhp/responses.result.model`, for
+`Response.model` — and `null` for `provider`, `effort` and `cwd`, because the protocol defines no field
+for any of them and a label for a field the wire cannot report is a name with no referent. A field whose
+observed source is `null` is refused by `isRouteEvidenceVerified` outright: a value beside an absent
+source came from somewhere this vocabulary cannot name. So the arm makes UHP provenance *honest* and
+leaves every UHP route as unverifiable as it was — two independent refusals, and
+[#294](https://github.com/rickylabs/harness/issues/294) owns the only thing that could change either.
+`compareRouteIdentity`'s dialect argument is optional and defaults to `codex`, so no call site that
+predates it changed. Decision and blast radius:
+`.llm/runs/route-identity-uhp--s10/proposal-routesource-uhp.md`.
+
+**A steer carries the route evidence a dispatch does.** `SteerResult.route` is the same optional field,
+with the same fail-closed reading, and it exists because UHP continuation is `previous_response_id`: a
+long session is mostly steers, so a server that honours the model on turn one and substitutes on turn
+five was producing a structured record in which no substitution ever happened. The verdict stays
+`delivered` — the message landed, and resending it would put two turns in one conversation — and the
+contradiction is carried in `route`, where `decideUhpRoute` can refuse on it. Read it with
+`isSteerRouteVerified`, or hand `route` to the gate; absence is unverified, never agreement.
+
 **Runs are keyed on `runId`; the UHP `session_id` lives in `RunRef.external`.** The same rule
 `lease.ts` is built on, with a UHP-specific edge: the protocol leaves room for a server to branch a
 second chain from an earlier response, so one session id can legitimately cover two runs, and a

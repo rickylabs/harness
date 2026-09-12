@@ -622,6 +622,9 @@ export function createUhpProvider(options: UhpProviderOptions): UhpProvider {
         cwd: state.requested.cwd,
       },
       observeUhpRoute(response),
+      // The dialect the observation actually came from. Without it every observed label would say
+      // `thread/start.result.*` — a Codex response this provider never sent (#287).
+      "uhp",
     );
     const stated = statedContradictions(response, state.requested.model);
     if (stated.harnessIgnored) {
@@ -743,9 +746,22 @@ export function createUhpProvider(options: UhpProviderOptions): UhpProvider {
    * steer
    * -------------------------------------------------------------------------------------------- */
 
-  const steerResult = (run: RunRef, verdict: SteerVerdict, detail: string): SteerResult => ({
+  /**
+   * A steer result, with route evidence when there is a response to have read one off.
+   *
+   * `route` is omitted rather than set to `undefined` — `exactOptionalPropertyTypes` is on, and the two
+   * are not the same value to a consumer enumerating keys. Every early return here has no response yet,
+   * so it carries no route, and absence is unverified by `isSteerRouteVerified`.
+   */
+  const steerResult = (
+    run: RunRef,
+    verdict: SteerVerdict,
+    detail: string,
+    route?: PublishedRouteEvidence,
+  ): SteerResult => ({
     verdict,
     detail: publish("steer", run.runId, verdict, detail),
+    ...(route === undefined ? {} : { route }),
   });
 
   /**
@@ -828,14 +844,38 @@ export function createUhpProvider(options: UhpProviderOptions): UhpProvider {
     ledger = withUhpSession(ledger, recorded.session);
 
     const stated = statedContradictions(task.response, state.requested.model);
-    // `delivered` is a statement about the message, and the message did land. The route contradiction is a
-    // different fact and `SteerResult` has nowhere structured to put it, so it is named in the detail and
-    // in the diagnostic, and the next `observe` or `dispatch` sees it too. The seam's inability to carry
-    // route evidence through `steer` is recorded as a proposal in this run's notes, not fixed here.
-    const detail = stated.fields.length === 0 && !stated.harnessIgnored
+    // The route this continuation actually ran on, compared the same way `dispatch` compares its own and
+    // labelled with the same dialect. #287: a server may honour the requested model on the opening turn
+    // and substitute on the fifth, and UHP continuation means most turns are steers, so a record that
+    // could only say this in prose showed a session with no substitution in it.
+    const evidence = compareRouteIdentity(
+      {
+        provider: state.requested.provider,
+        model: state.requested.model,
+        effort: state.requested.effort,
+        cwd: state.requested.cwd,
+      },
+      observeUhpRoute(task.response),
+      "uhp",
+    );
+    const negatives = uhpRouteNegatives(evidence);
+    const contradicted = [...new Set<RouteField>([...negatives.contradicted, ...stated.fields])];
+    // `delivered` is a statement about the message, and the message did land: the turn exists on the
+    // server and resending it would put two turns in one conversation, which is why a contradicted route
+    // is not promoted to `refused` here. It is promoted to *structure*: `route` carries the comparison,
+    // so a gate can refuse the next turn on evidence instead of on a substring of this sentence.
+    const facts = [
+      ...(contradicted.length === 0 ? [] : [`the server contradicted the requested route on ${contradicted.join(", ")}`]),
+      ...stated.notes,
+    ];
+    const detail = facts.length === 0
       ? `turn ${recorded.session.turns.length} was accepted and reported status ${task.response.status}`
-      : `turn ${recorded.session.turns.length} was accepted with status ${task.response.status}, and the server states a contradiction of the requested route: ${stated.notes.join("; ")}`;
-    return steerResult(run, "delivered", detail);
+      : `turn ${recorded.session.turns.length} was accepted with status ${task.response.status}, and ${
+        facts.join("; ")
+      }; the message landed, so this is not a refusal to resend, and the contradiction is carried as route evidence rather than only in this sentence; ${
+        decideUhpRoute(evidence).detail
+      }`;
+    return steerResult(run, "delivered", detail, redactRouteEvidence(evidence));
   }
 
   /* -----------------------------------------------------------------------------------------------

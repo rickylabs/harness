@@ -61,10 +61,10 @@ function substitutionDetectedByMismatches(evidence: RouteIdentityEvidence): bool
 }
 
 /** A UHP observation of the conformant response: model reported, three fields silent. */
-const benign = compareRouteIdentity(UHP_REQUESTED, observeUhpRoute(UHP_FIXTURES.conformant));
+const benign = compareRouteIdentity(UHP_REQUESTED, observeUhpRoute(UHP_FIXTURES.conformant), "uhp");
 
 /** A UHP observation of the substitution Tasks §1.3 describes: the server ran a different model. */
-const substituted = compareRouteIdentity(UHP_REQUESTED, observeUhpRoute(UHP_FIXTURES.modelSubstituted));
+const substituted = compareRouteIdentity(UHP_REQUESTED, observeUhpRoute(UHP_FIXTURES.modelSubstituted), "uhp");
 
 describe("the UHP route gate — B: the signal is in mismatches, not in status", () => {
   it("shows the two evidence sets are indistinguishable by status", () => {
@@ -220,7 +220,7 @@ describe("the UHP route gate — C: the verdict comes from the strongest negativ
     // `effort` and `cwd` in `metadata` — which no clause of UHP defines — must move nothing: not to
     // accepted, and not to refused either, because an undefined key can no more contradict than agree.
     for (const fixture of [UHP_FIXTURES.allThreeAgreeingExtended, UHP_FIXTURES.effortContradictingExtended]) {
-      const decision = decideUhpRoute(compareRouteIdentity(UHP_REQUESTED, observeUhpRoute(fixture)));
+      const decision = decideUhpRoute(compareRouteIdentity(UHP_REQUESTED, observeUhpRoute(fixture), "uhp"));
       assert.equal(decision.verdict, "unknown");
       assert.deepEqual(decision.contradicted, []);
     }
@@ -232,9 +232,40 @@ describe("the UHP route gate — C: the verdict comes from the strongest negativ
   it("refuses a substitution the same way when the model is absent rather than different", () => {
     // A response with no `model` violates `Response.required`. There is nothing to contradict, so it is
     // unknown — a different fact from a substitution, and the two must not converge.
-    const absent = compareRouteIdentity(UHP_REQUESTED, observeUhpRoute(UHP_FIXTURES.modelAbsent));
+    const absent = compareRouteIdentity(UHP_REQUESTED, observeUhpRoute(UHP_FIXTURES.modelAbsent), "uhp");
     assert.equal(decideUhpRoute(absent).verdict, "unknown");
     assert.notEqual(decideUhpRoute(absent).verdict, decideUhpRoute(substituted).verdict);
     assert.deepEqual(uhpRouteNegatives(absent).unreported, ["provider", "model", "effort", "cwd"]);
   });
+});
+
+/* -------------------------------------------------------------------------------------------------
+ * The dialect labels explain; the values decide
+ * ---------------------------------------------------------------------------------------------- */
+
+describe("the UHP route gate — a provenance label never changes a verdict", () => {
+  // #287 relabelled every UHP observation. The gate must be indifferent to that: a verdict that moved
+  // because a label moved would mean provenance had become a decision input, which is exactly the
+  // fabricated-agreement shape this module refuses. Asserted on both fixtures, in both dialects.
+
+  for (const [name, fixture, expected] of [
+    ["a conformant response", UHP_FIXTURES.conformant, "unknown"],
+    ["a substituted model", UHP_FIXTURES.modelSubstituted, "refused"],
+  ] as const) {
+    it(`decides ${name} identically under either labelling`, () => {
+      const asUhp = compareRouteIdentity(UHP_REQUESTED, observeUhpRoute(fixture), "uhp");
+      const asCodex = compareRouteIdentity(UHP_REQUESTED, observeUhpRoute(fixture), "codex");
+
+      assert.equal(decideUhpRoute(asUhp).verdict, expected);
+      assert.equal(decideUhpRoute(asCodex).verdict, expected);
+      assert.deepEqual(uhpRouteNegatives(asUhp).contradicted, uhpRouteNegatives(asCodex).contradicted);
+      assert.deepEqual(uhpRouteNegatives(asUhp).unreported, uhpRouteNegatives(asCodex).unreported);
+      assert.equal(uhpRouteNegatives(asUhp).unverified, uhpRouteNegatives(asCodex).unverified);
+
+      // The control that keeps the assertions above from being about one object compared to itself: the
+      // two really are labelled differently, and the two fixtures really do decide differently.
+      assert.notEqual(asUhp.observed.model.source, asCodex.observed.model.source);
+      assert.notEqual(decideUhpRoute(asUhp).verdict, expected === "unknown" ? "refused" : "unknown");
+    });
+  }
 });
