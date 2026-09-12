@@ -113,24 +113,51 @@ value-checked exception — a key named `cwd` passes only while it holds `known`
 right resolution and it is the one guard on today's list that caught a real conflict at the moment
 it was introduced, by rendering absence and normality distinctly.
 
-**But the fence is keyed on names, and this repository's type carries paths under a name it will
-not match.** `describeRouteEvidence` in `packages/subagents/src/route.ts` builds the `detail` string
-by embedding field values verbatim through `quote()`, for every mismatched field and, on the
-`known` branch, for every field. `cwd` is one of `ROUTE_FIELDS`. So `detail` contains the absolute
-working-directory path on both the `mismatch` and `known` branches.
+**This repository's type carries absolute paths inside a free-form string.**
+`describeRouteEvidence` in `packages/subagents/src/route.ts` builds the `detail` string by embedding
+field values verbatim through `quote()`, for every mismatched field and, on the `known` branch, for
+every field. `cwd` is one of `ROUTE_FIELDS`. So `detail` contains the absolute working-directory
+path on both the `mismatch` and `known` branches.
 
 `RouteIdentityEvidence.detail` says so itself: it "may contain caller-supplied route strings,
 including absolute paths, so callers remain responsible for handling it."
 
-The consequence for the boundary: a consumer that redacts `observed.cwd.value` and then publishes
-`detail` unchanged has redacted the field and shipped the path. A fence that bans the key `cwd`
-does not fire, because the key is called `detail`. Raised to Cockpit to check whether `detail` is
-banned or carried.
+**The producer-side obligation stands and is now in #286.** `detail` is designed as a human
+diagnostic and is documented as unsafe. If it crosses a published boundary at all, the redaction
+belongs to the producer before handover, not to a consumer recognising a string it has no grammar
+to parse. An obligation that depends on the consumer's fence being thorough is not an obligation.
 
-This is worth recording as a producer-side obligation rather than only a consumer-side warning.
-`detail` is designed as a human diagnostic and is documented as unsafe; if it crosses a published
-boundary at all, the safety has to come from the producer redacting before it is handed over, not
-from a consumer recognising a string it has no way to parse.
+### Three things asserted here about the consumer's fence were wrong
+
+The first version of this section reasoned about Cockpit's sanitization from a description of it
+rather than from that code, and predicted a live leak. The consuming coordinator refuted it with a
+runnable probe. Recorded rather than quietly edited, because the errors are more instructive than
+the finding.
+
+1. Claimed their fence is keyed on key names, so one banning `cwd` would not fire on a key called
+   `detail`. **Wrong.** `assertSanitized` runs two checks: a forbidden-key check *and* a value check
+   applied to every string it reaches, at any depth, under any key name. Their probe throws on a
+   path embedded in `detail` on both branches and under an arbitrary nested key, while controls
+   confirm a path-free diagnostic, an HTTPS URL and a bare single segment all pass — so it is
+   discriminating, not merely strict.
+2. Claimed such a leak would survive their mutation test, since reverting redaction would not touch
+   a string that was never redacted. **Wrong.** The fence's value check and the mutation's redaction
+   share a pattern list but neither calls the other, so disabling redaction does not disable the
+   fence. The mutation test is narrower than feared and the fence is broader.
+3. Implied a live leak existed in their draft. **Wrong.** Their `RouteObservation` carries exactly
+   five fields — `provider`, `model`, `effort`, `cwd`, `source` — and no `detail`, so the diagnostic
+   never enters the projection.
+
+The lesson is the same one this run keeps recording from the other side: a claim about code that
+was not read is a finding for a spike, not an input to a plan. The probe took minutes and settled
+all three.
+
+### The forward consequence, worth knowing before it arrives as a bug report
+
+If unredacted `detail` is ever handed over and someone adds it to the projection, **publication
+throws rather than leaking.** Correct failure direction, deliberately. But the symptom is a broken
+stream rather than a degraded diagnostic, so whoever debugs it starts at the publisher and not at
+the evidence string. That connection is now written into #286 so the trail is short.
 
 [observed — `describeRouteEvidence` embedding `quote(value)` per field on the mismatch and known
  branches, and the `detail` doc comment, at packages/subagents/src/route.ts; read 2026-09-12]
