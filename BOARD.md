@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **240/305 done · 19 running · 25 queued · 4 blocked · 15 abandoned · 2 invisible**
+`[###############-----]` **241/307 done · 19 running · 25 queued · 4 blocked · 15 abandoned · 3 invisible**
 
-_Latest board activity: 2026-09-13T23:21:26Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T23:40:45Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (4)
 
@@ -43,13 +43,25 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (1)
+## Not on the board (1)
+
+Open, and carrying no `status:` label — real work no column can see.
+
+| item | column | epic |
+| --- | --- | --- |
+| [PR319 docs: point the governance record at the charter, not at a closed issue](https://github.com/rickylabs/harness/pull/319) | — | — |
+
+## Anomalies (2)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`epic-closed-by-child`**
 
 - **#30** — is closed with 1 open child (#182); an umbrella closes when its last child does — reopen it, do not relabel it
+
+**`no-status`**
+
+- **#319** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -74,12 +86,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 48/63 done · 3 queued · 2 blocked · 9 abandoned · 1 invisible
+`[#########---]` 49/65 done · 3 queued · 2 blocked · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
-| _(no epic)_ | `[#########---]` 43/57 done · 3 queued · 1 blocked · 9 abandoned · 1 invisible | — |
+| _(no epic)_ | `[########----]` 44/59 done · 3 queued · 1 blocked · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -122,7 +134,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  240/305 done · 19 running · 25 queued · 4 blocked · 15 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  241/307 done · 19 running · 25 queued · 4 blocked · 15 abandoned · 3 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 19 running · 22 queued · 2 blocked · 6 abandoned · 1 invisible
 
@@ -403,7 +415,7 @@ Something could be acting on these right now.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     triage               #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  48/63 done · 3 queued · 2 blocked · 9 abandoned · 1 invisible
+## (no milestone)  [###############-----]  49/65 done · 3 queued · 2 blocked · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -472,6 +484,8 @@ Something could be acting on these right now.
     shipped              PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed
     shipped              PR309 docs(architecture): an empty check result is not a pass
     shipped              PR310 docs(security): session identifiers are credential-class, and shape-matching cannot find them
+    shipped              PR318 docs: finish the charter reconciliation the lock started
+    no status            PR319 docs: point the governance record at the charter, not at a closed issue
 ```
 
 </details>
