@@ -86,3 +86,50 @@ Extraction of the runtime out of netscript is not proposed, per §11.
  the corrected park evidence, and the amendment route; consulted 2026-09-13]
 [observed — fresh `deno task agentic:matrix -- --json` at NetScript `155dbbe90`; topic: the export's
  exact shape as the object of study; executed 2026-09-13]
+
+---
+
+## 2026-09-13 — plan session
+
+The scope declared in 2026-09-08 still governs and is not amended. This section records the third
+session against it. The research section above stays as written.
+
+Session identity: model `claude-opus-5`, as reported by the session's own system context, on the
+Claude Code CLI. **Not a matrix candidate and not selected by a fresh matrix query** — the operator
+brief assigned this session directly and restricted it to the plan artifact. Recorded in the terms
+`.llm/runs/architecture-v1--smoke/receipt.md` uses rather than smoothed over: requested route
+unknown, observed `claude-opus-5` on the `claude` transport, effort observed in the session
+environment and not verified as having been requested. No session identifier is recorded here or
+anywhere in this run directory; session identifiers are credential-class, and six were redacted from
+this directory earlier today.
+
+Baseline `e7af112` (origin/main), branch `docs/274-capability-detection-plan`, from the assigned
+isolated worktree.
+
+**Mutation surface for this session: `.llm/runs/capability-detection--274/` only.** Specifically
+`plan.md` created; `worklog.md`, `verification.md`, `context-pack.md` and this file appended to. No
+existing paragraph of `research.md` or `verification.md` was edited — the research receipt is evidence
+and a later session does not revise it to agree with the present.
+
+**Must not touch, and did not:** anything under `packages/`; no new package; no schema file; no
+configuration file; no test; `ARCHITECTURE.md`, `AGENTS.md`, `doctrine/` and `profiles/` are read-only
+(§13 routes disagreement through a numbered decision, not a pull request); no sibling repository; no
+issue, label or milestone mutation beyond the one pull request this session opens; the `harness`
+dispatch-trigger label is never applied.
+
+**Why a plan and not code.** 274's execution rules are research, then independent plan evaluation,
+then product mutation, and `doctrine/WORKFLOW.md` Stage G forbids mutation until `plan-eval.md` reads
+`PASS`. Writing the plan needs no evaluator; only evaluating it does, and evaluator capacity is the
+constrained resource. A ready plan is what makes that gate cheap when it opens.
+
+**Evidence discipline.** No vendor CLI was invoked, no provider process started, no account touched,
+nothing spent. The only commands run were four repository gates — build stages 7, 6, 5 and 3, each
+run individually rather than through the twelve-stage aggregate — and `grep` over an enumerated set
+of tracked files with a control before each absence query. E3 and UHP remain parked per §10 and
+decision 0004; nothing here proposes UHP work or runtime extraction.
+
+[owner — deliver `plan.md` for 274, plan only, nothing under `packages/`, branch from origin/main;
+ received 2026-09-13]
+[observed — build stage 7 (`pnpm -r run build`) exit 0 with fifteen packages reporting `Done`, and
+ stages 6, 5 and 3 exit 0 individually; topic: gate results named by stage rather than by aggregate;
+ executed 2026-09-13]

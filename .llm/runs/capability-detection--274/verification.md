@@ -112,3 +112,72 @@ green with four markdown files added; it proves nothing about behaviour that was
 per-transport detection table and the 38-resolution audit are measurements of what the *current*
 commands do on *this* host on *this* date; they are evidence for a plan, not a plan, and not a
 parity certification. Nothing here has been independently evaluated.
+
+---
+
+## 2026-09-13 — plan session
+
+A second session on the same day, on baseline `e7af112` (origin/main), branch
+`docs/274-capability-detection-plan`. It produced `plan.md` and nothing else executable: **no
+product code, no package, no schema file, no configuration file, no test.** The research section
+above is unchanged and was not re-measured; `plan.md` cites it rather than repeating it.
+
+### Gates, named by stage rather than by aggregate
+
+`pnpm run build` in this repository is a twelve-stage `&&` chain and the compile is stage 7, so an
+aggregate verdict cannot distinguish "the code does not compile" from "a check six stages earlier
+stopped the chain". The stages were therefore run individually.
+
+| Stage | Command | Result |
+|---|---|---|
+| **7 — the compile** | `pnpm -r run build` | **Exit 0**, and it demonstrably *ran*: fifteen packages each reported `build: Done`. This is the stage that would have caught a broken change; the change is markdown only |
+| 6 | `node scripts/check-compiled-policy.mjs` | Exit 0 — `307 sources checked; mutation self-test passed`. The mutation self-test is what establishes the check could have failed |
+| 5 | `node scripts/check-snapshots.mjs` | Exit 0 — `117 tracked data file(s) carry no live allowance snapshot (8 exact synthetic fixtures verified)`. No data file was added by this session |
+| 3 | `node scripts/check-links.mjs` | Exit 0 — 66 files, 360 relative links, 0 broken. **This says nothing about `plan.md`:** `EXCLUDED` in that script is `[".llm/runs/"]` and holds nothing else, by design, because run artifacts are evidence. `plan.md`'s two relative links (`research.md`, `verification.md`) were checked by hand against this directory |
+
+Stages 1, 2, 4 and 8–12 were not run. They gate the project graph, the label lifecycle, issue forms,
+publication, the label registry, the CLI reference, the skill and the tutorial — none of which a file
+under `.llm/runs/` can affect. That is a statement about scope, not a claim that they pass.
+
+### Absence claims, with the aim shared by construction
+
+`plan.md`'s acceptance map asserts that four things are absent from the tree. An absence claim is
+worth nothing unless the instrument was pointed at the right input set, so the input set was
+enumerated **once** to a file, a control was run over that file, and the real queries were run over
+that same file.
+
+    git ls-files 'packages/**/*.ts'  ->  /tmp/274-inputset.txt   308 files
+    grep '^packages/routing/'        ->  /tmp/274-routing-set.txt  14 files
+
+| Query | Over | Result |
+|---|---|---|
+| **control** `mayDispatch` | 308 files | 5 files — the instrument works and is aimed at compiled sources |
+| **control** `capturedAt` | 308 files | 10 files, in `contracts` and `telemetry` — so the token is findable where it exists |
+| `resolveWorkloadRoute` | same 308 | **0** |
+| `routing-policy` | same 308 | **0** |
+| `ResolvedDelegationRoute` | same 308 | **0** |
+| **control** `Availability` | 14 routing files | 4 files |
+| `capturedAt` | same 14 | **0** |
+| `installed` / `authenticated` / `entitled` as whole words | same 14 | **0** |
+| `spawn` / `execFile` | same 14 | 1 file, `load.test.ts` only — no non-test source in `routing` executes a subprocess today |
+
+So: nothing in harness reaches netscript's resolver by any spelling; `packages/routing` has no
+configuration freshness field, no representation of three of the six facts, and no subprocess
+execution outside a test. Those are the three gaps `plan.md` steps 2, 4 and 5 exist to close.
+
+### Hygiene held
+
+No credential, token, cookie, account identifier or session identifier was printed, written or
+committed by this session. No vendor CLI was invoked, no provider process was started, no account
+was touched and nothing was spent — the only commands run were four repository gates and `grep` over
+tracked files. `plan.md` contains no matrix data, no model catalogue entry, no capability row and no
+allowance figure.
+
+### What is not claimed
+
+`plan.md` has **not** been independently evaluated. `doctrine/WORKFLOW.md` Stage G forbids mutation
+of the world until `plan-eval.md` reads `PASS`, and that file does not exist. Stage 7 returning 0
+proves the repository compiles with one markdown file added; it proves nothing about ten steps that
+have not been written. Every step's gate claim above — the project graph at stage 1, `STRUCTURAL_FIELDS`
+at stage 7, the fixture digest inventory at stage 5, the compiled-policy scan at stage 6 — is derived
+by reading those scripts, not by running an implementation through them.
