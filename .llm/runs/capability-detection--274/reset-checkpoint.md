@@ -21,7 +21,7 @@ The full product goal is incomplete; this pause is neither completion nor a fail
   FAIL_FIX and repaired A-1. CI34277626288 passed at that exact head. One additional plan review
   needs the recorded owner decision272; no approval received and no second review dispatched.
   Author session e2ca9e1a-1a8f-452c-8d98-9e433c973bd6 completed repair; evaluator
-  ses_f7d424645ffeq9bROwhiZS6RMy completed its first verdict. Preserve both.
+  the first evaluator session completed its first verdict. Preserve both.
 - Published contracts remain0.3.0/protocol1, source97e9d058. Recovery265 is merged in source
   at3e70d37, but proposed0.4.0 remains unpublished pending owner283. Do not push its tag from
   any previous publication approval.
