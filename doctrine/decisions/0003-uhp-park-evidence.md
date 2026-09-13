@@ -112,3 +112,46 @@ subscription to expose and is not one any coordinator should take.
 ---
 
 [observed - live verification from an agent container, 2026-09-13; re-verified independently by the session that authored §10]
+
+---
+
+## Addendum — the second premise has further to run than this record first said
+
+Added after the session that raised the router concurred on this record and quantified what it
+understated. Recorded here rather than left in the pull request discussion, because a decision record
+that loses half its evidence on merge is not durable.
+
+**Concurrence, stated so it is not mistaken for a split.** That session's note on
+[#294](https://github.com/rickylabs/harness/issues/294) said §10's conclusion is accurate. This record
+says §10's first premise is false. Both are true, about different sentences: the literal claim *"no
+router instance exists"* is false, and the operative claim *"nothing can be connected to"* holds. Same
+distinction, same recommendation.
+
+**"For want of a provider credential" understates the distance.** Measured against the live instance
+by that session, reading `/harnesses` authenticated, four steps separate *the router answers* from
+*a round-trip is provable*:
+
+1. A provider credential is configured. The owner's call, and nothing proceeds without it.
+2. A harness **object** is created. A fresh instance has none, and the eleven installed backends are
+   not harness objects. Nothing in this repository can create one.
+3. `config/harnesses.v1.json` is reconciled against real `chrn_` identifiers, with `reconciledAt`
+   stamped. Only then does `provider-uhp` stop refusing every dispatch, which it currently does
+   correctly.
+4. #294's round-trip runs against a harness that can actually execute.
+
+This strengthens the recommendation rather than weakening it. The park now rests on the half of the
+evidence with the most distance left in it.
+
+**Two corrections, both in the direction of holding.** Borrowing netscript's sandbox makes the
+instance less available than "a running container" sounds: it competes for that project's capped CPU
+and memory. And it is disposable with no owner and no lifecycle — created by hand, in a sandbox whose
+`/etc/hosts` pin is lost when the agent container restarts, with nothing to recreate it. An argument
+leaning on its continued existence would be leaning on nothing.
+
+**Also parked, in this repository:** #298, #299 and #301, labelled and branches retained per §10.
+#301 is a breaking change to a published package and should not sit on `main` for an epic that
+produces no records, because the next tag cut from `main` would carry it.
+
+[observed - the four-step breakdown and the empty harness list are that session's authenticated
+measurements, not this author's; unauthenticated re-verification from this container returns 401 and
+cannot see the list. Router liveness and the 307 re-confirmed here 2026-09-13.]
