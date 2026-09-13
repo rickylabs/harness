@@ -259,7 +259,7 @@ widening reads it there rather than discovering the obligation from a changelog.
 | `pnpm run build` | **green**, exit 0. 15 packages, plus `check:graph`, `check:lifecycle`, `check:links` (344 relative links, 0 broken), `check:forms`, `check:snapshots` (9 exact synthetic fixtures), `check:compiled-policy`, `check:publish`, `check:label-registry`, `check:docs`, `check:skill`, `check:tutorial`. |
 | `check:publish` | `@rickylabs/harness-contracts@0.5.0, protocol 1, 78 files, no tests` |
 | `pnpm -r run test` | **green**, exit 0. 12 package suites, **3,125 tests, 0 fail**. Contracts 220 (was 213 at baseline: 7 new tests). |
-| `pnpm run test` → `check:installed` | **blocked on this host, at baseline too.** Fails at `sleeping probe startup (requires executable TMPDIR)` in its *governance* half. Measured on the unmodified `origin/main` baseline first, with the same message and the same exit code — see `worklog.md` D1. Not a regression and not caused by this change. |
+| `pnpm run test` → `check:installed` | **blocked on this host, at baseline too**, then **green in CI.** Locally it fails at `sleeping probe startup (requires executable TMPDIR)` in its *governance* half — measured on the unmodified `origin/main` baseline first, with the same message and the same exit code (`worklog.md` D1). On the GitHub runner it passes: the `ci` workflow runs `pnpm test`, which is `pnpm -r run test && pnpm run check:installed`, and it reported `typecheck · build · test` **SUCCESS** on PR 301 at `a35076c`. So the gate is intact and the limitation was this host's. |
 | `probe-installed-decoder.mjs` | **green.** The run-observation half of that gate, run standalone: packs the real 0.5.0 tarball, installs it offline, checks `dsh.protocol 1` and 78 files, compiles an exhaustive consumer against the installed `.d.ts` (and confirms it refuses `'claude'` as a source, `3` as a schema, and the rejected basis name), and drives all **108** synthetic fixtures from the actual CLI through the **installed** decoder. |
 | `probe-published-readers.mjs` | **green**, §5. |
 | `mutations.mjs` | **30 mutations, every one compiled and killed at least one test.** Baseline 0 fail, 0 fail after restore. §9. |
@@ -360,10 +360,10 @@ accepted) paired with two negatives on the same input (one non-null at a time). 
   evidence. The UHP producer would be Cockpit, under Decision 5's single read-projection owner rule.
   This change ships vocabulary, not a second producer — and a test asserts that the local reader never
   mints the UHP vocabulary (T2, T3).
-- **`check:installed` was not made to pass.** Its governance half needs an executable `TMPDIR` this
-  host does not provide, on baseline as well as here. The run-observation half it would have exercised
-  was run standalone instead (§8), so the *installed* decoder is proven; the sleeping-probe reaping
-  assertions in that gate's governance half are not.
+- **`check:installed` could not be made to pass on the run host**, on baseline as well as here, so the
+  run-observation half it would have exercised was extracted and run standalone (§8). It then passed
+  **in CI**, which is where the gate that matters runs, so the sleeping-probe reaping assertions are
+  covered there rather than here — but they were not observed from this host.
 - **No claim about `rickylabs/atelier-cockpit`'s code** beyond what #287 and #300 state. That
   repository was not read.
 - **No publication, no tag, no arming.** §4.

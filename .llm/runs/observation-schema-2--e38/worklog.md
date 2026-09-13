@@ -43,6 +43,12 @@ So it is a host limitation in the gate's *governance* half — the synthetic sle
 spawns through the usage reader does not start here — and not a regression from this change. The same
 limitation is recorded on PR 299 (`drift.md` D7).
 
+**Settled after the push: the gate is fine, this host is not.** The `ci` workflow runs `pnpm test`,
+which is `pnpm -r run test && pnpm run check:installed`, and it reported
+`typecheck · build · test` **SUCCESS** on PR 301 at `a35076c` — so `check:installed` passes on the
+Ubuntu runner, governance half included. The local failure is a host limitation and nothing in the
+gate needed changing.
+
 The gate fails before reaching its run-observation half, which is the half this change actually
 affects. Rather than declare that coverage blocked, the run-observation half was extracted into
 `probe-installed-decoder.mjs` and run standalone: pack the real tarball, install it offline, compile a
@@ -130,4 +136,7 @@ release receipt, which belongs to whoever cut the tag. Left alone and recorded. 
 - No container runtime started, installed or required. Every UHP shape from the published spec and `uhp-mock.ts`.
 - No claim about a live `HarnessRouter` (#294, blocked).
 - `RunSource` unchanged: still `claude | codex | opencode`, still the billing seam.
-- No `npm publish`, no `npm version`, no tag, no release-workflow trigger armed.
+- No `npm publish`, no `npm version`, no tag, no release-workflow trigger armed. Confirmed after the
+  push: `gh run list --branch feat/300-observation-schema-2` shows **one** run, `ci`, event
+  `pull_request`. `release-contracts.yml` has fired only on tag pushes and manual dispatches, the most
+  recent being the `harness-contracts-v0.4.0` tag at 2026-09-13T06:23:16Z, which is not this branch's.
