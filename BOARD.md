@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **242/309 done · 19 running · 26 queued · 4 blocked · 15 abandoned · 3 invisible**
+`[###############-----]` **243/310 done · 19 running · 26 queued · 4 blocked · 15 abandoned · 3 invisible**
 
-_Latest board activity: 2026-09-13T23:50:19Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T23:54:36Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (4)
 
@@ -49,7 +49,7 @@ Something could be acting on these right now.
 
 **`closed-without-status`**
 
-- **#320** — merged, but carries no status label; delivered work the board cannot see
+- **#322** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -82,13 +82,13 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 50/67 done · 4 queued · 2 blocked · 9 abandoned · 2 invisible
+`[#########---]` 51/68 done · 4 queued · 2 blocked · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/1 done · 1 queued | `triage` |
-| _(no epic)_ | `[#########---]` 45/60 done · 3 queued · 1 blocked · 9 abandoned · 2 invisible | — |
+| _(no epic)_ | `[#########---]` 46/61 done · 3 queued · 1 blocked · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -132,7 +132,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  242/309 done · 19 running · 26 queued · 4 blocked · 15 abandoned · 3 invisible
+# rickylabs/harness  [###############-----]  243/310 done · 19 running · 26 queued · 4 blocked · 15 abandoned · 3 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 19 running · 22 queued · 2 blocked · 6 abandoned · 1 invisible
 
@@ -413,7 +413,7 @@ Something could be acting on these right now.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     triage               #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [##############------]  50/67 done · 4 queued · 2 blocked · 9 abandoned · 2 invisible
+## (no milestone)  [###############-----]  51/68 done · 4 queued · 2 blocked · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -488,7 +488,8 @@ Something could be acting on these right now.
     shipped              PR310 docs(security): session identifiers are credential-class, and shape-matching cannot find them
     shipped              PR318 docs: finish the charter reconciliation the lock started
     shipped              PR319 docs: point the governance record at the charter, not at a closed issue
-    no status            PR320 docs: mark the same four decisions in the second place they are restated
+    shipped              PR320 docs: mark the same four decisions in the second place they are restated
+    no status            PR322 chore(uhp-dispatch-readiness--e3): retain two coordinator receipts
 ```
 
 </details>
