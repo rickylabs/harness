@@ -66,3 +66,39 @@ proposal to extract the netscript runtime — not on the critical path per §11.
 must stay read-only and free. Never print or commit a credential, token, cookie or account
 identifier; `claude auth status` returns three of them beside the three fields a receipt wants, so
 a detector must emit an allowlist of fields, never a denylist.
+
+---
+
+## Current state — 2026-09-13, after the plan session
+
+`plan.md` now exists. The run's remaining debt is **not** an artifact: it is the independent plan
+evaluation. `doctrine/WORKFLOW.md` Stage G forbids executing any step in `plan.md` until
+`plan-eval.md` reads `PASS`, and 274's own execution rules say the same. Nothing under `packages/`
+has been touched by this run, at any point.
+
+Read in this order if you are arriving cold: `ARCHITECTURE.md`, then `research.md` (self-contained,
+every claim measured or cited), then `plan.md`. `verification.md` is the receipt for both sessions.
+
+**What `plan.md` settles, so it is not re-litigated.** Ten ordered steps, each naming a file and an
+existing function. Harness calls a resolve view and never reimplements resolution; the interim is a
+bounded Deno service adapter against an operator-configured netscript checkout, on the precedent of
+`packages/telemetry/adapters/opencode-usage-probe.ts`, calling the same exported
+`resolveWorkloadRoute` that netscript#2015 will expose. Six facts get a total record whose state
+union carries `unknown` and `withheld`, transplanting `probe.ts`'s configured-may-refuse-never-permit
+asymmetry rather than inventing one. Detection commands are document data, which is what keeps this
+generic rather than four bespoke provider integrations. The published contract is modelled on
+`packages/contracts/src/governance-read.ts`, which already ships this artifact class.
+
+**Six owner forks are open and are the next thing a human is needed for:** F1 whether the new
+configuration keys land under schema version 1 while 272 is gated; F2 which facts configuration may
+assert rather than only refuse; F3 one account per provider or many; F4 what the machine-readable
+artifact for the backend's generator is; F5 whether `routing` takes a dependency on `telemetry` for
+the bounded subprocess reader; F6 who composes the `agy` effort-suffixed model id. Each carries
+options, a recommendation and the cost if the recommendation is wrong.
+
+**Five spikes are recorded and none blocks a step.** S1, whether `claude --effort` sets
+`CLAUDE_EFFORT`, is one paid launch and remains the cheapest step toward invariant I1's effort leg.
+
+Standing constraints are unchanged: no product code before the evaluation gate, no matrix data in
+this repository, no UHP work, no runtime extraction, read-only free detection commands only, and
+never a credential, account identifier or session identifier in a tracked file.
