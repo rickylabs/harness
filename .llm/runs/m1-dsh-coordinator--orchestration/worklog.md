@@ -87,7 +87,7 @@ an M1 issue is dispatching an agent, not annotating a board.
 Read from the N5 at Step 0 so the `environment` row is a measurement rather than a `null`:
 
 ```bash
-ssh -p 2222 root@100.87.225.36 "nsenter -t 1 -m -u -i -n -p -- /usr/local/bin/nerdctl --namespace=rickylabs-main ps -q | wc -l"
+ssh <host-redacted> "nsenter -t 1 -m -u -i -n -p -- /usr/local/bin/nerdctl --namespace=rickylabs-main ps -q | wc -l"
 ```
 
 The fleet namespace was carrying 14 containers and 14 networks at Step 0. None of them belong to
