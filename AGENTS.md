@@ -2,6 +2,12 @@
 
 Entry point for agent mode in `rickylabs/harness`.
 
+> **Read [`ARCHITECTURE.md`](ARCHITECTURE.md) before anything else.** It is the locked charter
+> of this repository (v1, 2026-09-13) and it supersedes
+> [#30](https://github.com/rickylabs/harness/issues/30). It states what is built, what is
+> parked, and the four invariants every run is held to. An agent may not amend it and may not
+> open a pull request that assumes a different architecture.
+
 ## Invocation
 
 ```
@@ -20,10 +26,13 @@ before your first mutation. They are short by design.
 
 ## What this repository is
 
-The **`dsh` layer** of a deterministic coordinator for an agent fleet: Cordis plugin packages
-and one profile over published
-[`@deepseek-ai/dsh`](https://github.com/deepseek-ai/deepseek-harness), plus the portable
-harness doctrine they encode. It is a product being designed by its own method — the founding
+The **portable agent runtime**: the routing matrix, the launchers that enforce it, the
+slice loop, the profiles and the doctrine, made to run against any repository, not one.
+See [`ARCHITECTURE.md`](ARCHITECTURE.md) §1.
+
+The `dsh` plugin packages under `packages/` were built against UHP-hosted dispatch, which
+is **parked** — [`ARCHITECTURE.md`](ARCHITECTURE.md) §10. They are not deleted, and they are
+no longer the charter. It is a product being designed by its own method — the founding
 architecture run at
 [`.llm/runs/architecture-foundation--seed/`](.llm/runs/architecture-foundation--seed/)
 records that design; the board says what is built. [`BOARD.md`](BOARD.md) is that board rendered as
