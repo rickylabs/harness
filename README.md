@@ -280,15 +280,19 @@ contradiction.
 
 ### Ratified decisions
 
-Four decisions are **ratified** in the *Decisions taken* table of the
-[E0 roadmap](https://github.com/rickylabs/harness/issues/30). They are
+Four decisions were **ratified** in the *Decisions taken* table of the
+[E0 roadmap](https://github.com/rickylabs/harness/issues/30), which
+[`ARCHITECTURE.md`](ARCHITECTURE.md) supersedes. Where the two differ, the
+charter wins: two of the four hold unchanged, one is scoped to parked work, and
+one is superseded on its first clause — each is marked below. They are
 restated here because root documents are what an agent reads first, and a
 root document that contradicts a ratified decision propagates the
 contradiction silently. They are not re-opened in a run, a PR, or a prompt;
 reversing one goes through [`ARCHITECTURE.md`](ARCHITECTURE.md) §13 — a numbered decision in
 [`doctrine/decisions/`](doctrine/decisions/) — not through #30, which is closed and superseded.
 
-1. **Plugin-only, no core fork.** Depend on published
+1. **Plugin-only, no core fork.** *Scoped to the parked plugin layer —*
+   [`ARCHITECTURE.md`](ARCHITECTURE.md) §10. Depend on published
    [`@deepseek-ai/dsh`](https://github.com/deepseek-ai/deepseek-harness). We
    ship Cordis plugin packages and one profile. Only
    [`runzhliu/deepseek-harness-docker`](https://github.com/runzhliu/deepseek-harness-docker)
@@ -297,7 +301,10 @@ reversing one goes through [`ARCHITECTURE.md`](ARCHITECTURE.md) §13 — a numbe
    build-time dependency.
 3. **GitHub is the source of truth for the board**; `dsh` projects the live
    view.
-4. **This repo is the `dsh` layer only.** No cockpit is built here. The two
+4. **Superseded on its first clause.** This repository is **the portable agent
+   runtime** — [`ARCHITECTURE.md`](ARCHITECTURE.md) §1, which states that charter
+   "replaces the previous one ("the `dsh` plugin layer")". The rest of this
+   decision still holds. No cockpit is built here. The two
    that consume this layer are separate products in their own repositories —
    `rickylabs/atelier-cockpit`, the engineering cockpit, and
    `rickylabs/atelier-mobile`, the Expo companion. Consequence: `contracts`

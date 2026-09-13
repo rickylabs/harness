@@ -178,9 +178,11 @@ Two constraints apply to every change here, large or small, and are not restated
    and the cost if the recommendation is wrong. Do not pick one and move on, and do not bury it in
    prose.
 
-The four **ratified decisions** in [#30](https://github.com/rickylabs/harness/issues/30) are not
-open questions. A design that contradicts one is wrong before it is reviewed; reversing one is a
-change to #30 first. [`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) lists them.
+The four **ratified decisions** taken in [#30](https://github.com/rickylabs/harness/issues/30) are
+not open questions. A design that contradicts one is wrong before it is reviewed; reversing one is a
+numbered decision in [`doctrine/decisions/`](doctrine/decisions/) first, per
+[`ARCHITECTURE.md`](ARCHITECTURE.md) §13, not a change to #30, which is closed.
+[`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) lists all four with the status of each.
 
 ## Review
 
