@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **228/291 done · 23 running · 23 queued · 2 blocked · 12 abandoned · 3 invisible**
+`[###############-----]` **229/292 done · 23 running · 23 queued · 2 blocked · 12 abandoned · 3 invisible**
 
-_Latest board activity: 2026-09-13T15:06:19Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T15:08:07Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (2)
 
@@ -45,13 +45,21 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
+## Not on the board (1)
+
+Open, and carrying no `status:` label — real work no column can see.
+
+| item | column | epic |
+| --- | --- | --- |
+| [#304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt](https://github.com/rickylabs/harness/issues/304) | — | — |
+
 ## Anomalies (1)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
-**`closed-without-status`**
+**`no-status`**
 
-- **#303** — merged, but carries no status label; delivered work the board cannot see
+- **#304** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -76,12 +84,12 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[########----]` 42/57 done · 1 running · 3 queued · 9 abandoned · 2 invisible
+`[########----]` 43/58 done · 1 running · 3 queued · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 running | `impl` |
-| _(no epic)_ | `[########----]` 37/51 done · 3 queued · 9 abandoned · 2 invisible | — |
+| _(no epic)_ | `[########----]` 38/52 done · 3 queued · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -122,7 +130,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  228/291 done · 23 running · 23 queued · 2 blocked · 12 abandoned · 3 invisible
+# rickylabs/harness  [###############-----]  229/292 done · 23 running · 23 queued · 2 blocked · 12 abandoned · 3 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  186/234 done · 22 running · 20 queued · 2 blocked · 3 abandoned · 1 invisible
 
@@ -395,7 +403,7 @@ Something could be acting on these right now.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  42/57 done · 1 running · 3 queued · 9 abandoned · 2 invisible
+## (no milestone)  [##############------]  43/58 done · 1 running · 3 queued · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
     [#############---] 5/6 done · 1 running
@@ -457,7 +465,8 @@ Something could be acting on these right now.
     shipped              PR254 docs(how-to): add the first how-to guide, installing the board process (p2)
     triage               #255 fix(forge): skill install --dry-run reports a file as created that it does not create (p3)
     triage               #285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision
-    no status            PR303 docs(architecture): lock v1 — the portable agent runtime
+    shipped              PR303 docs(architecture): lock v1 — the portable agent runtime
+    no status            #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
 ```
 
 </details>
