@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **234/298 done · 20 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible**
+`[###############-----]` **234/299 done · 21 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-13T17:24:25Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T17:35:46Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (4)
 
@@ -17,7 +17,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (20)
+## Moving now (21)
 
 Something could be acting on these right now.
 
@@ -37,6 +37,7 @@ Something could be acting on these right now.
 | [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl-eval` | `e3` |
 | [#300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision](https://github.com/rickylabs/harness/issues/300) | `impl-eval` | `e3` |
 | [PR302 docs(concepts): record the 0.4.0 release the tag push made this page wrong about](https://github.com/rickylabs/harness/pull/302) | `impl-eval` | `e10` |
+| [PR311 docs: same-input pairing works because of aim, not because the control works](https://github.com/rickylabs/harness/pull/311) | `impl-eval` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -56,7 +57,7 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 186/235 done · 20 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
+`[#########---]` 186/236 done · 21 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -71,7 +72,7 @@ Something could be acting on these right now.
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
-| _(no epic)_ | `[############]` 3/3 done | — |
+| _(no epic)_ | `[#########---]` 3/4 done · 1 running | — |
 
 ### (no milestone)
 
@@ -121,9 +122,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  234/298 done · 20 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  234/299 done · 21 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [###############-----]  186/235 done · 20 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [###############-----]  186/236 done · 21 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -394,6 +395,7 @@ Something could be acting on these right now.
     shipped              PR219 fix(board): say so when a column is a lie
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
+    impl-eval            PR311 docs: same-input pairing works because of aim, not because the control works (p2)
 
 ## (no milestone)  [###############-----]  48/63 done · 3 queued · 2 blocked · 9 abandoned · 1 invisible
 
