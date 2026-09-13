@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **229/295 done · 21 running · 23 queued · 2 blocked · 15 abandoned · 5 invisible**
+`[###############-----]` **231/295 done · 20 running · 23 queued · 2 blocked · 15 abandoned · 4 invisible**
 
-_Latest board activity: 2026-09-13T15:33:18Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T15:33:48Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (2)
 
@@ -15,7 +15,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 
-## Moving now (21)
+## Moving now (20)
 
 Something could be acting on these right now.
 
@@ -41,7 +41,6 @@ Something could be acting on these right now.
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
-| [PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt](https://github.com/rickylabs/harness/pull/305) | `impl` | — |
 
 ## Not on the board (2)
 
@@ -52,17 +51,9 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft](https://github.com/rickylabs/harness/issues/306) | — | — |
 | [PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed](https://github.com/rickylabs/harness/pull/307) | — | — |
 
-## Anomalies (5)
+## Anomalies (3)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#305** — closed on GitHub but sits in impl; the issue wins, the column is stale
-
-**`closed-without-status`**
-
-- **#304** — closed as completed, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -96,12 +87,12 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 43/61 done · 2 running · 3 queued · 9 abandoned · 4 invisible
+`[########----]` 45/61 done · 1 running · 3 queued · 9 abandoned · 3 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 running | `no status` |
-| _(no epic)_ | `[########----]` 38/55 done · 1 running · 3 queued · 9 abandoned · 4 invisible | — |
+| _(no epic)_ | `[########----]` 40/55 done · 3 queued · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
@@ -142,7 +133,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  229/295 done · 21 running · 23 queued · 2 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [###############-----]  231/295 done · 20 running · 23 queued · 2 blocked · 15 abandoned · 4 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  186/234 done · 19 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
 
@@ -415,7 +406,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  43/61 done · 2 running · 3 queued · 9 abandoned · 4 invisible
+## (no milestone)  [##############------]  45/61 done · 1 running · 3 queued · 9 abandoned · 3 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 running
@@ -478,8 +469,8 @@ Open, and carrying no `status:` label — real work no column can see.
     triage               #255 fix(forge): skill install --dry-run reports a file as created that it does not create (p3)
     triage               #285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision
     shipped              PR303 docs(architecture): lock v1 — the portable agent runtime
-    no status            #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
-    impl                 PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt
+    shipped              #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
+    shipped              PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt
     no status            #306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft
     no status            PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed (waiting on owner)
 ```
