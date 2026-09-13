@@ -23,7 +23,8 @@ the hazard is stated in full in [`AGENTS.md`](AGENTS.md#operational-hazard-this-
 Quick orientation:
 
 - Ratified decisions: [`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) — the four taken in
-  [#30](https://github.com/rickylabs/harness/issues/30). This repository is the `dsh` layer only;
+  [#30](https://github.com/rickylabs/harness/issues/30), superseded by
+  [`ARCHITECTURE.md`](ARCHITECTURE.md) §1 — this repository is **the portable agent runtime**;
   netscript is a service behind an adapter, not a build-time dependency.
 - Workspace layout and **the two seams** — `ctx.subagents` for vendor CLIs, `ctx.llm` for API and
   local models: [`AGENTS.md`](AGENTS.md#workspace-layout-and-the-two-seams), with the

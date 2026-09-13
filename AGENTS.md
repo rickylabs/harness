@@ -104,17 +104,27 @@ means, and the three places the coordinator reads it — so this file does not r
 
 ## Ratified decisions you inherit
 
-These four are ratified in the *Decisions taken* table of
-[#30](https://github.com/rickylabs/harness/issues/30). They are **not** owner forks and not
-open questions: do not re-derive them, do not design against them, and if evidence contradicts
-one, raise it as a change to #30 rather than resolving it inside a run.
+These four were ratified in the *Decisions taken* table of
+[#30](https://github.com/rickylabs/harness/issues/30), which
+[`ARCHITECTURE.md`](ARCHITECTURE.md) supersedes. Where the two differ, the charter wins. Two of
+the four still hold unchanged, one is now scoped to parked work, and one is superseded outright —
+each is marked below.
 
-1. **Plugin-only, no core fork.** Depend on published `@deepseek-ai/dsh`. We ship our Cordis
-   plugin packages and one profile. Only `runzhliu/deepseek-harness-docker` is forked,
+They remain **not** owner forks and not open questions: do not re-derive them and do not design
+against them. If evidence contradicts one, [`ARCHITECTURE.md`](ARCHITECTURE.md) §13 is the
+mechanism — file a numbered decision in [`doctrine/decisions/`](doctrine/decisions/) with the
+evidence, the recommendation, and the cost of being wrong. Do not raise it against #30, which is
+closed.
+
+1. **Plugin-only, no core fork.** *Scoped to the parked plugin layer —*
+   [`ARCHITECTURE.md`](ARCHITECTURE.md) §10. Depend on published `@deepseek-ai/dsh`. We ship our
+   Cordis plugin packages and one profile. Only `runzhliu/deepseek-harness-docker` is forked,
    upstream remote kept for updates.
 2. **Node + pnpm.** netscript stays a service behind an adapter, not a build-time dependency.
 3. **GitHub is the source of truth for the board**; dsh projects the live view.
-4. **This repo is the dsh layer only.** No cockpit is built here. The two that consume this
+4. **Superseded on its first clause.** This repository is **the portable agent runtime** —
+   [`ARCHITECTURE.md`](ARCHITECTURE.md) §1, which states that charter "replaces the previous one
+   (\"the `dsh` plugin layer\")". The rest of this decision still holds. No cockpit is built here. The two that consume this
    layer are separate products in their own repositories — `rickylabs/atelier-cockpit`, the
    engineering cockpit and backend, and `rickylabs/atelier-mobile`, the native companion.
    The backend adapts Harness; the native client uses the backend-generated API/client. Consequence:
