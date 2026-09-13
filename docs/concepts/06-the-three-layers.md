@@ -251,8 +251,12 @@ is necessary evidence, not a second routing authority.
 ## Gaps, stated plainly
 
 **The contracts package is published.** `@rickylabs/harness-contracts` is
-on npm at 0.3.0, protocol 1, released by the owner with a public receipt
-([issue #39 comment](https://github.com/rickylabs/harness/issues/39#issuecomment-5582710963)).
+on npm at 0.4.0, protocol 1, released by the owner with a public receipt
+([issue #283 comment](https://github.com/rickylabs/harness/issues/283#issuecomment-5651656367)).
+0.3.0 was the first release and carried the same receipt discipline
+([issue #39 comment](https://github.com/rickylabs/harness/issues/39#issuecomment-5582710963));
+0.4.0 adds the connection-recovery work from #265 and changes no wire shape, so the
+observation surface is byte-identical between the two published artifacts.
 The gap this section tracks has therefore moved one step down the chain: what
 is not yet established is the downstream integration evidence — the backend
 adapter consuming a released version, the captured OpenAPI artifact, the
@@ -285,8 +289,8 @@ freshness recovery is an additional, separately tracked limitation in #265.
 
 This decision is historical, made by the protocol owner under the
 architecture-lock directive of 2026-09-07 (see Consulted sources below).
-Protocol 1 is unchanged in the 0.3.0 release, so the documented loss and the
-consumer obligations above continue in 0.3.0; the structured provider-state
+Protocol 1 is unchanged in both published releases, so the documented loss and
+the consumer obligations above continue in 0.4.0; the structured provider-state
 alternative remains deferred.
 
 ---
