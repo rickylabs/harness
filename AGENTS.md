@@ -124,7 +124,7 @@ closed.
 3. **GitHub is the source of truth for the board**; dsh projects the live view.
 4. **Superseded on its first clause.** This repository is **the portable agent runtime** —
    [`ARCHITECTURE.md`](ARCHITECTURE.md) §1, which states that charter "replaces the previous one
-   (\"the `dsh` plugin layer\")". The rest of this decision still holds. No cockpit is built here. The two that consume this
+   ("the `dsh` plugin layer")". The rest of this decision still holds. No cockpit is built here. The two that consume this
    layer are separate products in their own repositories — `rickylabs/atelier-cockpit`, the
    engineering cockpit and backend, and `rickylabs/atelier-mobile`, the native companion.
    The backend adapts Harness; the native client uses the backend-generated API/client. Consequence:
