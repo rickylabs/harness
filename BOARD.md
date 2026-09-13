@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **231/295 done · 20 running · 23 queued · 2 blocked · 15 abandoned · 4 invisible**
+`[###############-----]` **232/295 done · 20 running · 23 queued · 2 blocked · 15 abandoned · 3 invisible**
 
-_Latest board activity: 2026-09-13T15:33:48Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T15:36:20Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (2)
 
@@ -42,14 +42,13 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Not on the board (2)
+## Not on the board (1)
 
 Open, and carrying no `status:` label — real work no column can see.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft](https://github.com/rickylabs/harness/issues/306) | — | — |
-| [PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed](https://github.com/rickylabs/harness/pull/307) | — | — |
 
 ## Anomalies (3)
 
@@ -62,7 +61,10 @@ Open, and carrying no `status:` label — real work no column can see.
 **`no-status`**
 
 - **#306** — open item has no status label, so it appears in no column
-- **#307** — open item has no status label, so it appears in no column
+
+**`stale-owner-decision`**
+
+- **#307** — is closed but still carries the owner-decision flag; the question was answered or went moot — drop the flag, or reopen this if it is still live
 
 ## Epics
 
@@ -87,12 +89,12 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 45/61 done · 1 running · 3 queued · 9 abandoned · 3 invisible
+`[#########---]` 46/61 done · 1 running · 3 queued · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 running | `no status` |
-| _(no epic)_ | `[########----]` 40/55 done · 3 queued · 9 abandoned · 3 invisible | — |
+| _(no epic)_ | `[########----]` 41/55 done · 3 queued · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -133,7 +135,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  231/295 done · 20 running · 23 queued · 2 blocked · 15 abandoned · 4 invisible
+# rickylabs/harness  [###############-----]  232/295 done · 20 running · 23 queued · 2 blocked · 15 abandoned · 3 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  186/234 done · 19 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
 
@@ -406,7 +408,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  45/61 done · 1 running · 3 queued · 9 abandoned · 3 invisible
+## (no milestone)  [###############-----]  46/61 done · 1 running · 3 queued · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 running
@@ -472,7 +474,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
     shipped              PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt
     no status            #306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft
-    no status            PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed (waiting on owner)
+    shipped              PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed (waiting on owner)
 ```
 
 </details>
