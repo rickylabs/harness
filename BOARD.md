@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[###############-----]` **238/301 done · 18 running · 23 queued · 5 blocked · 15 abandoned · 2 invisible**
+`[###############-----]` **240/302 done · 18 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-13T22:36:23Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T22:50:48Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (5)
+## Waiting on you (4)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
@@ -14,7 +14,6 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | --- | --- | --- |
 | [#313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN](https://github.com/rickylabs/harness/issues/313) | `triage` | — |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
-| [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
@@ -43,13 +42,9 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (3)
+## Anomalies (2)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#284** — closed on GitHub but sits in plan; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -63,13 +58,13 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 190/238 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
+`[#########---]` 192/239 done · 18 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 29/32 done · 2 queued · 1 abandoned | `impl` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#####-------]` 4/9 done · 2 running · 2 queued · 1 blocked | `triage` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[######------]` 5/9 done · 2 running · 2 queued | `triage` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 24/39 done · 7 running · 4 queued · 1 blocked · 3 abandoned | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 invisible | `triage` |
@@ -78,7 +73,7 @@ Something could be acting on these right now.
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
-| _(no epic)_ | `[#########---]` 4/5 done · 1 blocked | — |
+| _(no epic)_ | `[##########--]` 5/6 done · 1 blocked | — |
 
 ### (no milestone)
 
@@ -128,9 +123,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  238/301 done · 18 running · 23 queued · 5 blocked · 15 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  240/302 done · 18 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [###############-----]  190/238 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [################----]  192/239 done · 18 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -187,14 +182,14 @@ Something could be acting on these right now.
     shipped              PR302 docs(concepts): record the 0.4.0 release the tag push made this page wrong about (p2)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]
-    [#######---------] 4/9 done · 2 running · 2 queued · 1 blocked
+    [########--------] 5/9 done · 2 running · 2 queued
     shipped              #271 Routing configuration 1/5 — Load a wholly replaceable routing configuration (p1)
     plan-eval            #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p0)
     triage               #273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator (p0)
     plan                 #274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration (p0)
     triage               #275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON (p0)
     shipped              PR277 routing-configuration--271: load an explicit replaceable routing document (p1)
-    plan                 PR284 Routing schema: preserve and repair the complete configuration plan (p1, waiting on owner)
+    shipped              PR284 Routing schema: preserve and repair the complete configuration plan (p1, waiting on owner)
     shipped              PR308 docs(274): measure per-transport detection and the matrix resolution gap (p0)
     shipped              PR312 docs(capability-detection--274): lock the step 4 plan on the merged research (p0)
 
@@ -404,6 +399,7 @@ Something could be acting on these right now.
     shipped              PR266 docs: record the locked three-layer architecture
     shipped              PR311 docs: same-input pairing works because of aim, not because the control works (p2)
     triage               #313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN (p0, waiting on owner)
+    shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
 
 ## (no milestone)  [###############-----]  48/63 done · 3 queued · 2 blocked · 9 abandoned · 1 invisible
 
