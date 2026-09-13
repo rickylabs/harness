@@ -2,16 +2,17 @@
 
 # rickylabs/harness
 
-`[###############-----]` **238/300 done · 18 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible**
+`[###############-----]` **238/301 done · 18 running · 23 queued · 5 blocked · 15 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-13T19:58:14Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T20:24:54Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (4)
+## Waiting on you (5)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
 | item | column | epic |
 | --- | --- | --- |
+| [#313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN](https://github.com/rickylabs/harness/issues/313) | `triage` | — |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
@@ -54,7 +55,7 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 190/237 done · 18 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
+`[#########---]` 190/238 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -69,7 +70,7 @@ Something could be acting on these right now.
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
-| _(no epic)_ | `[############]` 4/4 done | — |
+| _(no epic)_ | `[#########---]` 4/5 done · 1 blocked | — |
 
 ### (no milestone)
 
@@ -119,9 +120,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  238/300 done · 18 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  238/301 done · 18 running · 23 queued · 5 blocked · 15 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [################----]  190/237 done · 18 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [###############-----]  190/238 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -394,6 +395,7 @@ Something could be acting on these right now.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
     shipped              PR311 docs: same-input pairing works because of aim, not because the control works (p2)
+    triage               #313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN (p0, waiting on owner)
 
 ## (no milestone)  [###############-----]  48/63 done · 3 queued · 2 blocked · 9 abandoned · 1 invisible
 
