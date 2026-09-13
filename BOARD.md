@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **229/292 done · 23 running · 23 queued · 2 blocked · 12 abandoned · 3 invisible**
+`[###############-----]` **229/295 done · 21 running · 23 queued · 2 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-13T15:08:07Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T15:33:18Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (2)
 
@@ -15,13 +15,15 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 
-## Moving now (23)
+## Moving now (21)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl-eval` | `e9` |
+| [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `plan-eval` | `e11` |
+| [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `research` | `e11` |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
@@ -30,13 +32,8 @@ Something could be acting on these right now.
 | [#261 E6 — Define command receipt lookup and unknown reconciliation boundaries](https://github.com/rickylabs/harness/issues/261) | `research` | `e6` |
 | [#262 E9 — Specify projection revision, observation coverage and census authority](https://github.com/rickylabs/harness/issues/262) | `research` | `e9` |
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
-| [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `plan-eval` | `e11` |
-| [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `research` | `e11` |
 | [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl-eval` | `e3` |
-| [PR298 feat(subagents): accept a UHP route whose model agrees, and refuse only the drifted lane](https://github.com/rickylabs/harness/pull/298) | `impl-eval` | `e3` |
-| [PR299 E3.8 — contract alignment for UHP-hosted runs: honest route provenance, steer route evidence, and the observation surface raised as a proposal](https://github.com/rickylabs/harness/pull/299) | `impl-eval` | `e3` |
 | [#300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision](https://github.com/rickylabs/harness/issues/300) | `impl-eval` | `e3` |
-| [PR301 E3.8a — observation schema 2: a UHP-hosted run is publishable, and schema 1 stays readable](https://github.com/rickylabs/harness/pull/301) | `impl-eval` | `e3` |
 | [PR302 docs(concepts): record the 0.4.0 release the tag push made this page wrong about](https://github.com/rickylabs/harness/pull/302) | `impl-eval` | `e10` |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
@@ -44,28 +41,43 @@ Something could be acting on these right now.
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
+| [PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt](https://github.com/rickylabs/harness/pull/305) | `impl` | — |
 
-## Not on the board (1)
+## Not on the board (2)
 
 Open, and carrying no `status:` label — real work no column can see.
 
 | item | column | epic |
 | --- | --- | --- |
-| [#304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt](https://github.com/rickylabs/harness/issues/304) | — | — |
+| [#306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft](https://github.com/rickylabs/harness/issues/306) | — | — |
+| [PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed](https://github.com/rickylabs/harness/pull/307) | — | — |
 
-## Anomalies (1)
+## Anomalies (5)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
+**`closed-but-unshipped`**
+
+- **#305** — closed on GitHub but sits in impl; the issue wins, the column is stale
+
+**`closed-without-status`**
+
+- **#304** — closed as completed, but carries no status label; delivered work the board cannot see
+
+**`epic-closed-by-child`**
+
+- **#30** — is closed with 1 open child (#182); an umbrella closes when its last child does — reopen it, do not relabel it
+
 **`no-status`**
 
-- **#304** — open item has no status label, so it appears in no column
+- **#306** — open item has no status label, so it appears in no column
+- **#307** — open item has no status label, so it appears in no column
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 186/234 done · 22 running · 20 queued · 2 blocked · 3 abandoned · 1 invisible
+`[#########---]` 186/234 done · 19 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -73,7 +85,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 28/32 done · 1 running · 2 queued · 1 abandoned | `impl` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[###---------]` 2/7 done · 2 running · 2 queued · 1 blocked | `triage` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 24/39 done · 10 running · 4 queued · 1 blocked | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 24/39 done · 7 running · 4 queued · 1 blocked · 3 abandoned | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 invisible | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
@@ -84,12 +96,12 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 43/58 done · 1 running · 3 queued · 9 abandoned · 2 invisible
+`[########----]` 43/61 done · 2 running · 3 queued · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
-| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 running | `impl` |
-| _(no epic)_ | `[########----]` 38/52 done · 3 queued · 9 abandoned · 2 invisible | — |
+| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 running | `no status` |
+| _(no epic)_ | `[########----]` 38/55 done · 1 running · 3 queued · 9 abandoned · 4 invisible | — |
 
 ## Waiting to start
 
@@ -130,9 +142,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  229/292 done · 23 running · 23 queued · 2 blocked · 12 abandoned · 3 invisible
+# rickylabs/harness  [###############-----]  229/295 done · 21 running · 23 queued · 2 blocked · 15 abandoned · 5 invisible
 
-## M1 — dsh coordinator foundation  [###############-----]  186/234 done · 22 running · 20 queued · 2 blocked · 3 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [###############-----]  186/234 done · 19 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -191,10 +203,10 @@ Open, and carrying no `status:` label — real work no column can see.
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]
     [####------------] 2/7 done · 2 running · 2 queued · 1 blocked
     shipped              #271 Routing configuration 1/5 — Load a wholly replaceable routing configuration (p1)
-    plan-eval            #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p1)
-    triage               #273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator (p1)
-    research             #274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration (p1)
-    triage               #275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON (p1)
+    plan-eval            #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p0)
+    triage               #273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator (p0)
+    research             #274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration (p0)
+    triage               #275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON (p0)
     shipped              PR277 routing-configuration--271: load an explicit replaceable routing document (p1)
     plan                 PR284 Routing schema: preserve and repair the complete configuration plan (draft, p1, waiting on owner)
 
@@ -216,7 +228,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR230 feat(dsh-app): carry board anomalies and fetch coverage in the projection (p1)
 
   E3 — Subagent providers over structured protocols #33  [triage]
-    [#########-------] 24/39 done · 10 running · 4 queued · 1 blocked
+    [#########-------] 24/39 done · 7 running · 4 queued · 1 blocked · 3 abandoned
     shipped              #51 E3.1 — DispatchRequest and the SubagentProvider contract
     shipped              #52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk
     triage               #53 E3.3 — provider-codex against the running app-server daemon
@@ -252,10 +264,10 @@ Open, and carrying no `status:` label — real work no column can see.
     triage               #294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE (p1, waiting on owner)
     shipped              PR295 feat(subagents): read UHP streams and continue sessions without guessing (S11) (p1)
     shipped              PR297 feat(subagents): dispatch, observe, steer and stop a run over UHP (provider-uhp) (p1)
-    impl-eval            PR298 feat(subagents): accept a UHP route whose model agrees, and refuse only the drifted lane (p1)
-    impl-eval            PR299 E3.8 — contract alignment for UHP-hosted runs: honest route provenance, steer route evidence, and the observation surface raised as a proposal (p1)
+    no status            PR298 feat(subagents): accept a UHP route whose model agrees, and refuse only the drifted lane (p1)
+    no status            PR299 E3.8 — contract alignment for UHP-hosted runs: honest route provenance, steer route evidence, and the observation surface raised as a proposal (p1)
     impl-eval            #300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision (p1)
-    impl-eval            PR301 E3.8a — observation schema 2: a UHP-hosted run is publishable, and schema 1 stays readable (p1)
+    no status            PR301 E3.8a — observation schema 2: a UHP-hosted run is publishable, and schema 1 stays readable (p1)
 
   E4 — Model gateway and routing matrix #34  [triage]
     [#############---] 12/14 done · 1 queued · 1 invisible
@@ -403,9 +415,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [##############------]  43/58 done · 1 running · 3 queued · 9 abandoned · 2 invisible
+## (no milestone)  [##############------]  43/61 done · 2 running · 3 queued · 9 abandoned · 4 invisible
 
-  E0 — Roadmap: harness as the deterministic coordinator layer #30  [impl]
+  E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 running
     shipped              PR97 docs(root): state the four ratified decisions from #30 in README/AGENTS
     impl                 #182 Consolidation pass — the Astra medium review of the shipped ground work (p1)
@@ -467,6 +479,9 @@ Open, and carrying no `status:` label — real work no column can see.
     triage               #285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision
     shipped              PR303 docs(architecture): lock v1 — the portable agent runtime
     no status            #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
+    impl                 PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt
+    no status            #306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft
+    no status            PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed (waiting on owner)
 ```
 
 </details>
