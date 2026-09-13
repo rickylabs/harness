@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **227/288 done · 22 running · 23 queued · 2 blocked · 12 abandoned · 2 invisible**
+`[###############-----]` **228/288 done · 21 running · 23 queued · 2 blocked · 12 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-13T06:18:22Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T06:41:07Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (2)
 
@@ -15,7 +15,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 
-## Moving now (22)
+## Moving now (21)
 
 Something could be acting on these right now.
 
@@ -32,7 +32,6 @@ Something could be acting on these right now.
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `plan-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `research` | `e11` |
-| [#283 Contracts 0.4.0 — authorize publication of reviewed synchronization recovery](https://github.com/rickylabs/harness/issues/283) | `impl-eval` | `e9` |
 | [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl-eval` | `e3` |
 | [PR298 feat(subagents): accept a UHP route whose model agrees, and refuse only the drifted lane](https://github.com/rickylabs/harness/pull/298) | `impl-eval` | `e3` |
 | [PR299 E3.8 — contract alignment for UHP-hosted runs: honest route provenance, steer route evidence, and the observation surface raised as a proposal](https://github.com/rickylabs/harness/pull/299) | `impl-eval` | `e3` |
@@ -48,7 +47,7 @@ Something could be acting on these right now.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 185/232 done · 21 running · 20 queued · 2 blocked · 3 abandoned · 1 invisible
+`[#########---]` 186/232 done · 20 running · 20 queued · 2 blocked · 3 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -62,7 +61,7 @@ Something could be acting on these right now.
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 22/26 done · 4 running | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
 | _(no epic)_ | `[############]` 3/3 done | — |
 
 ### (no milestone)
@@ -113,9 +112,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  227/288 done · 22 running · 23 queued · 2 blocked · 12 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  228/288 done · 21 running · 23 queued · 2 blocked · 12 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [###############-----]  185/232 done · 21 running · 20 queued · 2 blocked · 3 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [################----]  186/232 done · 20 running · 20 queued · 2 blocked · 3 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -351,7 +350,7 @@ Something could be acting on these right now.
     shipped              #279 chore(contracts): owner release of the reviewed governance read boundary as 0.2.0 (p0)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]
-    [#############---] 22/26 done · 4 running
+    [##############--] 23/26 done · 3 running
     shipped              #83 E9.1 — SessionTelemetrySink on every run, on both seams
     shipped              #84 E9.2 — Push over /api/remote.mux, never poll
     shipped              #85 E9.3 — The hierarchy view: milestone → epic → task → subagent
@@ -377,7 +376,7 @@ Something could be acting on these right now.
     shipped              PR278 fix(contracts): expose configured governance through an installed read boundary (p0)
     shipped              PR280 feat(telemetry): publish repository-bound run observations (p0)
     shipped              PR282 fix(contracts): retain boards without false synchronization after connection loss (p1)
-    impl-eval            #283 Contracts 0.4.0 — authorize publication of reviewed synchronization recovery (p1)
+    shipped              #283 Contracts 0.4.0 — authorize publication of reviewed synchronization recovery (p1)
 
   (no epic)
     shipped              PR219 fix(board): say so when a column is a lie
