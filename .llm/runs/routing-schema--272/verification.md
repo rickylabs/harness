@@ -38,8 +38,17 @@ so an empty pass is excluded.
 second leg, `scripts/check-installed-contracts.mjs`, exits non-zero with
 `check:installed failed at sleeping probe startup (requires executable TMPDIR)`. That is an
 environment precondition this sandbox does not satisfy, not a result about this change: the script
-contains zero references to routing and exercises the published contracts tarball. It is
-**unproven here**, not green, and CI is where it can run.
+contains zero references to routing and exercises the published contracts tarball. It was therefore
+**unproven here**, not green.
+
+CI then ran it. On `feat/272-routing-schema-impl` the `typecheck · build · test` job passed in 1m34s
+(run 34789133304), and its log carries `node scripts/check-installed-contracts.mjs` followed by two
+`"status":"PASS"` receipts — `installed-repository-run-observation` over 108 fixtures and
+`installed-governance`, both against contracts `0.4.0`, protocol 1, tarball sha256
+`2fea5d3d8775be73b83c5f618ae7e0c260ae31a816f8ae4a55afda222af33ccb`. The governance receipt names the
+precondition this sandbox fails: `"sleeping executable fixture requires POSIX shebang support and
+executable TMPDIR"`. The gate is green where it can execute, and the local record above stands as
+what this environment could and could not establish.
 
 ## The absence claim, with the instrument aimed at the same input set
 
