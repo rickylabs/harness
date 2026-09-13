@@ -4,7 +4,7 @@
 
 `[###############-----]` **238/301 done · 18 running · 23 queued · 5 blocked · 15 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-13T20:24:54Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T22:36:23Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (5)
 
@@ -43,13 +43,21 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (1)
+## Anomalies (3)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#284** — closed on GitHub but sits in plan; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
 - **#30** — is closed with 1 open child (#182); an umbrella closes when its last child does — reopen it, do not relabel it
+
+**`stale-owner-decision`**
+
+- **#284** — is closed but still carries the owner-decision flag; the question was answered or went moot — drop the flag, or reopen this if it is still live
 
 ## Epics
 
@@ -186,7 +194,7 @@ Something could be acting on these right now.
     plan                 #274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration (p0)
     triage               #275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON (p0)
     shipped              PR277 routing-configuration--271: load an explicit replaceable routing document (p1)
-    plan                 PR284 Routing schema: preserve and repair the complete configuration plan (draft, p1, waiting on owner)
+    plan                 PR284 Routing schema: preserve and repair the complete configuration plan (p1, waiting on owner)
     shipped              PR308 docs(274): measure per-transport detection and the matrix resolution gap (p0)
     shipped              PR312 docs(capability-detection--274): lock the step 4 plan on the merged research (p0)
 
