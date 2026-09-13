@@ -71,3 +71,56 @@ and the second cannot.
  fourteen-mutation table; PR 295, 2026-09-12]
 [source — the Cockpit seat's deletion control failing for the symmetrical reason, reported to this
  seat 2026-09-12]
+
+---
+
+## Correction: the reason same-input pairing works is aim, not function
+
+Added 2026-09-13. This file's rule stands and its **justification was wrong**, which matters because the
+wrong justification was given to four delegates and it licenses a weaker check than the rule needs.
+
+The rule above says to pair a negative control with a positive one **on the same input**. I justified
+that as proving the instrument works. A peer seat produced the counter-case:
+
+> A positive control proves an instrument works, never that it is aimed at the subject, so a working
+> control on the wrong target is indistinguishable in its output from a confirmed finding.
+
+So "the instrument works" is the weak half. A perfectly functioning search pointed at the wrong
+directory, the wrong identifier shape, or the wrong repository returns a clean-looking answer, and its
+control passes too. Proving function proves nothing about aim.
+
+**Same-input pairing survives, for a different reason.** It works because sharing the input forces
+the control and the query onto the same subject. Aim becomes a property of the construction rather
+than of the operator's attention. The instruction was right and the reason I gave for it was not.
+
+### The mechanical form, which is what makes it executable
+
+Contributed by the same seat after it had made the aim error three times in one afternoon and found
+that naming the pattern did not stop it:
+
+1. Enumerate the input set **once**, to a file.
+2. Run the control over that file.
+3. Run the real query over **that same file**.
+
+Under this construction a misaimed run cannot produce a dead query beside a live control. The silent
+wrong answer converts into a visibly dead control, which is a failure this catalogue already knows how
+to read. That is the whole value: it turns an invisible failure into one of the visible kinds.
+
+**The worked example is a search at a dependency directory that does not exist inside a worktree.** It
+returned zero. Only the control also returning zero revealed the search as blind rather than the
+answer as empty. Under the three-step construction that outcome is guaranteed rather than lucky.
+
+### Why this belongs with the rule rather than beside it
+
+The rule in this file is *running the control is the mechanism, writing it is not*. The aim correction
+is the same claim one level down: **running a control proves nothing unless it ran over the same input
+as the query.** An executed control on the wrong input is as empty as an unexecuted one, and reports
+the same way.
+
+If the owner takes this file's doctrine candidate, it should carry the three-step construction rather
+than the prose, because the prose is what four delegates were given and the construction is what would
+have caught the errors.
+
+[source — the aim distinction and the three-step construction from a peer seat's absent-signal
+ catalogue, entries 25 and 28; adopted here with its own correction to this file's justification,
+ 2026-09-13]
