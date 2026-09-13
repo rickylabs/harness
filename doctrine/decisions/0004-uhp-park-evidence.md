@@ -1,6 +1,6 @@
-# ADR 0003 — §10's evidence has half changed: a router exists and cannot execute
+# ADR 0004 — §10's evidence has half changed: a router exists and cannot execute
 
-**Status:** proposed · **Date:** 2026-09-13 · **Supersedes:** nothing · **Amends:** `ARCHITECTURE.md` §10 · **Issues:** [#294](https://github.com/rickylabs/harness/issues/294), `rickylabs/atelier-cockpit` #105, #107
+**Status:** accepted · **Date:** 2026-09-13 · **Supersedes:** nothing · **Ratified by:** owner, 2026-09-13 · **Amends:** `ARCHITECTURE.md` §10 · **Issues:** [#294](https://github.com/rickylabs/harness/issues/294), `rickylabs/atelier-cockpit` #105, #107
 
 ---
 
@@ -155,3 +155,34 @@ produces no records, because the next tag cut from `main` would carry it.
 [observed - the four-step breakdown and the empty harness list are that session's authenticated
 measurements, not this author's; unauthenticated re-verification from this container returns 401 and
 cannot see the list. Router liveness and the 307 re-confirmed here 2026-09-13.]
+
+
+---
+
+## Ruling — owner, 2026-09-13
+
+**The park holds.** Ratified as recommended, with no amendment to the recommendation.
+
+The owner's words on the corrected evidence: it *"doesn't change anything about our locked
+architecture, except we need to remove the stale servers and surface to focus on the new
+architecture."*
+
+Three stale things, removed the same day:
+
+| Stale | Action |
+| --- | --- |
+| `harness-router-dev`, borrowed in netscript's sandbox | removed |
+| `atelier-cockpit` #105 — HarnessRouter CE container profile | closed, stays parked |
+| `atelier-cockpit` #107 — UHP SSE run observation | closed, stays parked |
+
+Removing the instance also removes the hazard this record names: nobody can now read a running
+container as evidence that the park is stale. If the park is ever lifted, the router is recreated
+deliberately, in a sandbox of its own, by an owner decision that begins with a provider credential.
+
+§10's first sentence is corrected on `main` by the same change that merges this record. That
+sentence was false when it was written, and the way it became false is worth more than the
+correction: it rested on a `docker ps` that reported an **empty daemon** because `DOCKER_HOST` was
+unset, which is indistinguishable from nothing running. The same false negative took three separate
+agents in one day, including the session that authored §10.
+
+[ruled - owner, 2026-09-13]

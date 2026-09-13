@@ -197,12 +197,21 @@ invented, and an invented number in a cost dashboard is worse than three true on
 **UHP-hosted dispatch (epic E3) is parked.** Not deleted — parked, revisitable, and out of the
 way.
 
-The reason is evidence, not preference: no router instance exists to talk to, on any host, and
-the spike that would prove a live round-trip
-([#294](https://github.com/rickylabs/harness/issues/294)) has never been funded. The client is
-well built. It has nothing to connect to. Every contract shaped against it is therefore work
-against an untested assumption, and the product does not need it: the dispatch contract in §5
-is proven and needs no protocol.
+The reason is evidence, not preference. A router instance exists and answers, and it **cannot
+execute**: every backend reports every model unavailable for want of a provider credential, and
+the harness list is empty, so no identifier can be pinned. The spike that would prove a live
+round-trip ([#294](https://github.com/rickylabs/harness/issues/294)) has never been funded. The
+client is well built. It has nothing it can connect to. Every contract shaped against it is
+therefore work against an untested assumption, and the product does not need it: the dispatch
+contract in §5 is proven and needs no protocol.
+
+This paragraph once opened *"no router instance exists to talk to, on any host."* That was false
+when it was written. It rested on a `docker ps` that reported an **empty daemon** because
+`DOCKER_HOST` was unset — output indistinguishable from nothing running. Corrected by
+[decision 0004](doctrine/decisions/0004-uhp-park-evidence.md), which the owner ratified on
+2026-09-13: **the park holds**, because a router answering `401` with no executable backend does
+not test the assumption the park exists to protect against. The borrowed instance was removed the
+same day, so no future reader mistakes a running container for a stale park.
 
 Parked issues carry the `parked` label. Their branches remain. If #294 is ever funded and
 passes, UHP returns as **one more transport behind the same matrix** — a row in provider
