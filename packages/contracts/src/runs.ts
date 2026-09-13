@@ -31,6 +31,14 @@
  * Closed: a client renders a source as a badge and a filter, and an unrecognised source silently
  * dropping out of a filtered list is a run that has vanished from the board. Growing this list is a
  * contract change, which is the correct amount of ceremony for adding a harness.
+ *
+ * A known downstream consumer mirrors this vocabulary in a database enum — Atelier Cockpit's Prisma
+ * `MessageCli`, carrying `claude`, `codex` and `opencode`, documented at that end as a copy of this
+ * list — with no type-level link between the two declarations. Widening this list therefore requires
+ * notifying that consumer *before* publication rather than after it, because no compile error is
+ * available across a boundary between two languages in two repositories: the drift is silent, and it
+ * surfaces as a message from an unrecognised CLI disappearing from a filtered list, which is the
+ * failure this comment already warns about arriving from the one direction it cannot see.
  */
 export const RUN_SOURCES = ["claude", "codex", "opencode"] as const;
 export type RunSource = (typeof RUN_SOURCES)[number];

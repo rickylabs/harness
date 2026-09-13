@@ -4,7 +4,8 @@ import { open, realpath, stat } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { isAbsolute, relative, sep } from "node:path";
-import { readRepositoryRunObservation, type RepositoryRunBinding, type RepositoryRunObservation,
+import { readRepositoryRunObservation, REPOSITORY_RUN_OBSERVATION_SCHEMA,
+  type RepositoryRunBinding, type RepositoryRunObservation,
   type RunObservationCoverage, type ObservedRepositoryRun, type RunTokenObservation } from "@rickylabs/harness-contracts";
 
 const exec = promisify(execFile);
@@ -40,7 +41,7 @@ function descriptor(bytes: Buffer): RepositoryRunSourceDescriptor {
   if (!d || Object.keys(d).sort().join() !== "binding,gitCommonDirectory,schema,source,worktree" || d.schema !== 1) throw new Error("invalid descriptor");
   const s = obj(d.source);
   if (!s || Object.keys(s).sort().join() !== "file,kind,nativeId,root" || s.kind !== "codex" || !identifier(s.nativeId) || !safePath(s.root) || !safePath(s.file) || !safePath(d.worktree) || !safePath(d.gitCommonDirectory)) throw new Error("invalid descriptor");
-  const read = readRepositoryRunObservation({ schema: 1, protocol: 1, binding: d.binding, capturedAt: EPOCH,
+  const read = readRepositoryRunObservation({ schema: REPOSITORY_RUN_OBSERVATION_SCHEMA, protocol: 1, binding: d.binding, capturedAt: EPOCH,
     coverage: unavailable("source-missing"), verification: null, run: null });
   if (!read.ok) throw new Error("invalid descriptor");
   return { schema: 1, binding: read.observation.binding, source: { kind: "codex", root: s.root, file: s.file, nativeId: s.nativeId }, worktree: d.worktree, gitCommonDirectory: d.gitCommonDirectory };
@@ -266,7 +267,12 @@ export async function collectRepositoryRunObservation(path: string, options: Rep
     } catch { failure = incomplete("source-changed"); }
   }
   const verification = failure === null && run !== null ? { basis: "enrollment-and-local-worktree", verifiedAt: now() } : null;
-  const result = readRepositoryRunObservation({ schema: 1, protocol: 1, binding: d.binding, capturedAt: now(), coverage: failure ?? { status: "read", reason: null }, verification, run: failure ? null : run });
+  // Writes the newest schema the package defines. This producer reads a local Codex rollout against a
+  // local worktree, so `enrollment-and-local-worktree` above is still the basis it can evidence; the
+  // schema number is the package's, not this producer's vocabulary.
+  // `RepositoryRunSourceDescriptor.schema` is a separate, private, local descriptor format and is
+  // deliberately not moved with it.
+  const result = readRepositoryRunObservation({ schema: REPOSITORY_RUN_OBSERVATION_SCHEMA, protocol: 1, binding: d.binding, capturedAt: now(), coverage: failure ?? { status: "read", reason: null }, verification, run: failure ? null : run });
   if (!result.ok) throw new Error("run-observation: collection failed");
   return result.observation;
 }

@@ -1,0 +1,491 @@
+{
+  "baseline": {
+    "killed": 0,
+    "per": {
+      "contracts": 0,
+      "telemetry": 0
+    },
+    "compiled": true,
+    "tests": []
+  },
+  "results": [
+    {
+      "id": "N1",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the write number goes back to 1, so nothing this package produces carries the new schema",
+      "killed": 2,
+      "per": {
+        "contracts": 1,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: writes schema 2, reads schema 1 and schema 2, and never rewrites the schema it read",
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "N2",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "read-both becomes read-newest, so every already-persisted schema-1 record becomes unreadable",
+      "killed": 7,
+      "per": {
+        "contracts": 6,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: standalone strict decoder owns normalized nested data and supports every coverage reason",
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters",
+        "contracts: unknown keys, missing keys, exotic objects and getters fail without reflecting input",
+        "contracts: a degraded coverage carries neither a run nor a verification",
+        "contracts: writes schema 2, reads schema 1 and schema 2, and never rewrites the schema it read",
+        "contracts: each widening is refused inside schema 1 and accepted at schema 2, on the same record",
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "N3",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the source vocabulary is bound to the wrong schema: schema 1 admits UHP and schema 2 refuses it",
+      "killed": 6,
+      "per": {
+        "contracts": 5,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: writes schema 2, reads schema 1 and schema 2, and never rewrites the schema it read",
+        "contracts: each widening is refused inside schema 1 and accepted at schema 2, on the same record",
+        "contracts: schema 2 widens by exactly three values and does not overload the billing seam",
+        "contracts: an in-flight report is timestamped, and unknown stays the untimestamped arm",
+        "contracts: source and verification basis stay independent fields, by decision",
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "N4",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the basis vocabulary is bound to the wrong schema, so `read` loses its local-worktree entailment inside schema 1",
+      "killed": 5,
+      "per": {
+        "contracts": 5,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: writes schema 2, reads schema 1 and schema 2, and never rewrites the schema it read",
+        "contracts: each widening is refused inside schema 1 and accepted at schema 2, on the same record",
+        "contracts: schema 2 widens by exactly three values and does not overload the billing seam",
+        "contracts: an in-flight report is timestamped, and unknown stays the untimestamped arm",
+        "contracts: source and verification basis stay independent fields, by decision"
+      ]
+    },
+    {
+      "id": "N5",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the status vocabulary is bound to the wrong schema, so an in-flight report is legal inside schema 1",
+      "killed": 4,
+      "per": {
+        "contracts": 4,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: writes schema 2, reads schema 1 and schema 2, and never rewrites the schema it read",
+        "contracts: each widening is refused inside schema 1 and accepted at schema 2, on the same record",
+        "contracts: schema 2 widens by exactly three values and does not overload the billing seam",
+        "contracts: source and verification basis stay independent fields, by decision"
+      ]
+    },
+    {
+      "id": "N6",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "schema 1 is retroactively told it always admitted a UHP source, which is what read-both must not claim",
+      "killed": 2,
+      "per": {
+        "contracts": 1,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: each widening is refused inside schema 1 and accepted at schema 2, on the same record",
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "N7",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "schema 1 is retroactively told it always admitted the router-session basis",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: each widening is refused inside schema 1 and accepted at schema 2, on the same record"
+      ]
+    },
+    {
+      "id": "N8",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "schema 1 is retroactively told it always admitted an in-flight status",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: each widening is refused inside schema 1 and accepted at schema 2, on the same record"
+      ]
+    },
+    {
+      "id": "N9",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the schema read is overwritten with the schema written, so stored evidence claims a vocabulary it never had",
+      "killed": 2,
+      "per": {
+        "contracts": 2,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: standalone strict decoder owns normalized nested data and supports every coverage reason",
+        "contracts: writes schema 2, reads schema 1 and schema 2, and never rewrites the schema it read"
+      ]
+    },
+    {
+      "id": "N10",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "a record from an unread schema answers `invalid` instead of `unsupported-schema` — the whole reason this decision went the way it did",
+      "killed": 3,
+      "per": {
+        "contracts": 2,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters",
+        "contracts: an unread schema answers unsupported-schema with the numbers, never invalid",
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "N11",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "`unsupported-schema` reports a number it does not carry, so a pinned consumer cannot say by how much it is behind",
+      "killed": 3,
+      "per": {
+        "contracts": 2,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters",
+        "contracts: an unread schema answers unsupported-schema with the numbers, never invalid",
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "N17",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the two numbers on `unsupported-schema` are swapped, so a pinned consumer is told the wrong distance",
+      "killed": 3,
+      "per": {
+        "contracts": 2,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters",
+        "contracts: an unread schema answers unsupported-schema with the numbers, never invalid",
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "N12",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the in-flight arm is decided by the timestamp rather than the status, so a running report with no time is read as unknown",
+      "killed": 2,
+      "per": {
+        "contracts": 1,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: an in-flight report is timestamped, and unknown stays the untimestamped arm",
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "N13",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the reported-status vocabulary grows a fourth member nothing produces",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: schema 2 widens by exactly three values and does not overload the billing seam"
+      ]
+    },
+    {
+      "id": "N14",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the observed-source vocabulary absorbs a `RunSource` member, overloading the billing seam this decision refused to touch",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: schema 2 widens by exactly three values and does not overload the billing seam"
+      ]
+    },
+    {
+      "id": "N15",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the new basis is renamed to the alternative the proposal rejected, so the published name is the vaguer one",
+      "killed": 5,
+      "per": {
+        "contracts": 5,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: writes schema 2, reads schema 1 and schema 2, and never rewrites the schema it read",
+        "contracts: each widening is refused inside schema 1 and accepted at schema 2, on the same record",
+        "contracts: schema 2 widens by exactly three values and does not overload the billing seam",
+        "contracts: an in-flight report is timestamped, and unknown stays the untimestamped arm",
+        "contracts: source and verification basis stay independent fields, by decision"
+      ]
+    },
+    {
+      "id": "N16",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the version fence lets a future schema through to field validation, so a newer record is judged by this reader's rules",
+      "killed": 3,
+      "per": {
+        "contracts": 2,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters",
+        "contracts: an unread schema answers unsupported-schema with the numbers, never invalid",
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "T1",
+      "file": "packages/telemetry/src/repository-run-observation.ts",
+      "breaks": "the producer keeps writing schema 1, so the bump exists in the type and in nothing published",
+      "killed": 1,
+      "per": {
+        "contracts": 0,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "T2",
+      "file": "packages/telemetry/src/repository-run-observation.ts",
+      "breaks": "a local-worktree reader claims the router-session basis — the new vocabulary used to lie rather than to be honest",
+      "killed": 1,
+      "per": {
+        "contracts": 0,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "T3",
+      "file": "packages/telemetry/src/repository-run-observation.ts",
+      "breaks": "a local Codex rollout is published as a UHP-hosted run, which the widened source now makes expressible",
+      "killed": 1,
+      "per": {
+        "contracts": 0,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "C1",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the observation interval may run backwards",
+      "killed": 8,
+      "per": {
+        "contracts": 7,
+        "telemetry": 1
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: standalone strict decoder owns normalized nested data and supports every coverage reason",
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters",
+        "contracts: writes schema 2, reads schema 1 and schema 2, and never rewrites the schema it read",
+        "contracts: each widening is refused inside schema 1 and accepted at schema 2, on the same record",
+        "contracts: schema 2 widens by exactly three values and does not overload the billing seam",
+        "contracts: an in-flight report is timestamped, and unknown stays the untimestamped arm",
+        "contracts: source and verification basis stay independent fields, by decision",
+        "telemetry: selected-source CLI and strict decoder synthetic coverage/race matrix"
+      ]
+    },
+    {
+      "id": "C2",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "evidence may be timestamped after the last observed envelope",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters"
+      ]
+    },
+    {
+      "id": "C3",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "a verification may be stamped after the collection it belongs to",
+      "killed": 7,
+      "per": {
+        "contracts": 7,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: standalone strict decoder owns normalized nested data and supports every coverage reason",
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters",
+        "contracts: writes schema 2, reads schema 1 and schema 2, and never rewrites the schema it read",
+        "contracts: each widening is refused inside schema 1 and accepted at schema 2, on the same record",
+        "contracts: schema 2 widens by exactly three values and does not overload the billing seam",
+        "contracts: an in-flight report is timestamped, and unknown stays the untimestamped arm",
+        "contracts: source and verification basis stay independent fields, by decision"
+      ]
+    },
+    {
+      "id": "C4",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the relationships fence accepts a record in which some relationship is claimed",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters"
+      ]
+    },
+    {
+      "id": "C5",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "a non-read coverage may carry a run or a verification, so a degraded record can smuggle evidence",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: a degraded coverage carries neither a run nor a verification"
+      ]
+    },
+    {
+      "id": "C6",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "a usage record with no count at all is accepted as usage",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters"
+      ]
+    },
+    {
+      "id": "C7",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the accessor fence: a getter-backed property is read instead of refused, so input can execute code and leak",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: unknown keys, missing keys, exotic objects and getters fail without reflecting input"
+      ]
+    },
+    {
+      "id": "C8",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "negative zero survives normalization, so two equal counts are not equal",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters"
+      ]
+    },
+    {
+      "id": "C9",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "an identity leaf may carry twice the bounded length",
+      "killed": 1,
+      "per": {
+        "contracts": 1,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters"
+      ]
+    },
+    {
+      "id": "C10",
+      "file": "packages/contracts/src/repository-run-observation.ts",
+      "breaks": "the unknown arm may carry a timestamp, collapsing the distinction the in-flight status was added to make",
+      "killed": 2,
+      "per": {
+        "contracts": 2,
+        "telemetry": 0
+      },
+      "compiled": true,
+      "tests": [
+        "contracts: strict schema versions, malformed unions, bounded identifiers, dates and counters",
+        "contracts: an in-flight report is timestamped, and unknown stays the untimestamped arm"
+      ]
+    }
+  ],
+  "after": {
+    "killed": 0,
+    "per": {
+      "contracts": 0,
+      "telemetry": 0
+    },
+    "compiled": true,
+    "tests": []
+  },
+  "at": "2026-09-13T06:47:33.901Z"
+}

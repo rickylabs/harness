@@ -1,0 +1,16 @@
+{
+  "schema": 2,
+  "protocol": 1,
+  "binding": {"namespace":"synthetic-issuer","id":"binding-2","revision":"r1","sourceScopeId":"store-b","repo":{"owner":"synthetic","name":"repo"}},
+  "capturedAt":"2026-09-13T12:00:05.000Z",
+  "coverage":{"status":"read","reason":null},
+  "verification":{"basis":"enrollment-and-router-session","verifiedAt":"2026-09-13T12:00:04.000Z"},
+  "run":{
+    "source":"uhp","nativeId":"resp_synthetic-1",
+    "firstObservedAt":"2026-09-13T12:00:00.000Z","lastObservedAt":"2026-09-13T12:00:03.000Z",
+    "identity":{"provider":null,"model":{"value":"synthetic/model","observedAt":"2026-09-13T12:00:01.000Z"},"effort":null},
+    "usage":{"observedAt":"2026-09-13T12:00:02.000Z","inputTokens":17,"outputTokens":3},
+    "execution":{"status":"source-reported-running","observedAt":"2026-09-13T12:00:03.000Z"},
+    "relationships":{"parent":"unavailable","agent":"unavailable","task":"unavailable","messages":"unavailable","certification":"unavailable"}
+  }
+}

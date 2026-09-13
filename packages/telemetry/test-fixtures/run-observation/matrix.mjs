@@ -31,6 +31,10 @@ export async function runObservationMatrix({ scratch, collect, decode, cli, race
     assert.deepEqual(o.binding, f.d.binding);
     const publicText = JSON.stringify(o);
     for (const privateText of [CANARY, scratch, f.worktree, f.root, 'remote_url', 'credential']) assert.ok(!publicText.includes(privateText), 'public source text leaked');
+    // This producer writes the newest schema, and publishes only what it can actually evidence: a
+    // local Codex rollout read against a local worktree. It never mints the UHP vocabulary.
+    assert.equal(o.schema, 2);
+    assert.equal(o.run === null || o.run.source === 'codex', true, 'local Codex reader must not claim another source');
     if (reason === 'read') {
       assert.deepEqual(o.coverage, { status: 'read', reason: null });
       assert.equal(o.verification.basis, 'enrollment-and-local-worktree');
@@ -186,7 +190,16 @@ export async function runObservationMatrix({ scratch, collect, decode, cli, race
   if (matches(delayedA, activeEnrollment)) persisted.push(delayedA);
   assert.equal(persisted.length, 0); assert.equal(delayedA.binding.revision, 'r1');
   const collision = structuredClone(initial.o); collision.run.source = 'other'; assert.equal(decode(collision).ok, false);
-  collision.run.source = 'codex'; collision.schema = 2; assert.equal(decode(collision).ok, false);
+  // The schema fence, through the installed decoder. Schema 1 is still read, because already-persisted
+  // observations are durable evidence; the schema *after* the newest must come back unsupported with
+  // both numbers rather than invalid, which is what lets a pinned consumer say "too old, by this much".
+  collision.run.source = 'codex';
+  collision.schema = 1; assert.equal(decode(collision).ok, true, 'a persisted schema-1 record must stay readable');
+  collision.schema = 3; assert.deepEqual(decode(collision), { ok: false, reason: 'unsupported-schema', schema: 3, protocol: 1 });
+  // Schema 1 promised exactly one source and one basis, so a schema-1 record carrying schema-2
+  // vocabulary is malformed rather than merely newer.
+  collision.schema = 1; collision.run.source = 'uhp'; assert.equal(decode(collision).ok, false);
+  collision.schema = 2; assert.equal(decode(collision).ok, true, 'the same record at schema 2 is accepted');
   passed.push('store-collision-and-delayed-A-carrier-fence');
   const rejected = value => assert.equal(decode(value).ok, false, 'strict installed decoder accepted invalid input');
   for (const path of [[], ['binding'], ['binding','repo'], ['coverage'], ['verification'], ['run'], ['run','identity'], ['run','identity','model'], ['run','usage'], ['run','execution'], ['run','relationships']]) {

@@ -264,8 +264,12 @@ export {
 } from "./governance-read.js";
 
 export {
-  REPOSITORY_RUN_OBSERVATION_SCHEMA, RUN_OBSERVATION_INCOMPLETE_REASONS,
+  REPOSITORY_RUN_OBSERVATION_SCHEMA, REPOSITORY_RUN_OBSERVATION_READ_SCHEMAS,
+  OBSERVED_RUN_SOURCES, RUN_VERIFICATION_BASES, RUN_EXECUTION_REPORTED_STATUSES,
+  RUN_OBSERVATION_INCOMPLETE_REASONS,
   RUN_OBSERVATION_UNAVAILABLE_REASONS, readRepositoryRunObservation,
+  type RepositoryRunObservationSchema, type ObservedRunSource, type RunVerificationBasis,
+  type RunExecutionReportedStatus,
   type RepositoryRunBinding, type RunObservationCoverage, type RunIdentityObservation,
   type RunTokenObservation, type ObservedRepositoryRun, type RepositoryRunObservation,
   type RepositoryRunObservationReading,

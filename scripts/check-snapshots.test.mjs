@@ -9,6 +9,9 @@ import { test } from "node:test";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const directory = "packages/contracts/test-fixtures/governance-read";
 const runFixture = "packages/contracts/test-fixtures/repository-run-observation/read.json";
+// `read-uhp.json` is the schema-2 sibling (#300). Both run fixtures are inventoried, so both must be
+// present for the guard to pass; a missing one is what the two tests at the bottom of this file assert.
+const runFixtures = [runFixture, "packages/contracts/test-fixtures/repository-run-observation/read-uhp.json"];
 const names = ["admissions-only", "complete-without-admissions", "conflicting-admissions",
   "degraded-log", "mixed-timeout", "stale", "unavailable-not-configured"];
 function probe(change, expected, diagnostic) {
@@ -21,7 +24,7 @@ function probe(change, expected, diagnostic) {
     copyFileSync(join(root, "scripts/check-snapshots.mjs"), join(scratch, "scripts/check-snapshots.mjs"));
     for (const name of names) copyFileSync(join(root, directory, `${name}.json`), join(scratch, directory, `${name}.json`));
     mkdirSync(dirname(join(scratch, runFixture)), { recursive: true });
-    copyFileSync(join(root, runFixture), join(scratch, runFixture));
+    for (const fixture of runFixtures) copyFileSync(join(root, fixture), join(scratch, fixture));
     execFileSync("git", ["init", "--quiet"], { cwd: scratch, env });
     execFileSync("git", ["add", "--", "."], { cwd: scratch, env });
     change(scratch);
@@ -41,7 +44,7 @@ function track(scratch, file, body) {
     PATH: process.env.PATH, HOME: scratch, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null",
   } });
 }
-test("exact eight tracked fixtures pass", () => probe(() => {}, 0, /8 exact synthetic fixtures verified/));
+test("exact nine tracked fixtures pass", () => probe(() => {}, 0, /9 exact synthetic fixtures verified/));
 test("changed bytes fail even with identical JSON meaning", () => probe(scratch => {
   writeFileSync(target(scratch), readFileSync(target(scratch), "utf8") + "\n");
 }, 1, /exact SHA-256 match required/));
@@ -64,4 +67,11 @@ test("missing repository-run fixture fails loudly", () => probe(scratch => {
 }, 1, /exact SHA-256 match required/));
 test("changed repository-run fixture fails even without snapshot keys", () => probe(scratch => {
   writeFileSync(join(scratch, runFixture), '{}\n');
+}, 1, /exact SHA-256 match required/));
+// The schema-2 sibling is inventoried on the same terms, so neither fixture is exempt by being newer.
+test("missing schema-2 repository-run fixture fails loudly", () => probe(scratch => {
+  unlinkSync(join(scratch, runFixtures[1]));
+}, 1, /exact SHA-256 match required/));
+test("changed schema-2 repository-run fixture fails even without snapshot keys", () => probe(scratch => {
+  writeFileSync(join(scratch, runFixtures[1]), '{}\n');
 }, 1, /exact SHA-256 match required/));

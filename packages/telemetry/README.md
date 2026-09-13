@@ -667,7 +667,7 @@ Collection/verification times are separate from native evidence. Public output c
 prompts, messages, raw errors, remote URLs or source notes. Allowlisted identity labels are not a
 universal secret sanitizer: source storage must be trusted. There is no home scan, enrollment or
 auth integration. Backend fencing/retention obligations and the strict portable encoding are
-specified in [the contracts README](../contracts/README.md#standalone-repository-run-observation-030-protocol-1).
+specified in [the contracts README](../contracts/README.md#standalone-repository-run-observation-schema-2-in-050-protocol-1).
 Tests use temporary synthetic Git repositories/native files. Real-source acceptance is a separate,
 privately authorized coordinator gate; this command does not certify backend authorization.
 

@@ -1,7 +1,24 @@
 /** One selected, enrolled native source. No census, transport, authorization or liveness claim. */
 import type { RepoRef } from "./snapshot.js";
 
-export const REPOSITORY_RUN_OBSERVATION_SCHEMA = 1 as const;
+/** The schema a producer writes. Bumped to 2 for the UHP-hosted vocabulary below (#300). */
+export const REPOSITORY_RUN_OBSERVATION_SCHEMA = 2 as const;
+/** Every schema this decoder reads. Write the newest, read all of them: persisted records are evidence. */
+export const REPOSITORY_RUN_OBSERVATION_READ_SCHEMAS = [1, 2] as const;
+export type RepositoryRunObservationSchema = typeof REPOSITORY_RUN_OBSERVATION_READ_SCHEMAS[number];
+/** Where the observed session ran. Not `RunSource`, which stays the billing seam. */
+export const OBSERVED_RUN_SOURCES = ["codex", "uhp"] as const;
+export type ObservedRunSource = typeof OBSERVED_RUN_SOURCES[number];
+/** What a verification actually rests on. The router-session basis implies no checkout on this host. */
+export const RUN_VERIFICATION_BASES = ["enrollment-and-local-worktree", "enrollment-and-router-session"] as const;
+export type RunVerificationBasis = typeof RUN_VERIFICATION_BASES[number];
+/** Terminal evidence, plus one in-flight report that `unknown` previously had to absorb. */
+export const RUN_EXECUTION_REPORTED_STATUSES = ["source-reported-running", "source-reported-complete", "source-reported-error"] as const;
+export type RunExecutionReportedStatus = typeof RUN_EXECUTION_REPORTED_STATUSES[number];
+/** Schema 1 admitted exactly one source, one basis and no in-flight status. Enforced, not assumed. */
+const SCHEMA_1_SOURCES = ["codex"] as const;
+const SCHEMA_1_VERIFICATION_BASES = ["enrollment-and-local-worktree"] as const;
+const SCHEMA_1_REPORTED_STATUSES = ["source-reported-complete", "source-reported-error"] as const;
 export const RUN_OBSERVATION_INCOMPLETE_REASONS = ["malformed-record", "unknown-envelope", "source-changed", "binding-changed", "invalid-timestamp", "invalid-evidence"] as const;
 export const RUN_OBSERVATION_UNAVAILABLE_REASONS = ["source-missing", "source-unreadable", "source-too-large", "scope-unverified", "scope-mismatch", "identity-missing", "identity-mismatch"] as const;
 export interface RepositoryRunBinding {
@@ -24,7 +41,7 @@ export interface RunTokenObservation {
   readonly cacheReadTokens?: number;
 }
 export interface ObservedRepositoryRun {
-  readonly source: "codex";
+  readonly source: ObservedRunSource;
   readonly nativeId: string;
   readonly firstObservedAt: string;
   readonly lastObservedAt: string;
@@ -35,12 +52,13 @@ export interface ObservedRepositoryRun {
   };
   readonly usage: RunTokenObservation | null;
   readonly execution: { readonly status: "unknown"; readonly observedAt: null }
-    | { readonly status: "source-reported-complete" | "source-reported-error"; readonly observedAt: string };
+    | { readonly status: RunExecutionReportedStatus; readonly observedAt: string };
   readonly relationships: { readonly parent: "unavailable"; readonly agent: "unavailable"; readonly task: "unavailable"; readonly messages: "unavailable"; readonly certification: "unavailable" };
 }
-type ObservationBase = { readonly schema: 1; readonly protocol: 1; readonly binding: RepositoryRunBinding; readonly capturedAt: string };
+/** `schema` is preserved as read, never rewritten: a schema-1 record stays a schema-1 record. */
+type ObservationBase = { readonly schema: RepositoryRunObservationSchema; readonly protocol: 1; readonly binding: RepositoryRunBinding; readonly capturedAt: string };
 export type RepositoryRunObservation = ObservationBase & (
-  | { readonly coverage: { readonly status: "read"; readonly reason: null }; readonly verification: { readonly basis: "enrollment-and-local-worktree"; readonly verifiedAt: string }; readonly run: ObservedRepositoryRun }
+  | { readonly coverage: { readonly status: "read"; readonly reason: null }; readonly verification: { readonly basis: RunVerificationBasis; readonly verifiedAt: string }; readonly run: ObservedRepositoryRun }
   | { readonly coverage: Exclude<RunObservationCoverage, { status: "read" }>; readonly verification: null; readonly run: null }
 );
 export type RepositoryRunObservationReading =
@@ -85,9 +103,9 @@ function binding(value: unknown): RepositoryRunBinding {
     name: text(r.name, /^(?!\.{1,2}$)[A-Za-z0-9._-]+$/, 100),
   } };
 }
-function run(value: unknown): ObservedRepositoryRun {
+function run(value: unknown, schema: RepositoryRunObservationSchema): ObservedRepositoryRun {
   const r = record(value, ["source", "nativeId", "firstObservedAt", "lastObservedAt", "identity", "usage", "execution", "relationships"]);
-  if (r.source !== "codex") return bad();
+  const source = choice(r.source, schema === 1 ? SCHEMA_1_SOURCES : OBSERVED_RUN_SOURCES);
   const firstObservedAt = time(r.firstObservedAt), lastObservedAt = time(r.lastObservedAt);
   if (firstObservedAt > lastObservedAt) return bad();
   const within = (v: unknown): string => { const t = time(v); if (t < firstObservedAt || t > lastObservedAt) return bad(); return t; };
@@ -115,10 +133,10 @@ function run(value: unknown): ObservedRepositoryRun {
   if (e.status === "unknown") {
     if (e.observedAt !== null) return bad();
     execution = { status: "unknown", observedAt: null };
-  } else execution = { status: choice(e.status, ["source-reported-complete", "source-reported-error"]), observedAt: within(e.observedAt) };
+  } else execution = { status: choice(e.status, schema === 1 ? SCHEMA_1_REPORTED_STATUSES : RUN_EXECUTION_REPORTED_STATUSES), observedAt: within(e.observedAt) };
   const rel = record(r.relationships, ["parent", "agent", "task", "messages", "certification"]);
   if (Object.values(rel).some(v => v !== "unavailable")) return bad();
-  return { source: "codex", nativeId: id(r.nativeId), firstObservedAt, lastObservedAt,
+  return { source, nativeId: id(r.nativeId), firstObservedAt, lastObservedAt,
     identity: { provider: leaf(i.provider), model: leaf(i.model), effort: leaf(i.effort) }, usage, execution,
     relationships: { parent: "unavailable", agent: "unavailable", task: "unavailable", messages: "unavailable", certification: "unavailable" } };
 }
@@ -126,19 +144,23 @@ function run(value: unknown): ObservedRepositoryRun {
 export function readRepositoryRunObservation(value: unknown): RepositoryRunObservationReading {
   try {
     const r = record(value, ["schema", "protocol", "binding", "capturedAt", "coverage", "verification", "run"]);
-    if (r.schema !== 1 || r.protocol !== 1) {
+    // A record from an unread schema, or any other protocol, is reported as unsupported *with the
+    // numbers* — never as `invalid`. "Newer than me" and "corrupt" are different answers and a
+    // pinned consumer must be able to tell them apart.
+    if (!(REPOSITORY_RUN_OBSERVATION_READ_SCHEMAS as readonly unknown[]).includes(r.schema) || r.protocol !== 1) {
       const version = (v: unknown): number | null => typeof v === "number" && Number.isSafeInteger(v) && v >= 0 ? v : null;
       return { ok: false, reason: "unsupported-schema", schema: version(r.schema), protocol: version(r.protocol) };
     }
-    const base: ObservationBase = { schema: 1, protocol: 1, binding: binding(r.binding), capturedAt: time(r.capturedAt) };
+    const schema = r.schema as RepositoryRunObservationSchema;
+    const base: ObservationBase = { schema, protocol: 1, binding: binding(r.binding), capturedAt: time(r.capturedAt) };
     const c = record(r.coverage, ["status", "reason"]);
     if (c.status === "read") {
       if (c.reason !== null) return bad();
       const v = record(r.verification, ["basis", "verifiedAt"]);
-      if (v.basis !== "enrollment-and-local-worktree") return bad();
+      const basis = choice(v.basis, schema === 1 ? SCHEMA_1_VERIFICATION_BASES : RUN_VERIFICATION_BASES);
       const verifiedAt = time(v.verifiedAt);
       if (verifiedAt > base.capturedAt) return bad();
-      return { ok: true, observation: { ...base, coverage: { status: "read", reason: null }, verification: { basis: v.basis, verifiedAt }, run: run(r.run) } };
+      return { ok: true, observation: { ...base, coverage: { status: "read", reason: null }, verification: { basis, verifiedAt }, run: run(r.run, schema) } };
     }
     if (r.run !== null || r.verification !== null) return bad();
     let coverage: Exclude<RunObservationCoverage, { status: "read" }>;

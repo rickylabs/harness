@@ -114,9 +114,9 @@ subscription filter that can change mid-stream quietly breaks the property the p
 stale row no future event will ever correct. One repository's board is small enough that filtering
 is a client-side concern.
 
-## Connection recovery in the 0.4.0 candidate
+## Connection recovery, released in 0.4.0
 
-This source prepares 0.4.0 over published 0.3.0; protocol remains 1 and no wire shape changes.
+0.4.0 is published, over 0.3.0; protocol remained 1 and no wire shape changed in it.
 Packing or merging it is not publication or consumer adoption. The 0.x minor discloses changed
 client behavior: `EventFold.bound` is optional for source compatibility, and old-shaped folds use
 `bound ?? (generation !== null)`. New empty folds explicitly start unbound.
@@ -428,7 +428,7 @@ implies no downstream API/client compatibility, no upgrade receipt and no
 live #205/#87 acceptance; real-source and live acceptance remain separate
 gates.
 
-## Standalone repository run observation (0.3.0, protocol 1)
+## Standalone repository run observation (schema 2 in 0.5.0, protocol 1)
 
 `readRepositoryRunObservation(unknown)` validates a `RepositoryRunObservation` independently
 of snapshots, folds, hubs and transport. It returns `{ok:true, observation}` with owned nested
@@ -437,7 +437,21 @@ The root export and declarations require no dependencies, Node APIs or I/O. Unkn
 accessors, wrong unions, unsafe counters and noncanonical/impossible dates are rejected. Dates
 are UTC ISO strings with exactly three fractional digits. No invalid input is echoed.
 
-The exact root is `{schema:1, protocol:1, binding, capturedAt, coverage, verification, run}`.
+The exact root is `{schema, protocol:1, binding, capturedAt, coverage, verification, run}`.
+`REPOSITORY_RUN_OBSERVATION_SCHEMA` is **2** and is what a producer writes.
+`REPOSITORY_RUN_OBSERVATION_READ_SCHEMAS` is `[1, 2]`: the decoder reads both, because
+already-persisted observations are durable evidence and making them unreadable destroys it. The
+schema it read is returned unchanged, never relabelled, so `observation.schema` says which
+vocabulary the record was written under. A record from any other schema, or any other protocol,
+answers `{ok:false, reason:"unsupported-schema", schema, protocol}` with both numbers where they
+are usable version numbers and `null` where they are not — **never** `invalid`. That distinction is
+load-bearing: `invalid` means "your data is corrupt" and `unsupported-schema` means "newer than me,
+by this much", and a pinned reader must not give the first answer to well-formed data.
+
+Schema 1 is read under exactly the vocabulary schema 1 promised — `source:"codex"`, the
+local-worktree basis, and no in-flight status. A record claiming `schema:1` while carrying schema-2
+vocabulary is `invalid`, not merely newer.
+
 Binding is `{namespace,id,revision,sourceScopeId,repo:{owner,name}}`. Each identifier, including
 `run.nativeId`, is case-sensitive, 1..128 characters and matches
 `^[A-Za-z0-9][A-Za-z0-9._:-]*$`. Identifiers are equality-only; no ordering is implied.
@@ -453,22 +467,45 @@ Coverage is exactly one of:
 - `{status:"unavailable",reason}`: `source-missing`, `source-unreadable`, `source-too-large`,
   `scope-unverified`, `scope-mismatch`, `identity-missing` or `identity-mismatch`; both null.
 
-Verification is `{basis:"enrollment-and-local-worktree",verifiedAt}` and requires
-`verifiedAt <= capturedAt`. It records local validation completion. Enrollment asserts the
-logical repository association; local Git identity and native cwd corroborate the selected
-worktree. This is neither cryptographic provenance nor durable historical membership.
+Verification is `{basis,verifiedAt}` and requires `verifiedAt <= capturedAt`. It records validation
+completion. `RUN_VERIFICATION_BASES` is `enrollment-and-local-worktree` or, from schema 2,
+`enrollment-and-router-session`.
 
-A run has `source:"codex"`, `nativeId`, `firstObservedAt`, `lastObservedAt`, `identity`, `usage`,
+- `enrollment-and-local-worktree`: enrollment asserts the logical repository association; local Git
+  identity and native cwd corroborate the selected worktree.
+- `enrollment-and-router-session`: enrollment asserts the association, and the router session the
+  turn ran in is what the verification rests on. It implies **no checkout on this host** and a
+  container-hosted session can carry it truthfully.
+
+Neither is cryptographic provenance or durable historical membership. **`coverage.status === "read"`
+no longer entails a local worktree.** Under schema 1 it did, and a consumer that rendered `read` as a
+local-worktree claim was right; from schema 2 it is wrong on router-session rows while still
+compiling. Read `verification.basis` and branch. This is the one part of the schema-2 change no
+compiler catches, which is why the schema number moved rather than the literal widening in place.
+
+A run has `source`, `nativeId`, `firstObservedAt`, `lastObservedAt`, `identity`, `usage`,
 `execution` and `relationships`. Identity contains independently timestamped nullable provider,
 model and effort leaves `{value,observedAt}` (1..200 ASCII letters/digits/underscore/dot/colon/
 slash/hyphen). Usage is null or `{observedAt,inputTokens?,outputTokens?,reasoningTokens?,cacheReadTokens?}`
 with at least one nonnegative safe integer count. These are cumulative source totals, never
 summed, and missing fields remain absent. No cost or quota is supported. Execution is
-`{status:"unknown",observedAt:null}` or a timestamped `source-reported-complete` /
-`source-reported-error`. A later native task start clears terminal evidence. Relationships
+`{status:"unknown",observedAt:null}` or a timestamped `RUN_EXECUTION_REPORTED_STATUSES` member:
+`source-reported-complete`, `source-reported-error`, or, from schema 2, `source-reported-running`.
+An in-flight report is observed *at a time*, which is what separates it from `unknown`, whose
+`observedAt` is `null` by construction; before schema 2 a running session had to report `unknown`
+beside genuinely unobservable ones. `source-reported-*` says the source reported it and this record
+is not independently attesting it. A later native task start clears terminal evidence. Relationships
 `parent`, `agent`, `task`, `messages`, `certification` are all exactly `"unavailable"`.
 All source evidence timestamps lie within the first/last envelope interval. Collection and
 verification clocks do not refresh evidence; source clock skew past collection is permitted.
+
+`OBSERVED_RUN_SOURCES` is `codex` or, from schema 2, `uhp`: where the observed session ran, aligned
+with `RunRef.provider` and with `LaunchIdentity.harness`. It is deliberately **not** `RunSource`,
+which stays `claude | codex | opencode` and stays strictly the billing seam; a UHP-hosted run is not
+a fourth thing to bill. `source` and `verification.basis` are independent fields and the decoder
+enforces no entailment between them — one says where the session ran, the other says what the
+verification rests on. Over UHP, `identity.provider` and `identity.effort` are unreportable and stay
+`null`; the protocol defines no field for either.
 
 The native identity tuple is `(namespace,sourceScopeId,source,nativeId)`, never bare nativeId.
 The enrollment authority allocates opaque namespace/binding/revision/store identifiers; none
@@ -490,3 +527,18 @@ before/after changes in trusted local storage, not hostile ABA changes or an ato
 snapshot. This document released in 0.3.0 (receipt under
 [Releasing](#releasing)); packed synthetic gates do not establish real-source or downstream
 API/client compatibility — real-source acceptance remains a separately authorized coordinator gate.
+
+**Schema 2 is breaking for a consumer, and it is a candidate, not a release.** Measured against the
+published 0.3.0 and 0.4.0 tarballs rather than argued
+(`.llm/runs/observation-schema-2--e38/probe-published-readers.mjs`): a widened record inside
+`schema:1` reads as `invalid` on both, so a pinned consumer reports well-formed data as corrupt; the
+same record at `schema:2` reads as `unsupported-schema, schema:2, protocol:1`, which is correct and
+actionable. So the schema number moved. `protocol` stays 1: no existing value changed meaning, no
+verb, message or state machine moved, and #287's Decision 9 already places UHP cancellation and
+budget outcomes on protocol 1 of this resource. A consumer that wants UHP observations must handle
+`source:"uhp"`, read `verification.basis` instead of inferring a local worktree from `read`, handle
+`source-reported-running` as in-flight, write `schema:2`, and keep reading schema 1 for records
+already stored. `packages/telemetry` writes `schema:2` from this change onward, including for
+codex-hosted runs, so a consumer pinned below 0.5.0 sees `unsupported-schema` for **every** new
+observation until it upgrades, and its already-stored schema-1 records keep reading. No UHP producer
+exists in this repository; the widening is vocabulary for the read-projection owner.
