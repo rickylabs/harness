@@ -1,5 +1,11 @@
 # CLAUDE.md
 
+> **Read [`ARCHITECTURE.md`](ARCHITECTURE.md) before anything else.** It is the locked charter
+> of this repository (v1, 2026-09-13) and it supersedes
+> [#30](https://github.com/rickylabs/harness/issues/30). It states what is built, what is
+> parked, and the four invariants every run is held to. An agent may not amend it and may not
+> open a pull request that assumes a different architecture.
+
 See [`AGENTS.md`](AGENTS.md). The protocol is identical in standard mode; the only difference
 is that you are expected to ask before mutating anything outside the active run directory.
 
