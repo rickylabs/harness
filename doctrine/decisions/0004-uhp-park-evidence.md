@@ -156,7 +156,33 @@ produces no records, because the next tag cut from `main` would carry it.
 measurements, not this author's; unauthenticated re-verification from this container returns 401 and
 cannot see the list. Router liveness and the 307 re-confirmed here 2026-09-13.]
 
+### Cost of holding, corrected in both directions
 
+**Lower than this record first stated, for three of the five.** `rickylabs/harness` #298, #299 and
+#301 are finished work, not work in progress. Verified independently rather than taken on report:
+all three are closed and labelled `parked`, all three branches are retained per §10
+(`feat/286-provider-uhp-relax`, `feat/287-contract-alignment-uhp`, `feat/300-observation-schema-2`),
+and CI is green at every head. If the park is lifted they need un-parking, not rebuilding. #301's
+measured behaviour table against two published tarballs does not have to be re-derived. Only this
+author's #105 and #107 carry a rebuild cost, and it is small.
+
+**Higher than this record first stated, in one place that has to be said.** #301 is the change that
+publishes `@rickylabs/harness-contracts` **0.5.0 schema 2**. `rickylabs/atelier-cockpit` #119 is the
+issue that accepts it, and it currently carries **priority p0**. Holding the park means 0.5.0 is never
+published, so #119 is not startable — which #119 already says of itself.
+
+That leaves one of two things true, and the owner should pick which:
+
+- **The park holds and #119 is mis-rated.** It is a p0 on work the park makes moot, and it should be
+  re-rated and parked in sympathy so nobody starts it.
+- **#119's p0 is real**, in which case it is an argument for lifting the park that nobody has stated
+  as one, and it should be argued on its merits rather than arrived at by a priority label.
+
+This record recommends the first. It is recorded because a cost section that only collected evidence
+pointing one way would be the thing §13 exists to stop.
+
+[observed - pull request states, labels, retained refs and check conclusions read from the GitHub API
+2026-09-13; #301's scope and #119's text read from their bodies]
 ---
 
 ## Ruling — owner, 2026-09-13
@@ -167,22 +193,30 @@ The owner's words on the corrected evidence: it *"doesn't change anything about 
 architecture, except we need to remove the stale servers and surface to focus on the new
 architecture."*
 
-Three stale things, removed the same day:
+Stale things, removed the same day:
 
 | Stale | Action |
 | --- | --- |
 | `harness-router-dev`, borrowed in netscript's sandbox | removed |
 | `atelier-cockpit` #105 — HarnessRouter CE container profile | closed, stays parked |
 | `atelier-cockpit` #107 — UHP SSE run observation | closed, stays parked |
+| `atelier-cockpit` #119 — accepts contracts 0.5.0 schema 2 | re-rated and parked in sympathy |
 
-Removing the instance also removes the hazard this record names: nobody can now read a running
-container as evidence that the park is stale. If the park is ever lifted, the router is recreated
-deliberately, in a sandbox of its own, by an owner decision that begins with a provider credential.
+**On the fork this record raises.** The park holding makes #119 unstartable, so #119's `p0` was a
+priority on work the park moots. It is re-rated and parked, which is the first of the two branches
+this record offered. That is the owner's call taken as the record asked for it to be taken — not
+arrived at by leaving a priority label to argue the case on its own.
+
+Removing the router instance also removes the hazard this record names: nobody can now read a
+running container as evidence that the park is stale. If the park is ever lifted, the router is
+recreated deliberately, in a sandbox of its own, by an owner decision that begins with a provider
+credential — and the three finished pull requests this record verified (#298, #299, #301) are
+un-parked, not rebuilt.
 
 §10's first sentence is corrected on `main` by the same change that merges this record. That
-sentence was false when it was written, and the way it became false is worth more than the
-correction: it rested on a `docker ps` that reported an **empty daemon** because `DOCKER_HOST` was
-unset, which is indistinguishable from nothing running. The same false negative took three separate
-agents in one day, including the session that authored §10.
+sentence was false when it was written, and how it became false is worth more than the correction:
+it rested on a `docker ps` that reported an **empty daemon** because `DOCKER_HOST` was unset, which
+is indistinguishable from nothing running. The same false negative took three separate agents in one
+day, including the session that authored §10.
 
 [ruled - owner, 2026-09-13]
