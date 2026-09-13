@@ -226,6 +226,17 @@ To replace it, set `config.document` in your profile patch to your complete rout
 selection; load refusals contain fixed safe codes. `harness-llm` stays pending until routing is
 available and refuses an unsupported placement backend before registering any adapter.
 
+A schema **version 2** document — the fleet shape: tiers by role, ordered candidates per cell — is a
+valid selection and boots. `harness-routing` provides it, `source.schemaVersion` records which
+version booted, and `harness-llm` registers adapters from it, because the placement section is
+identical across versions. It is **not dispatchable** until step 3 (#273) teaches the resolver to
+read cells: the dry-run driver refuses it with
+`{ kind: "routing-unsupported", schemaVersion, requires: "lane-chains" }`, with `appended: 0` and
+before any store read. That refusal is distinct from `routing-unusable`, which means the document is
+not valid at all — a valid document this driver cannot resolve should not be reported as a broken
+one, and a version-1 reader handed a version-2 document would otherwise blame the dispatch for the
+document's shape. The bundle still selects the version-1 transcription.
+
 Render changes to the bundle rows with `pnpm --filter @rickylabs/dsh-app run bundle:render`, then
 run `pnpm run golden:bless -- "reason"` and inspect the resulting row diff.
 

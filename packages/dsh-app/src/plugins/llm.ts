@@ -35,6 +35,7 @@ import type { RoutingService } from "./routing.js";
 import type { Context } from "@deepseek-ai/cordis";
 import z from "@deepseek-ai/schemastery";
 import { BACKENDS, type Backend } from "@rickylabs/llm-local";
+import { placementsOf } from "@rickylabs/routing";
 
 import { LocalLlmAdapter, envCredentials } from "../llm/adapter.js";
 import { fetchTransport, type Transport } from "../llm/transport.js";
@@ -108,7 +109,9 @@ export function createAdapter(
 ): LocalLlmAdapter {
   return new LocalLlmAdapter({
     transport,
-    placements: routing.configuration.placements,
+    // Version-agnostic by construction: the placement section is the one section whose shape and
+    // namespace are identical across schema versions, so the llm seam needs no narrowing.
+    placements: placementsOf(routing.configuration),
     overrides: resolveOverrides(config),
     credentials: envCredentials(),
   });

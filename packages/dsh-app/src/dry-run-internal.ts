@@ -1,7 +1,7 @@
 /** Internal phase instrumentation for owned crash tests; not exported by the package. */
 import { admissibleDispatch, digest, type StepState } from "@rickylabs/coordinator";
 import type { DeliveryReceipt, IntentKey, StateStoreHandle, StoreResult } from "@rickylabs/harness-contracts";
-import { admitDispatch, describeAdmission, parseRoutingDocument } from "@rickylabs/routing";
+import { admitDispatch, describeAdmission, laneRouting, parseRoutingDocument } from "@rickylabs/routing";
 import { compareRouteIdentity, HARNESSES, isRouteEvidenceVerified, ROUTERS, type DispatchRequest } from "@rickylabs/subagents";
 import type { DriveOutcome, DriveRefusal } from "./dry-run.js";
 
@@ -67,6 +67,10 @@ async function driveChecked(handle: StateStoreHandle, value: unknown, hooks: Dri
       Object.keys(routing).some(k => k !== "source" && k !== "text")) return malformed();
   const loaded = parseRoutingDocument(routing.text, routing.source);
   if (!loaded.ok) return refuse({ kind: "routing-unusable", refusal: loaded.refusal });
+  // This driver resolves lane chains. A version-2 document is refused here, before any store read,
+  // rather than at an admission check that would blame the dispatch for the document's shape.
+  const lanes = laneRouting(loaded.loaded.configuration);
+  if (!lanes.ok) return refuse({ kind: "routing-unsupported", schemaVersion: lanes.refusal.schemaVersion, requires: lanes.refusal.requires });
   if (!object(source) || !object(scope) || !text(scope.repository) || !text(scope.milestone) ||
       source.repository !== scope.repository || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(scope.repository) ||
       source.kind !== "issue" || source.state !== "open" || !Number.isSafeInteger(source.number) || (source.number as number) <= 0 ||
@@ -86,7 +90,7 @@ async function driveChecked(handle: StateStoreHandle, value: unknown, hooks: Dri
       (dispatch.router !== undefined && !ROUTERS.includes(dispatch.router as NonNullable<DispatchRequest["router"]>))) {
     return refuse({ kind: "dispatch-inadmissible", problems: [{ reason: "malformed", message: "dispatch fields have invalid types or transport" }], detail: "malformed: dispatch fields have invalid types or transport" });
   }
-  const routed = admitDispatch(loaded.loaded.configuration, dispatch as unknown as DispatchRequest, { lane: value.lane });
+  const routed = admitDispatch(lanes.configuration, dispatch as unknown as DispatchRequest, { lane: value.lane });
   if (!routed.ok) return refuse({ kind: "dispatch-inadmissible", problems: routed.problems, detail: describeAdmission(routed) });
   if (!object(fake) || !code(fake.name) || !code(fake.provider)) return refuse({ kind: "executor-not-data", detail: "fake name and provider must be short lowercase identifiers" });
   const observed = object(fake.observation) ? fake.observation : {};

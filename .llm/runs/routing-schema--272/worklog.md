@@ -115,3 +115,47 @@ These are recorded in D-018; they do not independently approve the plan.
 Coordinator baseline command passed205/205 routing tests; see baseline-verification.md.
 [observed — native repair result, git branch/head, A-1 and author worklog; topic: exact receipt
 and unknown semantics; inspected2026-09-08]
+
+## 2026-09-14 — Stage F: the schema, built to the repaired plan
+
+Owner granted merge and build authority and stated the released package has no consumers yet, so
+the consumer-compatibility caution that held this work is lifted. What is not lifted: the second
+bounded plan evaluation on #272 never ran. The plan carries one independent `FAIL_FIX` verdict and
+the author's F1 to F4 repair, so it is reviewed and repaired but **not independently re-verified**.
+Nothing in this session describes that verdict as a PASS.
+
+Fresh matrix query before starting: `deno task agentic:matrix -- --json` at NetScript
+`155dbbe90b35b8ab24fa7c52d4947f3d5e8f38ac`, digest
+`44807db43ef19c14ac92e08fd5bf8bce89a5d38c7a19aba75db9d37ef4c70ac9`, byte-identical by `cmp` to this
+run's retained `matrix-full.json` (`8ba53bc5`) and `matrix-full-resume.json` (`8eaa8c54`). Three
+source revisions, the same bytes. No matrix data was copied into a product path.
+
+Built: schema version 2 as `src/fleet.ts`, the version dispatcher and typed consumer boundary as
+`src/document.ts`, the shared `validator()` factory and both diagnostic fixes in `src/schema.ts`,
+the widened loader types, three new `PolicyCode` members, two tracked test fixtures, `fleet.test.ts`,
+and the `dsh-app` narrowing with a `routing-unsupported` dry-run refusal before any store read.
+Details per acceptance line in `implementation.md`; executed gates, the absence-claim control and
+every mutation with its kill count in `verification.md`.
+
+Executed: stage 6 `check:compiled-policy` exit 0 with **no new allowlist entry**; stage 7
+`pnpm -r run build` exit 0, so the compile ran and passed; the whole twelve-stage `pnpm run build`
+exit 0; routing 419 pass 0 fail (baseline 205); `dsh-app` 336 pass 0 fail; `pnpm -r run test` 3,336
+pass 0 fail. `check:installed` cannot run in this sandbox (`requires executable TMPDIR`) and is
+recorded **unproven**, not green; it contains no reference to routing.
+
+Twenty mutants, all killing at least one test. Two killed zero on the first run and were treated as
+findings, not formalities: the same-launch relay-approval rule and the order-5 independence check
+over infeasible evaluators were both uncovered because the SETUP separated launches by restriction
+rather than by approval. Tests were added for each. Three mutants the compiler rejected were
+rewritten into forms a reviewer could plausibly have written before being counted.
+
+Divergences from the plan are recorded as D-101 to D-105 in `implementation.md`, the largest being
+that three further routing test files needed narrowing — which is the type boundary working, since
+they stopped compiling the moment the union landed.
+
+Not claimed: a plan PASS, an implementation evaluation, any live dispatch or capability fact, any
+fleet-parity result. No version-2 document ships; the packaged default is still the version-1
+transcription and the bundle row still selects it.
+
+[observed — commands, exit codes and digests in this worktree; topic: executed gates and fresh matrix authority; executed 2026-09-14]
+[source: `.llm/runs/routing-schema--272/{plan,plan-eval,plan-amendment}.md`; topic: the specification and its one repair; consulted 2026-09-14]

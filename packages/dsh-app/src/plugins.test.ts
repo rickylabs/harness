@@ -1,7 +1,7 @@
 import routingPlugin, { CONTEXT_KEY as ROUTING_KEY, createService as createRouting } from "./plugins/routing.js";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { loadRoutingConfiguration } from "@rickylabs/routing";
+import { fleetRouting, laneRouting, loadRoutingConfiguration, placementsOf } from "@rickylabs/routing";
 import { fileURLToPath } from "node:url";
 /**
  * The half of #46's third acceptance criterion that `--dump-config` cannot show.
@@ -327,9 +327,52 @@ describe("explicit routing composition", () => {
     const ctx = new Context();
     const fiber = await ctx.plugin(routingPlugin, { document: "@rickylabs/routing/config/routing.v1.json" });
     assert.ok(Object.isFrozen(ctx.harnessRouting));
-    assert.ok(Object.isFrozen(ctx.harnessRouting.configuration.lanes[0]?.chain));
+    const lanes = laneRouting(ctx.harnessRouting.configuration);
+    assert.ok(lanes.ok);
+    assert.ok(Object.isFrozen(lanes.configuration.lanes[0]?.chain));
     assert.match(ctx.harnessRouting.source.digest, /^sha256:[a-f0-9]{64}$/);
     await fiber.dispose(); assert.equal(ctx.get(ROUTING_KEY), undefined);
+  });
+  it("boots a version-2 document, registers the llm seam from it, and refuses every lane consumer", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "routing-plugin-v2-"));
+    const path = join(directory, "fleet.json");
+    const fleetText = await readFile(fileURLToPath(import.meta.resolve("@rickylabs/routing/package.json")).replace(/package\.json$/, "test-fixtures/fleet-shaped.v2.json"), "utf8");
+    const ctx = new Context(); const seam = fakeSeam();
+    const host = await ctx.plugin(seam.plugin);
+    try {
+      await writeFile(path, fleetText);
+      const service = await createRouting({ document: path });
+      assert.equal(service.source.schemaVersion, 2);
+      // The document is valid and usable for the llm seam, and unusable for a lane resolver.
+      assert.ok(fleetRouting(service.configuration).ok);
+      const lanes = laneRouting(service.configuration);
+      assert.ok(!lanes.ok);
+      assert.deepEqual(lanes.refusal, { kind: "unsupported-by-consumer", schemaVersion: 2, requires: "lane-chains" });
+      const routingFiber = await ctx.plugin(routingPlugin, { document: path });
+      const llmFiber = await ctx.plugin(llm);
+      const adapter = createAdapter(service, undefined);
+      const listed = await adapter.listModels("lm-studio");
+      const runs = placementsOf(service.configuration).entries.filter(e => e.verdict === "runs" && e.backend === "lm-studio");
+      assert.deepEqual(listed.map(m => m.id), runs.map(e => e.model));
+      assert.notEqual(runs.length, 0);
+      await llmFiber.dispose(); await routingFiber.dispose();
+    } finally { await host.dispose(); await rm(directory, { recursive: true, force: true }); }
+  });
+  it("refuses a version-2 document whose invariants fail, with codes and paths only", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "routing-plugin-v2-bad-"));
+    const path = join(directory, "fleet.json");
+    const fleetPath = fileURLToPath(import.meta.resolve("@rickylabs/routing/package.json")).replace(/package\.json$/, "test-fixtures/fleet-shaped.v2.json");
+    const document = JSON.parse(await readFile(fleetPath, "utf8"));
+    delete document.models.muse_spark_1_3.approvedRelayEvaluator;
+    try {
+      await writeFile(path, JSON.stringify(document));
+      await assert.rejects(createRouting({ document: path }), (error: unknown) => {
+        assert.ok(error instanceof RangeError);
+        assert.match(error.message, /^invariant: relay-evaluator-unapproved at /);
+        for (const value of ["muse_spark_1_3", "synthetic/muse", "openrouter"]) assert.ok(!error.message.includes(value), error.message);
+        return true;
+      });
+    } finally { await rm(directory, { recursive: true, force: true }); }
   });
   it("loads an explicit temp path and refuses malformed content safely while llm stays pending", async () => {
     const directory = await mkdtemp(join(tmpdir(), "routing-plugin-"));

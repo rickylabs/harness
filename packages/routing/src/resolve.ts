@@ -255,7 +255,9 @@ export type PolicyCode = "self-certifies" | "evaluation-without-certifies" | "ce
   "relay-evaluator-unapproved" | "first-step-not-primary" | "duplicate-primary" | "no-primary" |
   "opencode-without-router" | "router-outside-opencode" | "relay-without-profile" |
   "escalation-not-raising" | "escalation-not-comparable" | "constraint-violated" | "tier-unresolved" |
-  "unreviewed-step" | "duplicate-lane" | "lane-unrouted";
+  "unreviewed-step" | "duplicate-lane" | "lane-unrouted" |
+  // Version 2 only. `checkFleetPolicy` owns these three; no version-1 rule can produce them.
+  "no-independent-evaluator" | "capability-unsatisfied" | "effort-unsupported";
 export interface PolicyProblem {
   readonly code: PolicyCode;
   readonly lane: string;
