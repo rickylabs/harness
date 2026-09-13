@@ -4,7 +4,7 @@
 
 `[###############-----]` **234/298 done · 20 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-13T16:00:09Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T17:05:15Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (4)
 
@@ -15,7 +15,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
-| [#306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
+| [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
 ## Moving now (20)
 
@@ -460,7 +460,7 @@ Something could be acting on these right now.
     shipped              PR303 docs(architecture): lock v1 — the portable agent runtime
     shipped              #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
     shipped              PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt
-    triage               #306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft (waiting on owner)
+    triage               #306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment (waiting on owner)
     shipped              PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed
     shipped              PR309 docs(architecture): an empty check result is not a pass
     shipped              PR310 docs(security): session identifiers are credential-class, and shape-matching cannot find them
