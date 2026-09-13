@@ -2,18 +2,20 @@
 
 # rickylabs/harness
 
-`[###############-----]` **232/295 done · 20 running · 23 queued · 2 blocked · 15 abandoned · 3 invisible**
+`[###############-----]` **233/297 done · 20 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-13T15:36:20Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T15:51:46Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (2)
+## Waiting on you (4)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
 | item | column | epic |
 | --- | --- | --- |
+| [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [PR284 Routing schema: preserve and repair the complete configuration plan](https://github.com/rickylabs/harness/pull/284) | `plan` | `e11` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
+| [#306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
 ## Moving now (20)
 
@@ -24,7 +26,7 @@ Something could be acting on these right now.
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl-eval` | `e9` |
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `plan-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `research` | `e11` |
-| [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
+| [PR308 docs(274): measure per-transport detection and the matrix resolution gap](https://github.com/rickylabs/harness/pull/308) | `research` | `e11` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -42,15 +44,7 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Not on the board (1)
-
-Open, and carrying no `status:` label — real work no column can see.
-
-| item | column | epic |
-| --- | --- | --- |
-| [#306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft](https://github.com/rickylabs/harness/issues/306) | — | — |
-
-## Anomalies (3)
+## Anomalies (1)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -58,25 +52,17 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#30** — is closed with 1 open child (#182); an umbrella closes when its last child does — reopen it, do not relabel it
 
-**`no-status`**
-
-- **#306** — open item has no status label, so it appears in no column
-
-**`stale-owner-decision`**
-
-- **#307** — is closed but still carries the owner-decision flag; the question was answered or went moot — drop the flag, or reopen this if it is still live
-
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 186/234 done · 19 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
+`[#########---]` 186/235 done · 20 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 28/32 done · 1 running · 2 queued · 1 abandoned | `impl` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[###---------]` 2/7 done · 2 running · 2 queued · 1 blocked | `triage` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[###---------]` 2/8 done · 3 running · 2 queued · 1 blocked | `triage` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 24/39 done · 7 running · 4 queued · 1 blocked · 3 abandoned | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 invisible | `triage` |
@@ -89,12 +75,12 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 46/61 done · 1 running · 3 queued · 9 abandoned · 2 invisible
+`[#########---]` 47/62 done · 3 queued · 2 blocked · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
-| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 running | `no status` |
-| _(no epic)_ | `[########----]` 41/55 done · 3 queued · 9 abandoned · 2 invisible | — |
+| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
+| _(no epic)_ | `[#########---]` 42/56 done · 3 queued · 1 blocked · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
@@ -135,9 +121,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  232/295 done · 20 running · 23 queued · 2 blocked · 15 abandoned · 3 invisible
+# rickylabs/harness  [###############-----]  233/297 done · 20 running · 23 queued · 4 blocked · 15 abandoned · 2 invisible
 
-## M1 — dsh coordinator foundation  [###############-----]  186/234 done · 19 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [###############-----]  186/235 done · 20 running · 20 queued · 2 blocked · 6 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -194,7 +180,7 @@ Open, and carrying no `status:` label — real work no column can see.
     impl-eval            PR302 docs(concepts): record the 0.4.0 release the tag push made this page wrong about (p2)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]
-    [####------------] 2/7 done · 2 running · 2 queued · 1 blocked
+    [####------------] 2/8 done · 3 running · 2 queued · 1 blocked
     shipped              #271 Routing configuration 1/5 — Load a wholly replaceable routing configuration (p1)
     plan-eval            #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p0)
     triage               #273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator (p0)
@@ -202,6 +188,7 @@ Open, and carrying no `status:` label — real work no column can see.
     triage               #275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON (p0)
     shipped              PR277 routing-configuration--271: load an explicit replaceable routing document (p1)
     plan                 PR284 Routing schema: preserve and repair the complete configuration plan (draft, p1, waiting on owner)
+    research             PR308 docs(274): measure per-transport detection and the matrix resolution gap (p0)
 
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]
     [#############---] 12/14 done · 2 queued
@@ -408,12 +395,12 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
 
-## (no milestone)  [###############-----]  46/61 done · 1 running · 3 queued · 9 abandoned · 2 invisible
+## (no milestone)  [###############-----]  47/62 done · 3 queued · 2 blocked · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
-    [#############---] 5/6 done · 1 running
+    [#############---] 5/6 done · 1 blocked
     shipped              PR97 docs(root): state the four ratified decisions from #30 in README/AGENTS
-    impl                 #182 Consolidation pass — the Astra medium review of the shipped ground work (p1)
+    impl                 #182 Consolidation pass — the Astra medium review of the shipped ground work (p1, waiting on owner)
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
@@ -473,8 +460,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR303 docs(architecture): lock v1 — the portable agent runtime
     shipped              #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
     shipped              PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt
-    no status            #306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft
-    shipped              PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed (waiting on owner)
+    triage               #306 Escalation (§8): the mobile read path is gated on atelier-cockpit#93, which is still draft (waiting on owner)
+    shipped              PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed
+    shipped              PR309 docs(architecture): an empty check result is not a pass
 ```
 
 </details>
