@@ -133,6 +133,18 @@ Three profiles ship in v1: `milestone-coordinator`, `rfc`, `leaf`. See
 These are not advice. Each one gets a check, and a check that cannot execute here is recorded
 as **unproven** — never assumed green.
 
+**An empty result is not a pass.** A repository with no continuous integration returns an empty
+check array, and an empty array is indistinguishable from *every check ran and reported nothing*.
+That shape burned this project twice in one day: a `docker ps` aimed at the wrong daemon reports
+an empty list rather than an error — which is how a false sentence reached §10 and needed
+[decision 0004](doctrine/decisions/0004-uhp-park-evidence.md) to remove it — and a pull request
+with no workflows reports no failures.
+
+**Before reading a verdict, establish that the check could have run at all.** Where it could not,
+the invariant is `unproven` and the pull request says so. A gate recorded in a run directory by
+the agent that also wrote the code satisfies the letter of I2 and not its purpose: it is the
+generator's own account of its own work, which is the single thing I2 exists to refuse.
+
 **I1 — Every spawn records a matrix resolution.**
 Requested and observed model, effort, transport, role and tier land in the run receipt. A run
 without that record is not a valid run. *Check: receipt schema validation in CI.*
