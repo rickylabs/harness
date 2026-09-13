@@ -27,7 +27,7 @@ Public files exclude operator paths, credential values and private consumer inte
 [observed — fresh matrix-plan.json at NetScript8eaa8c54, architecture plan route; executed2026-09-08]
 [observed — b38d68a and diff9b120d2..b38d68a, board-only baseline advance; verified2026-09-08]
 
-Native planner init: model `claude-fable-5-1`, session `f8cf8218-6f61-4f67-aa82-84c536ebd295`. Fresh CLI selected Fable5.1/xhigh on Claude Code; no substitute seat.
+Native planner init: model `claude-fable-5-1`, in the preserved planner session. Fresh CLI selected Fable5.1/xhigh on Claude Code; no substitute seat.
 
 ---
 

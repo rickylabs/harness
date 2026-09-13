@@ -4,7 +4,7 @@
 
 Started from b38d68a. Committed scope319ad15 and bounded-execution/source-identity prior art
 b59af7d. Fresh architecture.plan selected Fable5.1/xhigh; native init confirmed
-claude-fable-5-1 in session f8cf8218-6f61-4f67-aa82-84c536ebd295. Planning remained active,
+claude-fable-5-1 in the preserved planner session. Planning remained active,
 with no final research.md or plan.md delivered before the owner requested a pause.
 
 ## 2026-09-08 — owner pause
@@ -20,7 +20,7 @@ resume instructions. No new expensive checks or dispatches. Goal remains incompl
 ## 2026-09-13 — research delivered
 
 Resumed from the 2026-09-08 pause on a new baseline, `aa06a6c`, after reading the locked charter
-and decisions 0003 and 0004. The preserved planner session `f8cf8218` was **not** resumed: the
+and decisions 0003 and 0004. The preserved planner session was **not** resumed: the
 operator brief assigned this session directly and restricted it to research, and re-steering a
 paid planner seat would have spent capacity the checkpoint was written to preserve. Recorded as a
 deviation from the checkpoint's resume step 3, deliberately.

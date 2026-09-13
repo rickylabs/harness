@@ -11,7 +11,7 @@ The full product goal is incomplete; this pause is neither completion nor a fail
 - Run: `.llm/runs/capability-detection--274/`. Issue274 remains research. The full detection plan
   has NOT been delivered: research.md and plan.md do not exist. context-pack, supervisor, matrix
   and coordinator discovery are the committed starting point, not a plan PASS.
-- Native planner: Claude Fable5.1/xhigh, session f8cf8218-6f61-4f67-aa82-84c536ebd295, selected by
+- Native planner: Claude Fable5.1/xhigh, in the preserved planner session, selected by
   the retained fresh architecture.plan query at NetScript8eaa8c54. The owner-requested pause
   was effected with a graceful interrupt of this run's verified child. Wrapper handle82847
   returned exit0 after interrupt; that is NOT a completed planning result. Its launcher, Deno
@@ -20,7 +20,7 @@ The full product goal is incomplete; this pause is neither completion nor a fail
 - Schema272: draft PR284 at df856383e6b8c34878effa8b642b7e0f79de50cf, with locked plan, independent
   FAIL_FIX and repaired A-1. CI34277626288 passed at that exact head. One additional plan review
   needs the recorded owner decision272; no approval received and no second review dispatched.
-  Author session e2ca9e1a-1a8f-452c-8d98-9e433c973bd6 completed repair; evaluator
+  The original author session completed repair; evaluator
   the first evaluator session completed its first verdict. Preserve both.
 - Published contracts remain0.3.0/protocol1, source97e9d058. Recovery265 is merged in source
   at3e70d37, but proposed0.4.0 remains unpublished pending owner283. Do not push its tag from

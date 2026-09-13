@@ -2,7 +2,7 @@
 
 OWNER-REQUESTED PAUSE UNTIL RESET. Read reset-checkpoint.md first.
 Issue274 is research/planning only; no delivered plan, independent verdict or product code.
-Preserved native planner session: f8cf8218-6f61-4f67-aa82-84c536ebd295; gracefully stopped at the
+Preserved native planner session, identifier withheld; gracefully stopped at the
 owner's request, not completed. Do not launch anything until the owner resumes.
 
 Read supervisor.md, coordinator-discovery.md and matrix-plan.json as historical routing evidence.
@@ -58,7 +58,7 @@ the repository boundary, which is the drift `ARCHITECTURE.md` §11 warns about.
 
 **Still open elsewhere, unchanged by this session:** schema 272's additional review and the 0.4
 recovery publication each have an unanswered owner decision. The preserved planner session
-`f8cf8218-6f61-4f67-aa82-84c536ebd295` was not resumed and was not stopped by this session.
+The preserved planner session was not resumed and was not stopped by this session.
 
 **Standing constraints for this run.** No product code, no new package, no schema file, no copy of
 the matrix or the capability table into this repository. No UHP work — E3 is parked per §10. No
