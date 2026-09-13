@@ -3,7 +3,7 @@
 [![ci](https://github.com/rickylabs/harness/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rickylabs/harness/actions/workflows/ci.yml)
 [![licence: MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A524-informational)](https://nodejs.org)
-[![dsh plugin layer](https://img.shields.io/badge/dsh-plugin%20layer-6f42c1)](https://github.com/deepseek-ai/deepseek-harness)
+[![portable agent runtime](https://img.shields.io/badge/portable-agent%20runtime-6f42c1)](ARCHITECTURE.md)
 
 **The deterministic coordinator layer for an agent fleet.** A monorepo of
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`)
@@ -235,9 +235,12 @@ fifteen minutes and needs no server.
 
 ## Architecture commitments
 
-Scope first, so the rest is readable: this repository is the `dsh` plugin
-layer, the doctrine those plugins encode, and the run artifacts they produce
-— nothing else. The two products that consume it are separate repositories —
+Scope first, so the rest is readable: this repository is **the portable agent
+runtime** — the routing matrix, the launchers that enforce it, the slice loop,
+the profiles, and the doctrine, made to run against any repository rather than
+one ([`ARCHITECTURE.md`](ARCHITECTURE.md) §1). The `dsh` plugin packages and the
+run artifacts are still here; §1 states that the charter "replaces the previous
+one" and §10 records that the plugins are parked rather than deleted. The two products that consume it are separate repositories —
 `rickylabs/atelier-cockpit`, the engineering cockpit, and
 `rickylabs/atelier-mobile`, the Expo companion — reaching this layer over a
 published contract package (ratified decision 4, below).
@@ -282,7 +285,8 @@ Four decisions are **ratified** in the *Decisions taken* table of the
 restated here because root documents are what an agent reads first, and a
 root document that contradicts a ratified decision propagates the
 contradiction silently. They are not re-opened in a run, a PR, or a prompt;
-reversing one is a change to #30 first.
+reversing one goes through [`ARCHITECTURE.md`](ARCHITECTURE.md) §13 — a numbered decision in
+[`doctrine/decisions/`](doctrine/decisions/) — not through #30, which is closed and superseded.
 
 1. **Plugin-only, no core fork.** Depend on published
    [`@deepseek-ai/dsh`](https://github.com/deepseek-ai/deepseek-harness). We
