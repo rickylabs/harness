@@ -90,6 +90,25 @@ diff under review and nothing else — no run artifacts, no `.llm/` evidence, no
 anything that captures a terminal is redacted before it is pasted anywhere, because a token printed
 into a transcript is a token that has left the machine.
 
+**An identifier is credential-class, and it does not look like one.** A session or run identifier
+names a live conversation with an agent. It is not a secret shaped like a key, so it survives the
+reflex that catches `sk-` and `ghp_`. Two failures on one branch on 2026-09-13 give the rule its
+edges:
+
+- **A scan for one identifier shape misses another.** The first pass matched prefixed identifiers
+  and left five bare-UUID ones standing in four files.
+- **An abbreviation defeats shape-matching entirely.** An eight-character prefix of an identifier
+  is the same shape as a short commit SHA, which is legitimately public, and abbreviating a session
+  reference is the normal way to write one. No pattern separates them. The only check that works is
+  *no prefix of a known identifier* — which means enumerating the identifiers the run touched
+  before scanning for them.
+
+Replace the identifier with the role it was serving. That is the part the artifact needed.
+
+**A resurrected artifact has not been reviewed at its new visibility.** Work carried forward from a
+paused run onto a live branch has never faced review at the visibility it is now heading for. Both
+failures above arrived that way. Re-review it as new rather than as already-seen.
+
 `ci` holds `permissions: contents: read` and publishes nothing, deliberately. The one credential
 this repository will ever need for publishing lives in a separate workflow triggered by a tag
 ([`release-contracts.yml`](.github/workflows/release-contracts.yml)) rather than in the workflow that
