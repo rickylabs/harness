@@ -4,7 +4,7 @@
 
 `[###############-----]` **241/307 done · 19 running · 25 queued · 4 blocked · 15 abandoned · 3 invisible**
 
-_Latest board activity: 2026-09-13T23:40:45Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T23:41:57Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (4)
 
@@ -43,25 +43,17 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Not on the board (1)
-
-Open, and carrying no `status:` label — real work no column can see.
-
-| item | column | epic |
-| --- | --- | --- |
-| [PR319 docs: point the governance record at the charter, not at a closed issue](https://github.com/rickylabs/harness/pull/319) | — | — |
-
 ## Anomalies (2)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
+**`closed-without-status`**
+
+- **#319** — merged, but carries no status label; delivered work the board cannot see
+
 **`epic-closed-by-child`**
 
 - **#30** — is closed with 1 open child (#182); an umbrella closes when its last child does — reopen it, do not relabel it
-
-**`no-status`**
-
-- **#319** — open item has no status label, so it appears in no column
 
 ## Epics
 
