@@ -23,7 +23,7 @@ explain them.
 - Want a flag, a subcommand or an exit code → [CLI reference](reference/cli/README.md).
 - Want to understand a design decision → [`concepts/`](concepts/) for the model,
   [`doctrine/`](../doctrine/) for the method, and the
-  [E0 roadmap](https://github.com/rickylabs/harness/issues/30) for what is ratified.
+  [`ARCHITECTURE.md`](../ARCHITECTURE.md) for what is ratified.
 - Want the details of one subsystem → its package README under [`packages/`](../packages/). Those
   are the deepest documents in the repository and they are where design rationale lives.
 - Want to change something here → [`CONTRIBUTING.md`](../CONTRIBUTING.md), and
