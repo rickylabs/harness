@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "mode": "role",
+  "role": "plan_evaluation",
+  "tiers": [
+    {
+      "tier": "complex",
+      "description": "Complex implementations, fixes, and features; medium temperature and high complexity.",
+      "routes": [
+        {
+          "model": "muse_spark_1_3",
+          "effort": "max"
+        },
+        {
+          "model": "grok_4_6",
+          "effort": "high"
+        }
+      ],
+      "policy": {
+        "maxRounds": 3,
+        "repairInFlightAt": 3,
+        "reSteerSameSession": true
+      }
+    }
+  ]
+}
