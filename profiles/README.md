@@ -63,3 +63,10 @@ Then the phases, in order, each one saying what it produces and what proves it.
 
 A new profile needs a real second user. Two runs that differ only in prose are one profile with
 a parameter, not two profiles. Add it in a PR that names the run it was extracted from.
+
+## Receipt check
+
+`pnpm run check:receipts` exercises the receipt validator and CLI in CI with synthetic fixtures.
+For explicit receipt files, use the [matrix receipt checker](../docs/reference/matrix-receipts.md).
+Unknown observations return `unproven`; a passing fixture suite does not prove that divybot
+records every spawn or that evidence references are authentic.
