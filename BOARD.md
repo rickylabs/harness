@@ -4,7 +4,7 @@
 
 `[###############-----]` **261/339 done · 27 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-14T19:22:58Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T21:00:33Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -55,18 +55,20 @@ Something could be acting on these right now.
 | [PR350 feat(telemetry): preserve dispatch route evidence for alpha reads](https://github.com/rickylabs/harness/pull/350) | `impl-eval` | — |
 | [#351 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/351) | `plan` | — |
 
-## Not on the board (2)
-
-Open, and carrying no `status:` label — real work no column can see.
-
-| item | column | epic |
-| --- | --- | --- |
-| [PR324 doctrine: add principle 12, an absence needs a reachability list](https://github.com/rickylabs/harness/pull/324) | — | — |
-| [PR336 doctrine: publish what a chain of checks must say when it stops](https://github.com/rickylabs/harness/pull/336) | — | — |
-
-## Anomalies (13)
+## Anomalies (16)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#339** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+- **#342** — closed on GitHub but sits in augment-review; the issue wins, the column is stale
+- **#350** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+
+**`closed-without-status`**
+
+- **#324** — merged, but carries no status label; delivered work the board cannot see
+- **#336** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -84,11 +86,6 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#346** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#347** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
-
-**`no-status`**
-
-- **#324** — open item has no status label, so it appears in no column
-- **#336** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -455,12 +452,12 @@ Open, and carrying no `status:` label — real work no column can see.
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]  (epic is in M1 — dsh coordinator foundation)
     [######----------] 4/10 done · 4 running · 1 blocked · 1 invisible
     triage               #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0, waiting on owner)
-    impl-eval            PR339 docs(e11): charter enforcement plan and measured dual-agent pilot (draft, p0)
+    impl-eval            PR339 docs(e11): charter enforcement plan and measured dual-agent pilot (p0)
     no status            #340 E11 I1: independent feature-tier plan evaluation for receipt checker (p0)
     shipped              #341 E11 I1: native fallback plan evaluation for receipt checker (p0)
-    augment-review       PR342 feat(e11): validate matrix receipts without false green observations (draft, p0)
+    augment-review       PR342 feat(e11): validate matrix receipts without false green observations (p0)
     shipped              #343 E11 I1: independent implementation review of matrix receipt checker (p0)
-    augment-review       PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation (draft, p0)
+    augment-review       PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation (p0)
     shipped              #346 E11: independently evaluate final receipt delta and blocked-decision check (p0)
     shipped              #347 E11: independently evaluate the upstream divybot matrix-hook plan (p0)
     research             #349 Brainstorm: dual-agent mailbox pilot contract (draft)
@@ -545,7 +542,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR338 docs: AGENTS.md said decision 4 was superseded outright; its own list says otherwise
     shipped              #344 I4: independent plan review for blocked-decision validation (p0)
     shipped              PR348 routing: make matrix roles, models and routers owner-configurable
-    impl-eval            PR350 feat(telemetry): preserve dispatch route evidence for alpha reads (draft)
+    impl-eval            PR350 feat(telemetry): preserve dispatch route evidence for alpha reads
     plan                 #351 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned
 ```
 
