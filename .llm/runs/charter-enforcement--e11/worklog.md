@@ -46,3 +46,11 @@ stopped. This is an admission failure, not a plan-evaluation failure round.
 or cancellation. Kept those states unproven. Updated PR evidence to distinguish a real passing
 CI job at the first artifact commit from the missing independent evaluator verdict. The draft
 contains no implementation; no runtime feature or invariant is claimed shipped.
+
+2026-09-14 — Native fallback issue 341 returned PASS AFTER NARROW FIXES. Control-plane and
+process observation corroborated the requested native model and transport, with no effort flag.
+The same reviewer reassessed the existing charter and accepted the independent plan evaluation
+as admissible; honest unknown receipt fields remain unknown. Incorporated its nine narrow
+fixes using the existing js-yaml parser for duplicate detection. User authorization already
+covers slice implementation; no new owner permission is required. Separate implementation PR
+follows. The later source review will use the fresh implementation-evaluation matrix row.

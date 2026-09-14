@@ -1,15 +1,20 @@
-# Plan evaluation
+# Plan evaluation — slice 1
 
-**UNPROVEN — no authorized evaluator verdict received.** This is a gate status written by the
-plan author, not an evaluation result. Product source mutation has not begun.
+**PASS AFTER NARROW FIXES**, independently returned by the selected native Fable reviewer in
+[issue 341](https://github.com/rickylabs/harness/issues/341#issuecomment-5660838420). The same
+reviewer [reassessed admissibility](https://github.com/rickylabs/harness/issues/341#issuecomment-5660892015)
+after external observation corroborated its native command and selected physical model.
 
-See owner fork 2 in `plan.md` and `advisory-review.md`. The Claude counterpart explicitly
-refused to have its advisory response counted as PASS. Routing JSON was freshly queried and
-retained; resolution alone is not a launch or a review.
+All nine bounded fixes are incorporated into `receipt-contract.md`: logical/physical identity,
+string semantics, exact CI wiring, honest role/tier unknowns, reason codes, effort fixtures,
+timestamp validation, unreadable-path nondisclosure, and semantic duplicate-key rejection.
+The existing js-yaml reader supplies duplicate detection after strict JSON.parse validation;
+no new parser or dependency is needed. Unknown observations remain unproven.
 
-Feature-primary review request [340](https://github.com/rickylabs/harness/issues/340) was
-withdrawn after the counterpart's Go admission refusal surfaced. It produced no review verdict.
-The draft PR's real CI job passed at `1bc0da1`; CI does not perform the independent plan review.
-The declared native Claude fallback remains untested through the dispatcher. No model-route
-override is needed merely to select that declared fallback, but admission and cancellation
-state cannot be inferred from catalogue presence or issue closure.
+The actual user assignment already authorizes implementation of this slice. No additional owner
+permission is inferred from the evaluator's closing suggestion. The charter requires an
+independent evaluation and honest receipt, both now recorded; applied effort, role and tier
+remain unobserved and are not promoted to known. This gate applies only to slice 1, not I4,
+dispatcher integration or dual-agent promotion.
+
+The implementation will have a separate PR and its own matrix-selected implementation review.
