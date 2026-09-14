@@ -37,8 +37,10 @@ Measured here, by breaking one markdown link on purpose:
 
     build FAILED at stage 4 of 13: check:links
       compile (build:packages, stage 8): DID NOT RUN
-      never reached: check:forms, check:snapshots, check:compiled-policy, build:packages,
-                     check:publish, check:label-registry, check:docs, check:skill, check:tutorial
+      never reached: check:forms, check:snapshots, check:compiled-policy, build:packages, check:publish, check:label-registry, check:docs, check:skill, check:tutorial
+
+Quoted unwrapped, on one line, because that is how it is emitted. A transcript a reader cannot
+compare byte for byte against their own output is the defect this document is about.
 
 ## The designated stage must be named and validated
 
@@ -52,8 +54,7 @@ confident, wrong answer is worse than no answer.
 
 Measured, the refusal:
 
-    run-stages configuration error — no stage was run:
-      --compile-stage does-not-exist is not one of the stages, so its report would be a lie
+    run-stages configuration error — no stage was run: --compile-stage does-not-exist is not one of the stages, so its report would be a lie
 
 Two properties of that refusal matter as much as its existence. It says **no stage was run**, so it
 cannot be read as a stage verdict. And it is a sentence rather than a stack trace, because a reader
