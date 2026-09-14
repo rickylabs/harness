@@ -24,6 +24,7 @@ explain them.
 - Want to understand a design decision → [`concepts/`](concepts/) for the model,
   [`doctrine/`](../doctrine/) for the method, and the
   [`ARCHITECTURE.md`](../ARCHITECTURE.md) for what is ratified.
+- Proposing a design → [numbered RFCs](rfcs/README.md), with pinned evidence and claim labels.
 - Want the details of one subsystem → its package README under [`packages/`](../packages/). Those
   are the deepest documents in the repository and they are where design rationale lives.
 - Want to change something here → [`CONTRIBUTING.md`](../CONTRIBUTING.md), and
