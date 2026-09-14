@@ -4,7 +4,7 @@
 
 `[###############-----]` **260/336 done · 24 running · 23 queued · 9 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-14T13:30:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T13:58:27Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (9)
 
@@ -62,9 +62,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [PR324 doctrine: add principle 12, an absence needs a reachability list](https://github.com/rickylabs/harness/pull/324) | — | — |
 | [PR336 doctrine: publish what a chain of checks must say when it stops](https://github.com/rickylabs/harness/pull/336) | — | — |
 
-## Anomalies (12)
+## Anomalies (13)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#348** — closed on GitHub but sits in augment-review; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
