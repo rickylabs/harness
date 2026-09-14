@@ -57,3 +57,17 @@ and reported: inbox harness label, profile: leaf in the issue-body /swarm block,
 Initial validation: 220 contract tests and 460 telemetry tests passed, along with typecheck,
 full build and all package tests. Installed-consumer export checks and final integration checks
 are being rerun after explicit-reference binding and source timestamp normalization.
+
+## Final source validation and draft handoff
+
+Workspace typecheck, the full build, the full test pipeline and the installed-consumer gate
+passed on the follow-up source. Contract tests: 220 passed. Telemetry tests: 461 passed.
+The installed check imports the decoder and canonical route subpath from the packed published
+package, validates declarations, and verifies a schema refusal. All fixtures are synthetic.
+The subsequent main update changed BOARD.md only; no executable source changed.
+
+This is a new draft follow-up to merged PR 350. It is not a runtime installation or live proof.
+The coordinator owns dispatch of issue 316 with profile leaf. Native-session association,
+observed native route, current running status and all three cost source bindings remain
+explicitly unavailable where their required evidence is absent. No local dispatcher is needed
+or started. Supervisor sign-off and independent evaluation remain pending.
