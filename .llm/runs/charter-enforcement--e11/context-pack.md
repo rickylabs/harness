@@ -1,29 +1,20 @@
 # Context pack
 
-Read-only discovery, fresh matrix CLI queries, an advisory review and draft plans are recorded.
-No product source has changed. No authorized plan-evaluation PASS exists.
+I1 plan evaluation is admissible and its nine narrow fixes are incorporated. Implementation
+is in PR 342 at source 495b815; local gates and CI passed, independent source review is on issue
+343. The reviewer has independently corroborated native command/model selection; applied effort
+remains unknown. See `plan-eval.md` and the implementation run linked from PR 342.
 
-Read `plan.md` for numbered forks and split slices, `advisory-review.md` for accepted/rejected
-findings, and `dispatcher-handoff.md` for the actual upstream seam. Profiles already exist.
-I1 receipt schema/CI is the first implementation slice. I4 is explicitly in charter section 7
-but is a separate follow-up. The dual-agent draft and observations do not gate those slices.
+I4 has a concrete independent draft in `i4-plan.md`; no I4 source has changed. Before-spawn
+integration remains the upstream handoff in `dispatcher-handoff.md`, not a deployed change.
+Profiles are present and remain markdown. Dual-agent promotion is still owner fork 1.
 
-The Claude counterpart supplied several useful answers and explicitly declined formal review
-authority. Feature-plan primary GLM 5.3 was requested through issue 340, then withdrawn after
-reading the counterpart's expense-guard refusal. Issue 340 is closed not-planned with no trigger
-label. Dispatcher-side cancellation is not yet confirmed; do not start a duplicate attempt.
-The fresh matrix's declared native Claude fallback remains untested. Reviewer assignment and
-plan verdict remain unproven. Use
-`read-claude` from the lane checkout for replies. Fresh matrix role JSON is retained; architecture
-and complex select models implicated by issue 321, while the feature row differs. Do not infer
-an approved tier or route override from availability. Do not take or evaluate PR 317.
+Review request 340 was withdrawn; its running evaluator subsequently acknowledged stand-down
+on the issue and performed no evaluation. That is a session acknowledgement, not proof of OS
+teardown. The native plan review on 341 produced the accepted content and admissibility update.
+The source-review row selects native Opus fallback; it is not the plan-review Fable row.
 
-Baseline remains harness `a0f681c`; source-only discovery used Orchid `d344bd0` and NetScript
-`f3324909e0896cedc9729005bac5f508e122d6c6`. The source dependencies are read-only. Installed the
-workspace's locked pnpm dependencies to prepare the gate; no lockfile change is intended.
-
-PR 339 is the durable review surface. Its CI ran and passed on the first artifact commit;
-independent plan evaluation remains unproven. Current next action is dispatcher-side terminal
-confirmation for the withdrawn request, then fresh resolution/admission of the declared native
-Claude fallback if available. This is an evidence gate, not a request for an invented reviewer.
-The counterpart cannot establish dispatch acceptance from the board publication heartbeat.
+NetScript MCP live-service discovery returned no services because its Aspire discovery reported
+project_root_mismatch and other sources were absent. `list_service_operations` for cockpit-api
+therefore returned service_unknown. That is a discovery limitation, not evidence the API has
+no handlers. No event schema or endpoint was invented; proposed consultation events remain draft.
