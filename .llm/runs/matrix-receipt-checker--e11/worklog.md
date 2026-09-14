@@ -19,3 +19,10 @@ review is next; no live dispatcher enforcement is claimed.
 2026-09-14 — Found and repaired a symlink entry-point false pass: observed exit 0 and empty
 streams on the earlier code, expected unproven exit 2. Fifteen receipt tests now pass, including
 an actual symlink invocation. The independent reviewer must inspect the new source head.
+
+2026-09-14 — Independent review on 343 returned FAIL_FIX at 495b815 for the same symlink
+entry defect. The production fix is in 2662860. Also incorporated its nonblocking suggestions:
+a real CLI escaped-duplicate fixture and precise ECMAScript trimming/BOM documentation. The
+symlink regression now checks malformed input as well. Sixteen tests pass; bypassing only CLI
+duplicate detection while preserving JSON error classification makes exactly the new CLI
+regression fail (15 pass, one fail). Restored the code. Final exact-head review remains pending.

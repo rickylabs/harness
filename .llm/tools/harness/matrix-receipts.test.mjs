@@ -167,7 +167,7 @@ test("missing and unreadable input cannot pass or disclose its path", (t) => {
 });
 
 test("a symlink entry point executes the checker instead of silently exiting zero", (t) => {
-  const [valid] = fixtureFiles(t, [receipt()]);
+  const [valid, malformed] = fixtureFiles(t, [receipt(), "{"]);
   const alias = join(dirname(valid), "receipt-alias.mjs");
   symlinkSync(cli, alias);
   const empty = spawnSync(process.execPath, [alias], { encoding: "utf8" });
@@ -176,6 +176,20 @@ test("a symlink entry point executes the checker instead of silently exiting zer
   const checked = spawnSync(process.execPath, [alias, valid], { encoding: "utf8" });
   assert.equal(checked.status, 0);
   assert.equal(JSON.parse(checked.stdout).results.length, 1);
+  const invalid = spawnSync(process.execPath, [alias, malformed], { encoding: "utf8" });
+  assert.equal(invalid.status, 1);
+  assert.equal(JSON.parse(invalid.stdout).results[0].findings[0].code, "invalid-json");
+});
+
+test("the real CLI rejects escaped duplicate keys, while allowing key-looking string contents", (t) => {
+  const duplicate = JSON.stringify(receipt()).replace('"status":"known"', '"sta\\u0074us":"known","status":"known"');
+  const valid = receipt();
+  valid.observed.model.evidenceRef = '{"status":1,"status":2}';
+  const [badFile, goodFile] = fixtureFiles(t, [duplicate, valid]);
+  const bad = run([badFile]);
+  assert.equal(bad.status, 1);
+  assert.equal(JSON.parse(bad.stdout).results[0].findings[0].code, "duplicate-key");
+  assert.equal(run([goodFile]).status, 0);
 });
 
 test("hostile values, keys and malformed input are never echoed by the CLI", (t) => {

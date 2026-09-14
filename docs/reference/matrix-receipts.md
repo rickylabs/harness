@@ -34,8 +34,9 @@ injected. Such receipts return unproven, even though their structure is valid. T
 changed to pass by copying requested values. This instrument does not establish global I1 coverage.
 
 Every object is closed: unexpected fields fail. Text cannot contain controls or line separators.
-Comparison trims surrounding whitespace, with no case folding or Unicode normalization. The
-logical-to-physical mapping is an assertion from the writer; no fleet inventory is embedded.
+Comparison uses the ECMAScript `String.trim()` whitespace set (including NBSP and U+FEFF),
+with no case folding or Unicode normalization. A BOM at the start of a file is invalid JSON.
+The logical-to-physical mapping is an assertion from the writer; no fleet inventory is embedded.
 Duplicate JSON keys, including escaped equivalents, fail. JSON syntax is checked first; the
 existing js-yaml reader supplies duplicate detection without accepting YAML-only input.
 
