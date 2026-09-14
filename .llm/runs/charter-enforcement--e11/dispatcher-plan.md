@@ -19,29 +19,45 @@ No provider integration, cockpit schema, fleet configuration copy, NetScript mut
 
 ## Contract and decisions
 
-1. Every new dispatch goes through one spawn-attempt function. It parses explicit tier and role,
+1. Every new dispatch goes through one spawn-attempt function. It establishes tier and role from
+   the brief, bound private metadata or the profile routing row; absent information is not guessed. It
    resolves the matrix, selects the quota account and host, persists a private receipt, then calls
    the existing launch path. Missing matrix configuration, tier or role fails closed. There is no
    legacy default-agent bypass when resolution cannot run. Existing live jobs may be supervised or
    adopted without claiming they received a new resolution; only a new spawn gets a new receipt.
    Initial issues, mirrored comments and retries all reach this existing common spawn site.
 
-2. Add tier/role to Overrides. Read profile as the existing profiles/<name>.md behavior; constrain
-   it to a simple filename stem so it cannot escape profiles. Existing explicit harness/model/effort
-   pins are constraints on the resolved route, not alternate routing authority. A mismatch refuses
-   dispatch. No approximate aliases, silent override or hard-coded fleet model defaults are added.
+2. Add tier/role to Overrides. Keep profiles/<name>.md as the profile source; constrain its name
+   to a filename stem. Read the routing table row from the target repository at a pinned source
+   commit, and bind its digest to the launch metadata. The existing workload row forms name roles
+   in inline code; parse those against NetScript's exported role vocabulary, default to the first
+   declared role when omitted, and refuse an explicit role outside that row. Leaf declares
+   implementation plus its evaluation roles; RFC declares deep-research. A coordinator routing row
+   names its coordinator scope and uses resolveCoordinatorRoute plus the full JSON CLI's coordinator
+   section. A workload tier still comes from the brief/bound metadata; never invent one. Missing,
+   ambiguous or unsupported row syntax refuses. Preserve profile transport restrictions through
+   the first-party resolver. No compiled model or profile-name routing table. Pin semantics remain
+   owner fork 4; no source implementation chooses an answer on the owner's behalf.
 
 3. Matrix configuration holds a private NetScript checkout location and private receipt location,
-   with no operational defaults in tracked examples. A short process bridge runs in that checkout.
-   It invokes the existing JSON CLI with explicit tier and role, then calls resolveWorkloadRoute
-   from the same checkout to obtain physical model/family/transport and requested/concrete effort.
+   with no operational defaults in tracked examples. Config pins the expected source commit. The
+   short embedded TypeScript bridge executes under Deno against that private checkout, importing
+   .llm/tools/agentic/runtime/routing-policy.ts in place and supplying the target worktree context.
+   It invokes the existing JSON CLI with the explicit workload tier/role (or full coordinator view),
+   then calls resolveWorkloadRoute/resolveCoordinatorRoute from the same checkout to obtain physical
+   model/family/transport and requested/concrete effort.
    Fresh process per attempt, bounded timeout/output, no shell interpolation of request data. Keep
-   source revision and digest of CLI output; reject dirty/changed source or inconsistent selected
+   source revision and digest of CLI output; require HEAD to equal the configured expected commit,
+   reject dirty/changed source or inconsistent selected
    logical model/effort versus the returned role cell. The bridge contains structural validation,
    not model/effort/tier tables. Go consumes a validated envelope and fills its existing overrides.
 
 4. Privileged authorization and generator linkage come from operator-controlled private task
-   metadata, keyed to the inbox issue, never from claims inside issue prose. The metadata names
+   metadata, bound to the global issue node identity, target repository and digest of the complete
+   parsed brief (including all accepted overrides and prompt), never from claims inside issue prose.
+   Fetch that node identity from GitHub rather than deriving it from a repository-local number.
+   A digest mismatch after an edit refuses. Metadata is immutable/write-once, with no transitions
+   or answer field; replacement is a distinct authorization for a distinct brief. The metadata names
    the owner/coordinator principal and rationale and identifies the actual generator receipt for
    an evaluation. Runtime validation checks the first-party authorizer union before calling the
    existing resolver. Missing/invalid provenance refuses privileged work; missing actual generator
@@ -52,9 +68,14 @@ No provider integration, cockpit schema, fleet configuration copy, NetScript mut
    generator fallback. Require a successful prior launch receipt and independent observed model
    selection; no requested-model self-report is sufficient. Apply first-party family checks in the
    resolver, retain generator session reference privately, and compare the newly observed session
-   when the control plane supplies one. Unknown new session identity leaves independence unproven
+   only when an actual model-session source supplies one. PaneID/WorkspaceID are operational handles,
+   never SessionIdentity.sessionId; current AgentInfo/list/get exposes no actual model-session field.
+   At this boundary today, model-session independence is always unproven. Unknown new session identity leaves independence unproven
    and cannot produce a valid evaluator certification. Reused same-session identity must stop that
-   evaluator. This source PR does not claim that unavailable live observations have become known.
+   evaluator. Existing pre-hook generators receive no synthesized receipt. Until owner fork 3 names
+   an acceptable observation source and its contract is executable, evaluation admission is refused;
+   there is no fictional bootstrap collector. This source PR does not turn unavailable observations
+   into known values.
 
 6. Preserve the existing launcher implementations. Advertise only mappings that this bridge can
    execute exactly; unsupported physical transports are unavailable to selection, not silently
@@ -78,7 +99,9 @@ No provider integration, cockpit schema, fleet configuration copy, NetScript mut
 8. New diagnostics use fixed reason codes and public issue numbers only. Never print subprocess
    stderr, private input metadata, session identities, locations or receipt contents. Configuration
    and receipt examples must carry only invented values and no concrete operational locations.
-   Direct spawning with absent/invalid resolved receipt is refused at the effect boundary.
+   The sole spawnAgent effect boundary must require an unexported typed durable-receipt handle
+   produced only by the successful write path; absent/invalid handles refuse. The existing bare
+   spawnAgent signature cannot remain a callable alternate path. The bypass test targets this boundary.
 
 ## Verification
 
@@ -113,7 +136,8 @@ revision (clean/unchanged source check); untrusted authority (private metadata a
 false model/session observation (unknown, no certification); private publication (fixed diagnostics
 and staged diff audit); rollout disruption from strict metadata (no deployment in this source PR).
 
-Owner forks: none selected silently. The upstream ownership question was sent to the counterpart
-and active lane; absent a conflicting assignment, the author's explicit section-11 scope supports
-preparing this isolated source PR. Any reviewer finding that requires a new policy or authority
-choice must become a numbered fork before implementation, rather than expanding this plan in code.
+Owner forks 3 and 4 are open in plan.md: observation/bootstrap source and explicit-pin semantics.
+No Orchid source mutation until those are ratified. The initial upstream ownership question remains
+unanswered; the user's section-11 assignment supports this isolated preparation. No deployment or
+supervisor sign-off is inferred. The six review corrections above are incorporated in this draft;
+its source-mutation gate remains pending the owner forks, not falsely marked PASS.

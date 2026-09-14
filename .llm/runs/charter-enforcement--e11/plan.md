@@ -117,3 +117,31 @@ plan gate passed with all narrow fixes incorporated. I4 obtained its own indepen
 Their locked plans and executable checks now live in PRs 342 and 345. This broader plan remains
 draft for actual dispatcher integration and dual-agent promotion; neither local check establishes
 all-launcher enforcement. See context-pack.md for current pinned review heads and outstanding work.
+
+## Upstream owner forks — raised by independent plan review 347
+
+3. **Open; blocks Orchid implementation. Observation and evaluator bootstrap.** Which trusted
+   source should supply the generator's actual launched model and model-session identity?
+   Current divybot AgentInfo and observed control-plane list/get fields supply neither. Options:
+   (a) implement the matrix hook for non-evaluation work first and refuse evaluator admission until
+   the control-plane/cockpit lane supplies a bound observation contract; (b) authorize a separately
+   reviewed native-runtime observation adapter now, reusing first-party NetScript capabilities where
+   present, then integrate its real receipts. Recommend (a): preserve unknowns and keep the hook
+   bounded; do not fabricate receipts for pre-hook generators. Cost if wrong: automated evaluation
+   remains unavailable longer. Option (b) costs another integration and transport-specific evidence.
+   A model-session identity is not a pane/workspace handle. No option waives I2.
+
+4. **Open; blocks Orchid implementation. Explicit free-mode pin semantics.** When a brief pins a
+   declared fallback model while the primary has not been shown unavailable, should dispatch refuse
+   unless there is a trusted owner override, or should the pin itself select that declared fallback?
+   Options: (a) pins constrain the normal resolved route; selecting a different route requires the
+   existing first-party OwnerMatrixOverride with trusted owner provenance, rationale and worklog;
+   (b) any pin to a declared candidate selects it without separate primary-unavailability evidence.
+   Recommend (a), preserving primary/fallback semantics and the existing owner-override mechanism.
+   Cost if wrong: stricter metadata and migration for current free-mode briefs. Option (b) is easier
+   operationally but lets a pin skip the matrix's preferred route; it still must never waive I2/I3
+   or profile restrictions. The charter preserves free mode but does not settle this precedence.
+
+Review: https://github.com/rickylabs/harness/issues/347#issuecomment-5661595770
+The six non-owner corrections are incorporated in dispatcher-plan.md. This is the concrete plan
+being offered for decision, not a request to approve an unspecified future design.

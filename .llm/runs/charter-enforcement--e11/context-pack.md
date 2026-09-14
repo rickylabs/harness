@@ -28,3 +28,7 @@ proof of an absent API. No endpoint or event schema was invented; consultation e
 Outstanding: supervisor sign-off, actual divybot integration ownership/plan and live acceptance,
 and the owner's separate dual-agent promotion decision. The mailbox has not answered the upstream
 ownership/supervisor question; an explicit ownership question is also pending in the active lane.
+
+Upstream preparation: isolated Orchid baseline d344bd0 passes Go test/vet/build. The dispatcher plan
+received independent PASS AFTER NARROW FIXES in 347; all six corrections are incorporated, but owner
+forks 3/4 block product mutation. Read dispatcher-plan-eval.md and plan.md. No Orchid source changed.

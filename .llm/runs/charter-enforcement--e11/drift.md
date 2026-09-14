@@ -22,3 +22,8 @@ plan is in the isolated implementation PR 345; this draft remains historical.
 review. Reused-session steering had been attempted; the dispatcher then reported teardown. A fresh
 matrix-selected evaluator in issue 346 now owns the remaining exact-head review. Earlier verdicts
 are retained at their original hashes, never relabeled as final-head passes.
+
+2026-09-14 — After the two local checks passed independent evaluation, proceeded with a concrete
+Orchid implementation plan within the assigned build-order scope. Review 347 required six narrow
+corrections and raised two owner choices. Corrected the plan and filed numbered forks 3/4 before
+any Orchid source mutation. Go baseline gates are executable and green; they are not new-hook proof.
