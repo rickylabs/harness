@@ -15,3 +15,7 @@ reference. Fourteen tests passed; bypassing the actual CLI call made two negativ
 Typecheck and build passed. Full tests first reported the known scratch-executability limitation
 as inconclusive, then all five stages passed using executable scratch. Independent source
 review is next; no live dispatcher enforcement is claimed.
+
+2026-09-14 — Found and repaired a symlink entry-point false pass: observed exit 0 and empty
+streams on the earlier code, expected unproven exit 2. Fifteen receipt tests now pass, including
+an actual symlink invocation. The independent reviewer must inspect the new source head.

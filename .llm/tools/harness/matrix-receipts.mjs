@@ -1,5 +1,4 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { load, JSON_SCHEMA } from "js-yaml";
 
@@ -115,7 +114,13 @@ export function checkFiles(files) {
   return { scope: SCOPE, verdict, results, ...(files.length ? {} : { reason: "no-inputs" }) };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// Resolve entry-point symlinks; an alias must not silently skip the CLI and exit zero.
+function isMain() {
+  try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); }
+  catch { return false; } // Imported modules can have no file entry point (for example node -e).
+}
+
+if (isMain()) {
   const result = checkFiles(process.argv.slice(2));
   console.log(JSON.stringify(result));
   process.exitCode = EXIT[result.verdict];

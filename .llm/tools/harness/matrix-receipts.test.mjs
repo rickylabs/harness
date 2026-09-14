@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -164,6 +164,18 @@ test("missing and unreadable input cannot pass or disclose its path", (t) => {
   const result = JSON.parse(output.stdout);
   assert.equal(result.results[1].index, 1);
   assert.equal(result.results[1].findings[0].code, "unreadable");
+});
+
+test("a symlink entry point executes the checker instead of silently exiting zero", (t) => {
+  const [valid] = fixtureFiles(t, [receipt()]);
+  const alias = join(dirname(valid), "receipt-alias.mjs");
+  symlinkSync(cli, alias);
+  const empty = spawnSync(process.execPath, [alias], { encoding: "utf8" });
+  assert.equal(empty.status, 2);
+  assert.equal(JSON.parse(empty.stdout).reason, "no-inputs");
+  const checked = spawnSync(process.execPath, [alias, valid], { encoding: "utf8" });
+  assert.equal(checked.status, 0);
+  assert.equal(JSON.parse(checked.stdout).results.length, 1);
 });
 
 test("hostile values, keys and malformed input are never echoed by the CLI", (t) => {
