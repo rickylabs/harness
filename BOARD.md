@@ -2,17 +2,18 @@
 
 # rickylabs/harness
 
-`[###############-----]` **243/310 done · 19 running · 26 queued · 4 blocked · 15 abandoned · 3 invisible**
+`[###############-----]` **244/310 done · 19 running · 25 queued · 5 blocked · 15 abandoned · 2 invisible**
 
-_Latest board activity: 2026-09-13T23:54:36Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-13T23:56:38Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (4)
+## Waiting on you (5)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN](https://github.com/rickylabs/harness/issues/313) | `triage` | — |
+| [#321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch](https://github.com/rickylabs/harness/issues/321) | `triage` | `e11` |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
@@ -43,13 +44,9 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Anomalies (3)
+## Anomalies (2)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-without-status`**
-
-- **#322** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -82,18 +79,18 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 51/68 done · 4 queued · 2 blocked · 9 abandoned · 2 invisible
+`[#########---]` 52/68 done · 3 queued · 3 blocked · 9 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/1 done · 1 queued | `triage` |
-| _(no epic)_ | `[#########---]` 46/61 done · 3 queued · 1 blocked · 9 abandoned · 2 invisible | — |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/1 done · 1 blocked | `triage` |
+| _(no epic)_ | `[#########---]` 47/61 done · 3 queued · 1 blocked · 9 abandoned · 1 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>26 filed, nothing started</summary>
+<summary>25 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -101,7 +98,6 @@ Something could be acting on these right now.
 | [#275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON](https://github.com/rickylabs/harness/issues/275) | `triage` | `e11` |
 | [#315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves](https://github.com/rickylabs/harness/issues/315) | `triage` | `e10` |
 | [#316 Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/316) | `triage` | — |
-| [#321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch](https://github.com/rickylabs/harness/issues/321) | `triage` | `e11` |
 | [#287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts](https://github.com/rickylabs/harness/issues/287) | `triage` | `e3` |
 | [#290 Spike S12 — Evidence path: transcript and quota meters for UHP runs](https://github.com/rickylabs/harness/issues/290) | `triage` | `e3` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
@@ -132,7 +128,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  243/310 done · 19 running · 26 queued · 4 blocked · 15 abandoned · 3 invisible
+# rickylabs/harness  [###############-----]  244/310 done · 19 running · 25 queued · 5 blocked · 15 abandoned · 2 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 19 running · 22 queued · 2 blocked · 6 abandoned · 1 invisible
 
@@ -413,7 +409,7 @@ Something could be acting on these right now.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     triage               #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  51/68 done · 4 queued · 2 blocked · 9 abandoned · 2 invisible
+## (no milestone)  [###############-----]  52/68 done · 3 queued · 3 blocked · 9 abandoned · 1 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -425,8 +421,8 @@ Something could be acting on these right now.
     shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [----------------] 0/1 done · 1 queued
-    triage               #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0)
+    [----------------] 0/1 done · 1 blocked
+    triage               #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0, waiting on owner)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
@@ -489,7 +485,7 @@ Something could be acting on these right now.
     shipped              PR318 docs: finish the charter reconciliation the lock started
     shipped              PR319 docs: point the governance record at the charter, not at a closed issue
     shipped              PR320 docs: mark the same four decisions in the second place they are restated
-    no status            PR322 chore(uhp-dispatch-readiness--e3): retain two coordinator receipts
+    shipped              PR322 chore(uhp-dispatch-readiness--e3): retain two coordinator receipts
 ```
 
 </details>
