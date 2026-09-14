@@ -2,9 +2,14 @@
 // test below asserts on those lines. Each case is a state the `&&` chain could not express.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
+
+/** A single quote, so a shell command can be built without fighting the surrounding literal. */
+const Q = String.fromCharCode(39);
 
 import { INCONCLUSIVE_EXIT, classifyStageResult, summarise } from "./run-stages.mjs";
 
@@ -76,11 +81,15 @@ test("no stages at all is refused", () => {
 // and the one line no test executed. Found in review, after merge, by a second reader.
 
 test("a stage killed by a signal is inconclusive, not a failure", () => {
+  // The runner process itself dying, which is what an OOM kill aimed at pnpm looks like. NOT what a
+  // terminal Ctrl-C looks like: that signals the whole foreground process group, so the reporter
+  // dies too and no summary prints at all. Measured — SIGINT to the process group produced no
+  // summary block, exit signal SIGINT. The wording used to claim Ctrl-C here and was wrong.
   const killed = spawnSync(process.execPath, ["-e", "process.kill(process.pid, 'SIGTERM')"]);
   assert.equal(killed.status, null, "this test is meaningless unless spawnSync really reports null here");
   const classified = classifyStageResult(killed);
   assert.equal(classified.code, INCONCLUSIVE_EXIT);
-  assert.notEqual(classified.code, 1, "Ctrl-C during a build must not attribute a failure to a stage");
+  assert.notEqual(classified.code, 1, "an imposed death must not be attributed to the stage as a failure");
   assert.equal(classified.reason, "stage-interrupted");
   assert.match(classified.remedy, /SIGTERM/);
 });
@@ -124,22 +133,60 @@ test("the interrupted reason reaches the reported lines", () => {
   assert.match(text, /two — stage-interrupted/);
 });
 
-test("a signal death translated by pnpm into 128 + N is inconclusive, not a failure", () => {
-  // The path the first diagnosis of this defect missed, and the common one. pnpm does not propagate
-  // a signal; it exits 143 for SIGTERM, so this never reaches the status === null branch. Measured
-  // against a real pnpm stage that kills its own child: status 143, signal null, error null.
-  for (const [code, signal] of [[130, "SIGINT"], [137, "SIGKILL"], [143, "SIGTERM"]]) {
-    const classified = classifyStageResult({ status: code, signal: null, error: undefined });
-    assert.equal(classified.code, INCONCLUSIVE_EXIT, `exit ${code} must not read as a failure`);
+test("a REAL translated signal death is inconclusive, not a failure", () => {
+  // This is the path the whole change is about, so it is driven by a real intermediate process
+  // waiting on a real child that dies of a real signal. It was previously asserted against a
+  // hand-written `{ status: 143 }` literal, with the measurement recorded in a comment beside it —
+  // and a comment cannot fail. If an intermediate ever starts propagating the signal instead of
+  // translating it, this test goes red where the comment would have stayed true-looking.
+  for (const [signal, code] of [["SIGHUP", 129], ["SIGINT", 130], ["SIGTERM", 143]]) {
+    const real = spawnSync("sh", ["-c", `node -e ${Q}process.kill(process.pid, "${signal}")${Q}`]);
+    assert.equal(real.status, code, `sh must translate ${signal} to ${code} for this test to mean anything`);
+    assert.equal(real.signal, null, "a translated death arrives as an ordinary status, not as a signal");
+    const classified = classifyStageResult(real);
+    assert.equal(classified.code, INCONCLUSIVE_EXIT, `a real ${signal} death must not read as a failure`);
     assert.equal(classified.reason, "stage-interrupted");
     assert.match(classified.remedy, new RegExp(signal));
   }
 });
 
+test("pnpm specifically translates rather than propagates, since the comment names pnpm", () => {
+  // The code comment claims this about pnpm, so pnpm is measured rather than assumed from sh.
+  const scratch = mkdtempSync(join(tmpdir(), "run-stages-xlate-"));
+  try {
+    writeFileSync(join(scratch, "package.json"), JSON.stringify({
+      name: "xlate-probe", private: true,
+      scripts: { suicide: `node -e "process.kill(process.pid,${Q}SIGTERM${Q})"` },
+    }));
+    const real = spawnSync("pnpm", ["run", "suicide"], { cwd: scratch, stdio: "ignore" });
+    assert.equal(real.status, 143, "pnpm must report 143 for this change's premise to hold");
+    assert.equal(real.signal, null);
+    assert.equal(classifyStageResult(real).reason, "stage-interrupted");
+  } finally { rmSync(scratch, { recursive: true, force: true }); }
+});
+
+test("a REAL abort arrives as 134 and stays a failure", () => {
+  // The boundary of the classification, against a real process rather than a literal. A stage that
+  // aborts has told you something true about the code.
+  // `ulimit -c 0` matters: without it this writes a half-gigabyte core file into whatever the cwd
+  // happens to be, which is how a test suite silently fills a repository. Found by doing it once.
+  const scratch = mkdtempSync(join(tmpdir(), "run-stages-abort-"));
+  try {
+    const real = spawnSync("sh", ["-c", `ulimit -c 0; node -e ${Q}process.abort()${Q}`],
+      { cwd: scratch, stdio: "ignore" });
+    assert.equal(real.status, 134, "sh must translate SIGABRT to 134 for this test to mean anything");
+    assert.deepEqual(readdirSync(scratch), [], "the abort probe must not leave a core dump behind");
+    const classified = classifyStageResult(real);
+    assert.equal(classified.code, 134);
+    assert.notEqual(classified.code, INCONCLUSIVE_EXIT, "an abort is the code failing, not the stage not running");
+    assert.equal(classified.reason, undefined);
+  } finally { rmSync(scratch, { recursive: true, force: true }); }
+});
+
 test("a high exit code that is not a known signal translation stays a failure", () => {
   // Three values, not `> 128`. Inconclusive is the weaker report and a genuine failure must never be
   // traded down to it.
-  for (const code of [129, 131, 136, 142, 144, 255]) {
+  for (const code of [131, 136, 142, 144, 255]) {
     const classified = classifyStageResult({ status: code, signal: null, error: undefined });
     assert.equal(classified.code, code, `exit ${code} is not a signal translation and must stay a failure`);
     assert.equal(classified.reason, undefined);

@@ -16,28 +16,37 @@ import { fileURLToPath } from "node:url";
 export const INCONCLUSIVE_EXIT = 2;
 
 /**
- * Signal deaths as an intermediate runner reports them. `pnpm` does not propagate a signal; it
- * translates the child's death into 128 + signal number and exits normally, so these arrive as
- * ordinary statuses and would otherwise read as three very specific failures.
+ * Signal deaths as an intermediate runner reports them. Neither `pnpm` nor `sh` propagates a signal;
+ * each translates the child's death into 128 + signal number and exits normally, so these arrive as
+ * ordinary statuses and would otherwise read as very specific failures. Measured both ways: a child
+ * that SIGTERMs itself under `sh` and under `pnpm run` both give status 143, signal null, error null.
  *
- * Three values, and `status > 128` would be **wrong rather than merely generous.** Not every signal
- * death is imposed from outside the process:
+ * An enumerated set, and `status > 128` would be **wrong rather than merely generous.** The question
+ * is not how large the code is, it is whether the stage chose its own death:
  *
- *     130 = 128 + 2   SIGINT    interrupted          inconclusive
- *     137 = 128 + 9   SIGKILL   killed, often OOM    inconclusive
- *     143 = 128 + 15  SIGTERM   terminated           inconclusive
- *     134 = 128 + 6   SIGABRT   died of its own defect   FAIL
- *     139 = 128 + 11  SIGSEGV   died of its own defect   FAIL
+ *     129 = 128 + 1   SIGHUP    terminal or parent went away   inconclusive
+ *     130 = 128 + 2   SIGINT    interrupted                    inconclusive
+ *     137 = 128 + 9   SIGKILL   killed, often OOM              inconclusive
+ *     143 = 128 + 15  SIGTERM   terminated                     inconclusive
+ *     134 = 128 + 6   SIGABRT   died of its own defect         FAIL
+ *     139 = 128 + 11  SIGSEGV   died of its own defect         FAIL
  *
  * A stage that aborts or segfaults has told you something true about the code, and calling that
- * inconclusive would suppress a real failure. The three above are deaths the stage did not choose,
- * and they say nothing about the repository. So the set is a classification, not a threshold, and
- * widening it to a range would misclassify the two codes that matter most.
+ * inconclusive would suppress a real failure. The four above are deaths the stage did not choose and
+ * say nothing about the repository. So widening this to a range would misclassify exactly the two
+ * codes that matter most.
  *
- * The residual trade: a script deliberately exiting 130, 137 or 143 would be misreported. None does
+ * 131, SIGQUIT, is deliberately left as a failure despite also arriving from outside. A quit signal
+ * is conventionally sent to dump a process that is already misbehaving, so the death is a response to
+ * the code rather than independent of it. That is a judgement rather than a measurement, and it is
+ * recorded here so it can be argued with.
+ *
+ * The residual trade: a script deliberately exiting one of the four would be misreported. None does
  * here, it would still be non-zero, and it would still name the signal it believed it saw.
  */
-const SIGNAL_EXIT_CODES = new Map([[130, "SIGINT"], [137, "SIGKILL"], [143, "SIGTERM"]]);
+const SIGNAL_EXIT_CODES = new Map([
+  [129, "SIGHUP"], [130, "SIGINT"], [137, "SIGKILL"], [143, "SIGTERM"],
+]);
 
 /**
  * Classify what a spawned stage actually did.
