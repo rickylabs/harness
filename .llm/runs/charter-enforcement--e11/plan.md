@@ -153,3 +153,23 @@ The owner, relayed by the coordinator in this run, approved the evaluator refusa
 NetScript first-party README at f3324909e0896cedc9729005bac5f508e122d6c6, lines 408–411, documents a typed ownerMatrixOverride with model, effort, rationale and worklog evidence. runtime/delegation-matrix.ts:310–347 defines that grant. MCP find_guidance was queried first, followed by literal search_docs; the public index returned no ownerMatrixOverride entry. The source CLI exposes matrix cells and coordinator routes, not a configurable default pin set. Thus the owner's claim of an existing default pin set is unverified; no such default is invented. Harness PR #348 (merged 298ffd0) independently supplies replaceable model configuration and configuration-derived pinnedModels in packages/routing/src/configuration.ts:6–9. Orchid accepts configured logical model/effort pins through the existing grant shape and validates them against the fresh NetScript catalog; it carries no model defaults.
 
 The mailbox remains a pilot. Draft an issue body and RFC for a separate owner brainstorm; do not ratify a mailbox protocol. Supervisor sign-off for PRs #342 and #345 remains pending; both retain draft status and their independently reviewed heads.
+
+## Explicit owner answers — forks 3 and 4
+
+The conversation reply explicitly assigns the Orchid spawn hook to this lane. Orchid PR2 must
+remain draft; the coordinator's merge authorization excludes Orchid. All Harness PRs remain
+drafts until owner sign-off.
+
+Fork 3 is ratified: refuse evaluator launches until actual model/session evidence can be
+established. Report `inconclusive` with the existing unknown-observation reason code
+`observer-unavailable`; no native-runtime observer is authorized or added. A refusal is not a
+successful evaluation or a launch receipt.
+
+Fork 4 is ratified: resolve the matrix primary first. A deviating pin needs the existing trusted
+owner override and exact first-party worklog entry. Pin values remain replaceable configuration,
+and that trusted override must name the pin it authorizes. Neither the pin nor its presence in
+configuration grants routing authority.
+
+There is no separate unanswered set of three questions. The owner confirms the mailbox did not
+contain these answers because they were never placed there. This reply is the authority; no
+mailbox wait remains. The mailbox pilot and issue/RFC brainstorm remain separate and undecided.

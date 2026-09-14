@@ -105,3 +105,23 @@ Rebased this artifact branch onto main after PR #348, including 298ffd0. The ind
 Remote source gate: [Orchid matrix-gate](https://github.com/rickylabs/orchid/actions/runs/34856678635) completed successfully at 85855119e07b27f4fcb032e44c65ecca69014200, including race-enabled tests, vet and build. The PR remains draft; source review, supervisor sign-off and live acceptance are separate outstanding gates.
 
 Owner alpha bar recorded in alpha-read-surfaces.md: live session observability and in-flight steering are deferred, not alpha blockers. Existing route evidence and telemetry collection were traced; stable per-run read wrappers are absent. The current cost source is `dsh-telemetry runs --json`, with provider-wide governance separately available through the existing governance command. No new collector, UHP path or replacement dispatch path is proposed. The coordinator's three queued questions were requested because they are absent from the visible handoff and mailbox.
+
+## Explicit owner answers — forks 3 and 4
+
+The conversation reply explicitly assigns the Orchid spawn hook to this lane. Orchid PR2 must
+remain draft; the coordinator's merge authorization excludes Orchid. All Harness PRs remain
+drafts until owner sign-off.
+
+Fork 3 is ratified: refuse evaluator launches until actual model/session evidence can be
+established. Report `inconclusive` with the existing unknown-observation reason code
+`observer-unavailable`; no native-runtime observer is authorized or added. A refusal is not a
+successful evaluation or a launch receipt.
+
+Fork 4 is ratified: resolve the matrix primary first. A deviating pin needs the existing trusted
+owner override and exact first-party worklog entry. Pin values remain replaceable configuration,
+and that trusted override must name the pin it authorizes. Neither the pin nor its presence in
+configuration grants routing authority.
+
+There is no separate unanswered set of three questions. The owner confirms the mailbox did not
+contain these answers because they were never placed there. This reply is the authority; no
+mailbox wait remains. The mailbox pilot and issue/RFC brainstorm remain separate and undecided.
