@@ -52,3 +52,30 @@ This is the reached source inventory, not evidence about a deployed binary or ot
 The local receipt checker will prove only schema/verdict behavior. All-launcher enforcement,
 receipt-to-spawn completeness and deployed reachability remain unproven until these tests and
 a controlled real issue launch execute. Evaluation requests used the existing dispatcher. None exercised a new matrix hook or proves deployed integration.
+
+## Bridge boundary found during implementation follow-up
+
+The public docs search did not locate a routing-policy operation; it returned web-routing pages.
+The inspected `runtime/cli/routing-state.ts` is a persisted-state reader, not a launch resolver.
+The existing first-party `resolveWorkloadRoute` remains the concrete authority to call in place:
+[routing-policy.ts:90–113,190–216](https://github.com/rickylabs/netscript/blob/f3324909e0896cedc9729005bac5f508e122d6c6/.llm/tools/agentic/runtime/routing-policy.ts#L90).
+It returns logical/physical model, family, transport and both requested/concrete effort, and requires
+the actual generator model for evaluation. Do not transcribe those mappings into Go or Harness.
+A reviewed process bridge may invoke it against the same source revision as the fresh matrix CLI;
+the current table output alone lacks that launch envelope. No bridge implementation is claimed.
+
+The input is a typed TypeScript interface, not a validated untrusted JSON API. Its privileged guard
+checks rationale at runtime; the `authorizer` union is a compile-time restriction:
+[delegation-matrix.ts:260–276](https://github.com/rickylabs/netscript/blob/f3324909e0896cedc9729005bac5f508e122d6c6/.llm/tools/agentic/runtime/delegation-matrix.ts#L260).
+A read-only synthetic probe on that revision refused missing authorization but accepted an untyped
+invalid authorizer with a rationale. No agent was spawned. Preserve the resolver; validate the
+bridge input against its declared type and trusted provenance before calling it. An arbitrary
+`authorizer` string copied from issue text is not a trusted owner/coordinator request.
+
+The dispatch `Issue` structure currently retains only number, title, body and labels, and its query
+does not fetch the author or an authorization receipt:
+[main.go:926–969](https://github.com/rickylabs/orchid/blob/d344bd037bcf10150fd12daef8ffa277576cd94a/cmd/divybot/main.go#L926).
+The assignment feeder separately fetches an author, then embeds it in mirrored prose; that prose
+is not an authority receipt. A bridge lacking trusted privileged provenance must refuse that spawn,
+not synthesize owner authority from the bot identity. This is an integration requirement, not a
+change to the locked I3 invariant.
