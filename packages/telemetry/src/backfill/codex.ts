@@ -43,6 +43,37 @@ export const KNOWN_TYPES: ReadonlySet<string> = new Set([
   "turn_context",
 ]);
 
+/**
+ * Envelope types this reader deliberately does not read, with the reason for each.
+ *
+ * These were producing "unrecognised record type" notes, and that note is a false statement about
+ * two of them: `world_state` is recognised and read by `repository-run-observation.ts` in this same
+ * package, for scope assertion. A note means something this package could not read. A record a
+ * sibling reader reads on purpose is not that, and reporting ordinary traffic as degradation is the
+ * fastest way to teach an operator to ignore notes.
+ *
+ * Censused 2026-09-14 over 428 rollouts on one host. Counts are an input, not a constant.
+ *
+ *     world_state                          1521
+ *     inter_agent_communication_metadata   1308
+ *
+ * Neither can understate `updatedAt`, because the clock below is gated on a known type. Both do
+ * carry a `timestamp`, so unlike the Claude reader's list this is not structural: a rollout ending
+ * on one of these would understate if that gate were ever removed. None of the 428 ends on one.
+ *
+ * `token_usage_record` is deliberately NOT here, at 17304 occurrences and still noting. Its payload
+ * carries input, output, total, cached-input, cache-write and reasoning-output counts at both turn
+ * and cumulative-thread granularity, which is strictly more than the protocol's own usage surface
+ * ships, and nothing in this repository reads any of it — the observation decoder consults it for
+ * identity only and says so in its own comment. Whether those counts should be read, and by which
+ * reader, is an open decision on issue 328. Until it is answered the note is the honest report, and
+ * silencing it would retire the only signal that the question exists.
+ */
+export const OBSERVED_UNREAD_ENVELOPES: ReadonlyMap<string, string> = new Map([
+  ["inter_agent_communication_metadata", "payload carries only a trigger_turn boolean; nothing this reader wants"],
+  ["world_state", "read by repository-run-observation.ts for scope assertion; a second reader mining the same record for another purpose is how two components come to disagree about one run"],
+]);
+
 /** An unrecognised envelope type, as it appears in a note. */
 export const unknownTypeNote = (type: unknown): string =>
   `unrecognised record type "${typeLabel(type)}"`;
@@ -121,7 +152,10 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
 
     // An unread record does not get to say when this run was last active. Finding F-9 on #105.
     const known = typeof line.type === "string" && KNOWN_TYPES.has(line.type);
-    if (!known) tally.bump(unknownTypeNote(line.type));
+    // A note means this package could not read something. A type recorded in
+    // OBSERVED_UNREAD_ENVELOPES is one it chose not to read, which is a different claim.
+    const declaredUnread = typeof line.type === "string" && OBSERVED_UNREAD_ENVELOPES.has(line.type);
+    if (!known && !declaredUnread) tally.bump(unknownTypeNote(line.type));
 
     const at = str(line.timestamp);
     if (at !== null && known) {
