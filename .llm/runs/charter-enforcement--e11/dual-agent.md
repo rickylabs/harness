@@ -122,3 +122,7 @@ mechanism or decision ledger is justified by this trial.
 The initial withdrawn request did launch: issue 340 later received the evaluator's stand-down
 acknowledgement. This corrects the earlier observation cutoff, not the original withdrawal record.
 No useful evaluation was accepted from it. The mailbox miss had a real dispatch consequence.
+
+## Owner direction — 2026-09-14
+
+Retain the pilot and defer any protocol/promotion decision to a separate brainstorm. [Issue #349](https://github.com/rickylabs/harness/issues/349) and [mailbox-rfc.md](mailbox-rfc.md) collect the findings and open questions. Earlier proposed contract language remains exploratory, not a ratified default.
