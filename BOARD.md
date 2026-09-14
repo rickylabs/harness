@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **266/339 done · 24 running · 23 queued · 8 blocked · 15 abandoned · 3 invisible**
+`[###############-----]` **267/341 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-14T21:00:59Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T21:20:11Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (24)
+## Moving now (23)
 
 Something could be acting on these right now.
 
@@ -50,11 +50,23 @@ Something could be acting on these right now.
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
-| [#351 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/351) | `plan` | — |
 
-## Anomalies (11)
+## Not on the board (2)
+
+Open, and carrying no `status:` label — real work no column can see.
+
+| item | column | epic |
+| --- | --- | --- |
+| [#352 Dispatch never runs: divybot spawns the agent with pane run, so herdr never registers it and the goal is lost](https://github.com/rickylabs/harness/issues/352) | — | — |
+| [PR353 feat(telemetry): expose bounded per-issue agent observations](https://github.com/rickylabs/harness/pull/353) | — | — |
+
+## Anomalies (14)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#345** — closed on GitHub but sits in augment-review; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -72,6 +84,11 @@ Something could be acting on these right now.
 - **#346** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#347** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+
+**`no-status`**
+
+- **#352** — open item has no status label, so it appears in no column
+- **#353** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -96,13 +113,13 @@ Something could be acting on these right now.
 
 ### (no milestone)
 
-`[#########---]` 74/97 done · 4 running · 3 queued · 5 blocked · 9 abandoned · 2 invisible
+`[#########---]` 75/99 done · 3 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#######-----]` 6/10 done · 2 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[#########---]` 63/81 done · 2 running · 3 queued · 3 blocked · 9 abandoned · 1 invisible | — |
+| _(no epic)_ | `[#########---]` 64/83 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
@@ -143,7 +160,7 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  266/339 done · 24 running · 23 queued · 8 blocked · 15 abandoned · 3 invisible
+# rickylabs/harness  [###############-----]  267/341 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -424,7 +441,7 @@ Something could be acting on these right now.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  74/97 done · 4 running · 3 queued · 5 blocked · 9 abandoned · 2 invisible
+## (no milestone)  [###############-----]  75/99 done · 3 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -529,7 +546,9 @@ Something could be acting on these right now.
     shipped              #344 I4: independent plan review for blocked-decision validation (p0)
     shipped              PR348 routing: make matrix roles, models and routers owner-configurable
     shipped              PR350 feat(telemetry): preserve dispatch route evidence for alpha reads
-    plan                 #351 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned
+    shipped              #351 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned
+    no status            #352 Dispatch never runs: divybot spawns the agent with pane run, so herdr never registers it and the goal is lost
+    no status            PR353 feat(telemetry): expose bounded per-issue agent observations (draft)
 ```
 
 </details>
