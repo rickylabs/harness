@@ -10,6 +10,7 @@ import { describe, it } from "node:test";
 import {
   isoFromUnixSeconds,
   KNOWN_TYPES,
+  OBSERVED_UNREAD_ENVELOPES,
   parseCodexRollout,
   quotaFromRateLimits,
   unknownTypeNote,
@@ -250,6 +251,65 @@ describe("parseCodexRollout, on a rollout it cannot fully read", () => {
   it("reports every envelope type the local store was observed to contain as known", () => {
     for (const type of ["compacted", "event_msg", "response_item", "session_meta", "turn_context"]) {
       assert.equal(KNOWN_TYPES.has(type), true, `${type} is not in KNOWN_TYPES`);
+    }
+  });
+});
+
+
+/**
+ * `world_state` and `inter_agent_communication_metadata` were reported as unrecognised on every
+ * rollout that held them — 1521 and 1308 occurrences on one host — and for `world_state` that note
+ * was a false statement: `repository-run-observation.ts` in this same package reads it on purpose,
+ * for scope assertion. A note means this package could not read something.
+ */
+describe("declared-unread envelopes", () => {
+  const at = "2026-09-05T09:00:00.000Z";
+  const rollout = (...records: readonly unknown[]): string =>
+    records.map((r) => JSON.stringify(r)).join("\n");
+  const meta = { type: "session_meta", timestamp: at, payload: { session_id: "s-1", cwd: "/w" } };
+
+  it("says nothing about an envelope it was told not to read", () => {
+    const { notes } = parseCodexRollout(rollout(meta,
+      { type: "world_state", timestamp: "2026-09-05T10:00:00.000Z", payload: { full: true } }), "o");
+    assert.deepEqual(notes, []);
+  });
+
+  it("says nothing about the inter-agent metadata envelope either", () => {
+    const { notes } = parseCodexRollout(rollout(meta,
+      { type: "inter_agent_communication_metadata", timestamp: at, payload: { trigger_turn: true } }), "o");
+    assert.deepEqual(notes, []);
+  });
+
+  it("still refuses to let a declared-unread envelope move the clock", () => {
+    // Quieter must not mean more trusting. The record is unread either way.
+    const { run } = parseCodexRollout(rollout(meta,
+      { type: "world_state", timestamp: "2026-09-05T23:00:00.000Z", payload: { full: true } }), "o");
+    assert.equal(run?.updatedAt, at);
+  });
+
+  it("keeps noting token_usage_record, because whether to read it is undecided", () => {
+    // 17304 occurrences carrying counts nothing in this repository reads. Silencing the note would
+    // retire the only signal that the question is open. Issue 328.
+    const { notes } = parseCodexRollout(rollout(meta,
+      { type: "token_usage_record", timestamp: at, payload: { thread_id: "t" } }), "o");
+    assert.deepEqual(notes, [{ reason: unknownTypeNote("token_usage_record"), lines: 1 }]);
+    assert.equal(OBSERVED_UNREAD_ENVELOPES.has("token_usage_record"), false);
+  });
+
+  it("still reports an envelope in neither list, so a real discovery is not silenced", () => {
+    const { notes } = parseCodexRollout(rollout(meta, { type: "warp_drive", timestamp: at, payload: {} }), "o");
+    assert.deepEqual(notes, [{ reason: unknownTypeNote("warp_drive"), lines: 1 }]);
+  });
+
+  it("holds the two lists disjoint", () => {
+    for (const type of KNOWN_TYPES) {
+      assert.equal(OBSERVED_UNREAD_ENVELOPES.has(type), false, `${type} is both read and declared unread`);
+    }
+  });
+
+  it("gives every declared-unread envelope a non-empty reason", () => {
+    for (const [type, reason] of OBSERVED_UNREAD_ENVELOPES) {
+      assert.ok(reason.trim().length > 0, `${type} has an empty reason`);
     }
   });
 });
