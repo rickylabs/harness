@@ -26,6 +26,7 @@ import { backfillFromDisk, defaultRoots, type BackfillRoots } from "./backfill/i
 import { diagnosticsFor, ALL_POINTERS } from "./diagnostics.js";
 import { parseItems, type LoadedItems } from "./items.js";
 import { readDispatchEvidence } from "./dispatch-evidence.js";
+import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
 import { foldLiveEvents, mergeLiveRuns, readLiveLog } from "./live.js";
 import {
   humanBytes,
@@ -544,9 +545,12 @@ export async function main(argv: readonly string[], services: SourceServices = d
     events: file.events.filter(event => event.kind !== "governance.admission"),
   }));
   const merged = mergeLiveRuns(scan.runs, foldLiveEvents(runFiles));
+  const orchid = command === "runs" && flags.json
+    ? await readOrchidDispatches(services.env[ORCHID_DISPATCH_ROOT])
+    : { dispatches: [], notes: [], degraded: false };
   const view = {
-    notes: [...scan.notes, ...log.notes, ...merged.notes],
-    degraded: scan.degraded || log.degraded || merged.degraded,
+    notes: [...scan.notes, ...log.notes, ...merged.notes, ...orchid.notes],
+    degraded: scan.degraded || log.degraded || merged.degraded || orchid.degraded,
   };
 
   // The stores are bounded by mtime and by the database's own `where`, which is coarse: a transcript
@@ -592,7 +596,7 @@ export async function main(argv: readonly string[], services: SourceServices = d
 
   if (command === "runs") {
     if (flags.json) {
-      const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded, readDispatchEvidence(runFiles));
+      const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded, [...readDispatchEvidence(runFiles), ...orchid.dispatches]);
       process.stdout.write(`${JSON.stringify(envelope, null, 2)}\n`);
       return view.degraded ? EXIT.incomplete : EXIT.ok;
     }

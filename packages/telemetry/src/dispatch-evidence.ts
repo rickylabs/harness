@@ -8,6 +8,12 @@ export interface DispatchEvidence {
   readonly external: string | null;
   readonly source: RunSource | null;
   readonly route: RouteIdentityEvidence;
+  readonly issue?: { readonly repo: string; readonly number: number } | null;
+  readonly parentRunId?: string | null;
+  readonly location?: { readonly paneId: string; readonly workspaceId: string } | null;
+  /** Dispatch acknowledgement is not evidence of current liveness. */
+  readonly dispatchState?: "launching" | "dispatched" | "uncertain";
+
 }
 
 export function readDispatchEvidence(files: readonly LiveFile[]): readonly DispatchEvidence[] {

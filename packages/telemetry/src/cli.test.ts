@@ -1071,3 +1071,24 @@ it("runs --json exposes the dispatch route and explicit native-session join", as
   assert.equal(read.dispatches[0].route.invalid.length, 2);
   assert.ok(!result.out.includes("/synthetic/work"));
 });
+
+// Synthetic reservation written in Orchid's format, read through the actual CLI.
+it("runs JSON includes Orchid issue and pane evidence without a native-session guess", async () => {
+  const key = "a".repeat(64);
+  const root = join(home, "private-dispatches");
+  const record = join(root, key, "record");
+  await mkdir(record, { recursive: true, mode: 0o700 });
+  await writeFile(join(record, "dispatch.json"), JSON.stringify({ schemaVersion: 1,
+    runId: "orchid-" + key, issue: { repo: "example/inbox", number: 42 }, parentRunId: null,
+    source: "codex", profile: "leaf", provider: "fixture-router", model: "fixture-model", effort: "high", state: "dispatched",
+    location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" },
+  }), { mode: 0o600 });
+  process.env.DSH_TELEMETRY_DISPATCH_ROOT = root;
+  const result = await run(["runs", "--json", "--home", home]);
+  const document = JSON.parse(result.out);
+  assert.equal(document.dispatches.length, 1);
+  assert.deepEqual(document.dispatches[0].issue, { repo: "example/inbox", number: 42 });
+  assert.equal(document.dispatches[0].route.requested.model.value, "fixture-model");
+  assert.equal(document.dispatches[0].external, null);
+  assert.ok(!result.out.includes(root));
+});
