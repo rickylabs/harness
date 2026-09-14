@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **252/322 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 3 invisible**
+`[###############-----]` **252/323 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 4 invisible**
 
-_Latest board activity: 2026-09-14T03:10:35Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T03:16:56Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -57,9 +57,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [PR324 doctrine: add principle 12, an absence needs a reachability list](https://github.com/rickylabs/harness/pull/324) | — | — |
 
-## Anomalies (3)
+## Anomalies (4)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-without-status`**
+
+- **#335** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -96,13 +100,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 60/80 done · 1 running · 3 queued · 5 blocked · 9 abandoned · 2 invisible
+`[########----]` 60/81 done · 1 running · 3 queued · 5 blocked · 9 abandoned · 3 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/1 done · 1 blocked | `triage` |
-| _(no epic)_ | `[#########---]` 55/73 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 2 invisible | — |
+| _(no epic)_ | `[########----]` 55/74 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
@@ -143,7 +147,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  252/322 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 3 invisible
+# rickylabs/harness  [###############-----]  252/323 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 4 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -424,7 +428,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  60/80 done · 1 running · 3 queued · 5 blocked · 9 abandoned · 2 invisible
+## (no milestone)  [##############------]  60/81 done · 1 running · 3 queued · 5 blocked · 9 abandoned · 3 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -513,6 +517,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR332 chore(uhp-dispatch-readiness--e3): retain the unimported-sweep incident
     shipped              PR333 fix(telemetry): declare token_usage_record unread, because its counts are read elsewhere
     triage               #334 The run record cannot say what a cache write cost, or which turn was expensive (p3, waiting on owner)
+    no status            PR335 chore(gates): run each gate's own guard before the gate it guards
 ```
 
 </details>
