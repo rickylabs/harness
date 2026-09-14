@@ -26,3 +26,23 @@ evaluator verdict. Receipt checking alone will not be reported as every-spawn en
 matrix. Link checker executed: 66 files, 379 relative links, zero broken; run artifacts are
 excluded by its declared scope, so this is not a citation audit. No product or live integration
 gate has run. The plan-review decision remains open; draft publication is for review only.
+
+2026-09-14 — Published draft PR 339 at 1bc0da1. CI registered and began a real check job; no
+empty check array was interpreted as success. Classified only the isolated I1 implementation
+as feature scope against fresh CLI guidance; retained the broader architecture as draft.
+Primary physical route opencode-go/glm-5.3 appears in the local model catalogue (exit 0), which
+proves listing only. Requeried the feature plan-evaluation row, wrote the full brief through a
+file, read issue 340 back exactly, then applied the dispatch label once. A 15-minute reviewer
+limit is in the brief. No evaluator reply or launcher observation had arrived at this entry.
+
+2026-09-14 — Read an earlier counterpart response that the temporary offset reader had missed.
+It reported a Go expense-guard refusal because usage could not be proven. Withdrew issue 340:
+removed the trigger and phase labels, posted a no-launch/no-continue note, closed not-planned.
+No review or launcher receipt was visible. Requested dispatcher-side cancellation confirmation
+before another attempt; issue closure alone is not evidence that an already accepted agent
+stopped. This is an admission failure, not a plan-evaluation failure round.
+
+2026-09-14 — Counterpart could establish recent board publication but not dispatcher acceptance
+or cancellation. Kept those states unproven. Updated PR evidence to distinguish a real passing
+CI job at the first artifact commit from the missing independent evaluator verdict. The draft
+contains no implementation; no runtime feature or invariant is claimed shipped.

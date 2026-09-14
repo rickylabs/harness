@@ -96,3 +96,16 @@ controlled live acceptance. Dual-agent measurements → owner promotion decision
 | Receipt schema passes with no launch coverage | high / high | explicit coverage inventory and live gate |
 | Consultation mistaken for review authority | high / high | independent assignment evidence |
 | Private operational data reaches public artifacts | medium / high | staged-diff publication review |
+
+## Review-assignment disposition
+
+The isolated I1 implementation was classified as feature work on its bounded scope and the
+fresh CLI description, with the counterpart concurring. That row already supplies independent
+candidates. Owner fork 2 therefore needs no route override for I1; its remaining obstacle is
+technical admission/receipt evidence, not permission to invent a reviewer. The wider
+architecture plan still has no authorized evaluation. See the withdrawal in `worklog.md`.
+
+The selected primary's Go admission was refused in the counterpart's diagnostic. Issue 340
+was withdrawn without a review result. A next attempt may use only the matrix's declared
+candidate with fresh resolution and admission evidence. No public issue state proves that an
+already accepted runtime stopped; dispatcher-side cancellation confirmation remains unproven.

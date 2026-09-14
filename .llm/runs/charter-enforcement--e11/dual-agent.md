@@ -63,3 +63,36 @@ answer time, not transport latency or confirmed read time. The reader observed t
 The caller revised the draft's slice priority as a result. That is one observed benefit, with
 no claimed speedup. The original question still carries the literal unanswered marker, and
 re-reading returns the same answer again. No machine-readable acknowledgement or cursor exists.
+
+## Further trial observations
+
+The counterpart acknowledged that its I4 scope objection was wrong after checking the cited
+charter lines. Treat history advice as evidence to verify, not authority that supersedes the
+charter. A later relay claimed that different OpenAI models satisfy I2; the author challenged
+it against the explicit different-vendor-family requirement. No same-family evaluation was
+accepted. The attribution and any proposed amendment remain unconfirmed.
+
+The counterpart reported a second watcher failure: one answer covering two questions broke
+its count-based outstanding-work calculation. Required correlation must identify each addressed
+question; an answer covering several needs explicit per-question links and completion state.
+A total answer count cannot compute pending questions. The current draft's single `inReplyTo`
+form would use one reply record per question, with shared answer text by reference if needed.
+
+The caller's temporary local read position also returned a partial word at the next read.
+That observation does not prove why the file changed, but it proves a byte offset alone was
+not a reliable cursor in this trial. A supported cursor needs immutable ordered records or a
+file-generation check with replay/deduplication after replacement. Merely adding an offset to
+the current helpers would preserve an observed failure.
+
+## Operational consequence and authority correction
+
+The offset-based reader missed an expense-guard refusal in an earlier answer. The caller had
+already queued a review request based on catalogue presence; after reading the missed answer,
+it withdrew that request and asked for cancellation confirmation. No evaluation result was
+accepted. This makes reliable replay and explicit acknowledgement an admission requirement,
+not merely a convenience. It does not prove that a dispatcher actually started the request.
+
+The counterpart later confirmed that the proposed same-family evaluation had been withdrawn
+and that no charter amendment supported it. It also clarified that the four suggested mailbox
+properties were peer recommendations, not an owner decision. The draft retains owner fork 1;
+no promotion or altered independence rule is ratified here.

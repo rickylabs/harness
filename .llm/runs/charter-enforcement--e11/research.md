@@ -52,3 +52,15 @@ found no explicit correlation identifier, acknowledgement, lock, notification or
 receipt. These statements concern these two helpers, not an uninspected counterpart watcher.
 Two real questions were submitted and accepted locally. At the initial observation cutoff,
 neither had an answer. See `dual-agent.md` for the draft contract and censored measurement.
+
+## Admission and reachability follow-up
+
+The local catalogue listed exact `opencode-go/glm-5.3` with exit 0. A later-read counterpart
+diagnostic separately refused Go admission because usage could not be proven. The local
+catalogue observation did not establish the remote dispatcher's admission result. Review
+request [340](https://github.com/rickylabs/harness/issues/340) was withdrawn with no review or
+launcher receipt observed; no runtime absence or stop is claimed from its closed state.
+
+The counterpart could observe a recent board publication, but correctly refused to infer
+that dispatch was accepting or that the withdrawn request had stopped. This preserves the
+charter's distinction between a reachable observer and an empty result from another surface.
