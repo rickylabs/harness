@@ -284,7 +284,8 @@ Four decisions were **ratified** in the *Decisions taken* table of the
 [E0 roadmap](https://github.com/rickylabs/harness/issues/30), which
 [`ARCHITECTURE.md`](ARCHITECTURE.md) supersedes. Where the two differ, the
 charter wins: two of the four hold unchanged, one is scoped to parked work, and
-one is superseded on its first clause — each is marked below. They are
+one is superseded on its first clause — each is marked below, and the marking is
+the authority, because nothing checks this sentence against that list. They are
 restated here because root documents are what an agent reads first, and a
 root document that contradicts a ratified decision propagates the
 contradiction silently. They are not re-opened in a run, a PR, or a prompt;
