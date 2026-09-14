@@ -15,6 +15,7 @@ export {
   resolveEffort,
   resolveFallback,
   resolveRoute,
+  resolveTierRole,
   selfCertifies,
   tierPlan,
   toDispatch,
@@ -69,3 +70,5 @@ export type {
   Source,
   Verdict,
 } from "./probe.js";
+
+export * from "./catalog.js";

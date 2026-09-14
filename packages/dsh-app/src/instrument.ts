@@ -86,7 +86,7 @@
  *   excluded from the public projection. Artifacts are recorded as a count.
  */
 
-import { instrumentedBy, markInstrumented } from "@rickylabs/subagents";
+import { instrumentedBy, markInstrumented, projectRouteIdentity } from "@rickylabs/subagents";
 import type {
   DispatchRequest,
   DispatchResult,
@@ -237,7 +237,9 @@ function verdictDetail(provider: string, result: DispatchResult): Record<string,
   const outcome = OUTCOME_OF_VERDICT[result.verdict];
   if (outcome !== null) detail.outcome = outcome;
   if (result.run !== null && result.run.external !== null) detail.external = result.run.external;
-  if (result.detail !== "") detail.note = clipDetail(result.detail);
+  if (result.route !== undefined) detail.route = projectRouteIdentity(result.route);
+  // Route diagnostics can contain private cwd values. The projected route owns its diagnostic.
+  if (result.route === undefined && result.detail !== "") detail.note = clipDetail(result.detail);
   return detail;
 }
 

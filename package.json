@@ -26,7 +26,7 @@
     "typecheck": "node scripts/run-stages.mjs --label typecheck --compile-stage typecheck:packages check:stages check:graph check:lifecycle typecheck:packages",
     "check:cluster": "node --test .llm/tools/harness/blocked-decisions.test.mjs",
     "check:test-scripts": "node --test scripts/check-test-scripts.test.mjs && node scripts/check-test-scripts.mjs",
-    "test": "node scripts/run-stages.mjs --label test check:stages check:test-scripts check:cluster test:packages check:installed",
+    "test": "node scripts/run-stages.mjs --label test check:stages check:test-scripts check:receipts check:cluster test:packages check:installed",
     "skill:install": "pnpm --filter @rickylabs/forge run build && node packages/forge/dist/cli.js skill install --dispatch-label harness",
     "golden:bless": "pnpm --filter @rickylabs/dsh-app run build && node packages/dsh-app/dist/bless.js",
     "clean": "pnpm -r run clean",
@@ -35,7 +35,8 @@
     "check:stages": "node --test scripts/run-stages.test.mjs",
     "build:packages": "pnpm -r run build",
     "test:packages": "pnpm -r run test",
-    "typecheck:packages": "pnpm -r run typecheck"
+    "typecheck:packages": "pnpm -r run typecheck",
+    "check:receipts": "node --test .llm/tools/harness/matrix-receipts.test.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",

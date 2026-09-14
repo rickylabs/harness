@@ -2,13 +2,19 @@
   "schemaVersion": 1,
   "name": "harness-compiled-table-transcription",
   "provenance": {
-    "description": "Compatibility transcription of packages/routing/src/{models,policy}.ts and packages/llm-local/src/capability.ts at 4c813fe10218e471f5d78a2dc45bd805ec260749; source/topic/date: repository compiled routing and observed placement data, consulted 2026-09-07. Wire model ids, not CLI keys. Not a fleet instance or parity result. sonnet-5, z-ai/glm-5.2, x-ai/grok-4.5 and gemini-3.6-flash-high have no key in the fresh full matrix export; later schema/parity steps own that gap."
+    "description": "Compatibility transcription of packages/routing/src/{models,policy}.ts and packages/llm-local/src/capability.ts at 4c813fe10218e471f5d78a2dc45bd805ec260749; source/topic/date: repository compiled routing and observed placement data, consulted 2026-09-07. Wire model ids, not CLI keys. Not a fleet instance or parity result. sonnet-5, z-ai/glm-5.2, x-ai/grok-4.5 and gemini-3.6-flash-high have no key in the fresh full matrix export; later schema/parity steps own that gap. 2026-09-14: the transcription claim above holds only at that sha -- packages/routing/src/{models,policy}.ts no longer exist on main, and this document has since been edited directly (complex-lane evaluators, the third implementation lane, fable-5.1, and the split of the `open` bucket into vendor families). It is now the source, not a copy of one. Lane names and tier evaluator bindings are explicit data; legacy aliases preserve callers. Model choices remain the PR baseline, not a claim of fleet parity."
   },
   "families": [
     "anthropic",
     "openai",
     "google",
-    "open"
+    "qwen",
+    "inclusionai",
+    "zai",
+    "xai",
+    "meta",
+    "moonshot",
+    "deepseek"
   ],
   "efforts": {
     "ordered": [
@@ -26,7 +32,7 @@
     "analysis",
     "design",
     "documentation",
-    "claude_workflow",
+    "workflow",
     "research_extraction",
     "evaluation",
     "docs_audit",
@@ -34,48 +40,81 @@
   ],
   "models": {
     "gpt-5.6-sol": {
-      "family": "openai"
+      "family": "openai",
+      "label": "Gpt 5.6 Sol"
     },
     "gpt-6-astra": {
-      "family": "openai"
+      "family": "openai",
+      "label": "Gpt 6 Astra"
     },
     "gpt-5.6-luna": {
-      "family": "openai"
+      "family": "openai",
+      "label": "Gpt 5.6 Luna"
     },
-    "fable-5": {
-      "family": "anthropic"
+    "fable-5.1": {
+      "family": "anthropic",
+      "label": "Fable 5.1"
     },
     "opus-5": {
-      "family": "anthropic"
+      "family": "anthropic",
+      "label": "Opus 5"
     },
     "sonnet-5": {
-      "family": "anthropic"
+      "family": "anthropic",
+      "label": "Sonnet 5"
     },
     "gemini-3.6-flash-high": {
-      "family": "google"
+      "family": "google",
+      "label": "Gemini 3.6 Flash High"
     },
     "n5air/qwen3.8-27b": {
-      "family": "open"
+      "family": "qwen",
+      "label": "Qwen3.8 27B"
     },
     "n5air/ling-3.0-flash": {
-      "family": "open"
+      "family": "inclusionai",
+      "label": "Ling 3.0 Flash"
     },
     "qwen/qwen3.8-flash": {
-      "family": "open",
-      "approvedRelayEvaluator": true
+      "family": "qwen",
+      "approvedRelayEvaluator": true,
+      "label": "Qwen3.8 Flash"
     },
     "z-ai/glm-5.3-flash": {
-      "family": "open",
-      "approvedRelayEvaluator": true
+      "family": "zai",
+      "approvedRelayEvaluator": true,
+      "label": "Glm 5.3 Flash"
     },
     "z-ai/glm-5.2": {
-      "family": "open"
+      "family": "zai",
+      "label": "Glm 5.2"
     },
     "x-ai/grok-4.5": {
-      "family": "open"
+      "family": "xai",
+      "label": "Grok 4.5"
+    },
+    "x-ai/grok-4.6": {
+      "family": "xai",
+      "approvedRelayEvaluator": true,
+      "label": "Grok 4.6"
+    },
+    "meta/muse-spark-1.3": {
+      "family": "meta",
+      "approvedRelayEvaluator": true,
+      "label": "Muse Spark 1.3"
     },
     "moonshotai/kimi-k3": {
-      "family": "open"
+      "family": "moonshot",
+      "label": "Kimi K3"
+    },
+    "google/gemini-3.8-flash": {
+      "family": "google",
+      "approvedRelayEvaluator": true,
+      "label": "Gemini 3.8 Flash"
+    },
+    "deepseek/deepseek-v4.1-flash": {
+      "family": "deepseek",
+      "label": "Deepseek V4.1 Flash"
     }
   },
   "profiles": [
@@ -100,6 +139,20 @@
           },
           "when": [],
           "note": "small_scoped_slices"
+        },
+        {
+          "route": {
+            "harness": "opencode",
+            "transport": "openrouter",
+            "model": "z-ai/glm-5.3-flash",
+            "effort": "low",
+            "router": "openrouter"
+          },
+          "when": [
+            "native-quota-limit",
+            "model-unavailable"
+          ],
+          "note": "third_implementation_lane_both_native_harnesses_down"
         }
       ]
     },
@@ -115,6 +168,20 @@
             "effort": "medium"
           },
           "when": []
+        },
+        {
+          "route": {
+            "harness": "opencode",
+            "transport": "openrouter",
+            "model": "google/gemini-3.8-flash",
+            "effort": "medium",
+            "router": "openrouter"
+          },
+          "when": [
+            "native-quota-limit",
+            "model-unavailable"
+          ],
+          "note": "third_implementation_lane_both_native_harnesses_down"
         }
       ]
     },
@@ -143,11 +210,25 @@
             "model-unavailable"
           ],
           "note": "astra_is_gated_on_codex_cli_version"
+        },
+        {
+          "route": {
+            "harness": "opencode",
+            "transport": "openrouter",
+            "model": "meta/muse-spark-1.3",
+            "effort": "max",
+            "router": "openrouter"
+          },
+          "when": [
+            "native-quota-limit",
+            "model-unavailable"
+          ],
+          "note": "third_implementation_lane_both_native_harnesses_down_owner_approval_required"
         }
       ]
     },
     {
-      "lane": "fast_iteration",
+      "lane": "fast_implementation",
       "purpose": "implementation",
       "chain": [
         {
@@ -158,6 +239,20 @@
             "effort": "max"
           },
           "when": []
+        },
+        {
+          "route": {
+            "harness": "opencode",
+            "transport": "openrouter",
+            "model": "deepseek/deepseek-v4.1-flash",
+            "effort": "max",
+            "router": "openrouter"
+          },
+          "when": [
+            "native-quota-limit",
+            "model-unavailable"
+          ],
+          "note": "third_implementation_lane_both_native_harnesses_down"
         }
       ]
     },
@@ -169,7 +264,7 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5",
+            "model": "fable-5.1",
             "effort": "medium"
           },
           "when": [],
@@ -223,6 +318,17 @@
       "chain": [
         {
           "route": {
+            "harness": "opencode",
+            "transport": "openrouter",
+            "model": "moonshotai/kimi-k3",
+            "effort": "xhigh",
+            "router": "openrouter"
+          },
+          "when": [],
+          "note": "lead_route_for_major_ui_ux_work"
+        },
+        {
+          "route": {
             "harness": "claude",
             "transport": "openrouter",
             "model": "z-ai/glm-5.2",
@@ -230,8 +336,11 @@
             "profile": "claude-openrouter",
             "preset": "claude-design-glm-5-2"
           },
-          "when": [],
-          "note": "lead_route_for_major_ui_ux_work"
+          "when": [
+            "model-unavailable",
+            "openrouter-limit"
+          ],
+          "note": "previous_lead_retained_as_fallback_behind_kimi_k3"
         }
       ]
     },
@@ -259,15 +368,57 @@
       "chain": [
         {
           "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-6-astra",
+            "effort": "medium"
+          },
+          "when": [],
+          "certifies": "moonshot",
+          "note": "primary_design_eval_opposite_family_to_the_kimi_k3_lead"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "native",
+            "model": "fable-5.1",
+            "effort": "medium"
+          },
+          "when": [
+            "token-limit",
+            "model-unavailable"
+          ],
+          "certifies": "moonshot",
+          "note": "primary_design_eval_second_seat"
+        },
+        {
+          "route": {
             "harness": "opencode",
             "transport": "openrouter",
             "model": "moonshotai/kimi-k3",
             "effort": "high",
             "router": "openrouter"
           },
-          "when": [],
+          "when": [
+            "third-opinion"
+          ],
           "certifies": "none",
           "note": "vision_evidence_complements_required_glm_design_review"
+        },
+        {
+          "route": {
+            "harness": "opencode",
+            "transport": "openrouter",
+            "model": "z-ai/glm-5.3-flash",
+            "effort": "high",
+            "router": "openrouter"
+          },
+          "when": [
+            "third-opinion",
+            "model-unavailable"
+          ],
+          "certifies": "moonshot",
+          "note": "certifies_the_kimi_k3_design_lead_from_a_different_vendor"
         }
       ]
     },
@@ -345,7 +496,7 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5",
+            "model": "fable-5.1",
             "effort": "medium"
           },
           "when": [],
@@ -407,8 +558,8 @@
       ]
     },
     {
-      "lane": "claude_workflow",
-      "purpose": "claude_workflow",
+      "lane": "workflow",
+      "purpose": "workflow",
       "chain": [
         {
           "route": {
@@ -444,7 +595,7 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5",
+            "model": "fable-5.1",
             "effort": "medium"
           },
           "when": [],
@@ -499,7 +650,7 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5",
+            "model": "fable-5.1",
             "effort": "medium"
           },
           "when": [],
@@ -547,7 +698,7 @@
       ]
     },
     {
-      "lane": "review_claude",
+      "lane": "workflow_review",
       "purpose": "evaluation",
       "chain": [
         {
@@ -563,7 +714,7 @@
       ]
     },
     {
-      "lane": "review_codex_light",
+      "lane": "light_review",
       "purpose": "evaluation",
       "chain": [
         {
@@ -588,18 +739,33 @@
             "token-limit"
           ],
           "certifies": "openai"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "google/gemini-3.8-flash",
+            "effort": "low",
+            "profile": "claude-openrouter"
+          },
+          "when": [
+            "native-quota-limit",
+            "model-unavailable"
+          ],
+          "certifies": "zai",
+          "note": "certifies_the_third_implementation_lane_glm_5_3_flash"
         }
       ]
     },
     {
-      "lane": "review_codex",
+      "lane": "normal_review",
       "purpose": "evaluation",
       "chain": [
         {
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5",
+            "model": "fable-5.1",
             "effort": "low"
           },
           "when": [],
@@ -617,18 +783,33 @@
             "token-limit"
           ],
           "certifies": "openai"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "z-ai/glm-5.3-flash",
+            "effort": "medium",
+            "profile": "claude-openrouter"
+          },
+          "when": [
+            "native-quota-limit",
+            "model-unavailable"
+          ],
+          "certifies": "google",
+          "note": "certifies_the_third_implementation_lane_gemini_3_8_flash"
         }
       ]
     },
     {
-      "lane": "review_codex_complex",
+      "lane": "complex_review",
       "purpose": "evaluation",
       "chain": [
         {
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5",
+            "model": "fable-5.1",
             "effort": "medium"
           },
           "when": [],
@@ -646,11 +827,26 @@
             "token-limit"
           ],
           "certifies": "openai"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "google/gemini-3.8-flash",
+            "effort": "high",
+            "profile": "claude-openrouter"
+          },
+          "when": [
+            "native-quota-limit",
+            "model-unavailable"
+          ],
+          "certifies": "meta",
+          "note": "certifies_the_third_implementation_lane_muse_spark_1_3"
         }
       ]
     },
     {
-      "lane": "review_codex_fast",
+      "lane": "fast_review",
       "purpose": "evaluation",
       "chain": [
         {
@@ -675,6 +871,87 @@
             "token-limit"
           ],
           "certifies": "openai"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "google/gemini-3.8-flash",
+            "effort": "medium",
+            "profile": "claude-openrouter"
+          },
+          "when": [
+            "native-quota-limit",
+            "model-unavailable"
+          ],
+          "certifies": "deepseek",
+          "note": "certifies_the_third_implementation_lane_deepseek_v4_1_flash"
+        }
+      ]
+    },
+    {
+      "lane": "complex_implementation_evaluation",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "meta/muse-spark-1.3",
+            "effort": "max",
+            "profile": "claude-openrouter"
+          },
+          "when": [],
+          "certifies": "any",
+          "note": "complex_tier_implementation_evaluation_first_seat"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "x-ai/grok-4.6",
+            "effort": "xhigh",
+            "profile": "claude-openrouter"
+          },
+          "when": [
+            "third-opinion",
+            "native-quota-limit"
+          ],
+          "certifies": "any",
+          "note": "second_seat_borrowed_from_the_architecture_row_pending_ratification"
+        }
+      ]
+    },
+    {
+      "lane": "complex_plan_evaluation",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "meta/muse-spark-1.3",
+            "effort": "max",
+            "profile": "claude-openrouter"
+          },
+          "when": [],
+          "certifies": "any",
+          "note": "complex_tier_plan_evaluation_first_seat"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "x-ai/grok-4.6",
+            "effort": "high",
+            "profile": "claude-openrouter"
+          },
+          "when": [
+            "third-opinion",
+            "native-quota-limit"
+          ],
+          "certifies": "any",
+          "note": "complex_tier_plan_evaluation_second_seat"
         }
       ]
     }
@@ -682,23 +959,40 @@
   "tiers": [
     {
       "tier": "light",
-      "implement": "light_implementation",
-      "review": "review_codex_light"
+      "review": "light_review",
+      "implementation": "light_implementation",
+      "plan": "planning_decisions",
+      "plan_evaluation": "formal_plan_evaluation",
+      "implementation_evaluation": "formal_impl_evaluation"
     },
     {
       "tier": "normal",
-      "implement": "normal_implementation",
-      "review": "review_codex"
+      "review": "normal_review",
+      "implementation": "normal_implementation",
+      "plan": "planning_decisions",
+      "plan_evaluation": "formal_plan_evaluation",
+      "implementation_evaluation": "formal_impl_evaluation"
     },
     {
       "tier": "complex",
-      "implement": "complex_implementation",
-      "review": "review_codex_complex"
+      "review": "complex_review",
+      "implementation": "complex_implementation",
+      "plan": "planning_decisions",
+      "plan_evaluation": "complex_plan_evaluation",
+      "implementation_evaluation": "complex_implementation_evaluation"
     },
     {
       "tier": "fast",
-      "implement": "fast_iteration",
-      "review": "review_codex_fast"
+      "review": "fast_review",
+      "implementation": "fast_implementation",
+      "plan": "planning_decisions",
+      "plan_evaluation": "formal_plan_evaluation",
+      "implementation_evaluation": "formal_impl_evaluation"
+    },
+    {
+      "tier": "chore",
+      "implementation": "chore_code",
+      "implementation_evaluation": "formal_impl_evaluation"
     }
   ],
   "constraints": {
@@ -721,9 +1015,10 @@
     },
     "major_ui_ux_design": {
       "models": [
+        "moonshotai/kimi-k3",
         "z-ai/glm-5.2"
       ],
-      "why": "major UI/UX work is led by GLM 5.2"
+      "why": "major UI/UX work is led by Kimi K3, with GLM 5.2 held behind it"
     },
     "major_ui_ux_adversarial_review": {
       "models": [
@@ -784,7 +1079,7 @@
         "backend": "lm-studio",
         "verdict": "refused",
         "reason": "unusably-slow",
-        "why": "It segfaults on Vulkan, and LM Studio's answer to that is a CPU fallback at roughly 3 tok/s — which is worse than a refusal, because it succeeds. A lane routed here does not fail; it takes an hour and looks like a hung agent."
+        "why": "It segfaults on Vulkan, and LM Studio's answer to that is a CPU fallback at roughly 3 tok/s \u2014 which is worse than a refusal, because it succeeds. A lane routed here does not fail; it takes an hour and looks like a hung agent."
       },
       {
         "model": "n5air/ling-3.0-flash",
@@ -870,5 +1165,30 @@
         "why": "Closed weights, as above."
       }
     ]
-  }
+  },
+  "laneAliases": {
+    "review_codex_light": "light_review",
+    "review_codex": "normal_review",
+    "review_codex_complex": "complex_review",
+    "review_codex_fast": "fast_review",
+    "claude_workflow": "workflow",
+    "review_claude": "workflow_review",
+    "fast_iteration": "fast_implementation",
+    "formal_impl_evaluation_complex": "complex_implementation_evaluation",
+    "formal_plan_evaluation_complex": "complex_plan_evaluation"
+  },
+  "triggers": [
+    "token-limit",
+    "no-claude-surface",
+    "third-opinion",
+    "native-quota-limit",
+    "openrouter-limit",
+    "model-unavailable"
+  ],
+  "routers": [
+    "n5air",
+    "n5air-rocm",
+    "openai",
+    "openrouter"
+  ]
 }

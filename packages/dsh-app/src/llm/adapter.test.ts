@@ -24,7 +24,7 @@ import type { Backend } from "@rickylabs/llm-local";
 import { ADAPTER_FAILURE_CODES, CREDENTIAL_REF, LocalLlmAdapter, PROVIDER_NAMES, envCredentials } from "./adapter.js";
 import type { Transport, WireExchange, WireRequest } from "./transport.js";
 
-const loadedRouting = await loadRoutingConfiguration({ path: fileURLToPath(import.meta.resolve("@rickylabs/routing/config/routing.v1.json")) });
+const loadedRouting = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../../../routing/test-fixtures/compatibility.json", import.meta.url)) });
 assert.ok(loadedRouting.ok);
 const routing = loadedRouting.loaded;
 const PLANTED_KEY = "sk-planted-canary-000111222333";

@@ -2,7 +2,7 @@ import { loadRoutingConfiguration } from "./load.js";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../config/routing.v1.json", import.meta.url)) });
+const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../test-fixtures/compatibility.json", import.meta.url)) });
 assert.ok(loadedA.ok);
 const A = loadedA.loaded.configuration;
 
@@ -194,7 +194,7 @@ describe("a lane makes the gate stricter", () => {
     // `deep_analysis` seats Fable on claude and falls back to Codex. Fable through codex is neither.
     const dispatch: DispatchRequest = {
       harness: "codex",
-      model: "fable-5",
+      model: "fable-5.1",
       effort: "medium",
       prompt: PROMPT,
     };
@@ -387,12 +387,18 @@ describe("the queries a refusal is built from", () => {
   it("lists the models a harness actually gets", () => {
     assert.deepEqual(routableModels(A, "agy"), ["gemini-3.6-flash-high"]);
     assert.deepEqual(routableModels(A, "agy"), routableModels(A, "agy", "openrouter"));
-    assert.equal(routableModels(A, "claude").includes("fable-5"), true);
+    assert.equal(routableModels(A, "claude").includes("fable-5.1"), true);
     assert.equal(routableModels(A, "claude").includes("gpt-5.6-sol"), false);
   });
 
   it("narrows an opencode harness by its router", () => {
-    assert.deepEqual(routableModels(A, "opencode", "openrouter"), ["moonshotai/kimi-k3"]);
+    assert.deepEqual(routableModels(A, "opencode", "openrouter"), [
+      "z-ai/glm-5.3-flash",
+      "google/gemini-3.8-flash",
+      "meta/muse-spark-1.3",
+      "deepseek/deepseek-v4.1-flash",
+      "moonshotai/kimi-k3",
+    ]);
     assert.deepEqual(routableModels(A, "opencode", "n5air"), []);
   });
 
@@ -404,7 +410,7 @@ describe("the queries a refusal is built from", () => {
 
   it("lists a lane's models in chain order", () => {
     assert.deepEqual(laneModels(A, "docs_polish"), [
-      "fable-5",
+      "fable-5.1",
       "opus-5",
       "z-ai/glm-5.2",
     ]);

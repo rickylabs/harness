@@ -695,3 +695,28 @@ provider/model/effort/usage/execution observation times or implies current liven
 unknown envelope types still withhold. This is support for two specifically reviewed source forms,
 not a claim of vendor-wide format completeness. The coordinator retains any initial real-source
 refusal and retries the unchanged source only under its separate private-read authorization.
+
+### Orchid dispatch context
+
+`dsh-telemetry runs --json` retains its existing `runs` and additive `dispatches` arrays.
+With the private `DSH_TELEMETRY_DISPATCH_ROOT` environment setting, it also reads Orchid's
+existing matrix reservation directory. The same root is configured as Orchid's private
+`matrix.receipt_root`; it must be readable by the telemetry process, private and outside Git.
+No new collector runs. Missing configuration leaves this source unbound. A configured unreadable
+or invalid source reports a fixed `orchid-dispatch` diagnostic and makes the read incomplete.
+The read is bounded to 1,000 reservations; truncation is explicit.
+
+Each started Orchid dispatch carries `issue: {repo, number}` for the inbox issue,
+`parentRunId: null` for this coordinator-dispatched root, exact `location: {paneId, workspaceId}`,
+and `dispatchState: launching | dispatched | uncertain`. Dispatch acknowledgement does not
+assert present liveness. Reserved attempts with no execution effect are omitted. The row's
+canonical `route` preserves requested provider, model and effort directly from the NetScript matrix. Observed
+identity remains unknown when the launch interface supplies no evidence. Transport is never substituted
+for router. `external` remains null until an actual native session association is established;
+this reader never searches by cwd to guess it.
+
+Native `runs[].parentId` continues to come from the existing telemetry readers. Codex now uses
+the thread's `id` ahead of a shared tree `session_id`, and reads explicit parent metadata. It
+rejects conflicting/self-parent links and does not treat a fork as a spawned child. These native
+links alone do not associate a root native session with an Orchid dispatch. Consumers must keep
+that missing association visible, including unavailable per-run cost rows, until it is bound.

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-const routingText = readFileSync(new URL(import.meta.resolve("@rickylabs/routing/config/routing.v1.json")), "utf8");
+const routingText = readFileSync(new URL("../../routing/test-fixtures/compatibility.json", import.meta.url), "utf8");
 import assert from "node:assert/strict";
 import { evidenceName, MILESTONE_WORKFLOW, prerequisites, settle, type StepState } from "@rickylabs/coordinator";
 import type { StoreResult } from "@rickylabs/harness-contracts";

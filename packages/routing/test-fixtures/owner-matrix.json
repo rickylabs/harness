@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "name": "owner-fixture",
+  "families": ["north", "south", "east"],
+  "efforts": {"ordered": ["gentle", "thorough"], "unordered": ["automatic"]},
+  "purposes": ["implementation", "evaluation", "planning", "accessibility"],
+  "triggers": ["capacity-changed", "owner-request"],
+  "routers": ["custom-gateway", "second-provider"],
+  "models": {
+    "writer-next": {"family": "north", "label": "Next Writer", "description": "General implementation"},
+    "critic-next": {"family": "south", "label": "Independent Critic"},
+    "spare-next": {"family": "east", "label": "Spare Critic"},
+    "registered-only": {"family": "north", "label": "Not yet routed"}
+  },
+  "profiles": [], "presets": [],
+  "lanes": [
+    {"lane": "feature_implementation", "purpose": "implementation", "chain": [
+      {"route": {"harness": "opencode", "router": "custom-gateway", "transport": "native", "model": "writer-next", "effort": "gentle"}, "when": []},
+      {"route": {"harness": "opencode", "router": "second-provider", "transport": "native", "model": "spare-next", "effort": "automatic"}, "when": ["capacity-changed"]}
+    ]},
+    {"lane": "feature_evaluation", "purpose": "evaluation", "chain": [
+      {"route": {"harness": "opencode", "router": "second-provider", "transport": "native", "model": "critic-next", "effort": "thorough"}, "when": [], "certifies": "any"},
+      {"route": {"harness": "opencode", "router": "custom-gateway", "transport": "native", "model": "spare-next", "effort": "gentle"}, "when": ["owner-request"], "certifies": "any"}
+    ]},
+    {"lane": "feature_plan", "purpose": "planning", "chain": [
+      {"route": {"harness": "opencode", "router": "custom-gateway", "transport": "native", "model": "writer-next", "effort": "gentle"}, "when": []}
+    ]},
+    {"lane": "feature_accessibility", "purpose": "accessibility", "chain": [
+      {"route": {"harness": "opencode", "router": "second-provider", "transport": "native", "model": "spare-next", "effort": "automatic"}, "when": []}
+    ]}
+  ],
+  "laneAliases": {"old_writer": "feature_implementation", "old_critic": "feature_evaluation"},
+  "tiers": [{"tier": "feature", "implementation": "feature_implementation", "implementation_evaluation": "feature_evaluation", "plan": "feature_plan", "plan_evaluation": "feature_evaluation", "accessibility_audit": "feature_accessibility"}],
+  "constraints": {}, "deepResearchLanes": [],
+  "policy": {"maxFallbackDepth": 3}, "placements": {"backends": [], "entries": []}
+}
