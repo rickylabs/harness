@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm, symlink, chmod } from "node:fs/promises"
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
-import { readOrchidDispatches } from "./orchid-dispatch.js";
+import { readOrchidDispatches, bindOrchidDispatchEvidence } from "./orchid-dispatch.js";
 const key = "a".repeat(64);
 const fixture = { schemaVersion: 1, runId: "orchid-" + key,
   issue: { repo: "example/inbox", number: 42 }, parentRunId: null, source: "codex",
@@ -63,5 +63,22 @@ it("withholds corrupt or relocated records, paths and symlinks with fixed diagno
     assert.equal((await readOrchidDispatches(s.root)).degraded, true);
     await chmod(s.root, 0o755);
     assert.deepEqual((await readOrchidDispatches(s.root)).notes, ["orchid-dispatch: source_unavailable"]);
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
+
+it("binds only an explicit same-dispatch same-source native reference and refuses ambiguity", async () => {
+  const s = await setup();
+  try {
+    await s.write(fixture);
+    const rows = (await readOrchidDispatches(s.root)).dispatches;
+    const d = rows[0]!;
+    const result = { ...d, external: "PRIVATE-NATIVE-FIXTURE" };
+    const bound = bindOrchidDispatchEvidence(rows, [result]);
+    assert.equal(bound.degraded, false);
+    assert.equal(bound.dispatches[0]?.external, "PRIVATE-NATIVE-FIXTURE");
+    for (const ambiguous of [[result, result], [{ ...result, source: "claude" as const }]]) {
+      assert.equal(bindOrchidDispatchEvidence(rows, ambiguous).degraded, true);
+    }
+    assert.equal(bindOrchidDispatchEvidence(rows, [{ ...result, runId: "different-fixture" }]).dispatches[0]?.external, null);
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });

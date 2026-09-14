@@ -25,8 +25,9 @@ import { homedir } from "node:os";
 import { backfillFromDisk, defaultRoots, type BackfillRoots } from "./backfill/index.js";
 import { diagnosticsFor, ALL_POINTERS } from "./diagnostics.js";
 import { parseItems, type LoadedItems } from "./items.js";
+import { buildAgentObservations } from "./agent-observations.js";
 import { readDispatchEvidence } from "./dispatch-evidence.js";
-import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
+import { ORCHID_DISPATCH_ROOT, readOrchidDispatches, bindOrchidDispatchEvidence } from "./orchid-dispatch.js";
 import { foldLiveEvents, mergeLiveRuns, readLiveLog } from "./live.js";
 import {
   humanBytes,
@@ -596,8 +597,15 @@ export async function main(argv: readonly string[], services: SourceServices = d
 
   if (command === "runs") {
     if (flags.json) {
-      const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded, [...readDispatchEvidence(runFiles), ...orchid.dispatches]);
-      process.stdout.write(`${JSON.stringify(envelope, null, 2)}\n`);
+      const evidence = readDispatchEvidence(runFiles);
+      const bound = bindOrchidDispatchEvidence(orchid.dispatches, evidence);
+      const orchidIds = new Set(orchid.dispatches.map(d => d.runId));
+      const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded && !bound.degraded,
+        [...evidence.filter(d => !orchidIds.has(d.runId)), ...bound.dispatches]);
+      const agentObservations = buildAgentObservations({ dispatches: bound.dispatches, runs: merged.runs,
+        observedAt: flags.now, sourceBound: services.env[ORCHID_DISPATCH_ROOT] !== undefined,
+        dispatchComplete: !orchid.degraded && !bound.degraded, nativeComplete: !scan.degraded && !merged.degraded });
+      process.stdout.write(`${JSON.stringify({ ...envelope, agentObservations }, null, 2)}\n`);
       return view.degraded ? EXIT.incomplete : EXIT.ok;
     }
     for (const run of runs) {

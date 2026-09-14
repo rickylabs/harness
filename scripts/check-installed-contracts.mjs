@@ -97,16 +97,25 @@ try {
   assert.ok(existsSync(join(installedRoot, "dist/index.d.ts")) && existsSync(join(installedRoot, "dist/server.d.ts")));
   stage = "installed root/server runtime exports";
   writeFileSync(join(consumer, "runtime.mjs"), `import assert from 'node:assert/strict';
-import { readGovernanceSnapshot, PROTOCOL_VERSION } from '@rickylabs/harness-contracts';
+import { readGovernanceSnapshot, readAgentObservations, MAX_AGENT_OBSERVATIONS, projectRouteIdentity, PROTOCOL_VERSION } from '@rickylabs/harness-contracts';
+import { projectRouteIdentity as routeExport } from '@rickylabs/harness-contracts/route';
 import { openHub } from '@rickylabs/harness-contracts/server';
 assert.equal(typeof readGovernanceSnapshot, 'function'); assert.equal(PROTOCOL_VERSION, 1);
 assert.equal(typeof openHub, 'function');
+assert.equal(projectRouteIdentity, routeExport);
+assert.equal(MAX_AGENT_OBSERVATIONS, 256);
+assert.equal(readAgentObservations({schema:1,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',revision:'a'.repeat(64),complete:true,reason:null,agents:[]}).ok, true);
+assert.deepEqual(readAgentObservations({schema:2,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',revision:'a'.repeat(64),complete:true,reason:null,agents:[]}), {ok:false,reason:'unsupported-schema'});
 console.log(JSON.stringify({ root: true, server: true, protocol: PROTOCOL_VERSION }));\n`);
   const runtime = await run(process.execPath, [join(consumer, "runtime.mjs")], { cwd: consumer, env });
   assert.equal(runtime.code, 0); assert.deepEqual(JSON.parse(runtime.stdout), { root: true, server: true, protocol: 1 });
   stage = "installed root/server declaration compilation";
   writeFileSync(join(consumer, "consumer.ts"), `import { readRepositoryRunObservation, type RepositoryRunObservation, type RepositoryRunObservationReading, readGovernanceSnapshot, PROTOCOL_VERSION, type GovernanceReadSnapshot, type GovernanceReading } from '@rickylabs/harness-contracts';
 import { openHub, type Hub, type Delivery } from '@rickylabs/harness-contracts/server';
+import { readAgentObservations, type AgentObservation, type AgentObservationsReading, type RouteIdentityEvidence } from '@rickylabs/harness-contracts';
+const agents: AgentObservationsReading = readAgentObservations({});
+function agentRoute(a: AgentObservation): RouteIdentityEvidence { return a.route; }
+if (agents.ok) agents.observation.agents.map(agentRoute);
 const observationReading: RepositoryRunObservationReading = readRepositoryRunObservation({});
 function acceptObservation(o: RepositoryRunObservation): string { return o.binding.namespace; }
 if (observationReading.ok) acceptObservation(observationReading.observation);

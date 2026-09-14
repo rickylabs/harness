@@ -37,3 +37,37 @@ is copied into Harness or Orchid. Observed provider remains unknown.
 
 Workspace typecheck and the full build gates passed for the linkage changes. The real pinned
 NetScript bridge probe is read-only; its public result contains no selected runtime identities.
+
+## Bounded agent collection and coordinator-owned proof
+
+The relayed collection is implemented on runs JSON as agentObservations. The published contracts
+package exports readAgentObservations, the version/size bounds, the canonical route implementation
+and the three-row cost vocabulary. The original subagents route.ts re-exports the same code.
+Whole-collection validation rejects incomplete/oversized/ambiguous trees with no accepted prefix.
+RepoRef and RunUsage are reused. Source receipts provide issue, assignment, location and requested
+route evidence. Existing explicit dispatch-result references are the only native-session join;
+without one, ancestry remains incomplete. Native identifiers do not leave this collection.
+
+The coordinator clarified that dispatch runs outside the isolated agent container. This lane
+will not install or start divybot, nor apply the live trigger. The coordinator owns the issue
+316 / leaf proof. Literal trigger and dry-run semantics were verified from dispatcher/forge source
+and reported: inbox harness label, profile: leaf in the issue-body /swarm block, and the daemon's
+-once -dryrun mode for its existing labeled queue. Comment admission skips the inbox repository.
+
+Initial validation: 220 contract tests and 460 telemetry tests passed, along with typecheck,
+full build and all package tests. Installed-consumer export checks and final integration checks
+are being rerun after explicit-reference binding and source timestamp normalization.
+
+## Final source validation and draft handoff
+
+Workspace typecheck, the full build, the full test pipeline and the installed-consumer gate
+passed on the follow-up source. Contract tests: 220 passed. Telemetry tests: 461 passed.
+The installed check imports the decoder and canonical route subpath from the packed published
+package, validates declarations, and verifies a schema refusal. All fixtures are synthetic.
+The subsequent main update changed BOARD.md only; no executable source changed.
+
+This is a new draft follow-up to merged PR 350. It is not a runtime installation or live proof.
+The coordinator owns dispatch of issue 316 with profile leaf. Native-session association,
+observed native route, current running status and all three cost source bindings remain
+explicitly unavailable where their required evidence is absent. No local dispatcher is needed
+or started. Supervisor sign-off and independent evaluation remain pending.

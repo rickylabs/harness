@@ -17,7 +17,7 @@ const allow = [
   { file: 'packages/dsh-app/src/board-smoke-fixture.ts', identifiers: ['model', 'effort'], reason: 'Synthetic board projection smoke data; E2 (#204), no dispatch consumer.' },
   { file: 'packages/forge/src/labels/taxonomy.ts', identifiers: ['lane'], reason: 'Label palette color, not a routing lane assignment; E7 (#37).' },
   { file: 'packages/forge/src/swarm/teardown.ts', identifiers: ['harness'], values: [''], reason: 'Empty missing-harness sentinel in orphan evidence; E7 (#37).' },
-  { file: 'packages/subagents/src/route.ts', identifiers: ['model', 'effort'], reason: 'Structural request/observed diagnostic field paths; E3 (#195).' },
+  { file: 'packages/contracts/src/route.ts', identifiers: ['model', 'effort'], values: ['request.model', 'request.effort', 'thread/start.result.model', 'thread/start.result.reasoningEffort'], reason: 'Canonical structural route provenance paths moved to the published contract; no routing values.' },
   { file: 'packages/routing/src/schema.ts', identifiers: ['harness'], reason: 'Structural schema vocabulary (#271).' },
   { file: 'packages/subagents/src/dispatch.ts', identifiers: ['harness'], reason: 'Executor harness vocabulary/default; E3 (#33), outside E11 step 1.' },
   { file: 'packages/dsh-app/src/dry-run-test-fixtures.ts', identifiers: [...identifiers], reason: 'Test-only fake dispatch fixture, not imported by production entry points (#271).' },

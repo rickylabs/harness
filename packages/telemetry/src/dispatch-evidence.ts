@@ -8,6 +8,9 @@ export interface DispatchEvidence {
   readonly external: string | null;
   readonly source: RunSource | null;
   readonly route: RouteIdentityEvidence;
+  readonly observedAt?: string;
+  readonly revision?: string;
+  readonly linkageBasis?: "dispatcher-confirmed";
   readonly issue?: { readonly repo: string; readonly number: number } | null;
   readonly parentRunId?: string | null;
   readonly location?: { readonly paneId: string; readonly workspaceId: string } | null;

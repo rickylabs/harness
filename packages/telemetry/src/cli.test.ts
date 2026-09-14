@@ -359,7 +359,7 @@ describe("dsh-telemetry --json", () => {
       runs: unknown[];
       notes: string[];
     };
-    assert.deepEqual(Object.keys(parsed).sort(), ["complete", "dispatches", "generatedAt", "notes", "runs"]);
+    assert.deepEqual(Object.keys(parsed).sort(), ["agentObservations", "complete", "dispatches", "generatedAt", "notes", "runs"]);
     assert.equal(parsed.generatedAt, "2026-09-04T22:00:00.000Z");
     assert.equal(parsed.complete, false);
     assert.equal(parsed.runs.length, 1);
@@ -1081,6 +1081,7 @@ it("runs JSON includes Orchid issue and pane evidence without a native-session g
   await writeFile(join(record, "dispatch.json"), JSON.stringify({ schemaVersion: 1,
     runId: "orchid-" + key, issue: { repo: "example/inbox", number: 42 }, parentRunId: null,
     source: "codex", profile: "leaf", provider: "fixture-router", model: "fixture-model", effort: "high", state: "dispatched",
+    observedAt: "2026-01-01T00:00:00.000Z",
     location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" },
   }), { mode: 0o600 });
   process.env.DSH_TELEMETRY_DISPATCH_ROOT = root;
@@ -1090,5 +1091,11 @@ it("runs JSON includes Orchid issue and pane evidence without a native-session g
   assert.deepEqual(document.dispatches[0].issue, { repo: "example/inbox", number: 42 });
   assert.equal(document.dispatches[0].route.requested.model.value, "fixture-model");
   assert.equal(document.dispatches[0].external, null);
+  assert.equal(document.agentObservations.schema, 1);
+  assert.equal(document.agentObservations.complete, false);
+  assert.equal(document.agentObservations.reason, "ancestry_unavailable");
+  assert.match(document.agentObservations.agents[0].agentId, /^agent_[a-f0-9]{64}$/);
+  assert.equal(document.agentObservations.agents[0].cost.subscriptionHeadroom.availability, "unavailable");
+  assert.ok(!JSON.stringify(document.agentObservations).includes(document.dispatches[0].runId));
   assert.ok(!result.out.includes(root));
 });
