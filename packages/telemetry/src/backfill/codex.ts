@@ -131,6 +131,8 @@ export function quotaFromRateLimits(
 export function parseCodexRollout(text: string, origin: string): ParsedTranscript<RunRecord> {
   const tally = new NoteTally();
   let id: string | null = null;
+  const parents = new Set<string>();
+  let parentInvalid = false;
   let firstAt: string | null = null;
   let lastAt: string | null = null;
   // Read, used, and dropped — see the note on `RunRecord`. On this seam the working directory is
@@ -173,7 +175,17 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
     if (payload === null) continue;
 
     if (line.type === "session_meta") {
-      id ??= str(payload["session_id"]) ?? str(payload["id"]);
+      // Newer Codex session_id is shared by the entire tree; id is this thread.
+      id ??= str(payload["id"]) ?? str(payload["session_id"]);
+      const source = obj(payload["source"]);
+      const subagent = obj(source?.["subagent"]);
+      const spawned = obj(subagent?.["thread_spawn"]);
+      for (const candidate of [payload["parent_thread_id"], spawned?.["parent_thread_id"]]) {
+        if (candidate === undefined || candidate === null) continue;
+        const parent = str(candidate);
+        if (parent === null || parent.trim() !== parent) parentInvalid = true;
+        else parents.add(parent);
+      }
       cwd = str(payload["cwd"]) ?? cwd;
       provider = str(payload["model_provider"]) ?? provider;
     }
@@ -221,6 +233,10 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
     if (kind === "error" || kind === "stream_error" || kind === "turn_aborted") outcome = "failed";
   }
 
+  if (parentInvalid || parents.size > 1 || (id !== null && parents.has(id))) {
+    tally.bump("invalid or conflicting parent identity");
+    parents.clear();
+  }
   const notes = tally.notes();
   if (id === null || firstAt === null || lastAt === null) return { run: null, notes };
 
@@ -228,7 +244,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
     run: {
       id,
       source: "codex",
-      parentId: null,
+      parentId: parents.values().next().value ?? null,
       startedAt: firstAt,
       updatedAt: lastAt,
       // A rollout does not record the branch; attribution on this seam comes from the working

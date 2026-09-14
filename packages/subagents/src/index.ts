@@ -130,6 +130,7 @@ export type {
 export {
   ROUTE_FIELDS,
   compareRouteIdentity,
+  projectRouteIdentity,
   describeRouteEvidence,
   isRouteEvidenceVerified,
 } from "./route.js";

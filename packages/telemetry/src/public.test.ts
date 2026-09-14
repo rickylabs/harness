@@ -57,7 +57,7 @@ describe("the published envelopes", () => {
     assert.equal(truncated.complete, false);
     assert.deepEqual(truncated.notes, ["claude: truncated"]);
     assert.equal(truncated.runs.length, 1);
-    assert.deepEqual(Object.keys(truncated).sort(), ["complete", "generatedAt", "notes", "runs"]);
+    assert.deepEqual(Object.keys(truncated).sort(), ["complete", "dispatches", "generatedAt", "notes", "runs"]);
   });
 
   it("carry the same allowlist through a snapshot's subagent trees", () => {

@@ -160,6 +160,9 @@ importers:
       '@rickylabs/harness-contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@rickylabs/subagents':
+        specifier: workspace:*
+        version: link:../subagents
 
 packages:
 
