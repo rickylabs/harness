@@ -20,11 +20,22 @@ export const INCONCLUSIVE_EXIT = 2;
  * translates the child's death into 128 + signal number and exits normally, so these arrive as
  * ordinary statuses and would otherwise read as three very specific failures.
  *
- * Deliberately three values and not `status > 128`. Treating every high code as a signal would
- * reclassify a genuine failure as inconclusive, and inconclusive is the weaker report — the
- * strongest-negative rule says never trade a failure down. A script that deliberately exits 130,
- * 137 or 143 exists in principle; in this repository none does, and the misreport would still be
- * non-zero and would still name which signal it believed it saw.
+ * Three values, and `status > 128` would be **wrong rather than merely generous.** Not every signal
+ * death is imposed from outside the process:
+ *
+ *     130 = 128 + 2   SIGINT    interrupted          inconclusive
+ *     137 = 128 + 9   SIGKILL   killed, often OOM    inconclusive
+ *     143 = 128 + 15  SIGTERM   terminated           inconclusive
+ *     134 = 128 + 6   SIGABRT   died of its own defect   FAIL
+ *     139 = 128 + 11  SIGSEGV   died of its own defect   FAIL
+ *
+ * A stage that aborts or segfaults has told you something true about the code, and calling that
+ * inconclusive would suppress a real failure. The three above are deaths the stage did not choose,
+ * and they say nothing about the repository. So the set is a classification, not a threshold, and
+ * widening it to a range would misclassify the two codes that matter most.
+ *
+ * The residual trade: a script deliberately exiting 130, 137 or 143 would be misreported. None does
+ * here, it would still be non-zero, and it would still name the signal it believed it saw.
  */
 const SIGNAL_EXIT_CODES = new Map([[130, "SIGINT"], [137, "SIGKILL"], [143, "SIGTERM"]]);
 

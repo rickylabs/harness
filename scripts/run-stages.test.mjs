@@ -146,6 +146,19 @@ test("a high exit code that is not a known signal translation stays a failure", 
   }
 });
 
+test("a stage that aborted or segfaulted stays a failure, because that is its own defect", () => {
+  // The reason the set is a classification and not a threshold. 134 is SIGABRT and 139 is SIGSEGV:
+  // the process died of something wrong with itself, which is a true report about the code. The
+  // three that are inconclusive are deaths imposed from outside and say nothing about the code.
+  // Widening to `status > 128` would suppress exactly these two.
+  for (const [code, signal] of [[134, "SIGABRT"], [139, "SIGSEGV"]]) {
+    const classified = classifyStageResult({ status: code, signal: null, error: undefined });
+    assert.equal(classified.code, code, `${signal} means the stage failed, not that it did not run`);
+    assert.notEqual(classified.code, INCONCLUSIVE_EXIT);
+    assert.equal(classified.reason, undefined);
+  }
+});
+
 test("importing the module runs no stages", () => {
   // The guard that keeps the executable half from firing on import. If it regresses, the test suite
   // itself would start shelling out to pnpm, which is the kind of failure that looks like a hang.
