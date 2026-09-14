@@ -177,8 +177,40 @@ describe("resolveFallback", () => {
         ...boundary,
       }),
     );
-    assert.equal(step.route.model, "meta/muse-spark-1.3");
+    assert.equal(step.route.model, "qwen/qwen3.8-flash");
     assert.equal(step.certifies, "any");
+  });
+
+  it("keeps the complex-tier evaluators out of the shared evaluation chain", () => {
+    // netscript's delegation matrix keys plan_evaluation and implementation_evaluation by
+    // workload tier, so muse-spark-1.3 and grok-4.6 (complex/architecture rows) are not
+    // fallbacks for glm-5.3-flash and qwen3.8-flash (straightforward row). They answer a
+    // different question, and a chain that mixes them silently downgrades a complex review.
+    for (const lane of ["formal_plan_evaluation", "formal_impl_evaluation"]) {
+      const models = (A.lanes.find((l) => l.lane === lane)?.chain ?? []).map((s) => s.route.model);
+      assert.equal(models.includes("meta/muse-spark-1.3"), false, lane);
+      assert.equal(models.includes("x-ai/grok-4.6"), false, lane);
+    }
+  });
+
+  it("gives the complex tier its own evaluation lanes, led by the matrix's first seat", () => {
+    const plan = expectRoute(resolveRoute(A, "formal_plan_evaluation_complex"));
+    assert.equal(plan.route.model, "meta/muse-spark-1.3");
+    assert.equal(plan.route.effort, "max");
+    const impl = expectRoute(resolveRoute(A, "formal_impl_evaluation_complex"));
+    assert.equal(impl.route.model, "meta/muse-spark-1.3");
+    assert.equal(impl.route.effort, "max");
+    // The second seat is reachable at depth 1, which the six-step chain it replaced was not.
+    const { step, index } = expectFallback(
+      resolveFallback(A, {
+        lane: "formal_plan_evaluation_complex",
+        trigger: "third-opinion",
+        from: 0,
+        ...boundary,
+      }),
+    );
+    assert.equal(index, 1);
+    assert.equal(step.route.model, "x-ai/grok-4.6");
   });
 
   it("has a native step left when the relay itself is limited", () => {

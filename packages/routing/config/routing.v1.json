@@ -598,36 +598,6 @@
           "route": {
             "harness": "claude",
             "transport": "openrouter",
-            "model": "meta/muse-spark-1.3",
-            "effort": "max",
-            "profile": "claude-openrouter"
-          },
-          "when": [
-            "third-opinion",
-            "native-quota-limit"
-          ],
-          "certifies": "any",
-          "note": "complex_architecture_route"
-        },
-        {
-          "route": {
-            "harness": "claude",
-            "transport": "openrouter",
-            "model": "x-ai/grok-4.6",
-            "effort": "high",
-            "profile": "claude-openrouter"
-          },
-          "when": [
-            "third-opinion",
-            "native-quota-limit"
-          ],
-          "certifies": "any",
-          "note": "complex_architecture_route"
-        },
-        {
-          "route": {
-            "harness": "claude",
-            "transport": "openrouter",
             "model": "qwen/qwen3.8-flash",
             "effort": "max",
             "profile": "claude-openrouter",
@@ -678,36 +648,6 @@
           },
           "when": [],
           "certifies": "anthropic"
-        },
-        {
-          "route": {
-            "harness": "claude",
-            "transport": "openrouter",
-            "model": "x-ai/grok-4.6",
-            "effort": "high",
-            "profile": "claude-openrouter"
-          },
-          "when": [
-            "third-opinion",
-            "native-quota-limit"
-          ],
-          "certifies": "any",
-          "note": "complex_architecture_route"
-        },
-        {
-          "route": {
-            "harness": "claude",
-            "transport": "openrouter",
-            "model": "meta/muse-spark-1.3",
-            "effort": "max",
-            "profile": "claude-openrouter"
-          },
-          "when": [
-            "third-opinion",
-            "native-quota-limit"
-          ],
-          "certifies": "any",
-          "note": "complex_architecture_route"
         },
         {
           "route": {
@@ -928,6 +868,72 @@
           ],
           "certifies": "deepseek",
           "note": "certifies_the_third_implementation_lane_deepseek_v4_1_flash"
+        }
+      ]
+    },
+    {
+      "lane": "formal_impl_evaluation_complex",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "meta/muse-spark-1.3",
+            "effort": "max",
+            "profile": "claude-openrouter"
+          },
+          "when": [],
+          "certifies": "any",
+          "note": "complex_tier_implementation_evaluation_first_seat"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "x-ai/grok-4.6",
+            "effort": "xhigh",
+            "profile": "claude-openrouter"
+          },
+          "when": [
+            "third-opinion",
+            "native-quota-limit"
+          ],
+          "certifies": "any",
+          "note": "second_seat_borrowed_from_the_architecture_row_pending_ratification"
+        }
+      ]
+    },
+    {
+      "lane": "formal_plan_evaluation_complex",
+      "purpose": "evaluation",
+      "chain": [
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "meta/muse-spark-1.3",
+            "effort": "max",
+            "profile": "claude-openrouter"
+          },
+          "when": [],
+          "certifies": "any",
+          "note": "complex_tier_plan_evaluation_first_seat"
+        },
+        {
+          "route": {
+            "harness": "claude",
+            "transport": "openrouter",
+            "model": "x-ai/grok-4.6",
+            "effort": "high",
+            "profile": "claude-openrouter"
+          },
+          "when": [
+            "third-opinion",
+            "native-quota-limit"
+          ],
+          "certifies": "any",
+          "note": "complex_tier_plan_evaluation_second_seat"
         }
       ]
     }
