@@ -1,8 +1,9 @@
 # Context pack
 
 Two implementation slices are published: I1 receipt checks in PR 342 at a8ecf95 and I4 blocked
-decisions in PR 345 at 1dd60db. Both passed local typecheck/build/test. I1 CI passed at its current
-head. Independent final evaluation is assigned to issue 346 with separate verdicts per slice.
+decisions in PR 345 at 1dd60db. Both passed local typecheck/build/test and Node 24 CI at their current
+heads. Independent final evaluation 346 returned separate PASS verdicts for both; see implementation-evals.md.
+Both PRs remain draft at status:augment-review awaiting the charter-required supervisor sign-off.
 
 I1's independent source evaluator found the symlink entry guard false green at 495b815 and passed
 the repair at 2662860. The final tests/docs delta addresses both nonblocking recommendations.
@@ -24,5 +25,6 @@ NetScript MCP service discovery returned no services because its discovery repor
 mismatch and other sources were absent. Cockpit operations could not be discovered. That is not
 proof of an absent API. No endpoint or event schema was invented; consultation event names are draft.
 
-Outstanding: final independent verdicts, supervisor sign-off, I4 CI, actual divybot integration
-ownership/plan and live acceptance, and the owner's separate dual-agent promotion decision.
+Outstanding: supervisor sign-off, actual divybot integration ownership/plan and live acceptance,
+and the owner's separate dual-agent promotion decision. The mailbox has not answered the upstream
+ownership/supervisor question; an explicit ownership question is also pending in the active lane.

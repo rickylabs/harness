@@ -81,3 +81,9 @@ writes did not wake it. Recorded the reports and their limits in dual-agent.md. 
 recommendation; a memory observation cannot establish host policy as the cause. Asked the
 counterpart to identify upstream divybot integration ownership and the eventual supervisor; no
 assignment or sign-off is inferred from silence.
+
+2026-09-14: Review 346 published separate exact-head PASS verdicts for PR 342 a8ecf95 and PR 345
+1dd60db, with executed mutation controls and inspection of nonempty Node 24 CI output. Recorded
+external review/observer links and limitations in implementation-evals.md. Moved both PRs to
+status:augment-review; kept draft because supervisor sign-off has not happened. No source changes
+after their reviewed heads. The combined stage list was independently tested and must survive merge.
