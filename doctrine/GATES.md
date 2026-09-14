@@ -3,10 +3,11 @@
 What a chain of checks must be able to say when it stops.
 
 Portable, like the rest of `doctrine/`: requirements on a report, not an implementation. Every claim
-below was measured in this repository on 2026-09-14 and the measurement is shown, with **one
-exception that is labelled where it appears**: the vacuous-coverage instance in the last section is
-reported by another lane on a runner this repository does not use. A tally mixing measured and
-reported rows has no single meaning, so the column exists before the tally does.
+below was measured in this repository on 2026-09-14 and the measurement is shown, **except two that
+are labelled where they appear** — the case for the third state, and the vacuous-coverage instance in
+the last section. Both are reported by other lanes, on runners this repository does not use, and each
+says so in place. A tally mixing measured and reported rows has no single meaning, so the column
+exists before the tally rather than being added afterwards to rescue it.
 
 ---
 
@@ -78,6 +79,22 @@ outranks an inconclusive when both occur: never trade a negative down to an abse
 An inconclusive report must name what was not established, in words. A status string can be skimmed
 past; a sentence saying nothing was established cannot.
 
+The case for this, *reported* by a third lane rather than measured here, is the one where refusing
+cost the refusing party something. A seat built a check over its own generated output, and the check
+was structurally unreliable from the moment it landed: the task runner rewrote the file the check
+compares against before the script had started. It passed only while the two happened to agree, and
+was one dependency change from never passing again.
+
+It refused, rather than reporting a failure it had not earned. In that lane's own words, which are
+better than a paraphrase: **the gate's report was the only component of the gate that still worked,
+and it was enough.**
+
+That is the whole argument for the third state in one sentence. A gate whose subject has been pulled
+out from under it has two honest options and only one of them preserves information. Reporting a
+failure would have sent somebody to look for a defect in generated output that was fine. Reporting
+nothing would have left a green. Reporting that it could not tell is the only answer that is both
+true and actionable, and it is available only if the vocabulary has a word for it.
+
 ## What a spawned stage actually returns
 
 Measured, because the first attempt at this got it wrong and the wrong version passed its tests.
@@ -108,8 +125,19 @@ Put the whole report in a **pure function** over the stage list, the results, an
 stage. Then every requirement above is testable without spawning anything, and the executable half
 stays small enough to read in one sitting.
 
-Measured here: 149 lines total, of which the executable half is 14 non-comment lines, covered by 20
-tests.
+Measured here, the executable half is small enough to read in one sitting and the pure function
+carries every requirement above.
+
+Deliberately without exact counts. A first draft of this paragraph said 149 lines, 14 non-comment
+lines and 20 tests, and **nothing in this repository checks any of those numbers.** They would have
+been wrong the next time anyone edited the file, and a document that states a figure no gate reads is
+a document that rots quietly while continuing to sound precise.
+
+The general form is worth more than the counts were: **do not put a number in a document unless
+something checks it, or unless a reader can check it against their own run.** The transcripts above
+survive that test, which is why they are quoted unwrapped — a reader can run the failure and compare.
+Line counts do not, so they are gone. A caveat that depends on somebody re-copying it by hand is one
+tired hop from vanishing; a claim a reader can verify does not need anybody to remember it.
 
 The tests must drive the pure function *and* the mapping from a real spawn result to a stage code.
 Measured mistake: a suite that fed the pure function codes chosen by hand covered it well and never
