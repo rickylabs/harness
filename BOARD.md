@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **269/342 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 6 invisible**
+`[###############-----]` **269/344 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 8 invisible**
 
-_Latest board activity: 2026-09-14T21:34:10Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T21:42:15Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -56,12 +56,17 @@ Open, and carrying no `status:` label — real work no column can see.
 | item | column | epic |
 | --- | --- | --- |
 | [#352 Dispatch never runs: divybot spawns the agent with pane run, so herdr never registers it and the goal is lost](https://github.com/rickylabs/harness/issues/352) | — | — |
-| [PR353 feat(telemetry): expose bounded per-issue agent observations](https://github.com/rickylabs/harness/pull/353) | — | — |
-| [#354 Expose bounded per-issue agent observations with a strict decoder](https://github.com/rickylabs/harness/issues/354) | — | — |
+| [#355 Record first-class Layer 1 adoption against the locked charter](https://github.com/rickylabs/harness/issues/355) | — | — |
+| [PR356 docs: propose first-class Layer 1 adoption RFC](https://github.com/rickylabs/harness/pull/356) | — | — |
 
-## Anomalies (14)
+## Anomalies (16)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-without-status`**
+
+- **#353** — merged, but carries no status label; delivered work the board cannot see
+- **#354** — closed as completed, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -83,8 +88,8 @@ Open, and carrying no `status:` label — real work no column can see.
 **`no-status`**
 
 - **#352** — open item has no status label, so it appears in no column
-- **#353** — open item has no status label, so it appears in no column
-- **#354** — open item has no status label, so it appears in no column
+- **#355** — open item has no status label, so it appears in no column
+- **#356** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -109,13 +114,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 76/100 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 5 invisible
+`[########----]` 76/102 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 7 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[#########---]` 64/84 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 4 invisible | — |
+| _(no epic)_ | `[########----]` 64/86 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 6 invisible | — |
 
 ## Waiting to start
 
@@ -156,7 +161,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  269/342 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 6 invisible
+# rickylabs/harness  [###############-----]  269/344 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 8 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  193/242 done · 19 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -437,7 +442,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  76/100 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 5 invisible
+## (no milestone)  [##############------]  76/102 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 7 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -546,6 +551,8 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #352 Dispatch never runs: divybot spawns the agent with pane run, so herdr never registers it and the goal is lost
     no status            PR353 feat(telemetry): expose bounded per-issue agent observations
     no status            #354 Expose bounded per-issue agent observations with a strict decoder
+    no status            #355 Record first-class Layer 1 adoption against the locked charter
+    no status            PR356 docs: propose first-class Layer 1 adoption RFC (draft)
 ```
 
 </details>
