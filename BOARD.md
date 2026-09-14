@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[###############-----]` **261/336 done · 23 running · 23 queued · 9 blocked · 15 abandoned · 5 invisible**
+`[###############-----]` **261/337 done · 25 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-14T13:59:04Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T14:38:17Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (9)
+## Waiting on you (8)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
@@ -15,14 +15,13 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN](https://github.com/rickylabs/harness/issues/313) | `triage` | — |
 | [#315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves](https://github.com/rickylabs/harness/issues/315) | `triage` | `e10` |
 | [#321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch](https://github.com/rickylabs/harness/issues/321) | `triage` | `e11` |
-| [PR339 docs(e11): charter enforcement plan and measured dual-agent pilot](https://github.com/rickylabs/harness/pull/339) | `plan-eval` | `e11` |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 | [#328 Three unrecognised envelope types on a real Codex store, one at 17304 occurrences, and the reader says that means a class of record is going unread](https://github.com/rickylabs/harness/issues/328) | `triage` | — |
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (23)
+## Moving now (25)
 
 Something could be acting on these right now.
 
@@ -33,6 +32,7 @@ Something could be acting on these right now.
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#316 Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/316) | `impl-eval` | — |
 | [PR317 feat(routing): validate the fleet-shaped configuration as schema version 2](https://github.com/rickylabs/harness/pull/317) | `impl-eval` | `e11` |
+| [PR339 docs(e11): charter enforcement plan and measured dual-agent pilot](https://github.com/rickylabs/harness/pull/339) | `impl-eval` | `e11` |
 | [PR342 feat(e11): validate matrix receipts without false green observations](https://github.com/rickylabs/harness/pull/342) | `augment-review` | `e11` |
 | [PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation](https://github.com/rickylabs/harness/pull/345) | `augment-review` | `e11` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
@@ -51,6 +51,7 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
+| [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 
 ## Not on the board (2)
 
@@ -61,7 +62,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [PR324 doctrine: add principle 12, an absence needs a reachability list](https://github.com/rickylabs/harness/pull/324) | — | — |
 | [PR336 doctrine: publish what a chain of checks must say when it stops](https://github.com/rickylabs/harness/pull/336) | — | — |
 
-## Anomalies (12)
+## Anomalies (13)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -80,6 +81,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#345** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#346** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#347** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 
 **`no-status`**
 
@@ -109,12 +111,12 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 69/94 done · 3 running · 3 queued · 6 blocked · 9 abandoned · 4 invisible
+`[########----]` 69/95 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#####-------]` 4/9 done · 2 running · 2 blocked · 1 invisible | `triage` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[####--------]` 4/10 done · 4 running · 1 blocked · 1 invisible | `triage` |
 | _(no epic)_ | `[#########---]` 60/79 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
@@ -156,7 +158,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  261/336 done · 23 running · 23 queued · 9 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [###############-----]  261/337 done · 25 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -437,7 +439,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [##############------]  69/94 done · 3 running · 3 queued · 6 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [##############------]  69/95 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -449,9 +451,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [#######---------] 4/9 done · 2 running · 2 blocked · 1 invisible
+    [######----------] 4/10 done · 4 running · 1 blocked · 1 invisible
     triage               #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0, waiting on owner)
-    plan-eval            PR339 docs(e11): charter enforcement plan and measured dual-agent pilot (draft, p0, waiting on owner)
+    impl-eval            PR339 docs(e11): charter enforcement plan and measured dual-agent pilot (draft, p0)
     no status            #340 E11 I1: independent feature-tier plan evaluation for receipt checker (p0)
     shipped              #341 E11 I1: native fallback plan evaluation for receipt checker (p0)
     augment-review       PR342 feat(e11): validate matrix receipts without false green observations (draft, p0)
@@ -459,6 +461,7 @@ Open, and carrying no `status:` label — real work no column can see.
     augment-review       PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation (draft, p0)
     shipped              #346 E11: independently evaluate final receipt delta and blocked-decision check (p0)
     shipped              #347 E11: independently evaluate the upstream divybot matrix-hook plan (p0)
+    research             #349 Brainstorm: dual-agent mailbox pilot contract (draft)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
