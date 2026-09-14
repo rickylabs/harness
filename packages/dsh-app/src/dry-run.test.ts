@@ -215,3 +215,17 @@ test("unresolved records for a different task or workflow step do not leave cros
   const result = await driveDryRun(handle, base); assert.ok(result.drove);
   assert.equal(value(await handle.read()).pending.length, 2);
 });
+
+// The consuming path must admit a configured custom provider, and reject one not configured.
+test("custom router survives routing admission through the dry-run coordinator", { timeout: 5000 }, async () => {
+  const { readFile } = await import("node:fs/promises");
+  const text = await readFile(new URL("../../routing/test-fixtures/owner-matrix.json", import.meta.url), "utf8");
+  const plan: DryRunPlan = { ...fixture(), lane: "feature_implementation", routing: { source: "owner-fixture", text },
+    dispatch: { harness: "opencode", router: "custom-gateway", model: "writer-next", effort: "gentle", prompt: "Synthetic task" },
+    fake: { ...base.fake, observation: { ...base.fake.observation, model: "writer-next", effort: "gentle" } },
+  };
+  const good = await memory(); assert.ok((await driveDryRun(good.handle, plan)).drove);
+  const bad = await memory(); const refused = await driveDryRun(bad.handle, { ...plan, dispatch: { ...plan.dispatch, router: "missing-gateway" } });
+  assert.ok(!refused.drove); assert.equal(value(await bad.handle.read()).lastEntry, 0);
+  value(await good.handle.close()); value(await bad.handle.close());
+});

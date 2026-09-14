@@ -2,7 +2,7 @@ import { loadRoutingConfiguration } from "./load.js";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../config/routing.v1.json", import.meta.url)) });
+const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../test-fixtures/compatibility.json", import.meta.url)) });
 assert.ok(loadedA.ok);
 const A = loadedA.loaded.configuration;
 

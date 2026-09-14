@@ -187,7 +187,7 @@ function declaredEfforts(configuration: RoutingConfiguration, lane: string, mode
 /** Derived per document; never a mutable global activation. */
 function echo(configuration: RoutingConfiguration, value: string): string {
   const longest = [...pinnedModels(configuration), ...lanes(configuration), ...configurationEfforts(configuration),
-    ...relayProfiles(configuration), ...ROUTERS, ...HARNESSES].reduce((n, name) => Math.max(n, name.length), 0);
+    ...relayProfiles(configuration), ...(configuration.routers ?? ROUTERS), ...HARNESSES].reduce((n, name) => Math.max(n, name.length), 0);
   if (value.length <= longest) return JSON.stringify(value);
   return `a ${String(value.length)}-character value`;
 }
@@ -322,7 +322,10 @@ function modelProblems(configuration: RoutingConfiguration, dispatch: DispatchRe
 
   const relayOnly = transports.every((transport) => transport === "openrouter");
   if (relayOnly) {
-    if (dispatch.router !== undefined && dispatch.router !== "openrouter") {
+    // OpenCode's configured provider ID is independent of the relay transport kind.
+    // Its exact router/model pairing was checked above against the document.
+    const isOpencode = baseHarness(dispatch.harness) === "opencode";
+    if (!isOpencode && dispatch.router !== undefined && dispatch.router !== "openrouter") {
       problems.push({
         reason: "wrong-router",
         message:
@@ -333,7 +336,6 @@ function modelProblems(configuration: RoutingConfiguration, dispatch: DispatchRe
     }
     // An opencode run addresses the relay through its own router key rather than through a profile;
     // `validateDispatch` is the one that insists it names that router.
-    const isOpencode = baseHarness(dispatch.harness) === "opencode";
     if (!isOpencode && (dispatch.profile === undefined || dispatch.profile === "")) {
       problems.push({
         reason: "unbound-credential",

@@ -2,7 +2,7 @@ import { loadRoutingConfiguration } from "./load.js";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../config/routing.v1.json", import.meta.url)) });
+const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../test-fixtures/compatibility.json", import.meta.url)) });
 assert.ok(loadedA.ok);
 const A = loadedA.loaded.configuration;
 
@@ -46,7 +46,7 @@ function runOf(route: Route, runId: string): RunIdentity {
   };
 }
 
-describe("the matrix itself", () => {
+describe("the behavioral fixture", () => {
   it("satisfies every invariant this package is supposed to hold", () => {
     assert.deepEqual(checkPolicy(A), []);
   });
@@ -283,7 +283,7 @@ describe("tiers", () => {
     // Availability is never traded for opposite-family review: a Codex-authored change reviewed
     // by another Codex run is the invariant failing quietly.
     for (const tier of A.tiers.map(t => t.tier)) {
-      const chain = laneChain(A, A.tiers.find(t => t.tier === tier)!.review) ?? [];
+      const chain = laneChain(A, A.tiers.find(t => t.tier === tier)!.review!) ?? [];
       for (const step of chain) {
         assert.equal(step.route.harness, "claude", `${tier} review ran on ${step.route.harness}`);
       }
@@ -382,7 +382,7 @@ describe("selfCertifies", () => {
     assert.equal(selfCertifies(A, stepOf("not-a-pinned-model", "anthropic")), false);
   });
 
-  it("holds across the live matrix", () => {
+  it("holds across the test fixture", () => {
     for (const policy of A.lanes) {
       for (const step of policy.chain) {
         assert.equal(selfCertifies(A, step), false, `${policy.lane} routes ${step.route.model}`);
@@ -401,8 +401,8 @@ describe("unreviewedSteps", () => {
     assert.deepEqual(unreviewedSteps(A, [astra, opus], [stepOf("opus-5", "openai")]), [1]);
   });
 
-  it("accepts a reviewer that certifies whoever authored", () => {
-    assert.deepEqual(unreviewedSteps(A, [astra, opus], [stepOf("opus-5", "any")]), []);
+  it("requires an opposite-family reviewer even for any", () => {
+    assert.deepEqual(unreviewedSteps(A, [astra, opus], [stepOf("opus-5", "any")]), [1]);
   });
 
   it("accepts one reviewer per author family", () => {
@@ -448,6 +448,6 @@ describe("the Astra row", () => {
 
   it("keeps a reviewer for every step of the complex tier, not only its primary", () => {
     const lanes = A.tiers.find(t => t.tier === "complex")!;
-    assert.deepEqual(unreviewedSteps(A, laneChain(A, lanes.implement) ?? [], laneChain(A, lanes.review) ?? []), []);
+    assert.deepEqual(unreviewedSteps(A, laneChain(A, lanes.implement!) ?? [], laneChain(A, lanes.review!) ?? []), []);
   });
 });
