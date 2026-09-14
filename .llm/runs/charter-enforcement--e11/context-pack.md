@@ -1,34 +1,13 @@
 # Context pack
 
-Two implementation slices are published: I1 receipt checks in PR 342 at a8ecf95 and I4 blocked
-decisions in PR 345 at 1dd60db. Both passed local typecheck/build/test and Node 24 CI at their current
-heads. Independent final evaluation 346 returned separate PASS verdicts for both; see implementation-evals.md.
-Both PRs remain draft at status:augment-review awaiting the charter-required supervisor sign-off.
+Orchid source integration is published in [draft PR #2](https://github.com/rickylabs/orchid/pull/2) at 85855119e07b27f4fcb032e44c65ecca69014200. It resolves NetScript before account/host selection, reads routing from pinned Markdown profiles, accepts configurable pins with trusted overrides for route changes, and persists private receipts before the sole spawn effect. Evaluator launches refuse until an actual model/session observation contract exists. No native observer or deployment is included.
 
-I1's independent source evaluator found the symlink entry guard false green at 495b815 and passed
-the repair at 2662860. The final tests/docs delta addresses both nonblocking recommendations.
-The original reviewer timed out before reading that delta; its PASS remains pinned to 2662860.
-Issue 346 replaces the unavailable session, not its evidence. I4's independent plan review 344
-passed after four bounded corrections; those are incorporated in the implementation plan.
+Local race tests, vet, build and read-only real-source resolution passed. Removing the common-path resolver or persistence produced semantic test failures. Harness PR #342's actual receipt CLI returned unproven/pass/fail for the corresponding synthetic compatibility cases. Remote CI and any subsequent review evidence belong in worklog.md. Independent source review and supervisor sign-off remain pending; no evaluator is launched through a bypass.
 
-Before-spawn integration remains the upstream handoff in dispatcher-handoff.md, not a deployed
-change. Profiles are present and remain markdown. No all-launcher I1–I3 completion is claimed.
-Dual-agent promotion is still owner fork 1. The pilot recovered useful history but exposed no
-reliable wake, correlation, acknowledgement or replay mechanism; no efficiency gain is measured.
+The owner ratified the two dispatcher forks (this run's forks 3/4, relayed as forks 1/2). See dispatcher-plan-eval.md and the dated disposition in plan.md. NetScript documents configurable ownerMatrixOverride values; no default configurable pin set was established in its CLI. No default set was invented. Harness PR #348 separately supplies configuration-derived pinned models; this artifact branch was rebased after its merge at 298ffd0.
 
-Review request 340 was withdrawn; its evaluator later acknowledged stand-down without evaluating.
-A self-reported stand-down is not OS teardown evidence. Plan review 341 supplied the accepted I1
-content and admissibility reassessment. The native feature implementation row selects Opus, not
-Fable. Preserve unknown applied effort and requested role/tier in every evaluator receipt.
+I1 receipt validation remains [draft PR #342](https://github.com/rickylabs/harness/pull/342) at a8ecf95; I4 blocked decisions remain [draft PR #345](https://github.com/rickylabs/harness/pull/345) at 1dd60db. Both passed local gates, Node 24 CI, and independent exact-head evaluation #346. The owner has not assigned supervisor sign-off. Preserve both reviewed heads and draft status. When eventually merging their package.json changes, retain both check:receipts and check:cluster stages.
 
-NetScript MCP service discovery returned no services because its discovery reported project-root
-mismatch and other sources were absent. Cockpit operations could not be discovered. That is not
-proof of an absent API. No endpoint or event schema was invented; consultation event names are draft.
+The mailbox remains a pilot for a separate owner brainstorm: [draft discussion #349](https://github.com/rickylabs/harness/issues/349), mailbox-rfc.md and dual-agent.md. It recovered useful history but lacks evidenced wake, acknowledgement and reliable correlation/replay. No efficiency gain is measured and no protocol is ratified. Recent pin/source questions were locally enqueued without a matching new answer observed.
 
-Outstanding: supervisor sign-off, actual divybot integration ownership/plan and live acceptance,
-and the owner's separate dual-agent promotion decision. The mailbox has not answered the upstream
-ownership/supervisor question; an explicit ownership question is also pending in the active lane.
-
-Upstream preparation: isolated Orchid baseline d344bd0 passes Go test/vet/build. The dispatcher plan
-received independent PASS AFTER NARROW FIXES in 347; all six corrections are incorporated, but owner
-forks 3/4 block product mutation. Read dispatcher-plan-eval.md and plan.md. No Orchid source changed.
+Profiles are present and remain Markdown. divybot remains dispatcher/executor, GitHub the sole dispatch path, and cockpit the event/effect authority. No all-launcher I1–I3 or live acceptance completion is claimed. Outstanding: source review with admissible observation evidence, supervisor sign-off, and separately authorized rollout/coverage verification.
