@@ -109,3 +109,11 @@ The selected primary's Go admission was refused in the counterpart's diagnostic.
 was withdrawn without a review result. A next attempt may use only the matrix's declared
 candidate with fresh resolution and admission evidence. No public issue state proves that an
 already accepted runtime stopped; dispatcher-side cancellation confirmation remains unproven.
+
+## Current slice disposition
+
+Owner fork 2 no longer blocks I1: the existing feature fallback was admitted and the independent
+plan gate passed with all narrow fixes incorporated. I4 obtained its own independent plan gate.
+Their locked plans and executable checks now live in PRs 342 and 345. This broader plan remains
+draft for actual dispatcher integration and dual-agent promotion; neither local check establishes
+all-launcher enforcement. See context-pack.md for current pinned review heads and outstanding work.

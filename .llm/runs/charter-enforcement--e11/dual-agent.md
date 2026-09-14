@@ -1,8 +1,9 @@
 # Dual-agent consultation — draft pilot contract
 
-The first real question received a correlated answer. It changed slice priority toward the
-missing I1 receipt gate and supplied prior gate evidence; time saved has not been measured. This draft records the minimum semantics to test,
-not a new runtime or a ratified public API. Evidence is in `research.md`.
+Retain this as a pilot. Real answers recovered history and changed slice priority toward I1,
+but repeated correlation/replay errors and absent wake semantics prevent claiming a dependable
+request channel. No efficiency gain has been measured. This draft defines the minimum contract
+to test, not a new runtime or ratified API. Evidence and later corrections follow below.
 
 ## Addressing and correlation
 
