@@ -3,7 +3,10 @@
 What a chain of checks must be able to say when it stops.
 
 Portable, like the rest of `doctrine/`: requirements on a report, not an implementation. Every claim
-below was measured in this repository on 2026-09-14 and the measurement is shown.
+below was measured in this repository on 2026-09-14 and the measurement is shown, with **one
+exception that is labelled where it appears**: the vacuous-coverage instance in the last section is
+reported by another lane on a runner this repository does not use. A tally mixing measured and
+reported rows has no single meaning, so the column exists before the tally does.
 
 ---
 
@@ -138,3 +141,19 @@ point.
 
 It also does not make a chain correct. Naming the stage that failed says nothing about whether the
 stages are the right stages, in the right order, or whether one of them is passing vacuously.
+
+**That one has a case behind it, and it is not from this repository.** *Reported* by another lane,
+within an hour of this document being written, on a runner that is neither of the two measured above:
+a chain reported nine of nine steps green, its first fully green end-to-end run, in exactly the form
+required here — naming what decided and what never started. On a build whose only network path was
+reachable from nothing but its own tests. Nine green steps covering a path that did not exist.
+
+Two things make that stronger evidence than an instance from here would be. It came from a different
+runner, so the property is not an artefact of this machinery. And the lane had not read this document
+when its gate went green, so the coverage claim failed independently of this framing.
+
+The uncomfortable part is the shape of it: **a green named-stage report feels most like coverage
+exactly when it is most misleading.** A red report invites a reader to check what ran. A green one
+invites nobody to check anything, and satisfying every requirement in this document does not change
+that. Naming stages tells a reader which questions were asked. It cannot tell them whether those were
+the questions worth asking.
