@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[###############-----]` **251/320 done · 21 running · 23 queued · 7 blocked · 15 abandoned · 3 invisible**
+`[###############-----]` **252/322 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 3 invisible**
 
-_Latest board activity: 2026-09-14T02:41:33Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T03:10:35Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (7)
+## Waiting on you (8)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
@@ -18,6 +18,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 | [#328 Three unrecognised envelope types on a real Codex store, one at 17304 occurrences, and the reader says that means a class of record is going unread](https://github.com/rickylabs/harness/issues/328) | `triage` | — |
+| [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
 ## Moving now (21)
@@ -95,13 +96,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 59/78 done · 1 running · 3 queued · 4 blocked · 9 abandoned · 2 invisible
+`[#########---]` 60/80 done · 1 running · 3 queued · 5 blocked · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/1 done · 1 blocked | `triage` |
-| _(no epic)_ | `[#########---]` 54/71 done · 1 running · 3 queued · 2 blocked · 9 abandoned · 2 invisible | — |
+| _(no epic)_ | `[#########---]` 55/73 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -142,7 +143,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  251/320 done · 21 running · 23 queued · 7 blocked · 15 abandoned · 3 invisible
+# rickylabs/harness  [###############-----]  252/322 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 3 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -423,7 +424,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  59/78 done · 1 running · 3 queued · 4 blocked · 9 abandoned · 2 invisible
+## (no milestone)  [###############-----]  60/80 done · 1 running · 3 queued · 5 blocked · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -510,6 +511,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR330 fix(telemetry): stop the Codex reader calling two envelopes unrecognised when a sibling reads one
     triage               #331 Incident: three sweeps, sixteen candidates, sixteen live — and the only unrecovered one was found by naming convention (p1)
     shipped              PR332 chore(uhp-dispatch-readiness--e3): retain the unimported-sweep incident
+    shipped              PR333 fix(telemetry): declare token_usage_record unread, because its counts are read elsewhere
+    triage               #334 The run record cannot say what a cache write cost, or which turn was expensive (p3, waiting on owner)
 ```
 
 </details>
