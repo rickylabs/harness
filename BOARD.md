@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **245/313 done · 19 running · 24 queued · 6 blocked · 15 abandoned · 4 invisible**
+`[###############-----]` **246/313 done · 19 running · 24 queued · 6 blocked · 15 abandoned · 3 invisible**
 
-_Latest board activity: 2026-09-14T01:13:19Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T01:16:03Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (6)
 
@@ -45,16 +45,15 @@ Something could be acting on these right now.
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 
-## Not on the board (2)
+## Not on the board (1)
 
 Open, and carrying no `status:` label — real work no column can see.
 
 | item | column | epic |
 | --- | --- | --- |
 | [PR324 doctrine: add principle 12, an absence needs a reachability list](https://github.com/rickylabs/harness/pull/324) | — | — |
-| [PR325 fix(gates): give three aggregates a third state so none reports a verdict it has not earned](https://github.com/rickylabs/harness/pull/325) | — | — |
 
-## Anomalies (4)
+## Anomalies (3)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -69,7 +68,6 @@ Open, and carrying no `status:` label — real work no column can see.
 **`no-status`**
 
 - **#324** — open item has no status label, so it appears in no column
-- **#325** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -94,13 +92,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 53/71 done · 3 queued · 3 blocked · 9 abandoned · 3 invisible
+`[#########---]` 54/71 done · 3 queued · 3 blocked · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/1 done · 1 blocked | `triage` |
-| _(no epic)_ | `[#########---]` 48/64 done · 3 queued · 1 blocked · 9 abandoned · 3 invisible | — |
+| _(no epic)_ | `[#########---]` 49/64 done · 3 queued · 1 blocked · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -142,7 +140,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  245/313 done · 19 running · 24 queued · 6 blocked · 15 abandoned · 4 invisible
+# rickylabs/harness  [###############-----]  246/313 done · 19 running · 24 queued · 6 blocked · 15 abandoned · 3 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 19 running · 21 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -423,7 +421,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     triage               #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [##############------]  53/71 done · 3 queued · 3 blocked · 9 abandoned · 3 invisible
+## (no milestone)  [###############-----]  54/71 done · 3 queued · 3 blocked · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -502,7 +500,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR322 chore(uhp-dispatch-readiness--e3): retain two coordinator receipts
     shipped              PR323 chore(uhp-dispatch-readiness--e3): retain the prune-pass measurement
     no status            PR324 doctrine: add principle 12, an absence needs a reachability list
-    no status            PR325 fix(gates): give three aggregates a third state so none reports a verdict it has not earned
+    shipped              PR325 fix(gates): give three aggregates a third state so none reports a verdict it has not earned
 ```
 
 </details>
