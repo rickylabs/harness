@@ -15,7 +15,7 @@ import { admitDispatch, describeAdmission, relayProfiles } from "./admit.js";
 import { checkPolicy, resolveFallback, tierPlan, toDispatch } from "./resolve.js";
 import { checkEvaluator, type RunIdentity } from "./family.js";
 
-const pathA = fileURLToPath(import.meta.resolve("@rickylabs/routing/config/routing.v1.json"));
+const pathA = fileURLToPath(new URL("../test-fixtures/compatibility.json", import.meta.url));
 const textA = await readFile(pathA, "utf8");
 function loaded(outcome: LoadOutcome) { assert.ok(outcome.ok, JSON.stringify(outcome)); return outcome.loaded; }
 function lanes1(document: RoutingDocument): RoutingConfiguration {
@@ -100,7 +100,7 @@ function refuseNonFileInChild(path: string, replacement?: string): void {
 describe("explicit document loader and identity", () => {
   it("loads the exported data asset with an independent raw-byte digest and freezes every depth", async () => {
     const result = loaded(await loadRoutingConfiguration({ path: pathA }));
-    assert.equal(result.source.name, "harness-compiled-table-transcription");
+    assert.equal(result.source.name, "routing-test-fixture");
     assert.equal(result.source.schemaVersion, 1);
     assert.equal(result.source.bytes, Buffer.byteLength(textA));
     assert.equal(result.source.digest, `sha256:${createHash("sha256").update(textA).digest("hex")}`);
@@ -120,7 +120,7 @@ describe("explicit document loader and identity", () => {
     await writeFile(script, 'process.stdout.write(import.meta.resolve("@rickylabs/routing/config/routing.v1.json"));');
     const packedPath = fileURLToPath(execFileSync(process.execPath, [script], { cwd: directory, encoding: "utf8" }));
     assert.ok(packedPath.startsWith(target));
-    assert.deepEqual(loaded(await loadRoutingConfiguration({ path: packedPath })).configuration, A);
+    assert.deepEqual(loaded(await loadRoutingConfiguration({ path: packedPath })).configuration, loaded(await loadRoutingConfiguration({ path: fileURLToPath(import.meta.resolve("@rickylabs/routing/config/routing.v1.json")) })).configuration);
   }));
   it("distinguishes source labels from bytes and delegates file parsing exactly", async () => scratch(async directory => {
     const raw = JSON.stringify(documentB());

@@ -3,7 +3,7 @@
 [![ci](https://github.com/rickylabs/harness/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rickylabs/harness/actions/workflows/ci.yml)
 [![licence: MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A524-informational)](https://nodejs.org)
-[![dsh plugin layer](https://img.shields.io/badge/dsh-plugin%20layer-6f42c1)](https://github.com/deepseek-ai/deepseek-harness)
+[![portable agent runtime](https://img.shields.io/badge/portable-agent%20runtime-6f42c1)](ARCHITECTURE.md)
 
 **The deterministic coordinator layer for an agent fleet.** A monorepo of
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`)
@@ -235,9 +235,12 @@ fifteen minutes and needs no server.
 
 ## Architecture commitments
 
-Scope first, so the rest is readable: this repository is the `dsh` plugin
-layer, the doctrine those plugins encode, and the run artifacts they produce
-— nothing else. The two products that consume it are separate repositories —
+Scope first, so the rest is readable: this repository is **the portable agent
+runtime** — the routing matrix, the launchers that enforce it, the slice loop,
+the profiles, and the doctrine, made to run against any repository rather than
+one ([`ARCHITECTURE.md`](ARCHITECTURE.md) §1). The `dsh` plugin packages and the
+run artifacts are still here; §1 states that the charter "replaces the previous
+one" and §10 records that the plugins are parked rather than deleted. The two products that consume it are separate repositories —
 `rickylabs/atelier-cockpit`, the engineering cockpit, and
 `rickylabs/atelier-mobile`, the Expo companion — reaching this layer over a
 published contract package (ratified decision 4, below).
@@ -277,14 +280,20 @@ contradiction.
 
 ### Ratified decisions
 
-Four decisions are **ratified** in the *Decisions taken* table of the
-[E0 roadmap](https://github.com/rickylabs/harness/issues/30). They are
+Four decisions were **ratified** in the *Decisions taken* table of the
+[E0 roadmap](https://github.com/rickylabs/harness/issues/30), which
+[`ARCHITECTURE.md`](ARCHITECTURE.md) supersedes. Where the two differ, the
+charter wins: two of the four hold unchanged, one is scoped to parked work, and
+one is superseded on its first clause — each is marked below, and the marking is
+the authority, because nothing checks this sentence against that list. They are
 restated here because root documents are what an agent reads first, and a
 root document that contradicts a ratified decision propagates the
 contradiction silently. They are not re-opened in a run, a PR, or a prompt;
-reversing one is a change to #30 first.
+reversing one goes through [`ARCHITECTURE.md`](ARCHITECTURE.md) §13 — a numbered decision in
+[`doctrine/decisions/`](doctrine/decisions/) — not through #30, which is closed and superseded.
 
-1. **Plugin-only, no core fork.** Depend on published
+1. **Plugin-only, no core fork.** *Scoped to the parked plugin layer —*
+   [`ARCHITECTURE.md`](ARCHITECTURE.md) §10. Depend on published
    [`@deepseek-ai/dsh`](https://github.com/deepseek-ai/deepseek-harness). We
    ship Cordis plugin packages and one profile. Only
    [`runzhliu/deepseek-harness-docker`](https://github.com/runzhliu/deepseek-harness-docker)
@@ -293,7 +302,10 @@ reversing one is a change to #30 first.
    build-time dependency.
 3. **GitHub is the source of truth for the board**; `dsh` projects the live
    view.
-4. **This repo is the `dsh` layer only.** No cockpit is built here. The two
+4. **Superseded on its first clause.** This repository is **the portable agent
+   runtime** — [`ARCHITECTURE.md`](ARCHITECTURE.md) §1, which states that charter
+   "replaces the previous one ("the `dsh` plugin layer")". The rest of this
+   decision still holds. No cockpit is built here. The two
    that consume this layer are separate products in their own repositories —
    `rickylabs/atelier-cockpit`, the engineering cockpit, and
    `rickylabs/atelier-mobile`, the Expo companion. Consequence: `contracts`

@@ -16,7 +16,7 @@ export const SUBSCRIPTION_STATES = ["included", "outside_plan"] as const;
 export const CERTIFIES_KEYWORDS = ["any", "none"] as const;
 export const EVALUATION_PURPOSE = "evaluation";
 export type Transport = (typeof TRANSPORTS)[number];
-export type FallbackTrigger = (typeof FALLBACK_TRIGGERS)[number];
+export type FallbackTrigger = string;
 export type SubscriptionState = (typeof SUBSCRIPTION_STATES)[number];
 export type ModelFamily = string;
 export type Effort = string;
@@ -98,6 +98,11 @@ export interface PlacementConfiguration {
   readonly backends: readonly string[];
   readonly entries: readonly PlacementRecord[];
 }
+/** Every field except tier is a declared role-to-lane binding. */
+export interface TierBindings {
+  readonly tier: string;
+  readonly [role: string]: string;
+}
 export interface RoutingConfiguration {
   readonly schemaVersion: 1;
   readonly name: string;
@@ -105,11 +110,16 @@ export interface RoutingConfiguration {
   readonly families: readonly string[];
   readonly efforts: { readonly ordered: readonly string[]; readonly unordered?: readonly string[] };
   readonly purposes: readonly string[];
-  readonly models: Readonly<Record<string, { readonly family: string; readonly approvedRelayEvaluator?: true }>>;
+  /** Omitted only for compatibility with original v1 documents. Explicit lists replace defaults. */
+  readonly triggers?: readonly string[];
+  readonly routers?: readonly string[];
+  /** One-hop compatibility names; targets must be canonical lane IDs. */
+  readonly laneAliases?: Readonly<Record<string, string>>;
+  readonly models: Readonly<Record<string, { readonly family: string; readonly approvedRelayEvaluator?: true; readonly label?: string; readonly description?: string }>>;
   readonly profiles: readonly string[];
   readonly presets: readonly string[];
   readonly lanes: readonly LanePolicy[];
-  readonly tiers: readonly { readonly tier: string; readonly implement: string; readonly review: string }[];
+  readonly tiers: readonly TierBindings[];
   readonly constraints: Readonly<Record<string, LaneConstraint>>;
   readonly deepResearchLanes: readonly string[];
   readonly policy: { readonly maxFallbackDepth: number };
@@ -136,6 +146,7 @@ const STRUCTURAL_FIELDS = new Set([
   "selection", "by", "otherwise", "cells", "loops", "maxRounds", "reSteerSameSession",
   "notifyOwnerAfter", "escalateToOwnerAt", "repairInFlightAt", "authorization", "coordinators",
   "ownerOverride", "evidence",
+  "triggers", "routers", "laneAliases", "label", "implementation", "implementation_evaluation", "plan", "plan_evaluation",
 ]);
 export function fieldPath(parent: string, key: string, index: number): string {
   return STRUCTURAL_FIELDS.has(key) ? (parent === "$" ? key : `${parent}.${key}`) : `${parent}[${index}]`;
@@ -294,7 +305,7 @@ export function validateLaneConfiguration(value: unknown): ValidationOutcome<Rou
   }
   const root = value as Record<string, unknown>;
   const { problems, add, obj, str, arr, strings, ref, records } = validator();
-  obj(root, "$", ["schemaVersion", "name", "families", "efforts", "purposes", "models", "profiles", "presets", "lanes", "tiers", "constraints", "deepResearchLanes", "policy", "placements"], ["provenance"]);
+  obj(root, "$", ["schemaVersion", "name", "families", "efforts", "purposes", "models", "profiles", "presets", "lanes", "tiers", "constraints", "deepResearchLanes", "policy", "placements"], ["provenance", "triggers", "routers", "laneAliases"]);
   str(root.name, "name", /^[a-z0-9][a-z0-9-]*$/);
   if (root.provenance !== undefined) str(obj(root.provenance, "provenance", ["description"]).description, "provenance.description");
   const families = strings(root.families, "families", true);
@@ -306,6 +317,9 @@ export function validateLaneConfiguration(value: unknown): ValidationOutcome<Rou
   const efforts = [...ordered, ...unordered];
   const purposes = strings(root.purposes, "purposes");
   if (!purposes.includes(EVALUATION_PURPOSE)) add("dangling-reference", "purposes");
+  const triggers = root.triggers === undefined ? FALLBACK_TRIGGERS : strings(root.triggers, "triggers");
+  const routers = root.routers === undefined ? ROUTERS : strings(root.routers, "routers");
+  routers.forEach((r, i) => str(r, `routers[${i}]`, /^[a-z0-9][a-z0-9_.-]*$/));
   const profiles = strings(root.profiles, "profiles");
   const presets = strings(root.presets, "presets");
   const models = records(root.models, "models");
@@ -314,7 +328,8 @@ export function validateLaneConfiguration(value: unknown): ValidationOutcome<Rou
   Object.entries(models).forEach(([key, v], i) => {
     const at = `models[${i}]`;
     str(key, at);
-    const m = obj(v, at, ["family"], ["approvedRelayEvaluator"]);
+    const m = obj(v, at, ["family"], ["approvedRelayEvaluator", "label", "description"]);
+    for (const key of ["label", "description"] as const) if (m[key] !== undefined) str(m[key], `${at}.${key}`);
     ref(m.family, `${at}.family`, families);
     if (m.approvedRelayEvaluator !== undefined && m.approvedRelayEvaluator !== true) add("wrong-type", `${at}.approvedRelayEvaluator`);
   });
@@ -332,8 +347,8 @@ export function validateLaneConfiguration(value: unknown): ValidationOutcome<Rou
       const s = obj(v, stepAt, ["route", "when"], ["certifies", "subscription", "effortEscalations", "note"]);
       const r = obj(s.route, `${stepAt}.route`, ["harness", "transport", "model", "effort"], ["router", "profile", "preset"]);
       for (const [key, vocabulary] of [["harness", HARNESSES], ["transport", TRANSPORTS], ["model", modelNames], ["effort", efforts]] as const) ref(r[key], `${stepAt}.route.${key}`, vocabulary);
-      for (const [key, vocabulary] of [["router", ROUTERS], ["profile", profiles], ["preset", presets]] as const) if (r[key] !== undefined) ref(r[key], `${stepAt}.route.${key}`, vocabulary);
-      strings(s.when, `${stepAt}.when`, false, FALLBACK_TRIGGERS);
+      for (const [key, vocabulary] of [["router", routers], ["profile", profiles], ["preset", presets]] as const) if (r[key] !== undefined) ref(r[key], `${stepAt}.route.${key}`, vocabulary);
+      strings(s.when, `${stepAt}.when`, false, triggers);
       if (s.certifies !== undefined) ref(s.certifies, `${stepAt}.certifies`, [...families, ...CERTIFIES_KEYWORDS]);
       if (s.subscription !== undefined) ref(s.subscription, `${stepAt}.subscription`, SUBSCRIPTION_STATES);
       if (s.note !== undefined) str(s.note, `${stepAt}.note`, undefined, false);
@@ -345,13 +360,27 @@ export function validateLaneConfiguration(value: unknown): ValidationOutcome<Rou
       });
     });
   });
+  const aliases = root.laneAliases === undefined ? {} : records(root.laneAliases, "laneAliases");
+  Object.entries(aliases).forEach(([key, target], i) => {
+    const at = `laneAliases[${i}]`;
+    str(key, at, /^[a-z][a-z0-9_]*$/);
+    if (laneNames.includes(key)) add("duplicate", at);
+    ref(target, at, laneNames);
+  });
   const tierNames = new Set<string>();
   arr(root.tiers, "tiers").forEach((v, i) => {
     const at = `tiers[${i}]`;
-    const t = obj(v, at, ["tier", "implement", "review"]);
+    const t = records(v, at);
     if (str(t.tier, `${at}.tier`)) { if (tierNames.has(t.tier)) add("duplicate", `${at}.tier`); tierNames.add(t.tier); }
-    ref(t.implement, `${at}.implement`, laneNames);
-    ref(t.review, `${at}.review`, laneNames);
+    if (t.implementation === undefined && t.implement === undefined) add("missing-key", `${at}.implementation`);
+    if (t.implementation_evaluation === undefined && t.review === undefined) add("missing-key", `${at}.implementation_evaluation`);
+    if (t.implementation !== undefined && t.implement !== undefined && t.implementation !== t.implement) add("duplicate", `${at}.implementation`);
+    Object.entries(t).forEach(([key, binding], j) => {
+      if (key === "tier") return;
+      const path = fieldPath(at, key, j);
+      str(key, path, /^[a-z][a-z0-9_]*$/);
+      ref(binding, path, laneNames);
+    });
   });
   const constraints = records(root.constraints, "constraints");
   Object.entries(constraints).forEach(([key, v], i) => {

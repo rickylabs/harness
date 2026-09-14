@@ -65,17 +65,19 @@ validation reads their values. Duplicate JSON keys are rejected before they can 
 
 ## Schema version 1
 
-[The structural schema](src/schema.ts) requires every root field below except `provenance`.
-Unknown fields at any nesting level are errors; omitted optional fields never activate defaults.
+[The structural schema](src/schema.ts) requires every root field below except the explicitly optional fields.
+Unknown structural fields are errors. Tier role names are open keys; their values must reference canonical lanes.
 
 | Field | Document data |
 | --- | --- |
 | `schemaVersion`, `name`, optional `provenance.description` | Version 1, stable name and transcription/source description |
-| `families`, `models` | Family identifiers and wire model ids, each bound to a family; optional `approvedRelayEvaluator: true` |
+| `families`, `models` | Family identifiers and wire model ids, each bound to a family; optional `approvedRelayEvaluator: true`, `label` and `description` |
 | `efforts` | Nonempty `ordered` ladder, lowest first; optional `unordered` vocabulary |
 | `purposes`, `profiles`, `presets` | Declared identifiers, with `evaluation` required among purposes |
+| optional `triggers`, `routers` | Complete custom vocabularies; omission accepts the original v1 vocabulary for compatibility. An explicit empty list stays empty |
+| optional `laneAliases` | One-hop old-name → canonical-lane map for caller queries only |
 | `lanes` | Named purposes and ordered chains containing routes, triggers, certification and declared escalations |
-| `tiers` | Named implement/review lane pairs |
+| `tiers` | Open role-to-lane maps, including `implementation`, `implementation_evaluation`, `plan`, `plan_evaluation`, and any project-specific role; legacy `implement`/`review` accepted |
 | `constraints`, `deepResearchLanes` | Per-lane restrictions; deep research requires an explicit native-only constraint |
 | `policy.maxFallbackDepth` | Nonnegative integer fallback limit |
 | `placements` | Declared backend identifiers and model/backend records, including observations and requirements |
@@ -87,9 +89,14 @@ names as bounded opaque identifiers; [llm-local](../llm-local/README.md) validat
 verdict and refusal vocabulary before the adapter is registered. An empty placement section is
 legal. Membership is explicit, with a record for every participating model/declared-backend pair.
 
-Transport kinds, fallback triggers, subscription states, certification keywords and the two seams
-remain structural code. Harness/router vocabulary is owned by `subagents`. Model ids, family
-bindings, efforts, tiers, route selections, profiles, presets, constraints and depth are data.
+Transport kinds (`native` and the legacy relay kind `openrouter`), subscription payment states,
+certification keywords (`any`/`none`), the semantic purposes `implementation`/`evaluation`, and the
+two seams remain structural code. Supported harnesses come from `subagents`: an unknown harness
+can silently launch a different executor, so a document cannot add executor support. These are
+mechanism and safety boundaries, not model preferences. Router IDs are document data and must
+match `^[a-z0-9][a-z0-9_.-]*$` with a 4,096-character limit; OpenCode carries that provider ID
+unchanged, including for a relay route. Model IDs, registered families, efforts, purposes, triggers,
+tiers, role bindings, route selections, profiles, presets, constraints and depth are data.
 Provider/account detection and CLI version requirements are later E11 work.
 
 ## Schema version 2 — the fleet shape
@@ -208,8 +215,15 @@ The [two seams](../../docs/concepts/02-the-two-seams.md) remain independent of m
 
 `tierPlan(configuration, tier)` uses the implementation **primary's** configured family to resolve
 its review lane. This is not generator-relative evaluator selection after fallback. `checkPolicy`
-still checks every implementation step for a certification seat. #181 remains dependent on #272
-and #273; configurable family names alone do not close it.
+checks every implementation step, including fallbacks, for a registered opposite-family certifier.
+Every implementation-purpose lane must be bound as a tier's implementation. A named same-family
+certification is refused; `any` is legal only as an opposite-family seat for the work it certifies.
+`resolveRoute` and `resolveFallback` skip same-family certifiers when given an author family.
+`checkEvaluator` remains required at the session boundary.
+
+Coverage is not availability or payment approval. A triggered or paid reviewer can provide declared
+coverage while launch still requires the matching trigger, a turn boundary, depth budget and paid
+approval. The editor catalog makes no claim that any configured model is currently reachable.
 
 ## Resolution and admission
 
@@ -237,12 +251,84 @@ cannot become a positive availability claim. A static fallback may refuse and ma
 `mayDispatch` requires both available status and probe provenance. Configuration placement data
 is not evidence of live reachability.
 
-## Compatibility and remaining E11 work
+## Tier roles and compatibility
 
-The packaged document is named `harness-compiled-table-transcription`. It preserves 14 wire model
-ids, 23 lanes, four tiers and 18 placement records from the removed table. Its provenance explains
-the gap from fresh CLI matrix keys and names the baseline; it is **not a fleet-parity result**.
-No new model was added as a stopgap.
+New callers use `tierRoleLane(configuration, tier, role)` or
+`resolveTierRole(configuration, tier, role, authorFamily)` rather than constructing lane names.
+A row can directly express all eight fleet roles (implementation, ui_ux, plan, plan_evaluation,
+implementation_evaluation, vision_evaluation, documentation, deep_research), plus custom roles.
+The bindings reference reusable ordered lane chains; they do not embed another model table.
+
+```json
+{
+  "tier": "feature",
+  "implementation": "feature_implementation",
+  "implementation_evaluation": "feature_evaluation",
+  "plan": "feature_plan",
+  "plan_evaluation": "feature_plan_evaluation",
+  "accessibility_audit": "feature_accessibility"
+}
+```
+
+Every row requires implementation and implementation-evaluator bindings; the legacy spellings
+`implement`/`review` satisfy those requirements. Both implementation spellings, if present, must
+agree. An explicit legacy `review` may differ from `implementation_evaluation`; `tierPlan.review`
+preserves that legacy choice and both lanes must cover every implementation step. A plan evaluator
+requires a plan binding and must cover every plan step. A plan without a plan evaluator is legal.
+Other role names are unrestricted identifiers referring to declared lanes; their semantics belong
+to the consuming profile. No new role needs a TypeScript change.
+
+The shipped document uses names such as `light_review`, `complex_review` and `workflow` and
+explicitly binds tier-local formal evaluators. `laneAliases` preserves old names such as
+`review_codex_light` and `claude_workflow` for existing query, admission and fallback callers.
+Aliases cannot collide with lanes, point to other aliases, or appear in document-internal
+references. There is no lane-name parser. A harness change only changes the route data.
+
+This is an additive v1 extension, not the separate fleet-shaped v2 work in #272. Existing valid
+v1 vocabularies remain accepted when optional lists are absent. Previously accepted unsafe
+same-family `any` coverage and unbound implementation lanes now fail validation. The packaged
+matrix adds an explicit chore tier for its existing chore implementation and binds its existing
+formal evaluator. Its model selections remain the PR baseline; it is not evidence of fleet parity.
+
+## Editor catalog for the cockpit
+
+```ts
+import { routingEditorCatalog, resolveTierRole } from "@rickylabs/routing";
+
+const catalog = routingEditorCatalog(configuration);
+const jsonForFrontend = JSON.stringify(catalog);
+const choice = resolveTierRole(configuration, "feature", "plan_evaluation", authorFamily);
+```
+
+The JSON-serializable catalog exports `value`/`label` choices for supported harnesses, transports,
+configured routers, efforts, triggers, purposes, families, profiles, presets, roles and lanes.
+It also includes the tier bindings, compatibility alias map, and all registered models, including
+models that have no route yet. Model entries carry their configured label (or a readable fallback),
+description, family, lowercase `searchText`, route combinations, and `availability: "unproven"`.
+Search the text and group by route router and model family, as the eis-chat picker does. Model
+labels are owner data and survive model-ID changes independently.
+
+Per-model routes preserve each declared harness/router/transport/effort/profile combination.
+Global lists are choices, not permission to combine every field arbitrarily. The consuming app
+edits the original JSON and reloads it through `validateRoutingConfiguration` or
+`parseRoutingDocument`; the catalog is a projection, not a second source of truth. Discovery
+adapters may supply new registrations and labels, but must not infer family from a provider name
+or treat catalog membership as proof of availability. Live discovery, persistence, authorization,
+and cockpit UI remain in their owning applications.
+
+## Tests and policy ownership
+
+The shipped document is checked only for structure and invariants in `agnostic.test.ts` (and
+package-asset loading). Model-specific behavior uses the compact fixed document under
+`test-fixtures/compatibility.json`; do not synchronize it with live policy edits.
+`test-fixtures/owner-matrix.json` exercises arbitrary model/family/router/effort/role choices.
+Paired mutation controls break and restore every new guard, and substitution of all shipped model
+and family IDs proves the invariant tests do not own model choices.
+
+The remaining E11 provider/account discovery and fleet parity work is separate. Exporting a
+configured choice does not observe a provider, apply an effort setting, or launch an agent.
+
+## Version-2 follow-up ownership
 
 Step 2 (#272) added schema version 2 and the CLI key namespace, and resolves nothing over cells;
 step 3 (#273) owns generator-relative evaluator selection, loop enforcement and reading
@@ -257,8 +343,3 @@ The one explicit normalisation between the CLI export and version 2 is the polic
 `loops.implementation` and `loops.documentation`. Everything else compares exactly. The CLI's own
 `schemaVersion` is a different number space from this document's, and version 2 carries no CLI
 query `mode`.
-
-Tests load the compatibility asset and a disjoint synthetic document, verify wholesale replacement,
-mutations, malformed data and diagnostics, and resolve the asset from an actual extracted npm
-package. `check:compiled-policy` scans runtime assignments in every package and runs a mutation
-self-test during the root build.

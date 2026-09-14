@@ -171,12 +171,12 @@ describe("parseSwarm", () => {
       assert.deepEqual(warningKinds("/swarm\nmodel: m\n\nx"), ["missing-harness"]);
     });
 
-    it("flags an unknown router without pretending the block failed", () => {
+    it("preserves a custom router without inventing an allowlist", () => {
       const p = parsed("/swarm\nharness: opencode\nrouter: elsewhere\n\nx");
       assert.equal(p.overrides.router, "elsewhere");
       assert.deepEqual(
         p.warnings.map((w) => w.kind),
-        ["unknown-router"],
+        [],
       );
     });
 

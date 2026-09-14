@@ -10,7 +10,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { KNOWN_TYPES, parseClaudeTranscript, unknownTypeNote } from "./claude.js";
+import { KNOWN_TYPES, OBSERVED_UNREAD_TYPES, parseClaudeTranscript, unknownTypeNote } from "./claude.js";
 import { NOT_AN_OBJECT, NOT_JSON } from "./jsonl.js";
 
 /** The record alone. Notes are asserted on directly in the degradation suite below. */
@@ -293,6 +293,56 @@ describe("parseClaudeTranscript, on a transcript it cannot fully read", () => {
       "user",
     ]) {
       assert.equal(KNOWN_TYPES.has(type), true, `${type} is not in KNOWN_TYPES`);
+    }
+  });
+
+  it("says nothing about a type it was told not to read", () => {
+    // A note means this package could not read something. Skipping a record by recorded decision is
+    // a different claim, and reporting it as degradation is how nine thousand ordinary `ai-title`
+    // records trained anyone reading notes to stop reading them.
+    const text = lines(user("go"), { type: "ai-title", title: "irrelevant" });
+    const { notes } = parseClaudeTranscript(text, "o");
+    assert.deepEqual(notes, []);
+  });
+
+  it("still refuses to let a type it was told not to read move the clock", () => {
+    // Quieter must not mean more trusting. The record is unread either way, so it is not evidence
+    // that an agent did anything, and `updatedAt` is exactly that claim.
+    const text = lines(user("go"), { type: "file-history-delta", timestamp: "2026-09-05T09:00:00.000Z" });
+    const { run } = parseClaudeTranscript(text, "o");
+    assert.equal(run?.updatedAt, "2026-09-04T22:00:00.000Z");
+  });
+
+  it("still reports a type in neither list, so a genuine discovery is not silenced", () => {
+    const text = lines(user("go"), { type: "warp-drive", timestamp: "2026-09-05T09:00:00.000Z" });
+    const { notes } = parseClaudeTranscript(text, "o");
+    assert.deepEqual(notes, [{ reason: unknownTypeNote("warp-drive"), lines: 1 }]);
+  });
+
+  it("holds the two lists disjoint, so no type is both read and declared unread", () => {
+    for (const type of KNOWN_TYPES) {
+      assert.equal(OBSERVED_UNREAD_TYPES.has(type), false, `${type} is both read and declared unread`);
+    }
+  });
+
+  it("gives every declared-unread type a non-empty reason", () => {
+    // An exemption without a reason is an omission with extra steps.
+    for (const [type, reason] of OBSERVED_UNREAD_TYPES) {
+      assert.equal(typeof reason, "string", `${type} has no reason`);
+      assert.ok(reason.trim().length > 0, `${type} has an empty reason`);
+    }
+  });
+
+  it("reports every type the 2026-09-14 census found as read or as declared unread", () => {
+    // The census this pair of lists came from. A type falling out of both would start producing
+    // notes for ordinary traffic again, which is the regression this test exists to catch.
+    for (const type of [
+      "agent-name", "ai-title", "cost-state", "failed", "file-history-delta",
+      "file-history-snapshot", "fork-context-ref", "launched", "permission-mode",
+      "relocated", "result", "started", "worktree-state",
+    ]) {
+      assert.equal(OBSERVED_UNREAD_TYPES.has(type), true, `${type} is not declared unread`);
+      assert.equal(KNOWN_TYPES.has(type), false, `${type} should not be read`);
     }
   });
 });

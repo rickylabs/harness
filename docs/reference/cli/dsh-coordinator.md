@@ -47,7 +47,8 @@ options:
   --run <id>         the run this decision belongs to, for the record
   --at <iso>         timestamp on the record, so a replay is byte-identical
   --json             the record as JSON instead of prose
-  --event            one JSONL line for "dsh-telemetry record"
+  --event            evaluator/plan/admit: one JSONL line for "dsh-telemetry
+                     record". Needs --run. A usage error on any other command.
   --journal <path>   evaluator/plan: append the decision and its inputs here
                      replay: the journal to re-run
   --before <path>    diff: the journal to compare from

@@ -21,8 +21,8 @@ import type {
   StopResult,
   SubagentProvider,
 } from "@rickylabs/subagents";
-import { instrumentedBy, isInstrumented, selectProvider } from "@rickylabs/subagents";
-import { createMemorySink } from "@rickylabs/telemetry";
+import { compareRouteIdentity, instrumentedBy, isInstrumented, selectProvider } from "@rickylabs/subagents";
+import { readDispatchEvidence, publicRuns, createMemorySink } from "@rickylabs/telemetry";
 
 import {
   clipDetail,
@@ -440,4 +440,22 @@ describe("what the observation memory costs", () => {
       );
     }
   });
+});
+
+it("dispatch route survives the sink and the runs read without cwd or diagnostic leakage", async () => {
+  const sink = createMemorySink();
+  const requested = { provider: "fixture-router", model: "fixture-model", effort: "high", cwd: "/synthetic/work" };
+  const route = compareRouteIdentity(requested, { ...requested, model: "fixture-other" });
+  await instrumentProvider(stub({ async dispatch() {
+    return { verdict: "accepted", run: REF, route, detail: route.detail };
+  } }), { sink, now: clock }).dispatch(REQUEST, REF.runId);
+  const envelope = publicRuns(AT, [], [], true, readDispatchEvidence([{ path: "synthetic", events: sink.events }]));
+  const actual = envelope.dispatches[0]?.route;
+  assert.equal(actual?.requested.provider.value, "fixture-router");
+  assert.equal(actual?.observed.model.value, "fixture-other");
+  assert.deepEqual(actual?.mismatches, ["model"]);
+  assert.deepEqual(actual?.invalid, [{ side: "requested", field: "cwd" }, { side: "observed", field: "cwd" }]);
+  assert.equal(actual?.status, "unknown");
+  assert.ok(!JSON.stringify(sink.events).includes("/synthetic/work"));
+  assert.ok(!JSON.stringify(envelope).includes("/synthetic/work"));
 });

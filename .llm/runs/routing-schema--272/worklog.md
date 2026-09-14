@@ -159,3 +159,19 @@ transcription and the bundle row still selects it.
 
 [observed — commands, exit codes and digests in this worktree; topic: executed gates and fresh matrix authority; executed 2026-09-14]
 [source: `.llm/runs/routing-schema--272/{plan,plan-eval,plan-amendment}.md`; topic: the specification and its one repair; consulted 2026-09-14]
+
+## Current-main reconciliation
+
+Merged main at 55083b5 into the existing PR branch without rewriting published history.
+Conflict resolution keeps the version-2 schema boundary and main's version-1 configurable
+routers, role bindings, catalog and policy checks. Main's new agnostic tests explicitly narrow
+the loaded versioned document to the lane schema before calling lane-only APIs.
+
+The first full test run caught the old fleet-identifier source guard treating main's structural
+role field names as fleet defaults. Its exceptions now match only the exact version-1 schema
+statements, each exactly once; identifiers remain forbidden elsewhere. Routing tests then
+passed, followed by the full test pipeline and installed-consumer checks. Workspace typecheck
+and full build also passed on the merged result. No routing selection default was introduced.
+
+The subsequent main commit changed BOARD.md only. No live dispatch or evaluator certification
+is claimed by these tests. Supervisor sign-off remains the owner's decision.

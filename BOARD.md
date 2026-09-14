@@ -2,30 +2,39 @@
 
 # rickylabs/harness
 
-`[###############-----]` **240/304 done · 18 running · 25 queued · 4 blocked · 15 abandoned · 2 invisible**
+`[###############-----]` **261/339 done · 27 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-13T23:06:57Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T21:00:33Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Waiting on you (4)
+## Waiting on you (8)
 
 Stopped on a decision only a person can make. No agent will pick these up.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN](https://github.com/rickylabs/harness/issues/313) | `triage` | — |
+| [#315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves](https://github.com/rickylabs/harness/issues/315) | `triage` | `e10` |
+| [#321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch](https://github.com/rickylabs/harness/issues/321) | `triage` | `e11` |
 | [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
+| [#328 Three unrecognised envelope types on a real Codex store, one at 17304 occurrences, and the reader says that means a class of record is going unread](https://github.com/rickylabs/harness/issues/328) | `triage` | — |
+| [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (18)
+## Moving now (27)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl-eval` | `e9` |
-| [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `plan-eval` | `e11` |
+| [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `impl-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
+| [#316 Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/316) | `impl-eval` | — |
+| [PR317 feat(routing): validate the fleet-shaped configuration as schema version 2](https://github.com/rickylabs/harness/pull/317) | `impl-eval` | `e11` |
+| [PR339 docs(e11): charter enforcement plan and measured dual-agent pilot](https://github.com/rickylabs/harness/pull/339) | `impl-eval` | `e11` |
+| [PR342 feat(e11): validate matrix receipts without false green observations](https://github.com/rickylabs/harness/pull/342) | `augment-review` | `e11` |
+| [PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation](https://github.com/rickylabs/harness/pull/345) | `augment-review` | `e11` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -41,26 +50,54 @@ Something could be acting on these right now.
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
+| [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
+| [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
+| [PR350 feat(telemetry): preserve dispatch route evidence for alpha reads](https://github.com/rickylabs/harness/pull/350) | `impl-eval` | — |
+| [#351 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/351) | `plan` | — |
 
-## Anomalies (1)
+## Anomalies (16)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#339** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+- **#342** — closed on GitHub but sits in augment-review; the issue wins, the column is stale
+- **#350** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+
+**`closed-without-status`**
+
+- **#324** — merged, but carries no status label; delivered work the board cannot see
+- **#336** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
 - **#30** — is closed with 1 open child (#182); an umbrella closes when its last child does — reopen it, do not relabel it
 
+**`epic-milestone-conflict`**
+
+- **#321** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#339** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#340** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#341** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#342** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#343** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#345** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#346** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#347** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 192/241 done · 18 running · 22 queued · 2 blocked · 6 abandoned · 1 invisible
+`[#########---]` 192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
-| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 29/33 done · 3 queued · 1 abandoned | `impl` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[######------]` 5/9 done · 2 running · 2 queued | `triage` |
+| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 29/33 done · 2 queued · 1 blocked · 1 abandoned | `impl` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[######------]` 5/10 done · 3 running · 2 queued | `triage` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 24/39 done · 7 running · 4 queued · 1 blocked · 3 abandoned | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 invisible | `triage` |
@@ -69,30 +106,30 @@ Something could be acting on these right now.
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
-| _(no epic)_ | `[########----]` 5/7 done · 1 queued · 1 blocked | — |
+| _(no epic)_ | `[########----]` 5/7 done · 1 running · 1 blocked | — |
 
 ### (no milestone)
 
-`[#########---]` 48/63 done · 3 queued · 2 blocked · 9 abandoned · 1 invisible
+`[########----]` 69/97 done · 7 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
-| _(no epic)_ | `[#########---]` 43/57 done · 3 queued · 1 blocked · 9 abandoned · 1 invisible | — |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[####--------]` 4/10 done · 4 running · 1 blocked · 1 invisible | `triage` |
+| _(no epic)_ | `[########----]` 60/81 done · 3 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>25 filed, nothing started</summary>
+<summary>23 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator](https://github.com/rickylabs/harness/issues/273) | `triage` | `e11` |
 | [#275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON](https://github.com/rickylabs/harness/issues/275) | `triage` | `e11` |
-| [#315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves](https://github.com/rickylabs/harness/issues/315) | `triage` | `e10` |
-| [#316 Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/316) | `triage` | — |
 | [#287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts](https://github.com/rickylabs/harness/issues/287) | `triage` | `e3` |
 | [#290 Spike S12 — Evidence path: transcript and quota meters for UHP runs](https://github.com/rickylabs/harness/issues/290) | `triage` | `e3` |
+| [#331 Incident: three sweeps, sixteen candidates, sixteen live — and the only unrecovered one was found by naming convention](https://github.com/rickylabs/harness/issues/331) | `triage` | — |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
 | [#264 E6 — Define creation capability ownership before exposing P2 actions](https://github.com/rickylabs/harness/issues/264) | `triage` | `e6` |
 | [#148 E10.8 — Publish the public documentation site](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
@@ -111,7 +148,6 @@ Something could be acting on these right now.
 | [#66 E5.5 — Wire the gate at the sandbox boundary](https://github.com/rickylabs/harness/issues/66) | `triage` | `e5` |
 | [#67 E5.6 — Boot-parameter verification after every kernel update](https://github.com/rickylabs/harness/issues/67) | `triage` | `e5` |
 | [#181 fix(routing): resolve complex evaluators across both implementer families](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
-| [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `triage` | — |
 
 </details>
 
@@ -121,9 +157,9 @@ Something could be acting on these right now.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  240/304 done · 18 running · 25 queued · 4 blocked · 15 abandoned · 2 invisible
+# rickylabs/harness  [###############-----]  261/339 done · 27 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
 
-## M1 — dsh coordinator foundation  [###############-----]  192/241 done · 18 running · 22 queued · 2 blocked · 6 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -145,7 +181,7 @@ Something could be acting on these right now.
     shipped              PR185 chore(scripts): keep the scratchpad out of the link check and out of git (p3)
 
   E10 — Docs: the front door, the reference, and the check that keeps them honest #140  [impl]
-    [##############--] 29/33 done · 3 queued · 1 abandoned
+    [##############--] 29/33 done · 2 queued · 1 blocked · 1 abandoned
     shipped              #141 E10.1 — Rewrite the root README from scratch (p1)
     shipped              #142 E10.2 — docs/ skeleton and the explanation set (p1)
     shipped              #143 E10.3 — Generated CLI reference with a drift test (p2)
@@ -178,12 +214,12 @@ Something could be acting on these right now.
     triage               #244 docs(runtime): enforce Node 24 floor and validate Node 26 target (p3)
     shipped              PR281 docs: describe the intended product and update operational guidance (p1)
     shipped              PR302 docs(concepts): record the 0.4.0 release the tag push made this page wrong about (p2)
-    triage               #315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves (p0)
+    triage               #315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves (p0, waiting on owner)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]
-    [########--------] 5/9 done · 2 running · 2 queued
+    [########--------] 5/10 done · 3 running · 2 queued
     shipped              #271 Routing configuration 1/5 — Load a wholly replaceable routing configuration (p1)
-    plan-eval            #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p0)
+    impl-eval            #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p0)
     triage               #273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator (p0)
     plan                 #274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration (p0)
     triage               #275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON (p0)
@@ -191,6 +227,7 @@ Something could be acting on these right now.
     shipped              PR284 Routing schema: preserve and repair the complete configuration plan (p1)
     shipped              PR308 docs(274): measure per-transport detection and the matrix resolution gap (p0)
     shipped              PR312 docs(capability-detection--274): lock the step 4 plan on the merged research (p0)
+    impl-eval            PR317 feat(routing): validate the fleet-shaped configuration as schema version 2 (p0)
 
   E2 — dsh app shell: profile, bundle, Docker fork, N5 compose #32  [triage]
     [#############---] 12/14 done · 2 queued
@@ -399,9 +436,9 @@ Something could be acting on these right now.
     shipped              PR311 docs: same-input pairing works because of aim, not because the control works (p2)
     triage               #313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN (p0, waiting on owner)
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
-    triage               #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
+    impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  48/63 done · 3 queued · 2 blocked · 9 abandoned · 1 invisible
+## (no milestone)  [##############------]  69/97 done · 7 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -411,6 +448,19 @@ Something could be acting on these right now.
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
     shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
+
+  E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]  (epic is in M1 — dsh coordinator foundation)
+    [######----------] 4/10 done · 4 running · 1 blocked · 1 invisible
+    triage               #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0, waiting on owner)
+    impl-eval            PR339 docs(e11): charter enforcement plan and measured dual-agent pilot (p0)
+    no status            #340 E11 I1: independent feature-tier plan evaluation for receipt checker (p0)
+    shipped              #341 E11 I1: native fallback plan evaluation for receipt checker (p0)
+    augment-review       PR342 feat(e11): validate matrix receipts without false green observations (p0)
+    shipped              #343 E11 I1: independent implementation review of matrix receipt checker (p0)
+    augment-review       PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation (p0)
+    shipped              #346 E11: independently evaluate final receipt delta and blocked-decision check (p0)
+    shipped              #347 E11: independently evaluate the upstream divybot matrix-hook plan (p0)
+    research             #349 Brainstorm: dual-agent mailbox pilot contract (draft)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
@@ -462,7 +512,7 @@ Something could be acting on these right now.
     shipped              PR252 docs: complete the Stage B discovery run with its external and document legs (p3)
     shipped              PR254 docs(how-to): add the first how-to guide, installing the board process (p2)
     triage               #255 fix(forge): skill install --dry-run reports a file as created that it does not create (p3)
-    triage               #285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision
+    impl-eval            #285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision
     shipped              PR303 docs(architecture): lock v1 — the portable agent runtime
     shipped              #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
     shipped              PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt
@@ -470,6 +520,30 @@ Something could be acting on these right now.
     shipped              PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed
     shipped              PR309 docs(architecture): an empty check result is not a pass
     shipped              PR310 docs(security): session identifiers are credential-class, and shape-matching cannot find them
+    shipped              PR318 docs: finish the charter reconciliation the lock started
+    shipped              PR319 docs: point the governance record at the charter, not at a closed issue
+    shipped              PR320 docs: mark the same four decisions in the second place they are restated
+    shipped              PR322 chore(uhp-dispatch-readiness--e3): retain two coordinator receipts
+    shipped              PR323 chore(uhp-dispatch-readiness--e3): retain the prune-pass measurement
+    no status            PR324 doctrine: add principle 12, an absence needs a reachability list
+    shipped              PR325 fix(gates): give three aggregates a third state so none reports a verdict it has not earned
+    shipped              PR326 fix(telemetry): make the Claude backfill say which types it chose not to read
+    shipped              PR327 fix(gates): stop the stage runner reporting a killed stage as a failed one
+    triage               #328 Three unrecognised envelope types on a real Codex store, one at 17304 occurrences, and the reader says that means a class of record is going unread (p3, waiting on owner)
+    shipped              PR329 fix(coordinator): make plan and admit honour --event instead of ignoring it
+    shipped              PR330 fix(telemetry): stop the Codex reader calling two envelopes unrecognised when a sibling reads one
+    triage               #331 Incident: three sweeps, sixteen candidates, sixteen live — and the only unrecovered one was found by naming convention (p1)
+    shipped              PR332 chore(uhp-dispatch-readiness--e3): retain the unimported-sweep incident
+    shipped              PR333 fix(telemetry): declare token_usage_record unread, because its counts are read elsewhere
+    triage               #334 The run record cannot say what a cache write cost, or which turn was expensive (p3, waiting on owner)
+    shipped              PR335 chore(gates): run each gate's own guard before the gate it guards
+    no status            PR336 doctrine: publish what a chain of checks must say when it stops
+    shipped              PR337 fix(gates): refuse in a sentence, and point at the doctrine file nothing pointed at
+    shipped              PR338 docs: AGENTS.md said decision 4 was superseded outright; its own list says otherwise
+    shipped              #344 I4: independent plan review for blocked-decision validation (p0)
+    shipped              PR348 routing: make matrix roles, models and routers owner-configurable
+    impl-eval            PR350 feat(telemetry): preserve dispatch route evidence for alpha reads
+    plan                 #351 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned
 ```
 
 </details>

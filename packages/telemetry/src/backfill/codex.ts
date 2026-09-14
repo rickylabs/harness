@@ -43,6 +43,43 @@ export const KNOWN_TYPES: ReadonlySet<string> = new Set([
   "turn_context",
 ]);
 
+/**
+ * Envelope types this reader deliberately does not read, with the reason for each.
+ *
+ * These were producing "unrecognised record type" notes, and that note is a false statement about
+ * two of them: `world_state` is recognised and read by `repository-run-observation.ts` in this same
+ * package, for scope assertion. A note means something this package could not read. A record a
+ * sibling reader reads on purpose is not that, and reporting ordinary traffic as degradation is the
+ * fastest way to teach an operator to ignore notes.
+ *
+ * Censused 2026-09-14 over 428 rollouts on one host. Counts are an input, not a constant.
+ *
+ *     world_state                          1521
+ *     inter_agent_communication_metadata   1308
+ *
+ * Neither can understate `updatedAt`, because the clock below is gated on a known type. Both do
+ * carry a `timestamp`, so unlike the Claude reader's list this is not structural: a rollout ending
+ * on one of these would understate if that gate were ever removed. None of the 428 ends on one.
+ *
+ * `token_usage_record` was left noting on a claim that turned out to be false: that the counts it
+ * carries are unread. They are read, from a record this reader already recognises. `event_msg` with
+ * `payload.type === "token_count"` carries `info.total_token_usage`, and the loop below maps four of
+ * its fields into `RunUsage`. On the same 428 rollouts that path has 82862 records against this
+ * envelope's 17304, so the envelope is a lower-volume second carrier of numbers already accounted
+ * for. The observation decoder additionally reads it for identity.
+ *
+ * Two things it carries are genuinely unread, and both are narrower than a missing usage surface:
+ * `cache_write_input_tokens` appears in no tracked source file, and the per-turn against
+ * cumulative-per-thread distinction is unavailable because only the cumulative record is read.
+ * Recorded on issue 328 rather than fixed here, because whether either matters is a question about
+ * what the usage surface is for.
+ */
+export const OBSERVED_UNREAD_ENVELOPES: ReadonlyMap<string, string> = new Map([
+  ["inter_agent_communication_metadata", "payload carries only a trigger_turn boolean; nothing this reader wants"],
+  ["token_usage_record", "its counts are already read from event_msg/token_count below, at 82862 records against this envelope's 17304; read by repository-run-observation.ts for identity"],
+  ["world_state", "read by repository-run-observation.ts for scope assertion; a second reader mining the same record for another purpose is how two components come to disagree about one run"],
+]);
+
 /** An unrecognised envelope type, as it appears in a note. */
 export const unknownTypeNote = (type: unknown): string =>
   `unrecognised record type "${typeLabel(type)}"`;
@@ -94,6 +131,8 @@ export function quotaFromRateLimits(
 export function parseCodexRollout(text: string, origin: string): ParsedTranscript<RunRecord> {
   const tally = new NoteTally();
   let id: string | null = null;
+  const parents = new Set<string>();
+  let parentInvalid = false;
   let firstAt: string | null = null;
   let lastAt: string | null = null;
   // Read, used, and dropped — see the note on `RunRecord`. On this seam the working directory is
@@ -121,7 +160,10 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
 
     // An unread record does not get to say when this run was last active. Finding F-9 on #105.
     const known = typeof line.type === "string" && KNOWN_TYPES.has(line.type);
-    if (!known) tally.bump(unknownTypeNote(line.type));
+    // A note means this package could not read something. A type recorded in
+    // OBSERVED_UNREAD_ENVELOPES is one it chose not to read, which is a different claim.
+    const declaredUnread = typeof line.type === "string" && OBSERVED_UNREAD_ENVELOPES.has(line.type);
+    if (!known && !declaredUnread) tally.bump(unknownTypeNote(line.type));
 
     const at = str(line.timestamp);
     if (at !== null && known) {
@@ -133,7 +175,17 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
     if (payload === null) continue;
 
     if (line.type === "session_meta") {
-      id ??= str(payload["session_id"]) ?? str(payload["id"]);
+      // Newer Codex session_id is shared by the entire tree; id is this thread.
+      id ??= str(payload["id"]) ?? str(payload["session_id"]);
+      const source = obj(payload["source"]);
+      const subagent = obj(source?.["subagent"]);
+      const spawned = obj(subagent?.["thread_spawn"]);
+      for (const candidate of [payload["parent_thread_id"], spawned?.["parent_thread_id"]]) {
+        if (candidate === undefined || candidate === null) continue;
+        const parent = str(candidate);
+        if (parent === null || parent.trim() !== parent) parentInvalid = true;
+        else parents.add(parent);
+      }
       cwd = str(payload["cwd"]) ?? cwd;
       provider = str(payload["model_provider"]) ?? provider;
     }
@@ -181,6 +233,10 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
     if (kind === "error" || kind === "stream_error" || kind === "turn_aborted") outcome = "failed";
   }
 
+  if (parentInvalid || parents.size > 1 || (id !== null && parents.has(id))) {
+    tally.bump("invalid or conflicting parent identity");
+    parents.clear();
+  }
   const notes = tally.notes();
   if (id === null || firstAt === null || lastAt === null) return { run: null, notes };
 
@@ -188,7 +244,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
     run: {
       id,
       source: "codex",
-      parentId: null,
+      parentId: parents.values().next().value ?? null,
       startedAt: firstAt,
       updatedAt: lastAt,
       // A rollout does not record the branch; attribution on this seam comes from the working

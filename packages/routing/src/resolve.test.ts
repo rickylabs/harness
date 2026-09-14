@@ -3,7 +3,7 @@ import { laneRouting } from "./document.js";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../config/routing.v1.json", import.meta.url)) });
+const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../test-fixtures/compatibility.json", import.meta.url)) });
 assert.ok(loadedA.ok);
 // A version-2 document cannot reach a version-1 function: `laneRouting` is the only way in.
 const narrowedA = laneRouting(loadedA.loaded.configuration);
@@ -50,7 +50,7 @@ function runOf(route: Route, runId: string): RunIdentity {
   };
 }
 
-describe("the matrix itself", () => {
+describe("the behavioral fixture", () => {
   it("satisfies every invariant this package is supposed to hold", () => {
     assert.deepEqual(checkPolicy(A), []);
   });
@@ -99,7 +99,7 @@ describe("resolveRoute", () => {
 
   it("picks the evaluator leg from the author's family", () => {
     const forOpenai = expectRoute(resolveRoute(A, "formal_impl_evaluation", "openai"));
-    assert.equal(forOpenai.route.model, "fable-5");
+    assert.equal(forOpenai.route.model, "fable-5.1");
     const forAnthropic = expectRoute(resolveRoute(A, "formal_impl_evaluation", "anthropic"));
     assert.equal(forAnthropic.route.model, "gpt-5.6-sol");
     assert.equal(forAnthropic.route.effort, "xhigh");
@@ -185,6 +185,38 @@ describe("resolveFallback", () => {
     assert.equal(step.certifies, "any");
   });
 
+  it("keeps the complex-tier evaluators out of the shared evaluation chain", () => {
+    // netscript's delegation matrix keys plan_evaluation and implementation_evaluation by
+    // workload tier, so muse-spark-1.3 and grok-4.6 (complex/architecture rows) are not
+    // fallbacks for glm-5.3-flash and qwen3.8-flash (straightforward row). They answer a
+    // different question, and a chain that mixes them silently downgrades a complex review.
+    for (const lane of ["formal_plan_evaluation", "formal_impl_evaluation"]) {
+      const models = (A.lanes.find((l) => l.lane === lane)?.chain ?? []).map((s) => s.route.model);
+      assert.equal(models.includes("meta/muse-spark-1.3"), false, lane);
+      assert.equal(models.includes("x-ai/grok-4.6"), false, lane);
+    }
+  });
+
+  it("gives the complex tier its own evaluation lanes, led by the matrix's first seat", () => {
+    const plan = expectRoute(resolveRoute(A, "formal_plan_evaluation_complex"));
+    assert.equal(plan.route.model, "meta/muse-spark-1.3");
+    assert.equal(plan.route.effort, "max");
+    const impl = expectRoute(resolveRoute(A, "formal_impl_evaluation_complex"));
+    assert.equal(impl.route.model, "meta/muse-spark-1.3");
+    assert.equal(impl.route.effort, "max");
+    // The second seat is reachable at depth 1, which the six-step chain it replaced was not.
+    const { step, index } = expectFallback(
+      resolveFallback(A, {
+        lane: "formal_plan_evaluation_complex",
+        trigger: "third-opinion",
+        from: 0,
+        ...boundary,
+      }),
+    );
+    assert.equal(index, 1);
+    assert.equal(step.route.model, "x-ai/grok-4.6");
+  });
+
   it("has a native step left when the relay itself is limited", () => {
     const { step } = expectFallback(
       resolveFallback(A, {
@@ -255,7 +287,7 @@ describe("tiers", () => {
     // Availability is never traded for opposite-family review: a Codex-authored change reviewed
     // by another Codex run is the invariant failing quietly.
     for (const tier of A.tiers.map(t => t.tier)) {
-      const chain = laneChain(A, A.tiers.find(t => t.tier === tier)!.review) ?? [];
+      const chain = laneChain(A, A.tiers.find(t => t.tier === tier)!.review!) ?? [];
       for (const step of chain) {
         assert.equal(step.route.harness, "claude", `${tier} review ran on ${step.route.harness}`);
       }
@@ -280,7 +312,7 @@ describe("toDispatch", () => {
   });
 
   it("carries the profile a relay route needs to bind its credential", () => {
-    const step = expectRoute(resolveRoute(A, "major_ui_ux_design"));
+    const step = expectRoute(resolveRoute(A, "major_ui_ux_adversarial_review"));
     assert.deepEqual(toDispatch(A, step.route), {
       harness: "claude",
       model: "z-ai/glm-5.2",
@@ -290,13 +322,23 @@ describe("toDispatch", () => {
   });
 
   it("splits an opencode route into an unprefixed model and its router", () => {
-    const step = expectRoute(resolveRoute(A, "adversarial_design_eval"));
+    const step = expectRoute(resolveRoute(A, "major_ui_ux_design"));
     assert.deepEqual(toDispatch(A, step.route), {
       harness: "opencode",
       model: "moonshotai/kimi-k3",
-      effort: "high",
+      effort: "xhigh",
       router: "openrouter",
     });
+
+    // The design evaluation lane certifies open-family work, so it cannot itself be open family.
+    // Its primary is deliberately opposite-family to the Kimi K3 lead above.
+    const evaluation = expectRoute(resolveRoute(A, "adversarial_design_eval"));
+    assert.deepEqual(toDispatch(A, evaluation.route), {
+      harness: "codex",
+      model: "gpt-6-astra",
+      effort: "medium",
+    });
+    assert.equal(evaluation.certifies, "moonshot");
   });
 
   it("applies a resolved escalation instead of the step's base effort", () => {
@@ -344,7 +386,7 @@ describe("selfCertifies", () => {
     assert.equal(selfCertifies(A, stepOf("not-a-pinned-model", "anthropic")), false);
   });
 
-  it("holds across the live matrix", () => {
+  it("holds across the test fixture", () => {
     for (const policy of A.lanes) {
       for (const step of policy.chain) {
         assert.equal(selfCertifies(A, step), false, `${policy.lane} routes ${step.route.model}`);
@@ -363,8 +405,8 @@ describe("unreviewedSteps", () => {
     assert.deepEqual(unreviewedSteps(A, [astra, opus], [stepOf("opus-5", "openai")]), [1]);
   });
 
-  it("accepts a reviewer that certifies whoever authored", () => {
-    assert.deepEqual(unreviewedSteps(A, [astra, opus], [stepOf("opus-5", "any")]), []);
+  it("requires an opposite-family reviewer even for any", () => {
+    assert.deepEqual(unreviewedSteps(A, [astra, opus], [stepOf("opus-5", "any")]), [1]);
   });
 
   it("accepts one reviewer per author family", () => {
@@ -385,7 +427,7 @@ describe("unreviewedSteps", () => {
 describe("the Astra row", () => {
   it("leads complex implementation, and falls back on a CLI that cannot reach it", () => {
     const chain = laneChain(A, "complex_implementation") ?? [];
-    assert.equal(chain.length, 2);
+    assert.equal(chain.length, 3);
     assert.deepEqual(toDispatch(A, chain[0]?.route ?? ({} as Route)), {
       harness: "codex",
       model: "gpt-6-astra",
@@ -398,10 +440,18 @@ describe("the Astra row", () => {
     assert.deepEqual(chain[1]?.when, ["model-unavailable"]);
     assert.equal(chain[1]?.route.model, "gpt-5.6-sol");
     assert.ok(FALLBACK_TRIGGERS.includes("model-unavailable"));
+
+    // The third lane: neither native harness can run, so implementation leaves both for the relay.
+    // `native-quota-limit` is legitimate HERE, unlike on step 1, because this step does not draw on
+    // the same subscription as anything above it.
+    assert.deepEqual(chain[2]?.when, ["native-quota-limit", "model-unavailable"]);
+    assert.equal(chain[2]?.route.harness, "opencode");
+    assert.equal(chain[2]?.route.model, "meta/muse-spark-1.3");
+    assert.equal(chain[2]?.route.effort, "max");
   });
 
   it("keeps a reviewer for every step of the complex tier, not only its primary", () => {
     const lanes = A.tiers.find(t => t.tier === "complex")!;
-    assert.deepEqual(unreviewedSteps(A, laneChain(A, lanes.implement) ?? [], laneChain(A, lanes.review) ?? []), []);
+    assert.deepEqual(unreviewedSteps(A, laneChain(A, lanes.implement!) ?? [], laneChain(A, lanes.review!) ?? []), []);
   });
 });

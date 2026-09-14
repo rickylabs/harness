@@ -190,3 +190,20 @@ export function isRouteEvidenceVerified(evidence: RouteIdentityEvidence | undefi
     return false;
   }
 }
+
+/** Public read projection. Withhold cwd and recompute diagnostics; never trust supplied status. */
+export function projectRouteIdentity(input: unknown): RouteIdentityEvidence {
+  const raw = input as RouteIdentityEvidence | null | undefined;
+  const side = (name: RouteSide, sources: Readonly<Record<RouteField, RouteSource>>): RouteIdentityInput => {
+    const read = (field: RouteField): string | null => {
+      if (field === "cwd") return null;
+      const item = raw?.[name]?.[field];
+      const value = item?.value;
+      return item?.source === sources[field] && typeof value === "string" &&
+        /^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,127}$/.test(value) && !value.includes("..")
+        ? value : null;
+    };
+    return { provider: read("provider"), model: read("model"), effort: read("effort"), cwd: null };
+  };
+  return compareRouteIdentity(side("requested", REQUESTED_SOURCES), side("observed", OBSERVED_SOURCES));
+}

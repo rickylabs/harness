@@ -3,7 +3,7 @@
  */
 import type { DispatchRequest } from "@rickylabs/subagents";
 
-import { familyOf, isApprovedOpenEvaluator, lanePolicy, tierLanes, maxFallbackDepth, effortIndex } from "./configuration.js";
+import { familyOf, isApprovedOpenEvaluator, lanePolicy, tierLanes, tierRoleLane, maxFallbackDepth, effortIndex } from "./configuration.js";
 import type { RoutingConfiguration, Effort, ModelFamily, Certifies, FallbackTrigger, Lane, Route, RouteStep, Tier } from "./schema.js";
 
 /**
@@ -42,7 +42,10 @@ export function unreviewedSteps(configuration: RoutingConfiguration,
     const family = familyOf(configuration, step.route.model);
     if (family === null) continue;
     const reviewed = review.some(
-      (candidate) => candidate.certifies === "any" || certifiedFamily(candidate.certifies) === family,
+      (candidate) => familyOf(configuration, candidate.route.model) !== null &&
+        familyOf(configuration, candidate.route.model) !== family &&
+        (candidate.certifies === "any" || certifiedFamily(candidate.certifies) === family) &&
+        (candidate.route.transport !== "openrouter" || isApprovedOpenEvaluator(configuration, candidate.route.model)),
     );
     if (!reviewed) unreviewed.push(index);
   }
@@ -83,8 +86,9 @@ function primaryIndexes(chain: readonly RouteStep[]): readonly number[] {
  * against any author family — and is refused by `checkEvaluator`, which is the gate. Keeping the
  * two apart is what lets a supplementary run be scheduled without it becoming a certification.
  */
-function certifiesMatches(step: RouteStep, authorFamily: ModelFamily): boolean {
+function certifiesMatches(configuration: RoutingConfiguration, step: RouteStep, authorFamily: ModelFamily): boolean {
   const certifies = step.certifies;
+  if (certifies !== undefined && certifies !== "none" && familyOf(configuration, step.route.model) === authorFamily) return false;
   if (certifies === undefined || certifies === "any" || certifies === "none") return true;
   return certifies === authorFamily;
 }
@@ -114,7 +118,7 @@ export function resolveRoute(configuration: RoutingConfiguration, lane: string, 
 
   for (const index of primaries) {
     const step = policy.chain[index];
-    if (step !== undefined && certifiesMatches(step, authorFamily)) {
+    if (step !== undefined && certifiesMatches(configuration, step, authorFamily)) {
       return { ok: true, step, index };
     }
   }
@@ -175,7 +179,7 @@ export function resolveFallback(configuration: RoutingConfiguration, request: Fa
     const step = policy.chain[index];
     if (step === undefined) continue;
     if (!step.when.includes(request.trigger)) continue;
-    if (request.authorFamily !== undefined && !certifiesMatches(step, request.authorFamily)) {
+    if (request.authorFamily !== undefined && !certifiesMatches(configuration, step, request.authorFamily)) {
       continue;
     }
     if (step.subscription === "outside_plan" && request.explicitPaidApproval !== true) {
@@ -229,6 +233,13 @@ export function tierPlan(configuration: RoutingConfiguration, tier: Tier): TierP
   };
 }
 
+/** Resolve a tier/role through data, including the supplied author's family after fallback. */
+export function resolveTierRole(configuration: RoutingConfiguration, tier: string, role: string, authorFamily?: ModelFamily):
+  RouteResolution | { readonly ok: false; readonly reason: "unknown-tier-role"; readonly tier: string; readonly role: string } {
+  const lane = tierRoleLane(configuration, tier, role);
+  return lane === null ? { ok: false, reason: "unknown-tier-role", tier, role } : resolveRoute(configuration, lane, authorFamily);
+}
+
 /** The routing half of a dispatch payload. The caller owns the prompt and the run's budget. */
 export type RoutedDispatch = Pick<DispatchRequest, "harness" | "model" | "effort" | "router" | "profile">;
 
@@ -255,8 +266,8 @@ export type PolicyCode = "self-certifies" | "evaluation-without-certifies" | "ce
   "relay-evaluator-unapproved" | "first-step-not-primary" | "duplicate-primary" | "no-primary" |
   "opencode-without-router" | "router-outside-opencode" | "relay-without-profile" |
   "escalation-not-raising" | "escalation-not-comparable" | "constraint-violated" | "tier-unresolved" |
-  "unreviewed-step" | "duplicate-lane" | "lane-unrouted" |
-  // Version 2 only. `checkFleetPolicy` owns these three; no version-1 rule can produce them.
+  "unreviewed-step" | "duplicate-lane" | "lane-unrouted" | "tier-role-purpose" | "evaluation-without-generator" |
+  // Version 2 only. checkFleetPolicy owns these, not the lane-chain validator.
   "no-independent-evaluator" | "capability-unsatisfied" | "effort-unsupported";
 export interface PolicyProblem {
   readonly code: PolicyCode;
@@ -307,10 +318,30 @@ export function checkPolicy(configuration: RoutingConfiguration): readonly Polic
     });
     if (primaries === 0) add("no-primary");
   });
+  const coveredImplementations = new Set<string>();
   configuration.tiers.forEach((tier, i) => {
     if (tierPlan(configuration, tier.tier) === null) problems.push({ code: "tier-unresolved", lane: `tiers[${i}]` });
-    for (const index of unreviewedSteps(configuration, laneChain(configuration, tier.implement) ?? [], laneChain(configuration, tier.review) ?? [])) {
-      problems.push({ code: "unreviewed-step", lane: `lanes[${configuration.lanes.findIndex(l => l.lane === tier.implement)}]`, index });
+    const implementation = tierRoleLane(configuration, tier.tier, "implementation");
+    const generator = implementation === null ? null : lanePolicy(configuration, implementation);
+    if (generator?.purpose !== "implementation") problems.push({ code: "tier-role-purpose", lane: `tiers[${i}]` });
+    if (generator) coveredImplementations.add(generator.lane);
+    const pair = (generatorLane: string | null, evaluatorLane: string | null) => {
+      if (evaluatorLane === null) return;
+      const author = generatorLane === null ? null : lanePolicy(configuration, generatorLane);
+      const evaluator = lanePolicy(configuration, evaluatorLane);
+      if (!author) { problems.push({ code: "evaluation-without-generator", lane: `tiers[${i}]` }); return; }
+      if (evaluator?.purpose !== "evaluation") { problems.push({ code: "tier-role-purpose", lane: `tiers[${i}]` }); return; }
+      for (const index of unreviewedSteps(configuration, author.chain, evaluator.chain)) {
+        problems.push({ code: "unreviewed-step", lane: `lanes[${configuration.lanes.indexOf(author)}]`, index });
+      }
+    };
+    pair(implementation, tierRoleLane(configuration, tier.tier, "review"));
+    pair(implementation, tierRoleLane(configuration, tier.tier, "implementation_evaluation"));
+    pair(tierRoleLane(configuration, tier.tier, "plan"), tierRoleLane(configuration, tier.tier, "plan_evaluation"));
+  });
+  configuration.lanes.forEach((lane, i) => {
+    if (lane.purpose === "implementation" && !coveredImplementations.has(lane.lane)) {
+      lane.chain.forEach((_, index) => problems.push({ code: "unreviewed-step", lane: `lanes[${i}]`, index }));
     }
   });
   return problems;

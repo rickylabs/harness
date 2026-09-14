@@ -2,7 +2,7 @@
 import { admissibleDispatch, digest, type StepState } from "@rickylabs/coordinator";
 import type { DeliveryReceipt, IntentKey, StateStoreHandle, StoreResult } from "@rickylabs/harness-contracts";
 import { admitDispatch, describeAdmission, laneRouting, parseRoutingDocument } from "@rickylabs/routing";
-import { compareRouteIdentity, HARNESSES, isRouteEvidenceVerified, ROUTERS, type DispatchRequest } from "@rickylabs/subagents";
+import { compareRouteIdentity, HARNESSES, isRouteEvidenceVerified, type DispatchRequest } from "@rickylabs/subagents";
 import type { DriveOutcome, DriveRefusal } from "./dry-run.js";
 
 const object = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -86,8 +86,7 @@ async function driveChecked(handle: StateStoreHandle, value: unknown, hooks: Dri
   // Validate the runtime shape before invoking the typed routing API, which owns vocabulary checks.
   if (!object(dispatch) || typeof dispatch.harness !== "string" || !HARNESSES.includes(dispatch.harness as DispatchRequest["harness"]) ||
       typeof dispatch.prompt !== "string" ||
-      !["model", "effort", "maxTokens", "profile", "timeout", "router"].every(k => dispatch[k] === undefined || typeof dispatch[k] === "string") ||
-      (dispatch.router !== undefined && !ROUTERS.includes(dispatch.router as NonNullable<DispatchRequest["router"]>))) {
+      !["model", "effort", "maxTokens", "profile", "timeout", "router"].every(k => dispatch[k] === undefined || typeof dispatch[k] === "string")) {
     return refuse({ kind: "dispatch-inadmissible", problems: [{ reason: "malformed", message: "dispatch fields have invalid types or transport" }], detail: "malformed: dispatch fields have invalid types or transport" });
   }
   const routed = admitDispatch(lanes.configuration, dispatch as unknown as DispatchRequest, { lane: value.lane });

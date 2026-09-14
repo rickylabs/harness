@@ -930,8 +930,30 @@ it("keeps every fleet model, tier, role, scope, lane, family and effort out of r
   assert.ok(forbidden.length > 40, `the forbidden list is the point: ${forbidden.length}`);
   const files = (await readdir(source)).filter(f => f.endsWith(".ts") && !f.endsWith(".test.ts"));
   assert.ok(files.length >= 8, `scanned too few sources: ${files.length}`);
+  // Main's version-1 compatibility schema names these role fields. Exempt only the exact
+  // structural statements, not their words everywhere: another hard-coded selection still fails.
+  const structural: Record<string, readonly string[]> = {
+    "configuration.ts": [
+      'if (binding === undefined && role === "implementation") binding = row.implement;',
+      'if (binding === undefined && role === "implementation_evaluation") binding = row.review;',
+    ],
+    "schema.ts": [
+      '"triggers", "routers", "laneAliases", "label", "implementation", "implementation_evaluation", "plan", "plan_evaluation",',
+    ],
+    "resolve.ts": [
+      'const implementation = tierRoleLane(configuration, tier.tier, "implementation");',
+      'if (generator?.purpose !== "implementation") problems.push({ code: "tier-role-purpose", lane: `tiers[${i}]` });',
+      'pair(implementation, tierRoleLane(configuration, tier.tier, "implementation_evaluation"));',
+      'pair(tierRoleLane(configuration, tier.tier, "plan"), tierRoleLane(configuration, tier.tier, "plan_evaluation"));',
+      'if (lane.purpose === "implementation" && !coveredImplementations.has(lane.lane)) {',
+    ],
+  };
   for (const file of files) {
-    const code = (await read(new URL(file, source), "utf8")).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
+    let code = (await read(new URL(file, source), "utf8")).replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
+    for (const statement of structural[file] ?? []) {
+      assert.equal(code.split(statement).length, 2, `${file}: structural exception must match exactly once`);
+      code = code.replace(statement, "");
+    }
     for (const value of forbidden) assert.ok(!code.includes(JSON.stringify(value)), `${file} compiles ${value}`);
   }
 });

@@ -19,6 +19,7 @@
  */
 
 import type { EvaluatorDecision, Rejection } from "./independence.js";
+import type { Admission, Plan } from "./plan.js";
 
 /** An actor as it is kept: exactly the launch identity, no more, so the record stays comparable. */
 export interface RecordedActor {
@@ -93,4 +94,47 @@ export function recordOf(runId: string, at: string, decision: EvaluatorDecision)
 export function telemetryLine(record: EvaluatorRecord): string {
   const { at, runId, ...detail } = record;
   return JSON.stringify({ runId, kind: EVENT_KIND, at, detail });
+}
+
+export const PLAN_EVENT_KIND = "plan" as const;
+export const ADMIT_EVENT_KIND = "admit" as const;
+
+/** The envelope, for a kind that is not the evaluator's. `kind` is an open field on the reader. */
+function eventLine(kind: string, runId: string, at: string, detail: Record<string, unknown>): string {
+  return JSON.stringify({ runId, kind, at, detail });
+}
+
+/**
+ * What a plan decided, in one word.
+ *
+ * Exported and used for both the exit code and the event, so the two cannot disagree. Computing the
+ * outcome separately from the exit status is how a recorded event comes to contradict the status the
+ * caller branched on, and a telemetry line that disagrees with the process it came from is worse
+ * than no line at all.
+ */
+export function planOutcome(plan: Plan): "complete" | "halted" | "runnable" | "stalled" {
+  if (plan.complete) return "complete";
+  if (plan.forks.length > 0 || plan.blocked.length > 0) return "halted";
+  return plan.runnable.length > 0 ? "runnable" : "stalled";
+}
+
+/** One JSONL line for what `plan` decided. */
+export function planTelemetryLine(runId: string, at: string, plan: Plan): string {
+  return eventLine(PLAN_EVENT_KIND, runId, at, {
+    workflow: plan.workflow,
+    outcome: planOutcome(plan),
+    complete: plan.complete,
+    runnable: plan.runnable,
+    done: plan.done,
+    forks: plan.forks,
+    blocked: plan.blocked,
+    waiting: plan.waiting,
+  });
+}
+
+/** One JSONL line for what `admit` decided about one step. */
+export function admitTelemetryLine(runId: string, at: string, admission: Admission): string {
+  return eventLine(ADMIT_EVENT_KIND, runId, at, admission.admitted
+    ? { outcome: "admitted", step: admission.step, because: admission.because }
+    : { outcome: "refused", step: admission.step, rule: admission.rule, detail: admission.detail });
 }

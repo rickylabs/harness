@@ -90,7 +90,7 @@ function fakeSeam(): FakeSeam {
   return seam;
 }
 
-const loadedRouting = await loadRoutingConfiguration({ path: fileURLToPath(import.meta.resolve("@rickylabs/routing/config/routing.v1.json")) });
+const loadedRouting = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../../routing/test-fixtures/compatibility.json", import.meta.url)) });
 assert.ok(loadedRouting.ok);
 const routing = loadedRouting.loaded;
 describe("each plugin claims its service and gives it back", () => {
@@ -149,7 +149,7 @@ describe("each plugin claims its service and gives it back", () => {
     const seam = fakeSeam();
     const ctx = new Context();
     const host = await ctx.plugin(seam.plugin);
-    const routingFiber = await ctx.plugin(routingPlugin, { document: "@rickylabs/routing/config/routing.v1.json" });
+    const routingFiber = await ctx.plugin(routingPlugin, { document: fileURLToPath(new URL("../../routing/test-fixtures/compatibility.json", import.meta.url)) });
     const fiber = await ctx.plugin(llm);
 
     assert.equal(seam.registered.length, 1, "the three routes register in one call, or not at all");
@@ -173,7 +173,7 @@ describe("each plugin claims its service and gives it back", () => {
 
     const host = await ctx.plugin(seam.plugin);
     assert.equal(seam.registered.length, 0, "routing must also be available");
-    const routingFiber = await ctx.plugin(routingPlugin, { document: "@rickylabs/routing/config/routing.v1.json" });
+    const routingFiber = await ctx.plugin(routingPlugin, { document: fileURLToPath(new URL("../../routing/test-fixtures/compatibility.json", import.meta.url)) });
     assert.equal(seam.registered.length, 1, "the waiting fiber never activated");
     await routingFiber.dispose();
 
@@ -203,7 +203,7 @@ describe("the bundle as a whole", () => {
       await ctx.plugin(subagents),
       await ctx.plugin(board),
       await ctx.plugin(coordinator),
-      await ctx.plugin(routingPlugin, { document: "@rickylabs/routing/config/routing.v1.json" }),
+      await ctx.plugin(routingPlugin, { document: fileURLToPath(new URL("../../routing/test-fixtures/compatibility.json", import.meta.url)) }),
     ];
     for (const key of [SUBAGENTS_KEY, BOARD_KEY, COORDINATOR_KEY, TELEMETRY_KEY, ROUTING_KEY] as const) {
       assert.notEqual(ctx.get(key), undefined, `${key} is not on the context`);
@@ -325,7 +325,7 @@ describe("explicit routing composition", () => {
   });
   it("provides immutable configuration and provenance, and releases its key", async () => {
     const ctx = new Context();
-    const fiber = await ctx.plugin(routingPlugin, { document: "@rickylabs/routing/config/routing.v1.json" });
+    const fiber = await ctx.plugin(routingPlugin, { document: fileURLToPath(new URL("../../routing/test-fixtures/compatibility.json", import.meta.url)) });
     assert.ok(Object.isFrozen(ctx.harnessRouting));
     const lanes = laneRouting(ctx.harnessRouting.configuration);
     assert.ok(lanes.ok);

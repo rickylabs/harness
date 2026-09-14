@@ -25,7 +25,7 @@ const codex: Candidate = {
   blockedBy: null,
 };
 
-const sibling: Candidate = { ...codex, id: "run-sibling", family: "anthropic", model: "fable-5" };
+const sibling: Candidate = { ...codex, id: "run-sibling", family: "anthropic", model: "fable-5.1" };
 
 const lines = (candidates: readonly Candidate[]): readonly string[] =>
   renderDecision(selectEvaluator(author, candidates)).split("\n");
@@ -61,7 +61,7 @@ describe("renderDecision", () => {
       ...codex,
       id: "run-relay",
       seam: "relay",
-      family: "open",
+      family: "zai",
       model: "z-ai/glm-5.3-flash",
       openWeights: true,
     };

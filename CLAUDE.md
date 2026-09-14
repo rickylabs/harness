@@ -23,13 +23,15 @@ the hazard is stated in full in [`AGENTS.md`](AGENTS.md#operational-hazard-this-
 Quick orientation:
 
 - Ratified decisions: [`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) — the four taken in
-  [#30](https://github.com/rickylabs/harness/issues/30). This repository is the `dsh` layer only;
+  [#30](https://github.com/rickylabs/harness/issues/30), superseded by
+  [`ARCHITECTURE.md`](ARCHITECTURE.md) §1 — this repository is **the portable agent runtime**;
   netscript is a service behind an adapter, not a build-time dependency.
 - Workspace layout and **the two seams** — `ctx.subagents` for vendor CLIs, `ctx.llm` for API and
   local models: [`AGENTS.md`](AGENTS.md#workspace-layout-and-the-two-seams), with the
   package-by-package table in [`packages/README.md`](packages/README.md).
 - Doctrine lives in [`doctrine/`](doctrine/) — portable, plain markdown, zero runtime:
-  [`WORKFLOW.md`](doctrine/WORKFLOW.md), [`PRINCIPLES.md`](doctrine/PRINCIPLES.md)
+  [`WORKFLOW.md`](doctrine/WORKFLOW.md), [`PRINCIPLES.md`](doctrine/PRINCIPLES.md),
+  [`GATES.md`](doctrine/GATES.md), [`TOOLCHAIN.md`](doctrine/TOOLCHAIN.md)
 - The board, without asking an agent: `dsh-board status`, `dsh-board check`.
 - Active run: [`.llm/runs/architecture-foundation--seed/`](.llm/runs/architecture-foundation--seed/)
 - Start with that run's `context-pack.md` — it is written to be the single file that resumes the work.
