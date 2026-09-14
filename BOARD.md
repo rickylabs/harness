@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **248/317 done · 20 running · 24 queued · 6 blocked · 15 abandoned · 4 invisible**
+`[###############-----]` **249/317 done · 21 running · 23 queued · 6 blocked · 15 abandoned · 3 invisible**
 
-_Latest board activity: 2026-09-14T02:00:45Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T02:01:13Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (6)
 
@@ -19,7 +19,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (20)
+## Moving now (21)
 
 Something could be acting on these right now.
 
@@ -45,6 +45,7 @@ Something could be acting on these right now.
 | [#198 E3.8 - Liveness with evidence: working, idle, stalled, dead, refused](https://github.com/rickylabs/harness/issues/198) | `plan` | `e3` |
 | [#199 E3.9 - Two wake signals: progress and idle are not interchangeable](https://github.com/rickylabs/harness/issues/199) | `plan` | `e3` |
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
+| [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 
 ## Not on the board (1)
 
@@ -54,13 +55,9 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [PR324 doctrine: add principle 12, an absence needs a reachability list](https://github.com/rickylabs/harness/pull/324) | — | — |
 
-## Anomalies (4)
+## Anomalies (3)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-without-status`**
-
-- **#329** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -97,18 +94,18 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 56/75 done · 4 queued · 3 blocked · 9 abandoned · 3 invisible
+`[#########---]` 57/75 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/1 done · 1 blocked | `triage` |
-| _(no epic)_ | `[#########---]` 51/68 done · 4 queued · 1 blocked · 9 abandoned · 3 invisible | — |
+| _(no epic)_ | `[#########---]` 52/68 done · 1 running · 3 queued · 1 blocked · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>24 filed, nothing started</summary>
+<summary>23 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -135,7 +132,6 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#66 E5.5 — Wire the gate at the sandbox boundary](https://github.com/rickylabs/harness/issues/66) | `triage` | `e5` |
 | [#67 E5.6 — Boot-parameter verification after every kernel update](https://github.com/rickylabs/harness/issues/67) | `triage` | `e5` |
 | [#181 fix(routing): resolve complex evaluators across both implementer families](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
-| [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `triage` | — |
 
 </details>
 
@@ -145,7 +141,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  248/317 done · 20 running · 24 queued · 6 blocked · 15 abandoned · 4 invisible
+# rickylabs/harness  [###############-----]  249/317 done · 21 running · 23 queued · 6 blocked · 15 abandoned · 3 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -426,7 +422,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [##############------]  56/75 done · 4 queued · 3 blocked · 9 abandoned · 3 invisible
+## (no milestone)  [###############-----]  57/75 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -491,7 +487,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR252 docs: complete the Stage B discovery run with its external and document legs (p3)
     shipped              PR254 docs(how-to): add the first how-to guide, installing the board process (p2)
     triage               #255 fix(forge): skill install --dry-run reports a file as created that it does not create (p3)
-    triage               #285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision
+    impl-eval            #285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision
     shipped              PR303 docs(architecture): lock v1 — the portable agent runtime
     shipped              #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
     shipped              PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt
@@ -509,7 +505,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR326 fix(telemetry): make the Claude backfill say which types it chose not to read
     shipped              PR327 fix(gates): stop the stage runner reporting a killed stage as a failed one
     triage               #328 Three unrecognised envelope types on a real Codex store, one at 17304 occurrences, and the reader says that means a class of record is going unread (p3)
-    no status            PR329 fix(coordinator): make plan and admit honour --event instead of ignoring it
+    shipped              PR329 fix(coordinator): make plan and admit honour --event instead of ignoring it
 ```
 
 </details>
