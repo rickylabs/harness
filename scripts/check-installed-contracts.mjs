@@ -11,6 +11,7 @@ import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { runObservationMatrix } from "../packages/telemetry/test-fixtures/run-observation/matrix.mjs";
+import { INCONCLUSIVE_EXIT, Inconclusive, inconclusiveRecord, requireExecutableDirectory } from "./inconclusive.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
 const cli = join(root, "packages/telemetry/dist/cli.js");
@@ -60,6 +61,8 @@ try {
     assert.ok(existsSync(file), "required dist output missing; run workspace build first");
   }
   scratch = mkdtempSync(join(tmpdir(), "governance-installed-"));
+  stage = "scratch executability preflight";
+  requireExecutableDirectory(scratch);
   const consumer = join(scratch, "consumer"), packDir = join(scratch, "pack"), cgroup = join(scratch, "cgroup");
   for (const dir of [consumer, packDir, cgroup, join(scratch, "home"), join(scratch, "checkout")]) mkdirSync(dir);
   // Explicit empty npm configuration: never consult operator auth/config files or remote metadata.
@@ -127,7 +130,10 @@ void protocol; void server; void acceptHub;\n`);
   const compiled = await run(process.execPath, [require.resolve("typescript/bin/tsc"), "-p", join(consumer, "tsconfig.json")], { cwd: consumer, env });
   assert.equal(compiled.code, 0);
   stage = "synthetic fixture setup";
-  assert.notEqual(process.platform, "win32", "sleeping executable fixture currently requires a POSIX shebang host");
+  if (process.platform === "win32") {
+    throw new Inconclusive("posix-shebang-host-required",
+      "the sleeping executable fixture needs a POSIX shebang host; run this gate on Linux or macOS");
+  }
   const pidFile = join(scratch, "probe.pid"), probe = join(scratch, "sleeping-probe");
   // One Node child, no shell, subprocess or grandchild. The CLI must kill and reap this process.
   writeFileSync(probe, `#!${process.execPath}\nimport { writeFileSync } from 'node:fs';\nwriteFileSync(${JSON.stringify(pidFile)}, String(process.pid));\nsetTimeout(() => {}, 60_000);\n`);
@@ -226,8 +232,16 @@ if(invoked !== 1) throw new Error('checkpoint not reached');`);
     fixtures: ["mixed-timeout", "all-unconfigured"], timeout: { actualSleepingProbe: true, terminatedAndReaped: true, grandchildren: 0 },
     assertions: "version/protocol, root/server runtime and compiled declarations, source coverage, admission refusal and original stamps, memory readings, privacy, unavailable",
     limitations: ["synthetic only; no live acceptance or downstream compatibility claim", "sleeping executable fixture requires POSIX shebang support and executable TMPDIR", "candidate only; no publication"] }));
-} catch {
+} catch (error) {
   // Never reflect npm/compiler/probe output, paths, arbitrary errors or credential-bearing input.
-  console.error(`check:installed failed at ${stage}`);
-  process.exitCode = 1;
+  // Only the stage label, a closed reason vocabulary and a fixed remedy string cross this boundary.
+  if (error instanceof Inconclusive) {
+    console.log(JSON.stringify(inconclusiveRecord("installed-contracts", stage, error)));
+    console.error(`check:installed inconclusive at ${stage} — ${error.reason}: ${error.remedy}`);
+    process.exitCode = INCONCLUSIVE_EXIT;
+  } else {
+    console.log(JSON.stringify({ check: "installed-contracts", status: "FAIL", stage }));
+    console.error(`check:installed failed at ${stage}`);
+    process.exitCode = 1;
+  }
 } finally { cleanup(); }
