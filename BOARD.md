@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **267/341 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
+`[###############-----]` **268/341 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-14T21:20:11Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T21:21:27Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (23)
+## Moving now (22)
 
 Something could be acting on these right now.
 
@@ -32,7 +32,6 @@ Something could be acting on these right now.
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#316 Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/316) | `impl-eval` | — |
 | [PR317 feat(routing): validate the fleet-shaped configuration as schema version 2](https://github.com/rickylabs/harness/pull/317) | `impl-eval` | `e11` |
-| [PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation](https://github.com/rickylabs/harness/pull/345) | `augment-review` | `e11` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -66,7 +65,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 **`closed-but-unshipped`**
 
-- **#345** — closed on GitHub but sits in augment-review; the issue wins, the column is stale
+- **#317** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -113,12 +112,12 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 75/99 done · 3 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
+`[#########---]` 76/99 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#######-----]` 6/10 done · 2 running · 1 blocked · 1 invisible | `triage` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | _(no epic)_ | `[#########---]` 64/83 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
@@ -160,7 +159,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  267/341 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [###############-----]  268/341 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -441,7 +440,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  75/99 done · 3 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [###############-----]  76/99 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -453,14 +452,14 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [#########-------] 6/10 done · 2 running · 1 blocked · 1 invisible
+    [###########-----] 7/10 done · 1 running · 1 blocked · 1 invisible
     triage               #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0, waiting on owner)
     shipped              PR339 docs(e11): charter enforcement plan and measured dual-agent pilot (p0)
     no status            #340 E11 I1: independent feature-tier plan evaluation for receipt checker (p0)
     shipped              #341 E11 I1: native fallback plan evaluation for receipt checker (p0)
     shipped              PR342 feat(e11): validate matrix receipts without false green observations (p0)
     shipped              #343 E11 I1: independent implementation review of matrix receipt checker (p0)
-    augment-review       PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation (p0)
+    shipped              PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation (p0)
     shipped              #346 E11: independently evaluate final receipt delta and blocked-decision check (p0)
     shipped              #347 E11: independently evaluate the upstream divybot matrix-hook plan (p0)
     research             #349 Brainstorm: dual-agent mailbox pilot contract (draft)
