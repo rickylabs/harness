@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **256/329 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
+`[###############-----]` **257/333 done · 25 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-14T08:12:27Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T08:44:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (22)
+## Moving now (25)
 
 Something could be acting on these right now.
 
@@ -33,6 +33,9 @@ Something could be acting on these right now.
 | [#316 Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/316) | `impl-eval` | — |
 | [PR317 feat(routing): validate the fleet-shaped configuration as schema version 2](https://github.com/rickylabs/harness/pull/317) | `impl-eval` | `e11` |
 | [PR339 docs(e11): charter enforcement plan and measured dual-agent pilot](https://github.com/rickylabs/harness/pull/339) | `plan-eval` | `e11` |
+| [PR342 feat(e11): validate matrix receipts without false green observations](https://github.com/rickylabs/harness/pull/342) | `impl-eval` | `e11` |
+| [#344 I4: independent plan review for blocked-decision validation](https://github.com/rickylabs/harness/issues/344) | `plan-eval` | — |
+| [PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation](https://github.com/rickylabs/harness/pull/345) | `impl-eval` | `e11` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -59,7 +62,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [PR324 doctrine: add principle 12, an absence needs a reachability list](https://github.com/rickylabs/harness/pull/324) | — | — |
 | [PR336 doctrine: publish what a chain of checks must say when it stops](https://github.com/rickylabs/harness/pull/336) | — | — |
 
-## Anomalies (7)
+## Anomalies (10)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -73,6 +76,9 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#339** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#340** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#341** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#342** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#343** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#345** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 
 **`no-status`**
 
@@ -102,13 +108,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 64/87 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
+`[########----]` 65/91 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[###---------]` 1/4 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[#########---]` 58/77 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[###---------]` 2/7 done · 3 running · 1 blocked · 1 invisible | `triage` |
+| _(no epic)_ | `[########----]` 58/78 done · 2 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
@@ -149,7 +155,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  256/329 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [###############-----]  257/333 done · 25 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -430,7 +436,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [##############------]  64/87 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [##############------]  65/91 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -442,11 +448,14 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [####------------] 1/4 done · 1 running · 1 blocked · 1 invisible
+    [####------------] 2/7 done · 3 running · 1 blocked · 1 invisible
     triage               #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0, waiting on owner)
     plan-eval            PR339 docs(e11): charter enforcement plan and measured dual-agent pilot (draft, p0)
     no status            #340 E11 I1: independent feature-tier plan evaluation for receipt checker (p0)
     shipped              #341 E11 I1: native fallback plan evaluation for receipt checker (p0)
+    impl-eval            PR342 feat(e11): validate matrix receipts without false green observations (draft, p0)
+    shipped              #343 E11 I1: independent implementation review of matrix receipt checker (p0)
+    impl-eval            PR345 feat(e11): enforce blocked-decision-check--e11 in cluster validation (draft, p0)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
@@ -526,6 +535,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            PR336 doctrine: publish what a chain of checks must say when it stops
     shipped              PR337 fix(gates): refuse in a sentence, and point at the doctrine file nothing pointed at
     shipped              PR338 docs: AGENTS.md said decision 4 was superseded outright; its own list says otherwise
+    plan-eval            #344 I4: independent plan review for blocked-decision validation (p0)
 ```
 
 </details>
