@@ -2,7 +2,7 @@ import { loadRoutingConfiguration } from "./load.js";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../config/routing.v1.json", import.meta.url)) });
+const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../test-fixtures/compatibility.json", import.meta.url)) });
 assert.ok(loadedA.ok);
 const A = loadedA.loaded.configuration;
 
@@ -22,7 +22,7 @@ const nativeFable: RunIdentity = {
   runId: "run-fable",
   seam: "subagents",
   harness: "claude",
-  model: "fable-5",
+  model: "fable-5.1",
   transport: "native",
 };
 
@@ -55,7 +55,7 @@ describe("familyOfRun", () => {
   it("reads the family off the model, not off the harness", () => {
     assert.equal(familyOfRun(A, nativeOpus), "anthropic");
     // Same harness, same seam, different family — because the model is what was actually run.
-    assert.equal(familyOfRun(A, relayGlmUnderClaude), "open");
+    assert.equal(familyOfRun(A, relayGlmUnderClaude), "zai");
   });
 
   it("gives the same answer on either seam", () => {
@@ -84,7 +84,7 @@ describe("checkEvaluator", () => {
     // `claude`, the other is not a CLI at all, so nothing about the launch says they are the same
     // model — and letting GLM certify GLM is a run agreeing with itself.
     const verdict = checkEvaluator(A, { author: llmGlm, evaluator: relayGlmUnderClaude });
-    assert.deepEqual(verdict, { ok: false, reason: "same-family", family: "open" });
+    assert.deepEqual(verdict, { ok: false, reason: "same-family", family: "zai" });
   });
 
   it("accepts a relay evaluator over Claude-authored work", () => {
@@ -96,7 +96,7 @@ describe("checkEvaluator", () => {
       evaluator: relayGlmUnderClaude,
       certifies: "any",
     });
-    assert.deepEqual(verdict, { ok: true, authorFamily: "anthropic", evaluatorFamily: "open" });
+    assert.deepEqual(verdict, { ok: true, authorFamily: "anthropic", evaluatorFamily: "zai" });
   });
 
   it("refuses a model it cannot place, on either side", () => {

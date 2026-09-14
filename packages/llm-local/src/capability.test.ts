@@ -16,7 +16,7 @@ import {
   refusalOf,
 } from "./capability.js";
 
-const loadedRouting = await loadRoutingConfiguration({ path: fileURLToPath(import.meta.resolve("@rickylabs/routing/config/routing.v1.json")) });
+const loadedRouting = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../../routing/test-fixtures/compatibility.json", import.meta.url)) });
 assert.ok(loadedRouting.ok);
 const routing = loadedRouting.loaded;
 const placements = requirePlacements(routing.configuration.placements);

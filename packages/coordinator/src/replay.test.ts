@@ -30,7 +30,7 @@ const codex: Candidate = {
   blockedBy: null,
 };
 
-const sibling: Candidate = { ...codex, id: "run-sibling", family: "anthropic", model: "fable-5" };
+const sibling: Candidate = { ...codex, id: "run-sibling", family: "anthropic", model: "fable-5.1" };
 const glm: Candidate = {
   id: "run-glm",
   seam: "relay",

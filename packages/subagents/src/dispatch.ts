@@ -81,7 +81,8 @@ export const DEFAULT_HARNESS: Harness = "claude";
 
 /** OpenCode provider prefixes, which select where an OpenCode run actually executes. */
 export const ROUTERS = ["n5air", "n5air-rocm", "openai", "openrouter"] as const;
-export type Router = (typeof ROUTERS)[number];
+/** Provider IDs are configured/discovered by the caller, not enumerated by the wire protocol. */
+export type Router = string;
 
 /**
  * A dispatch, fully specified — what a coordinator *intends* to launch.
@@ -176,7 +177,6 @@ export function renderSwarm(request: DispatchRequest): string {
 }
 
 const HARNESS_SET: ReadonlySet<string> = new Set(HARNESSES);
-const ROUTER_SET: ReadonlySet<string> = new Set(ROUTERS);
 
 /** Keys that are spellings of another key. Both map to the same field in `Overrides`. */
 const ALIASES: Readonly<Record<string, string>> = { agent: "harness", provider: "router" };
@@ -422,12 +422,7 @@ export function parseSwarm(body: string): ParsedSwarm | null {
         `${DEFAULT_HARNESS}, so the run will not be what the record says it is`,
     });
   }
-  if (router !== "" && !ROUTER_SET.has(router)) {
-    warnings.push({
-      kind: "unknown-router",
-      detail: `router ${JSON.stringify(router)} is not one of ${ROUTERS.join(", ")}`,
-    });
-  }
+
 
   const overrides: SwarmOverrides = {
     harness,
@@ -512,7 +507,7 @@ export function toDispatchRequest(parsed: ParsedSwarm): DispatchRequest {
     ...(some(o.maxTokens) !== undefined ? { maxTokens: o.maxTokens } : {}),
     ...(some(o.profile) !== undefined ? { profile: o.profile } : {}),
     ...(o.timeoutNs > 0 ? { timeout: formatGoDuration(o.timeoutNs) } : {}),
-    ...(ROUTER_SET.has(o.router) ? { router: o.router as Router } : {}),
+    ...(some(o.router) !== undefined ? { router: o.router } : {}),
     prompt: o.prompt,
   };
 }

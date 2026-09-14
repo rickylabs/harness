@@ -140,7 +140,7 @@ describe("foldLiveEvents", () => {
     // under two models, and the one that finished it is the one an audit is about.
     const runs = foldLiveEvents([
       file("/log/live.jsonl", [
-        event("a", "start", "2026-09-05T10:00:00.000Z", { model: "fable-5", provider: "anthropic" }),
+        event("a", "start", "2026-09-05T10:00:00.000Z", { model: "fable-5.1", provider: "anthropic" }),
         event("a", "fallback", "2026-09-05T10:05:00.000Z", { model: "z-ai/glm-5.3-flash" }),
       ]),
     ]);
@@ -379,7 +379,7 @@ describe("mergeLiveRuns", () => {
       [run({ identity: { model: "opus-5", effort: null, provider: null, profile: null } })],
       [
         live({
-          identity: { model: "fable-5", effort: "medium", provider: "anthropic", profile: "review" },
+          identity: { model: "fable-5.1", effort: "medium", provider: "anthropic", profile: "review" },
         }),
       ],
     );
