@@ -1,0 +1,1036 @@
+{
+  "schemaVersion": 2,
+  "name": "fixture-fleet-shaped-8ba53bc",
+  "provenance": {
+    "description": "Test fixture, not fleet authority. tiers (names, order, descriptions), every cell's ordered candidates including the two empty cells and the one exact repeat, the three loop policies per tier, coordinators by scope and providerPrecedence are copied verbatim from agentic:matrix --json at NetScript 8ba53bc50ca02aab29e99ba5362728839b8f1713, re-queried byte-identically at 8eaa8c54 and at 155dbbe90b35b8ab24fa7c52d4947f3d5e8f38ac. families, capabilities, provider identities, launch seams, launch ids, effort evidence, role declarations, restrictions, selection, authorization, lanes, policy and placements are synthetic test values the CLI does not export and this fixture does not claim: every effortSupport unknown is a genuine unknown and the single known entry is a synthetic shape, not measured capability. Export gaps E-1 to E-14 are owned by #274 and #275."
+  },
+  "families": [
+    "anthropic",
+    "openai",
+    "google",
+    "meta",
+    "deepseek",
+    "minimax",
+    "open"
+  ],
+  "efforts": {
+    "ordered": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "unordered": [
+      "provider_default"
+    ]
+  },
+  "capabilities": [
+    "vision",
+    "deep_research"
+  ],
+  "providers": {
+    "claude": {},
+    "codex": {},
+    "agy": {},
+    "github_copilot": {},
+    "opencode_go": {},
+    "ollama": {},
+    "openrouter": {}
+  },
+  "providerPrecedence": [
+    "claude",
+    "codex",
+    "agy",
+    "github_copilot",
+    "opencode_go",
+    "ollama",
+    "openrouter"
+  ],
+  "profiles": [
+    "relay-profile"
+  ],
+  "presets": [
+    "relay-preset"
+  ],
+  "models": {
+    "astra": {
+      "family": "openai",
+      "launches": [
+        {
+          "provider": "codex",
+          "seam": "subagents",
+          "id": "synthetic-astra",
+          "transport": "native",
+          "harness": "codex",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "deepseek_v4_flash": {
+      "family": "deepseek",
+      "launches": [
+        {
+          "provider": "claude",
+          "seam": "subagents",
+          "id": "synthetic-deepseek-flash",
+          "transport": "native",
+          "harness": "claude",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "deepseek_v4_flash_vision": {
+      "family": "deepseek",
+      "capabilities": [
+        "vision"
+      ],
+      "launches": [
+        {
+          "provider": "claude",
+          "seam": "subagents",
+          "id": "synthetic-deepseek-vision",
+          "transport": "native",
+          "harness": "claude",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "deepseek_v4_pro": {
+      "family": "deepseek",
+      "launches": [
+        {
+          "provider": "claude",
+          "seam": "subagents",
+          "id": "synthetic-deepseek-pro",
+          "transport": "native",
+          "harness": "claude",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "fable_5_1": {
+      "family": "anthropic",
+      "capabilities": [
+        "vision"
+      ],
+      "launches": [
+        {
+          "provider": "claude",
+          "seam": "subagents",
+          "id": "synthetic-fable",
+          "transport": "native",
+          "harness": "claude",
+          "subscription": "included",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "gemini_3_8_flash": {
+      "family": "google",
+      "capabilities": [
+        "vision",
+        "deep_research"
+      ],
+      "launches": [
+        {
+          "provider": "agy",
+          "seam": "subagents",
+          "id": "synthetic-gemini",
+          "transport": "native",
+          "harness": "agy",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "glm_5_3": {
+      "family": "open",
+      "approvedRelayEvaluator": true,
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "synthetic/glm",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "router": "openrouter",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "glm_5_3_flash": {
+      "family": "open",
+      "launches": [
+        {
+          "provider": "agy",
+          "seam": "subagents",
+          "id": "synthetic-glm-flash",
+          "transport": "native",
+          "harness": "agy",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "grok_4_6": {
+      "family": "open",
+      "launches": [
+        {
+          "provider": "codex",
+          "seam": "subagents",
+          "id": "synthetic-grok",
+          "transport": "native",
+          "harness": "codex-run",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "kimi_k3": {
+      "family": "open",
+      "capabilities": [
+        "vision"
+      ],
+      "launches": [
+        {
+          "provider": "claude",
+          "seam": "subagents",
+          "id": "synthetic-kimi",
+          "transport": "native",
+          "harness": "claude",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "luna": {
+      "family": "openai",
+      "capabilities": [
+        "deep_research"
+      ],
+      "launches": [
+        {
+          "provider": "codex",
+          "seam": "subagents",
+          "id": "synthetic-luna",
+          "transport": "native",
+          "harness": "codex",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "minimax_m3": {
+      "family": "minimax",
+      "capabilities": [
+        "vision"
+      ],
+      "launches": [
+        {
+          "provider": "agy",
+          "seam": "subagents",
+          "id": "synthetic-minimax",
+          "transport": "native",
+          "harness": "agy",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "muse_spark_1_3": {
+      "family": "meta",
+      "capabilities": [
+        "vision"
+      ],
+      "approvedRelayEvaluator": true,
+      "launches": [
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "synthetic/muse",
+          "transport": "openrouter",
+          "harness": "claude",
+          "profile": "relay-profile",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        },
+        {
+          "provider": "openrouter",
+          "seam": "llm",
+          "id": "synthetic/muse",
+          "transport": "openrouter",
+          "effortSupport": {
+            "status": "known",
+            "supported": [
+              "low",
+              "medium",
+              "high",
+              "xhigh"
+            ],
+            "unsupported": [
+              "max"
+            ],
+            "why": "synthetic fixture value, shaped like the anonymized report on #273; not verified capability"
+          }
+        }
+      ]
+    },
+    "opus_5": {
+      "family": "anthropic",
+      "launches": [
+        {
+          "provider": "claude",
+          "seam": "subagents",
+          "id": "synthetic-opus",
+          "transport": "native",
+          "harness": "claude",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "qwen_3_8_flash_next": {
+      "family": "open",
+      "launches": [
+        {
+          "provider": "ollama",
+          "seam": "llm",
+          "id": "synthetic-local",
+          "transport": "native",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "qwen_3_8_max": {
+      "family": "open",
+      "launches": [
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "synthetic/qwen-max",
+          "transport": "openrouter",
+          "harness": "claude",
+          "profile": "relay-profile",
+          "preset": "relay-preset",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "sol": {
+      "family": "openai",
+      "launches": [
+        {
+          "provider": "codex",
+          "seam": "subagents",
+          "id": "synthetic-sol",
+          "transport": "native",
+          "harness": "codex",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    }
+  },
+  "roles": {
+    "implementation": {},
+    "ui_ux": {
+      "selection": {
+        "by": [
+          "owner"
+        ],
+        "otherwise": "implementation"
+      }
+    },
+    "plan": {},
+    "plan_evaluation": {
+      "certifies": "any",
+      "evaluates": [
+        "plan"
+      ]
+    },
+    "implementation_evaluation": {
+      "certifies": "any",
+      "evaluates": [
+        "implementation",
+        "ui_ux"
+      ]
+    },
+    "vision_evaluation": {
+      "certifies": "none",
+      "evaluates": [
+        "ui_ux"
+      ],
+      "requires": [
+        "vision"
+      ]
+    },
+    "documentation": {},
+    "deep_research": {
+      "requires": [
+        "deep_research"
+      ],
+      "restrictions": {
+        "seams": [
+          "subagents"
+        ],
+        "transports": [
+          "native"
+        ],
+        "harnesses": [
+          "agy",
+          "codex",
+          "codex-run"
+        ]
+      }
+    }
+  },
+  "tiers": [
+    {
+      "tier": "simple",
+      "description": "Automation, simple fixes, and chores; low temperature and low complexity.",
+      "cells": {
+        "implementation": [
+          {
+            "model": "luna",
+            "effort": "max"
+          },
+          {
+            "model": "qwen_3_8_flash_next",
+            "effort": "provider_default"
+          }
+        ],
+        "ui_ux": [
+          {
+            "model": "kimi_k3",
+            "effort": "low"
+          },
+          {
+            "model": "minimax_m3",
+            "effort": "provider_default"
+          }
+        ],
+        "plan": [],
+        "plan_evaluation": [],
+        "implementation_evaluation": [
+          {
+            "model": "minimax_m3",
+            "effort": "provider_default"
+          },
+          {
+            "model": "deepseek_v4_flash",
+            "effort": "provider_default"
+          }
+        ],
+        "vision_evaluation": [
+          {
+            "model": "minimax_m3",
+            "effort": "provider_default"
+          },
+          {
+            "model": "deepseek_v4_flash_vision",
+            "effort": "provider_default"
+          }
+        ],
+        "documentation": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "medium"
+          },
+          {
+            "model": "opus_5",
+            "effort": "low"
+          }
+        ],
+        "deep_research": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "low"
+          },
+          {
+            "model": "luna",
+            "effort": "max"
+          }
+        ]
+      },
+      "loops": {
+        "plan": {
+          "maxRounds": "none",
+          "reSteerSameSession": true
+        },
+        "implementation": {
+          "maxRounds": "unspecified_by_owner",
+          "reSteerSameSession": true
+        },
+        "documentation": {
+          "maxRounds": 2,
+          "reSteerSameSession": true
+        }
+      }
+    },
+    {
+      "tier": "straightforward",
+      "description": "Straightforward implementations and features; medium temperature and medium complexity.",
+      "cells": {
+        "implementation": [
+          {
+            "model": "sol",
+            "effort": "medium"
+          },
+          {
+            "model": "glm_5_3_flash",
+            "effort": "provider_default"
+          }
+        ],
+        "ui_ux": [
+          {
+            "model": "kimi_k3",
+            "effort": "high"
+          },
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          }
+        ],
+        "plan": [
+          {
+            "model": "sol",
+            "effort": "medium"
+          },
+          {
+            "model": "glm_5_3_flash",
+            "effort": "provider_default"
+          }
+        ],
+        "plan_evaluation": [
+          {
+            "model": "opus_5",
+            "effort": "medium"
+          },
+          {
+            "model": "qwen_3_8_flash_next",
+            "effort": "provider_default"
+          }
+        ],
+        "implementation_evaluation": [
+          {
+            "model": "glm_5_3_flash",
+            "effort": "provider_default"
+          },
+          {
+            "model": "deepseek_v4_pro",
+            "effort": "provider_default"
+          }
+        ],
+        "vision_evaluation": [
+          {
+            "model": "deepseek_v4_flash_vision",
+            "effort": "provider_default"
+          },
+          {
+            "model": "kimi_k3",
+            "effort": "low"
+          }
+        ],
+        "documentation": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          },
+          {
+            "model": "qwen_3_8_flash_next",
+            "effort": "provider_default"
+          }
+        ],
+        "deep_research": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "medium"
+          },
+          {
+            "model": "luna",
+            "effort": "max"
+          }
+        ]
+      },
+      "loops": {
+        "plan": {
+          "maxRounds": 0,
+          "repairInFlightAt": "immediate",
+          "reSteerSameSession": true
+        },
+        "implementation": {
+          "maxRounds": 5,
+          "notifyOwnerAfter": 3,
+          "reSteerSameSession": true
+        },
+        "documentation": {
+          "maxRounds": 2,
+          "notifyOwnerAfter": 2,
+          "reSteerSameSession": true
+        }
+      }
+    },
+    {
+      "tier": "feature",
+      "description": "Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.",
+      "cells": {
+        "implementation": [
+          {
+            "model": "astra",
+            "effort": "low"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "xhigh"
+          }
+        ],
+        "ui_ux": [
+          {
+            "model": "kimi_k3",
+            "effort": "high"
+          },
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          }
+        ],
+        "plan": [
+          {
+            "model": "fable_5_1",
+            "effort": "low"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "xhigh"
+          }
+        ],
+        "plan_evaluation": [
+          {
+            "model": "glm_5_3",
+            "effort": "provider_default"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "low"
+          }
+        ],
+        "implementation_evaluation": [
+          {
+            "model": "muse_spark_1_3",
+            "effort": "xhigh"
+          },
+          {
+            "model": "opus_5",
+            "effort": "xhigh"
+          }
+        ],
+        "vision_evaluation": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "xhigh"
+          }
+        ],
+        "documentation": [
+          {
+            "model": "qwen_3_8_max",
+            "effort": "provider_default"
+          },
+          {
+            "model": "glm_5_3_flash",
+            "effort": "provider_default"
+          }
+        ],
+        "deep_research": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          },
+          {
+            "model": "luna",
+            "effort": "max"
+          }
+        ]
+      },
+      "loops": {
+        "plan": {
+          "maxRounds": 2,
+          "repairInFlightAt": 2,
+          "reSteerSameSession": true
+        },
+        "implementation": {
+          "maxRounds": 5,
+          "notifyOwnerAfter": 3,
+          "reSteerSameSession": true
+        },
+        "documentation": {
+          "maxRounds": 2,
+          "notifyOwnerAfter": 2,
+          "reSteerSameSession": true
+        }
+      }
+    },
+    {
+      "tier": "complex",
+      "description": "Complex implementations, fixes, and features; medium temperature and high complexity.",
+      "cells": {
+        "implementation": [
+          {
+            "model": "astra",
+            "effort": "medium"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "medium"
+          }
+        ],
+        "ui_ux": [
+          {
+            "model": "kimi_k3",
+            "effort": "max"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "medium"
+          }
+        ],
+        "plan": [
+          {
+            "model": "fable_5_1",
+            "effort": "medium"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          }
+        ],
+        "plan_evaluation": [
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          },
+          {
+            "model": "grok_4_6",
+            "effort": "high"
+          }
+        ],
+        "implementation_evaluation": [
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          }
+        ],
+        "vision_evaluation": [
+          {
+            "model": "kimi_k3",
+            "effort": "max"
+          },
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          }
+        ],
+        "documentation": [
+          {
+            "model": "fable_5_1",
+            "effort": "medium"
+          },
+          {
+            "model": "qwen_3_8_max",
+            "effort": "provider_default"
+          }
+        ],
+        "deep_research": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          },
+          {
+            "model": "luna",
+            "effort": "max"
+          }
+        ]
+      },
+      "loops": {
+        "plan": {
+          "maxRounds": 3,
+          "repairInFlightAt": 3,
+          "reSteerSameSession": true
+        },
+        "implementation": {
+          "maxRounds": 5,
+          "notifyOwnerAfter": 3,
+          "reSteerSameSession": true
+        },
+        "documentation": {
+          "maxRounds": 2,
+          "notifyOwnerAfter": 2,
+          "reSteerSameSession": true
+        }
+      },
+      "authorization": {
+        "by": [
+          "owner",
+          "milestone"
+        ]
+      }
+    },
+    {
+      "tier": "architecture",
+      "description": "Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.",
+      "cells": {
+        "implementation": [
+          {
+            "model": "astra",
+            "effort": "xhigh"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "xhigh"
+          }
+        ],
+        "ui_ux": [
+          {
+            "model": "kimi_k3",
+            "effort": "max"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "medium"
+          }
+        ],
+        "plan": [
+          {
+            "model": "fable_5_1",
+            "effort": "xhigh"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          }
+        ],
+        "plan_evaluation": [
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          },
+          {
+            "model": "grok_4_6",
+            "effort": "xhigh"
+          }
+        ],
+        "implementation_evaluation": [
+          {
+            "model": "grok_4_6",
+            "effort": "xhigh"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          }
+        ],
+        "vision_evaluation": [
+          {
+            "model": "kimi_k3",
+            "effort": "max"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "high"
+          }
+        ],
+        "documentation": [
+          {
+            "model": "fable_5_1",
+            "effort": "high"
+          },
+          {
+            "model": "qwen_3_8_max",
+            "effort": "provider_default"
+          }
+        ],
+        "deep_research": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          },
+          {
+            "model": "luna",
+            "effort": "max"
+          }
+        ]
+      },
+      "loops": {
+        "plan": {
+          "maxRounds": 1,
+          "escalateToOwnerAt": 2,
+          "reSteerSameSession": true
+        },
+        "implementation": {
+          "maxRounds": 3,
+          "notifyOwnerAfter": 2,
+          "reSteerSameSession": true
+        },
+        "documentation": {
+          "maxRounds": 2,
+          "notifyOwnerAfter": 2,
+          "reSteerSameSession": true
+        }
+      },
+      "authorization": {
+        "by": [
+          "owner",
+          "milestone"
+        ]
+      }
+    }
+  ],
+  "coordinators": {
+    "small_project": [
+      {
+        "model": "luna",
+        "effort": "max"
+      },
+      {
+        "model": "opus_5",
+        "effort": "low"
+      }
+    ],
+    "project": [
+      {
+        "model": "sol",
+        "effort": "medium"
+      },
+      {
+        "model": "opus_5",
+        "effort": "medium"
+      }
+    ],
+    "framework": [
+      {
+        "model": "astra",
+        "effort": "low"
+      },
+      {
+        "model": "opus_5",
+        "effort": "xhigh"
+      }
+    ],
+    "milestone": [
+      {
+        "model": "astra",
+        "effort": "medium"
+      },
+      {
+        "model": "fable_5_1",
+        "effort": "medium"
+      },
+      {
+        "model": "opus_5",
+        "effort": "xhigh"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "lane": "simple_implementation",
+      "tier": "simple",
+      "role": "implementation"
+    },
+    {
+      "lane": "straightforward_plan",
+      "tier": "straightforward",
+      "role": "plan"
+    },
+    {
+      "lane": "feature_implementation",
+      "tier": "feature",
+      "role": "implementation"
+    },
+    {
+      "lane": "feature_deep_research",
+      "tier": "feature",
+      "role": "deep_research",
+      "note": "synthetic lane; the CLI exports no lanes"
+    },
+    {
+      "lane": "complex_implementation",
+      "tier": "complex",
+      "role": "implementation"
+    },
+    {
+      "lane": "complex_ui_ux",
+      "tier": "complex",
+      "role": "ui_ux"
+    },
+    {
+      "lane": "complex_documentation",
+      "tier": "complex",
+      "role": "documentation"
+    },
+    {
+      "lane": "architecture_plan",
+      "tier": "architecture",
+      "role": "plan"
+    },
+    {
+      "lane": "architecture_plan_evaluation",
+      "tier": "architecture",
+      "role": "plan_evaluation"
+    }
+  ],
+  "policy": {
+    "maxFallbackDepth": 2,
+    "ownerOverride": {
+      "evidence": [
+        "worklog"
+      ]
+    }
+  },
+  "placements": {
+    "backends": [
+      "lm-studio"
+    ],
+    "entries": [
+      {
+        "model": "synthetic-local",
+        "backend": "lm-studio",
+        "verdict": "runs",
+        "why": "synthetic evidence"
+      }
+    ]
+  }
+}

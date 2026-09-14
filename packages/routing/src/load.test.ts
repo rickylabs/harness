@@ -7,7 +7,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { describeLoadRefusal, loadRoutingConfiguration, parseRoutingDocument, type LoadOutcome } from "./load.js";
-import { MAX_DEPTH, MAX_DOCUMENT_BYTES, MAX_MEMBERS, validateRoutingConfiguration, type RoutingConfiguration } from "./schema.js";
+import type { RoutingDocument } from "./document.js";
+import { MAX_DEPTH, MAX_DOCUMENT_BYTES, MAX_MEMBERS, type RoutingConfiguration } from "./schema.js";
+import { laneRouting, validateRoutingConfiguration } from "./document.js";
 import { familyOf, pinnedModels, lanePolicy, maxFallbackDepth, tiers, isDeclaredEffort } from "./configuration.js";
 import { admitDispatch, describeAdmission, relayProfiles } from "./admit.js";
 import { checkPolicy, resolveFallback, tierPlan, toDispatch } from "./resolve.js";
@@ -16,7 +18,12 @@ import { checkEvaluator, type RunIdentity } from "./family.js";
 const pathA = fileURLToPath(new URL("../test-fixtures/compatibility.json", import.meta.url));
 const textA = await readFile(pathA, "utf8");
 function loaded(outcome: LoadOutcome) { assert.ok(outcome.ok, JSON.stringify(outcome)); return outcome.loaded; }
-const A = loaded(parseRoutingDocument(textA, "fixture-a")).configuration;
+function lanes1(document: RoutingDocument): RoutingConfiguration {
+  const narrowed = laneRouting(document);
+  assert.ok(narrowed.ok, JSON.stringify(narrowed));
+  return narrowed.configuration;
+}
+const A = lanes1(loaded(parseRoutingDocument(textA, "fixture-a")).configuration);
 /** Independent small matrix: no model, family, lane, effort, tier, profile or preset from A. */
 function documentB() {
   return {
@@ -40,7 +47,7 @@ function documentB() {
     policy: { maxFallbackDepth: 5 }, placements: { backends: ["lm-studio"], entries: [{ model: "writer-a", backend: "lm-studio", verdict: "runs", why: "synthetic evidence" }] },
   };
 }
-function config(value: unknown): RoutingConfiguration { const result = validateRoutingConfiguration(value); assert.ok(result.ok, JSON.stringify(result)); return result.configuration; }
+function config(value: unknown): RoutingConfiguration { const result = validateRoutingConfiguration(value); assert.ok(result.ok, JSON.stringify(result)); return lanes1(result.configuration); }
 const B = config(documentB());
 function refused(outcome: LoadOutcome, kind: string, code?: string, path?: string) {
   assert.ok(!outcome.ok); assert.equal(outcome.refusal.kind, kind);
@@ -97,7 +104,7 @@ describe("explicit document loader and identity", () => {
     assert.equal(result.source.schemaVersion, 1);
     assert.equal(result.source.bytes, Buffer.byteLength(textA));
     assert.equal(result.source.digest, `sha256:${createHash("sha256").update(textA).digest("hex")}`);
-    assert.deepEqual(checkPolicy(result.configuration), []); frozen(result);
+    assert.deepEqual(checkPolicy(lanes1(result.configuration)), []); frozen(result);
   });
   it("ships and resolves the actual document from an extracted npm package", async () => scratch(async directory => {
     const packageDirectory = fileURLToPath(new URL(".", new URL(import.meta.resolve("@rickylabs/routing/package.json"))));
@@ -196,13 +203,22 @@ describe("explicit document loader and identity", () => {
   for (const [text, code] of [["{", "not-json"], ["[]", "root-not-object"], ['"root"', "root-not-object"], ["null", "root-not-object"]]) {
     it(`refuses malformed document ${code}`, () => { refused(parseRoutingDocument(text!, "input"), "malformed", code); });
   }
-  for (const schemaVersion of [undefined, "1", 2, 1.5]) it(`keeps unsupported version distinct (${String(schemaVersion)})`, () => {
+  for (const schemaVersion of [undefined, "1", 3, -2, 1.5]) it(`keeps unsupported version distinct (${String(schemaVersion)})`, () => {
     const result = refused(validate({ ...documentB(), schemaVersion }), schemaVersion === undefined ? "invalid" : "unsupported-schema-version");
     // Missing is JSON absence, not the non-JSON undefined value accepted by this helper's input type.
     if (schemaVersion === undefined) {
       const value: Record<string, unknown> = documentB(); delete value.schemaVersion;
-      assert.deepEqual(refused(validate(value), "unsupported-schema-version"), { kind: "unsupported-schema-version", seen: null, supported: [1] });
-    } else assert.deepEqual(result, { kind: "unsupported-schema-version", seen: Number.isInteger(schemaVersion) ? schemaVersion : null, supported: [1] });
+      assert.deepEqual(refused(validate(value), "unsupported-schema-version"), { kind: "unsupported-schema-version", seen: null, supported: [1, 2] });
+    } else assert.deepEqual(result, { kind: "unsupported-schema-version", seen: Number.isInteger(schemaVersion) ? schemaVersion : null, supported: [1, 2] });
+  });
+  it("reads the version from the integer alone, never from the document's shape", () => {
+    // A version-1 shape claiming version 2 is `invalid`, not silently accepted or upgraded: the
+    // gate compares an integer, and a shape that does not match its own integer is a defect.
+    const raised = refused(validate({ ...documentB(), schemaVersion: 2 }), "invalid");
+    assert.ok("problems" in raised);
+    assert.ok(raised.problems.some(p => p.code === "missing-key" && "path" in p && p.path === "roles"));
+    assert.ok(raised.problems.some(p => p.code === "unknown-key"));
+    assert.equal(describeLoadRefusal({ kind: "unsupported-schema-version", seen: 3, supported: [1, 2] }), "unsupported-schema-version: seen 3; supported 1, 2");
   });
   it("rejects duplicate JSON model keys, including escaped equivalent names", () => {
     const raw = JSON.stringify(documentB()).replace('"writer-a":{"family":"alpha"}', '"writer-a":{"family":"alpha"},"writer-\\u0061":{"family":"beta"}');
@@ -213,8 +229,8 @@ describe("explicit document loader and identity", () => {
 describe("strict structural and invariant refusal", () => {
   // Mutations are independent defects of the document, not copies of validator branches.
   const cases: readonly [string, (v: any) => void, string, string][] = [
-    ["unknown root", v => { v.extra = 1; }, "unknown-key", "$"],
-    ["unknown nested step", v => { v.lanes[0].chain[0].extra = 1; }, "unknown-key", "lanes[0].chain[0]"],
+    ["unknown root", v => { v.extra = 1; }, "unknown-key", "$[14]"],
+    ["unknown nested step", v => { v.lanes[0].chain[0].extra = 1; }, "unknown-key", "lanes[0].chain[0][2]"],
     ["missing lanes", v => { delete v.lanes; }, "missing-key", "lanes"],
     ["empty families", v => { v.families = []; }, "empty", "families"],
     ["duplicate lane", v => { v.lanes.push(v.lanes[0]); }, "duplicate", "lanes[2].lane"],
@@ -255,6 +271,12 @@ describe("strict structural and invariant refusal", () => {
     ["constraint violated", v => { v.constraints.assemble = { why: "synthetic", models: ["relay-c"] }; }, "constraint-violated"],
   ];
   for (const [name, change, code] of invariants) it(name, () => { const v = documentB(); change(v); refused(validate(v), "invariant", code); });
+  it("reports an absent required key once, with no wrong-type twin at the same path", () => {
+    const v: Record<string, unknown> = documentB(); delete v.policy;
+    const result = refused(validate(v), "invalid"); assert.ok("problems" in result);
+    const atPolicy = result.problems.filter(p => "path" in p && p.path.startsWith("policy"));
+    assert.deepEqual(atPolicy, [{ code: "missing-key", path: "policy" }]);
+  });
   it("collects independent structural defects", () => {
     const v: any = documentB(); v.extra = true; v.policy.maxFallbackDepth = -1; v.lanes[0].chain[0].extra = 1;
     const result = refused(validate(v), "invalid"); assert.ok("problems" in result); assert.equal(result.problems.length, 3);
@@ -355,7 +377,7 @@ describe("whole replacement, project isolation and mutation resistance", () => {
 it("keeps configured credential-shaped names out of admission diagnostics too", () => {
   const secret = "sk-or-v1-" + "c".repeat(48);
   const raw = JSON.stringify(documentB()).replaceAll("writer-a", secret);
-  const configured = loaded(parseRoutingDocument(raw, "private-source")).configuration;
+  const configured = lanes1(loaded(parseRoutingDocument(raw, "private-source")).configuration);
   const admission = admitDispatch(configured, { harness: "codex", model: "unknown", effort: "one", prompt: "synthetic" }, { lane: "assemble" });
   assert.ok(!admission.ok);
   assert.ok(!JSON.stringify(admission).includes(secret)); assert.ok(!describeAdmission(admission).includes(secret));

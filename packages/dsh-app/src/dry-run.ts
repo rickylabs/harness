@@ -39,6 +39,15 @@ export interface DryRunPlan {
 }
 export type DriveRefusal =
   | { readonly kind: "routing-unusable"; readonly refusal: LoadRefusal }
+  /**
+   * The document loaded and this driver cannot use it.
+   *
+   * Distinct from `routing-unusable`, which means the document is not valid at all. A version-2
+   * fleet document is valid and carries tier-by-role cells; nothing here resolves a cell yet, so
+   * the driver refuses before it reads the store rather than misreading the document as a lane
+   * table and reporting a misleading admission problem.
+   */
+  | { readonly kind: "routing-unsupported"; readonly schemaVersion: 1 | 2; readonly requires: "lane-chains" | "fleet-cells" }
   | { readonly kind: "unresolved-prior-effect"; readonly status: "pending" | "unknown" }
   | { readonly kind: "store-refused"; readonly operation: "read"; readonly refusal: StoreRefusal }
   | { readonly kind: "source-unusable"; readonly detail: string }

@@ -1,4 +1,6 @@
 import { parseRoutingDocument } from "@rickylabs/routing";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { digest, MemoryStateStore } from "@rickylabs/coordinator";
@@ -171,6 +173,33 @@ for (const routing of [undefined, null, {}, { source: "fixture", text: "{" }, { 
   assert.ok(!outcome.drove && outcome.appended === 0);
   assert.ok(outcome.refusal.kind === "routing-unusable" || outcome.refusal.kind === "source-unusable");
   assert.equal(assembled, 0); assert.equal(attempted, 0); assert.equal(value(await handle.read()).lastEntry, 0);
+});
+test("a valid fleet document refuses before any store read, with no intent and no delivery", async () => {
+  const fleetText = await readFile(fileURLToPath(import.meta.resolve("@rickylabs/routing/package.json")).replace(/package\.json$/, "test-fixtures/fleet-shaped.v2.json"), "utf8");
+  // The document is valid: the loader accepts it, which is exactly why the driver must refuse it.
+  assert.ok(parseRoutingDocument(fleetText, "fixture-fleet").ok);
+  const { handle } = await memory();
+  let reads = 0; let assembled = 0; let attempted = 0;
+  const watched: StateStoreHandle = { ...handle, read: () => { reads += 1; return handle.read(); } };
+  const outcome = await driveSnapshot(watched, { ...base, routing: { source: "fixture-fleet", text: fleetText } },
+    { assembled: () => { assembled += 1; }, attempted: () => { attempted += 1; } });
+  assert.ok(!outcome.drove);
+  assert.equal(outcome.appended, 0);
+  assert.deepEqual(outcome.refusal, { kind: "routing-unsupported", schemaVersion: 2, requires: "lane-chains" });
+  assert.equal(reads, 0);
+  assert.equal(assembled, 0);
+  assert.equal(attempted, 0);
+  assert.equal(value(await handle.read()).lastEntry, 0);
+});
+test("an invalid fleet document is routing-unusable, which is a different refusal", async () => {
+  const fleetPath = fileURLToPath(import.meta.resolve("@rickylabs/routing/package.json")).replace(/package\.json$/, "test-fixtures/fleet-shaped.v2.json");
+  const document = JSON.parse(await readFile(fleetPath, "utf8"));
+  delete document.models.muse_spark_1_3.approvedRelayEvaluator;
+  const { handle } = await memory();
+  const outcome = await driveSnapshot(handle, { ...base, routing: { source: "fixture-fleet", text: JSON.stringify(document) } });
+  assert.ok(!outcome.drove && outcome.appended === 0);
+  assert.equal(outcome.refusal.kind, "routing-unusable");
+  assert.equal(value(await handle.read()).lastEntry, 0);
 });
 for (const orphaned of [false, true]) test(`memory protects unresolved operation across revisions and attempts (orphaned=${orphaned})`, async () => {
   const setup = await memory(); let handle = setup.handle;

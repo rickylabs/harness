@@ -3,8 +3,10 @@ import { HARNESSES, ROUTERS, type Harness, type Router } from "@rickylabs/subage
 import { types } from "node:util";
 import { checkPolicy } from "./resolve.js";
 import type { LoadRefusal } from "./load.js";
+import type { RoutingDocument } from "./document.js";
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSIONS = [1, 2] as const;
+export type SchemaVersion = (typeof SCHEMA_VERSIONS)[number];
 export const MAX_DOCUMENT_BYTES = 1024 * 1024;
 export const MAX_DEPTH = 16;
 export const MAX_MEMBERS = 4096;
@@ -126,7 +128,7 @@ export interface RoutingConfiguration {
 export type InvalidCode = "unknown-key" | "missing-key" | "wrong-type" | "empty" | "duplicate" |
   "dangling-reference" | "reserved-name" | "out-of-range" | "depth-exceeded" | "size-exceeded" | "not-plain-data";
 export interface InvalidProblem { readonly code: InvalidCode; readonly path: string }
-export type ValidationOutcome = { readonly ok: true; readonly configuration: RoutingConfiguration } |
+export type ValidationOutcome<T = RoutingDocument> = { readonly ok: true; readonly configuration: T } |
   { readonly ok: false; readonly refusal: LoadRefusal };
 
 /** Field paths contain schema-owned names and indices only, never dynamic keys. */
@@ -137,6 +139,13 @@ const STRUCTURAL_FIELDS = new Set([
   "certifies", "subscription", "effortEscalations", "condition", "note", "tiers", "tier", "implement", "review",
   "constraints", "transports", "harnesses", "why", "deepResearchLanes", "policy", "maxFallbackDepth",
   "placements", "backends", "entries", "backend", "verdict", "reason", "requires", "env", "args",
+  // Version 2 adds these schema-owned names. Every dynamic key (role, tier, scope, provider,
+  // model, capability, lane) stays outside this set and prints as its index.
+  "capabilities", "providers", "seam", "seams", "providerPrecedence", "launches", "provider", "id",
+  "effortSupport", "status", "supported", "unsupported", "roles", "evaluates", "restrictions",
+  "selection", "by", "otherwise", "cells", "loops", "maxRounds", "reSteerSameSession",
+  "notifyOwnerAfter", "escalateToOwnerAt", "repairInFlightAt", "authorization", "coordinators",
+  "ownerOverride", "evidence",
   "triggers", "routers", "laneAliases", "label", "implementation", "implementation_evaluation", "plan", "plan_evaluation",
 ]);
 export function fieldPath(parent: string, key: string, index: number): string {
@@ -188,33 +197,52 @@ export function deepFreeze<T>(value: T): T {
   return value;
 }
 
-/** Strict whole-document validation; no absent field is filled or bad record discarded. */
-export function validateRoutingConfiguration(value: unknown): ValidationOutcome {
-  const unsafe = plainDataProblem(value);
-  if (unsafe) return { ok: false, refusal: { kind: "invalid", problems: [unsafe] } };
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return { ok: false, refusal: { kind: "malformed", code: "root-not-object" } };
-  }
-  const root = value as Record<string, unknown>;
-  if (root.schemaVersion !== SCHEMA_VERSION) return { ok: false, refusal: {
-    kind: "unsupported-schema-version", seen: Number.isSafeInteger(root.schemaVersion) ? root.schemaVersion as number : null, supported: [SCHEMA_VERSION],
-  } };
+/**
+ * The field-check helpers both schema versions share.
+ *
+ * Two diagnostic rules live here so the two versions cannot drift apart (#272 box 5):
+ *
+ * 1. An unknown key is reported at `fieldPath(parent, key, index)`. A schema-owned name prints
+ *    as the name; any other key prints as its index among the object's own keys. A document key
+ *    is never rendered, because a credential-shaped key can match any identifier pattern.
+ * 2. A required key that is absent is reported once. Every helper skips a value whose own path
+ *    was already reported `missing-key`, or whose container could not be read, so an incomplete
+ *    document does not produce a second problem at the same path.
+ */
+export function validator() {
   const problems: InvalidProblem[] = [];
-  const add = (code: InvalidCode, path: string) => { problems.push({ code, path }); };
-  function obj(v: unknown, path: string, required: string[], optional: string[] = []): Record<string, unknown> {
-    if (typeof v !== "object" || v === null || Array.isArray(v)) { add("wrong-type", path); return {}; }
+  const unreadable = new Set<string>();
+  const add = (code: InvalidCode, path: string): void => { problems.push({ code, path }); };
+  /** True when this path was already reported absent or wrong-typed; its children stay silent. */
+  const skip = (v: unknown, path: string): boolean => v === undefined && unreadable.has(path);
+  /** Record every required child of a container that could not be read, so no child cascades. */
+  function unreachable(path: string, required: readonly string[]): Record<string, unknown> {
+    for (const key of required) unreadable.add(fieldPath(path, key, 0));
+    return {};
+  }
+  function obj(v: unknown, path: string, required: readonly string[], optional: readonly string[] = []): Record<string, unknown> {
+    if (skip(v, path)) return unreachable(path, required);
+    if (typeof v !== "object" || v === null || Array.isArray(v)) { add("wrong-type", path); return unreachable(path, required); }
     const o = v as Record<string, unknown>;
-    for (const key of required) if (!Object.hasOwn(o, key)) add("missing-key", fieldPath(path, key, 0));
-    for (const key of Object.keys(o)) if (![...required, ...optional].includes(key)) add("unknown-key", path);
+    for (const key of required) if (!Object.hasOwn(o, key)) {
+      const at = fieldPath(path, key, 0);
+      add("missing-key", at);
+      unreadable.add(at);
+    }
+    Object.keys(o).forEach((key, index) => {
+      if (!required.includes(key) && !optional.includes(key)) add("unknown-key", fieldPath(path, key, index));
+    });
     return o;
   }
   function str(v: unknown, path: string, pattern?: RegExp, nonempty = true): v is string {
+    if (skip(v, path)) return false;
     if (typeof v !== "string") { add("wrong-type", path); return false; }
     if (nonempty && !v.trim()) { add("empty", path); return false; }
     if (v.length > 4096 || (pattern && !pattern.test(v))) { add("out-of-range", path); return false; }
     return true;
   }
   function arr(v: unknown, path: string, nonempty = false): unknown[] {
+    if (skip(v, path)) return [];
     if (!Array.isArray(v)) { add("wrong-type", path); return []; }
     if (nonempty && !v.length) add("empty", path);
     return v;
@@ -235,10 +263,48 @@ export function validateRoutingConfiguration(value: unknown): ValidationOutcome 
   function ref(v: unknown, path: string, vocabulary: readonly string[]): void {
     if (str(v, path) && !vocabulary.includes(v)) add("dangling-reference", path);
   }
-  function records(v: unknown, path: string): Record<string, unknown> {
+  function records(v: unknown, path: string, nonempty = false): Record<string, unknown> {
+    if (skip(v, path)) return {};
     if (typeof v !== "object" || v === null || Array.isArray(v)) { add("wrong-type", path); return {}; }
-    return v as Record<string, unknown>;
+    const o = v as Record<string, unknown>;
+    // Emptiness is reported here, and only when an object was actually read, so a wrong-typed or
+    // absent container never also reports as empty.
+    if (nonempty && Object.keys(o).length === 0) add("empty", path);
+    return o;
   }
+  /**
+   * An integer at least `min`, or one of a closed set of words the document may carry instead.
+   *
+   * A string outside that set is `out-of-range` rather than `wrong-type`: the field lawfully holds
+   * a word, so the type is not the defect — the word is. No word is ever mapped onto a number.
+   */
+  function bounded(v: unknown, path: string, states: readonly string[] = [], min = 0): void {
+    if (skip(v, path)) return;
+    if (typeof v === "string") { if (!states.includes(v)) add("out-of-range", path); return; }
+    if (typeof v !== "number") { add("wrong-type", path); return; }
+    if (!Number.isSafeInteger(v) || v < min) add("out-of-range", path);
+  }
+  function bool(v: unknown, path: string): void {
+    if (skip(v, path)) return;
+    if (typeof v !== "boolean") add("wrong-type", path);
+  }
+  return { problems, add, obj, str, arr, strings, ref, records, bounded, bool };
+}
+export type Validator = ReturnType<typeof validator>;
+
+/**
+ * Version 1: strict whole-document validation; no absent field is filled or bad record discarded.
+ *
+ * The shared stages (plain-data walk, root object, version gate) run in `document.ts` before this
+ * is reached. The root-object guard below is the only concession to a direct caller, so one still
+ * gets a refusal rather than a throw.
+ */
+export function validateLaneConfiguration(value: unknown): ValidationOutcome<RoutingConfiguration> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return { ok: false, refusal: { kind: "malformed", code: "root-not-object" } };
+  }
+  const root = value as Record<string, unknown>;
+  const { problems, add, obj, str, arr, strings, ref, records } = validator();
   obj(root, "$", ["schemaVersion", "name", "families", "efforts", "purposes", "models", "profiles", "presets", "lanes", "tiers", "constraints", "deepResearchLanes", "policy", "placements"], ["provenance", "triggers", "routers", "laneAliases"]);
   str(root.name, "name", /^[a-z0-9][a-z0-9-]*$/);
   if (root.provenance !== undefined) str(obj(root.provenance, "provenance", ["description"]).description, "provenance.description");
@@ -330,7 +396,7 @@ export function validateRoutingConfiguration(value: unknown): ValidationOutcome 
     if (!Array.isArray(transports) || transports.length !== 1 || transports[0] !== "native") add("dangling-reference", `deepResearchLanes[${i}]`);
   });
   const policy = obj(root.policy, "policy", ["maxFallbackDepth"]);
-  if (!Number.isSafeInteger(policy.maxFallbackDepth) || (policy.maxFallbackDepth as number) < 0) add("out-of-range", "policy.maxFallbackDepth");
+  if (policy.maxFallbackDepth !== undefined && (!Number.isSafeInteger(policy.maxFallbackDepth) || (policy.maxFallbackDepth as number) < 0)) add("out-of-range", "policy.maxFallbackDepth");
   const placements = obj(root.placements, "placements", ["backends", "entries"]);
   const backends = strings(placements.backends, "placements.backends");
   backends.forEach((b, i) => str(b, `placements.backends[${i}]`, /^[a-z][a-z0-9-]{0,31}$/));

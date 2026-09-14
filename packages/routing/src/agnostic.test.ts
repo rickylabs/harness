@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import { describe, it } from "node:test";
 import { HARNESSES, ROUTERS, parseSwarm, renderSwarm, toDispatchRequest } from "@rickylabs/subagents";
 import { parseRoutingDocument } from "./load.js";
-import { validateRoutingConfiguration, FALLBACK_TRIGGERS, TRANSPORTS, type RoutingConfiguration } from "./schema.js";
+import { FALLBACK_TRIGGERS, TRANSPORTS, type RoutingConfiguration } from "./schema.js";
+import { validateRoutingConfiguration, laneRouting } from "./document.js";
 import { canonicalLane, familyOf, lanePolicy, laneConstraint, tierRoleLane } from "./configuration.js";
 import { checkPolicy, resolveRoute, resolveTierRole, resolveFallback, tierPlan, toDispatch, unreviewedSteps } from "./resolve.js";
 import { admitDispatch } from "./admit.js";
@@ -15,7 +16,9 @@ const fixture = () => JSON.parse(fixtureText);
 function accepted(value: unknown): RoutingConfiguration {
   const result = validateRoutingConfiguration(value);
   assert.ok(result.ok, JSON.stringify(result));
-  return result.configuration;
+  const lanes = laneRouting(result.configuration);
+  assert.ok(lanes.ok);
+  return lanes.configuration;
 }
 const C = accepted(fixture());
 
@@ -169,7 +172,8 @@ describe("owner-controlled routing: resolution and editor export", { timeout: 50
 it("the shipped document satisfies invariants independent of model identities", { timeout: 5000 }, async () => {
   const text = await readFile(new URL("../config/routing.v1.json", import.meta.url), "utf8");
   const outcome = parseRoutingDocument(text, "shipped-document"); assert.ok(outcome.ok);
-  const c = outcome.loaded.configuration;
+  const lanes = laneRouting(outcome.loaded.configuration); assert.ok(lanes.ok);
+  const c = lanes.configuration;
   assert.deepEqual(checkPolicy(c), []);
   for (const l of c.lanes) {
     const primaries = l.chain.filter(s => s.when.length === 0);

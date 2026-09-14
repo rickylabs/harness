@@ -1,10 +1,14 @@
 import { loadRoutingConfiguration } from "./load.js";
+import { laneRouting } from "./document.js";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 const loadedA = await loadRoutingConfiguration({ path: fileURLToPath(new URL("../test-fixtures/compatibility.json", import.meta.url)) });
 assert.ok(loadedA.ok);
-const A = loadedA.loaded.configuration;
+// A version-2 document cannot reach a version-1 function: `laneRouting` is the only way in.
+const narrowedA = laneRouting(loadedA.loaded.configuration);
+assert.ok(narrowedA.ok);
+const A = narrowedA.configuration;
 
 
 import { checkEvaluator, type RunIdentity } from "./family.js";

@@ -3,6 +3,8 @@ export const PACKAGE_NAME = "@rickylabs/routing" as const;
 export type PackageName = typeof PACKAGE_NAME;
 
 export * from "./schema.js";
+export * from "./document.js";
+export * from "./fleet.js";
 export * from "./load.js";
 export * from "./configuration.js";
 

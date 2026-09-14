@@ -266,7 +266,9 @@ export type PolicyCode = "self-certifies" | "evaluation-without-certifies" | "ce
   "relay-evaluator-unapproved" | "first-step-not-primary" | "duplicate-primary" | "no-primary" |
   "opencode-without-router" | "router-outside-opencode" | "relay-without-profile" |
   "escalation-not-raising" | "escalation-not-comparable" | "constraint-violated" | "tier-unresolved" |
-  "unreviewed-step" | "duplicate-lane" | "lane-unrouted" | "tier-role-purpose" | "evaluation-without-generator";
+  "unreviewed-step" | "duplicate-lane" | "lane-unrouted" | "tier-role-purpose" | "evaluation-without-generator" |
+  // Version 2 only. checkFleetPolicy owns these, not the lane-chain validator.
+  "no-independent-evaluator" | "capability-unsatisfied" | "effort-unsupported";
 export interface PolicyProblem {
   readonly code: PolicyCode;
   readonly lane: string;

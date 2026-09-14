@@ -2,8 +2,9 @@
 import { createHash } from "node:crypto";
 import { open } from "node:fs/promises";
 import { constants } from "node:fs";
-import { deepFreeze, fieldPath, MAX_DEPTH, MAX_DOCUMENT_BYTES, validateRoutingConfiguration } from "./schema.js";
-import type { InvalidProblem, RoutingConfiguration } from "./schema.js";
+import { deepFreeze, fieldPath, MAX_DEPTH, MAX_DOCUMENT_BYTES, SCHEMA_VERSIONS } from "./schema.js";
+import { validateRoutingConfiguration, type RoutingDocument } from "./document.js";
+import type { InvalidProblem, SchemaVersion } from "./schema.js";
 import type { PolicyProblem } from "./resolve.js";
 
 const MAX_SOURCE_ID_BYTES = 4096;
@@ -11,12 +12,13 @@ const MAX_SOURCE_ID_BYTES = 4096;
 export type LoadRefusal =
   | { readonly kind: "unreadable"; readonly code: "absent" | "not-a-file" | "permission" | "too-large" }
   | { readonly kind: "malformed"; readonly code: "not-json" | "not-utf8" | "root-not-object" }
-  | { readonly kind: "unsupported-schema-version"; readonly seen: number | null; readonly supported: readonly [1] }
+  | { readonly kind: "unsupported-schema-version"; readonly seen: number | null; readonly supported: readonly [1, 2] }
   | { readonly kind: "invalid"; readonly problems: readonly InvalidProblem[] }
   | { readonly kind: "invariant"; readonly problems: readonly PolicyProblem[] };
 export interface LoadedRoutingConfiguration {
-  readonly configuration: RoutingConfiguration;
-  readonly source: { readonly id: string; readonly digest: string; readonly bytes: number; readonly schemaVersion: 1; readonly name: string };
+  /** Either version. `source.schemaVersion` records which, and the narrowers are the only way in. */
+  readonly configuration: RoutingDocument;
+  readonly source: { readonly id: string; readonly digest: string; readonly bytes: number; readonly schemaVersion: SchemaVersion; readonly name: string };
 }
 export type LoadOutcome = { readonly ok: true; readonly loaded: LoadedRoutingConfiguration } | { readonly ok: false; readonly refusal: LoadRefusal };
 
@@ -117,6 +119,6 @@ export async function loadRoutingConfiguration({ path }: { readonly path: string
 
 export function describeLoadRefusal(refusal: LoadRefusal): string {
   if ("code" in refusal) return `${refusal.kind}: ${refusal.code}`;
-  if (refusal.kind === "unsupported-schema-version") return `${refusal.kind}: seen ${refusal.seen ?? "unknown"}; supported 1`;
+  if (refusal.kind === "unsupported-schema-version") return `${refusal.kind}: seen ${refusal.seen ?? "unknown"}; supported ${SCHEMA_VERSIONS.join(", ")}`;
   return `${refusal.kind}: ${refusal.problems.map(p => "path" in p ? `${p.code} at ${p.path}` : `${p.code} at ${p.lane}${p.index === undefined ? "" : `.chain[${p.index}]`}`).join("; ")}`;
 }
