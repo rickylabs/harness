@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **247/316 done · 20 running · 24 queued · 6 blocked · 15 abandoned · 4 invisible**
+`[###############-----]` **248/316 done · 20 running · 24 queued · 6 blocked · 15 abandoned · 3 invisible**
 
-_Latest board activity: 2026-09-14T01:44:26Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T01:49:20Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (6)
 
@@ -54,13 +54,9 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [PR324 doctrine: add principle 12, an absence needs a reachability list](https://github.com/rickylabs/harness/pull/324) | — | — |
 
-## Anomalies (4)
+## Anomalies (3)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-without-status`**
-
-- **#327** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -97,13 +93,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 55/74 done · 4 queued · 3 blocked · 9 abandoned · 3 invisible
+`[#########---]` 56/74 done · 4 queued · 3 blocked · 9 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/1 done · 1 blocked | `triage` |
-| _(no epic)_ | `[########----]` 50/67 done · 4 queued · 1 blocked · 9 abandoned · 3 invisible | — |
+| _(no epic)_ | `[#########---]` 51/67 done · 4 queued · 1 blocked · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -145,7 +141,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  247/316 done · 20 running · 24 queued · 6 blocked · 15 abandoned · 4 invisible
+# rickylabs/harness  [###############-----]  248/316 done · 20 running · 24 queued · 6 blocked · 15 abandoned · 3 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -426,7 +422,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [##############------]  55/74 done · 4 queued · 3 blocked · 9 abandoned · 3 invisible
+## (no milestone)  [###############-----]  56/74 done · 4 queued · 3 blocked · 9 abandoned · 2 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -507,7 +503,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            PR324 doctrine: add principle 12, an absence needs a reachability list
     shipped              PR325 fix(gates): give three aggregates a third state so none reports a verdict it has not earned
     shipped              PR326 fix(telemetry): make the Claude backfill say which types it chose not to read
-    no status            PR327 fix(gates): stop the stage runner reporting a killed stage as a failed one
+    shipped              PR327 fix(gates): stop the stage runner reporting a killed stage as a failed one
     triage               #328 Three unrecognised envelope types on a real Codex store, one at 17304 occurrences, and the reader says that means a class of record is going unread (p3)
 ```
 
