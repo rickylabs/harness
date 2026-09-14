@@ -7,7 +7,7 @@ an architecture amendment. Tracking issue: #355.
 
 The alpha prerequisite is the separate Orchid #3 registration fix, stacked on Orchid #2.
 Both remain subject to owner merge authorization. Harness #317 and #345 were merged by the
-coordinator; #353 is ready and tracks its source contract under #354. The coordinator owns
+coordinator; #353 was also merged and tracks its source contract under #354. The coordinator owns
 the live issue 316 / leaf dispatch. This proposal adds no runtime or live acceptance claim.
 
 The mailbox stays a pilot under #349. The next implementation slice must start from its

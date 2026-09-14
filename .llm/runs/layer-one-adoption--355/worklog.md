@@ -13,3 +13,6 @@ divybot dispatch, the two seams and the UHP park. Product durable runners remain
 Validation: all 18 local RFC references resolved and all 10 required format fields were
 present. git diff --check passed. These are documentation checks, not runtime or independent
 implementation evaluation. No additional product tests are claimed for this proposal.
+
+The coordinator subsequently merged #353 with green CI. This ships the source collection;
+publication, explicit runtime bindings and live acceptance remain distinct proof steps.
