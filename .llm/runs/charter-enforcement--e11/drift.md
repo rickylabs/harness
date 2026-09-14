@@ -13,3 +13,12 @@ implementation or dual-agent promotion is part of that slice. The complex/archit
 remains draft. Requested a primary GLM 5.3 feature plan review through issue 340 after a fresh
 matrix query and exact brief readback. This review-dispatch issue is the charter-mandated path
 for obtaining the pre-implementation gate; it is not dispatch of unreviewed product work.
+
+2026-09-14 — I4 plan review corrected both required Node imports, removed a nonexistent lane-state
+field, made schema-1 blocked-leaf refusal explicit, and fixed leaf-reference precedence. The locked
+plan is in the isolated implementation PR 345; this draft remains historical.
+
+2026-09-14 — The initial I1 reviewer timed out after a pinned PASS but before the final test/doc
+review. Reused-session steering had been attempted; the dispatcher then reported teardown. A fresh
+matrix-selected evaluator in issue 346 now owns the remaining exact-head review. Earlier verdicts
+are retained at their original hashes, never relabeled as final-head passes.

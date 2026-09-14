@@ -96,3 +96,28 @@ The counterpart later confirmed that the proposed same-family evaluation had bee
 and that no charter amendment supported it. It also clarified that the four suggested mailbox
 properties were peer recommendations, not an owner decision. The draft retains owner fork 1;
 no promotion or altered independence rule is ratified here.
+
+## Wake and liveness follow-up
+
+Observed 2026-09-14: source inspection of the installed helpers found no wake or notification
+operation (research.md, Dual-agent observation). The counterpart subsequently reported three
+terminated background watchers, the last about one minute after starting, and said its answers
+were written only when another channel woke it. Those are peer runtime reports, not independently
+observed process receipts. Its claim that host policy caused the terminations is an inference;
+free-memory observations do not establish that cause. No cause is promoted to a measured fact.
+
+A successful file append therefore proves local enqueue only. The current helper contract supplies
+no bounded wake or reply latency. Existing answer timestamps demonstrate completed exchanges,
+not continuous reader availability. A proposed adapter must either expose an evidenced wake result
+and recipient-observed acknowledgement or explicitly report wake unsupported. A last-seen marker
+can show a past read; it cannot prove the counterpart is currently listening.
+
+Current recommendation for owner fork 1: retain the pilot and its sanitized evidence; do not promote
+these helpers as a supported request channel yet. Test durable identities, per-question completion,
+replay after replacement/restart, and wake/acknowledgement before a thin adapter is ratified. The
+future adapter still consumes cockpit's authoritative event contract; no separate queue, dispatch
+mechanism or decision ledger is justified by this trial.
+
+The initial withdrawn request did launch: issue 340 later received the evaluator's stand-down
+acknowledgement. This corrects the earlier observation cutoff, not the original withdrawal record.
+No useful evaluation was accepted from it. The mailbox miss had a real dispatch consequence.

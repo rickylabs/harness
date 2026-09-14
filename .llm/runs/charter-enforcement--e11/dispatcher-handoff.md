@@ -51,4 +51,4 @@ This is the reached source inventory, not evidence about a deployed binary or ot
 
 The local receipt checker will prove only schema/verdict behavior. All-launcher enforcement,
 receipt-to-spawn completeness and deployed reachability remain unproven until these tests and
-a controlled real issue launch execute. No dispatch-trigger label was applied in this work.
+a controlled real issue launch execute. Evaluation requests used the existing dispatcher. None exercised a new matrix hook or proves deployed integration.

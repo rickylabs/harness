@@ -1,20 +1,28 @@
 # Context pack
 
-I1 plan evaluation is admissible and its nine narrow fixes are incorporated. Implementation
-is in PR 342 at source 495b815; local gates and CI passed, independent source review is on issue
-343. The reviewer has independently corroborated native command/model selection; applied effort
-remains unknown. See `plan-eval.md` and the implementation run linked from PR 342.
+Two implementation slices are published: I1 receipt checks in PR 342 at a8ecf95 and I4 blocked
+decisions in PR 345 at 1dd60db. Both passed local typecheck/build/test. I1 CI passed at its current
+head. Independent final evaluation is assigned to issue 346 with separate verdicts per slice.
 
-I4 has a concrete independent draft in `i4-plan.md`; no I4 source has changed. Before-spawn
-integration remains the upstream handoff in `dispatcher-handoff.md`, not a deployed change.
-Profiles are present and remain markdown. Dual-agent promotion is still owner fork 1.
+I1's independent source evaluator found the symlink entry guard false green at 495b815 and passed
+the repair at 2662860. The final tests/docs delta addresses both nonblocking recommendations.
+The original reviewer timed out before reading that delta; its PASS remains pinned to 2662860.
+Issue 346 replaces the unavailable session, not its evidence. I4's independent plan review 344
+passed after four bounded corrections; those are incorporated in the implementation plan.
 
-Review request 340 was withdrawn; its running evaluator subsequently acknowledged stand-down
-on the issue and performed no evaluation. That is a session acknowledgement, not proof of OS
-teardown. The native plan review on 341 produced the accepted content and admissibility update.
-The source-review row selects native Opus fallback; it is not the plan-review Fable row.
+Before-spawn integration remains the upstream handoff in dispatcher-handoff.md, not a deployed
+change. Profiles are present and remain markdown. No all-launcher I1–I3 completion is claimed.
+Dual-agent promotion is still owner fork 1. The pilot recovered useful history but exposed no
+reliable wake, correlation, acknowledgement or replay mechanism; no efficiency gain is measured.
 
-NetScript MCP live-service discovery returned no services because its Aspire discovery reported
-project_root_mismatch and other sources were absent. `list_service_operations` for cockpit-api
-therefore returned service_unknown. That is a discovery limitation, not evidence the API has
-no handlers. No event schema or endpoint was invented; proposed consultation events remain draft.
+Review request 340 was withdrawn; its evaluator later acknowledged stand-down without evaluating.
+A self-reported stand-down is not OS teardown evidence. Plan review 341 supplied the accepted I1
+content and admissibility reassessment. The native feature implementation row selects Opus, not
+Fable. Preserve unknown applied effort and requested role/tier in every evaluator receipt.
+
+NetScript MCP service discovery returned no services because its discovery reported project-root
+mismatch and other sources were absent. Cockpit operations could not be discovered. That is not
+proof of an absent API. No endpoint or event schema was invented; consultation event names are draft.
+
+Outstanding: final independent verdicts, supervisor sign-off, I4 CI, actual divybot integration
+ownership/plan and live acceptance, and the owner's separate dual-agent promotion decision.

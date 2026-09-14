@@ -61,3 +61,23 @@ readback; native model/transport were corroborated externally, with applied effo
 The original withdrawn reviewer acknowledged stand-down on 340. Prepared the separate I4 plan.
 NetScript service discovery could not establish the cockpit event contract (project-root
 mismatch); retained proposed event vocabulary as draft rather than hand-rolling an endpoint.
+
+2026-09-14: I1 source PR 342 passed independent review at 2662860 after a symlink-entry false-green
+repair. Final test/doc improvements at a8ecf95 address escaped duplicates through the actual CLI,
+malformed symlink input, trim/BOM wording, and non-adjacent root stage membership. CI passed at the
+final head. Original source reviewer 343 timed out before the delta review; fresh feature matrix
+query and exact brief readback preceded dispatch 346, a replacement session with separate I1/I4
+verdicts. This is the third I1 source-evaluation round; the counterpart was notified of the timeout
+and final-review requirement. No author sign-off.
+
+2026-09-14: Independent I4 plan review 344 returned PASS AFTER NARROW FIXES. External observation
+corroborated native Fable model/transport; effort remains unknown. All corrections landed before
+source mutation. PR 345 isolates the implementation at 1dd60db, with 20 full-validator tests and
+15 failures when the I4 call is removed. Restored tests, typecheck/build/full test all pass locally.
+The draft i4-plan.md remains historical; the locked corrected plan is in PR 345.
+
+2026-09-14: Counterpart reported that all three attempted watchers terminated and ordinary file
+writes did not wake it. Recorded the reports and their limits in dual-agent.md. Retained pilot-only
+recommendation; a memory observation cannot establish host policy as the cause. Asked the
+counterpart to identify upstream divybot integration ownership and the eventual supervisor; no
+assignment or sign-off is inferred from silence.
