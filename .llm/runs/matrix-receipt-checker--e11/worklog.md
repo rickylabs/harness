@@ -26,3 +26,5 @@ a real CLI escaped-duplicate fixture and precise ECMAScript trimming/BOM documen
 symlink regression now checks malformed input as well. Sixteen tests pass; bypassing only CLI
 duplicate detection while preserving JSON error classification makes exactly the new CLI
 regression fail (15 pass, one fail). Restored the code. Final exact-head review remains pending.
+
+The independent I4 plan review (issue 344, comment 5661244447) identified that adjacency in the receipt-stage wiring assertion would reject another legitimate named stage. Assert stage membership instead; the exact receipt command assertion remains. This permits the separately reviewed I4 gate without coupling the two suites.

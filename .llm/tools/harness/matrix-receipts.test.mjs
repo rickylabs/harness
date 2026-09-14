@@ -208,6 +208,6 @@ test("hostile values, keys and malformed input are never echoed by the CLI", (t)
 
 test("the root CI aggregate reaches this suite as an explicit named stage", () => {
   const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-  assert.match(manifest.scripts.test, /check:test-scripts check:receipts test:packages/);
+  assert.ok(manifest.scripts.test.split(/\s+/).includes("check:receipts"));
   assert.equal(manifest.scripts["check:receipts"], "node --test .llm/tools/harness/matrix-receipts.test.mjs");
 });
