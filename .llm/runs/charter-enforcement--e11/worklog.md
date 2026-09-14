@@ -125,3 +125,14 @@ configuration grants routing authority.
 There is no separate unanswered set of three questions. The owner confirms the mailbox did not
 contain these answers because they were never placed there. This reply is the authority; no
 mailbox wait remains. The mailbox pilot and issue/RFC brainstorm remain separate and undecided.
+
+## Owner-requested PR345 reconciliation
+
+Merged current main 55083b5 into the PR branch without rewriting published history. The package
+script conflict now retains both main’s matrix receipt gate and this PR’s blocked-decision
+cluster gate in the aggregate test command. Full checks run against this combined result.
+This update does not record or impersonate the owner’s supervisor sign-off.
+
+PR345 combined-head validation passed: offline install, workspace typecheck, all build gates,
+and the full test aggregate including both receipt and cluster gates plus installed-consumer
+checks. No force-push is needed; the reconciliation preserves both histories.

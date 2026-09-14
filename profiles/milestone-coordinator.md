@@ -109,3 +109,6 @@ cached result. Then it takes **one writer lease** for that content and publishes
 Cleanup of run directories happens only on an explicit owner ruling. Nothing is removed without
 the explicit apply flag. These directories are committed on purpose: they are how the next agent
 recovers context that no chat transcript survives to carry.
+
+Blocked lanes and leaves must satisfy the [open-decision snapshot rule](../docs/reference/blocked-decisions.md).
+The cluster validator checks the reference; cockpit owns durable decision authority.
