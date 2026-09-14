@@ -30,7 +30,7 @@ import {
   type PersistedDecision,
 } from "./journal.js";
 import { admit, parseStates, planOf, statesOf } from "./plan.js";
-import { recordOf, telemetryLine } from "./record.js";
+import { admitTelemetryLine, planOutcome, planTelemetryLine, recordOf, telemetryLine } from "./record.js";
 import {
   renderComparison,
   renderDecision,
@@ -111,7 +111,8 @@ options:
   --run <id>         the run this decision belongs to, for the record
   --at <iso>         timestamp on the record, so a replay is byte-identical
   --json             the record as JSON instead of prose
-  --event            one JSONL line for "dsh-telemetry record"
+  --event            evaluator/plan/admit: one JSONL line for "dsh-telemetry
+                     record". Needs --run. A usage error on any other command.
   --journal <path>   evaluator/plan: append the decision and its inputs here
                      replay: the journal to re-run
   --before <path>    diff: the journal to compare from
@@ -177,6 +178,26 @@ interface Flags {
   readonly after: string | null;
   readonly help: boolean;
   readonly rest: readonly string[];
+}
+
+/** The subcommands that reach a decision worth recording. Everything else refuses `--event`. */
+export const EVENT_COMMANDS: ReadonlySet<string> = new Set(["evaluator", "plan", "admit"]);
+
+/**
+ * Why `--event` cannot be honoured, or null when it can.
+ *
+ * One place, and pure, because this was three copies of the same condition in three subcommands and
+ * a fourth subcommand that had none — which is how `plan --event` came to accept the flag, print
+ * prose, and hand a dispatcher's pipeline nothing to record. A rule enforced in each command
+ * separately is a rule that is missing wherever nobody remembered it.
+ */
+export function eventFlagProblem(command: string, event: boolean, run: string | null): string | null {
+  if (!event) return null;
+  if (!EVENT_COMMANDS.has(command)) {
+    return `--event is not available on ${command}: only ${[...EVENT_COMMANDS].join(", ")} produce a recordable decision`;
+  }
+  if (run === null) return "--event needs --run: an event with no run is not attached to anything";
+  return null;
 }
 
 export function parseFlags(argv: readonly string[]): Flags {
@@ -323,10 +344,6 @@ function policies(): number {
 }
 
 async function evaluator(flags: Flags): Promise<number> {
-  if (flags.event && flags.run === null) {
-    process.stdout.write("--event needs --run: an event with no run is not attached to anything\n");
-    return EXIT.usage;
-  }
   if (flags.roster === null && process.stdin.isTTY === true) {
     process.stdout.write("no --roster and nothing on stdin — give a roster file or pipe one in\n");
     return EXIT.usage;
@@ -446,7 +463,13 @@ async function plan(flags: Flags): Promise<number> {
     }
   }
 
-  process.stdout.write(flags.json ? `${JSON.stringify(computed, null, 2)}\n` : `${renderPlan(computed)}\n`);
+  if (flags.event) {
+    process.stdout.write(`${planTelemetryLine(flags.run ?? flags.workflow.name, flags.at, computed)}\n`);
+  } else if (flags.json) {
+    process.stdout.write(`${JSON.stringify(computed, null, 2)}\n`);
+  } else {
+    process.stdout.write(`${renderPlan(computed)}\n`);
+  }
   for (const note of parsed.notes) process.stderr.write(`state: ${note}\n`);
 
   if (unrecorded !== null) {
@@ -455,9 +478,10 @@ async function plan(flags: Flags): Promise<number> {
     return EXIT.failed;
   }
 
-  if (computed.complete) return EXIT.ok;
-  if (computed.forks.length > 0 || computed.blocked.length > 0) return EXIT.blocked;
-  return computed.runnable.length > 0 ? EXIT.ok : EXIT.blocked;
+  // Both the exit code and the event read the same outcome, so a recorded line cannot contradict
+  // the status a caller branched on.
+  const outcome = planOutcome(computed);
+  return outcome === "complete" || outcome === "runnable" ? EXIT.ok : EXIT.blocked;
 }
 
 /**
@@ -480,7 +504,9 @@ async function admitCommand(flags: Flags): Promise<number> {
   }
 
   const admission = admit(flags.workflow, parsed.states, flags.step);
-  if (flags.json) {
+  if (flags.event) {
+    process.stdout.write(`${admitTelemetryLine(flags.run ?? flags.workflow.name, flags.at, admission)}\n`);
+  } else if (flags.json) {
     process.stdout.write(`${JSON.stringify(admission, null, 2)}\n`);
   } else if (admission.admitted) {
     process.stdout.write(`admitted: ${admission.step} — ${admission.because}\n`);
@@ -638,7 +664,12 @@ export async function main(argv: readonly string[]): Promise<number> {
     return EXIT.ok;
   }
 
-  const command = flags.rest[0];
+  const command = String(flags.rest[0]);
+  const eventProblem = eventFlagProblem(command, flags.event, flags.run);
+  if (eventProblem !== null) {
+    process.stdout.write(`${eventProblem}\n`);
+    return EXIT.usage;
+  }
   if (command === "evaluator") return await evaluator(flags);
   if (command === "policies") return policies();
   if (command === "workflow") return workflowCommand(flags);
