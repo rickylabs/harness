@@ -58,12 +58,12 @@ interface Line {
 }
 
 /**
- * The record types this store was observed to contain.
+ * The record types this parser reads and lets move the session clock.
  *
  * This is a census, not a specification: it is what a scan of the local store actually found, and
- * the CLI is free to add to it tomorrow. That is precisely why an unrecognised type produces a note
- * instead of being ignored — the note is the signal to come back and extend this list, and until
- * someone does, an unread record is visibly unread rather than quietly absent.
+ * the CLI is free to add to it tomorrow. That is precisely why a type in neither this list nor
+ * {@link OBSERVED_UNREAD_TYPES} produces a note — the note is the signal to come back and
+ * re-census, and until someone does, an unread record is visibly unread rather than quietly absent.
  */
 export const KNOWN_TYPES: ReadonlySet<string> = new Set([
   "assistant",
@@ -77,6 +77,54 @@ export const KNOWN_TYPES: ReadonlySet<string> = new Set([
   "queue-operation",
   "system",
   "user",
+]);
+
+/**
+ * Types the store was observed to contain that this parser deliberately does not read, with the
+ * reason for each. Being skipped is a decision recorded here, not an oversight, and separating
+ * these from genuinely unheard-of types is the whole point of the split.
+ *
+ * Without this list every one of these produced a note, and a note means "something this package
+ * could not read". `ai-title` alone appears about nine thousand times in the census below, so the
+ * parser was reporting ordinary traffic as degradation. The test suite already states the cost of
+ * that: notes for ordinary traffic are the fastest way to teach an operator to ignore them.
+ *
+ * None of these can understate `updatedAt`, and that is now structural rather than lucky. Twelve of
+ * the thirteen carry no timestamp field at all, so there is nothing for a clock to read. The
+ * thirteenth, `file-history-delta`, carries one alongside a `messageId`: it is metadata anchored to
+ * a message record that this parser already reads, so its time is derivative and letting it move
+ * the clock independently would add nothing while risking a claim about activity nobody parsed.
+ *
+ * Re-censused 2026-09-14 over 445 transcripts. The shape of a store is the input, not a constant:
+ * this census shares only two types with the one taken while shipping #246, and the three that
+ * census led with — `frame-link`, `artifact-autoreact-ledger`, `artifact-comment-monitor` — are
+ * absent here entirely. Re-census before trusting the counts.
+ *
+ *     ai-title                9193    permission-mode          8375
+ *     agent-name              1991    file-history-snapshot     1440
+ *     relocated               1139    worktree-state            1139
+ *     file-history-delta       575    cost-state                 163
+ *     started                   58    result                      47
+ *     fork-context-ref          10    launched                     5
+ *     failed                     2
+ *
+ * 100 of those 445 transcripts end on one of these records. None of the types that appeared at a
+ * tail carries a timestamp, so none of them could have understated a run's last activity.
+ */
+export const OBSERVED_UNREAD_TYPES: ReadonlyMap<string, string> = new Map([
+  ["agent-name", "no timestamp field; names a subagent, not an activity"],
+  ["ai-title", "no timestamp field; a generated session title"],
+  ["cost-state", "no timestamp field; carries startTime and totals, not an activity instant"],
+  ["failed", "no timestamp field; a subagent outcome keyed by agentId"],
+  ["file-history-delta", "timestamp is derivative; anchored by messageId to a record already read"],
+  ["file-history-snapshot", "no timestamp field; keyed by messageId"],
+  ["fork-context-ref", "no timestamp field; a pointer to a forked context"],
+  ["launched", "no timestamp field; carries nothing but its own type"],
+  ["permission-mode", "no timestamp field; records a mode, not an activity"],
+  ["relocated", "no timestamp field; records a changed cwd"],
+  ["result", "no timestamp field; a subagent outcome keyed by agentId"],
+  ["started", "no timestamp field; a subagent lifecycle marker keyed by agentId"],
+  ["worktree-state", "no timestamp field; records a worktree association"],
 ]);
 
 /** An unrecognised record type, as it appears in a note. */
@@ -152,7 +200,10 @@ export function parseClaudeTranscript(
     // `updatedAt` is a claim about when its agent last did something, and an unread record is not
     // evidence of that. Finding F-9 on #105.
     const known = typeof line.type === "string" && KNOWN_TYPES.has(line.type);
-    if (!known) tally.bump(unknownTypeNote(line.type));
+    // A note means this package could not read something. A type recorded in OBSERVED_UNREAD_TYPES
+    // is one it chose not to read, which is not the same claim and must not be reported as one.
+    const expectedUnread = typeof line.type === "string" && OBSERVED_UNREAD_TYPES.has(line.type);
+    if (!known && !expectedUnread) tally.bump(unknownTypeNote(line.type));
 
     const at = str(line.timestamp);
     if (at !== null && known) {
