@@ -107,8 +107,9 @@ means, and the three places the coordinator reads it — so this file does not r
 These four were ratified in the *Decisions taken* table of
 [#30](https://github.com/rickylabs/harness/issues/30), which
 [`ARCHITECTURE.md`](ARCHITECTURE.md) supersedes. Where the two differ, the charter wins. Two of
-the four still hold unchanged, one is now scoped to parked work, and one is superseded outright —
-each is marked below.
+the four still hold unchanged, one is now scoped to parked work, and one is superseded on its first
+clause only — each is marked below, and the marking is the authority. This sentence is a summary of
+the list and cannot be checked against it by anything, so where the two disagree, believe the list.
 
 They remain **not** owner forks and not open questions: do not re-derive them and do not design
 against them. If evidence contradicts one, [`ARCHITECTURE.md`](ARCHITECTURE.md) §13 is the
