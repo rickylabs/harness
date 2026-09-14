@@ -490,3 +490,41 @@ before/after changes in trusted local storage, not hostile ABA changes or an ato
 snapshot. This document released in 0.3.0 (receipt under
 [Releasing](#releasing)); packed synthetic gates do not establish real-source or downstream
 API/client compatibility — real-source acceptance remains a separately authorized coordinator gate.
+
+## Per-issue agent observations
+
+`readAgentObservations(value)` is the exported decoder for the `agentObservations` member of
+`dsh-telemetry runs --json`. It accepts schema 1 / protocol 1. The collection is bounded by
+`MAX_AGENT_OBSERVATIONS` (256 records) and `MAX_AGENT_OBSERVATION_BYTES` (1 MiB normalized
+encoded data). Consumers must also bound command/HTTP bytes before parsing JSON. Decode the
+whole collection **before** selecting a repository and issue; filtering first can hide a missing
+parent, conflicting assignment or truncated tree. Both limits are enforced by the decoder.
+
+Successful reads return `{ok: true, observation}` with owned normalized data. Failures return
+only `{ok: false, reason}`: `unsupported-schema`, `oversized`, `incomplete`, `invalid`, or
+`ambiguous-ancestry`. No failure carries an accepted subset. Duplicate agent identities, duplicate
+assignment roots, cycles, absent parents, unavailable parentage and cross-issue/cross-assignment
+parent links refuse the entire collection. Unknown fields and accessors are refused.
+
+Each agent carries `RepoRef`, issueNumber and a dispatcher-confirmed assignment identity. Public
+agent and assignment identities are domain-separated opaque hashes; native identities and source
+paths do not occur in the collection. Parent evidence explicitly distinguishes confirmed-root,
+known-parent and unavailable-with-reason. Workspace, tab, pane, terminal and running each carry a
+nullable value, reason, source time, validity and revision. Dispatch acknowledgement is never a
+running signal. A null validity end asserts no expiry interval; it does not assert current liveness.
+
+Route evidence uses the **single canonical implementation** now published from this package,
+also available at `@rickylabs/harness-contracts/route`. The existing subagents route.ts entry point
+re-exports it. Public cwd is withheld and canonical mismatch/invalid evidence is preserved.
+
+The cost object always contains subscriptionHeadroom / percent_remaining, meteredSpend /
+currency and runTokens / tokens. Every row names its source, scope, availability, measurement,
+reason, observedAt, validUntil and revision. Missing sources emit unavailable rows with null
+measurement/time/validity/revision; they are not zero. Available headroom requires a validity end
+and stays subscription-account scoped. Token measurements reuse RunUsage components without
+adding overlapping counters together. This source currently leaves all three rows unavailable.
+
+The legacy runs/dispatches members of the CLI envelope remain private telemetry reads. Forward
+only the new collection after decoding it; do not forward native identifiers from legacy members.
+The draft package must pass the installed-consumer gate and be released through the normal
+owner-controlled process before a downstream application pins its new decoder.

@@ -1,3 +1,4 @@
+import type { AgentObservations } from "@rickylabs/harness-contracts";
 /**
  * What leaves this machine.
  *
@@ -247,6 +248,7 @@ export function publicGovernance(value: GovernanceView): PublicGovernance {
 
 /** What `runs --json` returns: the same envelope, flat. */
 export interface PublicRuns {
+  readonly agentObservations?: AgentObservations;
   readonly dispatches: readonly DispatchEvidence[];
   readonly generatedAt: string;
   readonly complete: boolean;

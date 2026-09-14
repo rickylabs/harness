@@ -1,4 +1,5 @@
 /** Read the dispatcher's existing private matrix reservations; no collection or native-session guesses. */
+import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { lstat, open, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
@@ -49,13 +50,18 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
           throw error;
         }
         let input: Record<string, unknown> | null;
+        let revision: string;
+        let sourceModifiedAt: string;
         try {
           const stat = await file.stat();
+          sourceModifiedAt = stat.mtime.toISOString();
           if (!stat.isFile() || stat.size > 16_384 || (stat.mode & 0o077) !== 0) throw new Error();
           const bytes = Buffer.alloc(16_385);
           const { bytesRead } = await file.read(bytes, 0, bytes.length, 0);
           if (bytesRead > 16_384) throw new Error();
-          input = object(JSON.parse(bytes.subarray(0, bytesRead).toString("utf8")));
+          const raw = bytes.subarray(0, bytesRead);
+          revision = createHash("sha256").update(raw).digest("hex");
+          input = object(JSON.parse(raw.toString("utf8")));
         } finally { await file.close(); }
         if (input === null || input.schemaVersion !== 1 || input.runId !== "orchid-" + key) throw new Error();
         const issue = object(input.issue);
@@ -73,7 +79,11 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
           { provider: input.provider, model: input.model, effort: input.effort, cwd: null },
           { provider: null, model: null, effort: null, cwd: null },
         ));
-        dispatches.push({ runId: input.runId as string, external: null,
+        const timestamp = input.observedAt ?? sourceModifiedAt;
+        const at = typeof timestamp === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(timestamp) &&
+          Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp ? timestamp : undefined;
+        if (at === undefined) throw new Error();
+        dispatches.push({ observedAt: at, revision, linkageBasis: "dispatcher-confirmed", runId: input.runId as string, external: null,
           source: input.source === "codex" || input.source === "claude" ? input.source : null,
           route, issue: { repo: issue.repo, number: issue.number as number }, parentRunId: null,
           location: { paneId: location.paneId, workspaceId: location.workspaceId },
@@ -82,4 +92,23 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
     }
   } catch { notes.add("orchid-dispatch: source_unavailable"); }
   return { dispatches, notes: [...notes], degraded: notes.size > 0 };
+}
+
+/** Associate only an existing explicit DispatchResult reference, never cwd, title or issue prose. */
+export function bindOrchidDispatchEvidence(
+  dispatches: readonly DispatchEvidence[], evidence: readonly DispatchEvidence[],
+): { readonly dispatches: readonly DispatchEvidence[]; readonly degraded: boolean } {
+  let degraded = false;
+  const rows = dispatches.map(dispatch => {
+    const matches = evidence.filter(row => row.runId === dispatch.runId && row.external !== null);
+    if (matches.length === 0) return dispatch;
+    const match = matches[0];
+    if (matches.length !== 1 || !match || match.source === null || match.source !== dispatch.source) {
+      degraded = true;
+      return dispatch;
+    }
+    return { ...dispatch, external: match.external,
+      route: projectRouteIdentity({ requested: dispatch.route.requested, observed: match.route.observed }) };
+  });
+  return { dispatches: rows, degraded };
 }

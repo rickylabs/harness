@@ -270,3 +270,6 @@ export {
   type RunTokenObservation, type ObservedRepositoryRun, type RepositoryRunObservation,
   type RepositoryRunObservationReading,
 } from "./repository-run-observation.js";
+
+export * from "./route.js";
+export * from "./agent-observations.js";
