@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **261/337 done · 25 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
+`[###############-----]` **261/338 done · 26 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-14T14:47:52Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T15:31:35Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (25)
+## Moving now (26)
 
 Something could be acting on these right now.
 
@@ -52,6 +52,7 @@ Something could be acting on these right now.
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
+| [PR350 feat(telemetry): preserve dispatch route evidence for alpha reads](https://github.com/rickylabs/harness/pull/350) | `impl-eval` | — |
 
 ## Not on the board (2)
 
@@ -111,13 +112,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 69/95 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
+`[########----]` 69/96 done · 6 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[####--------]` 4/10 done · 4 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[#########---]` 60/79 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
+| _(no epic)_ | `[#########---]` 60/80 done · 2 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
@@ -158,7 +159,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  261/337 done · 25 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [###############-----]  261/338 done · 26 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -439,7 +440,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [##############------]  69/95 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [##############------]  69/96 done · 6 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -543,6 +544,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR338 docs: AGENTS.md said decision 4 was superseded outright; its own list says otherwise
     shipped              #344 I4: independent plan review for blocked-decision validation (p0)
     shipped              PR348 routing: make matrix roles, models and routers owner-configurable
+    impl-eval            PR350 feat(telemetry): preserve dispatch route evidence for alpha reads (draft)
 ```
 
 </details>
