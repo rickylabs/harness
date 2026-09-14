@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **269/344 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 8 invisible**
+`[###############-----]` **271/345 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 7 invisible**
 
-_Latest board activity: 2026-09-14T21:42:15Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T22:02:44Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -49,24 +49,23 @@ Something could be acting on these right now.
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 
-## Not on the board (3)
+## Not on the board (2)
 
 Open, and carrying no `status:` label — real work no column can see.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#352 Dispatch never runs: divybot spawns the agent with pane run, so herdr never registers it and the goal is lost](https://github.com/rickylabs/harness/issues/352) | — | — |
-| [#355 Record first-class Layer 1 adoption against the locked charter](https://github.com/rickylabs/harness/issues/355) | — | — |
-| [PR356 docs: propose first-class Layer 1 adoption RFC](https://github.com/rickylabs/harness/pull/356) | — | — |
+| [#357 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/357) | — | — |
 
-## Anomalies (16)
+## Anomalies (15)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-without-status`**
 
-- **#353** — merged, but carries no status label; delivered work the board cannot see
-- **#354** — closed as completed, but carries no status label; delivered work the board cannot see
+- **#355** — closed as completed, but carries no status label; delivered work the board cannot see
+- **#356** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -88,8 +87,7 @@ Open, and carrying no `status:` label — real work no column can see.
 **`no-status`**
 
 - **#352** — open item has no status label, so it appears in no column
-- **#355** — open item has no status label, so it appears in no column
-- **#356** — open item has no status label, so it appears in no column
+- **#357** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -114,13 +112,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[########----]` 76/102 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 7 invisible
+`[#########---]` 78/103 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 6 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[########----]` 64/86 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 6 invisible | — |
+| _(no epic)_ | `[#########---]` 66/87 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 5 invisible | — |
 
 ## Waiting to start
 
@@ -161,7 +159,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  269/344 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 8 invisible
+# rickylabs/harness  [###############-----]  271/345 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 7 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  193/242 done · 19 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -442,7 +440,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [##############------]  76/102 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 7 invisible
+## (no milestone)  [###############-----]  78/103 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 6 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -549,10 +547,11 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR350 feat(telemetry): preserve dispatch route evidence for alpha reads
     shipped              #351 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned
     no status            #352 Dispatch never runs: divybot spawns the agent with pane run, so herdr never registers it and the goal is lost
-    no status            PR353 feat(telemetry): expose bounded per-issue agent observations
-    no status            #354 Expose bounded per-issue agent observations with a strict decoder
+    shipped              PR353 feat(telemetry): expose bounded per-issue agent observations
+    shipped              #354 Expose bounded per-issue agent observations with a strict decoder
     no status            #355 Record first-class Layer 1 adoption against the locked charter
-    no status            PR356 docs: propose first-class Layer 1 adoption RFC (draft)
+    no status            PR356 docs: propose first-class Layer 1 adoption RFC
+    no status            #357 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned
 ```
 
 </details>
