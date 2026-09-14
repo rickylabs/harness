@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
-import { INCONCLUSIVE_EXIT, summarise } from "./run-stages.mjs";
+import { INCONCLUSIVE_EXIT, classifyStageResult, summarise } from "./run-stages.mjs";
 
 const script = resolve(dirname(fileURLToPath(import.meta.url)), "run-stages.mjs");
 const STAGES = ["one", "two", "compile", "four"];
@@ -68,6 +68,82 @@ test("no stages at all is refused", () => {
   const run = spawnSync(process.execPath, [script], { encoding: "utf8" });
   assert.notEqual(run.status, 0);
   assert.match(run.stderr, /at least one stage/);
+});
+
+// These drive the classification with results from REAL spawnSync calls, because the previous
+// version of this suite only ever fed `summarise` codes it had chosen by hand. The mapping from a
+// spawned process to a stage code was the one line the correctness of every other line depended on
+// and the one line no test executed. Found in review, after merge, by a second reader.
+
+test("a stage killed by a signal is inconclusive, not a failure", () => {
+  const killed = spawnSync(process.execPath, ["-e", "process.kill(process.pid, 'SIGTERM')"]);
+  assert.equal(killed.status, null, "this test is meaningless unless spawnSync really reports null here");
+  const classified = classifyStageResult(killed);
+  assert.equal(classified.code, INCONCLUSIVE_EXIT);
+  assert.notEqual(classified.code, 1, "Ctrl-C during a build must not attribute a failure to a stage");
+  assert.equal(classified.reason, "stage-interrupted");
+  assert.match(classified.remedy, /SIGTERM/);
+});
+
+test("a stage that could not be spawned is inconclusive, and says so differently", () => {
+  const missing = spawnSync("definitely-not-a-real-binary-for-this-test", []);
+  assert.ok(missing.error, "this test is meaningless unless spawnSync really reports an error here");
+  const classified = classifyStageResult(missing);
+  assert.equal(classified.code, INCONCLUSIVE_EXIT);
+  assert.equal(classified.reason, "stage-could-not-spawn");
+  assert.notEqual(classified.reason, "stage-interrupted", "two different conditions, two different responses");
+});
+
+test("a real non-zero exit is still a failure and keeps its own code", () => {
+  const failing = spawnSync(process.execPath, ["-e", "process.exit(3)"]);
+  const classified = classifyStageResult(failing);
+  assert.equal(classified.code, 3);
+  assert.equal(classified.reason, undefined, "a real verdict carries no inconclusive reason");
+});
+
+test("a real zero exit is a pass", () => {
+  const ok = spawnSync(process.execPath, ["-e", ""]);
+  assert.deepEqual(classifyStageResult(ok), { code: 0 });
+});
+
+test("a stage that exits 2 of its own accord is inconclusive and says its reason is unrecorded", () => {
+  // check:installed does exactly this. The aggregate must not invent a reason it was not given.
+  const own = spawnSync(process.execPath, ["-e", "process.exit(2)"]);
+  const classified = classifyStageResult(own);
+  assert.equal(classified.code, INCONCLUSIVE_EXIT);
+  const result = summarise({ ...base, results: [{ stage: "one", ...classified }] });
+  assert.match(result.lines.join("\n"), /reason not recorded by the stage/);
+});
+
+test("the interrupted reason reaches the reported lines", () => {
+  const killed = spawnSync(process.execPath, ["-e", "process.kill(process.pid, 'SIGTERM')"]);
+  const result = summarise({ ...base, results: [{ stage: "two", ...classifyStageResult(killed) }] });
+  const text = result.lines.join("\n");
+  assert.match(text, /INCONCLUSIVE/);
+  assert.doesNotMatch(text, /FAILED/);
+  assert.match(text, /two — stage-interrupted/);
+});
+
+test("a signal death translated by pnpm into 128 + N is inconclusive, not a failure", () => {
+  // The path the first diagnosis of this defect missed, and the common one. pnpm does not propagate
+  // a signal; it exits 143 for SIGTERM, so this never reaches the status === null branch. Measured
+  // against a real pnpm stage that kills its own child: status 143, signal null, error null.
+  for (const [code, signal] of [[130, "SIGINT"], [137, "SIGKILL"], [143, "SIGTERM"]]) {
+    const classified = classifyStageResult({ status: code, signal: null, error: undefined });
+    assert.equal(classified.code, INCONCLUSIVE_EXIT, `exit ${code} must not read as a failure`);
+    assert.equal(classified.reason, "stage-interrupted");
+    assert.match(classified.remedy, new RegExp(signal));
+  }
+});
+
+test("a high exit code that is not a known signal translation stays a failure", () => {
+  // Three values, not `> 128`. Inconclusive is the weaker report and a genuine failure must never be
+  // traded down to it.
+  for (const code of [129, 131, 136, 142, 144, 255]) {
+    const classified = classifyStageResult({ status: code, signal: null, error: undefined });
+    assert.equal(classified.code, code, `exit ${code} is not a signal translation and must stay a failure`);
+    assert.equal(classified.reason, undefined);
+  }
 });
 
 test("importing the module runs no stages", () => {

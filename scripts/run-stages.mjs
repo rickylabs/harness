@@ -15,6 +15,52 @@ import { fileURLToPath } from "node:url";
 
 export const INCONCLUSIVE_EXIT = 2;
 
+/**
+ * Signal deaths as an intermediate runner reports them. `pnpm` does not propagate a signal; it
+ * translates the child's death into 128 + signal number and exits normally, so these arrive as
+ * ordinary statuses and would otherwise read as three very specific failures.
+ *
+ * Deliberately three values and not `status > 128`. Treating every high code as a signal would
+ * reclassify a genuine failure as inconclusive, and inconclusive is the weaker report — the
+ * strongest-negative rule says never trade a failure down. A script that deliberately exits 130,
+ * 137 or 143 exists in principle; in this repository none does, and the misreport would still be
+ * non-zero and would still name which signal it believed it saw.
+ */
+const SIGNAL_EXIT_CODES = new Map([[130, "SIGINT"], [137, "SIGKILL"], [143, "SIGTERM"]]);
+
+/**
+ * Classify what a spawned stage actually did.
+ *
+ * Three conditions are not failing stages, and all three were being reported as one. Each was
+ * measured rather than reasoned about, because the first diagnosis of this defect was wrong about
+ * which path Ctrl-C actually takes:
+ *
+ *     pnpm itself killed by a signal   status null, signal set     OOM killing the runner
+ *     the stage runner not on PATH     status null, error ENOENT    host not set up
+ *     the stage's own child killed     status 143, signal null      Ctrl-C during a long build
+ *
+ * The third is the common one and it does not go through `status === null` at all, because pnpm
+ * translates it. A first fix that handled only the null cases would have looked complete and left
+ * the everyday path misreporting.
+ *
+ * The reasons stay apart because the responses differ. An interrupted stage says nothing about the
+ * repository. A stage that could not be spawned says the host is not set up to run it.
+ */
+export function classifyStageResult(result) {
+  if (result.error) {
+    return { code: INCONCLUSIVE_EXIT, reason: "stage-could-not-spawn",
+      remedy: "the stage runner could not be started on this host; check that pnpm is on PATH" };
+  }
+  const interrupted = result.status === null
+    ? (typeof result.signal === "string" && result.signal.length > 0 ? result.signal : "a signal")
+    : SIGNAL_EXIT_CODES.get(result.status);
+  if (interrupted !== undefined) {
+    return { code: INCONCLUSIVE_EXIT, reason: "stage-interrupted",
+      remedy: `the stage was terminated by ${interrupted} before it reached a verdict; nothing is known about it` };
+  }
+  return { code: result.status };
+}
+
 /** Pure, so the reporting can be driven in a test without spawning twelve real stages. */
 export function summarise({ label, stages, compileStage, results }) {
   const ran = results.map(r => r.stage);
@@ -28,6 +74,10 @@ export function summarise({ label, stages, compileStage, results }) {
     lines.push(`${label} FAILED at stage ${position} of ${stages.length}: ${failed.stage}`);
   } else if (inconclusive.length > 0) {
     lines.push(`${label} INCONCLUSIVE — ${inconclusive.length} stage(s) did not reach a verdict: ${inconclusive.join(", ")}`);
+    for (const result of results.filter(r => r.code === INCONCLUSIVE_EXIT)) {
+      const why = result.reason ? `${result.reason}: ${result.remedy ?? "no remedy recorded"}` : "reason not recorded by the stage";
+      lines.push(`  ${result.stage} — ${why}`);
+    }
     lines.push(`  nothing is established about ${inconclusive.join(", ")}; this is not a pass and not a failure`);
   } else {
     lines.push(`${label} ok — ${stages.length} stage(s), all green`);
@@ -67,9 +117,9 @@ if (invokedDirectly()) {
   const results = [];
   for (const stage of stages) {
     const run = spawnSync("pnpm", ["run", stage], { stdio: "inherit", shell: process.platform === "win32" });
-    const code = run.status ?? 1;
-    results.push({ stage, code });
-    if (code !== 0) break;
+    const classified = classifyStageResult(run);
+    results.push({ stage, ...classified });
+    if (classified.code !== 0) break;
   }
   const summary = summarise({ label, stages, compileStage, results });
   console.log("");
