@@ -15,6 +15,72 @@ import { fileURLToPath } from "node:url";
 
 export const INCONCLUSIVE_EXIT = 2;
 
+/**
+ * Signal deaths as an intermediate runner reports them. Neither `pnpm` nor `sh` propagates a signal;
+ * each translates the child's death into 128 + signal number and exits normally, so these arrive as
+ * ordinary statuses and would otherwise read as very specific failures. Measured both ways: a child
+ * that SIGTERMs itself under `sh` and under `pnpm run` both give status 143, signal null, error null.
+ *
+ * An enumerated set, and `status > 128` would be **wrong rather than merely generous.** The question
+ * is not how large the code is, it is whether the stage chose its own death:
+ *
+ *     129 = 128 + 1   SIGHUP    terminal or parent went away   inconclusive
+ *     130 = 128 + 2   SIGINT    interrupted                    inconclusive
+ *     137 = 128 + 9   SIGKILL   killed, often OOM              inconclusive
+ *     143 = 128 + 15  SIGTERM   terminated                     inconclusive
+ *     134 = 128 + 6   SIGABRT   died of its own defect         FAIL
+ *     139 = 128 + 11  SIGSEGV   died of its own defect         FAIL
+ *
+ * A stage that aborts or segfaults has told you something true about the code, and calling that
+ * inconclusive would suppress a real failure. The four above are deaths the stage did not choose and
+ * say nothing about the repository. So widening this to a range would misclassify exactly the two
+ * codes that matter most.
+ *
+ * 131, SIGQUIT, is deliberately left as a failure despite also arriving from outside. A quit signal
+ * is conventionally sent to dump a process that is already misbehaving, so the death is a response to
+ * the code rather than independent of it. That is a judgement rather than a measurement, and it is
+ * recorded here so it can be argued with.
+ *
+ * The residual trade: a script deliberately exiting one of the four would be misreported. None does
+ * here, it would still be non-zero, and it would still name the signal it believed it saw.
+ */
+const SIGNAL_EXIT_CODES = new Map([
+  [129, "SIGHUP"], [130, "SIGINT"], [137, "SIGKILL"], [143, "SIGTERM"],
+]);
+
+/**
+ * Classify what a spawned stage actually did.
+ *
+ * Three conditions are not failing stages, and all three were being reported as one. Each was
+ * measured rather than reasoned about, because the first diagnosis of this defect was wrong about
+ * which path Ctrl-C actually takes:
+ *
+ *     pnpm itself killed by a signal   status null, signal set     OOM killing the runner
+ *     the stage runner not on PATH     status null, error ENOENT    host not set up
+ *     the stage's own child killed     status 143, signal null      Ctrl-C during a long build
+ *
+ * The third is the common one and it does not go through `status === null` at all, because pnpm
+ * translates it. A first fix that handled only the null cases would have looked complete and left
+ * the everyday path misreporting.
+ *
+ * The reasons stay apart because the responses differ. An interrupted stage says nothing about the
+ * repository. A stage that could not be spawned says the host is not set up to run it.
+ */
+export function classifyStageResult(result) {
+  if (result.error) {
+    return { code: INCONCLUSIVE_EXIT, reason: "stage-could-not-spawn",
+      remedy: "the stage runner could not be started on this host; check that pnpm is on PATH" };
+  }
+  const interrupted = result.status === null
+    ? (typeof result.signal === "string" && result.signal.length > 0 ? result.signal : "a signal")
+    : SIGNAL_EXIT_CODES.get(result.status);
+  if (interrupted !== undefined) {
+    return { code: INCONCLUSIVE_EXIT, reason: "stage-interrupted",
+      remedy: `the stage was terminated by ${interrupted} before it reached a verdict; nothing is known about it` };
+  }
+  return { code: result.status };
+}
+
 /** Pure, so the reporting can be driven in a test without spawning twelve real stages. */
 export function summarise({ label, stages, compileStage, results }) {
   const ran = results.map(r => r.stage);
@@ -28,6 +94,10 @@ export function summarise({ label, stages, compileStage, results }) {
     lines.push(`${label} FAILED at stage ${position} of ${stages.length}: ${failed.stage}`);
   } else if (inconclusive.length > 0) {
     lines.push(`${label} INCONCLUSIVE — ${inconclusive.length} stage(s) did not reach a verdict: ${inconclusive.join(", ")}`);
+    for (const result of results.filter(r => r.code === INCONCLUSIVE_EXIT)) {
+      const why = result.reason ? `${result.reason}: ${result.remedy ?? "no remedy recorded"}` : "reason not recorded by the stage";
+      lines.push(`  ${result.stage} — ${why}`);
+    }
     lines.push(`  nothing is established about ${inconclusive.join(", ")}; this is not a pass and not a failure`);
   } else {
     lines.push(`${label} ok — ${stages.length} stage(s), all green`);
@@ -67,9 +137,9 @@ if (invokedDirectly()) {
   const results = [];
   for (const stage of stages) {
     const run = spawnSync("pnpm", ["run", stage], { stdio: "inherit", shell: process.platform === "win32" });
-    const code = run.status ?? 1;
-    results.push({ stage, code });
-    if (code !== 0) break;
+    const classified = classifyStageResult(run);
+    results.push({ stage, ...classified });
+    if (classified.code !== 0) break;
   }
   const summary = summarise({ label, stages, compileStage, results });
   console.log("");
