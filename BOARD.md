@@ -4,7 +4,7 @@
 
 `[###############-----]` **273/347 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-14T22:04:38Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T22:24:44Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -31,8 +31,8 @@ Something could be acting on these right now.
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `impl-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#316 Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/316) | `impl-eval` | — |
-| [#358 fix(divybot): explain matrix dispatch refusals safely](https://github.com/rickylabs/harness/issues/358) | `impl` | — |
-| [#359 feat(divybot): build and validate private matrix configuration](https://github.com/rickylabs/harness/issues/359) | `impl` | — |
+| [#358 fix(divybot): explain matrix dispatch refusals safely](https://github.com/rickylabs/harness/issues/358) | `impl-eval` | — |
+| [#359 feat(divybot): build and validate private matrix configuration](https://github.com/rickylabs/harness/issues/359) | `impl-eval` | — |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -549,8 +549,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #355 Record first-class Layer 1 adoption against the locked charter
     shipped              PR356 docs: propose first-class Layer 1 adoption RFC
     no status            #357 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned
-    impl                 #358 fix(divybot): explain matrix dispatch refusals safely (p0)
-    impl                 #359 feat(divybot): build and validate private matrix configuration (p0)
+    impl-eval            #358 fix(divybot): explain matrix dispatch refusals safely (p0)
+    impl-eval            #359 feat(divybot): build and validate private matrix configuration (p0)
 ```
 
 </details>
