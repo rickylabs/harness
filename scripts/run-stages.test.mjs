@@ -67,12 +67,15 @@ test("a compile stage that is not among the stages is refused rather than mis-re
   const run = spawnSync(process.execPath, [script, "--compile-stage", "absent", "one"], { encoding: "utf8" });
   assert.notEqual(run.status, 0);
   assert.match(run.stderr, /is not one of the stages/);
+  assert.match(run.stderr, /no stage was run/, "a misconfiguration must not read as a stage verdict");
+  assert.doesNotMatch(run.stderr, /at Object|at Module|\.mjs:\d+/, "a sentence, not a stack trace");
 });
 
 test("no stages at all is refused", () => {
   const run = spawnSync(process.execPath, [script], { encoding: "utf8" });
   assert.notEqual(run.status, 0);
   assert.match(run.stderr, /at least one stage/);
+  assert.match(run.stderr, /no stage was run/);
 });
 
 // These drive the classification with results from REAL spawnSync calls, because the previous

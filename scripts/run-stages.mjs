@@ -133,16 +133,24 @@ function invokedDirectly() {
 }
 
 if (invokedDirectly()) {
-  const { label, compileStage, stages } = parse(process.argv.slice(2));
-  const results = [];
-  for (const stage of stages) {
-    const run = spawnSync("pnpm", ["run", stage], { stdio: "inherit", shell: process.platform === "win32" });
-    const classified = classifyStageResult(run);
-    results.push({ stage, ...classified });
-    if (classified.code !== 0) break;
+  try {
+    const { label, compileStage, stages } = parse(process.argv.slice(2));
+    const results = [];
+    for (const stage of stages) {
+      const run = spawnSync("pnpm", ["run", stage], { stdio: "inherit", shell: process.platform === "win32" });
+      const classified = classifyStageResult(run);
+      results.push({ stage, ...classified });
+      if (classified.code !== 0) break;
+    }
+    const summary = summarise({ label, stages, compileStage, results });
+    console.log("");
+    for (const line of summary.lines) console.log(line);
+    process.exitCode = summary.code;
+  } catch (error) {
+    // A misconfigured runner is not a stage verdict and must not be readable as one. Said in a
+    // sentence rather than left as a stack trace: a reader who sees a trace here goes looking for a
+    // bug in a stage, when the fault is in the argv that named the stages.
+    console.error(`run-stages configuration error — no stage was run: ${error instanceof Error ? error.message : String(error)}`);
+    process.exitCode = 1;
   }
-  const summary = summarise({ label, stages, compileStage, results });
-  console.log("");
-  for (const line of summary.lines) console.log(line);
-  process.exitCode = summary.code;
 }

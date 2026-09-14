@@ -30,7 +30,8 @@ Quick orientation:
   local models: [`AGENTS.md`](AGENTS.md#workspace-layout-and-the-two-seams), with the
   package-by-package table in [`packages/README.md`](packages/README.md).
 - Doctrine lives in [`doctrine/`](doctrine/) — portable, plain markdown, zero runtime:
-  [`WORKFLOW.md`](doctrine/WORKFLOW.md), [`PRINCIPLES.md`](doctrine/PRINCIPLES.md)
+  [`WORKFLOW.md`](doctrine/WORKFLOW.md), [`PRINCIPLES.md`](doctrine/PRINCIPLES.md),
+  [`TOOLCHAIN.md`](doctrine/TOOLCHAIN.md)
 - The board, without asking an agent: `dsh-board status`, `dsh-board check`.
 - Active run: [`.llm/runs/architecture-foundation--seed/`](.llm/runs/architecture-foundation--seed/)
 - Start with that run's `context-pack.md` — it is written to be the single file that resumes the work.
