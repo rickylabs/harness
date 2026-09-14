@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **255/326 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 4 invisible**
+`[###############-----]` **255/327 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 4 invisible**
 
-_Latest board activity: 2026-09-14T04:22:19Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-14T07:45:27Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (21)
+## Moving now (22)
 
 Something could be acting on these right now.
 
@@ -32,6 +32,7 @@ Something could be acting on these right now.
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#316 Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/316) | `impl-eval` | — |
 | [PR317 feat(routing): validate the fleet-shaped configuration as schema version 2](https://github.com/rickylabs/harness/pull/317) | `impl-eval` | `e11` |
+| [PR339 docs(e11): charter enforcement plan and measured dual-agent pilot](https://github.com/rickylabs/harness/pull/339) | `plan-eval` | `e11` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -58,7 +59,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [PR324 doctrine: add principle 12, an absence needs a reachability list](https://github.com/rickylabs/harness/pull/324) | — | — |
 | [PR336 doctrine: publish what a chain of checks must say when it stops](https://github.com/rickylabs/harness/pull/336) | — | — |
 
-## Anomalies (4)
+## Anomalies (5)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -69,6 +70,7 @@ Open, and carrying no `status:` label — real work no column can see.
 **`epic-milestone-conflict`**
 
 - **#321** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#339** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 
 **`no-status`**
 
@@ -98,12 +100,12 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 63/84 done · 1 running · 3 queued · 5 blocked · 9 abandoned · 3 invisible
+`[########----]` 63/85 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 3 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/1 done · 1 blocked | `triage` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[------------]` 0/2 done · 1 running · 1 blocked | `triage` |
 | _(no epic)_ | `[#########---]` 58/77 done · 1 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
@@ -145,7 +147,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  255/326 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 4 invisible
+# rickylabs/harness  [###############-----]  255/327 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 4 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  192/242 done · 20 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -426,7 +428,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  63/84 done · 1 running · 3 queued · 5 blocked · 9 abandoned · 3 invisible
+## (no milestone)  [##############------]  63/85 done · 2 running · 3 queued · 5 blocked · 9 abandoned · 3 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -438,8 +440,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [----------------] 0/1 done · 1 blocked
+    [----------------] 0/2 done · 1 running · 1 blocked
     triage               #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0, waiting on owner)
+    plan-eval            PR339 docs(e11): charter enforcement plan and measured dual-agent pilot (draft, p0)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
