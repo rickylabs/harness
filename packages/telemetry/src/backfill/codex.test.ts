@@ -287,13 +287,27 @@ describe("declared-unread envelopes", () => {
     assert.equal(run?.updatedAt, at);
   });
 
-  it("keeps noting token_usage_record, because whether to read it is undecided", () => {
-    // 17304 occurrences carrying counts nothing in this repository reads. Silencing the note would
-    // retire the only signal that the question is open. Issue 328.
+  it("says nothing about token_usage_record, whose counts are read from another envelope", () => {
+    // Left noting on a false claim that its counts were unread. They are read from
+    // event_msg/token_count, 82862 records against this envelope's 17304 on one store. Issue 328.
     const { notes } = parseCodexRollout(rollout(meta,
       { type: "token_usage_record", timestamp: at, payload: { thread_id: "t" } }), "o");
-    assert.deepEqual(notes, [{ reason: unknownTypeNote("token_usage_record"), lines: 1 }]);
-    assert.equal(OBSERVED_UNREAD_ENVELOPES.has("token_usage_record"), false);
+    assert.deepEqual(notes, []);
+    assert.equal(OBSERVED_UNREAD_ENVELOPES.has("token_usage_record"), true);
+  });
+
+  it("still reads the counts from the envelope that does carry them", () => {
+    // The reason the record above can be skipped. If this ever stops holding, skipping the other
+    // becomes a real loss rather than a de-duplication, so the two belong in one another's company.
+    const { run } = parseCodexRollout(rollout(meta, {
+      type: "event_msg", timestamp: at,
+      payload: { type: "token_count", info: { total_token_usage: {
+        input_tokens: 11, output_tokens: 22, reasoning_output_tokens: 33, cached_input_tokens: 44 } } },
+    }), "o");
+    assert.equal(run?.usage.inputTokens, 11);
+    assert.equal(run?.usage.outputTokens, 22);
+    assert.equal(run?.usage.reasoningTokens, 33);
+    assert.equal(run?.usage.cacheReadTokens, 44);
   });
 
   it("still reports an envelope in neither list, so a real discovery is not silenced", () => {

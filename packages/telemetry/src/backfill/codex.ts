@@ -61,16 +61,22 @@ export const KNOWN_TYPES: ReadonlySet<string> = new Set([
  * carry a `timestamp`, so unlike the Claude reader's list this is not structural: a rollout ending
  * on one of these would understate if that gate were ever removed. None of the 428 ends on one.
  *
- * `token_usage_record` is deliberately NOT here, at 17304 occurrences and still noting. Its payload
- * carries input, output, total, cached-input, cache-write and reasoning-output counts at both turn
- * and cumulative-thread granularity, which is strictly more than the protocol's own usage surface
- * ships, and nothing in this repository reads any of it — the observation decoder consults it for
- * identity only and says so in its own comment. Whether those counts should be read, and by which
- * reader, is an open decision on issue 328. Until it is answered the note is the honest report, and
- * silencing it would retire the only signal that the question exists.
+ * `token_usage_record` was left noting on a claim that turned out to be false: that the counts it
+ * carries are unread. They are read, from a record this reader already recognises. `event_msg` with
+ * `payload.type === "token_count"` carries `info.total_token_usage`, and the loop below maps four of
+ * its fields into `RunUsage`. On the same 428 rollouts that path has 82862 records against this
+ * envelope's 17304, so the envelope is a lower-volume second carrier of numbers already accounted
+ * for. The observation decoder additionally reads it for identity.
+ *
+ * Two things it carries are genuinely unread, and both are narrower than a missing usage surface:
+ * `cache_write_input_tokens` appears in no tracked source file, and the per-turn against
+ * cumulative-per-thread distinction is unavailable because only the cumulative record is read.
+ * Recorded on issue 328 rather than fixed here, because whether either matters is a question about
+ * what the usage surface is for.
  */
 export const OBSERVED_UNREAD_ENVELOPES: ReadonlyMap<string, string> = new Map([
   ["inter_agent_communication_metadata", "payload carries only a trigger_turn boolean; nothing this reader wants"],
+  ["token_usage_record", "its counts are already read from event_msg/token_count below, at 82862 records against this envelope's 17304; read by repository-run-observation.ts for identity"],
   ["world_state", "read by repository-run-observation.ts for scope assertion; a second reader mining the same record for another purpose is how two components come to disagree about one run"],
 ]);
 
