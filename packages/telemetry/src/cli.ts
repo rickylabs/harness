@@ -25,6 +25,7 @@ import { homedir } from "node:os";
 import { backfillFromDisk, defaultRoots, type BackfillRoots } from "./backfill/index.js";
 import { diagnosticsFor, ALL_POINTERS } from "./diagnostics.js";
 import { parseItems, type LoadedItems } from "./items.js";
+import { readDispatchEvidence } from "./dispatch-evidence.js";
 import { foldLiveEvents, mergeLiveRuns, readLiveLog } from "./live.js";
 import {
   humanBytes,
@@ -591,7 +592,7 @@ export async function main(argv: readonly string[], services: SourceServices = d
 
   if (command === "runs") {
     if (flags.json) {
-      const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded);
+      const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded, readDispatchEvidence(runFiles));
       process.stdout.write(`${JSON.stringify(envelope, null, 2)}\n`);
       return view.degraded ? EXIT.incomplete : EXIT.ok;
     }

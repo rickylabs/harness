@@ -7,6 +7,7 @@
  * is the entire product.
  */
 
+import { compareRouteIdentity } from "@rickylabs/subagents";
 import assert from "node:assert/strict";
 import { readGovernanceSnapshot } from "@rickylabs/harness-contracts";
 import { mkdir, mkdtemp, readFile, readdir, stat, rm, writeFile } from "node:fs/promises";
@@ -358,7 +359,7 @@ describe("dsh-telemetry --json", () => {
       runs: unknown[];
       notes: string[];
     };
-    assert.deepEqual(Object.keys(parsed).sort(), ["complete", "generatedAt", "notes", "runs"]);
+    assert.deepEqual(Object.keys(parsed).sort(), ["complete", "dispatches", "generatedAt", "notes", "runs"]);
     assert.equal(parsed.generatedAt, "2026-09-04T22:00:00.000Z");
     assert.equal(parsed.complete, false);
     assert.equal(parsed.runs.length, 1);
@@ -1049,4 +1050,24 @@ describe("published governance one-shot command", () => {
     assert.equal(result.code, EXIT.ok); assert.equal(result.err, "");
     assert.equal(readGovernanceSnapshot(JSON.parse(result.out)).ok, true);
   });
+});
+
+it("runs --json exposes the dispatch route and explicit native-session join", async () => {
+  const at = "2026-09-04T22:00:00.000Z";
+  const input = { provider: "fixture-router", model: "fixture-model", effort: "high", cwd: "/synthetic/work" };
+  const file = livePath(resolveObservability(home, {}));
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(file, [
+    { at, runId: "fixture-dispatch", kind: "subagent.dispatching", detail: { source: "codex" } },
+    { at, runId: "fixture-dispatch", kind: "subagent.dispatch", detail: { verdict: "accepted", external: "fixture-native", route: compareRouteIdentity(input, input) } },
+  ].map(event => JSON.stringify(event)).join("\n") + "\n");
+  const result = await run(["runs", "--json", "--home", home, "--now", at]);
+  assert.equal(result.code, EXIT.ok);
+  const read = JSON.parse(result.out);
+  assert.equal(read.dispatches.length, 1);
+  assert.equal(read.dispatches[0].runId, "fixture-dispatch");
+  assert.equal(read.dispatches[0].external, "fixture-native");
+  assert.equal(read.dispatches[0].route.observed.provider.value, "fixture-router");
+  assert.equal(read.dispatches[0].route.invalid.length, 2);
+  assert.ok(!result.out.includes("/synthetic/work"));
 });

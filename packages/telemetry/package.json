@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/telemetry",
   "version": "0.0.0",
-  "description": "SessionTelemetrySink — the \"status ?\" killer",
+  "description": "SessionTelemetrySink \u2014 the \"status ?\" killer",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -31,6 +31,7 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@rickylabs/harness-contracts": "workspace:*"
+    "@rickylabs/harness-contracts": "workspace:*",
+    "@rickylabs/subagents": "workspace:*"
   }
 }

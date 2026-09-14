@@ -217,3 +217,5 @@ export {
 } from "./tree.js";
 
 export { parseSource, type GovernanceSource, type SourceRefusal } from "./source.js";
+
+export { readDispatchEvidence, type DispatchEvidence } from "./dispatch-evidence.js";

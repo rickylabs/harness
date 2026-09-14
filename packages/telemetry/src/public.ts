@@ -26,6 +26,7 @@ import type {
   RegimeStatus,
 } from "@rickylabs/harness-contracts";
 
+import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { LivenessVerdict } from "./liveness.js";
 import type {
   AttributedRun,
@@ -246,6 +247,7 @@ export function publicGovernance(value: GovernanceView): PublicGovernance {
 
 /** What `runs --json` returns: the same envelope, flat. */
 export interface PublicRuns {
+  readonly dispatches: readonly DispatchEvidence[];
   readonly generatedAt: string;
   readonly complete: boolean;
   readonly runs: readonly PublicRun[];
@@ -381,6 +383,7 @@ export function publicRuns(
   runs: readonly RunRecord[],
   notes: readonly string[],
   complete: boolean,
+  dispatches: readonly DispatchEvidence[] = [],
 ): PublicRuns {
-  return { generatedAt, complete, runs: runs.map(publicRun), notes };
+  return { generatedAt, complete, runs: runs.map(publicRun), notes, dispatches };
 }
