@@ -66,3 +66,15 @@ a phone, between meetings, deciding whether to open a desktop.
 The harness must not depend on which agent client opened it. Claude Code, Codex, opencode and
 Copilot are interchangeable transports over the same run directory. Any doctrine that only
 works in one of them is a bug.
+
+### 12. An absence is only as good as its reachability list
+
+A search that finds nothing has established nothing until you know every way the thing could
+have been found. A passing control licenses trust in the search's *mechanism*, never in its
+*completeness*. Enumerate how the subject can be reached, then check each candidate
+individually — a deletion is licensed by that check, never by the aggregate.
+
+Measured once, on this repository: a probe for unreferenced modules passed its control and
+still reported four live files. They were reached by a child process forked by URL, a
+package-manifest script, and a source file read as test data. No import graph contains any of
+those.
