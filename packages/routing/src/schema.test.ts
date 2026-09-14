@@ -14,17 +14,30 @@ describe("model pins", () => {
     assert.equal(familyOf(A, "gpt-5.6-sol"), "openai");
     assert.equal(familyOf(A, "gpt-5.6-luna"), "openai");
     assert.equal(familyOf(A, "gpt-6-astra"), "openai");
-    assert.equal(familyOf(A, "fable-5"), "anthropic");
+    assert.equal(familyOf(A, "fable-5.1"), "anthropic");
     assert.equal(familyOf(A, "opus-5"), "anthropic");
     assert.equal(familyOf(A, "sonnet-5"), "anthropic");
     assert.equal(familyOf(A, "gemini-3.6-flash-high"), "google");
   });
 
-  it("places every relay model in the open family, whatever CLI drives it", () => {
-    for (const model of ["qwen/qwen3.8-flash", "z-ai/glm-5.3-flash", "z-ai/glm-5.2", "x-ai/grok-4.5"]) {
-      assert.equal(familyOf(A, model), "open", model);
+  it("places every relay model with its vendor, whatever CLI drives it", () => {
+    // One `open` bucket said Z.ai and Moonshot were the same family, so a GLM review of a Kimi
+    // design read as self-certification. A family is the model's lineage; the relay is a seam.
+    const vendor = {
+      "qwen/qwen3.8-flash": "qwen",
+      "z-ai/glm-5.3-flash": "zai",
+      "z-ai/glm-5.2": "zai",
+      "x-ai/grok-4.5": "xai",
+      "moonshotai/kimi-k3": "moonshot",
+      "meta/muse-spark-1.3": "meta",
+      "deepseek/deepseek-v4.1-flash": "deepseek",
+      "n5air/ling-3.0-flash": "inclusionai",
+    };
+    for (const [model, family] of Object.entries(vendor)) {
+      assert.equal(familyOf(A, model), family, model);
     }
-    assert.equal(familyOf(A, "moonshotai/kimi-k3"), "open");
+    // Two vendors that used to share the bucket must now come apart, or the split did nothing.
+    assert.notEqual(familyOf(A, "z-ai/glm-5.3-flash"), familyOf(A, "moonshotai/kimi-k3"));
   });
 
   it("refuses to place a model it does not pin", () => {
@@ -52,10 +65,23 @@ describe("model pins", () => {
 });
 
 describe("approved open evaluators", () => {
-  it("approves the two relay evaluator models", () => {
+  it("approves exactly the five relay evaluator models, by name", () => {
     assert.equal(isApprovedOpenEvaluator(A, "qwen/qwen3.8-flash"), true);
     assert.equal(isApprovedOpenEvaluator(A, "z-ai/glm-5.3-flash"), true);
-    assert.equal(Object.values(A.models).filter(m => m.approvedRelayEvaluator).length, 2);
+    // Grok 4.6 and Muse Spark 1.3 lead the two formal evaluation lanes. `resolve.ts` refuses an
+    // openrouter step that certifies unless the model carries the flag, so the flag is what makes
+    // those lanes resolvable at all.
+    assert.equal(isApprovedOpenEvaluator(A, "x-ai/grok-4.6"), true);
+    assert.equal(isApprovedOpenEvaluator(A, "meta/muse-spark-1.3"), true);
+    // Gemini 3.8 Flash is the only approved evaluator outside the open family, which is what lets it
+    // certify the three open-family implementers of the third lane without self-certifying.
+    assert.equal(isApprovedOpenEvaluator(A, "google/gemini-3.8-flash"), true);
+    // The set, not the count: a fifth model gaining the flag by accident fails on its name here
+    // rather than on an arithmetic total that says nothing about which model slipped in.
+    assert.deepEqual(
+      Object.entries(A.models).filter(([, m]) => m.approvedRelayEvaluator).map(([name]) => name).sort(),
+      ["google/gemini-3.8-flash", "meta/muse-spark-1.3", "qwen/qwen3.8-flash", "x-ai/grok-4.6", "z-ai/glm-5.3-flash"],
+    );
   });
 
   it("approves nothing else, including open models the matrix uses elsewhere", () => {
@@ -65,6 +91,10 @@ describe("approved open evaluators", () => {
     assert.equal(isApprovedOpenEvaluator(A, "x-ai/grok-4.5"), false);
     assert.equal(isApprovedOpenEvaluator(A, "moonshotai/kimi-k3"), false);
     assert.equal(isApprovedOpenEvaluator(A, "opus-5"), false);
+    // The third implementation lane relays through openrouter too, but it implements rather than
+    // certifies, so its models must NOT be approved evaluators. Grok 4.5 above is the same shape:
+    // a near-neighbour of an approved id that must stay unapproved.
+    assert.equal(isApprovedOpenEvaluator(A, "deepseek/deepseek-v4.1-flash"), false);
   });
 });
 

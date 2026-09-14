@@ -95,7 +95,7 @@ describe("resolveRoute", () => {
 
   it("picks the evaluator leg from the author's family", () => {
     const forOpenai = expectRoute(resolveRoute(A, "formal_impl_evaluation", "openai"));
-    assert.equal(forOpenai.route.model, "fable-5");
+    assert.equal(forOpenai.route.model, "fable-5.1");
     const forAnthropic = expectRoute(resolveRoute(A, "formal_impl_evaluation", "anthropic"));
     assert.equal(forAnthropic.route.model, "gpt-5.6-sol");
     assert.equal(forAnthropic.route.effort, "xhigh");
@@ -177,7 +177,7 @@ describe("resolveFallback", () => {
         ...boundary,
       }),
     );
-    assert.equal(step.route.model, "qwen/qwen3.8-flash");
+    assert.equal(step.route.model, "meta/muse-spark-1.3");
     assert.equal(step.certifies, "any");
   });
 
@@ -276,7 +276,7 @@ describe("toDispatch", () => {
   });
 
   it("carries the profile a relay route needs to bind its credential", () => {
-    const step = expectRoute(resolveRoute(A, "major_ui_ux_design"));
+    const step = expectRoute(resolveRoute(A, "major_ui_ux_adversarial_review"));
     assert.deepEqual(toDispatch(A, step.route), {
       harness: "claude",
       model: "z-ai/glm-5.2",
@@ -286,13 +286,23 @@ describe("toDispatch", () => {
   });
 
   it("splits an opencode route into an unprefixed model and its router", () => {
-    const step = expectRoute(resolveRoute(A, "adversarial_design_eval"));
+    const step = expectRoute(resolveRoute(A, "major_ui_ux_design"));
     assert.deepEqual(toDispatch(A, step.route), {
       harness: "opencode",
       model: "moonshotai/kimi-k3",
-      effort: "high",
+      effort: "xhigh",
       router: "openrouter",
     });
+
+    // The design evaluation lane certifies open-family work, so it cannot itself be open family.
+    // Its primary is deliberately opposite-family to the Kimi K3 lead above.
+    const evaluation = expectRoute(resolveRoute(A, "adversarial_design_eval"));
+    assert.deepEqual(toDispatch(A, evaluation.route), {
+      harness: "codex",
+      model: "gpt-6-astra",
+      effort: "medium",
+    });
+    assert.equal(evaluation.certifies, "moonshot");
   });
 
   it("applies a resolved escalation instead of the step's base effort", () => {
@@ -381,7 +391,7 @@ describe("unreviewedSteps", () => {
 describe("the Astra row", () => {
   it("leads complex implementation, and falls back on a CLI that cannot reach it", () => {
     const chain = laneChain(A, "complex_implementation") ?? [];
-    assert.equal(chain.length, 2);
+    assert.equal(chain.length, 3);
     assert.deepEqual(toDispatch(A, chain[0]?.route ?? ({} as Route)), {
       harness: "codex",
       model: "gpt-6-astra",
@@ -394,6 +404,14 @@ describe("the Astra row", () => {
     assert.deepEqual(chain[1]?.when, ["model-unavailable"]);
     assert.equal(chain[1]?.route.model, "gpt-5.6-sol");
     assert.ok(FALLBACK_TRIGGERS.includes("model-unavailable"));
+
+    // The third lane: neither native harness can run, so implementation leaves both for the relay.
+    // `native-quota-limit` is legitimate HERE, unlike on step 1, because this step does not draw on
+    // the same subscription as anything above it.
+    assert.deepEqual(chain[2]?.when, ["native-quota-limit", "model-unavailable"]);
+    assert.equal(chain[2]?.route.harness, "opencode");
+    assert.equal(chain[2]?.route.model, "meta/muse-spark-1.3");
+    assert.equal(chain[2]?.route.effort, "max");
   });
 
   it("keeps a reviewer for every step of the complex tier, not only its primary", () => {

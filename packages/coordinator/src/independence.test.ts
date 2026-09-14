@@ -28,13 +28,13 @@ const candidate = (over: Partial<Candidate> & { readonly id: string }): Candidat
 });
 
 /** The rule that must never be selected: the same family as the author. */
-const sameFamily = candidate({ id: "run-sibling", family: "anthropic", model: "fable-5" });
+const sameFamily = candidate({ id: "run-sibling", family: "anthropic", model: "fable-5.1" });
 
 /** The relay seam, open-weights, legal but off the author's seam. */
 const relayOpen = candidate({
   id: "run-relay",
   seam: "relay",
-  family: "open",
+  family: "zai",
   model: "z-ai/glm-5.3-flash",
   openWeights: true,
 });

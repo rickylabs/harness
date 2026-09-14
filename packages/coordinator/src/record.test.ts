@@ -40,7 +40,7 @@ const codex: Candidate = {
   blockedBy: null,
 };
 
-const sibling: Candidate = { ...codex, id: "run-sibling", family: "anthropic", model: "fable-5" };
+const sibling: Candidate = { ...codex, id: "run-sibling", family: "anthropic", model: "fable-5.1" };
 
 const AT = "2026-09-05T09:00:00.000Z";
 
