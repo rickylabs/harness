@@ -1,0 +1,8 @@
+{
+  "command": "herdr agent get <private proof-agent label>",
+  "exit": 0,
+  "interactiveReady": true,
+  "agentSessionFieldPresent": false,
+  "agentSessionValuePresent": false,
+  "status": "done"
+}

@@ -1,0 +1,36 @@
+{
+  "sourceRevision": "f3324909e0896cedc9729005bac5f508e122d6c6",
+  "query": {
+    "schemaVersion": 1,
+    "mode": "role",
+    "role": "implementation",
+    "tiers": [
+      {
+        "tier": "simple",
+        "description": "Automation, simple fixes, and chores; low temperature and low complexity.",
+        "routes": [
+          {
+            "model": "luna",
+            "effort": "max"
+          },
+          {
+            "model": "qwen_3_8_flash_next",
+            "effort": "provider_default"
+          }
+        ]
+      }
+    ]
+  },
+  "resolver": {
+    "provider": "openai",
+    "model": "gpt-5.6-luna",
+    "logicalModel": "luna",
+    "effort": "max",
+    "requestedEffort": "max",
+    "transport": "codex",
+    "family": "openai",
+    "tier": "simple",
+    "role": "implementation",
+    "digest": "34fda1270ccd2048f61515372394f8a8619fc79966e06b518687eac4d0446564"
+  }
+}

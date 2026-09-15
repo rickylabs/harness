@@ -1,0 +1,181 @@
+{
+  "verdict": "INCONCLUSIVE",
+  "issue": 375,
+  "consumerExit": 3,
+  "consumerComplete": false,
+  "consumerSince": "2026-09-15T12:25:13.439Z",
+  "consumerLimit": 50,
+  "decoded": true,
+  "decoderReason": null,
+  "complete": false,
+  "reason": "ancestry_unavailable",
+  "rowCount": 1,
+  "depth": 0,
+  "receiptReadComplete": true,
+  "dispatches": [
+    {
+      "issue": 375,
+      "repository": "rickylabs/harness",
+      "state": "dispatched",
+      "nativeBinding": "absent",
+      "rootResolved": false,
+      "nativeChildren": null
+    },
+    {
+      "issue": 368,
+      "repository": "rickylabs/harness",
+      "state": "dispatched",
+      "nativeBinding": "absent",
+      "rootResolved": false,
+      "nativeChildren": null
+    }
+  ],
+  "nativeRunCount": 6,
+  "notes": [],
+  "rows": [
+    {
+      "agentId": "agent_50db9df74d9c631b3133c4be3d8844d14d88b916a9bc84a958fd560490a15e06",
+      "parentAgentId": {
+        "state": "unavailable",
+        "value": null,
+        "reason": "identity_unavailable"
+      },
+      "workspace": {
+        "observedAt": "2026-09-15T12:26:39.996Z",
+        "validUntil": null,
+        "revision": "e0599d77992e34a13251cba4059f72953ad95b8fb3f909cb0c76062b2b4af1eb",
+        "value": "w1F",
+        "reason": null
+      },
+      "pane": {
+        "observedAt": "2026-09-15T12:26:39.996Z",
+        "validUntil": null,
+        "revision": "e0599d77992e34a13251cba4059f72953ad95b8fb3f909cb0c76062b2b4af1eb",
+        "value": "w1F:p1",
+        "reason": null
+      },
+      "tab": {
+        "observedAt": null,
+        "validUntil": null,
+        "revision": null,
+        "value": null,
+        "reason": "source_not_bound"
+      },
+      "terminal": {
+        "observedAt": null,
+        "validUntil": null,
+        "revision": null,
+        "value": null,
+        "reason": "source_not_bound"
+      },
+      "running": {
+        "observedAt": null,
+        "validUntil": null,
+        "revision": null,
+        "value": null,
+        "reason": "observer-unavailable"
+      },
+      "route": {
+        "status": "unknown",
+        "requested": {
+          "provider": {
+            "value": "openai",
+            "source": "request.modelProvider"
+          },
+          "model": {
+            "value": "gpt-5.6-luna",
+            "source": "request.model"
+          },
+          "effort": {
+            "value": "max",
+            "source": "request.effort"
+          },
+          "cwd": {
+            "value": null,
+            "source": "provider.cwd"
+          }
+        },
+        "observed": {
+          "provider": {
+            "value": null,
+            "source": "thread/start.result.modelProvider"
+          },
+          "model": {
+            "value": null,
+            "source": "thread/start.result.model"
+          },
+          "effort": {
+            "value": null,
+            "source": "thread/start.result.reasoningEffort"
+          },
+          "cwd": {
+            "value": null,
+            "source": "thread/start.result.cwd"
+          }
+        },
+        "mismatches": [],
+        "invalid": [
+          {
+            "side": "observed",
+            "field": "provider"
+          },
+          {
+            "side": "observed",
+            "field": "model"
+          },
+          {
+            "side": "observed",
+            "field": "effort"
+          },
+          {
+            "side": "requested",
+            "field": "cwd"
+          },
+          {
+            "side": "observed",
+            "field": "cwd"
+          }
+        ],
+        "detail": "route unknown: invalid observed provider (thread/start.result.modelProvider); invalid observed model (thread/start.result.model); invalid observed effort (thread/start.result.reasoningEffort); invalid requested cwd (provider.cwd); invalid observed cwd (thread/start.result.cwd); no useful turn is permitted"
+      },
+      "cost": {
+        "subscriptionHeadroom": {
+          "kind": "subscription_headroom",
+          "unit": "percent_remaining",
+          "source": "dsh-telemetry.governance.usage",
+          "scope": "subscription_account",
+          "availability": "unavailable",
+          "measurement": null,
+          "reason": "source_not_bound",
+          "observedAt": null,
+          "validUntil": null,
+          "revision": null
+        },
+        "meteredSpend": {
+          "kind": "metered_spend",
+          "unit": "currency",
+          "source": "dsh-telemetry.runs",
+          "scope": "run",
+          "availability": "unavailable",
+          "measurement": null,
+          "reason": "source_not_bound",
+          "observedAt": null,
+          "validUntil": null,
+          "revision": null
+        },
+        "runTokens": {
+          "kind": "run_tokens",
+          "unit": "tokens",
+          "source": "dsh-telemetry.runs",
+          "scope": "run",
+          "availability": "unavailable",
+          "measurement": null,
+          "reason": "source_not_bound",
+          "observedAt": null,
+          "validUntil": null,
+          "revision": null
+        }
+      }
+    }
+  ]
+}
