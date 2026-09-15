@@ -140,3 +140,11 @@ metered currency spend and run tokens separate when those bindings are implement
 Final consumer verdict remains `INCONCLUSIVE`, `ancestry_unavailable`: one issue row,
 `complete:false`. No alpha PASS is claimed. The findings were reported to the coordinator
 before this existing PR was updated; no additional PR or issue was opened.
+
+## Evidence publication correction
+
+This is historical evidence, not a runtime input or product delivery. The bounded read is not a complete fleet census. Per-row observation timestamps, validity and revisions were removed from the redacted data artifact after the snapshot-publication guard refused them. The test verdict and native pair findings stand; consumers must never use these artifacts as current availability.
+
+## Evidence publication correction
+
+This is historical evidence, not a runtime input or product delivery. The bounded read is not a complete fleet census. Per-row observation timestamps, validity and revisions were removed from the redacted data artifact after the snapshot-publication guard refused them. The test verdict and native pair findings stand; consumers must never use these artifacts as current availability.

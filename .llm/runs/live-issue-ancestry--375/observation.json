@@ -41,37 +41,22 @@
         "reason": "identity_unavailable"
       },
       "workspace": {
-        "observedAt": "2026-09-15T12:26:39.996Z",
-        "validUntil": null,
-        "revision": "e0599d77992e34a13251cba4059f72953ad95b8fb3f909cb0c76062b2b4af1eb",
         "value": "w1F",
         "reason": null
       },
       "pane": {
-        "observedAt": "2026-09-15T12:26:39.996Z",
-        "validUntil": null,
-        "revision": "e0599d77992e34a13251cba4059f72953ad95b8fb3f909cb0c76062b2b4af1eb",
         "value": "w1F:p1",
         "reason": null
       },
       "tab": {
-        "observedAt": null,
-        "validUntil": null,
-        "revision": null,
         "value": null,
         "reason": "source_not_bound"
       },
       "terminal": {
-        "observedAt": null,
-        "validUntil": null,
-        "revision": null,
         "value": null,
         "reason": "source_not_bound"
       },
       "running": {
-        "observedAt": null,
-        "validUntil": null,
-        "revision": null,
         "value": null,
         "reason": "observer-unavailable"
       },
@@ -146,10 +131,7 @@
           "scope": "subscription_account",
           "availability": "unavailable",
           "measurement": null,
-          "reason": "source_not_bound",
-          "observedAt": null,
-          "validUntil": null,
-          "revision": null
+          "reason": "source_not_bound"
         },
         "meteredSpend": {
           "kind": "metered_spend",
@@ -158,10 +140,7 @@
           "scope": "run",
           "availability": "unavailable",
           "measurement": null,
-          "reason": "source_not_bound",
-          "observedAt": null,
-          "validUntil": null,
-          "revision": null
+          "reason": "source_not_bound"
         },
         "runTokens": {
           "kind": "run_tokens",
@@ -170,10 +149,7 @@
           "scope": "run",
           "availability": "unavailable",
           "measurement": null,
-          "reason": "source_not_bound",
-          "observedAt": null,
-          "validUntil": null,
-          "revision": null
+          "reason": "source_not_bound"
         }
       }
     }
