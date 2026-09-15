@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **279/356 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible**
+`[###############-----]` **279/357 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible**
 
-_Latest board activity: 2026-09-15T05:07:47Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-15T05:23:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (22)
+## Moving now (23)
 
 Something could be acting on these right now.
 
@@ -49,6 +49,7 @@ Something could be acting on these right now.
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR367 fix(gates): finish three-gates--316 inconclusive reporting](https://github.com/rickylabs/harness/pull/367) | `augment-review` | — |
+| [PR369 fix(telemetry): report orchid receipt root refusals](https://github.com/rickylabs/harness/pull/369) | `ready-merge` | — |
 
 ## Not on the board (5)
 
@@ -62,9 +63,14 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#363 Dispatch records an effort the codex transport never receives](https://github.com/rickylabs/harness/issues/363) | — | — |
 | [#368 fix(telemetry): report which receipt root the dispatch reader read and why it was empty](https://github.com/rickylabs/harness/issues/368) | — | — |
 
-## Anomalies (16)
+## Anomalies (18)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#316** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+- **#367** — closed on GitHub but sits in augment-review; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -114,13 +120,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 86/114 done · 3 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
+`[########----]` 86/115 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[#########---]` 74/98 done · 2 running · 4 queued · 3 blocked · 9 abandoned · 6 invisible | — |
+| _(no epic)_ | `[########----]` 74/99 done · 3 running · 4 queued · 3 blocked · 9 abandoned · 6 invisible | — |
 
 ## Waiting to start
 
@@ -162,7 +168,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  279/356 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible
+# rickylabs/harness  [###############-----]  279/357 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  193/242 done · 19 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -443,7 +449,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  86/114 done · 3 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
+## (no milestone)  [##############------]  86/115 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -566,6 +572,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR366 fix(telemetry): require exactly 0700 on dispatcher receipt roots
     augment-review       PR367 fix(gates): finish three-gates--316 inconclusive reporting
     no status            #368 fix(telemetry): report which receipt root the dispatch reader read and why it was empty
+    ready-merge          PR369 fix(telemetry): report orchid receipt root refusals
 ```
 
 </details>
