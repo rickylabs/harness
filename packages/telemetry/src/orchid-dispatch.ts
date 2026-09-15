@@ -26,7 +26,7 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
   try {
     if (!isAbsolute(root) || await realpath(root) !== resolve(root)) throw new Error();
     const rootStat = await lstat(root);
-    if (!rootStat.isDirectory() || (rootStat.mode & 0o077) !== 0) throw new Error();
+    if (!rootStat.isDirectory() || (rootStat.mode & 0o7777) !== 0o700) throw new Error();
     // The writer also refuses roots within a Git checkout. Recheck at the read boundary.
     for (let dir = root;; dir = dirname(dir)) {
       try { await lstat(join(dir, ".git")); throw new Error("tracked"); }

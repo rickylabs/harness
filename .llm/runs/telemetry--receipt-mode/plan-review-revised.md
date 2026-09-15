@@ -1,0 +1,3 @@
+PASS
+
+The plan correctly identifies the bug at line 28: `(rootStat.mode & 0o077) !== 0` rejects group/world bits but accepts `0o500` (owner r-x only) because `(0o500 & 0o077) === 0`. The proposed fix `(mode & 0o7777) === 0o700` requires exactly `0o700` within the permission nibbles, which correctly rejects `0o500` while accepting `0o700`. The mask `0o7777` correctly strips file-type bits (`0o40000` for directories) before comparison. Scope to root-only is a defensible minimal change; reservation/record/file guards remain as-is per plan. Test strategy (exact-mode 0o500 rejection + 0o700 acceptance control, 43 fixtures preserved) is sound.
