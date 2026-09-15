@@ -503,8 +503,23 @@ parent, conflicting assignment or truncated tree. Both limits are enforced by th
 Successful reads return `{ok: true, observation}` with owned normalized data. Failures return
 only `{ok: false, reason}`: `unsupported-schema`, `oversized`, `incomplete`, `invalid`, or
 `ambiguous-ancestry`. No failure carries an accepted subset. Duplicate agent identities, duplicate
-assignment roots, cycles, absent parents, unavailable parentage and cross-issue/cross-assignment
-parent links refuse the entire collection. Unknown fields and accessors are refused.
+assignment roots, cycles, absent parents and cross-issue/cross-assignment parent links refuse the
+entire collection. Complete trees also refuse unavailable parentage. Unknown fields and accessors are refused.
+
+A narrowly validated dispatch-only collection may decode successfully with `complete: false` and
+`reason: "ancestry_unavailable"`. **`ok: true` means valid evidence, not complete ancestry.** Consumers
+must retain and display that incompleteness when showing its rows. Every row in this exception has
+unavailable parentage (`value: null`, `reason: "identity_unavailable"`), null observed route values,
+null running state with `observer-unavailable` and no runtime timestamp, null tab/terminal, and three
+unavailable cost rows. Requested provider/model/effort and dispatch workspace/pane references are
+preserved; public cwd remains withheld. No native parent or running verdict is inferred.
+
+Other incomplete reasons, empty ancestry claims, and incomplete collections containing runtime-bound
+roots or children still refuse as a whole, including mixed runtime/dispatch-only collections. This
+exception cannot make a truncated runtime tree complete. Count, byte, identity, assignment, timestamp,
+route and cost validation apply before any row is returned. The telemetry producer uses this path only
+when the dispatch has no native binding; an existing binding with missing or partial runtime evidence
+continues to require a complete observation.
 
 Each agent carries `RepoRef`, issueNumber and a dispatcher-confirmed assignment identity. Public
 agent and assignment identities are domain-separated opaque hashes; native identities and source

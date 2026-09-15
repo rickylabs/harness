@@ -6,7 +6,7 @@ import { projectRouteIdentity, ROUTE_FIELDS, type RouteIdentityEvidence } from "
 export const AGENT_OBSERVATIONS_SCHEMA = 1 as const;
 export const MAX_AGENT_OBSERVATIONS = 256;
 export const MAX_AGENT_OBSERVATION_BYTES = 1_048_576;
-export const AGENT_UNAVAILABLE_REASONS = ["source_not_bound", "source_unavailable", "source_incomplete", "source_stale", "binding_invalid", "identity_unavailable", "measurement_missing", "run_not_found"] as const;
+export const AGENT_UNAVAILABLE_REASONS = ["source_not_bound", "source_unavailable", "source_incomplete", "source_stale", "binding_invalid", "identity_unavailable", "measurement_missing", "run_not_found", "observer-unavailable"] as const;
 export type AgentUnavailableReason = typeof AGENT_UNAVAILABLE_REASONS[number];
 export type AgentParent =
   | { readonly state: "confirmed-root"; readonly value: null; readonly reason: null }
@@ -222,7 +222,16 @@ function agent(value: unknown, capturedAt: string): AgentObservation {
     pane: observed(r.pane, capturedAt, id), terminal: observed(r.terminal, capturedAt, id),
     running: observed(r.running, capturedAt, v => typeof v === "boolean" ? v : bad()), route: route(r.route), cost: cost(r.cost, capturedAt), observedAt, revision: revision(r.revision) };
 }
-/** Whole-collection refusal. No failure returns agents, even if some rows validated successfully. */
+/** Dispatch-only evidence cannot certify native ancestry, runtime identity, liveness or usage. */
+function dispatchOnly(a: AgentObservation): boolean {
+  return a.parentAgentId.state === "unavailable" && a.parentAgentId.reason === "identity_unavailable" &&
+    ROUTE_FIELDS.every(field => a.route.observed[field].value === null) &&
+    a.running.value === null && a.running.reason === "observer-unavailable" &&
+    a.running.observedAt === null && a.running.revision === null &&
+    a.tab.value === null && a.terminal.value === null &&
+    Object.values(a.cost).every(row => row.availability === "unavailable");
+}
+/** Decode the whole collection. A successful dispatch-only read still reports complete: false. */
 export function readAgentObservations(value: unknown): AgentObservationsReading {
   try {
     const r = record(value, ["schema", "protocol", "observedAt", "revision", "complete", "reason", "agents"]);
@@ -230,17 +239,20 @@ export function readAgentObservations(value: unknown): AgentObservationsReading 
     const raw = array(r.agents, MAX_AGENT_OBSERVATIONS);
     const observedAt = time(r.observedAt), rev = revision(r.revision);
     if (typeof r.complete !== "boolean") return bad();
-    if (!r.complete) { choice(r.reason, AGENT_COLLECTION_REASONS); return bad("incomplete"); }
-    if (r.reason !== null) return bad();
+    const reason = r.complete ? null : choice(r.reason, AGENT_COLLECTION_REASONS);
+    if (r.complete && r.reason !== null) return bad();
+    if (!r.complete && (reason !== "ancestry_unavailable" || raw.length === 0)) return bad("incomplete");
     const agents = raw.map(v => agent(v, observedAt));
+    // Never use a dispatch-only exception to admit a prefix of an observed runtime tree.
+    if (!r.complete && !agents.every(dispatchOnly)) return bad("incomplete");
     const byId = new Map<string, AgentObservation>();
     const roots = new Set<string>();
     const issueKey = (a: AgentObservation) => `${a.repo.owner.toLowerCase()}/${a.repo.name.toLowerCase()}#${a.issueNumber}`;
     for (const a of agents) {
       if (byId.has(a.agentId)) return bad("ambiguous-ancestry");
       byId.set(a.agentId, a);
-      if (a.parentAgentId.state === "unavailable") return bad("ambiguous-ancestry");
-      if (a.parentAgentId.state === "confirmed-root") {
+      if (r.complete && a.parentAgentId.state === "unavailable") return bad("ambiguous-ancestry");
+      if (!r.complete || a.parentAgentId.state === "confirmed-root") {
         if (roots.has(a.assignment.id)) return bad("ambiguous-ancestry");
         roots.add(a.assignment.id);
       }
@@ -255,7 +267,7 @@ export function readAgentObservations(value: unknown): AgentObservationsReading 
         p = parent.parentAgentId;
       }
     }
-    const observation: AgentObservations = { schema: 1, protocol: 1, observedAt, revision: rev, complete: true, reason: null, agents };
+    const observation: AgentObservations = { schema: 1, protocol: 1, observedAt, revision: rev, complete: r.complete, reason, agents };
     if (new TextEncoder().encode(JSON.stringify(observation)).byteLength > MAX_AGENT_OBSERVATION_BYTES) return bad("oversized");
     return { ok: true, observation };
   } catch (error) { return { ok: false, reason: error instanceof Invalid ? error.reason : "invalid" }; }
