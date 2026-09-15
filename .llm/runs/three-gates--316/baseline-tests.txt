@@ -1,0 +1,44 @@
+check:test-scripts ok — 12 of 15 package(s) declare a test script; 3 declared uncovered with a reason (governance, netscript-bridge, provider-acp)
+✔ a package with no test script and no declaration is reported by name (0.894948ms)
+✔ a package with no test script that is declared uncovered is accepted (0.167324ms)
+✔ a declaration that outlived its reason is reported, so the list cannot rot (0.147566ms)
+✔ a declaration naming a package that no longer exists is reported (0.109826ms)
+✔ a declaration with no reason is an omission with extra steps and is reported (0.102492ms)
+✔ the real repository passes, and every declared package actually exists (0.590496ms)
+✔ the executable gate exits non-zero on a package it was not told about (38.502646ms)
+✔ inconclusive is not zero, because a gate that did not run is never green (1.057161ms)
+✔ a spawn that cannot execute produces Inconclusive, not a failure (0.731752ms)
+✔ a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass (0.206817ms)
+✔ an executable directory passes and is not reported as anything (0.269816ms)
+✔ the probe leaves nothing behind on either path (0.643185ms)
+✔ the record says plainly that nothing was established (0.127019ms)
+✔ the record carries no path, so a diagnostic cannot leak one (0.162725ms)
+✔ the real host is classified, and whichever way it goes the gate is honest about it (13.7062ms)
+✔ all green reports the count and that the compile ran (0.811872ms)
+✔ a failure before the compile names the stage and says the compile did not run (0.107121ms)
+✔ the stages never reached are named, so nothing is mistaken for having passed (0.088737ms)
+✔ a failure after the compile still reports that the compile ran (0.095669ms)
+✔ an inconclusive stage is not reported as a failure and not as a pass (0.615815ms)
+✔ a real failure outranks an inconclusive, because the strongest negative wins (0.111609ms)
+✔ a compile stage that is not among the stages is refused rather than mis-reported (32.808212ms)
+✔ no stages at all is refused (27.959535ms)
+✔ a stage killed by a signal is inconclusive, not a failure (17.348587ms)
+✔ a stage that could not be spawned is inconclusive, and says so differently (1.641977ms)
+✔ a real non-zero exit is still a failure and keeps its own code (16.482694ms)
+✔ a real zero exit is a pass (18.262228ms)
+✔ a stage that exits 2 of its own accord is inconclusive and says its reason is unrecorded (19.027363ms)
+✔ the interrupted reason reaches the reported lines (20.887299ms)
+✔ a REAL translated signal death is inconclusive, not a failure (57.723732ms)
+✔ pnpm specifically translates rather than propagates, since the comment names pnpm (611.914565ms)
+✔ a REAL abort arrives as 134 and stays a failure (54.376468ms)
+✔ a high exit code that is not a known signal translation stays a failure (0.181982ms)
+✔ a stage that aborted or segfaulted stays a failure, because that is its own defect (0.077095ms)
+✔ importing the module runs no stages (21.428815ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 957.737232

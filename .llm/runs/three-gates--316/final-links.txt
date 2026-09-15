@@ -1,0 +1,2 @@
+$ node scripts/check-links.mjs
+check:links — 74 file(s), 407 relative link(s) checked (40 with an anchor), 168 external link(s) not checked, 0 broken

@@ -1,0 +1,20 @@
+$ node --test scripts/inconclusive.test.mjs && node scripts/check-installed-contracts.mjs
+✔ inconclusive is not zero, because a gate that did not run is never green (4.761987ms)
+✔ a spawn that cannot execute produces Inconclusive, not a failure (0.738845ms)
+✔ a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass (0.227016ms)
+✔ an executable directory passes and is not reported as anything (0.259376ms)
+✔ the probe leaves nothing behind on either path (0.66702ms)
+✔ the record says plainly that nothing was established (0.125665ms)
+✔ the record carries no path, so a diagnostic cannot leak one (0.156895ms)
+✔ the real host is classified, and whichever way it goes the gate is honest about it (1.758065ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 60.485787
+{"check":"installed-contracts","status":"INCONCLUSIVE","stage":"scratch executability preflight","reason":"scratch-not-executable","remedy":"could not execute the Node shebang fixture in the scratch location; check permissions, mount options and interpreter availability, or point TMPDIR at an executable filesystem","established":"nothing; the gate did not run to a verdict","location":"/ephemeral/tmp/governance-installed-opUAgK","execution":"EACCES"}
+check:installed inconclusive at scratch executability preflight — scratch-not-executable: could not execute the Node shebang fixture in the scratch location; check permissions, mount options and interpreter availability, or point TMPDIR at an executable filesystem
+[ELIFECYCLE] Command failed with exit code 2.

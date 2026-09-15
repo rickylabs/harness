@@ -1,0 +1,705 @@
+$ python3 .llm/runs/three-gates--316/run-validation.py
+exit 0
+$ cd /tmp/harness-three-gates-316-verify
+$ TMPDIR=/tmp pnpm run typecheck
+exit 0
+packages/provider-codex typecheck: Done
+packages/telemetry typecheck$ tsc -b --emitDeclarationOnly
+packages/forge typecheck$ tsc -b --emitDeclarationOnly
+packages/provider-opencode typecheck: Done
+packages/routing typecheck: Done
+packages/llm-local typecheck$ tsc -b --emitDeclarationOnly
+packages/forge typecheck: Done
+packages/telemetry typecheck: Done
+packages/llm-local typecheck: Done
+packages/dsh-app typecheck$ tsc -b --emitDeclarationOnly
+packages/dsh-app typecheck: Done
+
+typecheck ok — 4 stage(s), all green
+  compile (typecheck:packages, stage 4): ran
+$ cd /tmp/harness-three-gates-316-verify
+$ TMPDIR=/tmp pnpm run build
+exit 0
+$ node scripts/check-label-registry.mjs
+label registry ok — 10 label use(s) in @rickylabs/board are all creatable by @rickylabs/forge (30 live core labels; 1 retired label(s) excluded)
+$ node scripts/cli-reference.mjs
+docs/reference/cli: 6 page(s) match the binaries
+$ node scripts/check-skill.mjs
+check:skill — 1 generated skill file(s) match the taxonomy (.claude/skills/board-process/SKILL.md)
+$ node scripts/check-tutorial.mjs
+tutorial ok — 4 block(s) re-run and matched, 3 declared untested (7 output claim(s) across 2 page(s))
+  trusted  docs/tutorials/01-from-clone-to-board.md:247 — writes to and reads from a live GitHub repository
+  trusted  docs/tutorials/01-from-clone-to-board.md:256 — a synthetic contradiction a healthy board never produces
+  trusted  docs/tutorials/01-from-clone-to-board.md:443 — an exit-3 path that needs a second machine's store
+
+build ok — 13 stage(s), all green
+  compile (build:packages, stage 8): ran
+$ cd /tmp/harness-three-gates-316-verify
+$ TMPDIR=/tmp pnpm test
+exit 0
+✔ the record carries no path, so a diagnostic cannot leak one (0.327704ms)
+✔ the real host is classified, and whichever way it goes the gate is honest about it (18.248088ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 74.036348
+{"check":"installed-repository-run-observation","status":"PASS","version":"0.4.0","protocol":1,"tarball":"rickylabs-harness-contracts-0.4.0.tgz","sha256":"cc0457184c55b1b6af0806b79dcda34e7d0a8b452e191621044e2b636d27b261","fixtures":["read-distinct-roots-independent-clocks","revision-echo-repeat-read","wrong-id","conflicting-aliases","invalid-alias","null-id","long-id","missing-id","equal-aliases","repeated-equal-id","repeated-conflicting-id","turn-context-only","no-session-cwd-proof","null-cwd","unresolvable-cwd","relative-cwd","outside-session-cwd","outside-turn-cwd","repeated-session-outside-cwd","cwd-symlink-outside","cwd-subdirectory","linked-worktree-common-directory-outside","source-symlink-inside","source-symlink-outside","wrong-common-directory","deleted-worktree","missing-source-root","source-missing","source-unreadable-directory","source-too-large","line-too-large","malformed-tail","array-line","non-object-payload","unknown-envelope","unknown-payload-neutral","malformed-before-identity-precedence","timestamp-missing","timestamp-impossible","timestamp-backward","timestamp-no-milliseconds","invalid-count--1","invalid-count-1.5","invalid-count-9007199254740992","invalid-count-null","invalid-count-11","invalid-identity-label","no-accounting-no-identity-no-terminal","source-clock-skew-does-not-imply-freshness","last-token-usage-not-accounting","accounting-cumulative-not-summed","response-item-cannot-supply-accounting-or-completion","terminal-then-start-reset","execution-error","execution-stream_error","execution-turn_aborted","nested-model-effort","world-state-full-and-token-corroboration","world-state-outside","world-state-unresolved","world-state-missing-cwd","world-state-relative-cwd","world-state-null-cwd","world-state-empty-cwd","world-state-non-object-record","world-state-missing-state","world-state-missing-environments","world-state-missing-map","world-state-array-map","world-state-empty-map","world-state-partial","world-state-nonboolean-full","world-state-mixed-invalid-and-outside","world-state-null-payload","world-state-symlink-outside","world-state-no-session-meta","world-state-cannot-replace-session-cwd","world-state-invalid-timestamp","token-record-thread_id-wrong","token-record-thread_id-undefined","token-record-thread_id-null","token-record-thread_id-bad/id","token-record-session_id-wrong","token-record-session_id-undefined","token-record-session_id-null","token-record-session_id-bad/id","token-record-only-no-session-meta","token-record-null-payload","token-record-no-supported-accounting","token-record-total-ignore-guard","token-record-backwards-timestamp","supplemental-third-envelope-refused","store-collision-and-delayed-A-carrier-fence","installed-strict-decoder-negative-matrix","race-opened-source-appended","race-opened-source-replaced","race-opened-source-truncated","race-descriptor-revision","race-descriptor-replaced-same-bytes","race-descriptor-deleted","race-source-appended","race-source-replaced","race-source-deleted","race-root-replaced","race-worktree-replaced","race-common-directory-replaced","race-git-association-changed","invalid-descriptor-fixed-output"],"fixtureCount":108,"exports":{"rootRuntime":true,"rootTypesCompiled":true,"serverTypesCompiled":true},"assertions":"actual CLI -> offline installed strict decoder; deterministic CLI-main races; identity, scope, clocks, coverage, carrier fence, privacy; no Node imports or dependencies","limitations":["synthetic only; no real-source acceptance","carrier fence model only; no backend authorization claim","trusted local storage; no adversarial ABA proof","candidate only; no publication"]}
+{"check":"installed-governance","status":"PASS","version":"0.4.0","protocol":1,"tarball":"rickylabs-harness-contracts-0.4.0.tgz","sha256":"cc0457184c55b1b6af0806b79dcda34e7d0a8b452e191621044e2b636d27b261","exports":{"rootRuntime":true,"serverRuntime":true,"rootTypesCompiled":true,"serverTypesCompiled":true},"install":"npm install --offline --ignore-scripts --no-audit --no-fund <tarball>","command":"node packages/telemetry/dist/cli.js governance --home <synthetic-home> --observations-from <synthetic-descriptor>","fixtures":["mixed-timeout","all-unconfigured"],"timeout":{"actualSleepingProbe":true,"terminatedAndReaped":true,"grandchildren":0},"assertions":"version/protocol, root/server runtime and compiled declarations, source coverage, admission refusal and original stamps, memory readings, privacy, unavailable","limitations":["synthetic only; no live acceptance or downstream compatibility claim","sleeping executable fixture requires POSIX shebang support and executable TMPDIR","candidate only; no publication"]}
+
+test ok — 6 stage(s), all green
+$ cd /tmp/harness-three-gates-316-verify
+$ TMPDIR=/ephemeral/tmp pnpm run check:installed
+exit 2
+✔ the record says plainly that nothing was established (0.125665ms)
+✔ the record carries no path, so a diagnostic cannot leak one (0.156895ms)
+✔ the real host is classified, and whichever way it goes the gate is honest about it (1.758065ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 60.485787
+{"check":"installed-contracts","status":"INCONCLUSIVE","stage":"scratch executability preflight","reason":"scratch-not-executable","remedy":"could not execute the Node shebang fixture in the scratch location; check permissions, mount options and interpreter availability, or point TMPDIR at an executable filesystem","established":"nothing; the gate did not run to a verdict","location":"/ephemeral/tmp/governance-installed-opUAgK","execution":"EACCES"}
+check:installed inconclusive at scratch executability preflight — scratch-not-executable: could not execute the Node shebang fixture in the scratch location; check permissions, mount options and interpreter availability, or point TMPDIR at an executable filesystem
+[ELIFECYCLE] Command failed with exit code 2.
+
+$ node --test scripts/inconclusive.test.mjs scripts/check-test-scripts.test.mjs scripts/run-stages.test.mjs scripts/gates-regressions.test.mjs
+exit 0
+✔ a package with no test script and no declaration is reported by name (0.99715ms)
+✔ a package with no test script that is declared uncovered is accepted (0.143459ms)
+✔ a declaration that outlived its reason is reported, so the list cannot rot (0.100468ms)
+✔ a declaration naming a package that no longer exists is reported (0.087845ms)
+✔ a declaration with no reason is an omission with extra steps and is reported (0.093525ms)
+✔ the real repository passes, and every declared package actually exists (0.710251ms)
+✔ the executable gate exits non-zero on a package it was not told about (24.991098ms)
+✔ installed entrypoint preserves preflight inconclusive status and location (34.584171ms)
+✔ preflight diagnostic names only owned location and closed execution reason (3.26413ms)
+✔ preflight refuses Windows before spawning or writing a shebang fixture (0.648495ms)
+✔ preflight fixture uses the same Node interpreter as the installed fixture (0.401703ms)
+✔ preflight unknown execution codes cannot reflect arbitrary input (0.416501ms)
+✔ preflight setup and thrown spawn errors are inconclusive without raw errors (0.509976ms)
+✔ preflight cleanup failure is inconclusive (0.543569ms)
+✔ bounded output capture is inconclusive after the runner started (18.680438ms)
+✔ workspace inventory missing or empty is inconclusive, not a verdict (46.269246ms)
+✔ workspace unreadable manifest is inconclusive but invalid JSON fails (69.845572ms)
+✔ workspace declarations pass, missing tests fail and the missing package is named (49.655062ms)
+✔ an inaccessible package cannot disappear from an otherwise valid inventory (50.427792ms)
+✔ importing a workspace audit does not inspect or certify the workspace (24.023474ms)
+✔ empty and partial stage observations cannot report all green (0.185899ms)
+✔ a real runner spawn refusal cannot claim the compile executed (25.74936ms)
+✔ shell command refusals remain inconclusive through pnpm (947.822153ms)
+✔ native compiler exit two fails while a non-compile gate exit two is inconclusive (1432.064697ms)
+✔ misconfigured aggregate reports inconclusive because no stage could run (26.271007ms)
+✔ stage output capture overflow reports inconclusive without forwarding truncated output (734.948864ms)
+✔ stage reporter preserves program output while omitting pnpm debug metadata (685.936086ms)
+✔ inconclusive is not zero, because a gate that did not run is never green (5.075815ms)
+✔ a spawn that cannot execute produces Inconclusive, not a failure (0.706174ms)
+✔ a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass (0.238958ms)
+✔ an executable directory passes and is not reported as anything (0.274906ms)
+✔ the probe leaves nothing behind on either path (0.692078ms)
+✔ the record says plainly that nothing was established (0.140945ms)
+✔ the record carries no path, so a diagnostic cannot leak one (0.174647ms)
+✔ the real host is classified, and whichever way it goes the gate is honest about it (1.805575ms)
+✔ all green reports the count and that the compile ran (0.904365ms)
+✔ a failure before the compile names the stage and says the compile did not run (0.168856ms)
+✔ the stages never reached are named, so nothing is mistaken for having passed (0.13847ms)
+✔ a failure after the compile still reports that the compile ran (0.12248ms)
+✔ an inconclusive stage is not reported as a failure and not as a pass (0.571562ms)
+✔ a real failure outranks an inconclusive, because the strongest negative wins (0.143339ms)
+✔ a compile stage that is not among the stages is refused rather than mis-reported (26.259245ms)
+✔ no stages at all is refused (22.57521ms)
+✔ a stage killed by a signal is inconclusive, not a failure (18.123193ms)
+✔ a stage that could not be spawned is inconclusive, and says so differently (1.158592ms)
+✔ a real non-zero exit is still a failure and keeps its own code (16.807346ms)
+✔ a real zero exit is a pass (17.19279ms)
+✔ a stage that exits 2 of its own accord is inconclusive and says its reason is unrecorded (14.907125ms)
+✔ the interrupted reason reaches the reported lines (15.878466ms)
+✔ a REAL translated signal death is inconclusive, not a failure (50.099055ms)
+✔ pnpm specifically translates rather than propagates, since the comment names pnpm (626.660279ms)
+✔ a REAL abort arrives as 134 and stays a failure (16.408559ms)
+✔ a high exit code that is not a known signal translation stays a failure (0.122911ms)
+✔ a stage that aborted or segfaulted stays a failure, because that is its own defect (0.140714ms)
+✔ importing the module runs no stages (21.483182ms)
+ℹ tests 55
+ℹ suites 0
+ℹ pass 55
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4216.320541
+
+$ pnpm run typecheck  # original noexec checkout
+exit 2
+$ tail -10 .llm/runs/three-gates--316/noexec-typecheck.txt
+exit 0
+[WARN]  Local package.json exists, but node_modules missing, did you mean to install?
+[WARN]  Local package.json exists, but node_modules missing, did you mean to install?
+@rickylabs/harness-monorepo@0.0.0 typecheck:packages: `pnpm -r run typecheck`
+Exit status 126
+
+typecheck INCONCLUSIVE — 1 stage(s) did not reach a verdict: typecheck:packages
+  typecheck:packages — stage-command-unavailable: the stage command could not execute (shell 126/127 or pnpm ENOENT); its result is unproven
+  nothing is established about typecheck:packages; this is not a pass and not a failure
+  compile (typecheck:packages, stage 4): DID NOT RUN — INCONCLUSIVE; compilation was not established
+[ELIFECYCLE] Command failed with exit code 2.
+
+$ pnpm run check:gate-mutations
+exit 0
+# Verbatim command/assertion excerpts; full stdout/stderr: mutations.txt
+
+baseline: installed-preflight-wiring
+exit code: 0
+ok 1 - installed entrypoint preserves preflight inconclusive status and location
+mutation: check-installed-contracts.mjs
+replace: "requireExecutableDirectory(scratch);"
+with: "/* bypass preflight */"
+mutant: installed-preflight-wiring
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^installed entrypoint preserves preflight inconclusive status and location$' '/ephemeral/tmp/gate-mutations-y34ZR2/installed-preflight-wiring/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - installed entrypoint preserves preflight inconclusive status and location
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 1
+
+baseline: installed-inconclusive-boundary
+exit code: 0
+ok 1 - installed entrypoint preserves preflight inconclusive status and location
+mutation: check-installed-contracts.mjs
+replace: "if (error instanceof Inconclusive)"
+with: "if (false)"
+mutant: installed-inconclusive-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^installed entrypoint preserves preflight inconclusive status and location$' '/ephemeral/tmp/gate-mutations-y34ZR2/installed-inconclusive-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - installed entrypoint preserves preflight inconclusive status and location
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 1
+
+baseline: scratch-spawn-refusal
+exit code: 0
+ok 1 - a spawn that cannot execute produces Inconclusive, not a failure
+mutation: inconclusive.mjs
+replace: "if (attempt.error || attempt.status !== 0)"
+with: "if (false)"
+mutant: scratch-spawn-refusal
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a spawn that cannot execute produces Inconclusive, not a failure$' '/ephemeral/tmp/gate-mutations-y34ZR2/scratch-spawn-refusal/scripts/inconclusive.test.mjs'
+exit code: 1
+not ok 1 - a spawn that cannot execute produces Inconclusive, not a failure
+  code: 'ERR_ASSERTION'
+
+baseline: scratch-nonzero-refusal
+exit code: 0
+ok 1 - a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass
+mutation: inconclusive.mjs
+replace: "attempt.error || attempt.status !== 0"
+with: "attempt.error"
+mutant: scratch-nonzero-refusal
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass$' '/ephemeral/tmp/gate-mutations-y34ZR2/scratch-nonzero-refusal/scripts/inconclusive.test.mjs'
+exit code: 1
+not ok 1 - a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass
+  code: 'ERR_ASSERTION'
+
+baseline: windows-preflight
+exit code: 0
+ok 1 - preflight refuses Windows before spawning or writing a shebang fixture
+mutation: inconclusive.mjs
+replace: "platform === \"win32\""
+with: "false"
+mutant: windows-preflight
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight refuses Windows before spawning or writing a shebang fixture$' '/ephemeral/tmp/gate-mutations-y34ZR2/windows-preflight/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - preflight refuses Windows before spawning or writing a shebang fixture
+  code: 'ERR_ASSERTION'
+
+baseline: node-shebang
+exit code: 0
+ok 1 - preflight fixture uses the same Node interpreter as the installed fixture
+mutation: inconclusive.mjs
+replace: "#!${process.execPath}"
+with: "#!/bin/sh"
+mutant: node-shebang
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight fixture uses the same Node interpreter as the installed fixture$' '/ephemeral/tmp/gate-mutations-y34ZR2/node-shebang/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - preflight fixture uses the same Node interpreter as the installed fixture
+  code: 'ERR_ASSERTION'
+  expected: true
+  actual: false
+
+baseline: caught-preflight-error
+exit code: 0
+ok 1 - preflight setup and thrown spawn errors are inconclusive without raw errors
+mutation: inconclusive.mjs
+replace: "attempt = { error };\n  } finally"
+with: "attempt = { status: 0 };\n  } finally"
+mutant: caught-preflight-error
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight setup and thrown spawn errors are inconclusive without raw errors$' '/ephemeral/tmp/gate-mutations-y34ZR2/caught-preflight-error/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - preflight setup and thrown spawn errors are inconclusive without raw errors
+  code: 'ERR_ASSERTION'
+
+baseline: preflight-cleanup-error
+exit code: 0
+ok 1 - preflight cleanup failure is inconclusive
+mutation: inconclusive.mjs
+replace: "catch (error) { attempt = { error }; }"
+with: "catch (error) { /* ignored */ }"
+mutant: preflight-cleanup-error
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight cleanup failure is inconclusive$' '/ephemeral/tmp/gate-mutations-y34ZR2/preflight-cleanup-error/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - preflight cleanup failure is inconclusive
+  code: 'ERR_ASSERTION'
+
+baseline: owned-location
+exit code: 0
+ok 1 - preflight diagnostic names only owned location and closed execution reason
+mutation: inconclusive.mjs
+replace: "{ location: directory, execution }"
+with: "{ execution }"
+mutant: owned-location
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight diagnostic names only owned location and closed execution reason$' '/ephemeral/tmp/gate-mutations-y34ZR2/owned-location/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - preflight diagnostic names only owned location and closed execution reason
+  code: 'ERR_ASSERTION'
+  expected: '/ephemeral/tmp/gate-control-M2QV7V'
+
+baseline: closed-execution-code
+exit code: 0
+ok 1 - preflight diagnostic names only owned location and closed execution reason
+mutation: inconclusive.mjs
+replace: "? code : \"probe-did-not-complete-successfully\""
+with: "? \"wrong-code\" : \"probe-did-not-complete-successfully\""
+mutant: closed-execution-code
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight diagnostic names only owned location and closed execution reason$' '/ephemeral/tmp/gate-mutations-y34ZR2/closed-execution-code/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - preflight diagnostic names only owned location and closed execution reason
+  code: 'ERR_ASSERTION'
+  expected: 'EACCES'
+  actual: 'wrong-code'
+
+baseline: raw-error-boundary
+exit code: 0
+ok 1 - preflight diagnostic names only owned location and closed execution reason
+mutation: inconclusive.mjs
+replace: "{ location: directory, execution }"
+with: "{ location: directory, execution: attempt.error?.message }"
+mutant: raw-error-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight diagnostic names only owned location and closed execution reason$' '/ephemeral/tmp/gate-mutations-y34ZR2/raw-error-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - preflight diagnostic names only owned location and closed execution reason
+  code: 'ERR_ASSERTION'
+  expected: 'EACCES'
+  actual: 'private-canary /unowned/credential'
+
+baseline: generic-path-boundary
+exit code: 0
+ok 1 - the record carries no path, so a diagnostic cannot leak one
+mutation: inconclusive.mjs
+replace: "check,\n    status:"
+with: "check,\n    leakedPath: process.env.TMPDIR || '/tmp',\n    status:"
+mutant: generic-path-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^the record carries no path, so a diagnostic cannot leak one$' '/ephemeral/tmp/gate-mutations-y34ZR2/generic-path-boundary/scripts/inconclusive.test.mjs'
+exit code: 1
+not ok 1 - the record carries no path, so a diagnostic cannot leak one
+  code: 'ERR_ASSERTION'
+  expected: true
+  actual: false
+
+baseline: workspace-empty
+exit code: 0
+ok 1 - workspace inventory missing or empty is inconclusive, not a verdict
+mutation: check-test-scripts.mjs
+replace: "if (packages.length === 0)"
+with: "if (false)"
+mutant: workspace-empty
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace inventory missing or empty is inconclusive, not a verdict$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-empty/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - workspace inventory missing or empty is inconclusive, not a verdict
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 1
+
+baseline: workspace-inaccessible-manifest
+exit code: 0
+ok 1 - an inaccessible package cannot disappear from an otherwise valid inventory
+mutation: check-test-scripts.mjs
+replace: "if (error.code === \"ENOENT\") return [];"
+with: "return [];"
+mutant: workspace-inaccessible-manifest
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^an inaccessible package cannot disappear from an otherwise valid inventory$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-inaccessible-manifest/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - an inaccessible package cannot disappear from an otherwise valid inventory
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 0
+
+baseline: workspace-nonpackage-directory
+exit code: 0
+ok 1 - workspace declarations pass, missing tests fail and the missing package is named
+mutation: check-test-scripts.mjs
+replace: "if (error.code === \"ENOENT\") return [];"
+with: "if (false) return [];"
+mutant: workspace-nonpackage-directory
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace declarations pass, missing tests fail and the missing package is named$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-nonpackage-directory/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - workspace declarations pass, missing tests fail and the missing package is named
+  code: 'ERR_ASSERTION'
+  expected: 0
+  actual: 2
+
+baseline: workspace-unreadable
+exit code: 0
+ok 1 - workspace inventory missing or empty is inconclusive, not a verdict
+mutation: check-test-scripts.mjs
+replace: "throw new Inconclusive(\"workspace-unreadable\","
+with: "throw new Error(\"workspace-unreadable\","
+mutant: workspace-unreadable
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace inventory missing or empty is inconclusive, not a verdict$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-unreadable/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - workspace inventory missing or empty is inconclusive, not a verdict
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 1
+
+baseline: manifest-syntax-failure
+exit code: 0
+ok 1 - workspace unreadable manifest is inconclusive but invalid JSON fails
+mutation: check-test-scripts.mjs
+replace: "if (typeof error.code !== \"string\" || typeof error.syscall !== \"string\") throw error;"
+with: "/* classify syntax as inconclusive */"
+mutant: manifest-syntax-failure
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace unreadable manifest is inconclusive but invalid JSON fails$' '/ephemeral/tmp/gate-mutations-y34ZR2/manifest-syntax-failure/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - workspace unreadable manifest is inconclusive but invalid JSON fails
+  code: 'ERR_ASSERTION'
+  expected: 1
+  actual: 2
+
+baseline: workspace-import-boundary
+exit code: 0
+ok 1 - importing a workspace audit does not inspect or certify the workspace
+mutation: check-test-scripts.mjs
+replace: "if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url))"
+with: "if (!process.argv[1] || realpathSync(process.argv[1]) === fileURLToPath(import.meta.url))"
+mutant: workspace-import-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^importing a workspace audit does not inspect or certify the workspace$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-import-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - importing a workspace audit does not inspect or certify the workspace
+  code: 'ERR_ASSERTION'
+  expected: 0
+  actual: 2
+
+baseline: missing-test-script
+exit code: 0
+ok 1 - workspace declarations pass, missing tests fail and the missing package is named
+mutation: check-test-scripts.mjs
+replace: "!p.hasTestScript && !declaredNames.has(p.name)"
+with: "false"
+mutant: missing-test-script
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace declarations pass, missing tests fail and the missing package is named$' '/ephemeral/tmp/gate-mutations-y34ZR2/missing-test-script/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - workspace declarations pass, missing tests fail and the missing package is named
+  code: 'ERR_ASSERTION'
+  expected: 1
+  actual: 0
+
+baseline: stale-exemption
+exit code: 0
+ok 1 - a declaration that outlived its reason is reported, so the list cannot rot
+mutation: check-test-scripts.mjs
+replace: "byName.get(d.name)?.hasTestScript === true"
+with: "false"
+mutant: stale-exemption
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a declaration that outlived its reason is reported, so the list cannot rot$' '/ephemeral/tmp/gate-mutations-y34ZR2/stale-exemption/scripts/check-test-scripts.test.mjs'
+exit code: 1
+not ok 1 - a declaration that outlived its reason is reported, so the list cannot rot
+  code: 'ERR_ASSERTION'
+  expected:
+  actual:
+
+baseline: incomplete-results
+exit code: 0
+ok 1 - empty and partial stage observations cannot report all green
+mutation: run-stages.mjs
+replace: "missing.length > 0 || stages.length === 0"
+with: "false"
+mutant: incomplete-results
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^empty and partial stage observations cannot report all green$' '/ephemeral/tmp/gate-mutations-y34ZR2/incomplete-results/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - empty and partial stage observations cannot report all green
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 0
+
+baseline: spawn-execution-report
+exit code: 0
+ok 1 - a real runner spawn refusal cannot claim the compile executed
+mutation: run-stages.mjs
+replace: "executed: false, reason: \"stage-could-not-spawn\""
+with: "executed: true, reason: \"stage-could-not-spawn\""
+mutant: spawn-execution-report
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a real runner spawn refusal cannot claim the compile executed$' '/ephemeral/tmp/gate-mutations-y34ZR2/spawn-execution-report/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - a real runner spawn refusal cannot claim the compile executed
+  code: 'ERR_ASSERTION'
+  expected:
+  actual: |-
+
+baseline: unavailable-command
+exit code: 0
+ok 1 - shell command refusals remain inconclusive through pnpm
+mutation: run-stages.mjs
+replace: "result.commandUnavailable || result.status === 126"
+with: "false"
+mutant: unavailable-command
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^shell command refusals remain inconclusive through pnpm$' '/ephemeral/tmp/gate-mutations-y34ZR2/unavailable-command/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - shell command refusals remain inconclusive through pnpm
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 126
+
+baseline: pnpm-enoent-record
+exit code: 0
+ok 1 - shell command refusals remain inconclusive through pnpm
+mutation: run-stages.mjs
+replace: "run.commandUnavailable = true;"
+with: "run.commandUnavailable = false;"
+mutant: pnpm-enoent-record
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^shell command refusals remain inconclusive through pnpm$' '/ephemeral/tmp/gate-mutations-y34ZR2/pnpm-enoent-record/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - shell command refusals remain inconclusive through pnpm
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 1
+
+baseline: compile-exit-two
+exit code: 0
+ok 1 - native compiler exit two fails while a non-compile gate exit two is inconclusive
+mutation: run-stages.mjs
+replace: "compile && result.status === INCONCLUSIVE_EXIT ? 1 : result.status"
+with: "result.status"
+mutant: compile-exit-two
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^native compiler exit two fails while a non-compile gate exit two is inconclusive$' '/ephemeral/tmp/gate-mutations-y34ZR2/compile-exit-two/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - native compiler exit two fails while a non-compile gate exit two is inconclusive
+  code: 'ERR_ASSERTION'
+  expected: 1
+  actual: 2
+
+baseline: noncompile-exit-two
+exit code: 0
+ok 1 - native compiler exit two fails while a non-compile gate exit two is inconclusive
+mutation: run-stages.mjs
+replace: "compile && result.status === INCONCLUSIVE_EXIT ? 1 : result.status"
+with: "result.status === INCONCLUSIVE_EXIT ? 1 : result.status"
+mutant: noncompile-exit-two
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^native compiler exit two fails while a non-compile gate exit two is inconclusive$' '/ephemeral/tmp/gate-mutations-y34ZR2/noncompile-exit-two/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - native compiler exit two fails while a non-compile gate exit two is inconclusive
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 1
+
+baseline: not-run-compile-wording
+exit code: 0
+ok 1 - a real runner spawn refusal cannot claim the compile executed
+mutation: run-stages.mjs
+replace: "DID NOT RUN — INCONCLUSIVE; compilation was not established"
+with: "DID NOT RUN"
+mutant: not-run-compile-wording
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a real runner spawn refusal cannot claim the compile executed$' '/ephemeral/tmp/gate-mutations-y34ZR2/not-run-compile-wording/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - a real runner spawn refusal cannot claim the compile executed
+  code: 'ERR_ASSERTION'
+  expected:
+  actual: |-
+
+baseline: named-failure
+exit code: 0
+ok 1 - a failure before the compile names the stage and says the compile did not run
+mutation: run-stages.mjs
+replace: ": ${failed.stage}`"
+with: ": unnamed`"
+mutant: named-failure
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a failure before the compile names the stage and says the compile did not run$' '/ephemeral/tmp/gate-mutations-y34ZR2/named-failure/scripts/run-stages.test.mjs'
+exit code: 1
+not ok 1 - a failure before the compile names the stage and says the compile did not run
+  code: 'ERR_ASSERTION'
+  expected:
+  actual: 'build FAILED at stage 2 of 4: unnamed'
+
+baseline: translated-signal
+exit code: 0
+ok 1 - a REAL translated signal death is inconclusive, not a failure
+mutation: run-stages.mjs
+replace: "SIGNAL_EXIT_CODES.get(result.status)"
+with: "undefined"
+mutant: translated-signal
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a REAL translated signal death is inconclusive, not a failure$' '/ephemeral/tmp/gate-mutations-y34ZR2/translated-signal/scripts/run-stages.test.mjs'
+exit code: 1
+not ok 1 - a REAL translated signal death is inconclusive, not a failure
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 129
+
+baseline: configuration-status
+exit code: 0
+ok 1 - misconfigured aggregate reports inconclusive because no stage could run
+mutation: run-stages.mjs
+replace: "process.exitCode = INCONCLUSIVE_EXIT;"
+with: "process.exitCode = 0;"
+mutant: configuration-status
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^misconfigured aggregate reports inconclusive because no stage could run$' '/ephemeral/tmp/gate-mutations-y34ZR2/configuration-status/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - misconfigured aggregate reports inconclusive because no stage could run
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: 0
+
+baseline: capture-started-guard
+exit code: 0
+ok 1 - bounded output capture is inconclusive after the runner started
+mutation: run-stages.mjs
+replace: "if (result.pid > 0)"
+with: "if (false)"
+mutant: capture-started-guard
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^bounded output capture is inconclusive after the runner started$' '/ephemeral/tmp/gate-mutations-y34ZR2/capture-started-guard/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - bounded output capture is inconclusive after the runner started
+  code: 'ERR_ASSERTION'
+  expected: 'stage-result-unavailable'
+  actual: 'stage-could-not-spawn'
+
+baseline: capture-execution-report
+exit code: 0
+ok 1 - bounded output capture is inconclusive after the runner started
+mutation: run-stages.mjs
+replace: "reason: \"stage-result-unavailable\""
+with: "executed: false, reason: \"stage-result-unavailable\""
+mutant: capture-execution-report
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^bounded output capture is inconclusive after the runner started$' '/ephemeral/tmp/gate-mutations-y34ZR2/capture-execution-report/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - bounded output capture is inconclusive after the runner started
+  code: 'ERR_ASSERTION'
+  expected: true
+  actual: false
+
+baseline: unknown-execution-code
+exit code: 0
+ok 1 - preflight unknown execution codes cannot reflect arbitrary input
+mutation: inconclusive.mjs
+replace: "? code : \"probe-did-not-complete-successfully\""
+with: "? code : code"
+mutant: unknown-execution-code
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight unknown execution codes cannot reflect arbitrary input$' '/ephemeral/tmp/gate-mutations-y34ZR2/unknown-execution-code/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - preflight unknown execution codes cannot reflect arbitrary input
+  code: 'ERR_ASSERTION'
+  expected: 'probe-did-not-complete-successfully'
+  actual: 'private-canary'
+
+baseline: capture-bound
+exit code: 0
+ok 1 - stage output capture overflow reports inconclusive without forwarding truncated output
+mutation: run-stages.mjs
+replace: "maxBuffer: 32 * 1024 * 1024"
+with: "maxBuffer: 128 * 1024 * 1024"
+mutant: capture-bound
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage output capture overflow reports inconclusive without forwarding truncated output$' '/ephemeral/tmp/gate-mutations-y34ZR2/capture-bound/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - stage output capture overflow reports inconclusive without forwarding truncated output
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: ~
+
+baseline: truncated-output-boundary
+exit code: 0
+ok 1 - stage output capture overflow reports inconclusive without forwarding truncated output
+mutation: run-stages.mjs
+replace: "if (run.error) return run;"
+with: "/* forward incomplete output */"
+mutant: truncated-output-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage output capture overflow reports inconclusive without forwarding truncated output$' '/ephemeral/tmp/gate-mutations-y34ZR2/truncated-output-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - stage output capture overflow reports inconclusive without forwarding truncated output
+  code: 'ERR_ASSERTION'
+  expected: 2
+  actual: ~
+
+baseline: debug-metadata-boundary
+exit code: 0
+ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+mutation: run-stages.mjs
+replace: "if (typeof record.line === \"string\") console.log(record.line);"
+with: "console.log(line); if (typeof record.line === \"string\") console.log(record.line);"
+mutant: debug-metadata-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/debug-metadata-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  code: 'ERR_ASSERTION'
+  expected:
+  actual: |-
+
+baseline: program-output-forwarding
+exit code: 0
+ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+mutation: run-stages.mjs
+replace: "} else console.log(line);"
+with: "} else { /* discard program output */ }"
+mutant: program-output-forwarding
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/program-output-forwarding/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  code: 'ERR_ASSERTION'
+  expected:
+  actual: |-
+
+baseline: lifecycle-output-forwarding
+exit code: 0
+ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+mutation: run-stages.mjs
+replace: "if (typeof record.line === \"string\") console.log(record.line);"
+with: "if (typeof record.line === \"string\") { /* discard lifecycle output */ }"
+mutant: lifecycle-output-forwarding
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/lifecycle-output-forwarding/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  code: 'ERR_ASSERTION'
+  expected:
+  actual: |-
+
+baseline: lifecycle-error-forwarding
+exit code: 0
+ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+mutation: run-stages.mjs
+replace: "else if (record.level === \"error\") console.error(record.err?.message ?? record.message ?? record.code);"
+with: "else if (record.level === \"error\") { /* discard lifecycle error */ }"
+mutant: lifecycle-error-forwarding
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/lifecycle-error-forwarding/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  code: 'ERR_ASSERTION'
+  expected:
+  actual: |-
+
+baseline: pnpm-error-code-boundary
+exit code: 0
+ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+mutation: run-stages.mjs
+replace: "[\"ELIFECYCLE\", \"ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL\"].includes(record.code)"
+with: "true"
+mutant: pnpm-error-code-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/pnpm-error-code-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+not ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  code: 'ERR_ASSERTION'
+  expected: 0
+  actual: 2
+Mutation verification: 40/40 killed by targeted assertions.

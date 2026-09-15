@@ -7,8 +7,8 @@
 // and by a structured status, because a caller that can only see zero or non-zero cannot act on it.
 //
 // Nothing here crosses the output boundary except a reason code from a closed vocabulary and a
-// fixed remedy string. No path, no raw error text, no command output: the gates that use this
-// module handle credential-bearing input, and a diagnostic is the easiest place to leak one.
+// fixed remedy string. The scratch preflight additionally reports its owned location and a closed
+// execution code. Never reflect arbitrary error text, unowned paths or child output.
 import { chmodSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join } from "node:path";
@@ -17,11 +17,13 @@ import { join } from "node:path";
 export const INCONCLUSIVE_EXIT = 2;
 
 export class Inconclusive extends Error {
-  constructor(reason, remedy) {
+  constructor(reason, remedy, details = {}) {
     super(reason);
     this.name = "Inconclusive";
     this.reason = reason;
     this.remedy = remedy;
+    this.location = details.location;
+    this.execution = details.execution;
   }
 }
 
@@ -32,17 +34,30 @@ export class Inconclusive extends Error {
  * rather than of the code under test. `spawner` is injectable only so the failure branch can be
  * driven in a test on a host where every filesystem happens to be executable.
  */
-export function requireExecutableDirectory(directory, spawner = spawnSync) {
+export function requireExecutableDirectory(directory, spawner = spawnSync, platform = process.platform) {
+  if (platform === "win32") {
+    throw new Inconclusive("posix-shebang-host-required",
+      "the executable fixture needs a POSIX shebang host; run this gate on Linux or macOS",
+      { location: directory });
+  }
   const probe = join(directory, "exec-preflight");
-  writeFileSync(probe, "#!/bin/sh\nexit 0\n");
-  chmodSync(probe, 0o700);
-  const attempt = spawner(probe, [], { stdio: "ignore" });
-  rmSync(probe, { force: true });
+  let attempt;
+  try {
+    writeFileSync(probe, `#!${process.execPath}\nprocess.exit(0);\n`);
+    chmodSync(probe, 0o700);
+    attempt = spawner(probe, [], { stdio: "ignore", timeout: 5000 });
+  } catch (error) {
+    attempt = { error };
+  } finally {
+    try { rmSync(probe, { force: true }); } catch (error) { attempt = { error }; }
+  }
   if (attempt.error || attempt.status !== 0) {
-    throw new Inconclusive(
-      "scratch-not-executable",
-      "the temporary directory is on a noexec filesystem; point TMPDIR at an executable one",
-    );
+    const code = attempt.error?.code;
+    const execution = ["EACCES", "EPERM", "ENOENT", "ENOEXEC", "ENOTDIR", "EROFS", "ENOSPC", "ETIMEDOUT"].includes(code)
+      ? code : "probe-did-not-complete-successfully";
+    throw new Inconclusive("scratch-not-executable",
+      "could not execute the Node shebang fixture in the scratch location; check permissions, mount options and interpreter availability, or point TMPDIR at an executable filesystem",
+      { location: directory, execution });
   }
 }
 
@@ -55,5 +70,7 @@ export function inconclusiveRecord(check, stage, error) {
     reason: error.reason,
     remedy: error.remedy,
     established: "nothing; the gate did not run to a verdict",
+    ...(error.location === undefined ? {} : { location: error.location }),
+    ...(error.execution === undefined ? {} : { execution: error.execution }),
   };
 }

@@ -59,6 +59,7 @@ test("the executable gate exits non-zero on a package it was not told about", ()
     mkdirSync(join(scratch, "scripts"));
     mkdirSync(join(scratch, "packages/surprise"), { recursive: true });
     copyFileSync(join(root, "scripts/check-test-scripts.mjs"), join(scratch, "scripts/check-test-scripts.mjs"));
+    copyFileSync(join(root, "scripts/inconclusive.mjs"), join(scratch, "scripts/inconclusive.mjs"));
     writeFileSync(join(scratch, "packages/surprise/package.json"), JSON.stringify({ name: "surprise", scripts: {} }));
     const run = spawnSync(process.execPath, ["scripts/check-test-scripts.mjs"], { cwd: scratch, encoding: "utf8" });
     assert.equal(run.status, 1, "an undeclared uncovered package must fail the gate");

@@ -139,10 +139,6 @@ void protocol; void server; void acceptHub;\n`);
   const compiled = await run(process.execPath, [require.resolve("typescript/bin/tsc"), "-p", join(consumer, "tsconfig.json")], { cwd: consumer, env });
   assert.equal(compiled.code, 0);
   stage = "synthetic fixture setup";
-  if (process.platform === "win32") {
-    throw new Inconclusive("posix-shebang-host-required",
-      "the sleeping executable fixture needs a POSIX shebang host; run this gate on Linux or macOS");
-  }
   const pidFile = join(scratch, "probe.pid"), probe = join(scratch, "sleeping-probe");
   // One Node child, no shell, subprocess or grandchild. The CLI must kill and reap this process.
   writeFileSync(probe, `#!${process.execPath}\nimport { writeFileSync } from 'node:fs';\nwriteFileSync(${JSON.stringify(pidFile)}, String(process.pid));\nsetTimeout(() => {}, 60_000);\n`);
@@ -242,8 +238,8 @@ if(invoked !== 1) throw new Error('checkpoint not reached');`);
     assertions: "version/protocol, root/server runtime and compiled declarations, source coverage, admission refusal and original stamps, memory readings, privacy, unavailable",
     limitations: ["synthetic only; no live acceptance or downstream compatibility claim", "sleeping executable fixture requires POSIX shebang support and executable TMPDIR", "candidate only; no publication"] }));
 } catch (error) {
-  // Never reflect npm/compiler/probe output, paths, arbitrary errors or credential-bearing input.
-  // Only the stage label, a closed reason vocabulary and a fixed remedy string cross this boundary.
+  // Never reflect npm/compiler/probe output, arbitrary errors or credential-bearing input.
+  // The preflight reports only its owned scratch location and a closed execution code.
   if (error instanceof Inconclusive) {
     console.log(JSON.stringify(inconclusiveRecord("installed-contracts", stage, error)));
     console.error(`check:installed inconclusive at ${stage} — ${error.reason}: ${error.remedy}`);

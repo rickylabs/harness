@@ -13,7 +13,8 @@ import { spawnSync } from "node:child_process";
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-export const INCONCLUSIVE_EXIT = 2;
+import { INCONCLUSIVE_EXIT } from "./inconclusive.mjs";
+export { INCONCLUSIVE_EXIT };
 
 /**
  * Signal deaths as an intermediate runner reports them. Neither `pnpm` nor `sh` propagates a signal;
@@ -66,10 +67,20 @@ const SIGNAL_EXIT_CODES = new Map([
  * The reasons stay apart because the responses differ. An interrupted stage says nothing about the
  * repository. A stage that could not be spawned says the host is not set up to run it.
  */
-export function classifyStageResult(result) {
+export function classifyStageResult(result, { compile = false } = {}) {
   if (result.error) {
-    return { code: INCONCLUSIVE_EXIT, reason: "stage-could-not-spawn",
+    if (result.pid > 0) {
+      return { code: INCONCLUSIVE_EXIT, reason: "stage-result-unavailable",
+        remedy: "the runner started but its complete result could not be captured; check output bounds and host resources" };
+    }
+    return { code: INCONCLUSIVE_EXIT, executed: false, reason: "stage-could-not-spawn",
       remedy: "the stage runner could not be started on this host; check that pnpm is on PATH" };
+  }
+  // Shell 126 means not executable; pnpm represents shell 127 as a lifecycle ENOENT.
+  // Like translated signals, deliberate application exits with these codes are ambiguous.
+  if (result.commandUnavailable || result.status === 126) {
+    return { code: INCONCLUSIVE_EXIT, executed: false, reason: "stage-command-unavailable",
+      remedy: "the stage command could not execute (shell 126/127 or pnpm ENOENT); its result is unproven" };
   }
   const interrupted = result.status === null
     ? (typeof result.signal === "string" && result.signal.length > 0 ? result.signal : "a signal")
@@ -78,12 +89,18 @@ export function classifyStageResult(result) {
     return { code: INCONCLUSIVE_EXIT, reason: "stage-interrupted",
       remedy: `the stage was terminated by ${interrupted} before it reached a verdict; nothing is known about it` };
   }
-  return { code: result.status };
+  // The designated compile stage speaks compiler exit codes, not the gate protocol.
+  return { code: compile && result.status === INCONCLUSIVE_EXIT ? 1 : result.status };
 }
 
 /** Pure, so the reporting can be driven in a test without spawning twelve real stages. */
 export function summarise({ label, stages, compileStage, results }) {
-  const ran = results.map(r => r.stage);
+  const missing = stages.filter(stage => !results.some(r => r.stage === stage));
+  if (!results.some(r => r.code !== 0) && (missing.length > 0 || stages.length === 0)) {
+    results = [...results, { stage: missing[0] ?? "stage inventory", code: INCONCLUSIVE_EXIT,
+      executed: false, reason: "stage-not-run", remedy: "the aggregate has no result for every requested stage" }];
+  }
+  const ran = results.filter(r => r.executed !== false).map(r => r.stage);
   const failed = results.find(r => r.code !== 0 && r.code !== INCONCLUSIVE_EXIT);
   const inconclusive = results.filter(r => r.code === INCONCLUSIVE_EXIT).map(r => r.stage);
   const compileRan = compileStage === undefined ? undefined : ran.includes(compileStage);
@@ -103,7 +120,7 @@ export function summarise({ label, stages, compileStage, results }) {
     lines.push(`${label} ok — ${stages.length} stage(s), all green`);
   }
   if (compileStage !== undefined) {
-    lines.push(`  compile (${compileStage}, stage ${stages.indexOf(compileStage) + 1}): ${compileRan ? "ran" : "DID NOT RUN"}`);
+    lines.push(`  compile (${compileStage}, stage ${stages.indexOf(compileStage) + 1}): ${compileRan ? "ran" : "DID NOT RUN — INCONCLUSIVE; compilation was not established"}`);
   }
   if (decided) {
     const skipped = stages.slice(position);
@@ -132,13 +149,36 @@ function invokedDirectly() {
   try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; }
 }
 
+/** pnpm maps shell exit 127 to exit 1; its structured lifecycle error retains ENOENT. */
+function runStage(stage) {
+  const run = spawnSync("pnpm", ["--reporter=ndjson", "run", stage], {
+    stdio: ["inherit", "pipe", "inherit"], encoding: "utf8", maxBuffer: 32 * 1024 * 1024,
+    shell: process.platform === "win32",
+  });
+  if (run.error) return run; // A truncated capture is not complete stage output.
+  for (const line of (run.stdout ?? "").split("\n")) {
+    if (!line) continue;
+    let record;
+    try { record = JSON.parse(line); } catch { /* Ordinary stage output. */ }
+    if (typeof record?.name === "string" && (record.name === "pnpm" || record.name.startsWith("pnpm:"))) {
+      if (["ELIFECYCLE", "ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL"].includes(record.code) && record.errno === "ENOENT") {
+        run.commandUnavailable = true;
+      }
+      // Keep lifecycle output and errors; omit package-manager debug metadata/manifests.
+      if (typeof record.line === "string") console.log(record.line);
+      else if (record.level === "error") console.error(record.err?.message ?? record.message ?? record.code);
+    } else console.log(line);
+  }
+  return run;
+}
+
 if (invokedDirectly()) {
   try {
     const { label, compileStage, stages } = parse(process.argv.slice(2));
     const results = [];
     for (const stage of stages) {
-      const run = spawnSync("pnpm", ["run", stage], { stdio: "inherit", shell: process.platform === "win32" });
-      const classified = classifyStageResult(run);
+      const run = runStage(stage);
+      const classified = classifyStageResult(run, { compile: stage === compileStage });
       results.push({ stage, ...classified });
       if (classified.code !== 0) break;
     }
@@ -150,7 +190,7 @@ if (invokedDirectly()) {
     // A misconfigured runner is not a stage verdict and must not be readable as one. Said in a
     // sentence rather than left as a stack trace: a reader who sees a trace here goes looking for a
     // bug in a stage, when the fault is in the argv that named the stages.
-    console.error(`run-stages configuration error — no stage was run: ${error instanceof Error ? error.message : String(error)}`);
-    process.exitCode = 1;
+    console.error(`run-stages INCONCLUSIVE — configuration error; no stage was run: ${error instanceof Error ? error.message : String(error)}`);
+    process.exitCode = INCONCLUSIVE_EXIT;
   }
 }

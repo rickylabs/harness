@@ -1,0 +1,126 @@
+$ node scripts/run-stages.mjs --label build --compile-stage build:packages check:stages check:graph check:lifecycle check:links check:forms check:snapshots check:compiled-policy build:packages check:publish check:label-registry check:docs check:skill check:tutorial
+$ node --test scripts/run-stages.test.mjs scripts/gates-regressions.test.mjs
+✔ preflight diagnostic names only owned location and closed execution reason (2.264736ms)
+✔ preflight refuses Windows before spawning or writing a shebang fixture (0.536586ms)
+✔ preflight fixture uses the same Node interpreter as the installed fixture (0.735058ms)
+✔ preflight setup and thrown spawn errors are inconclusive without raw errors (0.76797ms)
+✔ preflight cleanup failure is inconclusive (1.39277ms)
+✔ bounded output capture is inconclusive after the runner started (19.974623ms)
+✔ workspace inventory missing or empty is inconclusive, not a verdict (48.956421ms)
+✔ workspace unreadable manifest is inconclusive but invalid JSON fails (47.87828ms)
+✔ workspace declarations pass, missing tests fail and the missing package is named (51.646845ms)
+✔ importing a workspace audit does not inspect or certify the workspace (23.016686ms)
+✔ empty and partial stage observations cannot report all green (0.297808ms)
+✔ a real runner spawn refusal cannot claim the compile executed (27.079222ms)
+✔ shell command refusals remain inconclusive through pnpm (662.552034ms)
+✔ native compiler exit two fails while a non-compile gate exit two is inconclusive (1148.626121ms)
+✔ misconfigured aggregate reports inconclusive because no stage could run (26.410387ms)
+✔ all green reports the count and that the compile ran (0.874379ms)
+✔ a failure before the compile names the stage and says the compile did not run (0.132428ms)
+✔ the stages never reached are named, so nothing is mistaken for having passed (0.128551ms)
+✔ a failure after the compile still reports that the compile ran (0.104005ms)
+✔ an inconclusive stage is not reported as a failure and not as a pass (0.53329ms)
+✔ a real failure outranks an inconclusive, because the strongest negative wins (0.13873ms)
+✔ a compile stage that is not among the stages is refused rather than mis-reported (23.373615ms)
+✔ no stages at all is refused (25.074223ms)
+✔ a stage killed by a signal is inconclusive, not a failure (16.918615ms)
+✔ a stage that could not be spawned is inconclusive, and says so differently (1.188889ms)
+✔ a real non-zero exit is still a failure and keeps its own code (16.440809ms)
+✔ a real zero exit is a pass (17.816127ms)
+✔ a stage that exits 2 of its own accord is inconclusive and says its reason is unrecorded (16.738167ms)
+✔ the interrupted reason reaches the reported lines (14.532482ms)
+✔ a REAL translated signal death is inconclusive, not a failure (53.523422ms)
+✔ pnpm specifically translates rather than propagates, since the comment names pnpm (331.817808ms)
+✔ a REAL abort arrives as 134 and stays a failure (19.331037ms)
+✔ a high exit code that is not a known signal translation stays a failure (0.168436ms)
+✔ a stage that aborted or segfaulted stays a failure, because that is its own defect (0.07449ms)
+✔ importing the module runs no stages (23.183608ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2114.536866
+$ node scripts/check-project-graph.mjs
+project graph ok — 15 packages, references match dependencies
+$ node scripts/check-lifecycle.mjs
+lifecycle ok — 10 phases agree with .github/labels.yml
+lifecycle ok — 10 phases agree with packages/forge/src/labels/taxonomy.ts
+$ node scripts/check-links.mjs
+check:links — 73 file(s), 407 relative link(s) checked (40 with an anchor), 166 external link(s) not checked, 0 broken
+$ node scripts/check-forms.mjs
+check:forms — 3 issue form(s) valid against 64 declared label(s)
+$ node --test scripts/check-snapshots.test.mjs && node scripts/check-snapshots.mjs
+✔ exact eight tracked fixtures pass (48.551001ms)
+✔ changed bytes fail even with identical JSON meaning (50.374679ms)
+✔ changed fixture fails even after removing all snapshot keys (54.035592ms)
+✔ missing inventoried fixture fails loudly (59.302635ms)
+✔ new file in fixture directory gets ordinary detection (57.245038ms)
+✔ identical fixture bytes at another path get ordinary detection (53.862668ms)
+✔ operator snapshot outside fixture inventory still fails (62.611729ms)
+✔ missing repository-run fixture fails loudly (49.016834ms)
+✔ changed repository-run fixture fails even without snapshot keys (50.337379ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 525.322691
+check:snapshots — 130 tracked data file(s) carry no live allowance snapshot (8 exact synthetic fixtures verified)
+$ node scripts/check-compiled-policy.mjs
+compiled routing policy: 322 sources checked; mutation self-test passed
+$ pnpm -r run build
+Scope: 15 of 16 workspace projects
+packages/contracts build$ tsc -b
+packages/governance build$ tsc -b
+packages/provider-acp build$ tsc -b
+packages/netscript-bridge build$ tsc -b
+packages/netscript-bridge build: Done
+packages/provider-acp build: Done
+packages/governance build: Done
+packages/contracts build: Done
+packages/coordinator build$ tsc -b
+packages/subagents build$ tsc -b
+packages/subagents build: Done
+packages/board build$ tsc -b
+packages/provider-claude build$ tsc -b
+packages/provider-codex build$ tsc -b
+packages/coordinator build: Done
+packages/provider-opencode build$ tsc -b
+packages/provider-codex build: Done
+packages/routing build$ tsc -b
+packages/provider-claude build: Done
+packages/telemetry build$ tsc -b
+packages/provider-opencode build: Done
+packages/board build: Done
+packages/forge build$ tsc -b
+packages/routing build: Done
+packages/llm-local build$ tsc -b
+packages/telemetry build: Done
+packages/forge build: Done
+packages/llm-local build: Done
+packages/dsh-app build$ tsc -b
+packages/dsh-app build: Done
+$ node scripts/check-publish.mjs
+publish ok — @rickylabs/harness-contracts@0.4.0, protocol 1, 88 files, no tests
+$ node scripts/check-label-registry.mjs
+label registry ok — 10 label use(s) in @rickylabs/board are all creatable by @rickylabs/forge (30 live core labels; 1 retired label(s) excluded)
+$ node scripts/cli-reference.mjs
+docs/reference/cli: 6 page(s) match the binaries
+$ node scripts/check-skill.mjs
+check:skill — could not run the generator: Command failed: /usr/local/bin/node /tmp/harness-three-gates-316-verify/packages/forge/dist/cli.js skill install --dispatch-label harness --dry-run --json
+
+  this check runs after `pnpm -r run build`, which is what produces packages/forge/dist.
+@rickylabs/harness-monorepo@0.0.0 check:skill: `node scripts/check-skill.mjs`
+Exit status 2
+
+build INCONCLUSIVE — 1 stage(s) did not reach a verdict: check:skill
+  check:skill — reason not recorded by the stage
+  nothing is established about check:skill; this is not a pass and not a failure
+  compile (build:packages, stage 8): ran
+  never reached: check:tutorial
+[ELIFECYCLE] Command failed with exit code 2.
