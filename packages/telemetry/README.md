@@ -764,3 +764,15 @@ a bounded native header sample using the normal home (or privately configured
 assignment in a temporary private store, and deletes that store. It never modifies the live
 receipt store or claims that the selected pair belongs to a live issue. Its separate live-issue
 verdict preserves incomplete ancestry. Output contains only counts and closed reasons.
+
+## Codex thread reads and goal notifications
+
+`openCodexThreadReader()` opens the plain `codex app-server` JSONL stdio surface. `await reader.read()` returns a versioned native thread snapshot; `for await (const event of reader.events())` receives goal updated/cleared notifications without polling. Always close the reader in `finally`. It never dispatches, resumes, starts a turn, sets or clears a goal.
+
+CLI: `dsh-telemetry codex-threads --limit 500 --json`; append `--watch` for a snapshot followed by goal event JSONL. Exit 3 means incomplete source coverage; valid thread rows remain present when a goal RPC fails. Native parent absence remains `ancestry_unavailable`; goal absence remains `goal_absent`; an unset budget remains `budget_unset`. Reported zero is available zero. Model/effort are configured or persisted metadata, not per-turn route confirmation. Runtime state is scoped to the connected app-server; unloaded threads cannot prove running agents elsewhere.
+
+Cwd, Git origin and goal objective default to `redacted`. `includeSensitive:true` in the library or `--private` on the CLI permits those fields for an authenticated private consumer only. Never log that payload. Native IDs, session IDs, rollout paths and previews are always excluded; public thread references reuse existing opaque native-child IDs. `codexThreadEvidence(snapshot)` is the counts/availability/reasons-only projection for publishable evidence.
+
+Defaults: 500 rows, 30-second read/request deadline, 50 rows per page. Hard caps: 5000 rows, 202 pages, 1 MiB per frame, 8 outstanding RPCs, 128 buffered goal notifications. Both archived states and all declared native source kinds are included; list-side rollout repair is disabled. Overflow/disconnect is explicit. Sequence numbers are connection-local, not durable replay cursors. The snapshot is not atomic with the stream, and cross-process notification delivery is not claimed. See [RFC 0003](../../docs/rfcs/0003-codex-thread-read-stream.md).
+
+For `openCodexThreadReader`, `timeoutMs` bounds each request and the entire paged read (default 30000, maximum 60000 milliseconds). Either deadline reports `request_timeout`; raising the row limit does not extend it. Cross-page or cross-archive duplicate identities refuse the read because the snapshot is not atomic.

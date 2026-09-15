@@ -1,0 +1,14 @@
+[
+  {
+    "command": "pnpm --filter @rickylabs/telemetry test",
+    "exit_code": 0,
+    "output": "\u2139 tests 598\n\u2139 suites 74\n\u2139 pass 598\n\u2139 fail 0",
+    "output_note": "Captured summary excerpt."
+  },
+  {
+    "command": "pnpm --filter @rickylabs/harness-contracts test",
+    "exit_code": 0,
+    "output": "\u2139 tests 232\n\u2139 suites 0\n\u2139 pass 232\n\u2139 fail 0",
+    "output_note": "Captured summary excerpt."
+  }
+]

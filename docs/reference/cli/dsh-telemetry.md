@@ -27,6 +27,7 @@ and the number the process actually returns cannot disagree.
 dsh-telemetry — board activity, read from disk, with no agent awake
 
 usage:
+  dsh-telemetry codex-threads [--limit <n>] [--private] [--watch]  native thread JSON / goal JSONL
   dsh-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
   dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board

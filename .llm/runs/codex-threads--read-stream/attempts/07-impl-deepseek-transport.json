@@ -1,0 +1,9 @@
+{
+  "command": "COST_REVIEW_MODEL=deepseek/deepseek-v4-pro-0813 COST_REVIEW_MAX_TOKENS=32000 THREAD_REVIEW_PROMPT=REVIEW_PACKET python3 REVIEW_CLIENT impl",
+  "exit_code": 2,
+  "output": "{\"verdict\": \"INCONCLUSIVE\", \"reason\": \"model-or-completion-identity-unconfirmed\", \"modelMatch\": true, \"identityPresent\": true, \"finishReason\": \"length\"}\n",
+  "wall_seconds": 120.8,
+  "wall_cap_seconds": 900,
+  "packet": "transport",
+  "command_redaction": "Private executable and input-file locations are replaced by REVIEW_CLIENT and REVIEW_PACKET; model, arguments and exit code are unchanged."
+}

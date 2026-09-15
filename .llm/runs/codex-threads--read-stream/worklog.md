@@ -1,0 +1,15 @@
+# Worklog
+
+2026-09-15 — Read charter first, queried NetScript MCP guidance/docs, inspected the existing pure provider protocol and installed generated Codex schema. Plain stdio initialize/list/goal-get succeeded read-only. No current mailbox answer; old mailbox content is not an answer to this task.
+
+2026-09-15 — Independent Qwen plan review requested privacy/identity/allowlist clarification. GLM returned PASS after those dispositions. Plan-primary native evaluator lacks an established model/session observation path; coordinator-authorized API review candidates preserve independent model identity. Every review dispatch re-queries the matrix and has a 900-second cap.
+
+2026-09-15 — Implemented read-only transport, projection, CLI and bounded async goal subscription. Five first-pass mutation controls were strengthened; none was accepted as a timeout pass. Final receipts record exact results.
+
+2026-09-15 — Full implementation GLM attempt exhausted completion budget (exit 2, finishReason length), INCONCLUSIVE. Bounded reviews split source coverage into transport/reader (Qwen, coordinator-authorized candidate) and projection/types/CLI (DeepSeek, matrix fallback). Both must return complete identified PASS verdicts; partial review is never a whole-change PASS. The only code adjustment after the larger packet was removing redundant port-close idempotency; the connection owner still enforces and mutation-tests one close. Both bounded packets contain final source.
+
+2026-09-15 — Later bounded review found two CLI defects: interruption could return success, and output errors could escape the handler. Added serialized write callbacks, explicit output error/close handling and interruption-aware exit status. Negative controls include a blocked writer, callback-only failure, EPIPE-style failure and interruption during initialize/read/watch. All 77 mutations are killed and all 77 restored controls pass. Telemetry tests 598/598, contracts 232/232, full build 13 stages green. Final projection/types/CLI review returned GLM PASS; transport review remains separately required.
+
+2026-09-15 — Transport/reader review attempts returned completion exhaustion or provider error, all recorded INCONCLUSIVE. Further bounded connection and reader packets preserve full source coverage; they do not count as PASS without returned verdicts. After GLM and DeepSeek reader attempts returned no verdict, used the previously coordinator-authorized Kimi candidate for the complete transport/reader unit. Each invocation re-resolves the matrix; this Kimi choice is an explicit coordinator-authorized evaluator override, not a claimed matrix default. All attempts retain separate command, exit and output receipts with a 900-second wall cap.
+
+2026-09-15 — Kimi returned PASS, exit 0, for the complete transport/reader source; GLM returned PASS, exit 0, for final projection/types/CLI. Qwen connection attempt ended at completion budget and remains INCONCLUSIVE. Independent review is complete; owner supervisor sign-off remains pending.

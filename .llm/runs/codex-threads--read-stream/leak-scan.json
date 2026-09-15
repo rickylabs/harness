@@ -1,0 +1,6 @@
+{
+  "command": "python3 PUBLICATION_LEAK_SCAN",
+  "command_redaction": "Private scan helper location withheld. Checks the complete changed-file set and PR body against operator-path, native-identity, network-address and credential patterns, plus actual secret environment values in memory. No raw live values occur in the evidence allowlist.",
+  "exit_code": 0,
+  "output": "{\"scanned_files\": 47, \"pr_body_scanned\": true, \"findings\": []}\n"
+}
