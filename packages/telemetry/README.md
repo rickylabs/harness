@@ -704,6 +704,10 @@ existing matrix reservation directory. The same root is configured as Orchid's p
 `matrix.receipt_root`; it must be readable by the telemetry process, private and outside Git.
 No new collector runs. Missing configuration leaves this source unbound. A configured unreadable
 or invalid source reports a fixed `orchid-dispatch` diagnostic and makes the read incomplete.
+The reader result also returns the configured `root` and a nullable machine-readable `reason`:
+`missing`, `not_directory`, `wrong_mode`, `relative_path`, `symlink`, or `git_ancestor`. A healthy
+readable root with no dispatches reports no reason, so it remains distinguishable from a refused
+root without parsing the fixed diagnostic. These fields report existing checks and do not relax them.
 The read is bounded to 1,000 reservations; truncation is explicit.
 
 Each started Orchid dispatch carries `issue: {repo, number}` for the inbox issue,
