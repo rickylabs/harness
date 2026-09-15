@@ -6,7 +6,7 @@ import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 const opaque = (kind: "agent" | "assignment", value: string) => `${kind}_${digest(kind + "\0" + value)}`;
-const missing = <T>(reason: "source_not_bound" | "identity_unavailable" = "source_not_bound"): AgentObservedValue<T> =>
+const missing = <T>(reason: "source_not_bound" | "identity_unavailable" | "observer-unavailable" = "source_not_bound"): AgentObservedValue<T> =>
   ({ value: null, reason, observedAt: null, validUntil: null, revision: null });
 const nativeKey = (source: string, id: string) => `${source}\0${id}`;
 export function buildAgentObservations(input: {
@@ -23,7 +23,7 @@ export function buildAgentObservations(input: {
   const finish = (): AgentObservations => {
     const result: AgentObservations = { schema: 1, protocol: 1, observedAt: input.observedAt,
       revision: digest(JSON.stringify({ agents, reason })), complete: reason === null, reason, agents };
-    if (reason !== null) return result;
+    if (reason !== null && reason !== "ancestry_unavailable") return result;
     const checked = readAgentObservations(result);
     if (checked.ok) return checked.observation;
     return { ...result, complete: false, reason: checked.reason === "oversized" ? "scan_limit" : "ancestry_unavailable", agents: [] };
@@ -50,8 +50,10 @@ export function buildAgentObservations(input: {
     const root: AgentObservation = {
       agentId: opaque("agent", d.runId), repo: { owner, name }, issueNumber: d.issue.number,
       assignment: { id: opaque("assignment", d.runId), dispatcher: "divybot", basis: "dispatcher-confirmed" },
-      parentAgentId: { state: "confirmed-root", value: null, reason: null },
-      workspace: reference(d.location?.workspaceId), pane: reference(d.location?.paneId), tab: missing(), terminal: missing(), running: missing("identity_unavailable"),
+      parentAgentId: d.external === null
+        ? { state: "unavailable", value: null, reason: "identity_unavailable" }
+        : { state: "confirmed-root", value: null, reason: null },
+      workspace: reference(d.location?.workspaceId), pane: reference(d.location?.paneId), tab: missing(), terminal: missing(), running: missing(d.external === null ? "observer-unavailable" : "identity_unavailable"),
       route: projectRouteIdentity(d.route), cost: unavailableAgentCost(), observedAt, revision,
     };
     agents.push(root);

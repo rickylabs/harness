@@ -30,7 +30,6 @@ it("projects dispatcher-confirmed issue ancestry with opaque ids and unavailable
 });
 it("refuses to call ancestry complete without a native binding or on a partial scan", () => {
   for (const input of [
-    { ...defaults, dispatches: [{ ...dispatch, external: null }] },
     { ...defaults, nativeComplete: false }, { ...defaults, dispatchComplete: false },
     { ...defaults, sourceBound: false },
     { ...defaults, runs: [...defaults.runs, run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT")] },
@@ -48,5 +47,57 @@ it("does not infer assignment from transcript prose and never emits a truncated 
   const result = buildAgentObservations({ ...defaults, runs: [defaults.runs[0]!, ...children] });
   assert.equal(result.complete, false);
   assert.equal(result.reason, "scan_limit");
+  assert.deepEqual(result.agents, []);
+});
+
+it("dispatch-only: emits one decodable unknown agent without a native binding", () => {
+  const route = projectRouteIdentity({ requested: {
+    provider: { value: "fixture-router", source: "request.modelProvider" },
+    model: { value: "fixture-model", source: "request.model" },
+    effort: { value: "high", source: "request.effort" },
+  } });
+  for (const nativeComplete of [true, false]) {
+    const result = buildAgentObservations({ ...defaults, runs: [], nativeComplete,
+      dispatches: [{ ...dispatch, external: null, route }] });
+    const read = readAgentObservations(result);
+    assert.ok(read.ok);
+    assert.equal(read.observation.complete, false);
+    assert.equal(read.observation.reason, "ancestry_unavailable");
+    assert.equal(read.observation.agents.length, 1);
+    const agent = read.observation.agents[0]!;
+    assert.deepEqual(agent.parentAgentId, { state: "unavailable", value: null, reason: "identity_unavailable" });
+    assert.deepEqual(agent.route, route);
+    assert.ok(Object.values(agent.route.observed).every(field => field.value === null));
+    assert.equal(agent.running.value, null);
+    assert.equal(agent.running.reason, "observer-unavailable");
+    assert.equal(agent.pane.value, dispatch.location?.paneId);
+    assert.equal(agent.workspace.value, dispatch.location?.workspaceId);
+    assert.deepEqual(Object.keys(agent.cost), ["subscriptionHeadroom", "meteredSpend", "runTokens"]);
+    for (const row of Object.values(agent.cost)) {
+      assert.equal(row.availability, "unavailable");
+      assert.equal(row.measurement, null);
+      assert.equal(row.reason, "source_not_bound");
+    }
+    assert.ok(!JSON.stringify(result).includes("PRIVATE-"));
+  }
+});
+it("dispatch-only: cannot hide a partial runtime observation or a mixed collection", () => {
+  for (const input of [
+    { ...defaults, runs: [] },
+    { ...defaults, nativeComplete: false },
+    { ...defaults, dispatches: [dispatch, { ...dispatch, runId: "PRIVATE-OTHER-DISPATCH", external: null }] },
+  ]) {
+    const result = buildAgentObservations(input);
+    assert.equal(result.complete, false);
+    assert.equal(readAgentObservations(result).ok, false);
+  }
+});
+it("dispatch-only: validates before emitting and never clears fabricated runtime evidence", () => {
+  const route = projectRouteIdentity({ observed: {
+    model: { value: "fabricated", source: "thread/start.result.model" },
+  } });
+  const result = buildAgentObservations({ ...defaults, runs: [], dispatches: [{ ...dispatch, external: null, route }] });
+  assert.equal(result.complete, false);
+  assert.equal(readAgentObservations(result).ok, false);
   assert.deepEqual(result.agents, []);
 });

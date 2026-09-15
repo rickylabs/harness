@@ -729,13 +729,18 @@ that missing association visible, including unavailable per-run cost rows, until
 
 The same `dsh-telemetry runs --json` read now adds `agentObservations` (schema 1 / protocol 1).
 Use `readAgentObservations` from the published contracts package before filtering by repo and
-issueNumber. It refuses an incomplete or ambiguous tree as a whole, and enforces record and byte
-bounds. Existing DSH_TELEMETRY_DISPATCH_ROOT configuration supplies the private Orchid receipts.
+issueNumber. It refuses an incomplete runtime tree or ambiguous ancestry as a whole, and enforces
+record and byte bounds. A validated dispatch-only collection is readable with `complete:false` /
+`ancestry_unavailable`; a successful decode does not make it complete. Preserve this status in the
+per-issue view. See the [contracts exception](../contracts/README.md#per-issue-agent-observations). Existing DSH_TELEMETRY_DISPATCH_ROOT configuration supplies the private Orchid receipts.
 No additional process or collection command is introduced.
 
 Issue linkage must be dispatcher-confirmed; transcript path/prose mentions never assign work.
 Only an explicit native reference can connect a dispatched root to existing telemetry child
 records. The existing subagent dispatch-result log supplies that association when its run identity
-and source match the receipt; duplicate or cross-source associations refuse the read. Until that reference is bound, the collection says complete:false / ancestry_unavailable.
+and source match the receipt; duplicate or cross-source associations refuse the read. Until that reference is bound, a dispatch-only row retains the requested route, has null native
+parent and observed route values, and reports unknown execution with `observer-unavailable`.
+The collection says complete:false / ancestry_unavailable. A mixed collection containing runtime
+observations still requires complete ancestry; it cannot fall back to dispatch-only evidence.
 Source time is the receipt timestamp when present, otherwise its file modification time; it
 never claims current liveness. Receipt revisions come from the exact source bytes. All three cost rows remain individually unavailable.
