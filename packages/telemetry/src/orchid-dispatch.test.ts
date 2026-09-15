@@ -141,7 +141,8 @@ it("binds only an explicit same-dispatch same-source native reference and refuse
   const s = await setup();
   try {
     await s.write(fixture);
-    const rows = (await readOrchidDispatches(s.root)).dispatches;
+    // Legacy non-Orchid evidence remains supported; private reader rows have their own boundary.
+    const rows = (await readOrchidDispatches(s.root)).dispatches.map(row => ({ ...row }));
     const d = rows[0]!;
     const result = { ...d, external: "PRIVATE-NATIVE-FIXTURE" };
     const bound = bindOrchidDispatchEvidence(rows, [result]);

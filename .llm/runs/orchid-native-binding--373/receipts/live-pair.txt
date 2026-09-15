@@ -1,0 +1,6 @@
+command: node scripts/check-orchid-native-live-pair.mjs --live
+exit: 0
+configuration: source locations supplied privately; fresh owned clone
+output:
+{"verdict":"PASS","scope":"real-native-pair-with-isolated-synthetic-assignment","headers":13,"limit":512,"liveIssueAssignmentProven":false,"dataset":"selected-pair-only","decoded":true,"complete":true,"rows":2,"depth":1,"controls":[{"kind":"absent","rows":1,"complete":false,"reason":"ancestry_unavailable"},{"kind":"mismatched","rows":1,"complete":false,"reason":"ancestry_unavailable"}]}
+{"verdict":"INCONCLUSIVE","scope":"live-issue-ancestry","reason":"ancestry_unavailable","receiptScanComplete":true,"dispatches":1,"rows":1,"complete":false,"decoded":true}

@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { MAX_AGENT_OBSERVATIONS, projectRouteIdentity, readAgentObservations, unavailableAgentCost,
   type AgentObservation, type AgentObservations, type AgentObservedValue } from "@rickylabs/harness-contracts";
+import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -44,21 +45,23 @@ export function buildAgentObservations(input: {
     if (!d.issue || d.parentRunId !== null || !d.observedAt || !d.revision) { reason = "binding_unavailable"; break; }
     const [owner, name] = d.issue.repo.split("/");
     if (!owner || !name) { reason = "binding_unavailable"; break; }
-    const observedAt = d.observedAt, revision = d.revision;
+    const observedAt = d.observedAt;
+    const external = resolveOrchidNativeRoot(d, input.runs)?.id ?? d.external;
+    const revision = digest(JSON.stringify({ dispatch: d.revision, binding: external === null ? null : digest(external) }));
     const reference = (value: string | undefined): AgentObservedValue<string> => value === undefined ? missing()
       : { value, reason: null, observedAt, validUntil: null, revision };
     const root: AgentObservation = {
       agentId: opaque("agent", d.runId), repo: { owner, name }, issueNumber: d.issue.number,
       assignment: { id: opaque("assignment", d.runId), dispatcher: "divybot", basis: "dispatcher-confirmed" },
-      parentAgentId: d.external === null
+      parentAgentId: external === null
         ? { state: "unavailable", value: null, reason: "identity_unavailable" }
         : { state: "confirmed-root", value: null, reason: null },
-      workspace: reference(d.location?.workspaceId), pane: reference(d.location?.paneId), tab: missing(), terminal: missing(), running: missing(d.external === null ? "observer-unavailable" : "identity_unavailable"),
+      workspace: reference(d.location?.workspaceId), pane: reference(d.location?.paneId), tab: missing(), terminal: missing(), running: missing(external === null ? "observer-unavailable" : "identity_unavailable"),
       route: projectRouteIdentity(d.route), cost: unavailableAgentCost(), observedAt, revision,
     };
     agents.push(root);
-    if (d.external === null || d.source === null) { reason = "ancestry_unavailable"; continue; }
-    const key = nativeKey(d.source, d.external);
+    if (external === null || d.source === null) { reason = "ancestry_unavailable"; continue; }
+    const key = nativeKey(d.source, external);
     if (roots.has(key) || duplicates.has(key) || !native.has(key) || native.get(key)?.parentId !== null) { reason = "ancestry_unavailable"; continue; }
     roots.set(key, root);
   }

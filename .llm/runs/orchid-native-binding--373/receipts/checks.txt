@@ -1,0 +1,19 @@
+command: pnpm run typecheck
+exit: 0
+output (literal summary lines):
+typecheck ok — 4 stage(s), all green
+  compile (typecheck:packages, stage 4): ran
+
+command: pnpm run build
+exit: 0
+output (literal summary lines):
+build ok — 13 stage(s), all green
+  compile (build:packages, stage 8): ran
+
+command: pnpm run test
+exit: 0
+output (literal summary lines):
+packages/telemetry test: ℹ tests 525
+packages/telemetry test: ℹ pass 525
+packages/telemetry test: ℹ fail 0
+test ok — 6 stage(s), all green

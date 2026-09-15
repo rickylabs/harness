@@ -4,6 +4,7 @@ import { constants } from "node:fs";
 import { lstat, open, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents";
+import { readOrchidNativeBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
 export const ORCHID_DISPATCH_ROOT = "DSH_TELEMETRY_DISPATCH_ROOT";
@@ -103,11 +104,13 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         const at = typeof timestamp === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(timestamp) &&
           Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp ? timestamp : undefined;
         if (at === undefined) throw new Error();
-        dispatches.push({ observedAt: at, revision, linkageBasis: "dispatcher-confirmed", runId: input.runId as string, external: null,
+        const dispatch: DispatchEvidence = { observedAt: at, revision, linkageBasis: "dispatcher-confirmed", runId: input.runId as string, external: null,
           source: input.source === "codex" || input.source === "claude" ? input.source : null,
           route, issue: { repo: issue.repo, number: issue.number as number }, parentRunId: null,
           location: { paneId: location.paneId, workspaceId: location.workspaceId },
-          dispatchState: input.state as "launching" | "dispatched" | "uncertain" });
+          dispatchState: input.state as "launching" | "dispatched" | "uncertain" };
+        await readOrchidNativeBinding(record, key, dispatch);
+        dispatches.push(dispatch);
       } catch { notes.add("orchid-dispatch: binding_unavailable"); }
     }
   } catch { notes.add("orchid-dispatch: source_unavailable"); }
@@ -120,6 +123,8 @@ export function bindOrchidDispatchEvidence(
 ): { readonly dispatches: readonly DispatchEvidence[]; readonly degraded: boolean } {
   let degraded = false;
   const rows = dispatches.map(dispatch => {
+    // Orchid owns this binding now; legacy log rows cannot replace or revive it.
+    if (hasOrchidNativeBindingBoundary(dispatch)) return dispatch;
     const matches = evidence.filter(row => row.runId === dispatch.runId && row.external !== null);
     if (matches.length === 0) return dispatch;
     const match = matches[0];
