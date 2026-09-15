@@ -1,0 +1,12 @@
+[
+  {
+    "command": "pnpm --filter @rickylabs/telemetry test",
+    "exit": 0,
+    "output": "\u2139 tests 563\n\u2139 suites 74\n\u2139 pass 563\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 11545.975137"
+  },
+  {
+    "command": "pnpm --filter @rickylabs/harness-contracts test",
+    "exit": 0,
+    "output": "\u2139 tests 232\n\u2139 suites 0\n\u2139 pass 232\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 228.2955"
+  }
+]

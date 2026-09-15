@@ -1,0 +1,7 @@
+{
+  "command": "COST_REVIEW_MODEL=z-ai/glm-5.3-flash COST_REVIEW_MAX_TOKENS=32000 python3 REVIEW_CLIENT impl",
+  "exit_code": 124,
+  "output": "INCONCLUSIVE: 900-second review wall budget exceeded; no completed verdict.",
+  "wall_seconds": 900.1,
+  "wall_cap_seconds": 900
+}

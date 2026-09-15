@@ -1,0 +1,9 @@
+{
+  "command": "python3 <private-review-client> impl",
+  "exit_code": 2,
+  "output": "{\"verdict\": \"INCONCLUSIVE\", \"errorClass\": \"HTTPError\", \"httpStatus\": 429}",
+  "recording": "Prior attempt reconstructed from captured process outcomes; native completion identifiers and amounts withheld.",
+  "requested_model": "z-ai/glm-5.3-flash",
+  "command_redaction": "Private helper location omitted; request source supplied through a private input file, not argv.",
+  "output_excerpt": true
+}
