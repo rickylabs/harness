@@ -7,29 +7,49 @@ import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
 export const ORCHID_DISPATCH_ROOT = "DSH_TELEMETRY_DISPATCH_ROOT";
+export type OrchidDispatchUnavailableReason =
+  | "missing"
+  | "not_directory"
+  | "wrong_mode"
+  | "relative_path"
+  | "symlink"
+  | "git_ancestor";
 const hash = /^[a-f0-9]{64}$/;
 const label = (value: unknown): value is string => typeof value === "string" &&
   value.length <= 256 && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value);
 const object = (value: unknown): Record<string, unknown> | null =>
   value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 export interface OrchidDispatchRead {
+  readonly root: string | undefined;
+  readonly reason: OrchidDispatchUnavailableReason | null;
   readonly dispatches: readonly DispatchEvidence[];
   readonly notes: readonly string[];
   readonly degraded: boolean;
 }
 
-/** Fixed diagnostics never echo a descriptor path, native identity, or raw receipt. */
+/** Root diagnostics echo only the configured root, never a descriptor path, native identity, or raw receipt. */
 export async function readOrchidDispatches(root: string | undefined): Promise<OrchidDispatchRead> {
-  if (root === undefined) return { dispatches: [], notes: [], degraded: false };
+  if (root === undefined) return { root, reason: null, dispatches: [], notes: [], degraded: false };
   const dispatches: DispatchEvidence[] = [];
   const notes = new Set<string>();
+  let reason: OrchidDispatchUnavailableReason | null = null;
   try {
-    if (!isAbsolute(root) || await realpath(root) !== resolve(root)) throw new Error();
-    const rootStat = await lstat(root);
-    if (!rootStat.isDirectory() || (rootStat.mode & 0o7777) !== 0o700) throw new Error();
+    if (!isAbsolute(root)) reason = "relative_path";
+    if (reason !== null) throw new Error();
+    let rootStat;
+    try { rootStat = await lstat(root); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") reason = "missing";
+      throw error;
+    }
+    if (rootStat.isSymbolicLink()) reason = "symlink";
+    else if (!rootStat.isDirectory()) reason = "not_directory";
+    else if ((rootStat.mode & 0o7777) !== 0o700) reason = "wrong_mode";
+    else if (await realpath(root) !== resolve(root)) reason = "symlink";
+    if (reason !== null) throw new Error();
     // The writer also refuses roots within a Git checkout. Recheck at the read boundary.
     for (let dir = root;; dir = dirname(dir)) {
-      try { await lstat(join(dir, ".git")); throw new Error("tracked"); }
+      try { await lstat(join(dir, ".git")); reason = "git_ancestor"; throw new Error("tracked"); }
       catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
       if (dirname(dir) === dir) break;
     }
@@ -91,7 +111,7 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
       } catch { notes.add("orchid-dispatch: binding_unavailable"); }
     }
   } catch { notes.add("orchid-dispatch: source_unavailable"); }
-  return { dispatches, notes: [...notes], degraded: notes.size > 0 };
+  return { root, reason, dispatches, notes: [...notes], degraded: notes.size > 0 };
 }
 
 /** Associate only an existing explicit DispatchResult reference, never cwd, title or issue prose. */

@@ -548,7 +548,7 @@ export async function main(argv: readonly string[], services: SourceServices = d
   const merged = mergeLiveRuns(scan.runs, foldLiveEvents(runFiles));
   const orchid = command === "runs" && flags.json
     ? await readOrchidDispatches(services.env[ORCHID_DISPATCH_ROOT])
-    : { dispatches: [], notes: [], degraded: false };
+    : { root: undefined, reason: null, dispatches: [], notes: [], degraded: false };
   const view = {
     notes: [...scan.notes, ...log.notes, ...merged.notes, ...orchid.notes],
     degraded: scan.degraded || log.degraded || merged.degraded || orchid.degraded,

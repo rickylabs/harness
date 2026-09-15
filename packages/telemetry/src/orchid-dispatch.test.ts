@@ -66,6 +66,77 @@ it("withholds corrupt or relocated records, paths and symlinks with fixed diagno
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
 
+it("reports the configured receipt root and each root refusal without changing degradation", async t => {
+  const assertRefusal = async (root: string, reason: string) => {
+    const result = await readOrchidDispatches(root);
+    assert.equal(result.root, root);
+    assert.equal(result.reason, reason);
+    assert.deepEqual(result.dispatches, []);
+    assert.deepEqual(result.notes, ["orchid-dispatch: source_unavailable"]);
+    assert.equal(result.degraded, true);
+  };
+
+  await t.test("healthy readable root has no reason", async () => {
+    const root = await mkdtemp(join(tmpdir(), "orchid-empty-"));
+    try {
+      const result = await readOrchidDispatches(root);
+      assert.equal(result.root, root);
+      assert.equal(result.reason, null);
+      assert.deepEqual(result.dispatches, []);
+      assert.deepEqual(result.notes, []);
+      assert.equal(result.degraded, false);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  await t.test("missing", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "orchid-missing-"));
+    try { await assertRefusal(join(parent, "receipts"), "missing"); }
+    finally { await rm(parent, { recursive: true, force: true }); }
+  });
+
+  await t.test("not_directory", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "orchid-file-"));
+    const root = join(parent, "receipts");
+    try {
+      await writeFile(root, "fixture", { mode: 0o600 });
+      await assertRefusal(root, "not_directory");
+    } finally { await rm(parent, { recursive: true, force: true }); }
+  });
+
+  await t.test("wrong_mode", async () => {
+    const root = await mkdtemp(join(tmpdir(), "orchid-mode-"));
+    try {
+      await chmod(root, 0o755);
+      await assertRefusal(root, "wrong_mode");
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  await t.test("relative_path", async () => {
+    await assertRefusal("relative-receipts", "relative_path");
+  });
+
+  await t.test("symlink", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "orchid-symlink-"));
+    const target = join(parent, "target");
+    const root = join(parent, "receipts");
+    try {
+      await mkdir(target, { mode: 0o700 });
+      await symlink(target, root);
+      await assertRefusal(root, "symlink");
+    } finally { await rm(parent, { recursive: true, force: true }); }
+  });
+
+  await t.test("git_ancestor", async () => {
+    const parent = await mkdtemp(join(tmpdir(), "orchid-git-"));
+    const root = join(parent, "receipts");
+    try {
+      await mkdir(join(parent, ".git"), { mode: 0o700 });
+      await mkdir(root, { mode: 0o700 });
+      await assertRefusal(root, "git_ancestor");
+    } finally { await rm(parent, { recursive: true, force: true }); }
+  });
+});
+
 it("binds only an explicit same-dispatch same-source native reference and refuses ambiguity", async () => {
   const s = await setup();
   try {
