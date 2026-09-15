@@ -1,0 +1,14 @@
+[
+  {
+    "command": "TMPDIR=/tmp pnpm run typecheck",
+    "cwd": "/tmp/harness-three-gates-316-verify",
+    "exit": 0,
+    "output": "typecheck.txt"
+  },
+  {
+    "command": "TMPDIR=/tmp pnpm run build",
+    "cwd": "/tmp/harness-three-gates-316-verify",
+    "exit": 2,
+    "output": "build.txt"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "command": "TMPDIR=/tmp pnpm run typecheck",
+    "cwd": "/tmp/harness-three-gates-316-verify",
+    "exit": 0,
+    "output": "typecheck.txt"
+  },
+  {
+    "command": "TMPDIR=/tmp pnpm run build",
+    "cwd": "/tmp/harness-three-gates-316-verify",
+    "exit": 0,
+    "output": "build.txt"
+  },
+  {
+    "command": "TMPDIR=/tmp pnpm test",
+    "cwd": "/tmp/harness-three-gates-316-verify",
+    "exit": 0,
+    "output": "test.txt"
+  },
+  {
+    "command": "TMPDIR=/ephemeral/tmp pnpm run check:installed",
+    "cwd": "/tmp/harness-three-gates-316-verify",
+    "exit": 2,
+    "output": "installed-noexec.txt"
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "focused": {
+    "command": "node --test scripts/inconclusive.test.mjs scripts/check-test-scripts.test.mjs scripts/run-stages.test.mjs scripts/gates-regressions.test.mjs",
+    "exit": 0,
+    "output": "scoped-tests.txt"
+  },
+  "mutations": {
+    "command": "pnpm run check:gate-mutations",
+    "exit": 0,
+    "output": "mutations.txt"
+  },
+  "noexec_typecheck": {
+    "command": "pnpm run typecheck",
+    "exit": 2,
+    "output": "noexec-typecheck.txt"
+  },
+  "root_validation": {
+    "command": "python3 .llm/runs/three-gates--316/run-validation.py",
+    "exit": 0,
+    "output": "root-validation-transcript.txt"
+  }
+}

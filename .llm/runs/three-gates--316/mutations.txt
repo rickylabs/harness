@@ -1,0 +1,2893 @@
+$ node scripts/mutation-verify-gates.mjs
+
+baseline: installed-preflight-wiring
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^installed entrypoint preserves preflight inconclusive status and location$' '/ephemeral/tmp/gate-mutations-y34ZR2/installed-preflight-wiring/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: installed entrypoint preserves preflight inconclusive status and location
+ok 1 - installed entrypoint preserves preflight inconclusive status and location
+  ---
+  duration_ms: 38.302612
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 86.54694
+
+stderr:
+
+mutation: check-installed-contracts.mjs
+replace: "requireExecutableDirectory(scratch);"
+with: "/* bypass preflight */"
+
+mutant: installed-preflight-wiring
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^installed entrypoint preserves preflight inconclusive status and location$' '/ephemeral/tmp/gate-mutations-y34ZR2/installed-preflight-wiring/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: installed entrypoint preserves preflight inconclusive status and location
+not ok 1 - installed entrypoint preserves preflight inconclusive status and location
+  ---
+  duration_ms: 37.498434
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/installed-preflight-wiring/scripts/gates-regressions.test.mjs:40:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"check":"installed-contracts","status":"FAIL","stage":"scratch executability preflight"}
+    check:installed failed at scratch executability preflight
+    
+    
+    1 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/installed-preflight-wiring/scripts/gates-regressions.test.mjs:58:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 86.883992
+
+stderr:
+
+
+baseline: installed-inconclusive-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^installed entrypoint preserves preflight inconclusive status and location$' '/ephemeral/tmp/gate-mutations-y34ZR2/installed-inconclusive-boundary/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: installed entrypoint preserves preflight inconclusive status and location
+ok 1 - installed entrypoint preserves preflight inconclusive status and location
+  ---
+  duration_ms: 37.283481
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 84.711028
+
+stderr:
+
+mutation: check-installed-contracts.mjs
+replace: "if (error instanceof Inconclusive)"
+with: "if (false)"
+
+mutant: installed-inconclusive-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^installed entrypoint preserves preflight inconclusive status and location$' '/ephemeral/tmp/gate-mutations-y34ZR2/installed-inconclusive-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: installed entrypoint preserves preflight inconclusive status and location
+not ok 1 - installed entrypoint preserves preflight inconclusive status and location
+  ---
+  duration_ms: 36.154405
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/installed-inconclusive-boundary/scripts/gates-regressions.test.mjs:40:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"check":"installed-contracts","status":"FAIL","stage":"scratch executability preflight"}
+    check:installed failed at scratch executability preflight
+    
+    
+    1 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/installed-inconclusive-boundary/scripts/gates-regressions.test.mjs:58:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 88.994227
+
+stderr:
+
+
+baseline: scratch-spawn-refusal
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a spawn that cannot execute produces Inconclusive, not a failure$' '/ephemeral/tmp/gate-mutations-y34ZR2/scratch-spawn-refusal/scripts/inconclusive.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: a spawn that cannot execute produces Inconclusive, not a failure
+ok 1 - a spawn that cannot execute produces Inconclusive, not a failure
+  ---
+  duration_ms: 5.526991
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 44.414579
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "if (attempt.error || attempt.status !== 0)"
+with: "if (false)"
+
+mutant: scratch-spawn-refusal
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a spawn that cannot execute produces Inconclusive, not a failure$' '/ephemeral/tmp/gate-mutations-y34ZR2/scratch-spawn-refusal/scripts/inconclusive.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: a spawn that cannot execute produces Inconclusive, not a failure
+not ok 1 - a spawn that cannot execute produces Inconclusive, not a failure
+  ---
+  duration_ms: 5.554402
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/scratch-spawn-refusal/scripts/inconclusive.test.mjs:20:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/scratch-spawn-refusal/scripts/inconclusive.test.mjs:24:12)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 46.251984
+
+stderr:
+
+
+baseline: scratch-nonzero-refusal
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass$' '/ephemeral/tmp/gate-mutations-y34ZR2/scratch-nonzero-refusal/scripts/inconclusive.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass
+ok 1 - a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass
+  ---
+  duration_ms: 1.02973
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 45.496748
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "attempt.error || attempt.status !== 0"
+with: "attempt.error"
+
+mutant: scratch-nonzero-refusal
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass$' '/ephemeral/tmp/gate-mutations-y34ZR2/scratch-nonzero-refusal/scripts/inconclusive.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass
+not ok 1 - a non-zero probe exit also produces Inconclusive, so a silent noexec cannot pass
+  ---
+  duration_ms: 1.21074
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/scratch-nonzero-refusal/scripts/inconclusive.test.mjs:33:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception (Inconclusive).'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/scratch-nonzero-refusal/scripts/inconclusive.test.mjs:37:12)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 45.605512
+
+stderr:
+
+
+baseline: windows-preflight
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight refuses Windows before spawning or writing a shebang fixture$' '/ephemeral/tmp/gate-mutations-y34ZR2/windows-preflight/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: preflight refuses Windows before spawning or writing a shebang fixture
+ok 1 - preflight refuses Windows before spawning or writing a shebang fixture
+  ---
+  duration_ms: 1.718001
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 49.666363
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "platform === \"win32\""
+with: "false"
+
+mutant: windows-preflight
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight refuses Windows before spawning or writing a shebang fixture$' '/ephemeral/tmp/gate-mutations-y34ZR2/windows-preflight/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: preflight refuses Windows before spawning or writing a shebang fixture
+not ok 1 - preflight refuses Windows before spawning or writing a shebang fixture
+  ---
+  duration_ms: 1.671282
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/windows-preflight/scripts/gates-regressions.test.mjs:85:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/windows-preflight/scripts/gates-regressions.test.mjs:88:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 49.811626
+
+stderr:
+
+
+baseline: node-shebang
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight fixture uses the same Node interpreter as the installed fixture$' '/ephemeral/tmp/gate-mutations-y34ZR2/node-shebang/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: preflight fixture uses the same Node interpreter as the installed fixture
+ok 1 - preflight fixture uses the same Node interpreter as the installed fixture
+  ---
+  duration_ms: 1.86165
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 53.098287
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "#!${process.execPath}"
+with: "#!/bin/sh"
+
+mutant: node-shebang
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight fixture uses the same Node interpreter as the installed fixture$' '/ephemeral/tmp/gate-mutations-y34ZR2/node-shebang/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: preflight fixture uses the same Node interpreter as the installed fixture
+not ok 1 - preflight fixture uses the same Node interpreter as the installed fixture
+  ---
+  duration_ms: 5.535657
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/node-shebang/scripts/gates-regressions.test.mjs:94:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(observed.source.startsWith(`#!${process.execPath}\n`))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/node-shebang/scripts/gates-regressions.test.mjs:101:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61.268193
+
+stderr:
+
+
+baseline: caught-preflight-error
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight setup and thrown spawn errors are inconclusive without raw errors$' '/ephemeral/tmp/gate-mutations-y34ZR2/caught-preflight-error/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: preflight setup and thrown spawn errors are inconclusive without raw errors
+ok 1 - preflight setup and thrown spawn errors are inconclusive without raw errors
+  ---
+  duration_ms: 1.720245
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 46.873649
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "attempt = { error };\n  } finally"
+with: "attempt = { status: 0 };\n  } finally"
+
+mutant: caught-preflight-error
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight setup and thrown spawn errors are inconclusive without raw errors$' '/ephemeral/tmp/gate-mutations-y34ZR2/caught-preflight-error/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: preflight setup and thrown spawn errors are inconclusive without raw errors
+not ok 1 - preflight setup and thrown spawn errors are inconclusive without raw errors
+  ---
+  duration_ms: 1.816836
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/caught-preflight-error/scripts/gates-regressions.test.mjs:116:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/caught-preflight-error/scripts/gates-regressions.test.mjs:122:12)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 51.033336
+
+stderr:
+
+
+baseline: preflight-cleanup-error
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight cleanup failure is inconclusive$' '/ephemeral/tmp/gate-mutations-y34ZR2/preflight-cleanup-error/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: preflight cleanup failure is inconclusive
+ok 1 - preflight cleanup failure is inconclusive
+  ---
+  duration_ms: 1.82467
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 48.908072
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "catch (error) { attempt = { error }; }"
+with: "catch (error) { /* ignored */ }"
+
+mutant: preflight-cleanup-error
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight cleanup failure is inconclusive$' '/ephemeral/tmp/gate-mutations-y34ZR2/preflight-cleanup-error/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: preflight cleanup failure is inconclusive
+not ok 1 - preflight cleanup failure is inconclusive
+  ---
+  duration_ms: 1.894972
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/preflight-cleanup-error/scripts/gates-regressions.test.mjs:130:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected exception (Inconclusive).'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/preflight-cleanup-error/scripts/gates-regressions.test.mjs:132:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 52.718926
+
+stderr:
+
+
+baseline: owned-location
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight diagnostic names only owned location and closed execution reason$' '/ephemeral/tmp/gate-mutations-y34ZR2/owned-location/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: preflight diagnostic names only owned location and closed execution reason
+ok 1 - preflight diagnostic names only owned location and closed execution reason
+  ---
+  duration_ms: 2.411761
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 55.348245
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "{ location: directory, execution }"
+with: "{ execution }"
+
+mutant: owned-location
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight diagnostic names only owned location and closed execution reason$' '/ephemeral/tmp/gate-mutations-y34ZR2/owned-location/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: preflight diagnostic names only owned location and closed execution reason
+not ok 1 - preflight diagnostic names only owned location and closed execution reason
+  ---
+  duration_ms: 3.038516
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/owned-location/scripts/gates-regressions.test.mjs:68:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - '/ephemeral/tmp/gate-control-M2QV7V'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '/ephemeral/tmp/gate-control-M2QV7V'
+  operator: 'strictEqual'
+  stack: |-
+    Object.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/owned-location/scripts/gates-regressions.test.mjs:76:12)
+    expectedException (node:assert:547:17)
+    expectsError (node:assert:672:21)
+    strict.throws (node:assert:728:3)
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/owned-location/scripts/gates-regressions.test.mjs:71:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 54.399606
+
+stderr:
+
+
+baseline: closed-execution-code
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight diagnostic names only owned location and closed execution reason$' '/ephemeral/tmp/gate-mutations-y34ZR2/closed-execution-code/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: preflight diagnostic names only owned location and closed execution reason
+ok 1 - preflight diagnostic names only owned location and closed execution reason
+  ---
+  duration_ms: 2.183323
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 57.780154
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "? code : \"probe-did-not-complete-successfully\""
+with: "? \"wrong-code\" : \"probe-did-not-complete-successfully\""
+
+mutant: closed-execution-code
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight diagnostic names only owned location and closed execution reason$' '/ephemeral/tmp/gate-mutations-y34ZR2/closed-execution-code/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: preflight diagnostic names only owned location and closed execution reason
+not ok 1 - preflight diagnostic names only owned location and closed execution reason
+  ---
+  duration_ms: 2.058028
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/closed-execution-code/scripts/gates-regressions.test.mjs:68:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'wrong-code'
+    - 'EACCES'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'EACCES'
+  actual: 'wrong-code'
+  operator: 'strictEqual'
+  stack: |-
+    Object.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/closed-execution-code/scripts/gates-regressions.test.mjs:77:12)
+    expectedException (node:assert:547:17)
+    expectsError (node:assert:672:21)
+    strict.throws (node:assert:728:3)
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/closed-execution-code/scripts/gates-regressions.test.mjs:71:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 47.618986
+
+stderr:
+
+
+baseline: raw-error-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight diagnostic names only owned location and closed execution reason$' '/ephemeral/tmp/gate-mutations-y34ZR2/raw-error-boundary/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: preflight diagnostic names only owned location and closed execution reason
+ok 1 - preflight diagnostic names only owned location and closed execution reason
+  ---
+  duration_ms: 1.885955
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 49.183919
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "{ location: directory, execution }"
+with: "{ location: directory, execution: attempt.error?.message }"
+
+mutant: raw-error-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight diagnostic names only owned location and closed execution reason$' '/ephemeral/tmp/gate-mutations-y34ZR2/raw-error-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: preflight diagnostic names only owned location and closed execution reason
+not ok 1 - preflight diagnostic names only owned location and closed execution reason
+  ---
+  duration_ms: 2.385361
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/raw-error-boundary/scripts/gates-regressions.test.mjs:68:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'private-canary /unowned/credential'
+    - 'EACCES'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'EACCES'
+  actual: 'private-canary /unowned/credential'
+  operator: 'strictEqual'
+  stack: |-
+    Object.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/raw-error-boundary/scripts/gates-regressions.test.mjs:77:12)
+    expectedException (node:assert:547:17)
+    expectsError (node:assert:672:21)
+    strict.throws (node:assert:728:3)
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/raw-error-boundary/scripts/gates-regressions.test.mjs:71:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 47.206192
+
+stderr:
+
+
+baseline: generic-path-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^the record carries no path, so a diagnostic cannot leak one$' '/ephemeral/tmp/gate-mutations-y34ZR2/generic-path-boundary/scripts/inconclusive.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: the record carries no path, so a diagnostic cannot leak one
+ok 1 - the record carries no path, so a diagnostic cannot leak one
+  ---
+  duration_ms: 0.80533
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 43.680604
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "check,\n    status:"
+with: "check,\n    leakedPath: process.env.TMPDIR || '/tmp',\n    status:"
+
+mutant: generic-path-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^the record carries no path, so a diagnostic cannot leak one$' '/ephemeral/tmp/gate-mutations-y34ZR2/generic-path-boundary/scripts/inconclusive.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: the record carries no path, so a diagnostic cannot leak one
+not ok 1 - the record carries no path, so a diagnostic cannot leak one
+  ---
+  duration_ms: 1.364528
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/generic-path-boundary/scripts/inconclusive.test.mjs:68:1'
+  failureType: 'testCodeFailure'
+  error: 'the record embedded the temp root'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/generic-path-boundary/scripts/inconclusive.test.mjs:74:12)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 48.987531
+
+stderr:
+
+
+baseline: workspace-empty
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace inventory missing or empty is inconclusive, not a verdict$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-empty/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: workspace inventory missing or empty is inconclusive, not a verdict
+ok 1 - workspace inventory missing or empty is inconclusive, not a verdict
+  ---
+  duration_ms: 51.478931
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 99.259741
+
+stderr:
+
+mutation: check-test-scripts.mjs
+replace: "if (packages.length === 0)"
+with: "if (false)"
+
+mutant: workspace-empty
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace inventory missing or empty is inconclusive, not a verdict$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-empty/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: workspace inventory missing or empty is inconclusive, not a verdict
+not ok 1 - workspace inventory missing or empty is inconclusive, not a verdict
+  ---
+  duration_ms: 50.003556
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-empty/scripts/gates-regressions.test.mjs:150:1'
+  failureType: 'testCodeFailure'
+  error: |-
+      governance: declared uncovered but no such package exists. Remove its DECLARED_UNCOVERED entry.
+      netscript-bridge: declared uncovered but no such package exists. Remove its DECLARED_UNCOVERED entry.
+      provider-acp: declared uncovered but no such package exists. Remove its DECLARED_UNCOVERED entry.
+    check:test-scripts failed — 3 problem(s) across 0 package(s)
+    
+    
+    1 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/workspace-empty/scripts/gates-regressions.test.mjs:157:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 98.1925
+
+stderr:
+
+
+baseline: workspace-inaccessible-manifest
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^an inaccessible package cannot disappear from an otherwise valid inventory$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-inaccessible-manifest/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: an inaccessible package cannot disappear from an otherwise valid inventory
+ok 1 - an inaccessible package cannot disappear from an otherwise valid inventory
+  ---
+  duration_ms: 55.071036
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 100.628937
+
+stderr:
+
+mutation: check-test-scripts.mjs
+replace: "if (error.code === \"ENOENT\") return [];"
+with: "return [];"
+
+mutant: workspace-inaccessible-manifest
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^an inaccessible package cannot disappear from an otherwise valid inventory$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-inaccessible-manifest/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: an inaccessible package cannot disappear from an otherwise valid inventory
+not ok 1 - an inaccessible package cannot disappear from an otherwise valid inventory
+  ---
+  duration_ms: 50.142427
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-inaccessible-manifest/scripts/gates-regressions.test.mjs:195:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    check:test-scripts ok — 0 of 3 package(s) declare a test script; 3 declared uncovered with a reason (governance, netscript-bridge, provider-acp)
+    
+    
+    0 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/workspace-inaccessible-manifest/scripts/gates-regressions.test.mjs:212:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 102.437267
+
+stderr:
+
+
+baseline: workspace-nonpackage-directory
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace declarations pass, missing tests fail and the missing package is named$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-nonpackage-directory/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: workspace declarations pass, missing tests fail and the missing package is named
+ok 1 - workspace declarations pass, missing tests fail and the missing package is named
+  ---
+  duration_ms: 47.505142
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 92.190269
+
+stderr:
+
+mutation: check-test-scripts.mjs
+replace: "if (error.code === \"ENOENT\") return [];"
+with: "if (false) return [];"
+
+mutant: workspace-nonpackage-directory
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace declarations pass, missing tests fail and the missing package is named$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-nonpackage-directory/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: workspace declarations pass, missing tests fail and the missing package is named
+not ok 1 - workspace declarations pass, missing tests fail and the missing package is named
+  ---
+  duration_ms: 27.28071
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-nonpackage-directory/scripts/gates-regressions.test.mjs:182:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"check":"check:test-scripts","status":"INCONCLUSIVE","stage":"workspace inventory","reason":"workspace-unreadable","remedy":"workspace test coverage could not be inspected; restore access to packages/*/package.json","established":"nothing; the gate did not run to a verdict"}
+    
+    
+    2 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/workspace-nonpackage-directory/scripts/gates-regressions.test.mjs:188:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 74.874789
+
+stderr:
+
+
+baseline: workspace-unreadable
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace inventory missing or empty is inconclusive, not a verdict$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-unreadable/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: workspace inventory missing or empty is inconclusive, not a verdict
+ok 1 - workspace inventory missing or empty is inconclusive, not a verdict
+  ---
+  duration_ms: 49.555486
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 101.203545
+
+stderr:
+
+mutation: check-test-scripts.mjs
+replace: "throw new Inconclusive(\"workspace-unreadable\","
+with: "throw new Error(\"workspace-unreadable\","
+
+mutant: workspace-unreadable
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace inventory missing or empty is inconclusive, not a verdict$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-unreadable/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: workspace inventory missing or empty is inconclusive, not a verdict
+not ok 1 - workspace inventory missing or empty is inconclusive, not a verdict
+  ---
+  duration_ms: 25.598076
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-unreadable/scripts/gates-regressions.test.mjs:150:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"check":"check:test-scripts","status":"FAIL","reason":"invalid-workspace-manifest"}
+    
+    
+    1 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/workspace-unreadable/scripts/gates-regressions.test.mjs:153:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 76.916166
+
+stderr:
+
+
+baseline: manifest-syntax-failure
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace unreadable manifest is inconclusive but invalid JSON fails$' '/ephemeral/tmp/gate-mutations-y34ZR2/manifest-syntax-failure/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: workspace unreadable manifest is inconclusive but invalid JSON fails
+ok 1 - workspace unreadable manifest is inconclusive but invalid JSON fails
+  ---
+  duration_ms: 79.059784
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 126.71064
+
+stderr:
+
+mutation: check-test-scripts.mjs
+replace: "if (typeof error.code !== \"string\" || typeof error.syscall !== \"string\") throw error;"
+with: "/* classify syntax as inconclusive */"
+
+mutant: manifest-syntax-failure
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace unreadable manifest is inconclusive but invalid JSON fails$' '/ephemeral/tmp/gate-mutations-y34ZR2/manifest-syntax-failure/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: workspace unreadable manifest is inconclusive but invalid JSON fails
+not ok 1 - workspace unreadable manifest is inconclusive but invalid JSON fails
+  ---
+  duration_ms: 48.444614
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/manifest-syntax-failure/scripts/gates-regressions.test.mjs:164:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"check":"check:test-scripts","status":"INCONCLUSIVE","stage":"workspace inventory","reason":"workspace-unreadable","remedy":"workspace test coverage could not be inspected; restore access to packages/*/package.json","established":"nothing; the gate did not run to a verdict"}
+    
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/manifest-syntax-failure/scripts/gates-regressions.test.mjs:174:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 97.404804
+
+stderr:
+
+
+baseline: workspace-import-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^importing a workspace audit does not inspect or certify the workspace$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-import-boundary/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: importing a workspace audit does not inspect or certify the workspace
+ok 1 - importing a workspace audit does not inspect or certify the workspace
+  ---
+  duration_ms: 23.615188
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 72.615344
+
+stderr:
+
+mutation: check-test-scripts.mjs
+replace: "if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url))"
+with: "if (!process.argv[1] || realpathSync(process.argv[1]) === fileURLToPath(import.meta.url))"
+
+mutant: workspace-import-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^importing a workspace audit does not inspect or certify the workspace$' '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-import-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: importing a workspace audit does not inspect or certify the workspace
+not ok 1 - importing a workspace audit does not inspect or certify the workspace
+  ---
+  duration_ms: 27.998986
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/workspace-import-boundary/scripts/gates-regressions.test.mjs:217:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    2 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/workspace-import-boundary/scripts/gates-regressions.test.mjs:221:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 81.026621
+
+stderr:
+
+
+baseline: missing-test-script
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace declarations pass, missing tests fail and the missing package is named$' '/ephemeral/tmp/gate-mutations-y34ZR2/missing-test-script/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: workspace declarations pass, missing tests fail and the missing package is named
+ok 1 - workspace declarations pass, missing tests fail and the missing package is named
+  ---
+  duration_ms: 47.902608
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 93.686342
+
+stderr:
+
+mutation: check-test-scripts.mjs
+replace: "!p.hasTestScript && !declaredNames.has(p.name)"
+with: "false"
+
+mutant: missing-test-script
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^workspace declarations pass, missing tests fail and the missing package is named$' '/ephemeral/tmp/gate-mutations-y34ZR2/missing-test-script/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: workspace declarations pass, missing tests fail and the missing package is named
+not ok 1 - workspace declarations pass, missing tests fail and the missing package is named
+  ---
+  duration_ms: 57.106371
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/missing-test-script/scripts/gates-regressions.test.mjs:182:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    check:test-scripts ok — 1 of 5 package(s) declare a test script; 3 declared uncovered with a reason (governance, netscript-bridge, provider-acp)
+    
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/missing-test-script/scripts/gates-regressions.test.mjs:191:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 103.775937
+
+stderr:
+
+
+baseline: stale-exemption
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a declaration that outlived its reason is reported, so the list cannot rot$' '/ephemeral/tmp/gate-mutations-y34ZR2/stale-exemption/scripts/check-test-scripts.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: a declaration that outlived its reason is reported, so the list cannot rot
+ok 1 - a declaration that outlived its reason is reported, so the list cannot rot
+  ---
+  duration_ms: 0.96568
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 48.457769
+
+stderr:
+
+mutation: check-test-scripts.mjs
+replace: "byName.get(d.name)?.hasTestScript === true"
+with: "false"
+
+mutant: stale-exemption
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a declaration that outlived its reason is reported, so the list cannot rot$' '/ephemeral/tmp/gate-mutations-y34ZR2/stale-exemption/scripts/check-test-scripts.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: a declaration that outlived its reason is reported, so the list cannot rot
+not ok 1 - a declaration that outlived its reason is reported, so the list cannot rot
+  ---
+  duration_ms: 1.578339
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/stale-exemption/scripts/check-test-scripts.test.mjs:30:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+    + []
+    - [
+    -   'covered'
+    - ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'covered'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/stale-exemption/scripts/check-test-scripts.test.mjs:32:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 47.927104
+
+stderr:
+
+
+baseline: incomplete-results
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^empty and partial stage observations cannot report all green$' '/ephemeral/tmp/gate-mutations-y34ZR2/incomplete-results/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: empty and partial stage observations cannot report all green
+ok 1 - empty and partial stage observations cannot report all green
+  ---
+  duration_ms: 0.918041
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 49.030241
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "missing.length > 0 || stages.length === 0"
+with: "false"
+
+mutant: incomplete-results
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^empty and partial stage observations cannot report all green$' '/ephemeral/tmp/gate-mutations-y34ZR2/incomplete-results/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: empty and partial stage observations cannot report all green
+not ok 1 - empty and partial stage observations cannot report all green
+  ---
+  duration_ms: 1.184791
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/incomplete-results/scripts/gates-regressions.test.mjs:225:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/incomplete-results/scripts/gates-regressions.test.mjs:228:12)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 47.876238
+
+stderr:
+
+
+baseline: spawn-execution-report
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a real runner spawn refusal cannot claim the compile executed$' '/ephemeral/tmp/gate-mutations-y34ZR2/spawn-execution-report/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: a real runner spawn refusal cannot claim the compile executed
+ok 1 - a real runner spawn refusal cannot claim the compile executed
+  ---
+  duration_ms: 29.689596
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 77.77202
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "executed: false, reason: \"stage-could-not-spawn\""
+with: "executed: true, reason: \"stage-could-not-spawn\""
+
+mutant: spawn-execution-report
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a real runner spawn refusal cannot claim the compile executed$' '/ephemeral/tmp/gate-mutations-y34ZR2/spawn-execution-report/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: a real runner spawn refusal cannot claim the compile executed
+not ok 1 - a real runner spawn refusal cannot claim the compile executed
+  ---
+  duration_ms: 30.773537
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/spawn-execution-report/scripts/gates-regressions.test.mjs:236:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /compile .*DID NOT RUN — INCONCLUSIVE/. Input:
+    
+    '\n' +
+      'control INCONCLUSIVE — 1 stage(s) did not reach a verdict: compile\n' +
+      '  compile — stage-could-not-spawn: the stage runner could not be started on this host; check that pnpm is on PATH\n' +
+      '  nothing is established about compile; this is not a pass and not a failure\n' +
+      '  compile (compile, stage 1): ran\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    
+    control INCONCLUSIVE — 1 stage(s) did not reach a verdict: compile
+      compile — stage-could-not-spawn: the stage runner could not be started on this host; check that pnpm is on PATH
+      nothing is established about compile; this is not a pass and not a failure
+      compile (compile, stage 1): ran
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/spawn-execution-report/scripts/gates-regressions.test.mjs:241:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 75.874203
+
+stderr:
+
+
+baseline: unavailable-command
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^shell command refusals remain inconclusive through pnpm$' '/ephemeral/tmp/gate-mutations-y34ZR2/unavailable-command/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: shell command refusals remain inconclusive through pnpm
+ok 1 - shell command refusals remain inconclusive through pnpm
+  ---
+  duration_ms: 668.23244
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 717.946894
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "result.commandUnavailable || result.status === 126"
+with: "false"
+
+mutant: unavailable-command
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^shell command refusals remain inconclusive through pnpm$' '/ephemeral/tmp/gate-mutations-y34ZR2/unavailable-command/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: shell command refusals remain inconclusive through pnpm
+not ok 1 - shell command refusals remain inconclusive through pnpm
+  ---
+  duration_ms: 309.703486
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/unavailable-command/scripts/gates-regressions.test.mjs:245:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    
+    control FAILED at stage 1 of 1: compile
+      compile (compile, stage 1): ran
+    $ ./not-executable
+    sh: 1: ./not-executable: Permission denied
+    @ compile: `./not-executable`
+    Exit status 126
+    
+    
+    126 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 126
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/unavailable-command/scripts/gates-regressions.test.mjs:252:12)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 355.573433
+
+stderr:
+
+
+baseline: pnpm-enoent-record
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^shell command refusals remain inconclusive through pnpm$' '/ephemeral/tmp/gate-mutations-y34ZR2/pnpm-enoent-record/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: shell command refusals remain inconclusive through pnpm
+ok 1 - shell command refusals remain inconclusive through pnpm
+  ---
+  duration_ms: 638.024913
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 685.910669
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "run.commandUnavailable = true;"
+with: "run.commandUnavailable = false;"
+
+mutant: pnpm-enoent-record
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^shell command refusals remain inconclusive through pnpm$' '/ephemeral/tmp/gate-mutations-y34ZR2/pnpm-enoent-record/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: shell command refusals remain inconclusive through pnpm
+not ok 1 - shell command refusals remain inconclusive through pnpm
+  ---
+  duration_ms: 676.479008
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/pnpm-enoent-record/scripts/gates-regressions.test.mjs:245:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    
+    control FAILED at stage 1 of 1: compile
+      compile (compile, stage 1): ran
+    $ definitely-missing-316-command
+    sh: 1: definitely-missing-316-command: not found
+    @ compile: `definitely-missing-316-command`
+    spawn ENOENT
+    
+    
+    1 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/pnpm-enoent-record/scripts/gates-regressions.test.mjs:252:12)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 726.035316
+
+stderr:
+
+
+baseline: compile-exit-two
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^native compiler exit two fails while a non-compile gate exit two is inconclusive$' '/ephemeral/tmp/gate-mutations-y34ZR2/compile-exit-two/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: native compiler exit two fails while a non-compile gate exit two is inconclusive
+ok 1 - native compiler exit two fails while a non-compile gate exit two is inconclusive
+  ---
+  duration_ms: 1136.16493
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1184.43739
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "compile && result.status === INCONCLUSIVE_EXIT ? 1 : result.status"
+with: "result.status"
+
+mutant: compile-exit-two
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^native compiler exit two fails while a non-compile gate exit two is inconclusive$' '/ephemeral/tmp/gate-mutations-y34ZR2/compile-exit-two/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: native compiler exit two fails while a non-compile gate exit two is inconclusive
+not ok 1 - native compiler exit two fails while a non-compile gate exit two is inconclusive
+  ---
+  duration_ms: 845.876679
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/compile-exit-two/scripts/gates-regressions.test.mjs:258:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    broken.ts(1,7): error TS2322: Type 'number' is not assignable to type 'string'.
+    
+    control INCONCLUSIVE — 1 stage(s) did not reach a verdict: compile
+      compile — reason not recorded by the stage
+      nothing is established about compile; this is not a pass and not a failure
+      compile (compile, stage 1): ran
+    $ "/usr/local/bin/node" "/ephemeral/orch-work/issue-362/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/bin/tsc" --skipLibCheck --noEmit broken.ts
+    @ compile: `"/usr/local/bin/node" "/ephemeral/orch-work/issue-362/node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/bin/tsc" --skipLibCheck --noEmit broken.ts`
+    Exit status 2
+    
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/compile-exit-two/scripts/gates-regressions.test.mjs:269:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 901.55856
+
+stderr:
+
+
+baseline: noncompile-exit-two
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^native compiler exit two fails while a non-compile gate exit two is inconclusive$' '/ephemeral/tmp/gate-mutations-y34ZR2/noncompile-exit-two/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: native compiler exit two fails while a non-compile gate exit two is inconclusive
+ok 1 - native compiler exit two fails while a non-compile gate exit two is inconclusive
+  ---
+  duration_ms: 1101.770595
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1149.638678
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "compile && result.status === INCONCLUSIVE_EXIT ? 1 : result.status"
+with: "result.status === INCONCLUSIVE_EXIT ? 1 : result.status"
+
+mutant: noncompile-exit-two
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^native compiler exit two fails while a non-compile gate exit two is inconclusive$' '/ephemeral/tmp/gate-mutations-y34ZR2/noncompile-exit-two/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: native compiler exit two fails while a non-compile gate exit two is inconclusive
+not ok 1 - native compiler exit two fails while a non-compile gate exit two is inconclusive
+  ---
+  duration_ms: 1123.512971
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/noncompile-exit-two/scripts/gates-regressions.test.mjs:258:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    
+    control FAILED at stage 1 of 2: check
+      compile (compile, stage 2): DID NOT RUN — INCONCLUSIVE; compilation was not established
+      never reached: compile
+    $ node -e "process.exit(2)"
+    @ check: `node -e "process.exit(2)"`
+    Exit status 2
+    
+    
+    1 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/noncompile-exit-two/scripts/gates-regressions.test.mjs:274:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1178.647005
+
+stderr:
+
+
+baseline: not-run-compile-wording
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a real runner spawn refusal cannot claim the compile executed$' '/ephemeral/tmp/gate-mutations-y34ZR2/not-run-compile-wording/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: a real runner spawn refusal cannot claim the compile executed
+ok 1 - a real runner spawn refusal cannot claim the compile executed
+  ---
+  duration_ms: 33.487505
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 86.773715
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "DID NOT RUN — INCONCLUSIVE; compilation was not established"
+with: "DID NOT RUN"
+
+mutant: not-run-compile-wording
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a real runner spawn refusal cannot claim the compile executed$' '/ephemeral/tmp/gate-mutations-y34ZR2/not-run-compile-wording/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: a real runner spawn refusal cannot claim the compile executed
+not ok 1 - a real runner spawn refusal cannot claim the compile executed
+  ---
+  duration_ms: 31.043614
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/not-run-compile-wording/scripts/gates-regressions.test.mjs:236:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /compile .*DID NOT RUN — INCONCLUSIVE/. Input:
+    
+    '\n' +
+      'control INCONCLUSIVE — 1 stage(s) did not reach a verdict: compile\n' +
+      '  compile — stage-could-not-spawn: the stage runner could not be started on this host; check that pnpm is on PATH\n' +
+      '  nothing is established about compile; this is not a pass and not a failure\n' +
+      '  compile (compile, stage 1): DID NOT RUN\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    
+    control INCONCLUSIVE — 1 stage(s) did not reach a verdict: compile
+      compile — stage-could-not-spawn: the stage runner could not be started on this host; check that pnpm is on PATH
+      nothing is established about compile; this is not a pass and not a failure
+      compile (compile, stage 1): DID NOT RUN
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/not-run-compile-wording/scripts/gates-regressions.test.mjs:241:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 78.362718
+
+stderr:
+
+
+baseline: named-failure
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a failure before the compile names the stage and says the compile did not run$' '/ephemeral/tmp/gate-mutations-y34ZR2/named-failure/scripts/run-stages.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: a failure before the compile names the stage and says the compile did not run
+ok 1 - a failure before the compile names the stage and says the compile did not run
+  ---
+  duration_ms: 0.924343
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 46.423836
+
+stderr:
+
+mutation: run-stages.mjs
+replace: ": ${failed.stage}`"
+with: ": unnamed`"
+
+mutant: named-failure
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a failure before the compile names the stage and says the compile did not run$' '/ephemeral/tmp/gate-mutations-y34ZR2/named-failure/scripts/run-stages.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: a failure before the compile names the stage and says the compile did not run
+not ok 1 - a failure before the compile names the stage and says the compile did not run
+  ---
+  duration_ms: 1.276412
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/named-failure/scripts/run-stages.test.mjs:28:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /FAILED at stage 2 of 4: two/. Input:
+    
+    'build FAILED at stage 2 of 4: unnamed'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'build FAILED at stage 2 of 4: unnamed'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/named-failure/scripts/run-stages.test.mjs:32:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 51.406407
+
+stderr:
+
+
+baseline: translated-signal
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a REAL translated signal death is inconclusive, not a failure$' '/ephemeral/tmp/gate-mutations-y34ZR2/translated-signal/scripts/run-stages.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: a REAL translated signal death is inconclusive, not a failure
+ok 1 - a REAL translated signal death is inconclusive, not a failure
+  ---
+  duration_ms: 57.244459
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 106.477642
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "SIGNAL_EXIT_CODES.get(result.status)"
+with: "undefined"
+
+mutant: translated-signal
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^a REAL translated signal death is inconclusive, not a failure$' '/ephemeral/tmp/gate-mutations-y34ZR2/translated-signal/scripts/run-stages.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: a REAL translated signal death is inconclusive, not a failure
+not ok 1 - a REAL translated signal death is inconclusive, not a failure
+  ---
+  duration_ms: 22.641033
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/translated-signal/scripts/run-stages.test.mjs:139:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    a real SIGHUP death must not read as a failure
+    
+    129 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 129
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/translated-signal/scripts/run-stages.test.mjs:150:12)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 71.141682
+
+stderr:
+
+
+baseline: configuration-status
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^misconfigured aggregate reports inconclusive because no stage could run$' '/ephemeral/tmp/gate-mutations-y34ZR2/configuration-status/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: misconfigured aggregate reports inconclusive because no stage could run
+ok 1 - misconfigured aggregate reports inconclusive because no stage could run
+  ---
+  duration_ms: 29.137191
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 86.391218
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "process.exitCode = INCONCLUSIVE_EXIT;"
+with: "process.exitCode = 0;"
+
+mutant: configuration-status
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^misconfigured aggregate reports inconclusive because no stage could run$' '/ephemeral/tmp/gate-mutations-y34ZR2/configuration-status/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: misconfigured aggregate reports inconclusive because no stage could run
+not ok 1 - misconfigured aggregate reports inconclusive because no stage could run
+  ---
+  duration_ms: 26.484207
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/configuration-status/scripts/gates-regressions.test.mjs:280:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    run-stages INCONCLUSIVE — configuration error; no stage was run: run-stages needs at least one stage
+    
+    
+    0 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/configuration-status/scripts/gates-regressions.test.mjs:282:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 81.647044
+
+stderr:
+
+
+baseline: capture-started-guard
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^bounded output capture is inconclusive after the runner started$' '/ephemeral/tmp/gate-mutations-y34ZR2/capture-started-guard/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: bounded output capture is inconclusive after the runner started
+ok 1 - bounded output capture is inconclusive after the runner started
+  ---
+  duration_ms: 20.207181
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 73.068713
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "if (result.pid > 0)"
+with: "if (false)"
+
+mutant: capture-started-guard
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^bounded output capture is inconclusive after the runner started$' '/ephemeral/tmp/gate-mutations-y34ZR2/capture-started-guard/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: bounded output capture is inconclusive after the runner started
+not ok 1 - bounded output capture is inconclusive after the runner started
+  ---
+  duration_ms: 21.005566
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/capture-started-guard/scripts/gates-regressions.test.mjs:139:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'stage-could-not-spawn'
+    - 'stage-result-unavailable'
+             ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'stage-result-unavailable'
+  actual: 'stage-could-not-spawn'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/capture-started-guard/scripts/gates-regressions.test.mjs:145:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 67.406079
+
+stderr:
+
+
+baseline: capture-execution-report
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^bounded output capture is inconclusive after the runner started$' '/ephemeral/tmp/gate-mutations-y34ZR2/capture-execution-report/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: bounded output capture is inconclusive after the runner started
+ok 1 - bounded output capture is inconclusive after the runner started
+  ---
+  duration_ms: 21.027588
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 68.756681
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "reason: \"stage-result-unavailable\""
+with: "executed: false, reason: \"stage-result-unavailable\""
+
+mutant: capture-execution-report
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^bounded output capture is inconclusive after the runner started$' '/ephemeral/tmp/gate-mutations-y34ZR2/capture-execution-report/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: bounded output capture is inconclusive after the runner started
+not ok 1 - bounded output capture is inconclusive after the runner started
+  ---
+  duration_ms: 20.694353
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/capture-execution-report/scripts/gates-regressions.test.mjs:139:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/capture-execution-report/scripts/gates-regressions.test.mjs:147:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 66.860416
+
+stderr:
+
+
+baseline: unknown-execution-code
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight unknown execution codes cannot reflect arbitrary input$' '/ephemeral/tmp/gate-mutations-y34ZR2/unknown-execution-code/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: preflight unknown execution codes cannot reflect arbitrary input
+ok 1 - preflight unknown execution codes cannot reflect arbitrary input
+  ---
+  duration_ms: 1.723791
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 50.14984
+
+stderr:
+
+mutation: inconclusive.mjs
+replace: "? code : \"probe-did-not-complete-successfully\""
+with: "? code : code"
+
+mutant: unknown-execution-code
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^preflight unknown execution codes cannot reflect arbitrary input$' '/ephemeral/tmp/gate-mutations-y34ZR2/unknown-execution-code/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: preflight unknown execution codes cannot reflect arbitrary input
+not ok 1 - preflight unknown execution codes cannot reflect arbitrary input
+  ---
+  duration_ms: 2.349685
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/unknown-execution-code/scripts/gates-regressions.test.mjs:106:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'private-canary'
+    - 'probe-did-not-complete-successfully'
+         ^
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'probe-did-not-complete-successfully'
+  actual: 'private-canary'
+  operator: 'strictEqual'
+  stack: |-
+    Object.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/unknown-execution-code/scripts/gates-regressions.test.mjs:110:12)
+    expectedException (node:assert:547:17)
+    expectsError (node:assert:672:21)
+    strict.throws (node:assert:728:3)
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/unknown-execution-code/scripts/gates-regressions.test.mjs:108:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 49.849105
+
+stderr:
+
+
+baseline: capture-bound
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage output capture overflow reports inconclusive without forwarding truncated output$' '/ephemeral/tmp/gate-mutations-y34ZR2/capture-bound/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: stage output capture overflow reports inconclusive without forwarding truncated output
+ok 1 - stage output capture overflow reports inconclusive without forwarding truncated output
+  ---
+  duration_ms: 414.629508
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 465.292081
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "maxBuffer: 32 * 1024 * 1024"
+with: "maxBuffer: 128 * 1024 * 1024"
+
+mutant: capture-bound
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage output capture overflow reports inconclusive without forwarding truncated output$' '/ephemeral/tmp/gate-mutations-y34ZR2/capture-bound/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: stage output capture overflow reports inconclusive without forwarding truncated output
+not ok 1 - stage output capture overflow reports inconclusive without forwarding truncated output
+  ---
+  duration_ms: 404.528253
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/capture-bound/scripts/gates-regressions.test.mjs:287:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    $ node output.mjs
+    
+    
+    null !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: ~
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/capture-bound/scripts/gates-regressions.test.mjs:292:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 457.050971
+
+stderr:
+
+
+baseline: truncated-output-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage output capture overflow reports inconclusive without forwarding truncated output$' '/ephemeral/tmp/gate-mutations-y34ZR2/truncated-output-boundary/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: stage output capture overflow reports inconclusive without forwarding truncated output
+ok 1 - stage output capture overflow reports inconclusive without forwarding truncated output
+  ---
+  duration_ms: 378.703373
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 429.291715
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "if (run.error) return run;"
+with: "/* forward incomplete output */"
+
+mutant: truncated-output-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage output capture overflow reports inconclusive without forwarding truncated output$' '/ephemeral/tmp/gate-mutations-y34ZR2/truncated-output-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: stage output capture overflow reports inconclusive without forwarding truncated output
+not ok 1 - stage output capture overflow reports inconclusive without forwarding truncated output
+  ---
+  duration_ms: 381.226081
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/truncated-output-boundary/scripts/gates-regressions.test.mjs:287:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    $ node output.mjs
+    node:events:505
+        throw er; // Unhandled 'error' event
+        ^
+    
+    Error: write EPIPE
+        at WriteWrap.onWriteComplete [as oncomplete] (node:internal/stream_base_commons:87:19)
+    Emitted 'error' event on Socket instance at:
+        at emitErrorNT (node:internal/streams/destroy:170:8)
+        at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+        at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+      errno: -32,
+      code: 'EPIPE',
+      syscall: 'write'
+    }
+    
+    Node.js v26.8.2
+    
+    
+    null !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: ~
+  operator: 'strictEqual'
+  stack: |-
+    WriteWrap.onWriteComplete [as oncomplete] (node:internal/stream_base_commons:87:19)
+    emitErrorNT (node:internal/streams/destroy:170:8)
+    emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/truncated-output-boundary/scripts/gates-regressions.test.mjs:292:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 426.755361
+
+stderr:
+
+
+baseline: debug-metadata-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/debug-metadata-boundary/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: stage reporter preserves program output while omitting pnpm debug metadata
+ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  ---
+  duration_ms: 323.182965
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 369.25451
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "if (typeof record.line === \"string\") console.log(record.line);"
+with: "console.log(line); if (typeof record.line === \"string\") console.log(record.line);"
+
+mutant: debug-metadata-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/debug-metadata-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: stage reporter preserves program output while omitting pnpm debug metadata
+not ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  ---
+  duration_ms: 330.561226
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/debug-metadata-boundary/scripts/gates-regressions.test.mjs:297:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input was expected to not match the regular expression /private-canary/. Input:
+    
+    '{"time":1789430729352,"hostname":"ai-agents","pid":4052349,"level":"debug","name":"pnpm:scope","selected":1}\n' +
+      '{"check":"synthetic","status":"PASS"}\n' +
+      '{"name":"pnpm:debug","private":"private-canary"}\n' +
+      '{"name":"pnpm:lifecycle","line":"lifecycle-control"}\n' +
+      'lifecycle-control\n' +
+      '{"name":"pnpm","level":"error","code":"CONTROL","errno":"ENOENT","err":{"message":"visible-control-error"}}\n' +
+      '{"time":1789430729380,"hostname":"ai-agents","pid":4052349,"level":"debug","name":"pnpm:execution-time","startedAt":1789430729109,"endedAt":1789430729380}\n' +
+      '\n' +
+      'control ok — 1 stage(s), all green\n' +
+      '  compile (compile, stage 1): ran\n' +
+      '$ node output.mjs\n' +
+      'visible-control-error\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    {"time":1789430729352,"hostname":"ai-agents","pid":4052349,"level":"debug","name":"pnpm:scope","selected":1}
+    {"check":"synthetic","status":"PASS"}
+    {"name":"pnpm:debug","private":"private-canary"}
+    {"name":"pnpm:lifecycle","line":"lifecycle-control"}
+    lifecycle-control
+    {"name":"pnpm","level":"error","code":"CONTROL","errno":"ENOENT","err":{"message":"visible-control-error"}}
+    {"time":1789430729380,"hostname":"ai-agents","pid":4052349,"level":"debug","name":"pnpm:execution-time","startedAt":1789430729109,"endedAt":1789430729380}
+    
+    control ok — 1 stage(s), all green
+      compile (compile, stage 1): ran
+    $ node output.mjs
+    visible-control-error
+    
+  operator: 'doesNotMatch'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/debug-metadata-boundary/scripts/gates-regressions.test.mjs:312:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 381.839441
+
+stderr:
+
+
+baseline: program-output-forwarding
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/program-output-forwarding/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: stage reporter preserves program output while omitting pnpm debug metadata
+ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  ---
+  duration_ms: 316.106108
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 362.713387
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "} else console.log(line);"
+with: "} else { /* discard program output */ }"
+
+mutant: program-output-forwarding
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/program-output-forwarding/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: stage reporter preserves program output while omitting pnpm debug metadata
+not ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  ---
+  duration_ms: 353.717775
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/program-output-forwarding/scripts/gates-regressions.test.mjs:297:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /"check":"synthetic","status":"PASS"/. Input:
+    
+    'lifecycle-control\n' +
+      '\n' +
+      'control ok — 1 stage(s), all green\n' +
+      '  compile (compile, stage 1): ran\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    lifecycle-control
+    
+    control ok — 1 stage(s), all green
+      compile (compile, stage 1): ran
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/program-output-forwarding/scripts/gates-regressions.test.mjs:309:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 405.229679
+
+stderr:
+
+
+baseline: lifecycle-output-forwarding
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/lifecycle-output-forwarding/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: stage reporter preserves program output while omitting pnpm debug metadata
+ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  ---
+  duration_ms: 364.90139
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 414.117399
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "if (typeof record.line === \"string\") console.log(record.line);"
+with: "if (typeof record.line === \"string\") { /* discard lifecycle output */ }"
+
+mutant: lifecycle-output-forwarding
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/lifecycle-output-forwarding/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: stage reporter preserves program output while omitting pnpm debug metadata
+not ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  ---
+  duration_ms: 328.724663
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/lifecycle-output-forwarding/scripts/gates-regressions.test.mjs:297:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /lifecycle-control/. Input:
+    
+    '{"check":"synthetic","status":"PASS"}\n' +
+      '\n' +
+      'control ok — 1 stage(s), all green\n' +
+      '  compile (compile, stage 1): ran\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    {"check":"synthetic","status":"PASS"}
+    
+    control ok — 1 stage(s), all green
+      compile (compile, stage 1): ran
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/lifecycle-output-forwarding/scripts/gates-regressions.test.mjs:310:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 374.459467
+
+stderr:
+
+
+baseline: lifecycle-error-forwarding
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/lifecycle-error-forwarding/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: stage reporter preserves program output while omitting pnpm debug metadata
+ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  ---
+  duration_ms: 341.085445
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 388.296807
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "else if (record.level === \"error\") console.error(record.err?.message ?? record.message ?? record.code);"
+with: "else if (record.level === \"error\") { /* discard lifecycle error */ }"
+
+mutant: lifecycle-error-forwarding
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/lifecycle-error-forwarding/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: stage reporter preserves program output while omitting pnpm debug metadata
+not ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  ---
+  duration_ms: 337.393183
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/lifecycle-error-forwarding/scripts/gates-regressions.test.mjs:297:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /visible-control-error/. Input:
+    
+    '$ node output.mjs\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    $ node output.mjs
+    
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/lifecycle-error-forwarding/scripts/gates-regressions.test.mjs:311:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 386.248857
+
+stderr:
+
+
+baseline: pnpm-error-code-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/pnpm-error-code-boundary/scripts/gates-regressions.test.mjs'
+exit code: 0
+stdout:
+TAP version 13
+# Subtest: stage reporter preserves program output while omitting pnpm debug metadata
+ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  ---
+  duration_ms: 336.945745
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 386.153398
+
+stderr:
+
+mutation: run-stages.mjs
+replace: "[\"ELIFECYCLE\", \"ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL\"].includes(record.code)"
+with: "true"
+
+mutant: pnpm-error-code-boundary
+command: '/usr/local/bin/node' '--test' '--test-reporter=tap' '--test-name-pattern' '^stage reporter preserves program output while omitting pnpm debug metadata$' '/ephemeral/tmp/gate-mutations-y34ZR2/pnpm-error-code-boundary/scripts/gates-regressions.test.mjs'
+exit code: 1
+stdout:
+TAP version 13
+# Subtest: stage reporter preserves program output while omitting pnpm debug metadata
+not ok 1 - stage reporter preserves program output while omitting pnpm debug metadata
+  ---
+  duration_ms: 348.820064
+  type: 'test'
+  location: '/ephemeral/tmp/gate-mutations-y34ZR2/pnpm-error-code-boundary/scripts/gates-regressions.test.mjs:297:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"check":"synthetic","status":"PASS"}
+    lifecycle-control
+    
+    control INCONCLUSIVE — 1 stage(s) did not reach a verdict: compile
+      compile — stage-command-unavailable: the stage command could not execute (shell 126/127 or pnpm ENOENT); its result is unproven
+      nothing is established about compile; this is not a pass and not a failure
+      compile (compile, stage 1): DID NOT RUN — INCONCLUSIVE; compilation was not established
+    $ node output.mjs
+    visible-control-error
+    
+    
+    2 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///ephemeral/tmp/gate-mutations-y34ZR2/pnpm-error-code-boundary/scripts/gates-regressions.test.mjs:308:10)
+    Test.runInAsyncScope (node:async_hooks:226:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 400.889492
+
+stderr:
+
+
+Mutation verification: 40/40 killed by targeted assertions.

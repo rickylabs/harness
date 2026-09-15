@@ -32,11 +32,12 @@
     "clean": "pnpm -r run clean",
     "check:compiled-policy": "node scripts/check-compiled-policy.mjs",
     "check:installed": "node --test scripts/inconclusive.test.mjs && node scripts/check-installed-contracts.mjs",
-    "check:stages": "node --test scripts/run-stages.test.mjs",
+    "check:stages": "node --test scripts/run-stages.test.mjs scripts/gates-regressions.test.mjs",
     "build:packages": "pnpm -r run build",
     "test:packages": "pnpm -r run test",
     "typecheck:packages": "pnpm -r run typecheck",
-    "check:receipts": "node --test .llm/tools/harness/matrix-receipts.test.mjs"
+    "check:receipts": "node --test .llm/tools/harness/matrix-receipts.test.mjs",
+    "check:gate-mutations": "node scripts/mutation-verify-gates.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",

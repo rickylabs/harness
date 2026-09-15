@@ -1,0 +1,85 @@
+$ node scripts/run-stages.mjs --label typecheck --compile-stage typecheck:packages check:stages check:graph check:lifecycle typecheck:packages
+$ node --test scripts/run-stages.test.mjs scripts/gates-regressions.test.mjs
+✔ preflight diagnostic names only owned location and closed execution reason (2.211765ms)
+✔ preflight refuses Windows before spawning or writing a shebang fixture (0.419747ms)
+✔ preflight fixture uses the same Node interpreter as the installed fixture (0.564187ms)
+✔ preflight setup and thrown spawn errors are inconclusive without raw errors (0.659536ms)
+✔ preflight cleanup failure is inconclusive (1.311448ms)
+✔ bounded output capture is inconclusive after the runner started (20.617819ms)
+✔ workspace inventory missing or empty is inconclusive, not a verdict (48.455863ms)
+✔ workspace unreadable manifest is inconclusive but invalid JSON fails (53.98087ms)
+✔ workspace declarations pass, missing tests fail and the missing package is named (51.07939ms)
+✔ importing a workspace audit does not inspect or certify the workspace (23.894891ms)
+✔ empty and partial stage observations cannot report all green (0.20805ms)
+✔ a real runner spawn refusal cannot claim the compile executed (26.774921ms)
+✔ shell command refusals remain inconclusive through pnpm (642.344333ms)
+✔ native compiler exit two fails while a non-compile gate exit two is inconclusive (1203.610652ms)
+✔ misconfigured aggregate reports inconclusive because no stage could run (21.858063ms)
+✔ all green reports the count and that the compile ran (0.865092ms)
+✔ a failure before the compile names the stage and says the compile did not run (0.14931ms)
+✔ the stages never reached are named, so nothing is mistaken for having passed (0.102823ms)
+✔ a failure after the compile still reports that the compile ran (0.097272ms)
+✔ an inconclusive stage is not reported as a failure and not as a pass (0.522019ms)
+✔ a real failure outranks an inconclusive, because the strongest negative wins (0.11756ms)
+✔ a compile stage that is not among the stages is refused rather than mis-reported (23.065337ms)
+✔ no stages at all is refused (21.156519ms)
+✔ a stage killed by a signal is inconclusive, not a failure (14.959171ms)
+✔ a stage that could not be spawned is inconclusive, and says so differently (1.272506ms)
+✔ a real non-zero exit is still a failure and keeps its own code (16.754467ms)
+✔ a real zero exit is a pass (19.687865ms)
+✔ a stage that exits 2 of its own accord is inconclusive and says its reason is unrecorded (17.233345ms)
+✔ the interrupted reason reaches the reported lines (16.557648ms)
+✔ a REAL translated signal death is inconclusive, not a failure (54.838197ms)
+✔ pnpm specifically translates rather than propagates, since the comment names pnpm (311.573448ms)
+✔ a REAL abort arrives as 134 and stays a failure (22.473498ms)
+✔ a high exit code that is not a known signal translation stays a failure (0.184105ms)
+✔ a stage that aborted or segfaulted stays a failure, because that is its own defect (0.081984ms)
+✔ importing the module runs no stages (25.544985ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2147.411088
+$ node scripts/check-project-graph.mjs
+project graph ok — 15 packages, references match dependencies
+$ node scripts/check-lifecycle.mjs
+lifecycle ok — 10 phases agree with .github/labels.yml
+lifecycle ok — 10 phases agree with packages/forge/src/labels/taxonomy.ts
+$ pnpm -r run typecheck
+Scope: 15 of 16 workspace projects
+packages/contracts typecheck$ tsc -b --emitDeclarationOnly
+packages/governance typecheck$ tsc -b --emitDeclarationOnly
+packages/netscript-bridge typecheck$ tsc -b --emitDeclarationOnly
+packages/provider-acp typecheck$ tsc -b --emitDeclarationOnly
+packages/provider-acp typecheck: Done
+packages/governance typecheck: Done
+packages/netscript-bridge typecheck: Done
+packages/contracts typecheck: Done
+packages/coordinator typecheck$ tsc -b --emitDeclarationOnly
+packages/subagents typecheck$ tsc -b --emitDeclarationOnly
+packages/subagents typecheck: Done
+packages/board typecheck$ tsc -b --emitDeclarationOnly
+packages/provider-claude typecheck$ tsc -b --emitDeclarationOnly
+packages/provider-codex typecheck$ tsc -b --emitDeclarationOnly
+packages/coordinator typecheck: Done
+packages/provider-opencode typecheck$ tsc -b --emitDeclarationOnly
+packages/provider-codex typecheck: Done
+packages/routing typecheck$ tsc -b --emitDeclarationOnly
+packages/provider-claude typecheck: Done
+packages/telemetry typecheck$ tsc -b --emitDeclarationOnly
+packages/provider-opencode typecheck: Done
+packages/board typecheck: Done
+packages/forge typecheck$ tsc -b --emitDeclarationOnly
+packages/routing typecheck: Done
+packages/llm-local typecheck$ tsc -b --emitDeclarationOnly
+packages/telemetry typecheck: Done
+packages/forge typecheck: Done
+packages/llm-local typecheck: Done
+packages/dsh-app typecheck$ tsc -b --emitDeclarationOnly
+packages/dsh-app typecheck: Done
+
+typecheck ok — 4 stage(s), all green
+  compile (typecheck:packages, stage 4): ran

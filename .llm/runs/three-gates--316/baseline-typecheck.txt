@@ -1,0 +1,61 @@
+$ node scripts/run-stages.mjs --label typecheck --compile-stage typecheck:packages check:stages check:graph check:lifecycle typecheck:packages
+$ node --test scripts/run-stages.test.mjs
+✔ all green reports the count and that the compile ran (0.833002ms)
+✔ a failure before the compile names the stage and says the compile did not run (0.11755ms)
+✔ the stages never reached are named, so nothing is mistaken for having passed (0.088155ms)
+✔ a failure after the compile still reports that the compile ran (0.094867ms)
+✔ an inconclusive stage is not reported as a failure and not as a pass (0.507541ms)
+✔ a real failure outranks an inconclusive, because the strongest negative wins (0.112731ms)
+✔ a compile stage that is not among the stages is refused rather than mis-reported (24.63206ms)
+✔ no stages at all is refused (24.027677ms)
+✔ a stage killed by a signal is inconclusive, not a failure (18.957464ms)
+✔ a stage that could not be spawned is inconclusive, and says so differently (1.286571ms)
+✔ a real non-zero exit is still a failure and keeps its own code (17.283917ms)
+✔ a real zero exit is a pass (19.615707ms)
+✔ a stage that exits 2 of its own accord is inconclusive and says its reason is unrecorded (16.434575ms)
+✔ the interrupted reason reaches the reported lines (17.563501ms)
+✔ a REAL translated signal death is inconclusive, not a failure (56.628072ms)
+✔ pnpm specifically translates rather than propagates, since the comment names pnpm (307.040679ms)
+✔ a REAL abort arrives as 134 and stays a failure (17.601823ms)
+✔ a high exit code that is not a known signal translation stays a failure (0.203572ms)
+✔ a stage that aborted or segfaulted stays a failure, because that is its own defect (0.089598ms)
+✔ importing the module runs no stages (21.098867ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 598.064638
+$ node scripts/check-project-graph.mjs
+project graph ok — 15 packages, references match dependencies
+$ node scripts/check-lifecycle.mjs
+lifecycle ok — 10 phases agree with .github/labels.yml
+lifecycle ok — 10 phases agree with packages/forge/src/labels/taxonomy.ts
+$ pnpm -r run typecheck
+Scope: 15 of 16 workspace projects
+packages/contracts typecheck$ tsc -b --emitDeclarationOnly
+packages/governance typecheck$ tsc -b --emitDeclarationOnly
+packages/netscript-bridge typecheck$ tsc -b --emitDeclarationOnly
+packages/provider-acp typecheck$ tsc -b --emitDeclarationOnly
+packages/contracts typecheck: sh: 1: tsc: Permission denied
+packages/governance typecheck: sh: 1: tsc: Permission denied
+packages/netscript-bridge typecheck: sh: 1: tsc: Permission denied
+packages/provider-acp typecheck: sh: 1: tsc: Permission denied
+packages/governance typecheck: Failed
+packages/contracts typecheck: Failed
+[WARN]  Local package.json exists, but node_modules missing, did you mean to install?
+/ephemeral/orch-work/issue-362/packages/governance:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @rickylabs/governance@0.0.0 typecheck: `tsc -b --emitDeclarationOnly`
+Exit status 126
+[WARN]  Local package.json exists, but node_modules missing, did you mean to install?
+packages/provider-acp typecheck: Failed
+packages/netscript-bridge typecheck: Failed
+[WARN]  Local package.json exists, but node_modules missing, did you mean to install?
+[WARN]  Local package.json exists, but node_modules missing, did you mean to install?
+[ELIFECYCLE] Command failed with exit code 126.
+
+typecheck FAILED at stage 4 of 4: typecheck:packages
+  compile (typecheck:packages, stage 4): ran
+[ELIFECYCLE] Command failed with exit code 126.
