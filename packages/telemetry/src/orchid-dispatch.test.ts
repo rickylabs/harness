@@ -82,3 +82,23 @@ it("binds only an explicit same-dispatch same-source native reference and refuse
     assert.equal(bindOrchidDispatchEvidence(rows, [{ ...result, runId: "different-fixture" }]).dispatches[0]?.external, null);
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
+
+it("requires exactly 0700 on the root and still accepts a restored 0700 root", async () => {
+  const s = await setup();
+  try {
+    await s.write(fixture);
+    await chmod(s.root, 0o700);
+    assert.equal((await readOrchidDispatches(s.root)).dispatches.length, 1);
+    for (const mode of [0o500, 0o1700]) {
+      await chmod(s.root, mode);
+      const refused = await readOrchidDispatches(s.root);
+      assert.equal(refused.degraded, true);
+      assert.deepEqual(refused.dispatches, []);
+      assert.deepEqual(refused.notes, ["orchid-dispatch: source_unavailable"]);
+    }
+    await chmod(s.root, 0o700);
+    const accepted = await readOrchidDispatches(s.root);
+    assert.equal(accepted.degraded, false);
+    assert.equal(accepted.dispatches.length, 1);
+  } finally { await chmod(s.root, 0o700); await rm(s.root, { recursive: true, force: true }); }
+});
