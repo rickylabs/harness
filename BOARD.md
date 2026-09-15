@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **278/355 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible**
+`[###############-----]` **279/356 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible**
 
-_Latest board activity: 2026-09-15T00:12:41Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-15T05:07:47Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -60,7 +60,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#357 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/357) | — | — |
 | [#362 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/362) | — | — |
 | [#363 Dispatch records an effort the codex transport never receives](https://github.com/rickylabs/harness/issues/363) | — | — |
-| [#364 Dispatch records are unreadable by the cockpit: no shared path and no shared owner](https://github.com/rickylabs/harness/issues/364) | — | — |
+| [#368 fix(telemetry): report which receipt root the dispatch reader read and why it was empty](https://github.com/rickylabs/harness/issues/368) | — | — |
 
 ## Anomalies (16)
 
@@ -89,7 +89,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#357** — open item has no status label, so it appears in no column
 - **#362** — open item has no status label, so it appears in no column
 - **#363** — open item has no status label, so it appears in no column
-- **#364** — open item has no status label, so it appears in no column
+- **#368** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -114,13 +114,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 85/113 done · 3 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
+`[#########---]` 86/114 done · 3 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[#########---]` 73/97 done · 2 running · 4 queued · 3 blocked · 9 abandoned · 6 invisible | — |
+| _(no epic)_ | `[#########---]` 74/98 done · 2 running · 4 queued · 3 blocked · 9 abandoned · 6 invisible | — |
 
 ## Waiting to start
 
@@ -162,7 +162,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  278/355 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible
+# rickylabs/harness  [###############-----]  279/356 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  193/242 done · 19 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -443,7 +443,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  85/113 done · 3 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
+## (no milestone)  [###############-----]  86/114 done · 3 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -561,10 +561,11 @@ Open, and carrying no `status:` label — real work no column can see.
     triage               #361 fix(divybot): attribute quota refusals to transport and failed condition (p1)
     no status            #362 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned
     no status            #363 Dispatch records an effort the codex transport never receives
-    no status            #364 Dispatch records are unreadable by the cockpit: no shared path and no shared owner
+    shipped              #364 Dispatch records are unreadable by the cockpit: no shared path and no shared owner
     shipped              #365 fix(telemetry): require exactly 0700 on the dispatcher receipt root
     shipped              PR366 fix(telemetry): require exactly 0700 on dispatcher receipt roots
     augment-review       PR367 fix(gates): finish three-gates--316 inconclusive reporting
+    no status            #368 fix(telemetry): report which receipt root the dispatch reader read and why it was empty
 ```
 
 </details>
