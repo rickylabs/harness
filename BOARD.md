@@ -4,7 +4,7 @@
 
 `[###############-----]` **289/362 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible**
 
-_Latest board activity: 2026-09-15T10:21:10Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-15T11:58:14Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -58,9 +58,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 
-## Anomalies (12)
+## Anomalies (13)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#374** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -563,7 +567,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #371 Telemetry: expose a dispatch-only agent observation while runtime evidence is unavailable
     shipped              PR372 fix(telemetry): retain validated dispatch-only agent observations (p0)
     impl-eval            #373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees (p0)
-    impl-eval            PR374 fix(telemetry): join Orchid dispatches to native sub-agent trees (draft, p0)
+    impl-eval            PR374 fix(telemetry): join Orchid dispatches to native sub-agent trees (p0)
 ```
 
 </details>
