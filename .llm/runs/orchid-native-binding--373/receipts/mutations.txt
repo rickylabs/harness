@@ -1,0 +1,319 @@
+command: node scripts/mutation-verify-orchid-native-binding.mjs
+exit: 0
+output:
+baseline: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+launch-state: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 1 - {"state":"uncertain"}
+    not ok 2 - {"state":"launching"}
+not ok 3 - private binding: cannot certify uncertain, launching or unsupported transport launches
+# tests 52
+# pass 49
+# fail 3
+launch-state restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+supported-source: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 3 - {"source":"claude"}
+not ok 3 - private binding: cannot certify uncertain, launching or unsupported transport launches
+# tests 52
+# pass 50
+# fail 2
+supported-source restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+symlink: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 4 - symlink
+not ok 4 - private binding: refuses unsafe files and bounds both stat and actual bytes
+# tests 52
+# pass 50
+# fail 2
+symlink restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+regular-file: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 1 - not-file
+not ok 9 - private binding: each file metadata guard refuses even readable bounded JSON
+# tests 52
+# pass 50
+# fail 2
+regular-file restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+private-mode: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 1 - mode 644
+    not ok 2 - mode 400
+    not ok 3 - mode 1600
+not ok 4 - private binding: refuses unsafe files and bounds both stat and actual bytes
+# tests 52
+# pass 48
+# fail 4
+private-mode restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+declared-bound: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 2 - declared-oversize
+not ok 9 - private binding: each file metadata guard refuses even readable bounded JSON
+# tests 52
+# pass 50
+# fail 2
+declared-bound restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+actual-bound: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 7 - growth
+not ok 4 - private binding: refuses unsafe files and bounds both stat and actual bytes
+# tests 52
+# pass 50
+# fail 2
+actual-bound restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+identity-length: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 7 - invalid identity 2
+    not ok 18 - invalid identity 13
+    not ok 19 - invalid identity 14
+not ok 2 - private binding: missing, malformed, moved and route-mismatched bindings stay dispatch-only
+# tests 52
+# pass 48
+# fail 4
+identity-length restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+identity-trim: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 11 - invalid identity 6
+    not ok 12 - invalid identity 7
+not ok 2 - private binding: missing, malformed, moved and route-mismatched bindings stay dispatch-only
+# tests 52
+# pass 49
+# fail 3
+identity-trim restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+identity-characters: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 13 - invalid identity 8
+    not ok 14 - invalid identity 9
+    not ok 15 - invalid identity 10
+    not ok 16 - invalid identity 11
+    not ok 17 - invalid identity 12
+not ok 2 - private binding: missing, malformed, moved and route-mismatched bindings stay dispatch-only
+# tests 52
+# pass 46
+# fail 6
+identity-characters restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+reservation: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 25 - wrong reservation
+not ok 2 - private binding: missing, malformed, moved and route-mismatched bindings stay dispatch-only
+# tests 52
+# pass 50
+# fail 2
+reservation restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+route-transport: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 27 - wrong transport
+not ok 2 - private binding: missing, malformed, moved and route-mismatched bindings stay dispatch-only
+# tests 52
+# pass 50
+# fail 2
+route-transport restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+route-provider: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 28 - wrong provider
+not ok 2 - private binding: missing, malformed, moved and route-mismatched bindings stay dispatch-only
+# tests 52
+# pass 50
+# fail 2
+route-provider restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+route-model: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 29 - wrong model
+not ok 2 - private binding: missing, malformed, moved and route-mismatched bindings stay dispatch-only
+# tests 52
+# pass 50
+# fail 2
+route-model restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+route-effort: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+    not ok 30 - wrong effort
+not ok 2 - private binding: missing, malformed, moved and route-mismatched bindings stay dispatch-only
+# tests 52
+# pass 50
+# fail 2
+route-effort restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+snapshot: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+not ok 5 - private binding: changed dispatch snapshots cannot retain the private join
+# tests 52
+# pass 51
+# fail 1
+snapshot restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+invalidation: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+not ok 5 - private binding: changed dispatch snapshots cannot retain the private join
+not ok 7 - private binding: legacy evidence cannot replace or revive an Orchid binding
+# tests 52
+# pass 50
+# fail 2
+invalidation restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+unique-root: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+not ok 6 - private binding: absent, duplicate, cross-source and child-as-root native matches are unavailable
+# tests 52
+# pass 51
+# fail 1
+unique-root restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+native-root: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+not ok 6 - private binding: absent, duplicate, cross-source and child-as-root native matches are unavailable
+# tests 52
+# pass 51
+# fail 1
+native-root restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+source-namespace: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+not ok 6 - private binding: absent, duplicate, cross-source and child-as-root native matches are unavailable
+# tests 52
+# pass 51
+# fail 1
+source-namespace restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+private-storage: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+not ok 1 - private binding: resolves the existing parent tree without exporting native credentials
+    not ok 20 - different native root
+not ok 2 - private binding: missing, malformed, moved and route-mismatched bindings stay dispatch-only
+not ok 5 - private binding: changed dispatch snapshots cannot retain the private join
+not ok 6 - private binding: absent, duplicate, cross-source and child-as-root native matches are unavailable
+not ok 7 - private binding: legacy evidence cannot replace or revive an Orchid binding
+# tests 52
+# pass 46
+# fail 6
+private-storage restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+legacy-boundary: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+not ok 7 - private binding: legacy evidence cannot replace or revive an Orchid binding
+# tests 52
+# pass 51
+# fail 1
+legacy-boundary restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+consume-binding: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+not ok 1 - private binding: resolves the existing parent tree without exporting native credentials
+not ok 5 - private binding: changed dispatch snapshots cannot retain the private join
+not ok 6 - private binding: absent, duplicate, cross-source and child-as-root native matches are unavailable
+not ok 7 - private binding: legacy evidence cannot replace or revive an Orchid binding
+not ok 8 - private binding: binding arrival changes revision without changing public root identity
+# tests 52
+# pass 47
+# fail 5
+consume-binding restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+binding-revision: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+not ok 8 - private binding: binding arrival changes revision without changing public root identity
+# tests 52
+# pass 51
+# fail 1
+binding-revision restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+complete-native-tree: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 1
+not ok 6 - private binding: absent, duplicate, cross-source and child-as-root native matches are unavailable
+# tests 52
+# pass 51
+# fail 1
+complete-native-tree restored: node --test --test-reporter=tap packages/telemetry/dist/orchid-native-binding.test.js
+exit: 0
+# tests 52
+# pass 52
+# fail 0
+PASS: 25 mutations failed assertions and restored controls passed

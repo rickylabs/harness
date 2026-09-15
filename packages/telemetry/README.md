@@ -716,8 +716,8 @@ and `dispatchState: launching | dispatched | uncertain`. Dispatch acknowledgemen
 assert present liveness. Reserved attempts with no execution effect are omitted. The row's
 canonical `route` preserves requested provider, model and effort directly from the NetScript matrix. Observed
 identity remains unknown when the launch interface supplies no evidence. Transport is never substituted
-for router. `external` remains null until an actual native session association is established;
-this reader never searches by cwd to guess it.
+for router. `external` stays null on this read: the private native binding is never a public
+field. This reader never searches by cwd to guess an association.
 
 Native `runs[].parentId` continues to come from the existing telemetry readers. Codex now uses
 the thread's `id` ahead of a shared tree `session_id`, and reads explicit parent metadata. It
@@ -737,10 +737,25 @@ No additional process or collection command is introduced.
 
 Issue linkage must be dispatcher-confirmed; transcript path/prose mentions never assign work.
 Only an explicit native reference can connect a dispatched root to existing telemetry child
-records. The existing subagent dispatch-result log supplies that association when its run identity
-and source match the receipt; duplicate or cross-source associations refuse the read. Until that reference is bound, a dispatch-only row retains the requested route, has null native
+records. The reader now consumes Orchid’s private `NativeSessionID` from the existing binding
+next to the dispatch snapshot. It validates the reservation digest and selected route, accepts only
+a dispatched Codex launch, and resolves exactly one same-source native root. The binding read is
+bounded to 256 KiB, requires a regular 0600 file, refuses symlinks, and rechecks the dispatch
+snapshot after reading. Native identity is held only as an in-memory private hash, never copied
+to `external` or any JSON field; legacy log evidence cannot replace or revive this binding.
+Missing, malformed or unmatched bindings remain dispatch-only. Until that reference is bound, a dispatch-only row retains the requested route, has null native
 parent and observed route values, and reports unknown execution with `observer-unavailable`.
 The collection says complete:false / ancestry_unavailable. A mixed collection containing runtime
 observations still requires complete ancestry; it cannot fall back to dispatch-only evidence.
 Source time is the receipt timestamp when present, otherwise its file modification time; it
-never claims current liveness. Receipt revisions come from the exact source bytes. All three cost rows remain individually unavailable.
+never claims current liveness. Receipt revisions come from the exact source bytes; agent revisions also change when a native
+root becomes bound. Public agent and assignment IDs keep their existing derivation. All three cost
+rows remain individually unavailable, and a native parent link does not invent child location,
+router, budget or running observations. No cockpit contract or decoder change is required.
+
+`node scripts/check-orchid-native-live-pair.mjs --live` is an opt-in integration control. It reads
+a bounded native header sample using the normal home (or privately configured
+`DSH_TELEMETRY_NATIVE_HOME`), exercises one real parent/child pair under an explicitly synthetic
+assignment in a temporary private store, and deletes that store. It never modifies the live
+receipt store or claims that the selected pair belongs to a live issue. Its separate live-issue
+verdict preserves incomplete ancestry. Output contains only counts and closed reasons.
