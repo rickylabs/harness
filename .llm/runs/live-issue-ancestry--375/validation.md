@@ -95,3 +95,48 @@ or additional dispatch. The native identity source must supply an authoritative 
 identifier to the existing writer before a later real issue can meet ancestry acceptance.
 
 [Root completion report](https://github.com/rickylabs/harness/issues/375#issuecomment-5680176819) — not a substitute for native linkage.
+
+## Telemetry-side follow-up: real native pair and budget data confirmed
+
+The coordinator requested an identity-based telemetry check after the first evidence PR
+was opened. The same already-dispatched proof agent performed one additional read in its
+native tool environment. It wrote its own `CODEX_THREAD_ID` into a private 0600 diagnostic
+handoff within a 0700 directory. The identifier was never printed, committed, supplied in
+argv, or written into the dispatch store. No further agent or child was spawned.
+
+An exact same-source identity lookup found **one telemetry root and one native child**.
+The child's actual `parentId` equals that root's native identity: two observed telemetry
+rows, depth one. Both runs record outcome `complete`, provider `openai`, model
+`gpt-5.6-luna`, and effort `max`. The root's native parent is null, correctly.
+
+| Telemetry row | Native parent linkage | Nonzero usage values | Quota observations with known percent, window and reset |
+| --- | --- | --- | --- |
+| Root | null | input, output, reasoning and cache-read tokens | 12 |
+| Child | points exactly at the identified root | input, output, reasoning and cache-read tokens | 2 |
+
+These are counts of quota observations, not distinct quota windows, and provider quota is
+not one run's spend. No currency cost was supplied by these run usage objects. Actual
+usage and quota values stay private; value availability was checked, not just key presence.
+The bounded scan is incomplete, so this establishes the real pair, not a full-store census.
+
+[telemetry-join.json](telemetry-join.json) records the redacted checks. The identity lookup
+uses existing `backfillFromDisk` readers, compares the root ID exactly, and follows only
+native `parentId` edges. No diagnostic identity was inserted into `DispatchEvidence`, no
+assignment was synthesised, and no receipt or native store was changed.
+
+**The two persisted sources still cannot provide the current consumer's per-issue tree.**
+The exact missing join field is `NativeSessionID` in Orchid's private dispatch binding.
+Telemetry already has the identified root, native child, parent edge, usage and quota.
+The live `herdr agent get` response lacks the upstream `agent_session` source expected by
+the writer. This proof does not establish why that field is unavailable.
+
+There is a separate projection gap for real budget values: the current
+[agent-observation builder](https://github.com/rickylabs/harness/blob/7c4e4db70a6dd00075353158e2d5e83e48564f92/packages/telemetry/src/agent-observations.ts#L60)
+uses `unavailableAgentCost()` for both root and child rows (also line 85). The measurements
+exist in telemetry, but they are not mapped into the three agent cost rows yet. Persisting
+the native identity alone will not change that behavior. Keep subscription headroom,
+metered currency spend and run tokens separate when those bindings are implemented.
+
+Final consumer verdict remains `INCONCLUSIVE`, `ancestry_unavailable`: one issue row,
+`complete:false`. No alpha PASS is claimed. The findings were reported to the coordinator
+before this existing PR was updated; no additional PR or issue was opened.
