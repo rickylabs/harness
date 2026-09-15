@@ -1,0 +1,164 @@
+{
+  "verdict": "INCONCLUSIVE",
+  "reason": "dispatch_native_identity_missing",
+  "issue": 375,
+  "identityBasis": "exact registered proof agent -> native tool CODEX_THREAD_ID -> exact telemetry run.id",
+  "synthesizedAssignment": false,
+  "matchedRoots": 1,
+  "rootParentNull": true,
+  "telemetryRows": 2,
+  "telemetryChildRows": 1,
+  "telemetryDepth": 1,
+  "nativeScanComplete": false,
+  "nativeScanLimit": 50,
+  "nativeRunCount": 8,
+  "sourceNotes": [
+    {
+      "reason": "other_source_note"
+    }
+  ],
+  "consumerDecoded": true,
+  "consumerComplete": false,
+  "consumerReason": "ancestry_unavailable",
+  "consumerIssueRows": 1,
+  "rows": [
+    {
+      "row": "root",
+      "parentRow": null,
+      "nativeParentIsProofRoot": null,
+      "outcome": "complete",
+      "source": "codex",
+      "identity": {
+        "provider": "openai",
+        "model": "gpt-5.6-luna",
+        "effort": "max"
+      },
+      "usage": {
+        "inputTokens": {
+          "populated": true,
+          "nonzero": true
+        },
+        "outputTokens": {
+          "populated": true,
+          "nonzero": true
+        },
+        "reasoningTokens": {
+          "populated": true,
+          "nonzero": true
+        },
+        "cacheReadTokens": {
+          "populated": true,
+          "nonzero": true
+        }
+      },
+      "quotaCount": 12,
+      "quotaObservationsWithKnownWindow": 12,
+      "quota": [
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        }
+      ]
+    },
+    {
+      "row": "child 1",
+      "parentRow": "root",
+      "nativeParentIsProofRoot": true,
+      "outcome": "complete",
+      "source": "codex",
+      "identity": {
+        "provider": "openai",
+        "model": "gpt-5.6-luna",
+        "effort": "max"
+      },
+      "usage": {
+        "inputTokens": {
+          "populated": true,
+          "nonzero": true
+        },
+        "outputTokens": {
+          "populated": true,
+          "nonzero": true
+        },
+        "reasoningTokens": {
+          "populated": true,
+          "nonzero": true
+        },
+        "cacheReadTokens": {
+          "populated": true,
+          "nonzero": true
+        }
+      },
+      "quotaCount": 2,
+      "quotaObservationsWithKnownWindow": 2,
+      "quota": [
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        },
+        {
+          "usedPercentKnown": true,
+          "windowMinutesKnown": true,
+          "resetKnown": true
+        }
+      ]
+    }
+  ]
+}
