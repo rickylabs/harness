@@ -18,7 +18,7 @@ export class CodexReadConnection {
   private serial = 0;
   private ended = false;
   private ready = false;
-  private readonly pending = new Map<number, { resolve(v: unknown): void; reject(e: CodexReadError): void; timer: ReturnType<typeof setTimeout> }>();
+  private readonly pending = new Map<number, { resolve(v: unknown): void; reject(e: CodexReadError): void; goalThreadId: unknown; timer: ReturnType<typeof setTimeout> }>();
   constructor(private readonly port: CodexStdioPort, private readonly timeoutMs: number,
     private readonly notify: (method: string, params: unknown) => void, private readonly endedWith: (reason: CodexReadReason) => void) {
     port.output.on("data", (chunk: Buffer) => this.receive(Buffer.from(chunk)));
@@ -41,7 +41,7 @@ export class CodexReadConnection {
     const id = ++this.serial;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => this.fail("request_timeout"), this.timeoutMs);
-      this.pending.set(id, { resolve, reject, timer });
+      this.pending.set(id, { resolve, reject, timer, goalThreadId: method === "thread/goal/get" ? params.threadId : undefined });
       try { this.port.input.write(JSON.stringify({ id, method, params }) + "\n"); }
       catch { this.fail("source_unavailable"); }
     });
@@ -71,7 +71,13 @@ export class CodexReadConnection {
         if (!p) { this.fail("response_mismatch"); return; }
         if (("result" in m) === ("error" in m)) { this.fail("invalid_response"); return; }
         this.pending.delete(m.id as number); clearTimeout(p.timer);
-        if ("error" in m) p.reject(new CodexReadError("rpc_error")); else p.resolve(m.result);
+        if ("error" in m) {
+          const error = object(m.error);
+          // Exact daemon refusal, bound to this goal request. Never export the echoed native identity.
+          const reason = typeof p.goalThreadId === "string" && error?.code === -32600 &&
+            error.message === `thread not found: ${p.goalThreadId}` ? "thread_not_found" : "rpc_error";
+          p.reject(new CodexReadError(reason));
+        } else p.resolve(m.result);
       } else if (typeof m.method === "string") {
         if (m.method === "thread/goal/updated" || m.method === "thread/goal/cleared") this.notify(m.method, m.params);
       } else { this.fail("invalid_response"); return; }

@@ -1,0 +1,6 @@
+{
+  "command": "python3 NATIVE_GOAL_DIAGNOSTIC",
+  "command_redaction": "Private diagnostic helper location withheld. initialize, initialized, thread/list across both archive states, and thread/goal/get; native data retained only in a private file.",
+  "exit_code": 0,
+  "output": "{\"rowsRead\": 420, \"errorCount\": 3, \"daemonErrors\": [{\"code\": -32600, \"message\": \"thread not found: [REDACTED_NATIVE_ID]\"}, {\"code\": -32600, \"message\": \"thread not found: [REDACTED_NATIVE_ID]\"}, {\"code\": -32600, \"message\": \"thread not found: [REDACTED_NATIVE_ID]\"}]}"
+}

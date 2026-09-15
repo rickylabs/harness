@@ -294,3 +294,40 @@ test("CLI rejects a write callback error even before an output error event", asy
   try { assert.equal(await codexThreadsCommand([], async () => handle, output), 3); }
   finally { process.stderr.write = stderr; }
 });
+
+test("daemon thread-not-found classification requires matching request, identity and error code", async () => {
+  const refusal = { code: -32600, message: "thread not found: synthetic-root" };
+  const cases: Array<[unknown, string, Record<string, unknown>, string]> = [
+    [refusal, "thread/goal/get", { threadId: "synthetic-root" }, "thread_not_found"],
+    [{ ...refusal, code: "-32600" }, "thread/goal/get", { threadId: "synthetic-root" }, "rpc_error"],
+    [{ ...refusal, code: -32603 }, "thread/goal/get", { threadId: "synthetic-root" }, "rpc_error"],
+    [{ ...refusal, message: "thread not found: synthetic-other" }, "thread/goal/get", { threadId: "synthetic-root" }, "rpc_error"],
+    [{ ...refusal, message: refusal.message + " PRIVATE_ERROR_CANARY" }, "thread/goal/get", { threadId: "synthetic-root" }, "rpc_error"],
+    [refusal, "thread/list", { threadId: "synthetic-root" }, "rpc_error"],
+    [{ ...refusal, message: "thread not found: undefined" }, "thread/goal/get", {}, "rpc_error"],
+    [null, "thread/goal/get", { threadId: "synthetic-root" }, "rpc_error"],
+  ];
+  for (const [error, method, params, reason] of cases) {
+    const f = fake(() => undefined), c = new CodexReadConnection(f.port, 150, () => {}, () => {});
+    await c.initialize(); const pending = c.request(method, params);
+    f.emit({ id: f.sent.at(-1)!.id, error });
+    await assert.rejects(bounded(pending), (e: any) => e.reason === reason && e.message === reason);
+    c.fail("source_closed");
+  }
+});
+test("daemon refusal retains the row with an actionable reason and differs from transport failure", async () => {
+  const f = fake(m => {
+    if (m.method === "thread/list") return { data: m.params.archived ? [] : [thread()], nextCursor: null };
+    f.emit({ id: m.id, error: { code: -32600, message: "thread not found: synthetic-root" } }); return undefined;
+  });
+  const reader = await openCodexThreadReader({ port: f.port }); const snapshot = await reader.read(); reader.close();
+  assert.equal(snapshot.complete, false); assert.equal(snapshot.reason, "thread_not_found"); assert.equal(snapshot.rows.length, 1);
+  assert.equal(snapshot.rows[0]!.provider.value, "fixture-provider");
+  for (const key of ["goalObjective", "goalStatus", "tokenBudget", "tokensUsed", "secondsUsed"] as const)
+    assert.deepEqual(snapshot.rows[0]![key], { availability: "unavailable", value: null, reason: "thread_not_found" });
+  assert.doesNotMatch(JSON.stringify(snapshot), /synthetic-root|thread not found:/);
+  const broken = fake(() => undefined), connection = new CodexReadConnection(broken.port, 150, () => {}, () => {});
+  await connection.initialize(); const pending = connection.request("thread/goal/get", { threadId: "synthetic-root" });
+  broken.output.destroy(new Error("PRIVATE_TRANSPORT_CANARY"));
+  await assert.rejects(bounded(pending), (e: any) => e.reason === "source_unavailable" && e.message === "source_unavailable");
+});

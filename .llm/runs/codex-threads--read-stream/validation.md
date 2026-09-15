@@ -1,6 +1,6 @@
 # Validation
 
-Independent implementation review PASS: GLM projection/types/CLI and Kimi transport/reader, both exit 0. Native reads work; live goal notification delivery remains INCONCLUSIVE. No live values, identities or locations are published.
+Independent implementation review PASS: GLM projection/types/CLI and Kimi transport/reader, both exit 0. Native reads work; live goal notification delivery now has a driven PASS on this stdio connection. No live values, identities or locations are published.
 
 Baseline: 7dfefa38465ddd151a7e29360189a716ea484259, freshly fetched isolated worktree. Installed codex-cli 0.154.0 supplied the generated experimental field contract.
 
@@ -21,3 +21,7 @@ Before publication, fast-forwarded to 62adf158cf25080976ecd6f07ac6888fd75ee66e; 
 The CLI limit-one probe verifies exit 3 with complete:false/scan_limit, one surviving row and default sensitive-context redaction. [Command and output](cli-live-proof.json).
 
 [Completed independent review and dispositions](implementation-review.md). All unsuccessful attempts remain individually recorded as INCONCLUSIVE or FAIL_FIX.
+
+Follow-up: [driven proof](driven-live-proof.json) received both real native notifications through Harness reader.events(), verified the set by read-back and restored the exact prior null goal. This supersedes only the passive notification window. [Daemon diagnosis](daemon-refusals.json) identifies the three refusals as numeric -32600, thread not found with the requested identity; the reader exports thread_not_found without that identity. [Delta review](attempts/15-impl-glm-refusal.json) PASS, exit 0. Final follow-up tests and mutations are recorded separately below.
+
+Final follow-up: `node scripts/check-codex-thread-mutations.mjs` exit 0, 83 mutations killed, 83 restored controls, zero inconclusive ([receipts](refusal-mutations.jsonl)). `pnpm run build` exit 0, 13 stages; telemetry tests 600/600 and contracts tests 232/232 ([output](followup-tests.json)). The live read now preserves the three refused rows with thread_not_found and null goal values ([receipt](refusal-live-proof.json)); source coverage remains honestly incomplete.

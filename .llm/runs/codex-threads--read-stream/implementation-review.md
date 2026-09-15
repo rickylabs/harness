@@ -44,3 +44,16 @@ The real CLI findings from attempt 06 were fixed and re-reviewed in attempt 08. 
 The scan deadline deliberately shares timeoutMs with the per-request deadline; this is now stated explicitly in consumer documentation. Cross-pass duplicates deliberately refuse the read because a non-atomic scan cannot certify one version of that identity; no deduplication guess is introduced. The nested-container absence/invalid advisory does not change field availability.
 
 All exhausted or errored review attempts remain INCONCLUSIVE in their individual receipts. No timeout or incomplete answer is a PASS. Source unit hashes are in [review-scope.json](review-scope.json). Test and mutation execution evidence remains separate from reviewer judgment. Owner supervisor sign-off remains pending.
+
+## Follow-up daemon refusal classification
+
+Independent GLM delta review returned PASS, exit 0. [Command and exact verdict](attempts/15-impl-glm-refusal.json). The original product source review is supplemented by this narrow review; public reasons are additive, existing stream and write guards stay intact.
+
+**PASS**
+
+- **Binding is correct.** `goalThreadId` is captured per pending request and only for `thread/goal/get`; classification additionally requires code `-32600` and exact message equality against the caller-supplied id. Wrong operation, absent/non-string identity, wrong code, wrong id, trailing text, and `null` error all fall back to `rpc_error`. Conditional precedence (`A && B && C ? x : y`) is correct.
+- **No identity/text egress.** The native error object is only inspected for comparison, never stored or echoed; the rejected error and snapshot carry only the fixed `thread_not_found` enum string (error message asserted equal to reason; snapshot asserted free of identity/message text). Building the expected message from the request's own id means no private constant is needed.
+- **Conservative failure direction.** Any deviation degrades to `rpc_error` rather than over-classifying; transport failure stays `source_unavailable` and is asserted distinct from `thread_not_found`.
+- **Snapshot semantics intact.** Row is retained with provider available and goal/budget fields rendered as unavailable with reason `thread_not_found` via the existing generic unavailability path — no special-casing or coverage regression. Contracts change is purely additive.
+
+Non-blocking note: confirm any exhaustive `Record`/`switch` over `CodexReadReason` in downstream packages accounts for the new member (a full-keyed map would fail compilation, so a green build largely settles this).

@@ -210,8 +210,8 @@ const cases = [
   [
     "RPC errors are unavailable",
     "codex-thread-connection.js",
-    "if (\"error\" in m)\n                    p.reject(new CodexReadError(\"rpc_error\"));",
-    "if (\"error\" in m)\n                    p.resolve({ goal: null });"
+    "p.reject(new CodexReadError(reason));\n                }\n                else\n                    p.resolve(m.result);",
+    "p.resolve({ goal: null });\n                }\n                else\n                    p.resolve(m.result);"
   ],
   [
     "inbound notification allowlist",
@@ -426,6 +426,14 @@ cases.push(
 cases.push(
  ["CLI rejects an interrupted blocked write", "codex-threads-cli.js", 'rejectWrite?.(new CodexReadError("source_closed"));', ''],
  ["CLI interrupt closes its output", "codex-threads-cli.js", 'output.destroy();', '']
+);
+cases.push(
+ ["daemon refusal method binding", "codex-thread-connection.js", 'method === "thread/goal/get" ? params.threadId : undefined', 'params.threadId'],
+ ["daemon refusal identity type", "codex-thread-connection.js", 'typeof p.goalThreadId === "string"', 'true'],
+ ["daemon refusal error code type", "codex-thread-connection.js", 'error?.code === -32600', 'error?.code == -32600'],
+ ["daemon refusal error code", "codex-thread-connection.js", 'error?.code === -32600', 'true'],
+ ["daemon refusal exact identity message", "codex-thread-connection.js", 'error.message === `thread not found: ${p.goalThreadId}`', 'true'],
+ ["daemon refusal remains actionable", "codex-thread-connection.js", '? "thread_not_found" : "rpc_error"', '? "rpc_error" : "rpc_error"']
 );
 const args = ["--test", "--test-timeout=1500", "packages/telemetry/dist/codex-threads.test.js"];
 const test = () => spawnSync(process.execPath, args, { cwd: root, encoding: "utf8", timeout: 8000 });

@@ -1,7 +1,7 @@
 /** Additive native read surface. No issue assignment or per-turn route assertion. */
 export type CodexReadReason = "field_absent" | "invalid_field" | "redacted" | "goal_absent" | "budget_unset" |
   "ancestry_unavailable" | "runtime_unavailable" | "identity_mismatch" | "source_unavailable" | "source_closed" |
-  "request_timeout" | "invalid_response" | "response_mismatch" | "rpc_error" | "read_only_violation" |
+  "request_timeout" | "invalid_response" | "response_mismatch" | "rpc_error" | "thread_not_found" | "read_only_violation" |
   "oversized_frame" | "notification_overflow" | "scan_limit" | "invalid_options" | "read_in_progress" | "subscription_in_use";
 export type CodexField<T> = { availability: "available"; value: T; reason: null } |
   { availability: "unavailable"; value: null; reason: CodexReadReason };

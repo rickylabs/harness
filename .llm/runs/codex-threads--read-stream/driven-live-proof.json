@@ -1,0 +1,6 @@
+{
+  "command": "node AUTHORIZED_LIVE_PROOF",
+  "command_redaction": "Private proof helper location withheld. An isolated plain codex app-server stdio port is shared with the actual Harness reader. A test-only driver sends goal/set and goal/clear and consumes only its own RPC replies; unchanged native notifications flow through reader.events(). Production write methods remain refused.",
+  "exit_code": 0,
+  "output": "{\"verdict\":\"PASS\",\"source\":\"real codex app-server stdio\",\"subscriber\":\"merged Harness reader.events()\",\"priorGoal\":null,\"setReadbackVerified\":true,\"updatedProjectionVerified\":true,\"clearedProjectionVerified\":true,\"restoredExactly\":true,\"finalGoal\":null,\"nativeNotifications\":[{\"method\":\"thread/goal/updated\",\"params\":{\"threadId\":\"[REDACTED]\",\"turnId\":null,\"goal\":{\"threadId\":\"[REDACTED]\",\"objective\":\"[REDACTED]\",\"status\":\"paused\",\"tokenBudget\":\"[REDACTED]\",\"tokensUsed\":\"[REDACTED]\",\"timeUsedSeconds\":\"[REDACTED]\",\"createdAt\":\"[REDACTED]\",\"updatedAt\":\"[REDACTED]\"}}},{\"method\":\"thread/goal/cleared\",\"params\":{\"threadId\":\"[REDACTED]\"}}],\"redaction\":\"Native identifiers, objective, timestamps and numeric goal values withheld; payload keys and goal status retained.\"}\n"
+}

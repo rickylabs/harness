@@ -32,5 +32,13 @@
     "reader": {
       "packetSha256": "1c0e6b2bc80e228d8b93e944936e1755554a60eb2899818e9a863d1e7c7984ec"
     }
+  },
+  "refusalDelta": {
+    "passingAttempt": "attempts/15-impl-glm-refusal.json",
+    "packetSha256": "048e2df9597f2418ea378aa3bc93f995d406809b128d6a5f9a0abfea7206f708",
+    "files": {
+      "packages/contracts/src/codex-thread-observations.ts": "451aecad4f583f5aba9cbe9f8f9b52a998b5103d2e258babaee73a371952a034",
+      "packages/telemetry/src/codex-thread-connection.ts": "e38b8d66a8995dd47237e8d5cda7a360e1492d9a5fd97eb094f7a6aa0e9a14ef"
+    }
   }
 }

@@ -34,7 +34,7 @@ CURRENT identifies inspected source; CITED identifies a retrieved authority; PLA
 
 ## Subscription and ownership
 
-**CURRENT.** The outbound method set is initialize, initialized, thread/list and thread/goal/get. Inbound goal updated/cleared notifications have separate validation; unrelated notifications are ignored. Matching nested thread identity is required. Raw protocol errors and stderr never become diagnostics. There is no goal set/clear, thread start/resume, turn start, polling loop or dispatcher writer.
+**CURRENT.** The outbound method set is initialize, initialized, thread/list and thread/goal/get. Inbound goal updated/cleared notifications have separate validation; unrelated notifications are ignored. Matching nested thread identity is required. Raw protocol errors and stderr never become diagnostics. The product has no goal set/clear, thread start/resume, turn start, polling loop or dispatcher writer. A separately authorized test-only driver performed the live reversible goal round trip.
 
 **CURRENT.** One bounded async subscriber per reader receives ordered goal changes with a connection-local sequence and source goal timestamp where supplied. Overflow explicitly invalidates buffered events and ends the source; disconnect is an unavailable event. Closing a reader stops only its owned process/port. An injected port belongs to its caller; it is never discovered from a running daemon.
 
@@ -42,8 +42,10 @@ CURRENT identifies inspected source; CITED identifies a retrieved authority; PLA
 
 ## Consequences
 
-**MEASURED.** [Run evidence](../../.llm/runs/codex-threads--read-stream/validation.md) distinguishes real native reads, synthetic stream controls, mutation receipts and a live notification observation window. No goal was written to manufacture an event. An empty notification window is INCONCLUSIVE, never PASS. Readable stored threads cannot prove running agents in other processes.
+**MEASURED.** [Run evidence](../../.llm/runs/codex-threads--read-stream/validation.md) distinguishes real native reads, synthetic stream controls, mutation receipts and a live notification observation window. The initial passive notification window was INCONCLUSIVE. A subsequently coordinator-authorized driven live proof received both native goal notifications through the actual reader and restored the prior null goal exactly. That receipt proves this stdio connection, not cross-process broadcast. Readable stored threads cannot prove running agents in other processes.
 
 ## Revisit triggers
 
 **PLANNED.** Revisit when the native dispatcher writes parent relationships and budgets, when an authenticated consumer binds this source, and when a naturally produced goal event demonstrates live delivery scope. A linearizable snapshot/stream handshake, durable replay, or cross-process event delivery requires an explicit upstream contract; none is invented here.
+
+**MEASURED.** The three failed goal reads were daemon replies with code `-32600` and message `thread not found: [REDACTED_NATIVE_ID]`. The reader now maps only the exact matching goal/get request, string identity, numeric code and message to `thread_not_found`. Wrong operations, codes and identities retain `rpc_error`; transport failures stay separate. See [daemon receipts](../../.llm/runs/codex-threads--read-stream/daemon-refusals.json) and [driven live proof](../../.llm/runs/codex-threads--read-stream/driven-live-proof.json).
