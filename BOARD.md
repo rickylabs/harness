@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **287/359 done · 20 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
+`[################----]` **289/360 done · 20 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible**
 
-_Latest board activity: 2026-09-15T08:08:03Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-15T08:34:43Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -48,16 +48,15 @@ Something could be acting on these right now.
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 
-## Not on the board (2)
+## Not on the board (1)
 
 Open, and carrying no `status:` label — real work no column can see.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
-| [#371 Telemetry: expose a dispatch-only agent observation while runtime evidence is unavailable](https://github.com/rickylabs/harness/issues/371) | — | — |
 
-## Anomalies (13)
+## Anomalies (12)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -81,7 +80,6 @@ Open, and carrying no `status:` label — real work no column can see.
 **`no-status`**
 
 - **#370** — open item has no status label, so it appears in no column
-- **#371** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -106,13 +104,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 93/117 done · 2 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
+`[#########---]` 95/118 done · 2 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[#########---]` 81/101 done · 1 running · 4 queued · 3 blocked · 9 abandoned · 3 invisible | — |
+| _(no epic)_ | `[#########---]` 83/102 done · 1 running · 4 queued · 3 blocked · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -154,7 +152,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  287/359 done · 20 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [################----]  289/360 done · 20 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -435,7 +433,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  93/117 done · 2 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [################----]  95/118 done · 2 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -560,7 +558,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #368 fix(telemetry): report which receipt root the dispatch reader read and why it was empty
     shipped              PR369 fix(telemetry): report orchid receipt root refusals
     no status            #370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent
-    no status            #371 Telemetry: expose a dispatch-only agent observation while runtime evidence is unavailable
+    shipped              #371 Telemetry: expose a dispatch-only agent observation while runtime evidence is unavailable
+    shipped              PR372 fix(telemetry): retain validated dispatch-only agent observations (p0)
 ```
 
 </details>
