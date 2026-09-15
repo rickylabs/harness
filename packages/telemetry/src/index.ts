@@ -221,3 +221,5 @@ export { parseSource, type GovernanceSource, type SourceRefusal } from "./source
 export { readDispatchEvidence, type DispatchEvidence } from "./dispatch-evidence.js";
 
 export { buildAgentObservations } from "./agent-observations.js";
+
+export { openCodexThreadReader, CodexThreadReader, codexThreadEvidence, type CodexThreadReadOptions, type CodexThreadSnapshot, type CodexThreadObservation, type CodexGoalEvent } from "./codex-threads.js";

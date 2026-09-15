@@ -1,0 +1,13 @@
+{
+  "cliVersion": "0.154.0",
+  "command": "codex app-server generate-ts --experimental --out PRIVATE_SCRATCH",
+  "exit_code": 0,
+  "output": "Generated experimental protocol files; output location withheld.",
+  "schemas": {
+    "v2/Thread.ts": "a90071210b958953a9dca7b3884c2ab788d29c3a2cb346f72327377456436d8e",
+    "v2/ThreadGoal.ts": "c06ffa09651d4cc7f66dc6c0c2ea8f94551c10c1837aa3f73b7b66def1faaf7c",
+    "v2/ThreadGoalUpdatedNotification.ts": "a01a94c0dee5c68ae076b6950ecfa9acac1cc8a79718dde1a2a5a7ef26577a6c",
+    "v2/ThreadGoalClearedNotification.ts": "c7b2fae35683f672813077daf88ba9797ff0657f7eeba16655c32c13ac5e595d",
+    "v2/ThreadListParams.ts": "7cfa0f6782c8a783add4eefb118c981315187718f39d67571e77f7a676d414b3"
+  }
+}
