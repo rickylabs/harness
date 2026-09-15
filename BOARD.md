@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **290/365 done · 24 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible**
+`[###############-----]` **291/366 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-15T15:35:40Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-15T15:48:53Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (24)
+## Moving now (23)
 
 Something could be acting on these right now.
 
@@ -31,7 +31,6 @@ Something could be acting on these right now.
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `impl-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees](https://github.com/rickylabs/harness/issues/373) | `impl-eval` | — |
-| [#375 test(alpha): one live matrix dispatch with one native sub-agent](https://github.com/rickylabs/harness/issues/375) | `impl` | — |
 | [PR376 test(alpha): record live issue ancestry as inconclusive](https://github.com/rickylabs/harness/pull/376) | `ready-merge` | — |
 | [#377 fix(telemetry): bind native run usage and quota to agent cost rows](https://github.com/rickylabs/harness/issues/377) | `impl` | — |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
@@ -52,15 +51,16 @@ Something could be acting on these right now.
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 
-## Not on the board (1)
+## Not on the board (2)
 
 Open, and carrying no `status:` label — real work no column can see.
 
 | item | column | epic |
 | --- | --- | --- |
+| [#378 test(alpha): prove native session identity now lands after herdr codex hook install](https://github.com/rickylabs/harness/issues/378) | — | — |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 
-## Anomalies (12)
+## Anomalies (13)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -83,6 +83,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 **`no-status`**
 
+- **#378** — open item has no status label, so it appears in no column
 - **#370** — open item has no status label, so it appears in no column
 
 ## Epics
@@ -108,13 +109,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 96/123 done · 6 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
+`[#########---]` 97/124 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[#########---]` 84/107 done · 5 running · 4 queued · 3 blocked · 9 abandoned · 2 invisible | — |
+| _(no epic)_ | `[#########---]` 85/108 done · 4 running · 4 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
@@ -156,7 +157,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  290/365 done · 24 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible
+# rickylabs/harness  [###############-----]  291/366 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -437,7 +438,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  96/123 done · 6 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
+## (no milestone)  [###############-----]  97/124 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -566,9 +567,10 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR372 fix(telemetry): retain validated dispatch-only agent observations (p0)
     impl-eval            #373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees (p0)
     shipped              PR374 fix(telemetry): join Orchid dispatches to native sub-agent trees (p0)
-    impl                 #375 test(alpha): one live matrix dispatch with one native sub-agent (p0)
+    shipped              #375 test(alpha): one live matrix dispatch with one native sub-agent (p0)
     ready-merge          PR376 test(alpha): record live issue ancestry as inconclusive (p0)
     impl                 #377 fix(telemetry): bind native run usage and quota to agent cost rows (p0)
+    no status            #378 test(alpha): prove native session identity now lands after herdr codex hook install (p0)
 ```
 
 </details>
