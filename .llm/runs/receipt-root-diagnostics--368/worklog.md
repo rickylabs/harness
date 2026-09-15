@@ -27,3 +27,7 @@ Separate GLM-family evaluator verdict: `PASS`. It reproduced both green results 
 ## 2026-09-15 — handoff
 
 Committed product and run evidence as `d734f13`, pushed `orch/divybot-368`, and opened [PR #369](https://github.com/rickylabs/harness/pull/369). The PR is ready for review with `status:ready-merge`; its body ends with the required issue closing line and carries command outputs and exit codes. Nothing independent remains to fan out.
+
+## 2026-09-15 — base conflict repair
+
+Rebased onto `origin/main` at `273fdea`. Skipped the inherited baseline replay, then reconciled the product conflict by retaining main's new exact-`0700` safety rule and attaching this change's `wrong_mode` reason to that exact predicate. The combined reader suite passed 13 tests; disabling the combined guard failed the reason control and upstream exact-mode control, and restoration passed 13. See `drift.md`.

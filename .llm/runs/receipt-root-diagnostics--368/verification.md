@@ -15,4 +15,6 @@ The executable TypeScript/package-test equivalent passed 469 tests, the targeted
 | `pnpm test` | 126 | INCONCLUSIVE at `test:packages`: `tsc: Permission denied`; `check:installed` not reached |
 | `git diff --check` | 0 | no whitespace errors |
 
+After rebasing onto `273fdea`, `main`'s exact-`0700` guard was retained. The restored targeted command passed 13 tests. Mutating `(rootStat.mode & 0o7777) !== 0o700` to false exited 1 with 9 passed / 4 failed, including both `wrong_mode` (`actual: null`) and `requires exactly 0700`; restoring it returned 13 passed / 0 failed.
+
 The permission failure reproduces even when the shim has mode `0755`; direct execution reports permission denied, while invoking the TypeScript entry point through Node succeeds. It is therefore recorded as a reachability failure, not a failing code verdict.

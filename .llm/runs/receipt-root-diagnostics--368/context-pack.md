@@ -2,6 +2,6 @@
 
 ## Summary
 
-Issue #368 is implemented, locally verified, independently evaluated `PASS`, committed, and published as [PR #369](https://github.com/rickylabs/harness/pull/369), ready for review. The reader returns its supplied root and one of six nullable refusal reasons without changing its accepted roots, fixed notes, or degraded semantics. Six defects plus a healthy-empty root are tested; wrong-mode and independently git-ancestor classification were mutation-proven red and restored green. Declared pnpm wrappers are INCONCLUSIVE on the no-exec mount; their direct Node-invoked TypeScript equivalent passed all 469 telemetry tests. No independent remainder exists to fan out.
+Issue #368 is implemented, locally verified, independently evaluated `PASS`, and published as [PR #369](https://github.com/rickylabs/harness/pull/369), ready for review. The branch is rebased onto `origin/main` at `273fdea`; conflict resolution retained main's stricter exact-`0700` safety check and classifies its failures as `wrong_mode`. The combined reader suite passes 13 tests and its exact-mode guard is mutation-proven red/restored green. Declared pnpm wrappers remain INCONCLUSIVE on the no-exec mount; their direct Node-invoked TypeScript equivalent passed all 469 telemetry tests before the rebase. No independent remainder exists to fan out.
 
 Baseline is `ade559bef2c8a8d8f4356d6c580b69e455e4cd48` on `orch/divybot-368`. The exact permitted paths are in `supervisor.md`; decisions and risks are in `plan.md`.
