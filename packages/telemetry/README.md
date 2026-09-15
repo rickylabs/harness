@@ -749,9 +749,14 @@ The collection says complete:false / ancestry_unavailable. A mixed collection co
 observations still requires complete ancestry; it cannot fall back to dispatch-only evidence.
 Source time is the receipt timestamp when present, otherwise its file modification time; it
 never claims current liveness. Receipt revisions come from the exact source bytes; agent revisions also change when a native
-root becomes bound. Public agent and assignment IDs keep their existing derivation. All three cost
-rows remain individually unavailable, and a native parent link does not invent child location,
-router, budget or running observations. No cockpit contract or decoder change is required.
+root becomes bound. Public agent and assignment IDs keep their existing derivation. Unbound dispatches keep all three cost
+rows unavailable. Once a unique native run is bound, roots and children project that run's existing
+usage and quota into separate token, reported USD and account-headroom rows. Missing measurements
+remain unavailable; reported zero is available zero. Headroom is the account window last observed by
+that run, with source time and reset validity, never run spend or guaranteed current balance.
+A native parent link does not invent child location, router or running observations. No cockpit
+contract or decoder change is required. See [cost attribution](../../docs/rfcs/0002-agent-cost-attribution.md)
+for shared-run refusal, repeated-dispatch handling, source timestamps and limits.
 
 `node scripts/check-orchid-native-live-pair.mjs --live` is an opt-in integration control. It reads
 a bounded native header sample using the normal home (or privately configured

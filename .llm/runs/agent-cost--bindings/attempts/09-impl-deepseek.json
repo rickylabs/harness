@@ -1,0 +1,10 @@
+{
+  "command": "python3 <private-review-client> impl",
+  "exit_code": 143,
+  "output": "",
+  "recording": "Prior attempt reconstructed from captured process outcomes; native completion identifiers and amounts withheld.",
+  "requested_model": "deepseek/deepseek-v4-pro-0813",
+  "command_redaction": "Private helper location omitted; request source supplied through a private input file, not argv.",
+  "verdict": "INCONCLUSIVE",
+  "reason": "terminated_without_completed_verdict"
+}

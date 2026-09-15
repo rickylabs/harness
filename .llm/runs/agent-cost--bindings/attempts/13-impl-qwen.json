@@ -1,0 +1,9 @@
+{
+  "command": "COST_REVIEW_MODEL=qwen/qwen3.8-flash COST_REVIEW_MAX_TOKENS=32000 python3 REVIEW_CLIENT impl",
+  "exit_code": 2,
+  "output": "{\"verdict\": \"INCONCLUSIVE\", \"reason\": \"model-or-completion-identity-unconfirmed\", \"modelMatch\": true, \"identityPresent\": true, \"finishReason\": \"length\"}\n",
+  "wall_seconds": 609.2,
+  "wall_cap_seconds": 900,
+  "review_packet_sha256": "a0142c115ba42f7fcc0b3654fc4f3fc440c7bc99ae416a80590de89a0a2efaf0",
+  "command_redaction": "REVIEW_CLIENT denotes the private helper; its operator location is withheld."
+}

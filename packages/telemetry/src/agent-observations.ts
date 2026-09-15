@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { MAX_AGENT_OBSERVATIONS, projectRouteIdentity, readAgentObservations, unavailableAgentCost,
   type AgentObservation, type AgentObservations, type AgentObservedValue } from "@rickylabs/harness-contracts";
+import { projectAgentCost } from "./agent-cost.js";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
@@ -67,6 +68,13 @@ export function buildAgentObservations(input: {
   }
   if (reason !== null) return finish();
   if (roots.size > 0 && !input.nativeComplete) { reason = "ancestry_unavailable"; return finish(); }
+  // Bind only after every root identity and completeness fence has passed.
+  for (const [key, root] of roots) {
+    const cost = projectAgentCost(native.get(key)!, input.observedAt);
+    const bound = { ...root, cost, revision: digest(JSON.stringify({ prior: root.revision, cost })) };
+    agents[agents.indexOf(root)] = bound;
+    roots.set(key, bound);
+  }
   // Children inherit only a confirmed assignment through an explicit same-source parent chain.
   const assigned = new Map(roots);
   let changed = true;
@@ -79,11 +87,12 @@ export function buildAgentObservations(input: {
       if (duplicates.has(key)) { reason = "ancestry_unavailable"; return finish(); }
       if (agents.length === MAX_AGENT_OBSERVATIONS) { agents.length = 0; reason = "scan_limit"; return finish(); }
       const observedAt = run.updatedAt;
+      const cost = projectAgentCost(run, input.observedAt);
       const child: AgentObservation = { agentId: opaque("agent", key), repo: parent.repo, issueNumber: parent.issueNumber,
         assignment: parent.assignment, parentAgentId: { state: "known-parent", value: parent.agentId, reason: null },
         workspace: missing(), pane: missing(), tab: missing(), terminal: missing(), running: missing("identity_unavailable"),
-        route: projectRouteIdentity(null), cost: unavailableAgentCost(), observedAt,
-        revision: digest(JSON.stringify({ parent: parent.agentId, observedAt, outcome: run.outcome })),
+        route: projectRouteIdentity(null), cost, observedAt,
+        revision: digest(JSON.stringify({ parent: parent.agentId, observedAt, outcome: run.outcome, cost })),
       };
       agents.push(child); assigned.set(key, child); changed = true;
     }

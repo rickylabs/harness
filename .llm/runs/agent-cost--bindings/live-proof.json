@@ -1,0 +1,159 @@
+{
+  "verdict": "PASS",
+  "scope": "live native cost projection; not a dispatched issue join",
+  "limit": 10,
+  "nativeScanComplete": false,
+  "nativeRowsRead": 24,
+  "nonzeroTokensEqualNativeUsage": true,
+  "absentCurrencyStayedNull": true,
+  "samples": [
+    {
+      "sample": "resolved-tokens",
+      "isNativeChild": false,
+      "nativeParentPresentInRead": false,
+      "rows": {
+        "subscriptionHeadroom": {
+          "kind": "subscription_headroom",
+          "unit": "percent_remaining",
+          "scope": "subscription_account",
+          "availability": "available",
+          "reason": null,
+          "measurementPresent": true,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": true
+        },
+        "meteredSpend": {
+          "kind": "metered_spend",
+          "unit": "currency",
+          "scope": "run",
+          "availability": "unavailable",
+          "reason": "measurement_missing",
+          "measurementPresent": false,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": false
+        },
+        "runTokens": {
+          "kind": "run_tokens",
+          "unit": "tokens",
+          "scope": "run",
+          "availability": "available",
+          "reason": null,
+          "measurementPresent": true,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": true
+        }
+      }
+    },
+    {
+      "sample": "unavailable-currency",
+      "isNativeChild": false,
+      "nativeParentPresentInRead": false,
+      "rows": {
+        "subscriptionHeadroom": {
+          "kind": "subscription_headroom",
+          "unit": "percent_remaining",
+          "scope": "subscription_account",
+          "availability": "available",
+          "reason": null,
+          "measurementPresent": true,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": true
+        },
+        "meteredSpend": {
+          "kind": "metered_spend",
+          "unit": "currency",
+          "scope": "run",
+          "availability": "unavailable",
+          "reason": "measurement_missing",
+          "measurementPresent": false,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": false
+        },
+        "runTokens": {
+          "kind": "run_tokens",
+          "unit": "tokens",
+          "scope": "run",
+          "availability": "available",
+          "reason": null,
+          "measurementPresent": true,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": true
+        }
+      }
+    },
+    {
+      "sample": "reported-currency",
+      "isNativeChild": false,
+      "nativeParentPresentInRead": false,
+      "rows": {
+        "subscriptionHeadroom": {
+          "kind": "subscription_headroom",
+          "unit": "percent_remaining",
+          "scope": "subscription_account",
+          "availability": "unavailable",
+          "reason": "measurement_missing",
+          "measurementPresent": false,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": false
+        },
+        "meteredSpend": {
+          "kind": "metered_spend",
+          "unit": "currency",
+          "scope": "run",
+          "availability": "available",
+          "reason": null,
+          "measurementPresent": true,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": true
+        },
+        "runTokens": {
+          "kind": "run_tokens",
+          "unit": "tokens",
+          "scope": "run",
+          "availability": "available",
+          "reason": null,
+          "measurementPresent": true,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": true
+        }
+      }
+    },
+    {
+      "sample": "native-child-tokens",
+      "isNativeChild": true,
+      "nativeParentPresentInRead": true,
+      "rows": {
+        "subscriptionHeadroom": {
+          "kind": "subscription_headroom",
+          "unit": "percent_remaining",
+          "scope": "subscription_account",
+          "availability": "available",
+          "reason": null,
+          "measurementPresent": true,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": true
+        },
+        "meteredSpend": {
+          "kind": "metered_spend",
+          "unit": "currency",
+          "scope": "run",
+          "availability": "unavailable",
+          "reason": "measurement_missing",
+          "measurementPresent": false,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": false
+        },
+        "runTokens": {
+          "kind": "run_tokens",
+          "unit": "tokens",
+          "scope": "run",
+          "availability": "available",
+          "reason": null,
+          "measurementPresent": true,
+          "valuesWithheld": true,
+          "sourceMetadataPresent": true
+        }
+      }
+    }
+  ]
+}

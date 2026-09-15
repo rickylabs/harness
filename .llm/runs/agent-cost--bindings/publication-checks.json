@@ -1,0 +1,17 @@
+[
+  {
+    "command": "pnpm run check:links",
+    "exit_code": 0,
+    "output": "check:links \u2014 74 file(s), 416 relative link(s) checked (42 with an anchor), 173 external link(s) not checked, 0 broken\n$ node scripts/check-links.mjs\n"
+  },
+  {
+    "command": "pnpm run check:snapshots",
+    "exit_code": 0,
+    "output": "\u2714 exact eight tracked fixtures pass (48.810079ms)\n\u2714 changed bytes fail even with identical JSON meaning (38.625682ms)\n\u2714 changed fixture fails even after removing all snapshot keys (37.351652ms)\n\u2714 missing inventoried fixture fails loudly (40.631967ms)\n\u2714 new file in fixture directory gets ordinary detection (43.218709ms)\n\u2714 identical fixture bytes at another path get ordinary detection (43.77348ms)\n\u2714 operator snapshot outside fixture inventory still fails (48.409988ms)\n\u2714 missing repository-run fixture fails loudly (44.010183ms)\n\u2714 changed repository-run fixture fails even without snapshot keys (38.147846ms)\n\u2139 tests 9\n\u2139 suites 0\n\u2139 pass 9\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 426.674536\ncheck:snapshots \u2014 160 tracked data file(s) carry no live allowance snapshot (8 exact synthetic fixtures verified)\n$ node --test scripts/check-snapshots.test.mjs && node scripts/check-snapshots.mjs\n"
+  },
+  {
+    "command": "git diff --cached --check",
+    "exit_code": 0,
+    "output": ""
+  }
+]

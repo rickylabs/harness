@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "mode": "role",
+  "role": "plan_evaluation",
+  "tiers": [
+    {
+      "tier": "straightforward",
+      "description": "Straightforward implementations and features; medium temperature and medium complexity.",
+      "routes": [
+        {
+          "model": "opus_5",
+          "effort": "medium"
+        },
+        {
+          "model": "qwen_3_8_flash_next",
+          "effort": "provider_default"
+        }
+      ],
+      "policy": {
+        "maxRounds": 0,
+        "repairInFlightAt": "immediate",
+        "reSteerSameSession": true
+      }
+    }
+  ]
+}
