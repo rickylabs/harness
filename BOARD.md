@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **275/349 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
+`[###############-----]` **278/354 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible**
 
-_Latest board activity: 2026-09-14T23:29:49Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-15T00:08:16Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (22)
+## Moving now (21)
 
 Something could be acting on these right now.
 
@@ -31,7 +31,6 @@ Something could be acting on these right now.
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `impl-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#316 Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/316) | `impl-eval` | — |
-| [#360 Governor requires two rate-limit windows, so a one-window plan can never be admitted](https://github.com/rickylabs/harness/issues/360) | `impl-eval` | — |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -50,7 +49,7 @@ Something could be acting on these right now.
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 
-## Not on the board (2)
+## Not on the board (5)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -58,8 +57,11 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#352 Dispatch never runs: divybot spawns the agent with pane run, so herdr never registers it and the goal is lost](https://github.com/rickylabs/harness/issues/352) | — | — |
 | [#357 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/357) | — | — |
+| [#362 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned](https://github.com/rickylabs/harness/issues/362) | — | — |
+| [#363 Dispatch records an effort the codex transport never receives](https://github.com/rickylabs/harness/issues/363) | — | — |
+| [#364 Dispatch records are unreadable by the cockpit: no shared path and no shared owner](https://github.com/rickylabs/harness/issues/364) | — | — |
 
-## Anomalies (13)
+## Anomalies (16)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -84,6 +86,9 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#352** — open item has no status label, so it appears in no column
 - **#357** — open item has no status label, so it appears in no column
+- **#362** — open item has no status label, so it appears in no column
+- **#363** — open item has no status label, so it appears in no column
+- **#364** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -108,13 +113,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 82/107 done · 3 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
+`[#########---]` 85/112 done · 2 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[#########---]` 70/91 done · 2 running · 4 queued · 3 blocked · 9 abandoned · 3 invisible | — |
+| _(no epic)_ | `[#########---]` 73/96 done · 1 running · 4 queued · 3 blocked · 9 abandoned · 6 invisible | — |
 
 ## Waiting to start
 
@@ -156,7 +161,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  275/349 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [###############-----]  278/354 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  193/242 done · 19 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -437,7 +442,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     impl-eval            #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  82/107 done · 3 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [###############-----]  85/112 done · 2 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -551,8 +556,13 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #357 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned
     shipped              #358 fix(divybot): explain matrix dispatch refusals safely (p0)
     shipped              #359 feat(divybot): build and validate private matrix configuration (p0)
-    impl-eval            #360 Governor requires two rate-limit windows, so a one-window plan can never be admitted (p0)
+    shipped              #360 Governor requires two rate-limit windows, so a one-window plan can never be admitted (p0)
     triage               #361 fix(divybot): attribute quota refusals to transport and failed condition (p1)
+    no status            #362 [rickylabs/harness#316] Three gates cannot report inconclusive, so each reports a verdict it has not earned
+    no status            #363 Dispatch records an effort the codex transport never receives
+    no status            #364 Dispatch records are unreadable by the cockpit: no shared path and no shared owner
+    shipped              #365 fix(telemetry): require exactly 0700 on the dispatcher receipt root
+    shipped              PR366 fix(telemetry): require exactly 0700 on dispatcher receipt roots
 ```
 
 </details>
