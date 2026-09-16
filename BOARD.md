@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **297/372 done · 21 running · 25 queued · 8 blocked · 15 abandoned · 6 invisible**
+`[################----]` **299/372 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-16T07:24:02Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-16T07:24:30Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -58,17 +58,9 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#381 Dispatcher must write thread goal and sub-agent ancestry](https://github.com/rickylabs/harness/issues/381) | — | — |
 
-## Anomalies (15)
+## Anomalies (13)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
-
-**`closed-but-unshipped`**
-
-- **#255** — closed on GitHub but sits in triage; the issue wins, the column is stale
-
-**`closed-without-status`**
-
-- **#384** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -115,18 +107,18 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 103/130 done · 3 running · 5 queued · 5 blocked · 9 abandoned · 5 invisible
+`[#########---]` 105/130 done · 3 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| _(no epic)_ | `[#########---]` 91/114 done · 2 running · 5 queued · 3 blocked · 9 abandoned · 4 invisible | — |
+| _(no epic)_ | `[#########---]` 93/114 done · 2 running · 4 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>25 filed, nothing started</summary>
+<summary>24 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -144,7 +136,6 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#234 17 labels live on the repo and in no taxonomy, including the dispatch label](https://github.com/rickylabs/harness/issues/234) | `triage` | `e7` |
 | [#244 docs(runtime): enforce Node 24 floor and validate Node 26 target](https://github.com/rickylabs/harness/issues/244) | `triage` | `e10` |
 | [#249 `KNOWN_TYPES` in the Claude backfill reads as exhaustive and is not — five record types on a real store are unrecognised](https://github.com/rickylabs/harness/issues/249) | `triage` | — |
-| [#255 fix(forge): skill install --dry-run reports a file as created that it does not create](https://github.com/rickylabs/harness/issues/255) | `triage` | — |
 | [#47 E2.2 — Fork deepseek-harness-docker, keeping the upstream remote](https://github.com/rickylabs/harness/issues/47) | `triage` | `e2` |
 | [#49 E2.4 — Register the stack on the N5 and verify it comes up](https://github.com/rickylabs/harness/issues/49) | `triage` | `e2` |
 | [#53 E3.3 — provider-codex against the running app-server daemon](https://github.com/rickylabs/harness/issues/53) | `triage` | `e3` |
@@ -164,7 +155,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  297/372 done · 21 running · 25 queued · 8 blocked · 15 abandoned · 6 invisible
+# rickylabs/harness  [################----]  299/372 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -445,7 +436,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [###############-----]  103/130 done · 3 running · 5 queued · 5 blocked · 9 abandoned · 5 invisible
+## (no milestone)  [################----]  105/130 done · 3 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -518,7 +509,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR251 docs: retain the review evidence and owner corrections from the public docs relaunch
     shipped              PR252 docs: complete the Stage B discovery run with its external and document legs (p3)
     shipped              PR254 docs(how-to): add the first how-to guide, installing the board process (p2)
-    triage               #255 fix(forge): skill install --dry-run reports a file as created that it does not create (p3)
+    shipped              #255 fix(forge): skill install --dry-run reports a file as created that it does not create (p3)
     impl-eval            #285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision
     shipped              PR303 docs(architecture): lock v1 — the portable agent runtime
     shipped              #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
@@ -583,7 +574,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #381 Dispatcher must write thread goal and sub-agent ancestry
     shipped              #382 feat(telemetry): read Codex threads and subscribe to goal changes (p0)
     shipped              PR383 feat(telemetry): read Codex threads and stream goal changes (p0)
-    no status            PR384 fix(forge): skill install --dry-run reports a file as created that it does not create
+    shipped              PR384 fix(forge): skill install --dry-run reports a file as created that it does not create
 ```
 
 </details>
