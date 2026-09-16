@@ -4,7 +4,7 @@
 
 `[###############-----]` **297/372 done · 21 running · 25 queued · 8 blocked · 15 abandoned · 6 invisible**
 
-_Latest board activity: 2026-09-16T06:30:58Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-16T07:24:02Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -49,7 +49,7 @@ Something could be acting on these right now.
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 
-## Not on the board (3)
+## Not on the board (2)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -57,11 +57,18 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#381 Dispatcher must write thread goal and sub-agent ancestry](https://github.com/rickylabs/harness/issues/381) | — | — |
-| [PR384 fix(forge): skill install --dry-run reports a file as created that it does not create](https://github.com/rickylabs/harness/pull/384) | — | — |
 
-## Anomalies (14)
+## Anomalies (15)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#255** — closed on GitHub but sits in triage; the issue wins, the column is stale
+
+**`closed-without-status`**
+
+- **#384** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -84,7 +91,6 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#370** — open item has no status label, so it appears in no column
 - **#381** — open item has no status label, so it appears in no column
-- **#384** — open item has no status label, so it appears in no column
 
 ## Epics
 
