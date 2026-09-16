@@ -618,7 +618,8 @@ async function cmdSkillInstall(
   if (json) {
     out(JSON.stringify({ reports }, null, 2));
   } else {
-    for (const r of reports) out(`${r.outcome.padEnd(10)} ${r.path}${r.note ? ` — ${r.note}` : ""}`);
+    for (const r of reports) out(`${r.outcome.padEnd(12)} ${r.path}${r.note ? ` — ${r.note}` : ""}`);
+    if (flags.dryRun) out("dry run — nothing was created or updated");
   }
   return reports.some((r) => r.outcome === "foreign") ? EXIT.drift : EXIT.ok;
 }

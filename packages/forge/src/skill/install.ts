@@ -41,6 +41,7 @@ function withProvenance(rendered: string): string {
 
 export type InstallOutcome =
   | "created"
+  | "would create"
   | "updated"
   /** Byte-identical to what we would write; nothing to do. */
   | "unchanged"
@@ -91,7 +92,10 @@ export async function installSkill(options: InstallOptions): Promise<readonly In
         await mkdir(dirname(path), { recursive: true });
         await writeFile(path, body, "utf8");
       }
-      reports.push({ path: relative, outcome: "created" });
+      reports.push({
+        path: relative,
+        outcome: options.dryRun ? "would create" : "created",
+      });
       continue;
     }
 
