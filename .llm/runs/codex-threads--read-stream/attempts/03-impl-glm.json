@@ -1,0 +1,8 @@
+{
+  "command": "COST_REVIEW_MODEL=z-ai/glm-5.3-flash COST_REVIEW_MAX_TOKENS=32000 python3 REVIEW_CLIENT impl",
+  "exit_code": 2,
+  "output": "{\"verdict\": \"INCONCLUSIVE\", \"reason\": \"model-or-completion-identity-unconfirmed\", \"modelMatch\": true, \"identityPresent\": true, \"finishReason\": \"length\"}\n",
+  "wall_seconds": 387.1,
+  "wall_cap_seconds": 900,
+  "command_redaction": "Private executable and input-file locations are replaced by REVIEW_CLIENT and REVIEW_PACKET; model, arguments and exit code are unchanged."
+}

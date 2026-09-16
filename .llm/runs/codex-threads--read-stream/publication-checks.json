@@ -1,0 +1,17 @@
+[
+  {
+    "command": "git diff --cached --check",
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "command": "node scripts/check-links.mjs",
+    "exit_code": 0,
+    "output": "check:links \u2014 75 file(s), 423 relative link(s) checked (42 with an anchor), 175 external link(s) not checked, 0 broken\n"
+  },
+  {
+    "command": "node scripts/check-snapshots.mjs",
+    "exit_code": 0,
+    "output": "check:snapshots \u2014 183 tracked data file(s) carry no live allowance snapshot (8 exact synthetic fixtures verified)\n"
+  }
+]

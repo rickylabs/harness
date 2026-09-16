@@ -1,0 +1,44 @@
+{
+  "transport": {
+    "files": [
+      "packages/telemetry/src/codex-thread-connection.ts",
+      "packages/telemetry/src/codex-threads.ts"
+    ],
+    "packetSha256": "1df1f6a3e625e34ddc8b6675069c7f3df6ee3c386862a9ce3b42734247bc136b",
+    "fileSha256": {
+      "packages/telemetry/src/codex-thread-connection.ts": "b92624cbd443fadc4a99cd6e478a9283a328fff988cdf48f7f681182a0b3948e",
+      "packages/telemetry/src/codex-threads.ts": "50d7c9a424293de243f66c47d915ca3bc56869389720223bf3f058678d76705a"
+    },
+    "passingAttempt": "attempts/14-impl-kimi-transport.json"
+  },
+  "projection": {
+    "files": [
+      "packages/contracts/src/codex-thread-observations.ts",
+      "packages/telemetry/src/codex-thread-project.ts",
+      "packages/telemetry/src/codex-threads-cli.ts"
+    ],
+    "packetSha256": "98b7e6cc4721a81634a09357960c0a0b087715f81b7d38ed0864c8ddaebdfc27",
+    "fileSha256": {
+      "packages/contracts/src/codex-thread-observations.ts": "53ec955cb37d77b8eb6de7533dfe501f9ee0e918c61e31231e0c963f4af69ccf",
+      "packages/telemetry/src/codex-thread-project.ts": "87ab64f597276315cd652e80d9658b8e3711eef595a9379664206a4fc866f4ec",
+      "packages/telemetry/src/codex-threads-cli.ts": "fb5e4a0d9a3b603a2a24334398e12930ef483d5860fdf64e03c1e5d0294ad3af"
+    },
+    "passingAttempt": "attempts/08-impl-glm-projection.json"
+  },
+  "additionalPackets": {
+    "connection": {
+      "packetSha256": "f55049500735b01d56e0d8f7378f00b27b47cc29f981ad96232cbbc2db35143e"
+    },
+    "reader": {
+      "packetSha256": "1c0e6b2bc80e228d8b93e944936e1755554a60eb2899818e9a863d1e7c7984ec"
+    }
+  },
+  "refusalDelta": {
+    "passingAttempt": "attempts/15-impl-glm-refusal.json",
+    "packetSha256": "048e2df9597f2418ea378aa3bc93f995d406809b128d6a5f9a0abfea7206f708",
+    "files": {
+      "packages/contracts/src/codex-thread-observations.ts": "451aecad4f583f5aba9cbe9f8f9b52a998b5103d2e258babaee73a371952a034",
+      "packages/telemetry/src/codex-thread-connection.ts": "e38b8d66a8995dd47237e8d5cda7a360e1492d9a5fd97eb094f7a6aa0e9a14ef"
+    }
+  }
+}

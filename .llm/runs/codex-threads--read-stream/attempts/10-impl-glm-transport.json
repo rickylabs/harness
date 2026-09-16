@@ -1,0 +1,9 @@
+{
+  "command": "COST_REVIEW_MODEL=z-ai/glm-5.3-flash COST_REVIEW_MAX_TOKENS=65536 THREAD_REVIEW_PROMPT=REVIEW_PACKET python3 REVIEW_CLIENT impl",
+  "exit_code": 2,
+  "output": "{\"verdict\": \"INCONCLUSIVE\", \"reason\": \"model-or-completion-identity-unconfirmed\", \"modelMatch\": true, \"identityPresent\": true, \"finishReason\": \"error\"}\n",
+  "wall_seconds": 62.3,
+  "wall_cap_seconds": 900,
+  "packet": "transport",
+  "command_redaction": "REVIEW_CLIENT and REVIEW_PACKET replace private helper/input locations."
+}

@@ -1,0 +1,9 @@
+{
+  "command": "COST_REVIEW_MODEL=deepseek/deepseek-v4-pro-0813 COST_REVIEW_MAX_TOKENS=32000 THREAD_REVIEW_PROMPT=REVIEW_PACKET python3 REVIEW_CLIENT impl",
+  "exit_code": 0,
+  "output": "{\n  \"requestedModel\": \"deepseek/deepseek-v4-pro-0813\",\n  \"observedModel\": \"deepseek/deepseek-v4-pro-0813\",\n  \"identityObserved\": true,\n  \"complete\": true,\n  \"output\": \"FAIL_FIX\\n\\n- `projectGoal` only handles `raw === null` as `goal_absent`; `undefined` falls through to `invalid_response`. Use `raw == null` so absent goal properties classify correctly.\\n- `projectThread` passes `t.id as string` to `publicThreadId` without validating it. A missing or non-string native id is then hashed into a valid-looking stable public id, colliding on values like `\\\"undefined\\\"`/`\\\"[object Object]\\\"` and violating the valid unique native thread identity expectation. Validate `t.id` with `text`/reject malformed rows before deriving the public id.\"\n}\n",
+  "wall_seconds": 181.6,
+  "wall_cap_seconds": 900,
+  "packet": "projection",
+  "command_redaction": "Private executable and input-file locations are replaced by REVIEW_CLIENT and REVIEW_PACKET; model, arguments and exit code are unchanged."
+}

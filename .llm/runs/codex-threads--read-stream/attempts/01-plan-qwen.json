@@ -1,0 +1,8 @@
+{
+  "command": "COST_REVIEW_MODEL=qwen/qwen3.8-flash COST_REVIEW_MAX_TOKENS=32000 python3 REVIEW_CLIENT plan",
+  "exit_code": 0,
+  "output": "{\n  \"requestedModel\": \"qwen/qwen3.8-flash\",\n  \"observedModel\": \"qwen/qwen3.8-flash\",\n  \"identityObserved\": true,\n  \"complete\": true,\n  \"output\": \"FAIL_FIX\\n\\nBlocking defects:\\n1. \\u00a71\\u2019s allowlist is incompatible with \\u00a74: \\u201conly initialize, initialized, thread/list, thread/goal/get\\u201d does not explicitly permit the goal updated/cleared inbound notification methods needed for subscriptions. Separate outbound request allowlist from inbound notification allowlist and specify unknown/irrelevant notification behavior.\\n2. Sensitive-field evidence rule is not enforced: \\u00a72 projects `cwd`, origin, and objective, while \\u00a75/privacy and \\u00a76 require public artifacts/evidence without data. Add a field-level authorization/redaction policy and a machine-readable evidence projection limited to counts/presence/reasons, with leak tests.\\n3. Opaque public IDs are under-specified: deterministic mapping from native thread IDs using \\u201cexisting native child identity mapping\\u201d lacks required privacy guarantees such as secret/salt or random mapping, namespace isolation, collision policy, and handling after identity replacement/deletion.\"\n}\n",
+  "wall_seconds": 65.2,
+  "wall_cap_seconds": 900,
+  "command_redaction": "Private executable and input-file locations are replaced by REVIEW_CLIENT and REVIEW_PACKET; model, arguments and exit code are unchanged."
+}

@@ -1,0 +1,6 @@
+{
+  "command": "python3 PUBLICATION_LEAK_SCAN",
+  "exit_code": 0,
+  "output": "{\"scanned_files\": 56, \"pr_body_scanned\": true, \"findings\": []}\n",
+  "command_redaction": "Private scan helper withheld; complete branch diff and PR body checked, including credential environment values in memory."
+}
