@@ -4,7 +4,7 @@
 
 `[###############-----]` **295/371 done · 23 running · 25 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-15T21:38:40Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-16T00:59:17Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -60,9 +60,14 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#381 Dispatcher must write thread goal and sub-agent ancestry](https://github.com/rickylabs/harness/issues/381) | — | — |
 
-## Anomalies (13)
+## Anomalies (15)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#382** — closed on GitHub but sits in augment-review; the issue wins, the column is stale
+- **#383** — closed on GitHub but sits in augment-review; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
