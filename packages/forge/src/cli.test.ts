@@ -326,6 +326,43 @@ describe("--dry-run", () => {
     assert.equal(await exists(join(root, LABELS_FILE)), false);
   });
 
+  it("makes skill install write nothing and reports would create", async () => {
+    const rec = recorder();
+    const result = await captureWith(
+      ["skill", "install", "--dry-run", "--repo", "owner/repo", "--cwd", root, "--no-detect"],
+      rec,
+    );
+    assert.equal(result.code, 0);
+    assert.match(result.stdout, /would create/);
+    assert.doesNotMatch(result.stdout, /^created/m);
+    assert.match(result.stdout, /dry run — nothing was created or updated/);
+    assert.equal(await exists(join(root, ".claude", "skills", "board-process", "SKILL.md")), false);
+  });
+
+  it("reports would create and the closing dry-run line under init --dry-run", async () => {
+    const rec = recorder();
+    const result = await captureWith(
+      ["init", "--dry-run", "--repo", "owner/repo", "--cwd", root, "--no-detect"],
+      rec,
+    );
+    assert.equal(result.code, 0);
+    assert.match(result.stdout, /== skill ==\nwould create/);
+    assert.match(result.stdout, /dry run — nothing was created or updated/);
+  });
+
+  it("reports created without the closing dry-run line on a real install", async () => {
+    const rec = recorder();
+    const result = await captureWith(
+      ["skill", "install", "--repo", "owner/repo", "--cwd", root, "--no-detect"],
+      rec,
+    );
+    assert.equal(result.code, 0);
+    assert.match(result.stdout, /^created/m);
+    assert.doesNotMatch(result.stdout, /would create/);
+    assert.doesNotMatch(result.stdout, /dry run — nothing was created or updated/);
+    assert.equal(await exists(join(root, ".claude", "skills", "board-process", "SKILL.md")), true);
+  });
+
   it("still applies without the flag — the control above is not vacuous", async () => {
     const rec = recorder();
     const code = await run(["init", ...base()], rec);

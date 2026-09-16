@@ -171,7 +171,7 @@ describe("installSkill", () => {
   it("writes nothing under --dry-run", async () => {
     await withTempRepo(async (root) => {
       const reports = await installSkill({ ...ctx, repoRoot: root, skillDirs: [], dryRun: true });
-      assert.deepEqual(reports.map((r) => r.outcome), ["created"]);
+      assert.deepEqual(reports.map((r) => r.outcome), ["would create"]);
       await assert.rejects(readFile(skillPath(root, DEFAULT_SKILL_ROOT), "utf8"));
     });
   });
