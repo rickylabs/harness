@@ -1,0 +1,10 @@
+{
+  "command": "python3 native-goal-review.py plan qwen/qwen3.8-flash",
+  "exit_code": 0,
+  "output": {
+    "requestedModel": "qwen/qwen3.8-flash",
+    "observedModel": "qwen/qwen3.8-flash",
+    "nativeIdentityObserved": true,
+    "verdictText": "FAIL_FIX\n\nActionable defects:\n\n- **Live goal proof assumes reversible prior state.** Pinned findings say goal replacement can reset accounting and cannot restore arbitrary counters. Require a freshly created proof target with goal absent before set; allow restoration only to absent/cleared state, not to a prior non-empty goal. If a goal already exists, refuse live mutation. Remove or narrowly scope \u201cexact prior state.\u201d\n\n- **Budget request shape is unspecified.** The plan chooses assignment max-token authority and parses values, but does not define whether goal creation omits budget when absent, sends a nil value, sends an explicit empty numeric value, or refuses. Pin the exact create/update field matrix and add tests for absent budget, explicit empty budget, unsupported grammar, and route/matrix budget absence remaining non-authorizing.\n\n- **Lifecycle transitions still need authoritative event sources.** Completion, cancellation, timeout, and blocked mappings must come from evidenced dispatcher/native lifecycle events, not issue closure inferred from pane state, merged PR, or wall-clock timing alone. Require current goal ownership, active-state preconditions, and non-overwrite of daemon-owned budget/usage statuses.\n\n- **Reader parent-projection finding is unaddressed.** Add a separate read-only diagnosis/follow-up for missing native ancestry projection/hydration. Make clear the goal writer must not infer ancestry from flattened absence, and must not synthesize ancestry or replace the launcher.\n\n- **Identity acquisition needs a non-race correlation rule.** Bounded post-prompt evidence must be accepted only when correlated to the opaque dispatch receipt and registered occupant. Ambiguous, late, unrelated, or missing evidence must produce a closed refusal. Add controls for concurrent unrelated evidence."
+  }
+}

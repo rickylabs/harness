@@ -1,0 +1,11 @@
+{
+  "command": "python3 native-goal-review.py plan qwen/qwen3.8-flash",
+  "exit_code": 2,
+  "output": {
+    "verdict": "INCONCLUSIVE",
+    "reason": "evaluator-evidence-incomplete",
+    "modelMatches": true,
+    "identityObserved": true,
+    "finishReason": "length"
+  }
+}

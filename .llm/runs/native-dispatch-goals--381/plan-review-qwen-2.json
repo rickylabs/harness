@@ -1,0 +1,10 @@
+{
+  "command": "python3 native-goal-review.py plan qwen/qwen3.8-flash",
+  "exit_code": 0,
+  "output": {
+    "requestedModel": "qwen/qwen3.8-flash",
+    "observedModel": "qwen/qwen3.8-flash",
+    "nativeIdentityObserved": true,
+    "verdictText": "FAIL_FIX\n\n- Retry/ownership semantics conflict: \u201cexisting non-null goals are not adopted or replaced\u201d vs \u201cretry with same intent preserves counters\u201d are not reconciled. Define the exact state machine for discovered same-intent goals after crash/retry, including whether counters are preserved and when lifecycle ownership is valid.\n\n- Active-goal transaction order is ambiguous: creation wire fields include `status active`, but active is required only after prompt success + authoritative identity + ownership. Specify whether creation happens before/after identity persistence, and the rollback/retry behavior for partial success.\n\n- Budget grammar remains under-specified: provide a full canonical parser spec/regex for authorized `max-tokens`: decimal rules, `k`/`m` multipliers, fractional-token acceptance, zero, negative, overflow, unsafe integer, whitespace, and case handling.\n\n- Objective privacy control is incomplete: copying the exact assignment title into the goal can leak secrets/private identifiers. Require a narrow derived allowlist/redaction rule or hard refusal if the title contains credentials, private paths, native identities, or other forbidden content.\n\n- SessionStart compatibility is observation-only: installed integration version 8 is not a runtime guard. Add explicit supported schema/version negotiation or fail-closed allowlist, with closed refusal on unknown/unsupported reports.\n\n- Completion/limited-state precedence is ambiguous: \u201cexplicit assignment completion may finish a limited goal\u201d vs generic supervision must preserve native limit states needs precise event precedence: GitHub completed, cancellation, timeout, blocked, budget/usage limits, and dispatcher deadline."
+  }
+}
