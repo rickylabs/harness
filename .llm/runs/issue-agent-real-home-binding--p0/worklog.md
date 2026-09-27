@@ -1,0 +1,6 @@
+# Worklog
+
+- 2026-09-27 23:08 UTC: Reproduced the private real-home incomplete frame; diagnosed healthy Orchid receipts and oversized but valid Codex `session_meta` first lines. See research.md.
+- 2026-09-27 23:10 UTC: Stage F reviewer requested a precise private ancestry assertion and stronger size fixture. Recorded in drift.md. Awaiting Stage G verdict before product mutation.
+- 2026-09-27 23:12 UTC: Stage F/G re-review PASS. The >25 KiB fixture failed under 16 KiB, passed after raising the cap to 64 KiB, and the >64 KiB fail-closed test passed. Authorized real-home helper reported #387 complete; a private contract decoder asserted one dispatch, two distinct agents, one confirmed root and one child with a known-parent link to that root. Three stale issues remain scan_limit; top-level remains incomplete. No raw identity or path is copied here.
+- 2026-09-27 23:15 UTC: Node 24 full build passed 13/13 stages; telemetry 623/623 and contracts 243/243 passed. Independent implementation review PASS. Added an explicit >=24 KiB fixture assertion, reran focused tests 31/31, and checked public artifacts for private paths, credentials and native ids; `git diff --check` passed. Ready to commit and open the PR.
