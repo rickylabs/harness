@@ -5,7 +5,7 @@ import { lstat, open, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents";
 import { ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
-  type OrchidRouteObservedReasons } from "@rickylabs/harness-contracts";
+  type OrchidRouteObservedReasons, type AgentBudget } from "@rickylabs/harness-contracts";
 import { readOrchidNativeBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
@@ -139,8 +139,19 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
           Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp ? timestamp : undefined;
         if (at === undefined) throw new Error();
         const routeObservedReasons = await readRouteObservedReasons(record, input.source as string, input.model as string);
+        // Old writers have neither field. New writers must supply a bound, positive limit and its
+        // source together. A malformed budget never becomes an invented route default.
+        let budget: AgentBudget = { tokenLimit: null, source: "unavailable", reason: "source_not_bound" };
+        if (Object.hasOwn(input, "tokenBudget") || Object.hasOwn(input, "budgetSource")) {
+          if (input.tokenBudget === null && input.budgetSource === "unset") budget = { tokenLimit: null, source: "unavailable", reason: "source_not_bound" };
+          else if (typeof input.tokenBudget === "number" && Number.isSafeInteger(input.tokenBudget) && input.tokenBudget > 0 &&
+            (input.budgetSource === "issue" || input.budgetSource === "route")) {
+            budget = { tokenLimit: input.tokenBudget, source: input.budgetSource === "issue" ? "issue-override" : "route-default", reason: null };
+          } // Invalid budget metadata withholds only the budget, not the dispatch tree.
+        }
         const dispatch: DispatchEvidence = { observedAt: at, revision, linkageBasis: "dispatcher-confirmed", runId: input.runId as string, external: null,
           source: input.source === "codex" || input.source === "claude" ? input.source : null,
+          harness: input.source as "codex" | "claude" | "agy", budget,
           route, routeObservedReasons, issue: { repo: issue.repo, number: issue.number as number }, parentRunId: null,
           location: { paneId: location.paneId, workspaceId: location.workspaceId },
           dispatchState: input.state as "launching" | "dispatched" | "uncertain" };

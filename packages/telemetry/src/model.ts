@@ -140,6 +140,8 @@ export interface RunRecord {
   readonly identity: LaunchIdentity;
   readonly usage: RunUsage;
   readonly outcome: RunOutcome;
+  /** Exact terminal signal, when the native reader can distinguish failure from cancellation. */
+  readonly terminalCause?: "error" | "cancelled" | undefined;
   /** Issue and PR numbers this run points at, each carrying the evidence that produced it. */
   readonly linkedIssues: readonly IssueLink[];
   /**

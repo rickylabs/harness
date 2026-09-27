@@ -776,6 +776,17 @@ verdict preserves incomplete ancestry. Output contains only counts and closed re
 
 CLI: `dsh-telemetry codex-threads --limit 500 --json`; append `--watch` for a snapshot followed by goal event JSONL. Exit 3 means incomplete source coverage; valid thread rows remain present when a goal RPC fails. Native parent absence remains `ancestry_unavailable`; goal absence remains `goal_absent`; an unset budget remains `budget_unset`. Reported zero is available zero. Model/effort are configured or persisted metadata, not per-turn route confirmation. Runtime state is scoped to the connected app-server; unloaded threads cannot prove running agents elsewhere.
 
+The cockpit source feed is `dsh-telemetry issue-agents --watch`. It rereads dispatch and native
+evidence every five seconds and writes one complete per-issue tree snapshot per JSONL line, even
+when unchanged. Each process has a fresh generation and sequence starting at zero; a restarted
+consumer gets a new full snapshot. The cockpit backend, not this process, persists and replays
+events to its own clients. Each snapshot expires 15 seconds after `observedAt`; a stale feed is
+unknown, not still running. `issue-agents --json` reads one snapshot for diagnosis. Missing or
+degraded evidence is reported as incomplete, with explicit unknown budget and liveness fields.
+`--interval-ms` accepts 100–10000 milliseconds. If a scan lasts past its 15-second validity
+deadline, the command emits an incomplete snapshot. Slash-bearing native display labels are
+withheld because this public feed cannot safely distinguish them from relative paths.
+
 Cwd, Git origin and goal objective default to `redacted`. `includeSensitive:true` in the library or `--private` on the CLI permits those fields for an authenticated private consumer only. Never log that payload. Native IDs, session IDs, rollout paths and previews are always excluded; public thread references reuse existing opaque native-child IDs. `codexThreadEvidence(snapshot)` is the counts/availability/reasons-only projection for publishable evidence.
 
 Defaults: 500 rows, 30-second read/request deadline, 50 rows per page. Hard caps: 5000 rows, 202 pages, 1 MiB per frame, 8 outstanding RPCs, 128 buffered goal notifications. Both archived states and all declared native source kinds are included; list-side rollout repair is disabled. Overflow/disconnect is explicit. Sequence numbers are connection-local, not durable replay cursors. The snapshot is not atomic with the stream, and cross-process notification delivery is not claimed. See [RFC 0003](../../docs/rfcs/0003-codex-thread-read-stream.md).

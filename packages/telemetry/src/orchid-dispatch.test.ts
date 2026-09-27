@@ -86,6 +86,29 @@ it("joins exact inbox issue and pane to the dispatch without inventing router or
     assert.ok(!JSON.stringify(result).includes("PRIVATE-CANARY"));
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
+it("projects only a bound positive budget with the writer's exact source vocabulary", async () => {
+  const s = await setup();
+  try {
+    for (const [source, publicSource] of [["issue", "issue-override"], ["route", "route-default"]] as const) {
+      await s.write({ ...fixture, tokenBudget: 1000, budgetSource: source, ignoredDefault: 2000 });
+      const read = await readOrchidDispatches(s.root);
+      assert.equal(read.degraded, false);
+      assert.deepEqual(read.dispatches[0]?.budget, { tokenLimit: 1000, source: publicSource, reason: null });
+    }
+    await s.write({ ...fixture, tokenBudget: null, budgetSource: "unset" });
+    assert.deepEqual((await readOrchidDispatches(s.root)).dispatches[0]?.budget, { tokenLimit: null, source: "unavailable", reason: "source_not_bound" });
+    for (const bad of [
+      { tokenBudget: 0, budgetSource: "route" }, { tokenBudget: 1000, budgetSource: "PRIVATE-CANARY" },
+      { tokenBudget: "/PRIVATE-PATH-CANARY", budgetSource: "issue" }, { tokenBudget: 1000 },
+    ]) {
+      await s.write({ ...fixture, ...bad });
+      const read = await readOrchidDispatches(s.root);
+      assert.equal(read.degraded, false);
+      assert.deepEqual(read.dispatches[0]?.budget, { tokenLimit: null, source: "unavailable", reason: "source_not_bound" });
+      assert.ok(!JSON.stringify(read.dispatches).includes("PRIVATE-"));
+    }
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
 it("hides reserved attempts and retains an ambiguous execution as uncertain", async () => {
   const s = await setup();
   try {

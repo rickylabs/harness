@@ -1,6 +1,7 @@
 /** Reads dispatch receipts from the existing telemetry log; no collection or inferred joins. */
 import { projectRouteIdentity, type RouteIdentityEvidence } from "@rickylabs/subagents";
 import type { OrchidRouteObservedReasons } from "@rickylabs/harness-contracts";
+import type { AgentBudget } from "@rickylabs/harness-contracts";
 import type { LiveFile } from "./live.js";
 import type { RunSource } from "./model.js";
 
@@ -18,6 +19,10 @@ export interface DispatchEvidence {
   readonly location?: { readonly paneId: string; readonly workspaceId: string } | null;
   /** Dispatch acknowledgement is not evidence of current liveness. */
   readonly dispatchState?: "launching" | "dispatched" | "uncertain";
+  /** Sanitized dispatch-side identity; native RunSource cannot represent agy. */
+  readonly harness?: "codex" | "claude" | "agy";
+  /** Validated from Orchid's bound private dispatch record when the writer supplies it. */
+  readonly budget?: AgentBudget;
 
 }
 

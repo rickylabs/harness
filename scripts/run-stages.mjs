@@ -76,9 +76,10 @@ export function classifyStageResult(result, { compile = false } = {}) {
     return { code: INCONCLUSIVE_EXIT, executed: false, reason: "stage-could-not-spawn",
       remedy: "the stage runner could not be started on this host; check that pnpm is on PATH" };
   }
-  // Shell 126 means not executable; pnpm represents shell 127 as a lifecycle ENOENT.
-  // Like translated signals, deliberate application exits with these codes are ambiguous.
-  if (result.commandUnavailable || result.status === 126) {
+  // Shell 126 means not executable and 127 means command not found. Depending on pnpm/Node,
+  // 127 reaches us directly or as a structured lifecycle ENOENT. A deliberate application exit
+  // with either code is ambiguous, so neither can certify that the stage ran to a verdict.
+  if (result.commandUnavailable || result.status === 126 || result.status === 127) {
     return { code: INCONCLUSIVE_EXIT, executed: false, reason: "stage-command-unavailable",
       remedy: "the stage command could not execute (shell 126/127 or pnpm ENOENT); its result is unproven" };
   }

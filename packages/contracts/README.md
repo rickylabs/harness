@@ -116,7 +116,7 @@ is a client-side concern.
 
 ## Connection recovery in the 0.4.0 candidate
 
-This source prepares 0.4.0 over published 0.3.0; protocol remains 1 and no wire shape changes.
+The 0.4.0 candidate prepared connection recovery over published 0.3.0; protocol remains 1.
 Packing or merging it is not publication or consumer adoption. The 0.x minor discloses changed
 client behavior: `EventFold.bound` is optional for source compatibility, and old-shaped folds use
 `bound ?? (generation !== null)`. New empty folds explicitly start unbound.
@@ -532,7 +532,8 @@ Orchid-backed roots may carry additive `routeObservedReasons` for `transport`, `
 `tier` and `role`. Each field preserves the receipt's validated `status`, `reasonCode` and `reason`;
 an unreadable or invalid receipt yields `unavailable` / `receipt-unavailable` with null reason text.
 The currently supported source observation is `unknown` / `observer-unavailable` with the writer's
-fixed reason sentence. Requested provider (the router), model and effort remain in `route.requested`.
+fixed reason sentence. Requested provider, model and effort remain in `route.requested`; provider
+does not by itself prove a separate router identity.
 The reason fields do not fill `route.observed` or assert that the requested route actually ran.
 Older producers and native child rows can omit this additive field.
 
@@ -551,3 +552,42 @@ The legacy runs/dispatches members of the CLI envelope remain private telemetry 
 only the new collection after decoding it; do not forward native identifiers from legacy members.
 The draft package must pass the installed-consumer gate and be released through the normal
 owner-controlled process before a downstream application pins its new decoder.
+
+## Per-issue agent trees in the 0.5.0 candidate
+
+`IssueAgentTreeSnapshot` groups the validated `AgentObservation` collection by repository and
+issue, then by opaque stable dispatch ID. Each agent keeps its existing parent evidence, location,
+route evidence, and three separate cost rows. New fields name harness, provider, router, model,
+token budget and its source, quota regime, liveness with explicit unknown, start/end times, and a
+bounded typed history. The decoder rejects native IDs, extra fields, invalid budgets, and partial
+ancestry passed off as complete. A native child provider is not renamed to router, and a root budget
+is not inherited by a child.
+
+Each agent and history event repeats the enclosing dispatch ID so the cockpit can join only to its
+accepted dispatch receipt. The snapshot has a 15-second `validUntil` bound. Host, container and seat
+are individually nullable and distinguish dispatch placement from runtime observation; the current
+producer has no public-safe source for these three and reports typed unavailable values. A terminal
+native outcome reports succeeded, failed or cancelled only when its exact cause is known; an
+ambiguous failure remains unknown. `endedAt` stays unavailable until an exact terminal timestamp
+exists. Missing budget, route, model, quota, time and sanitized transcript
+evidence each carry typed reasons. This shape incorporates the cockpit seat's 2026-09-27 written
+contract agreement; that agreement is coordination evidence, not a runtime source.
+
+`dsh-telemetry issue-agents --watch` emits full JSONL snapshots every five seconds, including
+heartbeats, with a process generation and increasing `sequence`. On restart the source emits a new
+generation beginning at sequence zero. The cockpit backend owns persistence and replay. An
+unreadable source produces an incomplete snapshot with a reason. `--json` gives one diagnostic
+snapshot. Neither command exposes native session IDs or source paths.
+
+`--interval-ms` defaults to 5000 and is capped at 10000 so a normal watch cadence stays within
+the 15-second validity bound. A scan that crosses its own validity deadline emits an incomplete
+snapshot. Public display labels reject slash paths; slash-bearing model IDs remain unavailable
+until a safely attributed grammar is defined.
+
+The existing Orchid writer has no resolved budget field yet; this source reports unavailable/null
+until a validated writer supplies `tokenBudget` and `budgetSource` in its private dispatch record.
+The coordinator decided 2026-09-27 that the route default applies unless the issue overrides it;
+Eric can overrule. Child budgets and router identity need their own attributed evidence. `endedAt`
+remains null because the current native run record has last activity, not an exact terminal time.
+The 0.5.0 package version is release preparation only; the owner-authorized tag described above
+is required before npm publication.
