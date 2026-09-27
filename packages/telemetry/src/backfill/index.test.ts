@@ -103,6 +103,23 @@ describe("backfillFromDisk", () => {
     assert.equal(changed.degraded, true);
     assert.match(changed.notes.join("\n"), /could not be read/);
   });
+  it("fails closed when a Codex session_meta head exceeds the bounded read", async () => {
+    const store = join(root, ".codex", "sessions");
+    const day = join(store, "2026", "09", "27");
+    await mkdir(day, { recursive: true });
+    const id = "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d";
+    await writeFile(join(day, `rollout-2026-09-27T21-25-00-${id}.jsonl`),
+      JSON.stringify({ timestamp: "2026-09-27T21:25:00.000Z", type: "session_meta",
+        payload: { id, base_instructions: "fixture".repeat(10_000) } }) + "\n");
+    const result = await backfillFromDisk({ codexSessions: store }, { limit: 20,
+      codexWindows: [{ startMs: Date.parse("2026-09-27T21:20:00.000Z"), endMs: Date.parse("2026-09-27T21:30:00.000Z") }],
+      codexRootMatches: candidate => candidate === id, maxTranscriptBytes: 8_388_608,
+      maxTotalBytes: 33_554_432 });
+    assert.equal(result.degraded, true);
+    assert.deepEqual(result.runs, []);
+    assert.match(result.notes.join("\n"), /candidate head could not be read/);
+    assert.ok(result.bytesRead <= 65_537);
+  });
   it("refuses a symlink date directory and stops after a bounded number of entries", async () => {
     const store = join(root, ".codex", "sessions");
     const target = join(root, "other");

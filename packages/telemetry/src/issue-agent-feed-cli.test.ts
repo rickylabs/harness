@@ -118,7 +118,9 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     await mkdir(sessions, { recursive: true });
     const rollout = (id: string, parentId: string | null) => JSON.stringify({ timestamp: "2026-09-27T21:25:00.000Z",
       type: "session_meta", payload: { session_id: id, timestamp: "2026-09-27T21:25:00.000Z", cwd: "/fixture",
-        model_provider: "fixture", ...(parentId ? { parent_thread_id: parentId } : {}) } }) + "\n";
+        model_provider: "fixture", base_instructions: "fixture".repeat(3_600),
+        ...(parentId ? { parent_thread_id: parentId } : {}) } }) + "\n";
+    assert.ok(Buffer.byteLength(rollout(rootId, null).split("\n")[0]!) >= 24_000);
     // Native filenames use a local UTC+2 wall clock while receipts and JSONL timestamps use UTC.
     await writeFile(join(sessions, `rollout-2026-09-27T23-25-00-${rootId}.jsonl`), rollout(rootId, null));
     await writeFile(join(sessions, `rollout-2026-09-27T23-26-00-${childId}.jsonl`), rollout(childId, rootId));

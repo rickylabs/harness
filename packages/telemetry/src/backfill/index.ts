@@ -76,7 +76,7 @@ interface CodexHead {
   readonly id: string;
   readonly parentId: string | null;
 }
-const CODEX_HEAD_BYTES = 16_384;
+const CODEX_HEAD_BYTES = 65_536;
 const CODEX_HEAD_CANDIDATES = 128;
 
 /** Read the first session_meta line only; full files, including huge neighbours, stay unopened. */
