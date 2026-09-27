@@ -1,7 +1,7 @@
 /** Project existing dispatch and native telemetry evidence. This module collects nothing. */
 import { createHash } from "node:crypto";
 import { MAX_AGENT_OBSERVATIONS, projectRouteIdentity, readAgentObservations, unavailableAgentCost,
-  type AgentObservation, type AgentObservations, type AgentObservedValue } from "@rickylabs/harness-contracts";
+  unavailableOrchidRouteReasons, type AgentObservation, type AgentObservations, type AgentObservedValue } from "@rickylabs/harness-contracts";
 import { projectAgentCost } from "./agent-cost.js";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
@@ -48,7 +48,8 @@ export function buildAgentObservations(input: {
     if (!owner || !name) { reason = "binding_unavailable"; break; }
     const observedAt = d.observedAt;
     const external = resolveOrchidNativeRoot(d, input.runs)?.id ?? d.external;
-    const revision = digest(JSON.stringify({ dispatch: d.revision, binding: external === null ? null : digest(external) }));
+    const routeObservedReasons = d.routeObservedReasons ?? unavailableOrchidRouteReasons();
+    const revision = digest(JSON.stringify({ dispatch: d.revision, binding: external === null ? null : digest(external), routeObservedReasons }));
     const reference = (value: string | undefined): AgentObservedValue<string> => value === undefined ? missing()
       : { value, reason: null, observedAt, validUntil: null, revision };
     const root: AgentObservation = {
@@ -58,7 +59,7 @@ export function buildAgentObservations(input: {
         ? { state: "unavailable", value: null, reason: "identity_unavailable" }
         : { state: "confirmed-root", value: null, reason: null },
       workspace: reference(d.location?.workspaceId), pane: reference(d.location?.paneId), tab: missing(), terminal: missing(), running: missing(external === null ? "observer-unavailable" : "identity_unavailable"),
-      route: projectRouteIdentity(d.route), cost: unavailableAgentCost(), observedAt, revision,
+      route: projectRouteIdentity(d.route), routeObservedReasons, cost: unavailableAgentCost(), observedAt, revision,
     };
     agents.push(root);
     if (external === null || d.source === null) { reason = "ancestry_unavailable"; continue; }

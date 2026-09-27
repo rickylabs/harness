@@ -4,6 +4,8 @@ import { constants } from "node:fs";
 import { lstat, open, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents";
+import { ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
+  type OrchidRouteObservedReasons } from "@rickylabs/harness-contracts";
 import { readOrchidNativeBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
@@ -20,6 +22,38 @@ const label = (value: unknown): value is string => typeof value === "string" &&
   value.length <= 256 && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value);
 const object = (value: unknown): Record<string, unknown> | null =>
   value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
+/** Receipt reasons are public only after exact source, route and fixed-text validation. */
+async function readRouteObservedReasons(record: string, source: string, model: string): Promise<OrchidRouteObservedReasons> {
+  const unavailable = unavailableOrchidRouteReasons();
+  try {
+    const file = await open(join(record, "receipt.json"), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+    let raw: Buffer;
+    try {
+      const stat = await file.stat();
+      if (!stat.isFile() || (stat.mode & 0o7777) !== 0o600 || stat.size > 16_384) return unavailable;
+      const bytes = Buffer.alloc(16_385);
+      const { bytesRead } = await file.read(bytes, 0, bytes.length, 0);
+      if (bytesRead > 16_384) return unavailable;
+      raw = bytes.subarray(0, bytesRead);
+    } finally { await file.close(); }
+    const receipt = object(JSON.parse(raw.toString("utf8")));
+    const requested = object(receipt?.requested);
+    const observed = object(receipt?.observed);
+    const selected = object(object(receipt?.resolution)?.selected);
+    if (receipt?.schemaVersion !== 1 || requested === null || observed === null ||
+        requested.transport !== source || requested.model !== model || selected?.physicalModel !== model ||
+        typeof requested.effort !== "string" || requested.effort.length > 128 ||
+        Object.keys(observed).sort().join(",") !== [...ORCHID_ROUTE_FIELDS].sort().join(",")) return unavailable;
+    const result = {} as Record<typeof ORCHID_ROUTE_FIELDS[number], OrchidRouteObservedReasons[typeof ORCHID_ROUTE_FIELDS[number]]>;
+    for (const field of ORCHID_ROUTE_FIELDS) {
+      const row = object(observed[field]);
+      if (row === null || Object.keys(row).sort().join(",") !== "reason,reasonCode,status" ||
+          row.status !== "unknown" || row.reasonCode !== "observer-unavailable" || row.reason !== ORCHID_OBSERVER_REASON) return unavailable;
+      result[field] = { status: "unknown", reasonCode: "observer-unavailable", reason: ORCHID_OBSERVER_REASON };
+    }
+    return result as OrchidRouteObservedReasons;
+  } catch { return unavailable; }
+}
 export interface OrchidDispatchRead {
   readonly root: string | undefined;
   readonly reason: OrchidDispatchUnavailableReason | null;
@@ -104,9 +138,10 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         const at = typeof timestamp === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(timestamp) &&
           Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp ? timestamp : undefined;
         if (at === undefined) throw new Error();
+        const routeObservedReasons = await readRouteObservedReasons(record, input.source as string, input.model as string);
         const dispatch: DispatchEvidence = { observedAt: at, revision, linkageBasis: "dispatcher-confirmed", runId: input.runId as string, external: null,
           source: input.source === "codex" || input.source === "claude" ? input.source : null,
-          route, issue: { repo: issue.repo, number: issue.number as number }, parentRunId: null,
+          route, routeObservedReasons, issue: { repo: issue.repo, number: issue.number as number }, parentRunId: null,
           location: { paneId: location.paneId, workspaceId: location.workspaceId },
           dispatchState: input.state as "launching" | "dispatched" | "uncertain" };
         await readOrchidNativeBinding(record, key, dispatch);

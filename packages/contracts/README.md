@@ -528,6 +528,14 @@ known-parent and unavailable-with-reason. Workspace, tab, pane, terminal and run
 nullable value, reason, source time, validity and revision. Dispatch acknowledgement is never a
 running signal. A null validity end asserts no expiry interval; it does not assert current liveness.
 
+Orchid-backed roots may carry additive `routeObservedReasons` for `transport`, `model`, `effort`,
+`tier` and `role`. Each field preserves the receipt's validated `status`, `reasonCode` and `reason`;
+an unreadable or invalid receipt yields `unavailable` / `receipt-unavailable` with null reason text.
+The currently supported source observation is `unknown` / `observer-unavailable` with the writer's
+fixed reason sentence. Requested provider (the router), model and effort remain in `route.requested`.
+The reason fields do not fill `route.observed` or assert that the requested route actually ran.
+Older producers and native child rows can omit this additive field.
+
 Route evidence uses the **single canonical implementation** now published from this package,
 also available at `@rickylabs/harness-contracts/route`. The existing subagents route.ts entry point
 re-exports it. Public cwd is withheld and canonical mismatch/invalid evidence is preserved.
