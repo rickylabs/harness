@@ -4,7 +4,7 @@
 
 `[################----]` **302/376 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-27T22:08:38Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-27T22:11:40Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -48,20 +48,27 @@ Something could be acting on these right now.
 | [#200 E3.10 - The supervise loop: DONE/BLOCKED contract, quota backoff, durable heartbeats](https://github.com/rickylabs/harness/issues/200) | `plan` | `e3` |
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
-| [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `impl-eval` | — |
+| [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 
-## Not on the board (2)
+## Not on the board (1)
 
 Open, and carrying no `status:` label — real work no column can see.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
-| [#381 Dispatcher must write thread goal and sub-agent ancestry](https://github.com/rickylabs/harness/issues/381) | — | — |
 
-## Anomalies (15)
+## Anomalies (16)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+
+**`closed-without-status`**
+
+- **#381** — closed as completed, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -85,7 +92,6 @@ Open, and carrying no `status:` label — real work no column can see.
 **`no-status`**
 
 - **#370** — open item has no status label, so it appears in no column
-- **#381** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -585,7 +591,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR383 feat(telemetry): read Codex threads and stream goal changes (p0)
     shipped              PR384 fix(forge): skill install --dry-run reports a file as created that it does not create
     shipped              PR385 fix(telemetry): surface validated Orchid observed reasons (p0)
-    impl-eval            PR388 feat(contracts): sourced budget and router evidence
+    ready-merge          PR388 feat(contracts): sourced budget and router evidence
 ```
 
 </details>
