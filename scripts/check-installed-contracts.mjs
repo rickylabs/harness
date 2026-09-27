@@ -106,6 +106,8 @@ assert.equal(projectRouteIdentity, routeExport);
 assert.equal(MAX_AGENT_OBSERVATIONS, 256);
 assert.equal(readAgentObservations({schema:1,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',revision:'a'.repeat(64),complete:true,reason:null,agents:[]}).ok, true);
 assert.equal(readIssueAgentTreeSnapshot({schema:1,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',validUntil:'2026-01-01T00:00:15.000Z',revision:'a'.repeat(64),complete:true,reason:null,issues:[]}).ok, true);
+const partialIssue = readIssueAgentTreeSnapshot({schema:1,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',validUntil:'2026-01-01T00:00:15.000Z',revision:'a'.repeat(64),complete:false,reason:'scan_limit',issues:[{repo:{owner:'example',name:'project'},issueNumber:42,complete:false,reason:'scan_limit',dispatches:[]}]});
+assert.equal(partialIssue.ok, true); if (partialIssue.ok) assert.equal(partialIssue.snapshot.issues[0].reason, 'scan_limit');
 assert.deepEqual(readAgentObservations({schema:2,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',revision:'a'.repeat(64),complete:true,reason:null,agents:[]}), {ok:false,reason:'unsupported-schema'});
 console.log(JSON.stringify({ root: true, server: true, protocol: PROTOCOL_VERSION }));\n`);
   const runtime = await run(process.execPath, [join(consumer, "runtime.mjs")], { cwd: consumer, env });
@@ -116,7 +118,7 @@ import { openHub, type Hub, type Delivery } from '@rickylabs/harness-contracts/s
 import { readAgentObservations, readIssueAgentTreeSnapshot, type AgentObservation, type AgentObservationsReading, type IssueAgentTreeSnapshot, type RouteIdentityEvidence } from '@rickylabs/harness-contracts';
 const agents: AgentObservationsReading = readAgentObservations({});
 const issueTree = readIssueAgentTreeSnapshot({});
-function acceptIssueTree(tree: IssueAgentTreeSnapshot): boolean { return tree.complete; }
+function acceptIssueTree(tree: IssueAgentTreeSnapshot): boolean { return tree.issues.every(issue => issue.complete || issue.reason !== null); }
 if (issueTree.ok) acceptIssueTree(issueTree.snapshot);
 function agentRoute(a: AgentObservation): RouteIdentityEvidence { return a.route; }
 if (agents.ok) agents.observation.agents.map(agentRoute);

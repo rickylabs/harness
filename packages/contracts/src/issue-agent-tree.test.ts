@@ -23,7 +23,8 @@ const node = { dispatchId, observation, harness: { value: "codex", source: "disp
   history: [{ dispatchId, kind: "dispatch-observed", at }], historyTruncated: false } as const;
 const snapshot = (): IssueAgentTreeSnapshot => ({ schema: 1, protocol: 1, observedAt: at,
   validUntil: "2026-01-01T00:00:15.000Z", revision: rev, complete: true, reason: null,
-  issues: [{ repo: observation.repo, issueNumber: 42, dispatches: [{ dispatchId, agents: [node] }] }] });
+  issues: [{ repo: observation.repo, issueNumber: 42, complete: true, reason: null,
+    dispatches: [{ dispatchId, agents: [node] }] }] });
 const read = (value: unknown) => readIssueAgentTreeSnapshot(value);
 
 it("decodes a grouped opaque dispatch tree with explicit unknowns", () => {
@@ -77,6 +78,45 @@ it("reads a 0.5.0 frame without routePolicy as typed unavailable", () => {
   assert.equal(result.ok, true);
   if (result.ok) assert.deepEqual(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.routePolicy,
     { value: null, digest: null, source: "unavailable", reason: "source_not_bound" });
+});
+it("retains a complete issue beside a typed incomplete issue", () => {
+  const s = snapshot();
+  const partial = { ...s, complete: false, reason: "ancestry_unavailable" as const,
+    issues: [...s.issues, { repo: { owner: "example", name: "project" }, issueNumber: 43,
+      complete: false, reason: "ancestry_unavailable" as const, dispatches: [] }] };
+  const result = read(partial);
+  assert.equal(result.ok, true);
+  if (result.ok) {
+    assert.equal(result.snapshot.issues.length, 2);
+    assert.equal(result.snapshot.issues[0]?.complete, true);
+    assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents.length, 1);
+    assert.deepEqual(result.snapshot.issues[1], partial.issues[1]);
+  }
+  assert.equal(read({ ...partial, complete: true, reason: null }).ok, false);
+  assert.equal(read({ ...partial, issues: [s.issues[0], { ...partial.issues[1], dispatches: s.issues[0]?.dispatches }] }).ok, false);
+});
+it("normalizes 0.5.1 issue rows without per-issue status as complete", () => {
+  const s = snapshot();
+  const { complete: _complete, reason: _reason, ...legacyIssue } = s.issues[0]!;
+  const result = read({ ...s, issues: [legacyIssue] });
+  assert.equal(result.ok, true);
+  if (result.ok) assert.deepEqual([result.snapshot.issues[0]?.complete, result.snapshot.issues[0]?.reason], [true, null]);
+});
+it("accepts a 0.5.1 dispatch-only ancestry row and normalizes its incomplete issue", () => {
+  const dispatchOnly = { ...observation,
+    parentAgentId: { state: "unavailable", value: null, reason: "identity_unavailable" },
+    running: { ...absent(), reason: "observer-unavailable" },
+    route: projectRouteIdentity({ requested: observation.route.requested,
+      observed: projectRouteIdentity(null).observed }) };
+  const old = { ...snapshot(), complete: false, reason: "ancestry_unavailable",
+    issues: [{ repo: observation.repo, issueNumber: 42, dispatches: [{ dispatchId,
+      agents: [{ ...node, observation: dispatchOnly }] }] }] };
+  const result = read(old);
+  assert.equal(result.ok, true);
+  if (result.ok) assert.deepEqual(result.snapshot.issues[0], { repo: observation.repo, issueNumber: 42,
+    complete: false, reason: "ancestry_unavailable", dispatches: [] });
+  assert.equal(read({ ...old, issues: [{ ...old.issues[0], dispatches: [{ dispatchId,
+    agents: [{ ...node, observation: { ...dispatchOnly, parentAgentId: observation.parentAgentId } }] }] }] }).ok, false);
 });
 it("bounds and orders history, and never treats a last-activity event as endedAt", () => {
   const s = snapshot();

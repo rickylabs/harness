@@ -73,6 +73,9 @@ export interface IssueAgentTreeDispatch {
 export interface IssueAgentTree {
   readonly repo: RepoRef;
   readonly issueNumber: number;
+  /** A failed issue is retained with a typed reason and no unverified tree prefix. */
+  readonly complete: boolean;
+  readonly reason: AgentObservations["reason"];
   readonly dispatches: readonly IssueAgentTreeDispatch[];
 }
 export interface IssueAgentTreeSnapshot {
@@ -236,10 +239,18 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
     if (typeof row.revision !== "string" || !/^[a-f0-9]{64}$/.test(row.revision) || typeof row.complete !== "boolean") return bad();
     if (row.complete ? row.reason !== null : !["source_not_bound", "source_unavailable", "binding_unavailable", "scan_limit", "ancestry_unavailable"].includes(row.reason as string)) return bad();
     const issues: IssueAgentTree[] = [];
-    const all: IssueAgentTreeAgent[] = [];
+    let agentCount = 0;
+    const agentIds = new Set<string>();
     const issueKeys = new Set<string>();
+    const legacyPartials = new Set<number>();
     for (const rawIssue of array(row.issues, MAX_AGENT_OBSERVATIONS)) {
-      const issue = record(rawIssue, ["repo", "issueNumber", "dispatches"]);
+      const legacy = !Object.hasOwn(rawIssue as object, "complete") && !Object.hasOwn(rawIssue as object, "reason");
+      const issue = record(rawIssue, legacy ? ["repo", "issueNumber", "dispatches"] : ["repo", "issueNumber", "complete", "reason", "dispatches"]);
+      const legacyPartial = legacy && !row.complete && row.reason === "ancestry_unavailable";
+      const issueComplete = legacy ? !legacyPartial : issue.complete;
+      const issueReason = legacyPartial ? "ancestry_unavailable" : legacy ? null : issue.reason;
+      if (typeof issueComplete !== "boolean" || (issueComplete ? issueReason !== null :
+          !["source_not_bound", "source_unavailable", "binding_unavailable", "scan_limit", "ancestry_unavailable"].includes(issueReason as string))) return bad();
       const repo = record(issue.repo, ["owner", "name"]);
       if (typeof repo.owner !== "string" || !/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(repo.owner) || repo.owner.length > 39 ||
           typeof repo.name !== "string" || !/^(?!\.{1,2}$)[A-Za-z0-9._-]+$/.test(repo.name) || repo.name.length > 100 ||
@@ -261,18 +272,25 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
           const assignment = record(observed.assignment, ["id", "dispatcher", "basis"]);
           const agentRepo = record(observed.repo, ["owner", "name"]);
           if (assignment.id !== dispatch.dispatchId || agentRepo.owner !== repo.owner || agentRepo.name !== repo.name || observed.issueNumber !== issue.issueNumber) return bad("ambiguous-ancestry");
-          all.push(a);
+          if (agentIds.has(a.observation.agentId)) return bad("ambiguous-ancestry");
+          agentIds.add(a.observation.agentId);
+          agentCount++;
         }
         dispatches.push({ dispatchId: dispatch.dispatchId, agents });
       }
-      if (dispatches.length === 0) return bad();
-      issues.push({ repo: { owner: repo.owner, name: repo.name }, issueNumber: issue.issueNumber, dispatches });
+      if (legacyPartial ? dispatches.length === 0 : issueComplete ? dispatches.length === 0 : dispatches.length !== 0) return bad();
+      if (legacyPartial) legacyPartials.add(issues.length);
+      issues.push({ repo: { owner: repo.owner, name: repo.name }, issueNumber: issue.issueNumber,
+        complete: issueComplete, reason: issueReason as IssueAgentTree["reason"], dispatches });
     }
-    if (all.length > MAX_AGENT_OBSERVATIONS) return bad("oversized");
-    if (row.reason !== null && row.reason !== "ancestry_unavailable" && all.length !== 0) return bad();
-    if (all.length > 0 && (row.complete || row.reason === "ancestry_unavailable")) {
+    if (agentCount > MAX_AGENT_OBSERVATIONS) return bad("oversized");
+    if (row.complete && issues.some(issue => !issue.complete)) return bad();
+    for (let i = 0; i < issues.length; i++) {
+      const issue = issues[i]!;
+      if (!issue.complete && !legacyPartials.has(i)) continue;
+      const all = issue.dispatches.flatMap(dispatch => dispatch.agents);
       const base: AgentObservations = { schema: 1, protocol: 1, observedAt, revision: row.revision,
-        complete: row.complete, reason: row.reason as AgentObservations["reason"],
+        complete: !legacyPartials.has(i), reason: legacyPartials.has(i) ? "ancestry_unavailable" : null,
         agents: all.map(a => a.observation) };
       const read = readAgentObservations(base);
       if (!read.ok) return bad(read.reason === "oversized" ? "oversized" : read.reason === "ambiguous-ancestry" ? "ambiguous-ancestry" : "invalid");
@@ -292,11 +310,9 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
         }
         if (a.routePolicy.value !== null && parent?.state !== "confirmed-root") return bad();
       }
-      for (let i = 0; i < issues.length; i++) {
-        const issue = issues[i]!;
-        issues[i] = { ...issue, dispatches: issue.dispatches.map(dispatch => ({ ...dispatch,
+      issues[i] = legacyPartials.has(i) ? { ...issue, dispatches: [] } :
+        { ...issue, dispatches: issue.dispatches.map(dispatch => ({ ...dispatch,
           agents: dispatch.agents.map(a => ({ ...a, observation: safe.get(a.observation.agentId)! })) })) };
-      }
     }
     const snapshot: IssueAgentTreeSnapshot = { schema: 1, protocol: 1, observedAt, validUntil, revision: row.revision,
       complete: row.complete, reason: row.reason as IssueAgentTreeSnapshot["reason"], issues };

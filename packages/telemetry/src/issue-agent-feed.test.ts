@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { projectRouteIdentity, readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+import { ORCHID_OBSERVER_REASON, projectRouteIdentity, readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { buildAgentObservations } from "./agent-observations.js";
-import { buildIssueAgentTreeSnapshot } from "./issue-agent-feed.js";
+import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
 
@@ -100,4 +100,85 @@ it("withholds a partial native tree instead of publishing a misleading prefix", 
   const snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: [dispatch], runs });
   assert.equal(snapshot.complete, false);
   assert.deepEqual(snapshot.issues, []);
+});
+it("keeps a bound issue when another receipt has no native root", () => {
+  const good = build();
+  const stale = { ...good, complete: false, reason: "ancestry_unavailable" as const, issues: [] };
+  const combined = combineIssueAgentTreeSnapshots({ observedAt: later, entries: [
+    { repo: { owner: "example", name: "project" }, issueNumber: 43, snapshot: stale },
+    { repo: { owner: "example", name: "project" }, issueNumber: 42, snapshot: good },
+  ] });
+  assert.equal(combined.complete, false);
+  assert.equal(combined.reason, "ancestry_unavailable");
+  assert.equal(combined.issues[0]?.issueNumber, 42);
+  assert.equal(combined.issues[0]?.complete, true);
+  assert.equal(combined.issues[0]?.dispatches[0]?.agents.length, 2);
+  assert.deepEqual(combined.issues[1], { repo: { owner: "example", name: "project" }, issueNumber: 43,
+    complete: false, reason: "ancestry_unavailable", dispatches: [] });
+  assert.equal(readIssueAgentTreeSnapshot(combined).ok, true);
+});
+it("retains the first bound issue when aggregate issue count exceeds the contract cap", () => {
+  const good = build();
+  const stale = { ...good, complete: false, reason: "ancestry_unavailable" as const, issues: [] };
+  const entries = [{ repo: { owner: "example", name: "project" }, issueNumber: 42, snapshot: good },
+    ...Array.from({ length: 260 }, (_, i) => ({ repo: { owner: "example", name: "project" },
+      issueNumber: 1000 + i, snapshot: stale }))];
+  const combined = combineIssueAgentTreeSnapshots({ observedAt: later, entries });
+  assert.equal(combined.complete, false);
+  assert.equal(combined.reason, "scan_limit");
+  assert.equal(combined.issues.length, 256);
+  assert.equal(combined.issues[0]?.issueNumber, 42);
+  assert.equal(combined.issues[0]?.dispatches[0]?.agents.length, 2);
+  assert.equal(readIssueAgentTreeSnapshot(combined).ok, true);
+});
+it("retains earlier bound issues when aggregate bytes exceed the contract cap", () => {
+  const good = build();
+  const entries = Array.from({ length: 256 }, (_, i) => {
+    const copy = structuredClone(good) as unknown as {
+      issues: { issueNumber: number; dispatches: { dispatchId: string; agents: {
+        dispatchId: string; observation: { agentId: string; issueNumber: number;
+          assignment: { id: string }; parentAgentId: { state: string; value: string | null } };
+        provider: unknown; model: unknown; location: { host: unknown; container: unknown; seat: unknown };
+        history: { dispatchId: string; kind: string; at: string }[]; historyTruncated: boolean }[] }[] }[] };
+    const issueNumber = 1000 + i;
+    const assignment = `assignment_${(i + 1).toString(16).padStart(64, "0")}`;
+    const rootId = `agent_${(i * 2 + 1).toString(16).padStart(64, "0")}`;
+    const childId = `agent_${(i * 2 + 2).toString(16).padStart(64, "0")}`;
+    const issue = copy.issues[0]!;
+    issue.issueNumber = issueNumber;
+    const dispatch = issue.dispatches[0]!;
+    dispatch.dispatchId = assignment;
+    for (const agent of dispatch.agents) {
+      agent.dispatchId = assignment;
+      agent.observation.issueNumber = issueNumber;
+      agent.observation.assignment.id = assignment;
+      const child = agent.observation.parentAgentId.state === "known-parent";
+      agent.observation.agentId = child ? childId : rootId;
+      if (child) agent.observation.parentAgentId.value = rootId;
+      (agent.observation as unknown as { routeObservedReasons: unknown }).routeObservedReasons =
+        Object.fromEntries(["transport", "model", "effort", "tier", "role"].map(field => [field,
+          { status: "unknown", reasonCode: "observer-unavailable", reason: ORCHID_OBSERVER_REASON }]));
+      for (const field of ["host", "container", "seat"] as const) agent.location[field] =
+        { value: "f".repeat(128), basis: "placement", observedAt: at, reason: null };
+      agent.provider = { value: "f".repeat(128), source: "native", reason: null };
+      agent.model = { value: "f".repeat(128), source: "native", reason: null };
+      agent.history = [{ dispatchId: assignment, kind: "dispatch-observed", at },
+        ...Array.from({ length: 15 }, (_, n) => ({ dispatchId: assignment,
+          kind: "run-activity-observed", at: new Date(Date.parse(at) + n + 1).toISOString() }))];
+      agent.historyTruncated = true;
+    }
+    return { repo: { owner: "example", name: "project" }, issueNumber,
+      snapshot: copy as unknown as typeof good };
+  });
+  const first = readIssueAgentTreeSnapshot(entries[0]!.snapshot);
+  assert.equal(first.ok, true);
+  const combined = combineIssueAgentTreeSnapshots({ observedAt: later, entries,
+    globalReason: "source_unavailable" });
+  assert.equal(combined.complete, false);
+  assert.equal(combined.reason, "source_unavailable");
+  assert.ok(combined.issues.length > 0 && combined.issues.length < 256,
+    `issues=${combined.issues.length} bytes=${Buffer.byteLength(JSON.stringify(combined))}`);
+  assert.equal(combined.issues[0]?.issueNumber, 1000);
+  assert.equal(combined.issues[0]?.complete, true);
+  assert.equal(readIssueAgentTreeSnapshot(combined).ok, true);
 });

@@ -6,7 +6,7 @@
  */
 
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
@@ -32,6 +32,8 @@ const claudeLine = (id: string, at: string) =>
     gitBranch: "orch/divybot-39",
     message: { role: "assistant", model: "claude-opus-5", usage: { input_tokens: 3, output_tokens: 1 } },
   })}\n`;
+const codexLine = (id: string, at: string) => `${JSON.stringify({ timestamp: at, type: "session_meta",
+  payload: { session_id: id, timestamp: at, cwd: "/fixture", model_provider: "fixture" } })}\n`;
 
 async function claudeStore(files: readonly (readonly [string, string])[]): Promise<string> {
   const dir = join(root, ".claude", "projects", "slug");
@@ -54,6 +56,48 @@ async function writtenAt(store: string, name: string, iso: string): Promise<void
 }
 
 describe("backfillFromDisk", () => {
+  it("reads only canonical Codex rollouts inside the receipt date window", async () => {
+    const store = join(root, ".codex", "sessions");
+    const current = join(store, "2026", "09", "27"), old = join(store, "2025", "01", "01");
+    await mkdir(current, { recursive: true }); await mkdir(old, { recursive: true });
+    const id = "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d";
+    await writeFile(join(current, `rollout-2026-09-27T21-00-00-${id}.jsonl`), codexLine(id, "2026-09-27T21:00:00.000Z"));
+    await writeFile(join(current, `rollout-2026-09-27T22-00-00-${id}.jsonl`), "{bad json\n");
+    await writeFile(join(old, `rollout-2025-01-01T00-00-00-${id}.jsonl`), "{bad json\n");
+    const result = await backfillFromDisk({ codexSessions: store }, { limit: 20,
+      codexWindows: [{ startMs: Date.parse("2026-09-27T20:50:00.000Z"), endMs: Date.parse("2026-09-27T21:10:00.000Z") }],
+      maxTranscriptBytes: 8_388_608, maxTotalBytes: 33_554_432 });
+    assert.equal(result.degraded, false);
+    assert.equal(result.runs.length, 1);
+    assert.equal(result.runs[0]?.id, id);
+    assert.ok(result.bytesRead > 0);
+    const capped = await backfillFromDisk({ codexSessions: store }, { limit: 20,
+      codexWindows: [{ startMs: Date.parse("2026-09-27T20:50:00.000Z"), endMs: Date.parse("2026-09-27T21:10:00.000Z") }],
+      maxTranscriptBytes: 1, maxTotalBytes: 1 });
+    assert.equal(capped.degraded, true);
+    assert.deepEqual(capped.runs, []);
+    assert.match(capped.notes.join("\n"), /read bound/);
+  });
+  it("refuses a symlink date directory and stops after a bounded number of entries", async () => {
+    const store = join(root, ".codex", "sessions");
+    const target = join(root, "other");
+    await mkdir(join(store, "2026", "09"), { recursive: true });
+    await mkdir(target);
+    await symlink(target, join(store, "2026", "09", "27"));
+    const window = [{ startMs: Date.parse("2026-09-27T20:00:00.000Z"), endMs: Date.parse("2026-09-27T21:00:00.000Z") }];
+    const linked = await backfillFromDisk({ codexSessions: store }, { limit: 20, codexWindows: window,
+      maxTranscriptBytes: 8_388_608, maxTotalBytes: 33_554_432 });
+    assert.equal(linked.degraded, true);
+    assert.deepEqual(linked.runs, []);
+    await rm(join(store, "2026", "09", "27"));
+    const day = join(store, "2026", "09", "27");
+    await mkdir(day);
+    await Promise.all(Array.from({ length: 1001 }, (_, i) => writeFile(join(day, `unrelated-${i}`), "")));
+    const crowded = await backfillFromDisk({ codexSessions: store }, { limit: 20, codexWindows: window,
+      maxTranscriptBytes: 8_388_608, maxTotalBytes: 33_554_432 });
+    assert.equal(crowded.degraded, true);
+    assert.match(crowded.notes.join("\n"), /scan_limit/);
+  });
   it("says a store was not configured, rather than reporting it as empty", () => {
     // The distinction the whole package turns on.
     return backfillFromDisk({}).then(({ runs, notes }) => {
