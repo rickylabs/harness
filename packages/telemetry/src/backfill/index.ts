@@ -11,7 +11,8 @@
  * notes say it in prose, and prose is not something a caller can branch on.
  */
 
-import { readdir, readFile, stat } from "node:fs/promises";
+import { lstat, open, opendir, readdir, readFile, stat } from "node:fs/promises";
+import { constants } from "node:fs";
 import { join } from "node:path";
 
 import type { RunRecord } from "../model.js";
@@ -42,11 +43,17 @@ export interface BackfillOptions {
    * wearing the costume of a bound.
    */
   readonly sinceMs?: number | null;
+  /** Issue feed only: inspect canonical Codex rollout filenames in these receipt windows. */
+  readonly codexWindows?: readonly { readonly startMs: number; readonly endMs: number }[];
+  /** Issue feed only: a transcript over either byte bound is withheld, with degraded=true. */
+  readonly maxTranscriptBytes?: number;
+  readonly maxTotalBytes?: number;
 }
 
 export interface BackfillResult {
   readonly runs: readonly RunRecord[];
   readonly notes: readonly string[];
+  readonly bytesRead: number;
   /**
    * True when something that should have been read was not.
    *
@@ -64,10 +71,27 @@ interface Transcript {
   readonly mtimeMs: number;
 }
 
+/** Read at most the remaining byte budget, including a sentinel byte for a growing file. */
+async function readBounded(path: string, maxBytes: number): Promise<string | null> {
+  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const info = await file.stat();
+    if (!info.isFile() || info.size > maxBytes) return null;
+    const bytes = Buffer.allocUnsafe(maxBytes + 1);
+    let size = 0;
+    while (size < bytes.length) {
+      const { bytesRead } = await file.read(bytes, size, bytes.length - size, size);
+      if (bytesRead === 0) break;
+      size += bytesRead;
+    }
+    return size > maxBytes ? null : bytes.subarray(0, size).toString("utf8");
+  } finally { await file.close(); }
+}
+
 type Scan =
   | { readonly kind: "absent" }
   | { readonly kind: "unreadable"; readonly reason: string }
-  | { readonly kind: "found"; readonly files: readonly Transcript[]; readonly skipped: number };
+  | { readonly kind: "found"; readonly files: readonly Transcript[]; readonly skipped: number; readonly limited?: boolean };
 
 /** The machine-readable part of a thrown error. No message, and therefore no path in it. */
 function errorCode(error: unknown): string {
@@ -125,6 +149,59 @@ async function collectJsonl(root: string): Promise<Scan> {
   return { kind: "found", files, skipped };
 }
 
+/** Visit only the UTC day directories and rollout creation times named by bound receipts. */
+async function collectCodexWindows(root: string, windows: NonNullable<BackfillOptions["codexWindows"]>, limit: number): Promise<Scan> {
+  try {
+    if (!(await lstat(root)).isDirectory()) return { kind: "unreadable", reason: "not a directory" };
+  } catch (error) {
+    const reason = errorCode(error);
+    return reason === "ENOENT" ? { kind: "absent" } : { kind: "unreadable", reason };
+  }
+  if (windows.length === 0 || windows.length > 8 || windows.some(w => !Number.isSafeInteger(w.startMs) ||
+      !Number.isSafeInteger(w.endMs) || w.endMs < w.startMs || w.endMs - w.startMs > 86_400_000 + 600_000)) {
+    return { kind: "unreadable", reason: "invalid receipt window" };
+  }
+  const dates = new Set<string>();
+  for (const window of windows) {
+    for (let day = Math.floor(window.startMs / 86_400_000); day <= Math.floor(window.endMs / 86_400_000); day++) {
+      dates.add(new Date(day * 86_400_000).toISOString().slice(0, 10));
+    }
+  }
+  const files: Transcript[] = [];
+  let skipped = 0;
+  let limited = false;
+  for (const date of [...dates].sort()) {
+    const [year, month, day] = date.split("-");
+    const dir = join(root, year!, month!, day!);
+    let dirHandle;
+    try {
+      for (const part of [join(root, year!), join(root, year!, month!), dir]) {
+        if (!(await lstat(part)).isDirectory()) throw new Error("not a directory");
+      }
+      dirHandle = await opendir(dir);
+    }
+    catch (error) { if (errorCode(error) !== "ENOENT") skipped++; continue; }
+    let entriesSeen = 0;
+    try {
+      for await (const entry of dirHandle) {
+        if (++entriesSeen > 1000) { limited = true; break; }
+        if (!entry.name.startsWith("rollout-")) continue;
+        const match = /^rollout-(\d{4}-\d\d-\d\d)T(\d\d)-(\d\d)-(\d\d)-[0-9a-f-]{36}\.jsonl$/.exec(entry.name);
+        if (!entry.isFile() || !match || match[1] !== date) { skipped++; continue; }
+        const created = Date.parse(`${match[1]}T${match[2]}:${match[3]}:${match[4]}.000Z`);
+        if (!Number.isFinite(created) || !windows.some(w => created >= w.startMs && created <= w.endMs)) continue;
+        const path = join(dir, entry.name);
+        const found = await lstat(path).catch(() => null);
+        if (!found?.isFile()) skipped++;
+        else files.push({ path, mtimeMs: found.mtimeMs });
+        if (files.length > limit) break;
+      }
+    } catch { skipped++; }
+    if (limited || files.length > limit) break;
+  }
+  return { kind: "found", files, skipped, limited };
+}
+
 /** How many runs to read per seam before stopping. A fleet accumulates thousands. */
 export const DEFAULT_SCAN_LIMIT = 500;
 
@@ -143,6 +220,7 @@ export async function backfillFromDisk(
   const runs: RunRecord[] = [];
   const notes: string[] = [];
   let degraded = false;
+  let bytesRead = 0;
 
   type Parser = (text: string, origin: string) => ParsedTranscript<RunRecord>;
   const seams: readonly [string | undefined, string, Parser][] = [
@@ -156,7 +234,8 @@ export async function backfillFromDisk(
       notes.push(`${seam}: no store configured — skipped, not empty`);
       continue;
     }
-    const scan = await collectJsonl(root);
+    const scan = seam === "codex" && options.codexWindows !== undefined
+      ? await collectCodexWindows(root, options.codexWindows, limit) : await collectJsonl(root);
     if (scan.kind === "absent") {
       notes.push(`${seam}: no store on this box — nothing has run here`);
       continue;
@@ -171,6 +250,7 @@ export async function backfillFromDisk(
       notes.push(`${seam}: ${scan.skipped} path(s) under the store could not be inspected`);
       degraded = true;
     }
+    if (scan.limited) { notes.push(`${seam}: directory entry scan_limit`); degraded = true; }
 
     const fresh = sinceMs === null ? scan.files : scan.files.filter((f) => f.mtimeMs >= sinceMs);
     const ordered = [...fresh].sort(
@@ -186,17 +266,26 @@ export async function backfillFromDisk(
     let unreadable = 0;
     let empty = 0;
     let crashed = 0;
+    let limited = 0;
     // Degradation is counted across the whole seam rather than reported per file: one operator-
     // readable line beats five hundred, and the count is what says whether to care.
     const partial = new Map<string, { files: number; lines: number }>();
     for (const { path } of ordered.slice(0, limit)) {
       let text: string;
       try {
-        text = await readFile(path, "utf8");
+        if (options.maxTranscriptBytes !== undefined || options.maxTotalBytes !== undefined) {
+          const budget = Math.min(options.maxTranscriptBytes ?? Infinity, (options.maxTotalBytes ?? Infinity) - bytesRead);
+          const bounded = await readBounded(path, budget);
+          if (bounded === null) { limited++; continue; }
+          text = bounded;
+        } else {
+          text = await readFile(path, "utf8");
+        }
       } catch {
         unreadable += 1;
         continue;
       }
+      bytesRead += Buffer.byteLength(text);
       let parsed: ParsedTranscript<RunRecord>;
       try {
         parsed = parse(text, path);
@@ -218,6 +307,7 @@ export async function backfillFromDisk(
       notes.push(`${seam}: ${unreadable} transcript(s) could not be read`);
       degraded = true;
     }
+    if (limited > 0) { notes.push(`${seam}: ${limited} transcript(s) exceeded the read bound`); degraded = true; }
     // Not degraded: the file was read completely and had no session identity in it, which is an
     // answer about the transcript rather than a gap in what this scan saw.
     if (empty > 0) notes.push(`${seam}: ${empty} transcript(s) carried no session identity`);
@@ -263,7 +353,7 @@ export async function backfillFromDisk(
   // Deterministic order: newest activity first, ties broken by id so two runs updated in the same
   // millisecond do not swap places between snapshots.
   runs.sort((a, b) => compareStrings(b.updatedAt, a.updatedAt) || compareStrings(a.id, b.id));
-  return { runs, notes, degraded };
+  return { runs, notes, degraded, bytesRead };
 }
 
 /** The conventional store locations under a home directory. */

@@ -3,15 +3,13 @@ import { randomUUID, createHash } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
 import { homedir } from "node:os";
 import type { Writable } from "node:stream";
-import { MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, readIssueAgentTreeSnapshot,
-  type IssueAgentTreeFrame, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, readIssueAgentTreeSnapshot,
+  type IssueAgentTree, type IssueAgentTreeFrame, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { buildAgentObservations } from "./agent-observations.js";
-import { readDispatchEvidence } from "./dispatch-evidence.js";
-import { buildIssueAgentTreeSnapshot } from "./issue-agent-feed.js";
-import { foldLiveEvents, mergeLiveRuns, readLiveLog } from "./live.js";
-import { logPaths, resolveObservability } from "./observability.js";
-import { ORCHID_DISPATCH_ROOT, bindOrchidDispatchEvidence, readOrchidDispatches } from "./orchid-dispatch.js";
+import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
+import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
+import type { DispatchEvidence } from "./dispatch-evidence.js";
 
 export interface IssueAgentFeedOptions {
   readonly home: string;
@@ -20,22 +18,59 @@ export interface IssueAgentFeedOptions {
   readonly now: string;
 }
 
-/** Read every source anew; a degraded read never inherits yesterday's complete tree. */
+const PRE_DISPATCH_MS = 600_000;
+const MAX_DISPATCH_AGE_MS = 86_400_000;
+const MAX_ISSUE_DISPATCHES = 8;
+const MAX_ISSUE_FILES = 20;
+const MAX_TRANSCRIPT_BYTES = 8 * 1_048_576;
+const MAX_FRAME_TRANSCRIPT_BYTES = 32 * 1_048_576;
+
+/** Read each bound issue independently; one stale receipt never blanks its neighbours. */
 export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Promise<IssueAgentTreeSnapshot> {
-  const scan = await backfillFromDisk(defaultRoots(options.home), { limit: options.limit });
-  const log = await readLiveLog(logPaths(resolveObservability(options.home, options.env)), options.now);
-  const merged = mergeLiveRuns(scan.runs, foldLiveEvents(log.files));
+  if (options.env[ORCHID_DISPATCH_ROOT] === undefined) return unavailableSnapshot(options.now, "source_not_bound");
   const orchid = await readOrchidDispatches(options.env[ORCHID_DISPATCH_ROOT]);
-  const bound = bindOrchidDispatchEvidence(orchid.dispatches, readDispatchEvidence(log.files));
-  const degraded = scan.degraded || log.degraded || merged.degraded || orchid.degraded || bound.degraded;
-  const observations = buildAgentObservations({ dispatches: bound.dispatches, runs: merged.runs,
-    observedAt: options.now, sourceBound: options.env[ORCHID_DISPATCH_ROOT] !== undefined,
-    dispatchComplete: !log.degraded && !orchid.degraded && !bound.degraded,
-    nativeComplete: !scan.degraded && !merged.degraded });
-  if (degraded && observations.complete) {
-    return unavailableSnapshot(options.now, "source_unavailable");
+  const nowMs = Date.parse(options.now);
+  if (!Number.isFinite(nowMs) || orchid.reason !== null) return unavailableSnapshot(options.now, "source_unavailable");
+  const groups = new Map<string, { repo: IssueAgentTree["repo"]; issueNumber: number; dispatches: DispatchEvidence[] }>();
+  for (const dispatch of orchid.dispatches) {
+    if (!dispatch.issue) continue;
+    const [owner, name] = dispatch.issue.repo.split("/");
+    if (!owner || !name) continue;
+    const key = `${owner.toLowerCase()}/${name.toLowerCase()}#${dispatch.issue.number}`;
+    let group = groups.get(key);
+    if (!group) { group = { repo: { owner, name }, issueNumber: dispatch.issue.number, dispatches: [] }; groups.set(key, group); }
+    group.dispatches.push(dispatch);
   }
-  return buildIssueAgentTreeSnapshot({ observations, dispatches: bound.dispatches, runs: merged.runs });
+  const ordered = [...groups.values()].sort((a, b) =>
+    Math.max(...b.dispatches.map(d => Date.parse(d.observedAt!))) - Math.max(...a.dispatches.map(d => Date.parse(d.observedAt!))));
+  const entries: { repo: IssueAgentTree["repo"]; issueNumber: number; snapshot: IssueAgentTreeSnapshot }[] = [];
+  let remainingBytes = MAX_FRAME_TRANSCRIPT_BYTES;
+  for (const group of ordered.slice(0, MAX_AGENT_OBSERVATIONS)) {
+    const entry = { repo: group.repo, issueNumber: group.issueNumber,
+      snapshot: unavailableSnapshot(options.now, "binding_unavailable") };
+    entries.push(entry);
+    if (group.dispatches.some(d => d.source !== "codex" || d.observedAt === undefined)) continue;
+    if (group.dispatches.length > MAX_ISSUE_DISPATCHES || remainingBytes <= 0 ||
+        group.dispatches.some(d => nowMs > Date.parse(d.observedAt!) + MAX_DISPATCH_AGE_MS)) {
+      entry.snapshot = unavailableSnapshot(options.now, "scan_limit"); continue;
+    }
+    const windows = group.dispatches.map(d => ({ startMs: Date.parse(d.observedAt!) - PRE_DISPATCH_MS, endMs: nowMs }));
+    const codexSessions = defaultRoots(options.home).codexSessions;
+    const scan = await backfillFromDisk(codexSessions === undefined ? {} : { codexSessions },
+      { limit: Math.min(options.limit, MAX_ISSUE_FILES), codexWindows: windows,
+        maxTranscriptBytes: MAX_TRANSCRIPT_BYTES, maxTotalBytes: remainingBytes });
+    remainingBytes -= scan.bytesRead;
+    if (scan.degraded) {
+      entry.snapshot = unavailableSnapshot(options.now,
+        scan.notes.some(note => note.includes("only the") || note.includes("read bound") || note.includes("scan_limit")) ? "scan_limit" : "source_unavailable");
+      continue;
+    }
+    const observations = buildAgentObservations({ dispatches: group.dispatches, runs: scan.runs,
+      observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true });
+    entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs: scan.runs });
+  }
+  return combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,
+    globalReason: groups.size > MAX_AGENT_OBSERVATIONS ? "scan_limit" : orchid.degraded ? "source_unavailable" : null });
 }
 
 function unavailableSnapshot(at: string, reason: IssueAgentTreeSnapshot["reason"] = "source_unavailable"): IssueAgentTreeSnapshot {

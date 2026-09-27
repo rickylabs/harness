@@ -1,6 +1,7 @@
 /** Pure per-issue projection of the existing dispatcher/native ancestry join. */
 import { createHash } from "node:crypto";
-import { readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_HISTORY, ISSUE_AGENT_TREE_FRESH_MS,
+import { readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_HISTORY, MAX_AGENT_OBSERVATIONS,
+  MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS,
   projectRouteIdentity,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
   type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
@@ -116,6 +117,7 @@ export function buildIssueAgentTreeSnapshot(input: {
     agents.push(node(observation, dispatch, run, observations.observedAt));
   }
   const rows: IssueAgentTree[] = [...issues.values()].map(issue => ({ repo: issue.repo, issueNumber: issue.issueNumber,
+    complete: true, reason: null,
     dispatches: [...issue.dispatches].map(([dispatchId, agents]) => ({ dispatchId,
       agents: agents.sort((a, b) => a.observation.agentId.localeCompare(b.observation.agentId)) }))
       .sort((a, b) => a.dispatchId.localeCompare(b.dispatchId)) }))
@@ -126,4 +128,52 @@ export function buildIssueAgentTreeSnapshot(input: {
     complete: observations.complete, reason: observations.reason, issues: rows };
   const decoded = readIssueAgentTreeSnapshot(snapshot);
   return decoded.ok ? decoded.snapshot : empty(decoded.reason === "oversized" ? "scan_limit" : "ancestry_unavailable");
+}
+
+/** Preserve good issue trees when a different receipt cannot establish ancestry. */
+export function combineIssueAgentTreeSnapshots(input: {
+  readonly observedAt: string;
+  readonly entries: readonly { readonly repo: IssueAgentTree["repo"]; readonly issueNumber: number;
+    readonly snapshot: IssueAgentTreeSnapshot }[];
+  readonly globalReason?: IssueAgentTreeSnapshot["reason"];
+}): IssueAgentTreeSnapshot {
+  const issues: IssueAgentTree[] = [];
+  const agentIds = new Set<string>();
+  const issueKeys = new Set<string>();
+  let overflow = false;
+  const fits = (candidate: IssueAgentTree): boolean => issues.length < MAX_AGENT_OBSERVATIONS &&
+    agentIds.size + candidate.dispatches.reduce((count, dispatch) => count + dispatch.agents.length, 0) <= MAX_AGENT_OBSERVATIONS &&
+    Buffer.byteLength(JSON.stringify({ schema: 1, protocol: 1, observedAt: input.observedAt,
+      validUntil: input.observedAt, revision: "a".repeat(64), complete: false,
+      reason: "ancestry_unavailable", issues: [...issues, candidate] })) <= MAX_ISSUE_AGENT_TREE_BYTES;
+  for (const entry of input.entries) {
+    const key = `${entry.repo.owner.toLowerCase()}/${entry.repo.name.toLowerCase()}#${entry.issueNumber}`;
+    if (issueKeys.has(key)) { overflow = true; continue; }
+    issueKeys.add(key);
+    const read = readIssueAgentTreeSnapshot(entry.snapshot);
+    const issue = read.ok && read.snapshot.complete && read.snapshot.observedAt === input.observedAt &&
+      read.snapshot.issues.length === 1 && read.snapshot.issues[0]?.repo.owner === entry.repo.owner &&
+      read.snapshot.issues[0]?.repo.name === entry.repo.name && read.snapshot.issues[0]?.issueNumber === entry.issueNumber
+      ? read.snapshot.issues[0] : null;
+    const ids = issue?.dispatches.flatMap(dispatch => dispatch.agents.map(agent => agent.observation.agentId)) ?? [];
+    const unavailable: IssueAgentTree = { repo: entry.repo, issueNumber: entry.issueNumber, complete: false,
+      reason: read.ok && !read.snapshot.complete ? read.snapshot.reason : "binding_unavailable", dispatches: [] };
+    const candidate = issue !== null && ids.every(id => !agentIds.has(id)) ? issue : unavailable;
+    if (fits(candidate)) {
+      issues.push(candidate);
+      if (candidate.complete) ids.forEach(id => agentIds.add(id));
+    } else if (fits({ ...unavailable, reason: "scan_limit" })) {
+      issues.push({ ...unavailable, reason: "scan_limit" });
+      overflow = true;
+    } else overflow = true;
+  }
+  issues.sort((a, b) => a.repo.owner.localeCompare(b.repo.owner) || a.repo.name.localeCompare(b.repo.name) || a.issueNumber - b.issueNumber);
+  const firstIncomplete = issues.find(issue => !issue.complete);
+  const reason = input.globalReason ?? (overflow ? "scan_limit" : firstIncomplete?.reason ?? null);
+  const complete = reason === null;
+  const snapshot: IssueAgentTreeSnapshot = { schema: 1, protocol: 1, observedAt: input.observedAt,
+    validUntil: new Date(Date.parse(input.observedAt) + ISSUE_AGENT_TREE_FRESH_MS).toISOString(),
+    revision: digest(JSON.stringify({ issues, reason })), complete, reason, issues };
+  const read = readIssueAgentTreeSnapshot(snapshot);
+  return read.ok ? read.snapshot : { ...snapshot, complete: false, reason: "source_unavailable", issues: [] };
 }

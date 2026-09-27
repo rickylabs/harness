@@ -553,7 +553,7 @@ only the new collection after decoding it; do not forward native identifiers fro
 The draft package must pass the installed-consumer gate and be released through the normal
 owner-controlled process before a downstream application pins its new decoder.
 
-## Per-issue agent trees in the 0.5.1 candidate
+## Per-issue agent trees in the 0.5.2 candidate
 
 `IssueAgentTreeSnapshot` groups the validated `AgentObservation` collection by repository and
 issue, then by opaque stable dispatch ID. Each agent keeps its existing parent evidence, location,
@@ -579,6 +579,17 @@ generation beginning at sequence zero. The cockpit backend owns persistence and 
 unreadable source produces an incomplete snapshot with a reason. `--json` gives one diagnostic
 snapshot. Neither command exposes native session IDs or source paths.
 
+Each issue now carries `complete` and a typed `reason`. A complete issue retains its whole
+dispatch tree even when a different issue cannot bind; an incomplete issue has an empty
+`dispatches` array and its own reason. The top-level snapshot remains incomplete while any issue
+is incomplete. The 0.5.2 decoder accepts older 0.5.1 issue rows without these two fields:
+complete rows stay complete, while validated dispatch-only ancestry rows become typed incomplete
+issues with an empty tree. The producer only
+scans Codex rollout files in bounded receipt time windows: receipts older than 24 hours become
+`scan_limit` rows, and recent issues have an eight-dispatch, 20-file, 8 MiB-per-file and 32 MiB
+per-frame read bound. Other native transports report `binding_unavailable` until their Orchid
+binding is implemented.
+
 `--interval-ms` defaults to 5000 and is capped at 10000 so a normal watch cadence stays within
 the 15-second validity bound. A scan that crosses its own validity deadline emits an incomplete
 snapshot. Public display labels reject slash paths; slash-bearing model IDs remain unavailable
@@ -595,5 +606,5 @@ matrix digest. Missing or invalid receipts leave it typed unavailable. The decod
 The coordinator decided 2026-09-27 that the route default applies unless the issue overrides it;
 Eric can overrule. Child budgets and nonnative router identity need their own attributed evidence. `endedAt`
 remains null because the current native run record has last activity, not an exact terminal time.
-The 0.5.1 package version is release preparation only; the owner-authorized tag described above
+The 0.5.2 package version is release preparation only; the owner-authorized tag described above
 is required before npm publication.
