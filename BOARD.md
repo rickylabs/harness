@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **301/373 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
+`[################----]` **301/375 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-27T20:27:50Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-27T21:23:38Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (21)
+## Moving now (22)
 
 Something could be acting on these right now.
 
@@ -31,6 +31,7 @@ Something could be acting on these right now.
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `impl-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees](https://github.com/rickylabs/harness/issues/373) | `impl-eval` | — |
+| [PR386 feat(telemetry): versioned per-issue agent feed](https://github.com/rickylabs/harness/pull/386) | `augment-review` | `e9` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -58,9 +59,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#381 Dispatcher must write thread goal and sub-agent ancestry](https://github.com/rickylabs/harness/issues/381) | — | — |
 
-## Anomalies (13)
+## Anomalies (16)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
+
+**`closed-but-unshipped`**
+
+- **#386** — closed on GitHub but sits in augment-review; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -77,6 +82,8 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#345** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#346** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#347** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#386** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#387** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 
 **`no-status`**
@@ -107,18 +114,19 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 107/131 done · 3 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
+`[#########---]` 107/133 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[------------]` 0/2 done · 1 running · 1 queued | `impl` |
 | _(no epic)_ | `[#########---]` 95/115 done · 2 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>23 filed, nothing started</summary>
+<summary>24 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -128,6 +136,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#290 Spike S12 — Evidence path: transcript and quota meters for UHP runs](https://github.com/rickylabs/harness/issues/290) | `triage` | `e3` |
 | [#331 Incident: three sweeps, sixteen candidates, sixteen live — and the only unrecovered one was found by naming convention](https://github.com/rickylabs/harness/issues/331) | `triage` | — |
 | [#361 fix(divybot): attribute quota refusals to transport and failed condition](https://github.com/rickylabs/harness/issues/361) | `triage` | — |
+| [#387 Proof: one native child in the issue-agent feed](https://github.com/rickylabs/harness/issues/387) | `triage` | `e9` |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
 | [#264 E6 — Define creation capability ownership before exposing P2 actions](https://github.com/rickylabs/harness/issues/264) | `triage` | `e6` |
 | [#148 E10.8 — Publish the public documentation site](https://github.com/rickylabs/harness/issues/148) | `triage` | `e10` |
@@ -154,7 +163,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  301/373 done · 21 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [################----]  301/375 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -435,7 +444,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  107/131 done · 3 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [################----]  107/133 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -458,6 +467,11 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #346 E11: independently evaluate final receipt delta and blocked-decision check (p0)
     shipped              #347 E11: independently evaluate the upstream divybot matrix-hook plan (p0)
     research             #349 Brainstorm: dual-agent mailbox pilot contract (draft)
+
+  E9 — Telemetry: the "status ?" killer #39  [impl]  (epic is in M1 — dsh coordinator foundation)
+    [----------------] 0/2 done · 1 running · 1 queued
+    augment-review       PR386 feat(telemetry): versioned per-issue agent feed (p0)
+    triage               #387 Proof: one native child in the issue-agent feed (p1)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
