@@ -53,6 +53,11 @@ export function resolveOrchidNativeRoot(dispatch: DispatchEvidence, runs: readon
   const matches = runs.filter(run => keyFor(run.source, run.id) === key);
   return matches.length === 1 && matches[0]!.parentId === null ? matches[0]! : null;
 }
+/** Match a head identity to Orchid's private root without revealing either identity or key. */
+export function matchesOrchidNativeRootIdentity(dispatch: DispatchEvidence, id: string): boolean {
+  const key = bindings.get(dispatch)?.key;
+  return key !== null && key !== undefined && dispatch.source === "codex" && keyFor("codex", id) === key;
+}
 /** Private reader rows cannot acquire credentials from the legacy exported DispatchResult surface. */
 export function hasOrchidNativeBindingBoundary(dispatch: DispatchEvidence): boolean {
   return bindings.has(dispatch);

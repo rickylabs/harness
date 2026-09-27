@@ -45,6 +45,8 @@ export interface BackfillOptions {
   readonly sinceMs?: number | null;
   /** Issue feed only: inspect canonical Codex rollout filenames in these receipt windows. */
   readonly codexWindows?: readonly { readonly startMs: number; readonly endMs: number }[];
+  /** Issue feed only: private Orchid root predicate; no native identity enters public output. */
+  readonly codexRootMatches?: (id: string) => boolean;
   /** Issue feed only: a transcript over either byte bound is withheld, with degraded=true. */
   readonly maxTranscriptBytes?: number;
   readonly maxTotalBytes?: number;
@@ -69,6 +71,82 @@ export interface BackfillResult {
 interface Transcript {
   readonly path: string;
   readonly mtimeMs: number;
+}
+interface CodexHead {
+  readonly id: string;
+  readonly parentId: string | null;
+}
+const CODEX_HEAD_BYTES = 16_384;
+const CODEX_HEAD_CANDIDATES = 128;
+
+/** Read the first session_meta line only; full files, including huge neighbours, stay unopened. */
+async function readCodexHead(path: string): Promise<{ head: CodexHead | null; bytesRead: number }> {
+  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    if (!(await file.stat()).isFile()) return { head: null, bytesRead: 0 };
+    const bytes = Buffer.allocUnsafe(CODEX_HEAD_BYTES + 1);
+    let size = 0, lineEnd = -1;
+    while (size < bytes.length && lineEnd < 0) {
+      const { bytesRead } = await file.read(bytes, size, Math.min(512, bytes.length - size), size);
+      if (bytesRead === 0) break;
+      lineEnd = bytes.subarray(size, size + bytesRead).indexOf(10);
+      if (lineEnd >= 0) lineEnd += size;
+      size += bytesRead;
+    }
+    if (size > CODEX_HEAD_BYTES) return { head: null, bytesRead: size };
+    if (lineEnd < 0) lineEnd = size; // A final JSONL record may omit its trailing newline.
+    const line = JSON.parse(bytes.subarray(0, lineEnd).toString("utf8")) as unknown;
+    if (typeof line !== "object" || line === null || Array.isArray(line) ||
+        (line as Record<string, unknown>).type !== "session_meta") return { head: null, bytesRead: size };
+    const payload = (line as Record<string, unknown>).payload;
+    if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return { head: null, bytesRead: size };
+    const p = payload as Record<string, unknown>;
+    const str = (value: unknown) => typeof value === "string" && value.length > 0 ? value : null;
+    const id = str(p.id) ?? str(p.session_id);
+    if (id === null) return { head: null, bytesRead: size };
+    const source = typeof p.source === "object" && p.source !== null && !Array.isArray(p.source) ? p.source as Record<string, unknown> : null;
+    const subagent = typeof source?.subagent === "object" && source.subagent !== null && !Array.isArray(source.subagent)
+      ? source.subagent as Record<string, unknown> : null;
+    const spawned = typeof subagent?.thread_spawn === "object" && subagent.thread_spawn !== null && !Array.isArray(subagent.thread_spawn)
+      ? subagent.thread_spawn as Record<string, unknown> : null;
+    const parents = new Set<string>();
+    for (const candidate of [p.parent_thread_id, spawned?.parent_thread_id]) {
+      if (candidate === undefined || candidate === null) continue;
+      const parent = str(candidate);
+      if (parent === null || parent.trim() !== parent) return { head: null, bytesRead: size };
+      parents.add(parent);
+    }
+    if (parents.size > 1 || parents.has(id)) return { head: null, bytesRead: size };
+    return { head: { id, parentId: parents.values().next().value ?? null }, bytesRead: size };
+  } finally { await file.close(); }
+}
+
+async function selectCodexIssue(files: readonly Transcript[], rootMatches: (id: string) => boolean,
+  limit: number, remainingBytes: number): Promise<{ selected: readonly { file: Transcript; head: CodexHead }[];
+    bytesRead: number; limited: boolean; unreadable: boolean }> {
+  const heads: { file: Transcript; head: CodexHead }[] = [];
+  const ids = new Set<string>();
+  let bytesRead = 0, limited = false, unreadable = false;
+  for (const file of [...files].sort((a, b) => compareStrings(a.path, b.path))) {
+    if (bytesRead + CODEX_HEAD_BYTES + 1 > remainingBytes) { limited = true; break; }
+    try {
+      const result = await readCodexHead(file.path);
+      bytesRead += result.bytesRead;
+      if (result.head === null || ids.has(result.head.id)) { unreadable = true; continue; }
+      ids.add(result.head.id);
+      heads.push({ file, head: result.head });
+    } catch { unreadable = true; }
+  }
+  const selectedIds = new Set(heads.filter(row => rootMatches(row.head.id)).map(row => row.head.id));
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const row of heads) if (row.head.parentId !== null && selectedIds.has(row.head.parentId) && !selectedIds.has(row.head.id)) {
+      selectedIds.add(row.head.id); changed = true;
+    }
+  }
+  const selected = heads.filter(row => selectedIds.has(row.head.id));
+  if (selected.length > limit) limited = true;
+  return { selected: selected.slice(0, limit), bytesRead, limited, unreadable };
 }
 
 /** Read at most the remaining byte budget, including a sentinel byte for a growing file. */
@@ -149,8 +227,9 @@ async function collectJsonl(root: string): Promise<Scan> {
   return { kind: "found", files, skipped };
 }
 
-/** Visit only the UTC day directories and rollout creation times named by bound receipts. */
-async function collectCodexWindows(root: string, windows: NonNullable<BackfillOptions["codexWindows"]>, limit: number): Promise<Scan> {
+/** Visit an offset-safe envelope around receipt dates; filename clocks may be local to another process. */
+async function collectCodexWindows(root: string, windows: NonNullable<BackfillOptions["codexWindows"]>, limit: number,
+  offsetEnvelopeMs: number): Promise<Scan> {
   try {
     if (!(await lstat(root)).isDirectory()) return { kind: "unreadable", reason: "not a directory" };
   } catch (error) {
@@ -163,7 +242,8 @@ async function collectCodexWindows(root: string, windows: NonNullable<BackfillOp
   }
   const dates = new Set<string>();
   for (const window of windows) {
-    for (let day = Math.floor(window.startMs / 86_400_000); day <= Math.floor(window.endMs / 86_400_000); day++) {
+    for (let day = Math.floor((window.startMs - offsetEnvelopeMs) / 86_400_000);
+      day <= Math.floor((window.endMs + offsetEnvelopeMs) / 86_400_000); day++) {
       dates.add(new Date(day * 86_400_000).toISOString().slice(0, 10));
     }
   }
@@ -189,7 +269,8 @@ async function collectCodexWindows(root: string, windows: NonNullable<BackfillOp
         const match = /^rollout-(\d{4}-\d\d-\d\d)T(\d\d)-(\d\d)-(\d\d)-[0-9a-f-]{36}\.jsonl$/.exec(entry.name);
         if (!entry.isFile() || !match || match[1] !== date) { skipped++; continue; }
         const created = Date.parse(`${match[1]}T${match[2]}:${match[3]}:${match[4]}.000Z`);
-        if (!Number.isFinite(created) || !windows.some(w => created >= w.startMs && created <= w.endMs)) continue;
+        if (!Number.isFinite(created) || !windows.some(w =>
+          created >= w.startMs - offsetEnvelopeMs && created <= w.endMs + offsetEnvelopeMs)) continue;
         const path = join(dir, entry.name);
         const found = await lstat(path).catch(() => null);
         if (!found?.isFile()) skipped++;
@@ -235,7 +316,9 @@ export async function backfillFromDisk(
       continue;
     }
     const scan = seam === "codex" && options.codexWindows !== undefined
-      ? await collectCodexWindows(root, options.codexWindows, limit) : await collectJsonl(root);
+      ? await collectCodexWindows(root, options.codexWindows,
+        options.codexRootMatches === undefined ? limit : CODEX_HEAD_CANDIDATES,
+        options.codexRootMatches === undefined ? 0 : 86_400_000) : await collectJsonl(root);
     if (scan.kind === "absent") {
       notes.push(`${seam}: no store on this box — nothing has run here`);
       continue;
@@ -252,7 +335,21 @@ export async function backfillFromDisk(
     }
     if (scan.limited) { notes.push(`${seam}: directory entry scan_limit`); degraded = true; }
 
-    const fresh = sinceMs === null ? scan.files : scan.files.filter((f) => f.mtimeMs >= sinceMs);
+    let candidateFiles = scan.files;
+    const expectedHeads = new Map<string, CodexHead>();
+    if (seam === "codex" && options.codexRootMatches !== undefined) {
+      if (options.codexWindows === undefined || candidateFiles.length > CODEX_HEAD_CANDIDATES) {
+        notes.push("codex: candidate scan_limit"); degraded = true; continue;
+      }
+      const selected = await selectCodexIssue(candidateFiles, options.codexRootMatches, limit,
+        (options.maxTotalBytes ?? Infinity) - bytesRead);
+      bytesRead += selected.bytesRead;
+      if (selected.limited) { notes.push("codex: head or selected-file scan_limit"); degraded = true; }
+      if (selected.unreadable) { notes.push("codex: candidate head could not be read"); degraded = true; }
+      candidateFiles = selected.selected.map(row => row.file);
+      for (const row of selected.selected) expectedHeads.set(row.file.path, row.head);
+    }
+    const fresh = sinceMs === null ? candidateFiles : candidateFiles.filter((f) => f.mtimeMs >= sinceMs);
     const ordered = [...fresh].sort(
       (a, b) => b.mtimeMs - a.mtimeMs || compareStrings(a.path, b.path),
     );
@@ -295,6 +392,10 @@ export async function backfillFromDisk(
         // Finding F-4 on #105, where one `null` line reached a field access and ended the scan.
         crashed += 1;
         continue;
+      }
+      const expected = expectedHeads.get(path);
+      if (expected !== undefined && (parsed.run?.id !== expected.id || parsed.run.parentId !== expected.parentId)) {
+        unreadable += 1; continue;
       }
       for (const note of parsed.notes) {
         const seen = partial.get(note.reason) ?? { files: 0, lines: 0 };
