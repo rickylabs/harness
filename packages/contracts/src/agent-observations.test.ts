@@ -1,7 +1,8 @@
 /** Synthetic public identities and measurements only. */
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { readAgentObservations, unavailableAgentCost, MAX_AGENT_OBSERVATIONS, type AgentObservation, type AgentObservations } from "./agent-observations.js";
+import { readAgentObservations, unavailableAgentCost, unavailableOrchidRouteReasons, ORCHID_OBSERVER_REASON,
+  MAX_AGENT_OBSERVATIONS, type AgentObservation, type AgentObservations } from "./agent-observations.js";
 import { compareRouteIdentity, projectRouteIdentity, ROUTE_FIELDS } from "./route.js";
 const at = "2026-01-01T00:00:00.000Z";
 const rev = "a".repeat(64);
@@ -53,6 +54,16 @@ it("does not accept raw native ids, path references, spoofed route evidence or n
   refusal(envelope([{ ...fixture(), route: { ...fixture().route, status: "known" } }]), "invalid");
   refusal({ ...envelope(), agents: [{ ...fixture(), running: { ...absent(), reason: null } }] }, "invalid");
   refusal({ ...envelope(), agents: [{ ...fixture(), nativeId: "PRIVATE-CANARY" }] }, "invalid");
+});
+it("retains only validated per-field Orchid reason text", () => {
+  const reasons = { ...unavailableOrchidRouteReasons(), model: {
+    status: "unknown", reasonCode: "observer-unavailable", reason: ORCHID_OBSERVER_REASON,
+  } as const };
+  const read = readAgentObservations(envelope([{ ...fixture(), routeObservedReasons: reasons }]));
+  assert.ok(read.ok);
+  assert.equal(read.observation.agents[0]?.routeObservedReasons?.model.reason, ORCHID_OBSERVER_REASON);
+  refusal({ ...envelope(), agents: [{ ...fixture(), routeObservedReasons: { ...reasons,
+    model: { ...reasons.model, reason: "PRIVATE-CANARY" } } }] }, "invalid");
 });
 it("bounds total encoded bytes, independently of agent count", () => {
   const long = "x".repeat(128);

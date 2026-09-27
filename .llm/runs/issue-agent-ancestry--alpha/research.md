@@ -1,0 +1,10 @@
+# issue-agent-ancestry--alpha — research
+
+Summary: the issue-to-native join and Codex goal writer already exist; the observed reason text stops at Orchid's private receipt.
+
+- Orchid `cmd/divybot/matrix.go:357-388` writes one `observed` row per requested transport, model, effort, tier and role, currently `unknown / observer-unavailable` with a fixed sentence. `cmd/divybot/matrix.go:393-416,726-732` writes the stable dispatch ID and issue into a private snapshot.
+- Orchid `cmd/divybot/matrix.go:383,726-728` records requested effort in the receipt and effective effort in the dispatch snapshot. They can differ and must not be compared by the reader.
+- Orchid `cmd/divybot/native_goal.go:55-74,164-176,216-251` derives the Codex thread objective and optional budget, writes an active goal, and confirms its update notification. The matrix route has no token budget field (`cmd/divybot/matrix.go:75-86`); an absent `max-tokens` override stays null (`cmd/divybot/native_goal.go:55-59`). The coordinator's 2026-09-27 decision now requires a route default, with issue override precedence and null only when both are absent.
+- Harness `packages/telemetry/src/orchid-native-binding.ts:76-87` already resolves one private same-source root; `packages/telemetry/src/agent-observations.ts:44-102` traverses its native parent chain. [#370](https://github.com/rickylabs/harness/issues/370) measured 348 resolvable parents in 1,351 runs. [#373](https://github.com/rickylabs/harness/issues/373) still needs a new authorized live proof.
+- Harness `packages/telemetry/src/orchid-dispatch.ts:66-126` read only `dispatch.json` at baseline. [#379](https://github.com/rickylabs/harness/issues/379) identifies the missing canonical reason path. `packages/contracts/src/agent-observations.ts:209-225` owns the public decoder.
+- Runtime provenance: Orchid PR [#13](https://github.com/rickylabs/orchid/pull/13) merged at 2026-09-16 07:24:04 UTC. This seat cannot access the running container; binary age and quota/refusal state are unverified.

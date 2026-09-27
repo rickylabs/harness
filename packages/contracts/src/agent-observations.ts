@@ -20,6 +20,17 @@ export type AgentObservedValue<T> = {
   | { readonly value: T; readonly reason: null }
   | { readonly value: null; readonly reason: AgentUnavailableReason }
 );
+/** Orchid's independent route observation, kept separate from the requested route. */
+export const ORCHID_ROUTE_FIELDS = ["transport", "model", "effort", "tier", "role"] as const;
+export const ORCHID_OBSERVER_REASON = "No independent runtime observation is available." as const;
+export type OrchidRouteObservedReason =
+  | { readonly status: "unknown"; readonly reasonCode: "observer-unavailable"; readonly reason: typeof ORCHID_OBSERVER_REASON }
+  | { readonly status: "unavailable"; readonly reasonCode: "receipt-unavailable"; readonly reason: null };
+export type OrchidRouteObservedReasons = Record<typeof ORCHID_ROUTE_FIELDS[number], OrchidRouteObservedReason>;
+export function unavailableOrchidRouteReasons(): OrchidRouteObservedReasons {
+  const absent = () => ({ status: "unavailable", reasonCode: "receipt-unavailable", reason: null }) as const;
+  return { transport: absent(), model: absent(), effort: absent(), tier: absent(), role: absent() };
+}
 type CostRow<K, U, S, Scope, M> = {
   readonly kind: K; readonly unit: U; readonly source: S; readonly scope: Scope;
   readonly observedAt: string | null; readonly validUntil: string | null; readonly revision: string | null;
@@ -49,6 +60,8 @@ export interface AgentObservation {
   readonly terminal: AgentObservedValue<string>;
   readonly running: AgentObservedValue<boolean>;
   readonly route: RouteIdentityEvidence;
+  /** Additive in schema 1. Absent on older producers and native children without an Orchid receipt. */
+  readonly routeObservedReasons?: OrchidRouteObservedReasons;
   readonly cost: AgentCost;
   readonly observedAt: string;
   readonly revision: string;
@@ -169,6 +182,19 @@ function route(value: unknown): RouteIdentityEvidence {
   if (r.status !== expected.status || r.detail !== expected.detail || JSON.stringify(mismatches) !== JSON.stringify(expected.mismatches) || JSON.stringify(invalid) !== JSON.stringify(expected.invalid)) return bad();
   return expected;
 }
+function routeObservedReasons(value: unknown): OrchidRouteObservedReasons {
+  const fields = record(value, ORCHID_ROUTE_FIELDS);
+  const result = {} as Record<typeof ORCHID_ROUTE_FIELDS[number], OrchidRouteObservedReason>;
+  for (const field of ORCHID_ROUTE_FIELDS) {
+    const row = record(fields[field], ["status", "reasonCode", "reason"]);
+    if (row.status === "unknown" && row.reasonCode === "observer-unavailable" && row.reason === ORCHID_OBSERVER_REASON) {
+      result[field] = { status: row.status, reasonCode: row.reasonCode, reason: row.reason };
+    } else if (row.status === "unavailable" && row.reasonCode === "receipt-unavailable" && row.reason === null) {
+      result[field] = { status: row.status, reasonCode: row.reasonCode, reason: null };
+    } else return bad();
+  }
+  return result as OrchidRouteObservedReasons;
+}
 function cost(value: unknown, at: string): AgentCost {
   const r = record(value, ["subscriptionHeadroom", "meteredSpend", "runTokens"]);
   const expected = unavailableAgentCost();
@@ -207,7 +233,7 @@ function cost(value: unknown, at: string): AgentCost {
   return result;
 }
 function agent(value: unknown, capturedAt: string): AgentObservation {
-  const r = record(value, ["agentId", "repo", "issueNumber", "assignment", "parentAgentId", "workspace", "tab", "pane", "terminal", "running", "route", "cost", "observedAt", "revision"]);
+  const r = record(value, ["agentId", "repo", "issueNumber", "assignment", "parentAgentId", "workspace", "tab", "pane", "terminal", "running", "route", "cost", "observedAt", "revision"], ["routeObservedReasons"]);
   const repo = record(r.repo, ["owner", "name"]);
   const a = record(r.assignment, ["id", "dispatcher", "basis"]);
   if (a.dispatcher !== "divybot" || a.basis !== "dispatcher-confirmed") return bad();
@@ -220,7 +246,9 @@ function agent(value: unknown, capturedAt: string): AgentObservation {
   }, issueNumber, assignment: { id: text(a.id, /^assignment_[a-f0-9]{64}$/), dispatcher: a.dispatcher, basis: a.basis },
     parentAgentId: parent(r.parentAgentId), workspace: observed(r.workspace, capturedAt, id), tab: observed(r.tab, capturedAt, id),
     pane: observed(r.pane, capturedAt, id), terminal: observed(r.terminal, capturedAt, id),
-    running: observed(r.running, capturedAt, v => typeof v === "boolean" ? v : bad()), route: route(r.route), cost: cost(r.cost, capturedAt), observedAt, revision: revision(r.revision) };
+    running: observed(r.running, capturedAt, v => typeof v === "boolean" ? v : bad()), route: route(r.route),
+    ...(r.routeObservedReasons === undefined ? {} : { routeObservedReasons: routeObservedReasons(r.routeObservedReasons) }),
+    cost: cost(r.cost, capturedAt), observedAt, revision: revision(r.revision) };
 }
 /** Dispatch-only evidence cannot certify native ancestry, runtime identity, liveness or usage. */
 function dispatchOnly(a: AgentObservation): boolean {

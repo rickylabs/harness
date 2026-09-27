@@ -745,6 +745,11 @@ snapshot after reading. Native identity is held only as an in-memory private has
 to `external` or any JSON field; legacy log evidence cannot replace or revive this binding.
 Missing, malformed or unmatched bindings remain dispatch-only. Until that reference is bound, a dispatch-only row retains the requested route, has null native
 parent and observed route values, and reports unknown execution with `observer-unavailable`.
+The private Orchid `receipt.json` is also read with a bounded, 0600, no-symlink check. Its observed
+status and fixed reason text are carried in `routeObservedReasons` only when the transport and
+physical model match the dispatch snapshot. Requested effort may differ from effective dispatch
+effort and is kept separate. Invalid or absent receipts expose only
+`receipt-unavailable`; no raw receipt, path or native identity crosses the public boundary.
 The collection says complete:false / ancestry_unavailable. A mixed collection containing runtime
 observations still requires complete ancestry; it cannot fall back to dispatch-only evidence.
 Source time is the receipt timestamp when present, otherwise its file modification time; it

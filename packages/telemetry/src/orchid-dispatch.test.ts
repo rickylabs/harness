@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
 import { readOrchidDispatches, bindOrchidDispatchEvidence } from "./orchid-dispatch.js";
+import { buildAgentObservations } from "./agent-observations.js";
+import { readAgentObservations } from "@rickylabs/harness-contracts";
 const key = "a".repeat(64);
 const fixture = { schemaVersion: 1, runId: "orchid-" + key,
   issue: { repo: "example/inbox", number: 42 }, parentRunId: null, source: "codex",
@@ -15,8 +17,56 @@ async function setup() {
   const dir = join(root, key, "record");
   await mkdir(dir, { recursive: true, mode: 0o700 });
   const file = join(dir, "dispatch.json");
-  return { root, file, write: (value: unknown) => writeFile(file, JSON.stringify(value), { mode: 0o600 }) };
+  return { root, file, record: dir, write: (value: unknown) => writeFile(file, JSON.stringify(value), { mode: 0o600 }) };
 }
+it("carries validated Orchid observed reasons and withholds corrupt receipt text", async () => {
+  const s = await setup();
+  const reason = "No independent runtime observation is available.";
+  const receipt = { schemaVersion: 1, resolution: { sourceRevision: "a".repeat(40), digest: "b".repeat(64),
+    resolvedAt: "2026-01-01T00:00:00.000Z", selected: { logicalModel: "fixture-logical-model", physicalModel: "fixture-model" } },
+    requested: { transport: "codex", model: "fixture-model", effort: "medium", tier: "fixture", role: "fixture" },
+    observed: Object.fromEntries(["transport", "model", "effort", "tier", "role"].map(field => [field,
+      { status: "unknown", reasonCode: "observer-unavailable", reason }])) };
+  try {
+    await s.write(fixture);
+    const path = join(s.record, "receipt.json");
+    await writeFile(path, JSON.stringify(receipt), { mode: 0o600 });
+    const first = (await readOrchidDispatches(s.root)).dispatches[0];
+    assert.equal(first?.routeObservedReasons?.model.reason, reason);
+    assert.equal(first?.routeObservedReasons?.transport.reasonCode, "observer-unavailable");
+    // Orchid's requested effort can differ from the effective dispatch effort.
+    assert.equal(receipt.requested.effort, "medium");
+    assert.equal(fixture.effort, "high");
+    const publicTree = buildAgentObservations({ dispatches: [first!], runs: [], observedAt: new Date().toISOString(),
+      sourceBound: true, dispatchComplete: true, nativeComplete: true });
+    assert.equal(publicTree.agents[0]?.routeObservedReasons?.model.reason, reason);
+    assert.equal(readAgentObservations(publicTree).ok, true);
+    await writeFile(path, JSON.stringify({ ...receipt, requested: { ...receipt.requested, model: "wrong-model" } }));
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.routeObservedReasons?.model.status, "unavailable");
+    await writeFile(path, JSON.stringify({ ...receipt, resolution: { ...receipt.resolution,
+      selected: { ...receipt.resolution.selected, physicalModel: "wrong-model" } } }));
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.routeObservedReasons?.model.status, "unavailable");
+    await writeFile(path, JSON.stringify({ ...receipt, observed: { ...receipt.observed,
+      model: { status: "unknown", reasonCode: "observer-unavailable", reason: "PRIVATE-CANARY" } } }));
+    const invalid = (await readOrchidDispatches(s.root)).dispatches[0];
+    assert.equal(invalid?.routeObservedReasons?.model.status, "unavailable");
+    assert.ok(!JSON.stringify(invalid).includes("PRIVATE-CANARY"));
+    await writeFile(path, JSON.stringify(receipt));
+    await chmod(path, 0o644);
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.routeObservedReasons?.model.status, "unavailable");
+    await chmod(path, 0o600);
+    await rm(path);
+    const target = join(s.record, "receipt-target.json");
+    await writeFile(target, JSON.stringify(receipt), { mode: 0o600 });
+    await symlink(target, path);
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.routeObservedReasons?.model.status, "unavailable");
+    await rm(path);
+    const oversized = JSON.stringify({ ...receipt, padding: "x".repeat(16_385 - JSON.stringify({ ...receipt, padding: "" }).length) });
+    assert.equal(Buffer.byteLength(oversized), 16_385);
+    await writeFile(path, oversized, { mode: 0o600 });
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.routeObservedReasons?.model.status, "unavailable");
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
 it("joins exact inbox issue and pane to the dispatch without inventing router or native identity", async () => {
   const s = await setup();
   try {

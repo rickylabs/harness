@@ -1,5 +1,6 @@
 /** Reads dispatch receipts from the existing telemetry log; no collection or inferred joins. */
 import { projectRouteIdentity, type RouteIdentityEvidence } from "@rickylabs/subagents";
+import type { OrchidRouteObservedReasons } from "@rickylabs/harness-contracts";
 import type { LiveFile } from "./live.js";
 import type { RunSource } from "./model.js";
 
@@ -8,6 +9,7 @@ export interface DispatchEvidence {
   readonly external: string | null;
   readonly source: RunSource | null;
   readonly route: RouteIdentityEvidence;
+  readonly routeObservedReasons?: OrchidRouteObservedReasons;
   readonly observedAt?: string;
   readonly revision?: string;
   readonly linkageBasis?: "dispatcher-confirmed";
