@@ -1,7 +1,7 @@
 /** Reads dispatch receipts from the existing telemetry log; no collection or inferred joins. */
 import { projectRouteIdentity, type RouteIdentityEvidence } from "@rickylabs/subagents";
 import type { OrchidRouteObservedReasons } from "@rickylabs/harness-contracts";
-import type { AgentBudget } from "@rickylabs/harness-contracts";
+import type { AgentBudget, AgentRoutePolicy, AgentTreeValue } from "@rickylabs/harness-contracts";
 import type { LiveFile } from "./live.js";
 import type { RunSource } from "./model.js";
 
@@ -23,6 +23,10 @@ export interface DispatchEvidence {
   readonly harness?: "codex" | "claude" | "agy";
   /** Validated from Orchid's bound private dispatch record when the writer supplies it. */
   readonly budget?: AgentBudget;
+  /** Actual gateway, derived only from a validated native CLI dispatch source. */
+  readonly router?: AgentTreeValue;
+  /** Bound private matrix receipt, distinct from the gateway. */
+  readonly routePolicy?: AgentRoutePolicy;
 
 }
 

@@ -1,0 +1,5 @@
+# Drift
+
+- 2026-09-27 21:53 UTC — Discovery sharpened the evidence source before product mutation: `dispatch.json.source` already identifies the native codex/claude CLI transport, and the bound `receipt.json.resolution.digest` already names the matrix route digest. Coordinator Fork R1 permits `direct` from an explicit native CLI dispatch. The implementation can read those existing fields, avoiding a new Orchid writer dependency. The independent reviewer is assessing this refinement before the gate.
+- 2026-09-27 21:54 UTC — Stage F reviewer found the original plan overrequired new Orchid writer fields. Amended Decision 2 to use validated `dispatch.json.source` for codex/claude `direct` only, Decision 3 to use bound `receipt.json.resolution.digest`, and S1 to test actual collocation. No product mutation had begun.
+- 2026-09-27 21:55 UTC — Stage F also required separate `supervisor.md`, `research.md`, and `context-pack.md`; added them with cited merged-source findings and current status. The earlier drift entry already records the plan changes.
