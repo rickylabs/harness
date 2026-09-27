@@ -1,0 +1,278 @@
+/** Per-issue dispatch trees. Every identity here is opaque; no native session key or path is public. */
+import { readAgentObservations, MAX_AGENT_OBSERVATIONS, AGENT_UNAVAILABLE_REASONS, type AgentObservation,
+  type AgentObservations, type AgentUnavailableReason } from "./agent-observations.js";
+import type { RepoRef } from "./snapshot.js";
+
+export const ISSUE_AGENT_TREE_SCHEMA = 1 as const;
+export const ISSUE_AGENT_TREE_FRESH_MS = 15_000;
+export const MAX_ISSUE_AGENT_TREE_BYTES = 2_097_152;
+export const MAX_AGENT_HISTORY = 16;
+export const AGENT_HISTORY_KINDS = ["dispatch-observed", "run-started-observed", "run-activity-observed"] as const;
+export type AgentHistoryKind = typeof AGENT_HISTORY_KINDS[number];
+export interface AgentHistoryEvent { readonly dispatchId: string; readonly kind: AgentHistoryKind; readonly at: string }
+export type AgentTreeValueSource = "dispatch" | "native" | "unavailable";
+export type AgentTreeValue =
+  | { readonly value: string; readonly source: "dispatch" | "native"; readonly reason: null }
+  | { readonly value: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
+export type AgentBudget =
+  | { readonly tokenLimit: number; readonly source: "issue-override" | "route-default"; readonly reason: null }
+  | { readonly tokenLimit: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
+export type AgentQuotaRegime =
+  | { readonly value: "subscription" | "metered" | "local"; readonly reason: null }
+  | { readonly value: null; readonly reason: AgentUnavailableReason };
+export type AgentTreeLiveness =
+  | { readonly state: "unknown"; readonly evidence: null; readonly observedAt: null; readonly reason: AgentUnavailableReason }
+  | { readonly state: "running"; readonly evidence: "runtime-observation"; readonly observedAt: string; readonly reason: null }
+  | { readonly state: "ended"; readonly evidence: "native-outcome"; readonly observedAt: string; readonly reason: null };
+export type AgentPlacementValue =
+  | { readonly value: string; readonly basis: "placement" | "runtime"; readonly observedAt: string; readonly reason: null }
+  | { readonly value: null; readonly basis: "unavailable"; readonly observedAt: null; readonly reason: AgentUnavailableReason };
+export interface AgentTreeLocation {
+  readonly host: AgentPlacementValue;
+  readonly container: AgentPlacementValue;
+  readonly seat: AgentPlacementValue;
+}
+export type AgentTerminalOutcome =
+  | { readonly value: "succeeded" | "failed" | "cancelled"; readonly source: "native-outcome"; readonly observedAt: string; readonly reason: null }
+  | { readonly value: null; readonly source: "unavailable"; readonly observedAt: null; readonly reason: AgentUnavailableReason };
+
+export interface IssueAgentTreeAgent {
+  /** Equals both enclosing dispatchId and observation.assignment.id. */
+  readonly dispatchId: string;
+  /** Existing validated ancestry, location, route and separate cost rows. */
+  readonly observation: AgentObservation;
+  readonly harness: AgentTreeValue;
+  readonly provider: AgentTreeValue;
+  /** Provider is not a router. This remains unavailable without an explicit router observation. */
+  readonly router: AgentTreeValue;
+  readonly model: AgentTreeValue;
+  readonly location: AgentTreeLocation;
+  readonly budget: AgentBudget;
+  readonly quotaRegime: AgentQuotaRegime;
+  readonly liveness: AgentTreeLiveness;
+  readonly terminalOutcome: AgentTerminalOutcome;
+  readonly startedAt: string | null;
+  readonly startedAtReason: AgentUnavailableReason | null;
+  /** Last activity is never treated as an end timestamp. */
+  readonly endedAt: string | null;
+  readonly endedAtReason: AgentUnavailableReason | null;
+  /** No sanitized excerpt source exists yet. */
+  readonly transcript: { readonly value: null; readonly reason: "source_not_bound" };
+  readonly history: readonly AgentHistoryEvent[];
+  readonly historyTruncated: boolean;
+}
+export interface IssueAgentTreeDispatch {
+  readonly dispatchId: string;
+  readonly agents: readonly IssueAgentTreeAgent[];
+}
+export interface IssueAgentTree {
+  readonly repo: RepoRef;
+  readonly issueNumber: number;
+  readonly dispatches: readonly IssueAgentTreeDispatch[];
+}
+export interface IssueAgentTreeSnapshot {
+  readonly schema: 1;
+  readonly protocol: 1;
+  readonly observedAt: string;
+  /** A stopped 5-second producer is stale after 15 seconds. */
+  readonly validUntil: string;
+  readonly revision: string;
+  /** Dispatch/native ancestry coverage, not a claim that every optional field is observed. */
+  readonly complete: boolean;
+  readonly reason: AgentObservations["reason"];
+  readonly issues: readonly IssueAgentTree[];
+}
+/** A restarted producer chooses a new generation and begins at sequence zero with a full snapshot. */
+export interface IssueAgentTreeFrame {
+  readonly type: "snapshot";
+  readonly generation: string;
+  readonly sequence: number;
+  readonly snapshot: IssueAgentTreeSnapshot;
+}
+export type IssueAgentTreeReading =
+  | { readonly ok: true; readonly snapshot: IssueAgentTreeSnapshot }
+  | { readonly ok: false; readonly reason: "invalid" | "oversized" | "ambiguous-ancestry" | "unsupported-schema" };
+
+class Invalid extends Error { constructor(readonly reason: Exclude<IssueAgentTreeReading, { ok: true }>["reason"] = "invalid") { super(reason); } }
+const bad = (reason?: Invalid["reason"]): never => { throw new Invalid(reason); };
+function record(value: unknown, keys: readonly string[]): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Object.getPrototypeOf(value) !== Object.prototype) return bad();
+  const own = Reflect.ownKeys(value);
+  if (own.length !== keys.length || keys.some(key => !own.includes(key))) return bad();
+  const out: Record<string, unknown> = {};
+  for (const key of keys) {
+    const desc = Object.getOwnPropertyDescriptor(value, key);
+    if (!desc || !("value" in desc) || !desc.enumerable) return bad();
+    out[key] = desc.value;
+  }
+  return out;
+}
+function array(value: unknown, cap: number): unknown[] {
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype || value.length > cap) return bad(value instanceof Array && value.length > cap ? "oversized" : "invalid");
+  if (Reflect.ownKeys(value).length !== value.length + 1) return bad();
+  return Array.from({ length: value.length }, (_, i) => {
+    const desc = Object.getOwnPropertyDescriptor(value, String(i));
+    if (!desc || !("value" in desc) || !desc.enumerable) return bad();
+    return desc.value;
+  });
+}
+function stamp(value: unknown): string {
+  if (typeof value !== "string" || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) ||
+      !Number.isFinite(Date.parse(value)) || new Date(value).toISOString() !== value) return bad();
+  return value;
+}
+function label(value: unknown): string {
+  if (typeof value !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value) || value.includes("..")) return bad();
+  return value;
+}
+function reason(value: unknown): AgentUnavailableReason {
+  if (typeof value !== "string" || !AGENT_UNAVAILABLE_REASONS.includes(value as AgentUnavailableReason)) return bad();
+  return value as AgentUnavailableReason;
+}
+function valueRow(value: unknown): AgentTreeValue {
+  const row = record(value, ["value", "source", "reason"]);
+  if (row.source === "unavailable" && row.value === null) return { value: null, source: "unavailable", reason: reason(row.reason) };
+  if ((row.source !== "dispatch" && row.source !== "native") || row.reason !== null) return bad();
+  return { value: label(row.value), source: row.source, reason: null };
+}
+function placement(value: unknown, capturedAt: string): AgentPlacementValue {
+  const row = record(value, ["value", "basis", "observedAt", "reason"]);
+  if (row.value === null && row.basis === "unavailable" && row.observedAt === null) {
+    return { value: null, basis: "unavailable", observedAt: null, reason: reason(row.reason) };
+  }
+  if ((row.basis !== "placement" && row.basis !== "runtime") || row.reason !== null) return bad();
+  const observedAt = stamp(row.observedAt);
+  if (observedAt > capturedAt) return bad();
+  return { value: label(row.value), basis: row.basis, observedAt, reason: null };
+}
+function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<IssueAgentTreeAgent, "observation"> & { readonly observation: unknown } {
+  const row = record(value, ["dispatchId", "observation", "harness", "provider", "router", "model", "location", "budget", "quotaRegime", "liveness", "terminalOutcome", "startedAt", "startedAtReason", "endedAt", "endedAtReason", "transcript", "history", "historyTruncated"]);
+  if (row.dispatchId !== dispatchId) return bad("ambiguous-ancestry");
+  const budget = record(row.budget, ["tokenLimit", "source", "reason"]);
+  let decodedBudget: AgentBudget;
+  if (budget.tokenLimit === null && budget.source === "unavailable") decodedBudget = { tokenLimit: null, source: "unavailable", reason: reason(budget.reason) };
+  else if ((budget.source === "issue-override" || budget.source === "route-default") &&
+    typeof budget.tokenLimit === "number" && Number.isSafeInteger(budget.tokenLimit) && budget.tokenLimit > 0 && budget.reason === null) {
+    decodedBudget = { tokenLimit: budget.tokenLimit, source: budget.source, reason: null };
+  } else return bad();
+  const quota = record(row.quotaRegime, ["value", "reason"]);
+  let quotaRegime: AgentQuotaRegime;
+  if (quota.value === null) quotaRegime = { value: null, reason: reason(quota.reason) };
+  else if (["subscription", "metered", "local"].includes(quota.value as string) && quota.reason === null) {
+    quotaRegime = { value: quota.value as "subscription" | "metered" | "local", reason: null };
+  } else return bad();
+  const locationRow = record(row.location, ["host", "container", "seat"]);
+  const location: AgentTreeLocation = { host: placement(locationRow.host, capturedAt),
+    container: placement(locationRow.container, capturedAt), seat: placement(locationRow.seat, capturedAt) };
+  const live = record(row.liveness, ["state", "evidence", "observedAt", "reason"]);
+  let liveness: AgentTreeLiveness;
+  if (live.state === "unknown" && live.evidence === null && live.observedAt === null) liveness = { state: "unknown", evidence: null, observedAt: null, reason: reason(live.reason) };
+  else if (live.state === "running" && live.evidence === "runtime-observation" && live.reason === null) liveness = { state: "running", evidence: "runtime-observation", observedAt: stamp(live.observedAt), reason: null };
+  else if (live.state === "ended" && live.evidence === "native-outcome" && live.reason === null) liveness = { state: "ended", evidence: "native-outcome", observedAt: stamp(live.observedAt), reason: null };
+  else return bad();
+  if (liveness.observedAt !== null && liveness.observedAt > capturedAt) return bad();
+  const terminal = record(row.terminalOutcome, ["value", "source", "observedAt", "reason"]);
+  let terminalOutcome: AgentTerminalOutcome;
+  if (terminal.value === null && terminal.source === "unavailable" && terminal.observedAt === null) {
+    terminalOutcome = { value: null, source: "unavailable", observedAt: null, reason: reason(terminal.reason) };
+  } else if (["succeeded", "failed", "cancelled"].includes(terminal.value as string) &&
+    terminal.source === "native-outcome" && terminal.reason === null) {
+    terminalOutcome = { value: terminal.value as "succeeded" | "failed" | "cancelled", source: "native-outcome", observedAt: stamp(terminal.observedAt), reason: null };
+  } else return bad();
+  if (terminalOutcome.observedAt !== null && terminalOutcome.observedAt > capturedAt) return bad();
+  if (liveness.state !== "ended" && terminalOutcome.value !== null) return bad();
+  const startedAt = row.startedAt === null ? null : stamp(row.startedAt);
+  const endedAt = row.endedAt === null ? null : stamp(row.endedAt);
+  if ((startedAt !== null && startedAt > capturedAt) || (endedAt !== null && (startedAt === null || endedAt < startedAt || endedAt > capturedAt))) return bad();
+  const startedAtReason = startedAt === null ? reason(row.startedAtReason) : row.startedAtReason === null ? null : bad();
+  const endedAtReason = endedAt === null ? reason(row.endedAtReason) : row.endedAtReason === null ? null : bad();
+  const transcript = record(row.transcript, ["value", "reason"]);
+  if (transcript.value !== null || transcript.reason !== "source_not_bound") return bad();
+  const history = array(row.history, MAX_AGENT_HISTORY).map(event => {
+    const h = record(event, ["dispatchId", "kind", "at"]);
+    if (h.dispatchId !== dispatchId) return bad("ambiguous-ancestry");
+    if (!AGENT_HISTORY_KINDS.includes(h.kind as AgentHistoryKind)) return bad();
+    const at = stamp(h.at);
+    if (at > capturedAt) return bad();
+    return { dispatchId, kind: h.kind as AgentHistoryKind, at };
+  });
+  if (typeof row.historyTruncated !== "boolean" || (row.historyTruncated && history.length !== MAX_AGENT_HISTORY)) return bad();
+  for (let i = 1; i < history.length; i++) {
+    if (`${history[i - 1]!.at}\0${history[i - 1]!.kind}` >= `${history[i]!.at}\0${history[i]!.kind}`) return bad();
+  }
+  const router = valueRow(row.router);
+  if (router.value !== null) return bad(); // No validated router observation exists in this schema.
+  return { dispatchId, observation: row.observation, harness: valueRow(row.harness), provider: valueRow(row.provider),
+    router, model: valueRow(row.model), location, budget: decodedBudget,
+    quotaRegime, liveness, terminalOutcome, startedAt, startedAtReason, endedAt, endedAtReason,
+    transcript: { value: null, reason: "source_not_bound" }, history, historyTruncated: row.historyTruncated };
+}
+
+/** Strictly decode grouped ancestry before a cockpit stores or renders it. */
+export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReading {
+  try {
+    const row = record(input, ["schema", "protocol", "observedAt", "validUntil", "revision", "complete", "reason", "issues"]);
+    if (row.schema !== 1 || row.protocol !== 1) return bad("unsupported-schema");
+    const observedAt = stamp(row.observedAt);
+    const validUntil = stamp(row.validUntil);
+    if (validUntil !== new Date(Date.parse(observedAt) + ISSUE_AGENT_TREE_FRESH_MS).toISOString()) return bad();
+    if (typeof row.revision !== "string" || !/^[a-f0-9]{64}$/.test(row.revision) || typeof row.complete !== "boolean") return bad();
+    if (row.complete ? row.reason !== null : !["source_not_bound", "source_unavailable", "binding_unavailable", "scan_limit", "ancestry_unavailable"].includes(row.reason as string)) return bad();
+    const issues: IssueAgentTree[] = [];
+    const all: IssueAgentTreeAgent[] = [];
+    const issueKeys = new Set<string>();
+    for (const rawIssue of array(row.issues, MAX_AGENT_OBSERVATIONS)) {
+      const issue = record(rawIssue, ["repo", "issueNumber", "dispatches"]);
+      const repo = record(issue.repo, ["owner", "name"]);
+      if (typeof repo.owner !== "string" || !/^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(repo.owner) || repo.owner.length > 39 ||
+          typeof repo.name !== "string" || !/^(?!\.{1,2}$)[A-Za-z0-9._-]+$/.test(repo.name) || repo.name.length > 100 ||
+          typeof issue.issueNumber !== "number" || !Number.isSafeInteger(issue.issueNumber) || issue.issueNumber < 1) return bad();
+      const issueKey = `${repo.owner.toLowerCase()}/${repo.name.toLowerCase()}#${issue.issueNumber}`;
+      if (issueKeys.has(issueKey)) return bad("ambiguous-ancestry");
+      issueKeys.add(issueKey);
+      const dispatches: IssueAgentTreeDispatch[] = [];
+      const dispatchIds = new Set<string>();
+      for (const rawDispatch of array(issue.dispatches, MAX_AGENT_OBSERVATIONS)) {
+        const dispatch = record(rawDispatch, ["dispatchId", "agents"]);
+        if (typeof dispatch.dispatchId !== "string" || !/^assignment_[a-f0-9]{64}$/.test(dispatch.dispatchId) || dispatchIds.has(dispatch.dispatchId)) return bad("ambiguous-ancestry");
+        dispatchIds.add(dispatch.dispatchId);
+        const agents = array(dispatch.agents, MAX_AGENT_OBSERVATIONS).map(a => agent(a, observedAt, dispatch.dispatchId as string)) as IssueAgentTreeAgent[];
+        if (agents.length === 0) return bad();
+        for (const a of agents) {
+          const observed = record(a.observation, ["agentId", "repo", "issueNumber", "assignment", "parentAgentId", "workspace", "tab", "pane", "terminal", "running", "route", "cost", "observedAt", "revision"].concat(
+            Object.hasOwn(a.observation as object, "routeObservedReasons") ? ["routeObservedReasons"] : []));
+          const assignment = record(observed.assignment, ["id", "dispatcher", "basis"]);
+          const agentRepo = record(observed.repo, ["owner", "name"]);
+          if (assignment.id !== dispatch.dispatchId || agentRepo.owner !== repo.owner || agentRepo.name !== repo.name || observed.issueNumber !== issue.issueNumber) return bad("ambiguous-ancestry");
+          all.push(a);
+        }
+        dispatches.push({ dispatchId: dispatch.dispatchId, agents });
+      }
+      if (dispatches.length === 0) return bad();
+      issues.push({ repo: { owner: repo.owner, name: repo.name }, issueNumber: issue.issueNumber, dispatches });
+    }
+    if (all.length > MAX_AGENT_OBSERVATIONS) return bad("oversized");
+    if (row.reason !== null && row.reason !== "ancestry_unavailable" && all.length !== 0) return bad();
+    if (all.length > 0 && (row.complete || row.reason === "ancestry_unavailable")) {
+      const base: AgentObservations = { schema: 1, protocol: 1, observedAt, revision: row.revision,
+        complete: row.complete, reason: row.reason as AgentObservations["reason"],
+        agents: all.map(a => a.observation) };
+      const read = readAgentObservations(base);
+      if (!read.ok) return bad(read.reason === "oversized" ? "oversized" : read.reason === "ambiguous-ancestry" ? "ambiguous-ancestry" : "invalid");
+      const safe = new Map(read.observation.agents.map(a => [a.agentId, a]));
+      for (const a of all) {
+        if (safe.get(a.observation.agentId)?.parentAgentId.state === "known-parent" &&
+          (a.budget.tokenLimit !== null || a.provider.source === "dispatch" || a.model.source === "dispatch" || a.harness.source === "dispatch")) return bad();
+      }
+      for (let i = 0; i < issues.length; i++) {
+        const issue = issues[i]!;
+        issues[i] = { ...issue, dispatches: issue.dispatches.map(dispatch => ({ ...dispatch,
+          agents: dispatch.agents.map(a => ({ ...a, observation: safe.get(a.observation.agentId)! })) })) };
+      }
+    }
+    const snapshot: IssueAgentTreeSnapshot = { schema: 1, protocol: 1, observedAt, validUntil, revision: row.revision,
+      complete: row.complete, reason: row.reason as IssueAgentTreeSnapshot["reason"], issues };
+    if (new TextEncoder().encode(JSON.stringify(snapshot)).byteLength > MAX_ISSUE_AGENT_TREE_BYTES) return bad("oversized");
+    return { ok: true, snapshot };
+  } catch (error) { return { ok: false, reason: error instanceof Invalid ? error.reason : "invalid" }; }
+}

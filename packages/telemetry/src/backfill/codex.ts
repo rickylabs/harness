@@ -146,6 +146,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
   // A rollout that starts a turn and stops mid-stream leaves `running` standing, and that is the
   // true reading: nothing in the file says it ever finished.
   let outcome: RunRecord["outcome"] = "unknown";
+  let terminalCause: RunRecord["terminalCause"];
   const usage: Record<string, number> = {};
   const quota: QuotaReading[] = [];
 
@@ -228,9 +229,10 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
       if (reading !== null) quota.push(reading);
     }
 
-    if (kind === "task_started") outcome = "running";
-    if (kind === "task_complete") outcome = "complete";
-    if (kind === "error" || kind === "stream_error" || kind === "turn_aborted") outcome = "failed";
+    if (kind === "task_started") { outcome = "running"; terminalCause = undefined; }
+    if (kind === "task_complete") { outcome = "complete"; terminalCause = undefined; }
+    if (kind === "error" || kind === "stream_error") { outcome = "failed"; terminalCause = "error"; }
+    if (kind === "turn_aborted") { outcome = "failed"; terminalCause = "cancelled"; }
   }
 
   if (parentInvalid || parents.size > 1 || (id !== null && parents.has(id))) {
@@ -253,6 +255,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
       identity: { model, effort, provider, profile: null },
       usage: usage as RunUsage,
       outcome,
+      terminalCause,
       linkedIssues: linkedIssuesOf(cwd, title),
       origin,
       quota,

@@ -162,6 +162,9 @@ describe("parseCodexRollout", () => {
 
     const errored = `${started}\n${JSON.stringify({ timestamp: "2026-09-04T21:03:00.000Z", type: "event_msg", payload: { type: "stream_error", message: "upstream reset" } })}`;
     assert.equal(parseRun(errored, "o")?.outcome, "failed");
+    assert.equal(parseRun(errored, "o")?.terminalCause, "error");
+    const aborted = `${started}\n${JSON.stringify({ timestamp: "2026-09-04T21:03:00.000Z", type: "event_msg", payload: { type: "turn_aborted" } })}`;
+    assert.equal(parseRun(aborted, "o")?.terminalCause, "cancelled");
   });
 
   it("says unknown when nothing in the file speaks to the outcome", () => {

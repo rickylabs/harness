@@ -17,6 +17,7 @@
  */
 
 import { codexThreadsCommand } from "./codex-threads-cli.js";
+import { issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
 import { open, readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { isAbsolute, join } from "node:path";
@@ -97,6 +98,7 @@ const USAGE = `dsh-telemetry — board activity, read from disk, with no agent a
 
 usage:
   dsh-telemetry codex-threads [--limit <n>] [--private] [--watch]  native thread JSON / goal JSONL
+  dsh-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--interval-ms <n>]  per-issue agent trees
   dsh-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
   dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
@@ -470,6 +472,7 @@ function whereItWrites(flags: Flags): number {
 
 export async function main(argv: readonly string[], services: SourceServices = defaultSourceServices(), observationOptions: RepositoryRunReadOptions = {}): Promise<number> {
   if (argv[0] === "codex-threads") return codexThreadsCommand(argv.slice(1));
+  if (argv[0] === "issue-agents") return issueAgentFeedCommand(argv.slice(1));
   if (argv.includes("run-observation")) {
     if (argv.length !== 3 || argv[0] !== "run-observation" || argv[1] !== "--source" || !argv[2] || !isAbsolute(argv[2]) || /[\x00-\x1f\x7f]/.test(argv[2])) {
       process.stderr.write("run-observation: invalid command line\n");

@@ -273,5 +273,6 @@ export {
 
 export * from "./route.js";
 export * from "./agent-observations.js";
+export * from "./issue-agent-tree.js";
 
 export type { CodexReadReason, CodexField, CodexGoalStatus, CodexGoalObservation, CodexThreadObservation, CodexThreadSnapshot, CodexGoalEvent } from "./codex-thread-observations.js";
