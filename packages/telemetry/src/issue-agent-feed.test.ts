@@ -15,7 +15,10 @@ const route = projectRouteIdentity({ requested: {
 const dispatch: DispatchEvidence = { runId: "PRIVATE-DISPATCH-CANARY", external: "PRIVATE-NATIVE-ROOT", source: "codex", harness: "codex",
   linkageBasis: "dispatcher-confirmed", issue: { repo: "example/project", number: 42 }, parentRunId: null,
   location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" }, dispatchState: "dispatched",
-  budget: { tokenLimit: 1000, source: "issue-override", reason: null }, observedAt: at, revision: "a".repeat(64), route };
+  budget: { tokenLimit: 1000, source: "issue-override", reason: null },
+  router: { value: "direct", source: "dispatch", reason: null },
+  routePolicy: { value: "netscript-matrix", digest: "b".repeat(64), source: "dispatch", reason: null },
+  observedAt: at, revision: "a".repeat(64), route };
 const run = (id: string, parentId: string | null, outcome: RunRecord["outcome"] = "unknown"): RunRecord => ({
   id, parentId, source: "codex", startedAt: at, updatedAt: later, branch: null,
   identity: { provider: "native-provider", model: "native-model", effort: null, profile: null },
@@ -40,13 +43,27 @@ it("groups issue, dispatch, root and child without leaking native identity or pa
   assert.deepEqual(root.budget, { tokenLimit: 1000, source: "issue-override", reason: null });
   assert.deepEqual(child.budget, { tokenLimit: null, source: "unavailable", reason: "source_not_bound" });
   assert.deepEqual(child.provider, { value: "native-provider", source: "native", reason: null });
-  assert.deepEqual(child.router, { value: null, source: "unavailable", reason: "source_not_bound" });
+  assert.deepEqual(root.router, { value: "direct", source: "dispatch", reason: null });
+  assert.deepEqual(child.router, { value: "direct", source: "dispatch", reason: null });
+  assert.deepEqual(root.routePolicy, { value: "netscript-matrix", digest: "b".repeat(64), source: "dispatch", reason: null });
+  assert.deepEqual(child.routePolicy, { value: null, digest: null, source: "unavailable", reason: "source_not_bound" });
   assert.equal(root.terminalOutcome.value, "succeeded");
   assert.equal(root.dispatchId, root.observation.assignment.id);
   assert.ok(root.history.every(event => event.dispatchId === root.dispatchId));
   assert.equal(root.liveness.state, "ended");
   assert.equal(root.endedAt, null); // updatedAt is last activity, even after a terminal outcome.
   assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
+});
+it("keeps router unavailable when the dispatch has no validated gateway", () => {
+  const snapshot = build({ ...dispatch,
+    router: { value: null, source: "unavailable", reason: "source_not_bound" },
+    routePolicy: { value: null, digest: null, source: "unavailable", reason: "source_not_bound" },
+    budget: { tokenLimit: 0, source: "route-default", reason: null } });
+  const agents = snapshot.issues[0]?.dispatches[0]?.agents ?? [];
+  assert.equal(agents.length, 2);
+  assert.equal(agents[0]?.router.value, null);
+  assert.equal(agents[1]?.router.value, null);
+  assert.ok(agents.some(agent => agent.budget.tokenLimit === 0));
 });
 it("keeps unsafe child identity unknown and does not copy free-form source detail", () => {
   const bad = [runs[0]!, { ...runs[1]!, identity: { ...runs[1]!.identity,

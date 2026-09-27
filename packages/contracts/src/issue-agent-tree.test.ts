@@ -13,7 +13,8 @@ const observation: AgentObservation = { agentId: "agent_" + "c".repeat(64), repo
 const unknown = { value: null, source: "unavailable", reason: "source_not_bound" } as const;
 const unplaced = { value: null, basis: "unavailable", observedAt: null, reason: "source_not_bound" } as const;
 const node = { dispatchId, observation, harness: { value: "codex", source: "dispatch", reason: null }, provider: unknown,
-  router: unknown, model: unknown, location: { host: unplaced, container: unplaced, seat: unplaced },
+  router: unknown, routePolicy: { value: null, digest: null, source: "unavailable", reason: "source_not_bound" },
+  model: unknown, location: { host: unplaced, container: unplaced, seat: unplaced },
   budget: { tokenLimit: null, source: "unavailable", reason: "source_not_bound" }, quotaRegime: { value: "subscription", reason: null },
   liveness: { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" },
   terminalOutcome: { value: null, source: "unavailable", observedAt: null, reason: "measurement_missing" },
@@ -30,14 +31,20 @@ it("decodes a grouped opaque dispatch tree with explicit unknowns", () => {
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.budget.tokenLimit, null);
 });
-it("rejects private fields, invalid budgets, and fabricated router claims", () => {
+it("retains sourced zero, rejects invalid budgets and unsupported router claims", () => {
   const s = snapshot();
   const mutate = (patch: Record<string, unknown>) => ({ ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId, agents: [{ ...node, ...patch }] }] }] });
   assert.equal(read(mutate({ nativeSessionId: "PRIVATE-CANARY" })).ok, false);
-  assert.equal(read(mutate({ budget: { tokenLimit: 0, source: "route-default", reason: null } })).ok, false);
+  assert.equal(read(mutate({ budget: { tokenLimit: 0, source: "route-default", reason: null } })).ok, true);
+  assert.equal(read(mutate({ budget: { tokenLimit: -1, source: "route-default", reason: null } })).ok, false);
   assert.equal(read(mutate({ budget: { tokenLimit: null, source: "route-default", reason: null } })).ok, false);
   assert.equal(read(mutate({ router: { value: "PRIVATE-PATH-CANARY", source: "native", reason: null } })).ok, false);
   assert.equal(read(mutate({ router: { value: "router", source: "dispatch", reason: null } })).ok, false);
+  assert.equal(read(mutate({ router: { value: "direct", source: "dispatch", reason: null } })).ok, true);
+  assert.equal(read(mutate({ harness: { value: "opencode", source: "dispatch", reason: null },
+    router: { value: "openai", source: "dispatch", reason: null } })).ok, false);
+  assert.equal(read(mutate({ routePolicy: { value: "netscript-matrix", digest: rev, source: "dispatch", reason: null } })).ok, true);
+  assert.equal(read(mutate({ routePolicy: { value: "netscript-matrix", digest: "PRIVATE-CANARY", source: "dispatch", reason: null } })).ok, false);
   assert.equal(read(mutate({ model: { value: "home/agent/private", source: "native", reason: null } })).ok, false);
   assert.equal(read(mutate({ location: { ...node.location, host: { value: "home/agent/private", basis: "placement", observedAt: at, reason: null } } })).ok, false);
 });
@@ -54,6 +61,22 @@ it("rejects child claims that cannot be attributed to child evidence", () => {
   assert.equal(read(withChild({ provider: { value: "openai", source: "dispatch", reason: null } })).ok, false);
   assert.equal(read(withChild({ model: { value: "model", source: "dispatch", reason: null } })).ok, false);
   assert.equal(read(withChild({ harness: { value: "codex", source: "dispatch", reason: null } })).ok, false);
+  assert.equal(read(withChild({ router: { value: "direct", source: "dispatch", reason: null } })).ok, false);
+  const routed = { ...node, router: { value: "direct", source: "dispatch", reason: null } };
+  const s = snapshot();
+  const inherited = { ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId,
+    agents: [routed, { ...child, router: { value: "direct", source: "dispatch", reason: null } }] }] }] };
+  assert.equal(read(inherited).ok, true);
+  assert.equal(read(withChild({ routePolicy: { value: "netscript-matrix", digest: rev, source: "dispatch", reason: null } })).ok, false);
+});
+it("reads a 0.5.0 frame without routePolicy as typed unavailable", () => {
+  const { routePolicy: _legacy, ...legacyNode } = node;
+  const s = snapshot();
+  const old = { ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId, agents: [legacyNode] }] }] };
+  const result = read(old);
+  assert.equal(result.ok, true);
+  if (result.ok) assert.deepEqual(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.routePolicy,
+    { value: null, digest: null, source: "unavailable", reason: "source_not_bound" });
 });
 it("bounds and orders history, and never treats a last-activity event as endedAt", () => {
   const s = snapshot();

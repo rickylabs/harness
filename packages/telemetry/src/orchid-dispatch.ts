@@ -5,7 +5,7 @@ import { lstat, open, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents";
 import { ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
-  type OrchidRouteObservedReasons, type AgentBudget } from "@rickylabs/harness-contracts";
+  type OrchidRouteObservedReasons, type AgentBudget, type AgentRoutePolicy } from "@rickylabs/harness-contracts";
 import { readOrchidNativeBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
@@ -23,8 +23,12 @@ const label = (value: unknown): value is string => typeof value === "string" &&
 const object = (value: unknown): Record<string, unknown> | null =>
   value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 /** Receipt reasons are public only after exact source, route and fixed-text validation. */
-async function readRouteObservedReasons(record: string, source: string, model: string): Promise<OrchidRouteObservedReasons> {
-  const unavailable = unavailableOrchidRouteReasons();
+async function readRouteObservedReasons(record: string, source: string, model: string): Promise<{
+  readonly reasons: OrchidRouteObservedReasons; readonly policy: AgentRoutePolicy;
+}> {
+  const unavailable = { reasons: unavailableOrchidRouteReasons(), policy: {
+    value: null, digest: null, source: "unavailable", reason: "source_not_bound",
+  } as const };
   try {
     const file = await open(join(record, "receipt.json"), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
     let raw: Buffer;
@@ -51,7 +55,12 @@ async function readRouteObservedReasons(record: string, source: string, model: s
           row.status !== "unknown" || row.reasonCode !== "observer-unavailable" || row.reason !== ORCHID_OBSERVER_REASON) return unavailable;
       result[field] = { status: "unknown", reasonCode: "observer-unavailable", reason: ORCHID_OBSERVER_REASON };
     }
-    return result as OrchidRouteObservedReasons;
+    const resolution = object(receipt.resolution);
+    const digest = resolution?.digest;
+    return { reasons: result as OrchidRouteObservedReasons,
+      policy: typeof digest === "string" && hash.test(digest)
+        ? { value: "netscript-matrix", digest, source: "dispatch", reason: null }
+        : unavailable.policy };
   } catch { return unavailable; }
 }
 export interface OrchidDispatchRead {
@@ -138,13 +147,13 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         const at = typeof timestamp === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(timestamp) &&
           Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp ? timestamp : undefined;
         if (at === undefined) throw new Error();
-        const routeObservedReasons = await readRouteObservedReasons(record, input.source as string, input.model as string);
-        // Old writers have neither field. New writers must supply a bound, positive limit and its
+        const receipt = await readRouteObservedReasons(record, input.source as string, input.model as string);
+        // Old writers have neither field. New writers must supply a bound, nonnegative limit and its
         // source together. A malformed budget never becomes an invented route default.
         let budget: AgentBudget = { tokenLimit: null, source: "unavailable", reason: "source_not_bound" };
         if (Object.hasOwn(input, "tokenBudget") || Object.hasOwn(input, "budgetSource")) {
           if (input.tokenBudget === null && input.budgetSource === "unset") budget = { tokenLimit: null, source: "unavailable", reason: "source_not_bound" };
-          else if (typeof input.tokenBudget === "number" && Number.isSafeInteger(input.tokenBudget) && input.tokenBudget > 0 &&
+          else if (typeof input.tokenBudget === "number" && Number.isSafeInteger(input.tokenBudget) && input.tokenBudget >= 0 &&
             (input.budgetSource === "issue" || input.budgetSource === "route")) {
             budget = { tokenLimit: input.tokenBudget, source: input.budgetSource === "issue" ? "issue-override" : "route-default", reason: null };
           } // Invalid budget metadata withholds only the budget, not the dispatch tree.
@@ -152,7 +161,11 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         const dispatch: DispatchEvidence = { observedAt: at, revision, linkageBasis: "dispatcher-confirmed", runId: input.runId as string, external: null,
           source: input.source === "codex" || input.source === "claude" ? input.source : null,
           harness: input.source as "codex" | "claude" | "agy", budget,
-          route, routeObservedReasons, issue: { repo: issue.repo, number: issue.number as number }, parentRunId: null,
+          router: input.source === "codex" || input.source === "claude"
+            ? { value: "direct", source: "dispatch", reason: null }
+            : { value: null, source: "unavailable", reason: "source_not_bound" },
+          routePolicy: receipt.policy,
+          route, routeObservedReasons: receipt.reasons, issue: { repo: issue.repo, number: issue.number as number }, parentRunId: null,
           location: { paneId: location.paneId, workspaceId: location.workspaceId },
           dispatchState: input.state as "launching" | "dispatched" | "uncertain" };
         await readOrchidNativeBinding(record, key, dispatch);

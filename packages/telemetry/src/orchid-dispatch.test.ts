@@ -33,6 +33,7 @@ it("carries validated Orchid observed reasons and withholds corrupt receipt text
     await writeFile(path, JSON.stringify(receipt), { mode: 0o600 });
     const first = (await readOrchidDispatches(s.root)).dispatches[0];
     assert.equal(first?.routeObservedReasons?.model.reason, reason);
+    assert.deepEqual(first?.routePolicy, { value: "netscript-matrix", digest: "b".repeat(64), source: "dispatch", reason: null });
     assert.equal(first?.routeObservedReasons?.transport.reasonCode, "observer-unavailable");
     // Orchid's requested effort can differ from the effective dispatch effort.
     assert.equal(receipt.requested.effort, "medium");
@@ -50,7 +51,10 @@ it("carries validated Orchid observed reasons and withholds corrupt receipt text
       model: { status: "unknown", reasonCode: "observer-unavailable", reason: "PRIVATE-CANARY" } } }));
     const invalid = (await readOrchidDispatches(s.root)).dispatches[0];
     assert.equal(invalid?.routeObservedReasons?.model.status, "unavailable");
+    assert.equal(invalid?.routePolicy?.value, null);
     assert.ok(!JSON.stringify(invalid).includes("PRIVATE-CANARY"));
+    await writeFile(path, JSON.stringify({ ...receipt, resolution: { ...receipt.resolution, digest: "PRIVATE-CANARY" } }));
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.routePolicy?.value, null);
     await writeFile(path, JSON.stringify(receipt));
     await chmod(path, 0o644);
     assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.routeObservedReasons?.model.status, "unavailable");
@@ -83,10 +87,11 @@ it("joins exact inbox issue and pane to the dispatch without inventing router or
     assert.equal(row?.route.requested.provider.value, "fixture-router");
     assert.equal(row?.route.observed.model.value, null);
     assert.equal(row?.dispatchState, "dispatched");
+    assert.deepEqual(row?.router, { value: "direct", source: "dispatch", reason: null });
     assert.ok(!JSON.stringify(result).includes("PRIVATE-CANARY"));
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
-it("projects only a bound positive budget with the writer's exact source vocabulary", async () => {
+it("projects a bound nonnegative budget with the writer's exact source vocabulary", async () => {
   const s = await setup();
   try {
     for (const [source, publicSource] of [["issue", "issue-override"], ["route", "route-default"]] as const) {
@@ -97,8 +102,13 @@ it("projects only a bound positive budget with the writer's exact source vocabul
     }
     await s.write({ ...fixture, tokenBudget: null, budgetSource: "unset" });
     assert.deepEqual((await readOrchidDispatches(s.root)).dispatches[0]?.budget, { tokenLimit: null, source: "unavailable", reason: "source_not_bound" });
+    for (const source of ["issue", "route"] as const) {
+      await s.write({ ...fixture, tokenBudget: 0, budgetSource: source });
+      assert.deepEqual((await readOrchidDispatches(s.root)).dispatches[0]?.budget,
+        { tokenLimit: 0, source: source === "issue" ? "issue-override" : "route-default", reason: null });
+    }
     for (const bad of [
-      { tokenBudget: 0, budgetSource: "route" }, { tokenBudget: 1000, budgetSource: "PRIVATE-CANARY" },
+      { tokenBudget: -1, budgetSource: "route" }, { tokenBudget: 1000, budgetSource: "PRIVATE-CANARY" },
       { tokenBudget: "/PRIVATE-PATH-CANARY", budgetSource: "issue" }, { tokenBudget: 1000 },
     ]) {
       await s.write({ ...fixture, ...bad });
@@ -107,6 +117,14 @@ it("projects only a bound positive budget with the writer's exact source vocabul
       assert.deepEqual(read.dispatches[0]?.budget, { tokenLimit: null, source: "unavailable", reason: "source_not_bound" });
       assert.ok(!JSON.stringify(read.dispatches).includes("PRIVATE-"));
     }
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
+it("does not claim direct for an agy dispatch", async () => {
+  const s = await setup();
+  try {
+    await s.write({ ...fixture, source: "agy" });
+    assert.deepEqual((await readOrchidDispatches(s.root)).dispatches[0]?.router,
+      { value: null, source: "unavailable", reason: "source_not_bound" });
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
 it("hides reserved attempts and retains an ambiguous execution as uncertain", async () => {

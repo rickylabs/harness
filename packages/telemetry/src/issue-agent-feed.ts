@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_HISTORY, ISSUE_AGENT_TREE_FRESH_MS,
   projectRouteIdentity,
-  type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue,
+  type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
   type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
@@ -11,6 +11,7 @@ import type { RunRecord } from "./model.js";
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 const opaque = (kind: "agent" | "assignment", value: string) => `${kind}_${digest(kind + "\0" + value)}`;
 const unavailable: AgentTreeValue = { value: null, source: "unavailable", reason: "source_not_bound" };
+const unavailablePolicy: AgentRoutePolicy = { value: null, digest: null, source: "unavailable", reason: "source_not_bound" };
 const publicLabel = (value: string | null | undefined): value is string =>
   typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(value) && !value.includes("..");
 const safe = (value: string | null | undefined, source: "dispatch" | "native"): AgentTreeValue =>
@@ -45,9 +46,12 @@ function history(observation: AgentObservation, dispatch: DispatchEvidence, run:
 
 function node(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string): IssueAgentTreeAgent {
   const root = observation.parentAgentId.state !== "known-parent";
+  const provenAncestry = observation.parentAgentId.state === "confirmed-root" || observation.parentAgentId.state === "known-parent";
   const harness = root ? safe(dispatch.harness ?? dispatch.source, "dispatch") : safe(run?.source, "native");
   const provider = root ? safe(observation.route.requested.provider.value, "dispatch") : safe(run?.identity.provider, "native");
   const model = root ? safe(observation.route.requested.model.value, "dispatch") : safe(run?.identity.model, "native");
+  const router = provenAncestry && dispatch.router?.value === "direct" && dispatch.router.source === "dispatch" &&
+    (dispatch.source === "codex" || dispatch.source === "claude") ? dispatch.router : unavailable;
   const start = time(run?.startedAt, now);
   const outcomeAt = time(run?.updatedAt, now);
   const liveness: IssueAgentTreeAgent["liveness"] = (run?.outcome === "complete" || run?.outcome === "failed") && outcomeAt !== null
@@ -64,7 +68,8 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     : { value: null, source: "unavailable", observedAt: null, reason: "measurement_missing" };
   const unplaced = { value: null, basis: "unavailable", observedAt: null, reason: "source_not_bound" } as const;
   const seam = run?.source ?? dispatch.source;
-  return { dispatchId: observation.assignment.id, observation, harness, provider, router: unavailable, model,
+  return { dispatchId: observation.assignment.id, observation, harness, provider, router,
+    routePolicy: observation.parentAgentId.state === "confirmed-root" ? dispatch.routePolicy ?? unavailablePolicy : unavailablePolicy, model,
     location: { host: unplaced, container: unplaced, seat: unplaced },
     budget: root ? dispatch.budget ?? { tokenLimit: null, source: "unavailable", reason: "source_not_bound" }
       : { tokenLimit: null, source: "unavailable", reason: "source_not_bound" },

@@ -17,6 +17,9 @@ export type AgentTreeValue =
 export type AgentBudget =
   | { readonly tokenLimit: number; readonly source: "issue-override" | "route-default"; readonly reason: null }
   | { readonly tokenLimit: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
+export type AgentRoutePolicy =
+  | { readonly value: "netscript-matrix"; readonly digest: string; readonly source: "dispatch"; readonly reason: null }
+  | { readonly value: null; readonly digest: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
 export type AgentQuotaRegime =
   | { readonly value: "subscription" | "metered" | "local"; readonly reason: null }
   | { readonly value: null; readonly reason: AgentUnavailableReason };
@@ -43,8 +46,10 @@ export interface IssueAgentTreeAgent {
   readonly observation: AgentObservation;
   readonly harness: AgentTreeValue;
   readonly provider: AgentTreeValue;
-  /** Provider is not a router. This remains unavailable without an explicit router observation. */
+  /** Actual request gateway, evidenced by the bound dispatch transport or inherited ancestry. */
   readonly router: AgentTreeValue;
+  /** Matrix policy is separate from the gateway; its digest comes from a bound receipt. */
+  readonly routePolicy: AgentRoutePolicy;
   readonly model: AgentTreeValue;
   readonly location: AgentTreeLocation;
   readonly budget: AgentBudget;
@@ -135,6 +140,15 @@ function valueRow(value: unknown): AgentTreeValue {
   if ((row.source !== "dispatch" && row.source !== "native") || row.reason !== null) return bad();
   return { value: label(row.value), source: row.source, reason: null };
 }
+function policyRow(value: unknown): AgentRoutePolicy {
+  const row = record(value, ["value", "digest", "source", "reason"]);
+  if (row.value === null && row.digest === null && row.source === "unavailable") {
+    return { value: null, digest: null, source: "unavailable", reason: reason(row.reason) };
+  }
+  if (row.value !== "netscript-matrix" || row.source !== "dispatch" || row.reason !== null ||
+      typeof row.digest !== "string" || !/^[a-f0-9]{64}$/.test(row.digest)) return bad();
+  return { value: "netscript-matrix", digest: row.digest, source: "dispatch", reason: null };
+}
 function placement(value: unknown, capturedAt: string): AgentPlacementValue {
   const row = record(value, ["value", "basis", "observedAt", "reason"]);
   if (row.value === null && row.basis === "unavailable" && row.observedAt === null) {
@@ -146,13 +160,14 @@ function placement(value: unknown, capturedAt: string): AgentPlacementValue {
   return { value: label(row.value), basis: row.basis, observedAt, reason: null };
 }
 function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<IssueAgentTreeAgent, "observation"> & { readonly observation: unknown } {
-  const row = record(value, ["dispatchId", "observation", "harness", "provider", "router", "model", "location", "budget", "quotaRegime", "liveness", "terminalOutcome", "startedAt", "startedAtReason", "endedAt", "endedAtReason", "transcript", "history", "historyTruncated"]);
+  const keys = ["dispatchId", "observation", "harness", "provider", "router", "model", "location", "budget", "quotaRegime", "liveness", "terminalOutcome", "startedAt", "startedAtReason", "endedAt", "endedAtReason", "transcript", "history", "historyTruncated"];
+  const row = record(value, Object.hasOwn(value as object, "routePolicy") ? [...keys, "routePolicy"] : keys);
   if (row.dispatchId !== dispatchId) return bad("ambiguous-ancestry");
   const budget = record(row.budget, ["tokenLimit", "source", "reason"]);
   let decodedBudget: AgentBudget;
   if (budget.tokenLimit === null && budget.source === "unavailable") decodedBudget = { tokenLimit: null, source: "unavailable", reason: reason(budget.reason) };
   else if ((budget.source === "issue-override" || budget.source === "route-default") &&
-    typeof budget.tokenLimit === "number" && Number.isSafeInteger(budget.tokenLimit) && budget.tokenLimit > 0 && budget.reason === null) {
+    typeof budget.tokenLimit === "number" && Number.isSafeInteger(budget.tokenLimit) && budget.tokenLimit >= 0 && budget.reason === null) {
     decodedBudget = { tokenLimit: budget.tokenLimit, source: budget.source, reason: null };
   } else return bad();
   const quota = record(row.quotaRegime, ["value", "reason"]);
@@ -201,9 +216,11 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
     if (`${history[i - 1]!.at}\0${history[i - 1]!.kind}` >= `${history[i]!.at}\0${history[i]!.kind}`) return bad();
   }
   const router = valueRow(row.router);
-  if (router.value !== null) return bad(); // No validated router observation exists in this schema.
+  if (router.value !== null && router.source !== "dispatch") return bad();
+  const routePolicy = Object.hasOwn(row, "routePolicy") ? policyRow(row.routePolicy)
+    : { value: null, digest: null, source: "unavailable", reason: "source_not_bound" } as const;
   return { dispatchId, observation: row.observation, harness: valueRow(row.harness), provider: valueRow(row.provider),
-    router, model: valueRow(row.model), location, budget: decodedBudget,
+    router, routePolicy, model: valueRow(row.model), location, budget: decodedBudget,
     quotaRegime, liveness, terminalOutcome, startedAt, startedAtReason, endedAt, endedAtReason,
     transcript: { value: null, reason: "source_not_bound" }, history, historyTruncated: row.historyTruncated };
 }
@@ -260,9 +277,20 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
       const read = readAgentObservations(base);
       if (!read.ok) return bad(read.reason === "oversized" ? "oversized" : read.reason === "ambiguous-ancestry" ? "ambiguous-ancestry" : "invalid");
       const safe = new Map(read.observation.agents.map(a => [a.agentId, a]));
+      const publicAgents = new Map(all.map(a => [a.observation.agentId, a]));
       for (const a of all) {
-        if (safe.get(a.observation.agentId)?.parentAgentId.state === "known-parent" &&
-          (a.budget.tokenLimit !== null || a.provider.source === "dispatch" || a.model.source === "dispatch" || a.harness.source === "dispatch")) return bad();
+        const parent = safe.get(a.observation.agentId)?.parentAgentId;
+        if (parent?.state === "known-parent") {
+          if (a.budget.tokenLimit !== null || a.provider.source === "dispatch" || a.model.source === "dispatch" ||
+              a.harness.source === "dispatch" || a.routePolicy.value !== null) return bad();
+          const parentRouter = publicAgents.get(parent.value)?.router;
+          if (a.router.value !== null && (!parentRouter || parentRouter.value !== a.router.value || parentRouter.source !== "dispatch")) return bad();
+        } else if (a.router.value !== null) {
+          if (parent?.state !== "confirmed-root") return bad();
+          if (a.harness.source !== "dispatch" || a.router.value !== "direct" ||
+              (a.harness.value !== "codex" && a.harness.value !== "claude")) return bad();
+        }
+        if (a.routePolicy.value !== null && parent?.state !== "confirmed-root") return bad();
       }
       for (let i = 0; i < issues.length; i++) {
         const issue = issues[i]!;
