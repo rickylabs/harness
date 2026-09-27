@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { it } from "node:test";
 import { Writable } from "node:stream";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, open, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { collectIssueAgentTree, issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
@@ -119,8 +119,15 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     const rollout = (id: string, parentId: string | null) => JSON.stringify({ timestamp: "2026-09-27T21:25:00.000Z",
       type: "session_meta", payload: { session_id: id, timestamp: "2026-09-27T21:25:00.000Z", cwd: "/fixture",
         model_provider: "fixture", ...(parentId ? { parent_thread_id: parentId } : {}) } }) + "\n";
-    await writeFile(join(sessions, `rollout-2026-09-27T21-25-00-${rootId}.jsonl`), rollout(rootId, null));
-    await writeFile(join(sessions, `rollout-2026-09-27T21-26-00-${childId}.jsonl`), rollout(childId, rootId));
+    // Native filenames use a local UTC+2 wall clock while receipts and JSONL timestamps use UTC.
+    await writeFile(join(sessions, `rollout-2026-09-27T23-25-00-${rootId}.jsonl`), rollout(rootId, null));
+    await writeFile(join(sessions, `rollout-2026-09-27T23-26-00-${childId}.jsonl`), rollout(childId, rootId));
+    for (const [minute, id] of [[27, "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4f"],
+      [28, "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c50"]] as const) {
+      const unrelated = await open(join(sessions, `rollout-2026-09-27T23-${minute}-00-${id}.jsonl`), "w");
+      try { await unrelated.writeFile(rollout(id, null)); await unrelated.truncate(20 * 1_048_576); }
+      finally { await unrelated.close(); }
+    }
     const older = join(home, ".codex", "sessions", "2025", "01", "01");
     await mkdir(older, { recursive: true });
     await writeFile(join(older, `rollout-2025-01-01T00-00-00-${rootId}.jsonl`), "{malformed\n");

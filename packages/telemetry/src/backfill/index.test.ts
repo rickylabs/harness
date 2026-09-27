@@ -6,6 +6,7 @@
  */
 
 import assert from "node:assert/strict";
+import { writeFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm, symlink, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -77,6 +78,30 @@ describe("backfillFromDisk", () => {
     assert.equal(capped.degraded, true);
     assert.deepEqual(capped.runs, []);
     assert.match(capped.notes.join("\n"), /read bound/);
+  });
+  it("finds a bound late child across shifted filename dates and rejects a changed selected head", async () => {
+    const store = join(root, ".codex", "sessions");
+    const first = join(store, "2026", "09", "27"), next = join(store, "2026", "09", "28");
+    await mkdir(first, { recursive: true }); await mkdir(next, { recursive: true });
+    const rootId = "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d", childId = "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4e";
+    const rootPath = join(first, `rollout-2026-09-27T23-26-00-${rootId}.jsonl`);
+    await writeFile(rootPath, codexLine(rootId, "2026-09-27T21:26:00.000Z"));
+    await writeFile(join(next, `rollout-2026-09-28T11-27-00-${childId}.jsonl`),
+      JSON.stringify({ timestamp: "2026-09-27T21:27:00.000Z", type: "session_meta",
+        payload: { id: childId, timestamp: "2026-09-27T21:27:00.000Z", cwd: "/fixture",
+          source: { subagent: { thread_spawn: { parent_thread_id: rootId } } } } }) + "\n");
+    const options = { limit: 20,
+      codexWindows: [{ startMs: Date.parse("2026-09-27T21:16:00.000Z"), endMs: Date.parse("2026-09-27T21:40:00.000Z") }],
+      maxTranscriptBytes: 8_388_608, maxTotalBytes: 33_554_432 };
+    const bound = await backfillFromDisk({ codexSessions: store }, { ...options, codexRootMatches: id => id === rootId });
+    assert.equal(bound.degraded, false);
+    assert.deepEqual(bound.runs.map(run => [run.id, run.parentId]).sort(), [[childId, rootId], [rootId, null]].sort());
+    const changed = await backfillFromDisk({ codexSessions: store }, { ...options, codexRootMatches: id => {
+      if (id === rootId) writeFileSync(rootPath, codexLine(childId, "2026-09-27T21:26:00.000Z"));
+      return id === rootId;
+    } });
+    assert.equal(changed.degraded, true);
+    assert.match(changed.notes.join("\n"), /could not be read/);
   });
   it("refuses a symlink date directory and stops after a bounded number of entries", async () => {
     const store = join(root, ".codex", "sessions");

@@ -1,0 +1,3 @@
+# Context pack
+
+Fresh worktree at merged #389. Coordinator's real-home run failed because unrelated >8 MiB rollouts were read before native identity filtering and local filenames were parsed as UTC. Plan: select dates/filenames in a ±24-hour offset-safe envelope, bounded first-line `session_meta` read, match Orchid's private root hash and both explicit child-parent fields, then read only selected full rollouts with full/head identity agreement. Root/child fixture with unrelated 20 MiB rollouts, UTC+2 filenames and a shifted next-day child is the local gate; coordinator reruns #387 after PR merge. `STATUS.md` outside this public repo carries operational progress.

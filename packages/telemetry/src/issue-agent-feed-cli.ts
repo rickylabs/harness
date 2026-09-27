@@ -9,6 +9,7 @@ import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
+import { matchesOrchidNativeRootIdentity } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
 export interface IssueAgentFeedOptions {
@@ -58,6 +59,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     const codexSessions = defaultRoots(options.home).codexSessions;
     const scan = await backfillFromDisk(codexSessions === undefined ? {} : { codexSessions },
       { limit: Math.min(options.limit, MAX_ISSUE_FILES), codexWindows: windows,
+        codexRootMatches: id => group.dispatches.some(dispatch => matchesOrchidNativeRootIdentity(dispatch, id)),
         maxTranscriptBytes: MAX_TRANSCRIPT_BYTES, maxTotalBytes: remainingBytes });
     remainingBytes -= scan.bytesRead;
     if (scan.degraded) {
