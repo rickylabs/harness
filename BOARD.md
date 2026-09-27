@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **302/376 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
+`[################----]` **303/376 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible**
 
-_Latest board activity: 2026-09-27T22:11:40Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-27T22:11:50Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -66,10 +66,6 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
-**`closed-without-status`**
-
-- **#381** — closed as completed, but carries no status label; delivered work the board cannot see
-
 **`epic-closed-by-child`**
 
 - **#30** — is closed with 1 open child (#182); an umbrella closes when its last child does — reopen it, do not relabel it
@@ -88,6 +84,10 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#386** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#387** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
+
+**`multiple-status`**
+
+- **#388** — carries 2 status labels (status:ready-merge, status:shipped); exactly one is allowed
 
 **`no-status`**
 
@@ -116,14 +116,14 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 108/134 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
+`[#########---]` 109/134 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[######------]` 1/2 done · 1 queued | `impl` |
-| _(no epic)_ | `[#########---]` 95/116 done · 3 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
+| _(no epic)_ | `[#########---]` 96/116 done · 3 running · 3 queued · 3 blocked · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -165,7 +165,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  302/376 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [################----]  303/376 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -446,7 +446,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  108/134 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [################----]  109/134 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -586,7 +586,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #378 test(alpha): prove native session identity now lands after herdr codex hook install (p0)
     shipped              #379 Expose receipt observed-field reasons through canonical agent observations (p0)
     shipped              PR380 fix(telemetry): bind native usage and quota to agent cost rows (p0)
-    no status            #381 Dispatcher must write thread goal and sub-agent ancestry
+    shipped              #381 Dispatcher must write thread goal and sub-agent ancestry
     shipped              #382 feat(telemetry): read Codex threads and subscribe to goal changes (p0)
     shipped              PR383 feat(telemetry): read Codex threads and stream goal changes (p0)
     shipped              PR384 fix(forge): skill install --dry-run reports a file as created that it does not create
