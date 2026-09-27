@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **303/376 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible**
+`[################----]` **304/377 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible**
 
-_Latest board activity: 2026-09-27T22:11:50Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-27T22:45:08Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -116,14 +116,14 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 109/134 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
+`[#########---]` 110/135 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[######------]` 1/2 done · 1 queued | `impl` |
-| _(no epic)_ | `[#########---]` 96/116 done · 3 running · 3 queued · 3 blocked · 9 abandoned · 2 invisible | — |
+| _(no epic)_ | `[#########---]` 97/117 done · 3 running · 3 queued · 3 blocked · 9 abandoned · 2 invisible | — |
 
 ## Waiting to start
 
@@ -165,7 +165,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  303/376 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible
+# rickylabs/harness  [################----]  304/377 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -446,7 +446,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  109/134 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
+## (no milestone)  [################----]  110/135 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -592,6 +592,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR384 fix(forge): skill install --dry-run reports a file as created that it does not create
     shipped              PR385 fix(telemetry): surface validated Orchid observed reasons (p0)
     ready-merge          PR388 feat(contracts): sourced budget and router evidence
+    shipped              PR389 Preserve issue trees under bounded feed scans (p0)
 ```
 
 </details>
