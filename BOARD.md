@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **305/379 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible**
+`[################----]` **305/380 done · 22 running · 25 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-27T23:18:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-27T23:27:23Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (23)
+## Moving now (22)
 
 Something could be acting on these right now.
 
@@ -31,7 +31,6 @@ Something could be acting on these right now.
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `impl-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees](https://github.com/rickylabs/harness/issues/373) | `impl-eval` | — |
-| [PR391 Bind issue agents from modern Codex session heads](https://github.com/rickylabs/harness/pull/391) | `ready-merge` | — |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -51,21 +50,21 @@ Something could be acting on these right now.
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 
-## Not on the board (1)
+## Not on the board (2)
 
 Open, and carrying no `status:` label — real work no column can see.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
+| [#381 Dispatcher must write thread goal and sub-agent ancestry](https://github.com/rickylabs/harness/issues/381) | — | — |
 
-## Anomalies (17)
+## Anomalies (18)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
-- **#391** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
@@ -84,6 +83,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#346** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#347** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#386** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#392** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#387** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 
@@ -94,6 +94,7 @@ Open, and carrying no `status:` label — real work no column can see.
 **`no-status`**
 
 - **#370** — open item has no status label, so it appears in no column
+- **#381** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -118,24 +119,25 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 111/137 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
+`[#########---]` 111/138 done · 4 running · 5 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[######------]` 1/2 done · 1 queued | `impl` |
-| _(no epic)_ | `[#########---]` 98/119 done · 4 running · 3 queued · 3 blocked · 9 abandoned · 2 invisible | — |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[####--------]` 1/3 done · 2 queued | `impl` |
+| _(no epic)_ | `[#########---]` 98/119 done · 3 running · 3 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>24 filed, nothing started</summary>
+<summary>25 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator](https://github.com/rickylabs/harness/issues/273) | `triage` | `e11` |
 | [#275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON](https://github.com/rickylabs/harness/issues/275) | `triage` | `e11` |
+| [#392 Proof: route-default goal, live status and one native child](https://github.com/rickylabs/harness/issues/392) | `triage` | `e9` |
 | [#287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts](https://github.com/rickylabs/harness/issues/287) | `triage` | `e3` |
 | [#290 Spike S12 — Evidence path: transcript and quota meters for UHP runs](https://github.com/rickylabs/harness/issues/290) | `triage` | `e3` |
 | [#331 Incident: three sweeps, sixteen candidates, sixteen live — and the only unrecovered one was found by naming convention](https://github.com/rickylabs/harness/issues/331) | `triage` | — |
@@ -167,7 +169,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  305/379 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible
+# rickylabs/harness  [################----]  305/380 done · 22 running · 25 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -448,7 +450,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  111/137 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
+## (no milestone)  [################----]  111/138 done · 4 running · 5 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -473,9 +475,10 @@ Open, and carrying no `status:` label — real work no column can see.
     research             #349 Brainstorm: dual-agent mailbox pilot contract (draft)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]  (epic is in M1 — dsh coordinator foundation)
-    [########--------] 1/2 done · 1 queued
+    [#####-----------] 1/3 done · 2 queued
     shipped              PR386 feat(telemetry): versioned per-issue agent feed (p0)
     triage               #387 Proof: one native child in the issue-agent feed (p1)
+    triage               #392 Proof: route-default goal, live status and one native child (p0)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
@@ -588,7 +591,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #378 test(alpha): prove native session identity now lands after herdr codex hook install (p0)
     shipped              #379 Expose receipt observed-field reasons through canonical agent observations (p0)
     shipped              PR380 fix(telemetry): bind native usage and quota to agent cost rows (p0)
-    shipped              #381 Dispatcher must write thread goal and sub-agent ancestry
+    no status            #381 Dispatcher must write thread goal and sub-agent ancestry
     shipped              #382 feat(telemetry): read Codex threads and subscribe to goal changes (p0)
     shipped              PR383 feat(telemetry): read Codex threads and stream goal changes (p0)
     shipped              PR384 fix(forge): skill install --dry-run reports a file as created that it does not create
@@ -596,7 +599,7 @@ Open, and carrying no `status:` label — real work no column can see.
     ready-merge          PR388 feat(contracts): sourced budget and router evidence
     shipped              PR389 Preserve issue trees under bounded feed scans (p0)
     shipped              PR390 Select bound Codex rollouts before full reads (p0)
-    ready-merge          PR391 Bind issue agents from modern Codex session heads (p0)
+    shipped              PR391 Bind issue agents from modern Codex session heads (p0)
 ```
 
 </details>
