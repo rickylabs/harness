@@ -6,7 +6,7 @@ import { projectRouteIdentity, ROUTE_FIELDS, type RouteIdentityEvidence } from "
 export const AGENT_OBSERVATIONS_SCHEMA = 1 as const;
 export const MAX_AGENT_OBSERVATIONS = 256;
 export const MAX_AGENT_OBSERVATION_BYTES = 1_048_576;
-export const AGENT_UNAVAILABLE_REASONS = ["source_not_bound", "source_unavailable", "source_incomplete", "source_stale", "binding_invalid", "identity_unavailable", "measurement_missing", "run_not_found", "observer-unavailable"] as const;
+export const AGENT_UNAVAILABLE_REASONS = ["source_not_bound", "source_unavailable", "source_incomplete", "source_stale", "binding_invalid", "identity_unavailable", "host_identity_unset", "measurement_missing", "run_not_found", "observer-unavailable"] as const;
 export type AgentUnavailableReason = typeof AGENT_UNAVAILABLE_REASONS[number];
 export type AgentParent =
   | { readonly state: "confirmed-root"; readonly value: null; readonly reason: null }
@@ -51,6 +51,7 @@ export interface AgentCost {
   readonly localCapacity: CostRow<"local_capacity", "bytes", "dsh-telemetry.host-capacity", "host", {
     readonly host: string; readonly ramUsedBytes: number; readonly ramTotalBytes: number | null;
     readonly vramUsedBytes: number | null; readonly vramTotalBytes: number | null;
+    readonly cards?: readonly { readonly card: string; readonly vramUsedBytes: number; readonly vramTotalBytes: number }[];
   }>;
 }
 export interface AgentObservation {
@@ -232,7 +233,7 @@ function cost(value: unknown, at: string): AgentCost {
         if (x.currency !== "USD" || x.accounting !== "reported") return bad();
         measurement = { amount: number(x.amount, Number.MAX_VALUE, false), currency: "USD", accounting: "reported" };
       } else if (key === "localCapacity") {
-        const x = record(row.measurement, ["host", "ramUsedBytes", "ramTotalBytes", "vramUsedBytes", "vramTotalBytes"]);
+        const x = record(row.measurement, ["host", "ramUsedBytes", "ramTotalBytes", "vramUsedBytes", "vramTotalBytes"], ["cards"]);
         const host = text(x.host, /^[A-Za-z][A-Za-z0-9_-]{0,62}$/, 63);
         const ramUsedBytes = number(x.ramUsedBytes);
         const ramTotalBytes = x.ramTotalBytes === null ? null : number(x.ramTotalBytes);
@@ -240,7 +241,25 @@ function cost(value: unknown, at: string): AgentCost {
         const vramTotalBytes = x.vramTotalBytes === null ? null : number(x.vramTotalBytes);
         if ((ramTotalBytes !== null && ramUsedBytes > ramTotalBytes) ||
           (vramUsedBytes !== null && vramTotalBytes !== null && vramUsedBytes > vramTotalBytes)) return bad();
-        measurement = { host, ramUsedBytes, ramTotalBytes, vramUsedBytes, vramTotalBytes };
+        let cards: { card: string; vramUsedBytes: number; vramTotalBytes: number }[] | undefined;
+        if (x.cards !== undefined) {
+          const cardRows = array(x.cards, 16);
+          if (cardRows.length === 0) return bad();
+          cards = cardRows.map((raw: unknown) => {
+            const card = record(raw, ["card", "vramUsedBytes", "vramTotalBytes"]);
+            const name = text(card.card, /^card\d+$/, 16);
+            const used = number(card.vramUsedBytes);
+            const total = number(card.vramTotalBytes);
+            if (total === 0 || used > total) return bad();
+            return { card: name, vramUsedBytes: used, vramTotalBytes: total };
+          });
+          if (cards.some((card, index) => index > 0 && cards![index - 1]!.card >= card.card) ||
+            vramUsedBytes === null || vramTotalBytes === null ||
+            cards.reduce((sum, card) => sum + card.vramUsedBytes, 0) !== vramUsedBytes ||
+            cards.reduce((sum, card) => sum + card.vramTotalBytes, 0) !== vramTotalBytes) return bad();
+        }
+        measurement = { host, ramUsedBytes, ramTotalBytes, vramUsedBytes, vramTotalBytes,
+          ...(cards === undefined ? {} : { cards }) };
       } else {
         const keys = ["inputTokens", "outputTokens", "reasoningTokens", "cacheReadTokens", "cacheWriteTokens"];
         const x = record(row.measurement, [], keys);
