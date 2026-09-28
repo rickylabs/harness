@@ -78,6 +78,31 @@ it("private binding: resolves the existing parent tree without exporting native 
     unavailable(JSON.parse(JSON.stringify(rows)) as DispatchEvidence[]);
   } finally { await f.close(); }
 });
+it("private binding survives attaching verified stop observations to the same dispatch", async () => {
+  const f = await fixture();
+  const operationId = "123e4567-e89b-42d3-a456-426614174000", requestDigest = "c".repeat(64);
+  const action = join(f.root, "actions", operationId);
+  const opaque = (kind: string) => `${kind}_${sha(kind + "\0" + snapshot.runId)}`;
+  try {
+    await mkdir(action, { recursive: true, mode: 0o700 });
+    const privateWrite = (path: string, value: unknown) => writeFile(path, JSON.stringify(value), { mode: 0o600 });
+    await privateWrite(join(f.record, "stop-action.json"), { schemaVersion: 1, operationId, requestDigest });
+    await privateWrite(join(action, "intent.json"), { requestDigest });
+    await privateWrite(join(action, "result.json"), { schemaVersion: 1, operationId, requestDigest,
+      repository: snapshot.issue.repo, issueNumber: snapshot.issue.number,
+      agentId: opaque("agent"), dispatchId: opaque("assignment"), nativeRunId: snapshot.runId,
+      host: null, paneId: snapshot.location.paneId, workspaceId: snapshot.location.workspaceId,
+      action: "stop", outcome: "accepted", reason: "workspace_close_delivered", observedAt: at });
+    await privateWrite(join(action, "seat-observed.json"), { schemaVersion: 1, operationId, requestDigest,
+      kind: "seat_absent", observedAt: at });
+    await privateWrite(join(action, "process-observed.json"), { schemaVersion: 1, operationId, requestDigest,
+      kind: "process_absent", observedAt: at });
+    const rows = await f.read();
+    assert.deepEqual(rows[0]?.stop, { seatObservedAt: at, processObservedAt: at });
+    assert.equal(project(rows).complete, true);
+    assert.equal(project(rows).agents.length, 2);
+  } finally { await f.close(); }
+});
 it("private binding: missing, malformed, moved and route-mismatched bindings stay dispatch-only", async t => {
   const invalid: [string, unknown][] = [
     ["null document", null], ["array document", []], ["scalar document", true],
