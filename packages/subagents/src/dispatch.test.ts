@@ -34,6 +34,24 @@ const warningKinds = (text: string): readonly string[] =>
   parsed(text).warnings.map((w) => w.kind);
 
 describe("renderSwarm", () => {
+  it("round-trips the exact tier and role keys Orchid's matrix reads", () => {
+    const routed: DispatchRequest = {
+      harness: "codex", tier: "feature", role: "implementation", model: "gpt-6-sol",
+      effort: "high", profile: "leaf", timeout: "3m", prompt: "Read the issue.",
+    };
+    const wire = renderSwarm(routed);
+    assert.ok(wire.startsWith("/swarm\nharness: codex\ntier: feature\nrole: implementation\n"));
+    assert.deepEqual(parsed(wire).warnings, []);
+    assert.deepEqual(toDispatchRequest(parsed(wire)), routed);
+    assert.equal(renderSwarm(toDispatchRequest(parsed(wire))), wire);
+    assert.deepEqual(validateDispatch(routed), []);
+  });
+
+  it("refuses a partial or noncanonical matrix route", () => {
+    assert.ok(validateDispatch({ ...full, tier: "feature" }).some((value) => value.includes("together")));
+    assert.throws(() => renderSwarm({ ...full, tier: "feature", role: "deep-research" }),
+      /canonical underscore/);
+  });
   it("emits the documented grammar in a fixed field order", () => {
     assert.equal(
       renderSwarm(full),

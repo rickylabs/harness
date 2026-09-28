@@ -93,6 +93,10 @@ export type Router = string;
  */
 export interface DispatchRequest {
   readonly harness: Harness;
+  /** Orchid matrix workload tier, when this request names a resolved workload route. */
+  readonly tier?: string;
+  /** Orchid matrix role, in its canonical underscore spelling. */
+  readonly role?: string;
   readonly model?: string;
   readonly effort?: string;
   /**
@@ -114,6 +118,8 @@ export interface DispatchRequest {
 /** Field order on the wire. Fixed, so that two equal requests serialise identically. */
 const FIELD_ORDER = [
   ["harness", (r: DispatchRequest) => r.harness],
+  ["tier", (r: DispatchRequest) => r.tier],
+  ["role", (r: DispatchRequest) => r.role],
   ["model", (r: DispatchRequest) => r.model],
   ["effort", (r: DispatchRequest) => r.effort],
   ["max-tokens", (r: DispatchRequest) => r.maxTokens],
@@ -185,6 +191,8 @@ const ALIASES: Readonly<Record<string, string>> = { agent: "harness", provider: 
 const KNOWN_KEYS: ReadonlySet<string> = new Set([
   "harness",
   "agent",
+  "tier",
+  "role",
   "model",
   "router",
   "provider",
@@ -218,6 +226,8 @@ export interface SwarmWarning {
  */
 export interface SwarmOverrides {
   readonly harness: string;
+  readonly tier: string;
+  readonly role: string;
   readonly model: string;
   readonly router: string;
   readonly effort: string;
@@ -426,6 +436,8 @@ export function parseSwarm(body: string): ParsedSwarm | null {
 
   const overrides: SwarmOverrides = {
     harness,
+    tier: get("tier"),
+    role: get("role"),
     model: get("model"),
     router,
     effort: get("effort"),
@@ -455,6 +467,12 @@ function bind(
     case "harness":
     case "agent":
       bound.set("harness", value.toLowerCase());
+      return;
+    case "tier":
+      bound.set("tier", value);
+      return;
+    case "role":
+      bound.set("role", value.replaceAll("-", "_"));
       return;
     case "model":
       bound.set("model", value);
@@ -502,6 +520,8 @@ export function toDispatchRequest(parsed: ParsedSwarm): DispatchRequest {
   const some = (value: string): string | undefined => (value === "" ? undefined : value);
   return {
     harness: parsed.executes,
+    ...(some(o.tier) !== undefined ? { tier: o.tier } : {}),
+    ...(some(o.role) !== undefined ? { role: o.role } : {}),
     ...(some(o.model) !== undefined ? { model: o.model } : {}),
     ...(some(o.effort) !== undefined ? { effort: o.effort } : {}),
     ...(some(o.maxTokens) !== undefined ? { maxTokens: o.maxTokens } : {}),
@@ -552,11 +572,14 @@ function encodingProblems(request: DispatchRequest): readonly string[] {
   }
 
   // The executor lowercases these three. Emitting a capital means the record and the run disagree.
-  for (const key of ["harness", "effort", "router"] as const) {
+  for (const key of ["harness", "tier", "role", "effort", "router"] as const) {
     const value = request[key];
     if (typeof value === "string" && value !== value.toLowerCase()) {
       problems.push(`${key} ${JSON.stringify(value)} will be lowercased by the executor`);
     }
+  }
+  if (request.role?.includes("-")) {
+    problems.push("role must use the canonical underscore spelling Orchid stores");
   }
 
   for (const line of goSplitLines(request.prompt)) {
@@ -583,6 +606,10 @@ function encodingProblems(request: DispatchRequest): readonly string[] {
  */
 export function validateDispatch(request: DispatchRequest): readonly string[] {
   const problems: string[] = [...encodingProblems(request)];
+
+  if ((request.tier === undefined) !== (request.role === undefined)) {
+    problems.push("tier and role must be supplied together for a matrix route");
+  }
 
   if (request.model === undefined || goTrimSpace(request.model) === "") {
     problems.push(

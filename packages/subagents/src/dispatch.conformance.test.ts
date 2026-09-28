@@ -57,6 +57,8 @@ interface Case {
 
 const EMPTY: SwarmOverrides = {
   harness: "",
+  tier: "",
+  role: "",
   model: "",
   router: "",
   effort: "",
@@ -67,6 +69,21 @@ const EMPTY: SwarmOverrides = {
 };
 
 const CASES: readonly Case[] = [
+  {
+    what: "Orchid binds workload tier and normalizes the role's hyphen spelling",
+    rule: "(K)",
+    body: "/swarm\nharness: codex\ntier: feature\nrole: deep-research\nmodel: gpt-6-sol\neffort: high\n\nRead the issue.",
+    overrides: {
+      ...EMPTY,
+      harness: "codex",
+      tier: "feature",
+      role: "deep_research",
+      model: "gpt-6-sol",
+      effort: "high",
+      prompt: "Read the issue.",
+    },
+    executes: "codex",
+  },
   {
     what: "the ordinary dispatch the coordinator writes",
     rule: "(K)",

@@ -1,0 +1,4 @@
+# Dispatch tier and role bridge — worklog
+
+2026-09-28 14:50 UTC — Read Harness architecture and doctrine, Cockpit live refusal, Orchid overrides.go and matrix-bridge.ts, and Harness seat TIER_ROLE_HANDOFF.md. Implemented optional typed tier/role, ordered rendering, Go-shaped parsing, canonical role spelling, paired-field validation and conformance fixture. Focused package build PASS and tests 439/439 PASS. Full gates pending.
+2026-09-28 14:54 UTC — Full pnpm typecheck PASS (4 stages), pnpm build PASS (13 stages), pnpm test PASS (6 stages including installed contracts) with executable TMPDIR in Eric scratch. First test invocation with TMPDIR inside a nested Cockpit worktree failed unrelated forge checkout-target tests because the temp fixtures were inside a Git checkout; scratch rerun passed. Shared request/parser/renderer remains additive for legacy requests; no default tier chosen.
