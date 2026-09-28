@@ -85,6 +85,12 @@ export type AgentTokenUsage =
       readonly source: "codex-token-count" | "claude-usage"; readonly reason: null }
   | { readonly usedTokens: null; readonly budgetTokens: number | null; readonly observedAt: null;
       readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
+export const AGENT_ACTION_REJECTED_REASONS = ["digest_conflict", "request_invalid", "payload_invalid", "action_invalid",
+  "repository_mismatch", "identity_mismatch", "agent_not_stoppable", "agent_not_running", "agent_not_live",
+  "retry_requires_terminal_successor_contract"] as const;
+export type AgentTimelineReason = "prompt_delivered" | "workspace_close_delivered" |
+  typeof AGENT_ACTION_REJECTED_REASONS[number] | "native-complete" | "native-error" | "native-cancelled" |
+  "stop" | "timeout" | "teardown";
 export interface AgentTimelineEvent {
   readonly id: string;
   readonly at: string;
@@ -94,6 +100,8 @@ export interface AgentTimelineEvent {
   readonly relatedAgentId: string | null;
   readonly source: "dispatch" | "native" | "goal" | "action-receipt" | "terminal";
   readonly outcome: "succeeded" | "failed" | "cancelled" | null;
+  /** Additive in 0.12; a closed code from the receipt or verified terminal observation. */
+  readonly reason?: AgentTimelineReason | null;
 }
 export interface AgentTimeline { readonly events: readonly AgentTimelineEvent[]; readonly truncated: boolean }
 
@@ -285,7 +293,9 @@ function timelineRow(value: unknown, capturedAt: string): AgentTimeline {
   if (typeof row.truncated !== "boolean") return bad();
   const ids = new Set<string>();
   const events = array(row.events, MAX_AGENT_TIMELINE_EVENTS).map(value => {
-    const e = record(value, ["id", "at", "kind", "action", "relatedAgentId", "source", "outcome"]);
+    const hasReason = Object.hasOwn(value as object, "reason");
+    const e = record(value, ["id", "at", "kind", "action", "relatedAgentId", "source", "outcome",
+      ...(hasReason ? ["reason"] : [])]);
     if (typeof e.id !== "string" || !/^event_[a-f0-9]{64}$/.test(e.id) || ids.has(e.id)) return bad();
     ids.add(e.id);
     const at = stamp(e.at);
@@ -298,9 +308,18 @@ function timelineRow(value: unknown, capturedAt: string): AgentTimeline {
     if (actionKind ? !["steer", "stop", "retry", "send"].includes(e.action as string) : e.action !== null) return bad();
     if (e.kind === "subagent-spawned" ? typeof e.relatedAgentId !== "string" || !/^agent_[a-f0-9]{64}$/.test(e.relatedAgentId) : e.relatedAgentId !== null) return bad();
     if (e.kind === "ended" ? !["succeeded", "failed", "cancelled"].includes(e.outcome as string) : e.outcome !== null) return bad();
+    if (hasReason) {
+      const validReason = e.kind === "action-accepted"
+        ? e.reason === (e.action === "stop" ? "workspace_close_delivered" : "prompt_delivered")
+        : e.kind === "action-rejected" ? AGENT_ACTION_REJECTED_REASONS.includes(e.reason as typeof AGENT_ACTION_REJECTED_REASONS[number])
+          : e.kind === "ended" ? ["native-complete", "native-error", "native-cancelled", "stop", "timeout", "teardown"].includes(e.reason as string)
+            : e.reason === null;
+      if (!validReason) return bad();
+    }
     return { id: e.id, at, kind: e.kind as AgentTimelineEvent["kind"], action: e.action as AgentTimelineEvent["action"],
       relatedAgentId: e.relatedAgentId as string | null, source: e.source as AgentTimelineEvent["source"],
-      outcome: e.outcome as AgentTimelineEvent["outcome"] };
+      outcome: e.outcome as AgentTimelineEvent["outcome"],
+      ...(hasReason ? { reason: e.reason as AgentTimelineReason | null } : {}) };
   });
   for (let i = 1; i < events.length; i++) if (events[i - 1]!.at > events[i]!.at) return bad();
   return { events, truncated: row.truncated };
@@ -399,13 +418,22 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
     : { value: null, digest: null, source: "unavailable", reason: "source_not_bound" } as const;
   const nativeDepth = Object.hasOwn(row, "nativeDepth") ? depthRow(row.nativeDepth)
     : { value: null, source: "unavailable", reason: "source_not_bound" } as const;
+  const timeline = Object.hasOwn(row, "timeline") ? timelineRow(row.timeline, capturedAt) : undefined;
+  for (const event of timeline?.events ?? []) {
+    if (event.kind !== "ended" || event.reason === undefined) continue;
+    const expected = endedBy ?? (terminalOutcome.value === "succeeded" ? "native-complete"
+      : terminalOutcome.value === "failed" ? "native-error"
+        : terminalOutcome.value === "cancelled" ? "native-cancelled" : null);
+    if (event.reason !== expected || event.outcome !== terminalOutcome.value ||
+        (endedBy === null && terminalOutcome.source !== "native-outcome")) return bad();
+  }
   return { dispatchId, observation: row.observation, harness: valueRow(row.harness), provider: valueRow(row.provider),
     router, routePolicy, model: valueRow(row.model), location, budget: decodedBudget, nativeDepth,
     quotaRegime, liveness, actionState, endedBy, terminalOutcome, startedAt, startedAtReason, endedAt, endedAtReason,
     transcript: { value: null, reason: "source_not_bound" }, history, historyTruncated: row.historyTruncated,
     ...(Object.hasOwn(row, "activity") ? { activity: activityRow(row.activity, capturedAt) } : {}),
     ...(Object.hasOwn(row, "tokenUsage") ? { tokenUsage: tokenUsageRow(row.tokenUsage, capturedAt, decodedBudget.tokenLimit) } : {}),
-    ...(Object.hasOwn(row, "timeline") ? { timeline: timelineRow(row.timeline, capturedAt) } : {}) };
+    ...(timeline === undefined ? {} : { timeline }) };
 }
 
 /** Strictly decode grouped ancestry before a cockpit stores or renders it. */

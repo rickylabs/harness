@@ -1,10 +1,10 @@
 /** Pure per-issue projection of the existing dispatcher/native ancestry join. */
 import { createHash } from "node:crypto";
-import { readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_HISTORY, MAX_AGENT_OBSERVATIONS,
+import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_REJECTED_REASONS, MAX_AGENT_HISTORY, MAX_AGENT_OBSERVATIONS,
   MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, unavailableAgentCost,
   projectRouteIdentity,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
-  type AgentTimelineEvent, type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+  type AgentTimelineEvent, type AgentTimelineReason, type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
@@ -35,9 +35,9 @@ const time = (value: string | undefined, latest: string): string | null =>
     Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value && value <= latest ? value : null;
 const event = (agentId: string, kind: AgentTimelineEvent["kind"], at: string,
   source: AgentTimelineEvent["source"], relatedAgentId: string | null = null,
-  outcome: AgentTimelineEvent["outcome"] = null): AgentTimelineEvent => ({
+  outcome: AgentTimelineEvent["outcome"] = null, reason: AgentTimelineReason | null = null): AgentTimelineEvent => ({
     id: `event_${digest([agentId, kind, at, relatedAgentId ?? "", outcome ?? ""].join("\0"))}`,
-    at, kind, action: null, relatedAgentId, source, outcome });
+    at, kind, action: null, relatedAgentId, source, outcome, reason });
 const orderedEvents = (events: readonly AgentTimelineEvent[]) => [...events]
   .sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
 
@@ -159,20 +159,28 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   if (start !== null) events.push(event(observation.agentId, "started", start, "native"));
   if (liveness.state === "ended" && terminalOutcome.value !== null) {
     const end = liveness.evidence === "native-outcome" ? outcomeAt : liveness.observedAt;
-    if (end !== null) events.push(event(observation.agentId, "ended", end, "terminal", null, terminalOutcome.value));
+    const endReason: AgentTimelineReason = endedBy ?? (terminalOutcome.value === "succeeded" ? "native-complete"
+      : terminalOutcome.value === "failed" ? "native-error" : "native-cancelled");
+    if (end !== null) events.push(event(observation.agentId, "ended", end, "terminal", null, terminalOutcome.value, endReason));
   }
+  let invalidActionReason = false;
   for (const receipt of actions) {
     const at = time(receipt.observedAt ?? undefined, now);
     if (at === null || receipt.agentId !== observation.agentId || receipt.dispatchId !== observation.assignment.id ||
         receipt.repository?.toLowerCase() !== `${observation.repo.owner}/${observation.repo.name}`.toLowerCase() ||
         receipt.issueNumber !== observation.issueNumber || receipt.action === null ||
         (receipt.outcome !== "accepted" && receipt.outcome !== "rejected")) continue;
+    const validReason = receipt.outcome === "accepted"
+      ? receipt.reason === (receipt.action === "stop" ? "workspace_close_delivered" : "prompt_delivered")
+      : AGENT_ACTION_REJECTED_REASONS.includes(receipt.reason as typeof AGENT_ACTION_REJECTED_REASONS[number]);
+    if (!validReason) { invalidActionReason = true; continue; }
     events.push({ id: `event_${digest([observation.agentId, receipt.operationId, receipt.outcome].join("\0"))}`,
       at, kind: receipt.outcome === "accepted" ? "action-accepted" : "action-rejected",
-      action: receipt.action, relatedAgentId: null, source: "action-receipt", outcome: null });
+      action: receipt.action, relatedAgentId: null, source: "action-receipt", outcome: null,
+      reason: receipt.reason as AgentTimelineReason });
   }
   const timeline: NonNullable<IssueAgentTreeAgent["timeline"]> = {
-    events: orderedEvents(events).slice(-32), truncated: !actionsComplete || events.length > 32 };
+    events: orderedEvents(events).slice(-32), truncated: !actionsComplete || invalidActionReason || events.length > 32 };
   return { dispatchId: observation.assignment.id, observation: placedObservation, harness, provider, router,
     routePolicy: observation.parentAgentId.state === "confirmed-root" ? dispatch.routePolicy ?? unavailablePolicy : unavailablePolicy, model,
     location: { host, container: unplaced, seat: unplaced }, nativeDepth,

@@ -666,7 +666,7 @@ outcome is then `cancelled`, sourced from `teardown-observation`; the later obse
 proves termination. The two measurements have separate bounded history events. Native terminal
 outcomes and verified cockpit stops keep their existing precedence.
 
-## Recent agent work and timeline in 0.11.x
+## Recent agent work and timeline in 0.12.0
 
 Each bound issue-tree agent has three additive fields. `activity` contains at most 20 recent
 assistant-origin steps, newest first, with an opaque stable ID, source, time, kind, and a small
@@ -693,6 +693,11 @@ verified Orchid notification writer; the current issue feed does not emit them. 
 native reader presently binds Codex only. Claude parsing is available, while Claude issue-tree
 publication waits for a validated native binding and bounded scoped reader.
 
-Older frames without these optional fields remain decodable. A producer emitting 0.11.0 fields
-requires a 0.11.0 consumer because earlier decoders reject unknown agent keys. Upgrade consumers
-before deploying the new producer.
+In 0.12.0, timeline events add an optional closed `reason` code. Validated action receipts supply
+delivery or rejection reasons; an `ended` event names the verified native outcome, stop, timeout,
+or teardown. Receipt delivery by itself does not produce `ended`. The decoder accepts older events
+without `reason`, but checks new terminal reasons against the agent's measured terminal source.
+
+Older frames without these optional fields remain decodable. A producer emitting 0.12.0 timeline
+reasons requires a 0.12.0 consumer because earlier decoders reject unknown event keys. Upgrade
+consumers before deploying the new producer.
