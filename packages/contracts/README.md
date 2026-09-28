@@ -707,6 +707,11 @@ an allowlisted command head, a repository file basename, or a screened search qu
 rejected whole when unsafe; repository-relative path segments pass that screen too. No flags, raw
 paths, arguments, or unbounded transcript text are copied.
 
+In 0.14.0, an issue can add `launchRefusal` even when no agent row exists. It carries an opaque
+dispatch ID, Orchid source, observation time, and one closed pre-launch reason. A later launch
+attempt clears the refusal in Orchid's issue launch state. Inconclusive post-launch outcomes are
+never projected as refusals. Older frames without this optional issue field remain decodable.
+
 Older frames without these optional fields remain decodable. A producer emitting 0.12.0 timeline
 reasons requires a 0.12.0 consumer because earlier decoders reject unknown event keys. Upgrade
 consumers before deploying the new producer.

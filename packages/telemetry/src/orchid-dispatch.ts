@@ -4,7 +4,7 @@ import { constants } from "node:fs";
 import { lstat, open, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents";
-import { ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
+import { ISSUE_LAUNCH_REFUSAL_REASONS, ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
   type OrchidRouteObservedReasons, type AgentBudget, type AgentRoutePolicy } from "@rickylabs/harness-contracts";
 import { readOrchidNativeBinding, readOrchidHostBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import { readOrchidStopObservation } from "./orchid-stop-observation.js";
@@ -69,14 +69,50 @@ export interface OrchidDispatchRead {
   readonly root: string | undefined;
   readonly reason: OrchidDispatchUnavailableReason | null;
   readonly dispatches: readonly DispatchEvidence[];
+  readonly launchStates: readonly OrchidLaunchState[];
   readonly notes: readonly string[];
   readonly degraded: boolean;
+}
+export interface OrchidLaunchState {
+  readonly issue: { readonly repo: string; readonly number: number };
+  readonly dispatchId: string;
+  readonly state: "refused" | "launching" | "launched";
+  readonly reasonCode: typeof ISSUE_LAUNCH_REFUSAL_REASONS[number] | null;
+  readonly observedAt: string;
+}
+const launchFile = /^launch-[a-f0-9]{64}\.json$/;
+const assignment = /^assignment_[a-f0-9]{64}$/;
+const stamp = (value: unknown): value is string => typeof value === "string" &&
+  /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) &&
+  Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+async function readLaunchState(root: string, name: string): Promise<OrchidLaunchState> {
+  const file = await open(join(root, name), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    const stat = await file.stat();
+    if (!stat.isFile() || (stat.mode & 0o7777) !== 0o600 || stat.size > 4096) throw new Error();
+    const bytes = Buffer.alloc(4097);
+    const { bytesRead } = await file.read(bytes, 0, bytes.length, 0);
+    if (bytesRead > 4096) throw new Error();
+    const row = object(JSON.parse(bytes.subarray(0, bytesRead).toString("utf8")));
+    const issue = object(row?.issue);
+    if (row === null || Object.keys(row).sort().join(",") !== "dispatchId,issue,observedAt,reasonCode,schemaVersion,state" ||
+        row.schemaVersion !== 1 || issue === null || Object.keys(issue).sort().join(",") !== "number,repo" ||
+        typeof issue.repo !== "string" || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(issue.repo) ||
+        !Number.isSafeInteger(issue.number) || (issue.number as number) < 1 ||
+        typeof row.dispatchId !== "string" || !assignment.test(row.dispatchId) || !stamp(row.observedAt) ||
+        (row.state !== "refused" && row.state !== "launching" && row.state !== "launched") ||
+        (row.state === "refused" ? !ISSUE_LAUNCH_REFUSAL_REASONS.includes(row.reasonCode as typeof ISSUE_LAUNCH_REFUSAL_REASONS[number])
+          : row.reasonCode !== null)) throw new Error();
+    return { issue: { repo: issue.repo, number: issue.number as number }, dispatchId: row.dispatchId,
+      state: row.state, reasonCode: row.reasonCode as OrchidLaunchState["reasonCode"], observedAt: row.observedAt };
+  } finally { await file.close(); }
 }
 
 /** Root diagnostics echo only the configured root, never a descriptor path, native identity, or raw receipt. */
 export async function readOrchidDispatches(root: string | undefined): Promise<OrchidDispatchRead> {
-  if (root === undefined) return { root, reason: null, dispatches: [], notes: [], degraded: false };
+  if (root === undefined) return { root, reason: null, dispatches: [], launchStates: [], notes: [], degraded: false };
   const dispatches: DispatchEvidence[] = [];
+  const launchStates: OrchidLaunchState[] = [];
   const notes = new Set<string>();
   let reason: OrchidDispatchUnavailableReason | null = null;
   try {
@@ -99,7 +135,27 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
       catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
       if (dirname(dir) === dir) break;
     }
-    const entries = (await readdir(root)).filter(name => hash.test(name)).sort();
+    const names = await readdir(root);
+    const launches = names.filter(name => launchFile.test(name)).sort();
+    if (launches.length > 1000) notes.add("orchid-dispatch: scan_limit");
+    const seenLaunchIssues = new Set<string>();
+    const ambiguousLaunchIssues = new Set<string>();
+    for (const name of launches.slice(0, 1000)) {
+      try {
+        const state = await readLaunchState(root, name);
+        const key = `${state.issue.repo.toLowerCase()}#${state.issue.number}`;
+        if (seenLaunchIssues.has(key)) { ambiguousLaunchIssues.add(key); notes.add("orchid-dispatch: binding_unavailable"); }
+        seenLaunchIssues.add(key);
+        launchStates.push(state);
+      } catch { notes.add("orchid-dispatch: binding_unavailable"); }
+    }
+    if (ambiguousLaunchIssues.size > 0) {
+      for (let i = launchStates.length - 1; i >= 0; i--) {
+        const row = launchStates[i]!;
+        if (ambiguousLaunchIssues.has(`${row.issue.repo.toLowerCase()}#${row.issue.number}`)) launchStates.splice(i, 1);
+      }
+    }
+    const entries = names.filter(name => hash.test(name)).sort();
     if (entries.length > 1000) notes.add("orchid-dispatch: scan_limit");
     for (const key of entries.slice(0, 1000)) {
       try {
@@ -185,7 +241,7 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
       } catch { notes.add("orchid-dispatch: binding_unavailable"); }
     }
   } catch { notes.add("orchid-dispatch: source_unavailable"); }
-  return { root, reason, dispatches, notes: [...notes], degraded: notes.size > 0 };
+  return { root, reason, dispatches, launchStates, notes: [...notes], degraded: notes.size > 0 };
 }
 
 /** Associate only an existing explicit DispatchResult reference, never cwd, title or issue prose. */

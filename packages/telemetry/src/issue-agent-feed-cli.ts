@@ -11,6 +11,7 @@ import { buildAgentObservations } from "./agent-observations.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import { readActionReceipts } from "./action-receipt-cli.js";
 import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
+import type { OrchidLaunchState } from "./orchid-dispatch.js";
 import { matchesOrchidNativeRootIdentity } from "./orchid-native-binding.js";
 import { HOST_CAPACITY_PLACEMENT_HOST, readLocalHostCapacity } from "./host-capacity.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
@@ -42,7 +43,16 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   if (!Number.isFinite(nowMs) || orchid.reason !== null) return unavailableSnapshot(options.now, "source_unavailable");
   const localCapacity = await readLocalHostCapacity(options.now, options.env[HOST_CAPACITY_PLACEMENT_HOST]);
   const actionScan = await readActionReceipts(options.env[ORCHID_DISPATCH_ROOT]);
-  const groups = new Map<string, { repo: IssueAgentTree["repo"]; issueNumber: number; dispatches: DispatchEvidence[] }>();
+  const groups = new Map<string, { repo: IssueAgentTree["repo"]; issueNumber: number;
+    dispatches: DispatchEvidence[]; refusal?: OrchidLaunchState }>();
+  for (const refusal of orchid.launchStates) {
+    if (refusal.state !== "refused" || refusal.reasonCode === null || Date.parse(refusal.observedAt) > nowMs) continue;
+    const [owner, name] = refusal.issue.repo.split("/");
+    if (!owner || !name) continue;
+    const key = `${owner.toLowerCase()}/${name.toLowerCase()}#${refusal.issue.number}`;
+    if (options.issueKey !== undefined && key !== options.issueKey) continue;
+    groups.set(key, { repo: { owner, name }, issueNumber: refusal.issue.number, dispatches: [], refusal });
+  }
   for (const dispatch of orchid.dispatches) {
     if (!dispatch.issue) continue;
     const [owner, name] = dispatch.issue.repo.split("/");
@@ -54,7 +64,8 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     group.dispatches.push(dispatch);
   }
   const ordered = [...groups.values()].sort((a, b) =>
-    Math.max(...b.dispatches.map(d => Date.parse(d.observedAt!))) - Math.max(...a.dispatches.map(d => Date.parse(d.observedAt!))));
+    Math.max(...b.dispatches.map(d => Date.parse(d.observedAt!)), b.refusal ? Date.parse(b.refusal.observedAt) : -Infinity) -
+    Math.max(...a.dispatches.map(d => Date.parse(d.observedAt!)), a.refusal ? Date.parse(a.refusal.observedAt) : -Infinity));
   if (options.issueKey !== undefined && ordered.length === 0) {
     return unavailableSnapshot(options.now, orchid.degraded ? "source_unavailable" : "source_not_bound");
   }
@@ -64,6 +75,17 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     const entry = { repo: group.repo, issueNumber: group.issueNumber,
       snapshot: unavailableSnapshot(options.now, "binding_unavailable") };
     entries.push(entry);
+    if (group.dispatches.length === 0 && group.refusal !== undefined) {
+      const issue: IssueAgentTree = { repo: group.repo, issueNumber: group.issueNumber,
+        complete: true, reason: null, dispatches: [], launchRefusal: {
+          state: "refused", reason: group.refusal.reasonCode!, at: group.refusal.observedAt,
+          dispatchId: group.refusal.dispatchId, source: "orchid" } };
+      entry.snapshot = { schema: 1, protocol: 1, observedAt: options.now,
+        validUntil: new Date(nowMs + ISSUE_AGENT_TREE_FRESH_MS).toISOString(),
+        revision: createHash("sha256").update(JSON.stringify(issue)).digest("hex"),
+        complete: true, reason: null, issues: [issue] };
+      continue;
+    }
     if (group.dispatches.some(d => d.source !== "codex" || d.observedAt === undefined)) continue;
     if (group.dispatches.length > MAX_ISSUE_DISPATCHES || remainingBytes <= 0 ||
         group.dispatches.some(d => nowMs > Date.parse(d.observedAt!) + MAX_DISPATCH_AGE_MS)) {
@@ -88,8 +110,18 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete });
   }
   // A malformed receipt cannot be proven unrelated to a scoped issue.
-  return combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,
+  const combined = combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,
     globalReason: groups.size > MAX_AGENT_OBSERVATIONS ? "scan_limit" : orchid.degraded ? "source_unavailable" : null });
+  const issues = combined.issues.map(issue => {
+    const key = `${issue.repo.owner.toLowerCase()}/${issue.repo.name.toLowerCase()}#${issue.issueNumber}`;
+    const refusal = groups.get(key)?.refusal;
+    return refusal === undefined ? issue : { ...issue, launchRefusal: { state: "refused" as const,
+      reason: refusal.reasonCode!, at: refusal.observedAt, dispatchId: refusal.dispatchId, source: "orchid" as const } };
+  });
+  const snapshot = { ...combined, issues,
+    revision: createHash("sha256").update(JSON.stringify({ issues, reason: combined.reason })).digest("hex") };
+  const decoded = readIssueAgentTreeSnapshot(snapshot);
+  return decoded.ok ? decoded.snapshot : unavailableSnapshot(options.now);
 }
 
 function unavailableSnapshot(at: string, reason: IssueAgentTreeSnapshot["reason"] = "source_unavailable"): IssueAgentTreeSnapshot {

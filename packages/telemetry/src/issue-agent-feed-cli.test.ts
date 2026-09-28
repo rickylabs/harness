@@ -236,3 +236,34 @@ it("rejects malformed scoped issue selectors before collecting", async () => {
     assert.equal(await issueAgentFeedCommand(["--json", "--issue", issue], { collect: async () => { throw Error("must not collect"); } }), 2);
   }
 });
+it("keeps an issue-scoped Orchid refusal when no agent ever launched", async () => {
+  const home = await mkdtemp(join(tmpdir(), "issue-refusal-home-"));
+  const receipts = await mkdtemp(join(tmpdir(), "issue-refusal-root-"));
+  const path = join(receipts, "launch-" + "d".repeat(64) + ".json");
+  const refusal = { schemaVersion: 1, issue: { repo: "example/inbox", number: 42 },
+    dispatchId: "assignment_" + "e".repeat(64), state: "refused", reasonCode: "routing-invalid",
+    observedAt: "2026-01-01T00:00:00.000Z" };
+  try {
+    await writeFile(path, JSON.stringify(refusal), { mode: 0o600 });
+    const now = "2026-01-01T00:00:01.000Z";
+    const options = { home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20, now,
+      issueKey: "example/inbox#42" };
+    const frame = await collectIssueAgentTree(options);
+    assert.equal(frame.issues.length, 1);
+    assert.equal(frame.issues[0]?.complete, true);
+    assert.deepEqual(frame.issues[0]?.dispatches, []);
+    assert.deepEqual(frame.issues[0]?.launchRefusal, { state: "refused", reason: "routing-invalid",
+      at: refusal.observedAt, dispatchId: refusal.dispatchId, source: "orchid" });
+    const output = new Capture();
+    assert.equal(await issueAgentFeedCommand(["--json", "--issue", "example/inbox#42", "--home", home],
+      { output, now: () => now, env: options.env }), 0);
+    assert.equal(JSON.parse(output.lines[0]!).issues[0].launchRefusal.reason, "routing-invalid");
+    await writeFile(path, JSON.stringify({ ...refusal, state: "launching", reasonCode: null }));
+    const cleared = await collectIssueAgentTree(options);
+    assert.deepEqual(cleared.issues, []);
+    assert.ok(!JSON.stringify(frame).includes("PRIVATE"));
+  } finally {
+    await rm(home, { recursive: true, force: true });
+    await rm(receipts, { recursive: true, force: true });
+  }
+});

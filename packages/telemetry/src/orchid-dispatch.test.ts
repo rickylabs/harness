@@ -282,3 +282,32 @@ it("requires exactly 0700 on the root and still accepts a restored 0700 root", a
     assert.equal(accepted.dispatches.length, 1);
   } finally { await chmod(s.root, 0o700); await rm(s.root, { recursive: true, force: true }); }
 });
+it("reads a closed issue launch refusal without a dispatch and withholds malformed records", async () => {
+  const s = await setup();
+  const path = join(s.root, "launch-" + "d".repeat(64) + ".json");
+  const refusal = { schemaVersion: 1, issue: { repo: "example/inbox", number: 42 },
+    dispatchId: "assignment_" + "e".repeat(64), state: "refused", reasonCode: "routing-invalid",
+    observedAt: "2026-01-01T00:00:00.000Z" };
+  try {
+    await writeFile(path, JSON.stringify(refusal), { mode: 0o600 });
+    const good = await readOrchidDispatches(s.root);
+    assert.deepEqual(good.dispatches, []);
+    assert.equal(good.launchStates[0]?.reasonCode, "routing-invalid");
+    assert.ok(!JSON.stringify(good).includes("PRIVATE"));
+    for (const state of [
+      { ...refusal, reasonCode: "PRIVATE-refusal" },
+      { ...refusal, reasonCode: "goal-prompt-unconfirmed" },
+      { ...refusal, dispatchId: "PRIVATE-native-id" },
+      { ...refusal, issue: { repo: "example/inbox", number: 0 } },
+    ]) {
+      await writeFile(path, JSON.stringify(state));
+      const bad = await readOrchidDispatches(s.root);
+      assert.deepEqual(bad.launchStates, []);
+      assert.equal(bad.degraded, true);
+    }
+    await writeFile(path, JSON.stringify({ ...refusal, state: "launching", reasonCode: null }));
+    assert.equal((await readOrchidDispatches(s.root)).launchStates[0]?.state, "launching");
+    await chmod(path, 0o644);
+    assert.deepEqual((await readOrchidDispatches(s.root)).launchStates, []);
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
