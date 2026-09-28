@@ -11,7 +11,7 @@ USABLE-1 current-step follow-up to the merged activity feed. No contract field o
 - `pnpm typecheck` — PASS.
 - `pnpm build` — PASS, including after the documentation move.
 - `pnpm test` — PASS with executable TMPDIR; the full workspace suite completed.
-- Seven compileable mutants killed: plan status, length, character/secret screen, sentence boundary, shell flag, shell executable.
+- Eight compileable mutants killed: plan status, length, character/secret/domain screen, sentence boundary, shell flag, shell executable.
 - Public diff and PR body leak scan — PASS.
 
 ## Drift / Debt

@@ -71,6 +71,7 @@ it("uses the first safe assistant sentence, and never truncates or echoes privat
   assert.equal(text("Review the parser ".repeat(8) + ". Then run tests."), "Agent message");
   assert.equal(text("Read /private/host/path. Then continue."), "Agent message");
   assert.equal(text("Read /fixture/path. Then continue."), "Agent message");
+  assert.equal(text("Visit example.invalid. Then continue."), "Agent message");
   assert.equal(text("Check credential material. Then continue."), "Agent message");
   const claude = claudeActivity({ timestamp: at, type: "assistant", message: { content: [
     { type: "text", text: "Run focused tests. Then review." },

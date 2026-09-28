@@ -44,7 +44,7 @@ function safeText(value: unknown): string | null {
   if (candidate.length < 3 || candidate.length > 120 ||
       !/^[A-Za-z0-9][A-Za-z0-9 .,;:!?()'_-]*$/.test(candidate) ||
       /(?:secret|password|credential|private|bearer|token|api.?key|github_pat_|gh[pousr]_|\bsk-[A-Za-z0-9]{12,})/i.test(candidate) ||
-      /(?:\b\d{1,3}(?:\.\d{1,3}){3}\b|\b[a-f0-9]{24,}\b|[A-Za-z0-9_-]{32,})/i.test(candidate)) return null;
+      /(?:\b\d{1,3}(?:\.\d{1,3}){3}\b|\b[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+\b|\b[a-f0-9]{24,}\b|[A-Za-z0-9_-]{32,})/i.test(candidate)) return null;
   return candidate;
 }
 function firstSentence(value: unknown): string | null {
