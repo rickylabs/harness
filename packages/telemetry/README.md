@@ -799,6 +799,13 @@ checked aggregate values. Missing files remain unavailable rather than becoming 
 deadline, the command emits an incomplete snapshot. Slash-bearing native display labels are
 withheld because this public feed cannot safely distinguish them from relative paths.
 
+The 0.11.0 `activity.steps` producer reads the single `in_progress` item from a Codex
+`update_plan` call or Claude `TodoWrite` call as a current-step message. Assistant text contributes
+only its first sentence. Both use a reject-not-truncate 120-character screen for controls, paths,
+addresses, secrets and long opaque tokens; unsafe text stays a fixed generic label. An exact
+`bash`/`sh -lc` command array can supply a safe command head from its inner command, still without
+flags or arguments. These refinements change no 0.11.0 wire field or published decoder.
+
 Cwd, Git origin and goal objective default to `redacted`. `includeSensitive:true` in the library or `--private` on the CLI permits those fields for an authenticated private consumer only. Never log that payload. Native IDs, session IDs, rollout paths and previews are always excluded; public thread references reuse existing opaque native-child IDs. `codexThreadEvidence(snapshot)` is the counts/availability/reasons-only projection for publishable evidence.
 
 Defaults: 500 rows, 30-second read/request deadline, 50 rows per page. Hard caps: 5000 rows, 202 pages, 1 MiB per frame, 8 outstanding RPCs, 128 buffered goal notifications. Both archived states and all declared native source kinds are included; list-side rollout repair is disabled. Overflow/disconnect is explicit. Sequence numbers are connection-local, not durable replay cursors. The snapshot is not atomic with the stream, and cross-process notification delivery is not claimed. See [RFC 0003](../../docs/rfcs/0003-codex-thread-read-stream.md).
