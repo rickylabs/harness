@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **342/418 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 7 invisible**
+`[################----]` **343/421 done · 23 running · 25 queued · 8 blocked · 15 abandoned · 7 invisible**
 
-_Latest board activity: 2026-09-28T18:09:51Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-28T18:41:21Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (22)
+## Moving now (23)
 
 Something could be acting on these right now.
 
@@ -31,7 +31,8 @@ Something could be acting on these right now.
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `impl-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees](https://github.com/rickylabs/harness/issues/373) | `impl-eval` | — |
-| [#430 SSE live-push proof: watch a short native child review](https://github.com/rickylabs/harness/issues/430) | `impl` | — |
+| [#431 Show sourced action and terminal reasons in agent timeline](https://github.com/rickylabs/harness/issues/431) | `ready-merge` | `e9` |
+| [PR433 Expose sourced action and terminal reasons in agent timeline](https://github.com/rickylabs/harness/pull/433) | `ready-merge` | `e9` |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -59,7 +60,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
 
-## Anomalies (29)
+## Anomalies (32)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -94,6 +95,9 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#410** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#412** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#413** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#431** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#432** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#433** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#387** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#411** — is in milestone (none) but its epic #36 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
@@ -130,20 +134,20 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 147/176 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 6 invisible
+`[#########---]` 148/179 done · 6 running · 5 queued · 5 blocked · 9 abandoned · 6 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 11/13 done · 2 queued | `impl` |
-| _(no epic)_ | `[##########--]` 123/146 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 5 invisible | — |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[########----]` 11/16 done · 2 running · 3 queued | `impl` |
+| _(no epic)_ | `[##########--]` 124/146 done · 3 running · 2 queued · 3 blocked · 9 abandoned · 5 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>24 filed, nothing started</summary>
+<summary>25 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -151,6 +155,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON](https://github.com/rickylabs/harness/issues/275) | `triage` | `e11` |
 | [#397 Live proof: native goal, budget, child and run states](https://github.com/rickylabs/harness/issues/397) | `triage` | `e9` |
 | [#400 Live proof: native goal read-back and notifications](https://github.com/rickylabs/harness/issues/400) | `triage` | `e9` |
+| [#432 USABLE-1 proof: live steer, stop, child, and timeline](https://github.com/rickylabs/harness/issues/432) | `triage` | `e9` |
 | [#287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts](https://github.com/rickylabs/harness/issues/287) | `triage` | `e3` |
 | [#290 Spike S12 — Evidence path: transcript and quota meters for UHP runs](https://github.com/rickylabs/harness/issues/290) | `triage` | `e3` |
 | [#331 Incident: three sweeps, sixteen candidates, sixteen live — and the only unrecovered one was found by naming convention](https://github.com/rickylabs/harness/issues/331) | `triage` | — |
@@ -180,7 +185,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  342/418 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 7 invisible
+# rickylabs/harness  [################----]  343/421 done · 23 running · 25 queued · 8 blocked · 15 abandoned · 7 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  195/242 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -461,7 +466,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  147/176 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 6 invisible
+## (no milestone)  [################----]  148/179 done · 6 running · 5 queued · 5 blocked · 9 abandoned · 6 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -490,7 +495,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR411 feat(telemetry): read sanitized Orchid action receipts (p1)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]  (epic is in M1 — dsh coordinator foundation)
-    [#############---] 11/13 done · 2 queued
+    [###########-----] 11/16 done · 2 running · 3 queued
     shipped              PR386 feat(telemetry): versioned per-issue agent feed (p0)
     shipped              #387 Proof: one native child in the issue-agent feed (p1)
     shipped              #392 Proof: route-default goal, live status and one native child (p0)
@@ -504,6 +509,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #410 Live proof: native child depth and terminal goal notification (p0)
     shipped              #412 Live proof: private action delivery and observed stop (p0)
     shipped              #413 Live proof: accepted private steer and stop delivery (p0)
+    ready-merge          #431 Show sourced action and terminal reasons in agent timeline (p0)
+    triage               #432 USABLE-1 proof: live steer, stop, child, and timeline (p0)
+    ready-merge          PR433 Expose sourced action and terminal reasons in agent timeline (p0)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
@@ -651,7 +659,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #427 USABLE-1 proof: audit live activity, usage, child, and timeline (p0)
     shipped              #428 fix(telemetry): reject code-like activity and preserve timeline truncation (p0)
     shipped              PR429 fix(telemetry): screen code-like activity and retain timeline truncation (p0)
-    impl                 #430 SSE live-push proof: watch a short native child review (p0)
+    shipped              #430 SSE live-push proof: watch a short native child review (p0)
 ```
 
 </details>
