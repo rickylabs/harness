@@ -776,9 +776,12 @@ verdict preserves incomplete ancestry. Output contains only counts and closed re
 
 CLI: `dsh-telemetry codex-threads --limit 500 --json`; append `--watch` for a snapshot followed by goal event JSONL. Exit 3 means incomplete source coverage; valid thread rows remain present when a goal RPC fails. Native parent absence remains `ancestry_unavailable`; goal absence remains `goal_absent`; an unset budget remains `budget_unset`. Reported zero is available zero. Model/effort are configured or persisted metadata, not per-turn route confirmation. Runtime state is scoped to the connected app-server; unloaded threads cannot prove running agents elsewhere.
 
-The cockpit source feed is `dsh-telemetry issue-agents --watch`. It rereads dispatch and native
-evidence every five seconds and writes one complete per-issue tree snapshot per JSONL line, even
-when unchanged. Each process has a fresh generation and sequence starting at zero; a restarted
+The cockpit source feed is `dsh-telemetry issue-agents --watch`. It writes a full per-issue tree
+snapshot heartbeat every five seconds by default. Receipt changes, new native rollout files, and
+changes to selected rollouts trigger a disk scan at the next heartbeat. A 12-second safety scan
+recovers missed filesystem events before the 15-second freshness deadline. A heartbeat between
+scans keeps the original `observedAt` and `validUntil`; it never renews evidence by itself.
+Each process has a fresh generation and sequence starting at zero; a restarted
 consumer gets a new full snapshot. The cockpit backend, not this process, persists and replays
 events to its own clients. Each snapshot expires 15 seconds after `observedAt`; a stale feed is
 unknown, not still running. `issue-agents --json` reads one snapshot for diagnosis. Missing or
