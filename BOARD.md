@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **325/398 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible**
+`[################----]` **327/399 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible**
 
-_Latest board activity: 2026-09-28T10:28:33Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-28T11:10:14Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (22)
+## Moving now (21)
 
 Something could be acting on these right now.
 
@@ -35,7 +35,6 @@ Something could be acting on these right now.
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
 | [#260 E6 — Publish checked run-steer semantics over sender ownership](https://github.com/rickylabs/harness/issues/260) | `research` | `e6` |
-| [#261 E6 — Define command receipt lookup and unknown reconciliation boundaries](https://github.com/rickylabs/harness/issues/261) | `research` | `e6` |
 | [#262 E9 — Specify projection revision, observation coverage and census authority](https://github.com/rickylabs/harness/issues/262) | `research` | `e9` |
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
 | [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl-eval` | `e3` |
@@ -58,7 +57,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 
-## Anomalies (25)
+## Anomalies (26)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -92,6 +91,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#405** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#410** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#387** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#411** — is in milestone (none) but its epic #36 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 
 **`multiple-status`**
@@ -106,7 +106,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
+`[#########---]` 195/242 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 24/39 done · 7 running · 4 queued · 1 blocked · 3 abandoned | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 invisible | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
-| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 29/38 done · 6 running · 1 queued · 2 abandoned | `impl` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 30/38 done · 5 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
@@ -125,12 +125,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 131/156 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
+`[##########--]` 132/157 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
+| [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 9/11 done · 2 queued | `impl` |
 | _(no epic)_ | `[##########--]` 110/129 done · 3 running · 2 queued · 3 blocked · 9 abandoned · 2 invisible | — |
 
@@ -174,9 +175,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  325/398 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible
+# rickylabs/harness  [################----]  327/399 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 4 invisible
 
-## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
+## M1 — dsh coordinator foundation  [################----]  195/242 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -334,7 +335,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR257 docs: sidecar-ratification--e5 accepts owner decision
 
   E6 — Coordinator: workflows, task DAG, board projection #36  [impl]
-    [############----] 29/38 done · 6 running · 1 queued · 2 abandoned
+    [############----] 30/38 done · 5 running · 1 queued · 2 abandoned
     shipped              #68 E6.1 — board: task DAG, kanban projection, issue↔card reconciliation
     shipped              #69 E6.2 — coordinator: the workflow definitions
     shipped              #70 E6.3 — Emit one dispatch payload in the /swarm wire format
@@ -370,7 +371,7 @@ Open, and carrying no `status:` label — real work no column can see.
     research             #258 E6.C — Live driver adapter after sidecar ratification (p1)
     research             #259 E6 — Define a capability-gated run-stop contract (p1)
     research             #260 E6 — Publish checked run-steer semantics over sender ownership (p1)
-    research             #261 E6 — Define command receipt lookup and unknown reconciliation boundaries (p1)
+    shipped              #261 E6 — Define command receipt lookup and unknown reconciliation boundaries (p1)
     research             #263 E6 — Clarify correlation-group identity versus execution ancestry (p1)
     triage               #264 E6 — Define creation capability ownership before exposing P2 actions (p2)
 
@@ -455,7 +456,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  131/156 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
+## (no milestone)  [################----]  132/157 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 3 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -478,6 +479,10 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #346 E11: independently evaluate final receipt delta and blocked-decision check (p0)
     shipped              #347 E11: independently evaluate the upstream divybot matrix-hook plan (p0)
     research             #349 Brainstorm: dual-agent mailbox pilot contract (draft)
+
+  E6 — Coordinator: workflows, task DAG, board projection #36  [impl]  (epic is in M1 — dsh coordinator foundation)
+    [################] 1/1 done
+    shipped              PR411 feat(telemetry): read sanitized Orchid action receipts (p1)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]  (epic is in M1 — dsh coordinator foundation)
     [#############---] 9/11 done · 2 queued
