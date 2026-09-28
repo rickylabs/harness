@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **355/431 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible**
+`[################----]` **356/432 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible**
 
-_Latest board activity: 2026-09-28T21:58:24Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-28T22:07:27Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -49,7 +49,7 @@ Something could be acting on these right now.
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 
-## Not on the board (2)
+## Not on the board (3)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -57,6 +57,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
+| [#444 Live revision-pin feed proof with one native child](https://github.com/rickylabs/harness/issues/444) | — | — |
 
 ## Anomalies (36)
 
@@ -65,10 +66,6 @@ Open, and carrying no `status:` label — real work no column can see.
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
-
-**`closed-without-status`**
-
-- **#443** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -115,6 +112,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#370** — open item has no status label, so it appears in no column
 - **#422** — open item has no status label, so it appears in no column
+- **#444** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -139,7 +137,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 160/189 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
+`[##########--]` 161/190 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -147,7 +145,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 2 queued | `impl` |
-| _(no epic)_ | `[##########--]` 130/153 done · 3 running · 2 queued · 3 blocked · 9 abandoned · 6 invisible | — |
+| _(no epic)_ | `[##########--]` 131/154 done · 3 running · 2 queued · 3 blocked · 9 abandoned · 6 invisible | — |
 
 ## Waiting to start
 
@@ -189,7 +187,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  355/431 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible
+# rickylabs/harness  [################----]  356/432 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  195/242 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -470,7 +468,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  160/189 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
+## (no milestone)  [################----]  161/190 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -673,7 +671,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR440 feat(telemetry): project issue launch refusals
     shipped              PR441 feat(profiles): validate pinned Markdown metadata
     shipped              PR442 feat(contracts): add profile and workflow revisions
-    no status            PR443 Project pinned launch revisions in issue agent feed
+    shipped              PR443 Project pinned launch revisions in issue agent feed
+    no status            #444 Live revision-pin feed proof with one native child
 ```
 
 </details>
