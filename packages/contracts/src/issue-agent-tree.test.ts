@@ -34,6 +34,14 @@ it("decodes a grouped opaque dispatch tree with explicit unknowns", () => {
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.budget.tokenLimit, null);
 });
+it("accepts a sourced current budget only as a positive receipt value on the root", () => {
+  const s = snapshot();
+  const withBudget = (budget: unknown) => ({ ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId,
+    agents: [{ ...node, budget }] }] }] });
+  assert.equal(read(withBudget({ tokenLimit: 1_500, source: "action-receipt", reason: null })).ok, true);
+  assert.equal(read(withBudget({ tokenLimit: 0, source: "action-receipt", reason: null })).ok, false);
+  assert.equal(read(withBudget({ tokenLimit: "PRIVATE-BUDGET", source: "action-receipt", reason: null })).ok, false);
+});
 it("accepts a source-bound launch refusal with no agent and rejects unsourced or unsafe reasons", () => {
   const s = snapshot();
   const refusal = { state: "refused", reason: "routing-invalid", at, dispatchId, source: "orchid" };

@@ -158,8 +158,24 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     Number.isSafeInteger(run.nativeDepth) && run.nativeDepth >= 1
     ? { value: run.nativeDepth, source: "native", reason: null }
     : { value: null, source: "unavailable", reason: !root && run !== undefined ? "measurement_missing" : "source_not_bound" };
-  const budget = root ? dispatch.budget ?? { tokenLimit: null, source: "unavailable", reason: "source_not_bound" } as const
+  const launchBudget = root ? dispatch.budget ?? { tokenLimit: null, source: "unavailable", reason: "source_not_bound" } as const
     : { tokenLimit: null, source: "unavailable", reason: "source_not_bound" } as const;
+  // Each accepted raise receipt is written only after Orchid's native goal
+  // notification, get read-back and state persistence. A missing or partial
+  // action scan cannot supersede the original launch budget.
+  const raisedBudget = root && actionsComplete && launchBudget.tokenLimit !== null
+    ? actions.reduce<number | null>((highest, receipt) => {
+      const at = receiptTime(receipt.observedAt ?? undefined, now);
+      if (receipt.action !== "raise_budget" || receipt.outcome !== "accepted" ||
+          receipt.reason !== "goal_budget_updated" || receipt.agentId !== observation.agentId ||
+          receipt.dispatchId !== observation.assignment.id || receipt.issueNumber !== observation.issueNumber ||
+          receipt.repository?.toLowerCase() !== `${observation.repo.owner}/${observation.repo.name}`.toLowerCase() ||
+          at === null || typeof receipt.tokenBudget !== "number" || !Number.isSafeInteger(receipt.tokenBudget) ||
+          receipt.tokenBudget <= launchBudget.tokenLimit) return highest;
+      return Math.max(highest ?? launchBudget.tokenLimit, receipt.tokenBudget);
+    }, null) : null;
+  const budget: IssueAgentTreeAgent["budget"] = raisedBudget === null ? launchBudget
+    : { tokenLimit: raisedBudget, source: "action-receipt", reason: null };
   const steps = (run?.activitySteps ?? []).filter(step => time(step.at, now) !== null).slice(0, 20);
   const activity: NonNullable<IssueAgentTreeAgent["activity"]> = run !== undefined && time(run.updatedAt, now) !== null
     ? { availability: "available", reason: null, observedAt: run.updatedAt, steps }

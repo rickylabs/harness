@@ -157,6 +157,29 @@ it("binds measured activity, token numerator, child spawn, and immutable action 
   assert.equal(root.tokenUsage?.budgetTokens, 1000);
   assert.equal(child.tokenUsage?.usedTokens, 3);
   assert.equal(child.tokenUsage?.budgetTokens, null);
+  const raised: PublicActionReceipt = { ...accepted, action: "raise_budget", reason: "goal_budget_updated", tokenBudget: 1_500 };
+  const projectRaised = (row: PublicActionReceipt, actionsComplete = true) => buildIssueAgentTreeSnapshot({
+    observations, dispatches: [dispatch], runs: [rootRun, childRun], actions: [row], actionsComplete });
+  const raisedSnapshot = projectRaised(raised);
+  const raisedRoot = raisedSnapshot.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId === rootId);
+  const raisedChild = raisedSnapshot.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId !== rootId);
+  assert.deepEqual(raisedRoot?.budget, { tokenLimit: 1_500, source: "action-receipt", reason: null });
+  assert.equal(raisedRoot?.tokenUsage?.budgetTokens, 1_500);
+  assert.equal(raisedChild?.budget.tokenLimit, null);
+  assert.equal(readIssueAgentTreeSnapshot(raisedSnapshot).ok, true);
+  for (const unsafe of [
+    { ...raised, agentId: `agent_${"e".repeat(64)}` },
+    { ...raised, dispatchId: `assignment_${"f".repeat(64)}` },
+    { ...raised, outcome: "rejected" as const, reason: "budget_ceiling_exceeded" },
+    { ...raised, tokenBudget: null },
+    { ...raised, tokenBudget: 1_000 },
+  ]) {
+    const unraised = projectRaised(unsafe);
+    const unraisedRoot = unraised.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId === rootId);
+    assert.equal(unraisedRoot?.budget.tokenLimit, 1_000);
+  }
+  assert.equal(projectRaised(raised, false).issues[0]?.dispatches[0]?.agents
+    .find(agent => agent.observation.agentId === rootId)?.budget.tokenLimit, 1_000);
   assert.equal(root.activity?.steps[0]?.summary, "Ran git status");
   assert.deepEqual(root.timeline?.events.map(event => event.kind), ["dispatched", "started", "subagent-spawned", "action-accepted"]);
   assert.equal(root.timeline?.events.find(event => event.kind === "subagent-spawned")?.relatedAgentId, child.observation.agentId);

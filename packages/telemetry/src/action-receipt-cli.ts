@@ -38,6 +38,8 @@ export interface PublicActionReceipt {
   readonly replacementAgentId: string | null;
   /** Present on a source-proven accepted retry. Older receipts omit this additive field. */
   readonly replacementDispatchId?: string | null;
+  /** A confirmed native read-back, present only on a new accepted budget raise. */
+  readonly tokenBudget?: number | null;
   readonly messageId: string | null;
 }
 export interface ActionReceiptScan {
@@ -117,18 +119,22 @@ async function readActionReceiptAtRoot(root: string, operationId: string, wanted
     const replacementAgentId = safeOptional(receipt.replacementAgentId, agent);
     const replacementDispatchId = safeOptional(receipt.replacementDispatchId, assignment);
     const messageId = safeOptional(receipt.messageId, message);
+    const tokenBudget = receipt.tokenBudget === undefined ? null
+      : typeof receipt.tokenBudget === "number" && Number.isSafeInteger(receipt.tokenBudget) &&
+        receipt.tokenBudget > 0 && receipt.tokenBudget <= 9_007_199_254_740_991 ? receipt.tokenBudget : undefined;
     const observedAt = time(receipt.observedAt);
-    if (action === undefined || repo === undefined || issueNumber === undefined || agentId === undefined || dispatchId === undefined || replacementAgentId === undefined || replacementDispatchId === undefined ||
+    if (action === undefined || repo === undefined || issueNumber === undefined || agentId === undefined || dispatchId === undefined || replacementAgentId === undefined || replacementDispatchId === undefined || tokenBudget === undefined ||
         messageId === undefined || observedAt === null || (action !== null && !actions.has(action)) ||
         (outcome === "accepted" && (action === null || reason !== AGENT_ACTION_ACCEPTED_REASONS[action as AgentActionKind] ||
           repo === null || issueNumber === null || agentId === null || dispatchId === null ||
           (action === "retry" ? replacementAgentId === null || replacementDispatchId === null
             : replacementAgentId !== null || replacementDispatchId !== null))) ||
-        (outcome !== "accepted" && (replacementAgentId !== null || replacementDispatchId !== null)))
+        (outcome !== "accepted" && (replacementAgentId !== null || replacementDispatchId !== null)) ||
+        (tokenBudget !== null && (outcome !== "accepted" || action !== "raise_budget")))
       return unavailable(operationId, wanted, "receipt_invalid");
     return { schemaVersion: 1, operationId, requestDigest: receipt.requestDigest as string, repository: repo, issueNumber,
       action: action as PublicActionReceipt["action"],
-      agentId, dispatchId, outcome, reason, observedAt, replacementAgentId, replacementDispatchId, messageId };
+      agentId, dispatchId, outcome, reason, observedAt, replacementAgentId, replacementDispatchId, tokenBudget, messageId };
   } catch (error) {
     return unavailable(operationId, wanted, (error as NodeJS.ErrnoException).code === "ENOENT" ? "receipt_missing" : "source_unavailable");
   }

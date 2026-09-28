@@ -747,3 +747,10 @@ ceiling failures have closed rejection codes. Ambiguous writes and launch effect
 with closed reasons. The issue timeline reports delivery outcomes on the original agent; a receipt
 never proves that the replacement ran or that a raised budget was consumed. Older action rows
 remain readable.
+
+In 0.17.0, a new accepted `raise_budget` receipt may carry `tokenBudget`, the value Orchid
+confirmed through the native goal read-back before persisting the receipt. On a complete action
+scan, the issue tree uses the highest confirmed raise for the exact root agent and dispatch,
+marks its budget `source: action-receipt`, and uses that value as the token usage denominator.
+The child's budget stays unknown. Old receipts without this field remain readable and cannot
+change the launch budget; rejected, unknown, mismatched or malformed receipts cannot change it.
