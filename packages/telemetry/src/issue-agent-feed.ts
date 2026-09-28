@@ -33,6 +33,14 @@ function publicObservation(observation: AgentObservation): AgentObservation {
 const time = (value: string | undefined, latest: string): string | null =>
   value && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) &&
     Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value && value <= latest ? value : null;
+/** Orchid receipts may have nanoseconds; the public timeline wire time has milliseconds. */
+const receiptTime = (value: string | undefined, latest: string): string | null => {
+  if (!value || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?Z$/.test(value)) return null;
+  const millis = Date.parse(value);
+  if (!Number.isFinite(millis)) return null;
+  const at = new Date(millis).toISOString();
+  return at.slice(0, 19) === value.slice(0, 19) && at <= latest ? at : null;
+};
 const event = (agentId: string, kind: AgentTimelineEvent["kind"], at: string,
   source: AgentTimelineEvent["source"], relatedAgentId: string | null = null,
   outcome: AgentTimelineEvent["outcome"] = null, reason: AgentTimelineReason | null = null): AgentTimelineEvent => ({
@@ -165,7 +173,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   }
   let invalidActionReason = false;
   for (const receipt of actions) {
-    const at = time(receipt.observedAt ?? undefined, now);
+    const at = receiptTime(receipt.observedAt ?? undefined, now);
     if (at === null || receipt.agentId !== observation.agentId || receipt.dispatchId !== observation.assignment.id ||
         receipt.repository?.toLowerCase() !== `${observation.repo.owner}/${observation.repo.name}`.toLowerCase() ||
         receipt.issueNumber !== observation.issueNumber || receipt.action === null ||

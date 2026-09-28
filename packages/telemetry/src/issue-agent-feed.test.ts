@@ -162,6 +162,28 @@ it("binds measured activity, token numerator, child spawn, and immutable action 
   assert.ok(!JSON.stringify(malformed).includes("PRIVATE-RAW-REASON"));
   assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
 });
+it("canonicalizes a nanosecond action receipt time without admitting malformed or future receipts", () => {
+  const active = [run("PRIVATE-NATIVE-ROOT", null, "running")];
+  const observations = buildAgentObservations({ dispatches: [dispatch], runs: active, observedAt: later,
+    sourceBound: true, dispatchComplete: true, nativeComplete: true });
+  const rootId = observations.agents[0]!.agentId;
+  const receipt: PublicActionReceipt = { schemaVersion: 1, operationId: "00000000-0000-4000-8000-000000000001",
+    requestDigest: "a".repeat(64), repository: "example/project", issueNumber: 42, action: "steer",
+    agentId: rootId, dispatchId: observations.agents[0]!.assignment.id, outcome: "accepted",
+    reason: "prompt_delivered", observedAt: "2026-01-01T00:00:01.000000123Z", replacementAgentId: null, messageId: null };
+  const project = (observedAt: string) => buildIssueAgentTreeSnapshot({ observations, dispatches: [dispatch], runs: active,
+    actions: [{ ...receipt, observedAt }], actionsComplete: true });
+  const good = project(receipt.observedAt!);
+  const events = good.issues[0]?.dispatches[0]?.agents[0]?.timeline?.events ?? [];
+  assert.equal(events.find(event => event.kind === "action-accepted")?.at, later);
+  assert.equal(events.find(event => event.kind === "action-accepted")?.reason, "prompt_delivered");
+  assert.equal(readIssueAgentTreeSnapshot(good).ok, true);
+  for (const invalid of ["2026-01-01T00:00:01.0000001234Z", "2025-02-30T00:00:01.000000123Z",
+    "2026-01-01T00:00:02.000000123Z"]) {
+    assert.equal(project(invalid).issues[0]?.dispatches[0]?.agents[0]?.timeline?.events
+      .some(event => event.kind === "action-accepted"), false);
+  }
+});
 it("preserves incomplete action and event-overflow truncation when child spawn decorates the root", () => {
   const observations = buildAgentObservations({ dispatches: [dispatch], runs, observedAt: later,
     sourceBound: true, dispatchComplete: true, nativeComplete: true });
