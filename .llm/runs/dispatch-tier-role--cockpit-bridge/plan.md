@@ -1,0 +1,3 @@
+# Dispatch tier and role bridge — plan
+
+The live Cockpit API created binding Harness #421 and Orchid refused launch because its /swarm body omitted tier and role. Harness packages/subagents/src/dispatch.ts currently drops those keys from its typed request and parser; Orchid cmd/divybot/overrides.go reads them and matrix-bridge.ts validates them. Add optional fields to the shared request, renderer and parser with the existing field-order and Go grammar safeguards. Prove exact render/parse round-trip, a Go-derived conformance case, and all repository gates. Cockpit will pin the merged source and choose/validate routing values before assignment or label. Owner choice of a default leaf tier stays open in Cockpit; this wire change makes none.
