@@ -1,0 +1,101 @@
+import assert from "node:assert/strict";
+import { it } from "node:test";
+import { readProfileRef, readWorkflowRevision, readRoutineRevision, readWorkflowRun } from "./profiles-workflows.js";
+
+const id = "11111111-1111-4111-8111-111111111111";
+const id2 = "22222222-2222-4222-8222-222222222222";
+const commit = "a".repeat(40), digest = "b".repeat(64), writer = "scope_" + "c".repeat(32);
+const at = "2026-09-28T21:25:00.123456789Z";
+const profile = { name: "leaf", title: "Implementation teammate", kind: "leaf", role: "implementation", tier: "feature",
+  profileRevision: commit, profileDigest: digest, matrixRevision: commit, guardrailDigest: digest,
+  budget: { tokenLimit: null, source: "unavailable", reason: "source_not_bound" } } as const;
+const phase = { id: "plan", profile, dependsOn: [], parallelCount: 1, writerScopeIds: [writer],
+  outputKind: "plan", outputSchemaDigest: digest, verifierRole: "plan_evaluation", maxRounds: 2 } as const;
+const workflow = { schema: 1, workflowId: id, revision: digest, createdByRunId: null,
+  phases: [phase, { ...phase, id: "review", dependsOn: ["plan"], writerScopeIds: ["scope_" + "d".repeat(32)] }] } as const;
+const routine = { schema: 1, routineId: id2, revision: digest, workflowId: id, workflowRevision: digest,
+  trigger: { kind: "label", filterDigest: digest }, overlapPolicy: "coalesce", missedRunPolicy: "skip" } as const;
+const unknown = { value: null, source: "unavailable", observedAt: null, reason: "source_not_bound" } as const;
+const attempt = { id: id2, phaseId: "plan", state: "blocked", outcome: null, blockKind: "needs_input",
+  dispatchId: null, agentId: null, startedAt: null, endedAt: null,
+  cost: { runTokens: unknown, meteredUsdMicros: unknown } } as const;
+const run = { schema: 1, id: id2, workflowId: id, workflowRevision: digest, scope: { kind: "issue", id },
+  state: "blocked", outcome: null, blockKind: "needs_input", attempts: [attempt], finalReportId: null,
+  createdAt: at, updatedAt: at } as const;
+const fields = (v: { readonly ok: boolean; readonly problems?: readonly { readonly field: string }[] }) =>
+  v.ok ? [] : v.problems?.map(p => p.field) ?? [];
+
+it("reads pinned profile refs and refuses executable metadata or unsourced budget", () => {
+  assert.equal(readProfileRef(profile).ok, true);
+  assert.ok(fields(readProfileRef({ ...profile, model: "fixture-model" })).includes("profile.model"));
+  assert.ok(fields(readProfileRef({ ...profile, profileRevision: "relative/path" })).includes("profile.profileRevision"));
+  assert.ok(fields(readProfileRef({ ...profile, budget: { tokenLimit: 0, source: "unavailable", reason: "source_not_bound" } }))
+    .includes("profile.budget.tokenLimit"));
+  assert.equal(readProfileRef({ ...profile, budget: { tokenLimit: 0, source: "issue-override", reason: null } }).ok, true);
+  assert.ok(fields(readProfileRef({ ...profile, kind: "milestone-coordinator" })).includes("profile.kind"));
+});
+
+it("reads an immutable DAG and rejects cycles, duplicate phases and writer paths", () => {
+  assert.equal(readWorkflowRevision(workflow).ok, true);
+  assert.ok(fields(readWorkflowRevision({ ...workflow, phases: [
+    { ...phase, dependsOn: ["review"] }, workflow.phases[1] ] })).includes("workflow.phases"));
+  assert.ok(fields(readWorkflowRevision({ ...workflow, phases: [phase, { ...phase }] })).includes("workflow.phases"));
+  assert.ok(fields(readWorkflowRevision({ ...workflow, phases: [
+    { ...phase, writerScopeIds: ["src/private/file.ts"] }] })).includes("workflow.phases[0].writerScopeIds[0]"));
+  assert.ok(fields(readWorkflowRevision({ ...workflow, instructions: "raw agent prompt" })).includes("workflow.instructions"));
+});
+
+it("reads routine policies but not raw filters, paths or an invalid schedule", () => {
+  assert.equal(readRoutineRevision(routine).ok, true);
+  assert.ok(fields(readRoutineRevision({ ...routine, trigger: { kind: "label", filterDigest: digest,
+    label: "harness" } })).includes("routine.trigger.label"));
+  assert.ok(fields(readRoutineRevision({ ...routine, trigger: { kind: "schedule", cron: "* * * * *",
+    timeZone: "UTC" } })).length === 0);
+  assert.ok(fields(readRoutineRevision({ ...routine, trigger: { kind: "schedule", cron: "rm -rf /",
+    timeZone: "/private/host" } })).includes("routine.trigger.cron"));
+  assert.ok(fields(readRoutineRevision({ ...routine, overlapPolicy: "run_twice" })).includes("routine.overlapPolicy"));
+});
+
+it("retains blocked claims and separates measured zero from unknown cost", () => {
+  assert.equal(readWorkflowRun(run).ok, true);
+  assert.ok(fields(readWorkflowRun({ ...run, blockKind: null })).includes("run.blockKind"));
+  assert.ok(fields(readWorkflowRun({ ...run, attempts: [{ ...attempt, cost: { ...attempt.cost,
+    runTokens: { value: 0, source: "unavailable", observedAt: null, reason: "source_not_bound" } } }] }))
+    .includes("run.attempts[0].cost.runTokens.value"));
+  const measured = { value: 0, source: "native-usage", observedAt: at, reason: null };
+  assert.equal(readWorkflowRun({ ...run, attempts: [{ ...attempt, cost: { ...attempt.cost,
+    runTokens: measured } }] }).ok, true);
+  assert.ok(fields(readWorkflowRun({ ...run, attempts: [{ ...attempt, cost: { ...attempt.cost,
+    meteredUsdMicros: { ...measured, source: "native-usage" } } }] })).includes("run.attempts[0].cost.meteredUsdMicros.source"));
+});
+
+it("requires terminal evidence for ended and refuses public raw fields", () => {
+  const ended = { ...attempt, state: "ended", outcome: "succeeded", blockKind: null,
+    startedAt: at, endedAt: at, dispatchId: "assignment_" + "e".repeat(64), agentId: "agent_" + "f".repeat(64) };
+  assert.equal(readWorkflowRun({ ...run, state: "ended", outcome: "succeeded", blockKind: null,
+    attempts: [ended], finalReportId: id }).ok, true);
+  assert.ok(fields(readWorkflowRun({ ...run, attempts: [{ ...ended, endedAt: null }] }))
+    .includes("run.attempts[0].endedAt"));
+  assert.ok(fields(readWorkflowRun({ ...run, attempts: [{ ...attempt, state: "pending", blockKind: null,
+    startedAt: at }] })).includes("run.attempts[0].startedAt"));
+  assert.ok(fields(readWorkflowRun({ ...run, attempts: [{ ...attempt, agentId: "agent_" + "f".repeat(64) }] }))
+    .includes("run.attempts[0].agentId"));
+  assert.ok(fields(readWorkflowRun({ ...run, finalReportId: id })).includes("run.finalReportId"));
+  assert.ok(fields(readWorkflowRun({ ...run, conversation: "private chat" })).includes("run.conversation"));
+  assert.ok(fields(readWorkflowRun({ ...run, updatedAt: "2026-09-27T21:25:00.000Z" })).includes("run.updatedAt"));
+});
+
+it("returns detached JSON data without touching accessors or retaining callers", () => {
+  let accessed = 0;
+  const hostile = { ...profile } as Record<string, unknown>;
+  Object.defineProperty(hostile, "instructions", { enumerable: true, get() { accessed++; return "private"; } });
+  assert.ok(fields(readProfileRef(hostile)).includes("profile"));
+  assert.equal(accessed, 0);
+  const original = structuredClone(profile) as Record<string, unknown>;
+  const accepted = readProfileRef(original);
+  assert.equal(accepted.ok, true);
+  if (accepted.ok) {
+    original["title"] = "Changed later";
+    assert.equal(accepted.value.title, "Implementation teammate");
+  }
+});
