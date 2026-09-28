@@ -328,3 +328,32 @@ it("requires verified seat AND native process absence to end a stopped root", ()
     assert.ok(readIssueAgentTreeSnapshot(build({ ...dispatch, stop: state }, active, captured)).ok);
   }
 });
+
+it("masks stale running at teardown seat absence and ends only after process absence", () => {
+  const active = [run("PRIVATE-NATIVE-ROOT", null, "running")];
+  const captured = "2026-01-01T00:00:04.000Z";
+  const seatAt = "2026-01-01T00:00:02.000Z", processAt = "2026-01-01T00:00:03.000Z";
+  const root = (teardown: NonNullable<DispatchEvidence["teardown"]>) => build({ ...dispatch, teardown }, active, captured)
+    .issues[0]?.dispatches[0]?.agents[0];
+  const intentOnly = root({ cause: "timeout", seatObservedAt: null, processObservedAt: null });
+  assert.equal(intentOnly?.liveness.state, "running");
+  const seatOnly = root({ cause: "timeout", seatObservedAt: seatAt, processObservedAt: null });
+  assert.equal(seatOnly?.liveness.state, "unknown");
+  assert.equal(seatOnly?.observation.running.value, null);
+  assert.equal(seatOnly?.endedBy, null);
+  assert.equal(seatOnly?.terminalOutcome.value, null);
+  assert.ok(seatOnly?.history.some(event => event.kind === "teardown-seat-observed"));
+  const processOnly = root({ cause: "timeout", seatObservedAt: null, processObservedAt: processAt });
+  assert.equal(processOnly?.liveness.state, "running");
+  const both = root({ cause: "timeout", seatObservedAt: seatAt, processObservedAt: processAt });
+  assert.deepEqual(both?.liveness, { state: "ended", evidence: "teardown-observation", observedAt: processAt, reason: null });
+  assert.equal(both?.endedBy, "timeout");
+  assert.deepEqual(both?.terminalOutcome, { value: "cancelled", source: "teardown-observation", observedAt: processAt, reason: null });
+  assert.equal(both?.endedAt, processAt);
+  assert.ok(both?.history.some(event => event.kind === "teardown-process-observed"));
+  assert.equal(root({ cause: "teardown", seatObservedAt: seatAt, processObservedAt: processAt })?.endedBy, "teardown");
+  for (const state of [{ cause: "timeout", seatObservedAt: seatAt, processObservedAt: null },
+    { cause: "timeout", seatObservedAt: seatAt, processObservedAt: processAt }] as const) {
+    assert.ok(readIssueAgentTreeSnapshot(build({ ...dispatch, teardown: state }, active, captured)).ok);
+  }
+});

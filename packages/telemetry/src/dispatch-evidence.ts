@@ -31,6 +31,9 @@ export interface DispatchEvidence {
   readonly routePolicy?: AgentRoutePolicy;
   /** Bound, separately verified Orchid stop observations for the root only. */
   readonly stop?: { readonly seatObservedAt: string | null; readonly processObservedAt: string | null };
+  /** Bound, separately verified ordinary teardown observations for the root only. */
+  readonly teardown?: { readonly cause: "timeout" | "teardown"; readonly seatObservedAt: string | null;
+    readonly processObservedAt: string | null };
 
 }
 

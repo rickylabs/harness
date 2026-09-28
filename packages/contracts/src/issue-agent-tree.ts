@@ -7,7 +7,7 @@ export const ISSUE_AGENT_TREE_SCHEMA = 1 as const;
 export const ISSUE_AGENT_TREE_FRESH_MS = 15_000;
 export const MAX_ISSUE_AGENT_TREE_BYTES = 2_097_152;
 export const MAX_AGENT_HISTORY = 16;
-export const AGENT_HISTORY_KINDS = ["dispatch-observed", "run-started-observed", "run-activity-observed", "stop-seat-observed", "stop-process-observed"] as const;
+export const AGENT_HISTORY_KINDS = ["dispatch-observed", "run-started-observed", "run-activity-observed", "stop-seat-observed", "stop-process-observed", "teardown-seat-observed", "teardown-process-observed"] as const;
 export type AgentHistoryKind = typeof AGENT_HISTORY_KINDS[number];
 export interface AgentHistoryEvent { readonly dispatchId: string; readonly kind: AgentHistoryKind; readonly at: string }
 export type AgentTreeValueSource = "dispatch" | "native" | "unavailable";
@@ -29,7 +29,7 @@ export type AgentQuotaRegime =
 export type AgentTreeLiveness =
   | { readonly state: "unknown"; readonly evidence: null; readonly observedAt: null; readonly reason: AgentUnavailableReason }
   | { readonly state: "running"; readonly evidence: "runtime-observation"; readonly observedAt: string; readonly reason: null }
-  | { readonly state: "ended"; readonly evidence: "native-outcome" | "stop-observation"; readonly observedAt: string; readonly reason: null };
+  | { readonly state: "ended"; readonly evidence: "native-outcome" | "stop-observation" | "teardown-observation"; readonly observedAt: string; readonly reason: null };
 export type AgentActionState =
   | { readonly state: "unknown"; readonly observedAt: null; readonly reason: AgentUnavailableReason }
   | { readonly state: "stopping" | "stopped"; readonly observedAt: string; readonly reason: null };
@@ -42,7 +42,7 @@ export interface AgentTreeLocation {
   readonly seat: AgentPlacementValue;
 }
 export type AgentTerminalOutcome =
-  | { readonly value: "succeeded" | "failed" | "cancelled"; readonly source: "native-outcome" | "stop-observation"; readonly observedAt: string; readonly reason: null }
+  | { readonly value: "succeeded" | "failed" | "cancelled"; readonly source: "native-outcome" | "stop-observation" | "teardown-observation"; readonly observedAt: string; readonly reason: null }
   | { readonly value: null; readonly source: "unavailable"; readonly observedAt: null; readonly reason: AgentUnavailableReason };
 
 export interface IssueAgentTreeAgent {
@@ -65,7 +65,7 @@ export interface IssueAgentTreeAgent {
   readonly liveness: AgentTreeLiveness;
   /** A stop remains separate from native liveness until both seat and process absence are verified. */
   readonly actionState: AgentActionState;
-  readonly endedBy: "stop" | null;
+  readonly endedBy: "stop" | "timeout" | "teardown" | null;
   readonly terminalOutcome: AgentTerminalOutcome;
   readonly startedAt: string | null;
   readonly startedAtReason: AgentUnavailableReason | null;
@@ -210,7 +210,7 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   let liveness: AgentTreeLiveness;
   if (live.state === "unknown" && live.evidence === null && live.observedAt === null) liveness = { state: "unknown", evidence: null, observedAt: null, reason: reason(live.reason) };
   else if (live.state === "running" && live.evidence === "runtime-observation" && live.reason === null) liveness = { state: "running", evidence: "runtime-observation", observedAt: stamp(live.observedAt), reason: null };
-  else if (live.state === "ended" && (live.evidence === "native-outcome" || live.evidence === "stop-observation") && live.reason === null) liveness = { state: "ended", evidence: live.evidence, observedAt: stamp(live.observedAt), reason: null };
+  else if (live.state === "ended" && (live.evidence === "native-outcome" || live.evidence === "stop-observation" || live.evidence === "teardown-observation") && live.reason === null) liveness = { state: "ended", evidence: live.evidence, observedAt: stamp(live.observedAt), reason: null };
   else return bad();
   if (liveness.observedAt !== null && liveness.observedAt > capturedAt) return bad();
   const actionRow = Object.hasOwn(row, "actionState") ? record(row.actionState, ["state", "observedAt", "reason"]) : null;
@@ -223,17 +223,19 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   }
   if (actionState.observedAt !== null && actionState.observedAt > capturedAt) return bad();
   const endedBy = Object.hasOwn(row, "endedBy") ? row.endedBy : null;
-  if (endedBy !== null && endedBy !== "stop") return bad();
+  if (endedBy !== null && endedBy !== "stop" && endedBy !== "timeout" && endedBy !== "teardown") return bad();
   if (actionState.state === "stopping" && liveness.state === "running") return bad();
   if (actionState.state === "stopped" && liveness.state === "running") return bad();
   if (liveness.state === "ended" && liveness.evidence === "stop-observation" && (actionState.state !== "stopped" || endedBy !== "stop")) return bad();
   if (endedBy === "stop" && (liveness.state !== "ended" || liveness.evidence !== "stop-observation")) return bad();
+  if (liveness.state === "ended" && liveness.evidence === "teardown-observation" && endedBy !== "timeout" && endedBy !== "teardown") return bad();
+  if ((endedBy === "timeout" || endedBy === "teardown") && (liveness.state !== "ended" || liveness.evidence !== "teardown-observation")) return bad();
   const terminal = record(row.terminalOutcome, ["value", "source", "observedAt", "reason"]);
   let terminalOutcome: AgentTerminalOutcome;
   if (terminal.value === null && terminal.source === "unavailable" && terminal.observedAt === null) {
     terminalOutcome = { value: null, source: "unavailable", observedAt: null, reason: reason(terminal.reason) };
   } else if (["succeeded", "failed", "cancelled"].includes(terminal.value as string) &&
-    (terminal.source === "native-outcome" || (terminal.source === "stop-observation" && terminal.value === "cancelled")) && terminal.reason === null) {
+    (terminal.source === "native-outcome" || ((terminal.source === "stop-observation" || terminal.source === "teardown-observation") && terminal.value === "cancelled")) && terminal.reason === null) {
     terminalOutcome = { value: terminal.value as "succeeded" | "failed" | "cancelled", source: terminal.source, observedAt: stamp(terminal.observedAt), reason: null };
   } else return bad();
   if (terminalOutcome.observedAt !== null && terminalOutcome.observedAt > capturedAt) return bad();
@@ -241,10 +243,14 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   if (liveness.state === "ended" && liveness.evidence === "stop-observation" &&
     (terminalOutcome.value !== "cancelled" || terminalOutcome.source !== "stop-observation")) return bad();
   if (terminalOutcome.source === "stop-observation" && (liveness.state !== "ended" || liveness.evidence !== "stop-observation")) return bad();
+  if (liveness.state === "ended" && liveness.evidence === "teardown-observation" &&
+    (terminalOutcome.value !== "cancelled" || terminalOutcome.source !== "teardown-observation")) return bad();
+  if (terminalOutcome.source === "teardown-observation" && (liveness.state !== "ended" || liveness.evidence !== "teardown-observation")) return bad();
   const startedAt = row.startedAt === null ? null : stamp(row.startedAt);
   const endedAt = row.endedAt === null ? null : stamp(row.endedAt);
   if ((startedAt !== null && startedAt > capturedAt) || (endedAt !== null && (startedAt === null || endedAt < startedAt || endedAt > capturedAt))) return bad();
   if (endedBy === "stop" && (endedAt === null || endedAt !== actionState.observedAt)) return bad();
+  if ((endedBy === "timeout" || endedBy === "teardown") && (endedAt === null || endedAt !== liveness.observedAt)) return bad();
   const startedAtReason = startedAt === null ? reason(row.startedAtReason) : row.startedAtReason === null ? null : bad();
   const endedAtReason = endedAt === null ? reason(row.endedAtReason) : row.endedAtReason === null ? null : bad();
   const transcript = record(row.transcript, ["value", "reason"]);
