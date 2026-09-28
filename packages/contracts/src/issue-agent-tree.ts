@@ -297,6 +297,11 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
       const safe = new Map(read.observation.agents.map(a => [a.agentId, a]));
       const publicAgents = new Map(all.map(a => [a.observation.agentId, a]));
       for (const a of all) {
+        const running = safe.get(a.observation.agentId)?.running;
+        if (a.liveness.state === "running") {
+          if (running?.value !== true || running.observedAt !== a.liveness.observedAt ||
+              running.validUntil === null || running.validUntil < validUntil) return bad();
+        } else if (running?.value === true) return bad();
         const parent = safe.get(a.observation.agentId)?.parentAgentId;
         if (parent?.state === "known-parent") {
           if (a.budget.tokenLimit !== null || a.provider.source === "dispatch" || a.model.source === "dispatch" ||

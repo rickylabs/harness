@@ -553,7 +553,7 @@ only the new collection after decoding it; do not forward native identifiers fro
 The draft package must pass the installed-consumer gate and be released through the normal
 owner-controlled process before a downstream application pins its new decoder.
 
-## Per-issue agent trees in the 0.5.2 candidate
+## Per-issue agent trees in the 0.5.3 candidate
 
 `IssueAgentTreeSnapshot` groups the validated `AgentObservation` collection by repository and
 issue, then by opaque stable dispatch ID. Each agent keeps its existing parent evidence, location,
@@ -595,6 +595,15 @@ the 15-second validity bound. A scan that crosses its own validity deadline emit
 snapshot. Public display labels reject slash paths; slash-bearing model IDs remain unavailable
 until a safely attributed grammar is defined.
 
+A `running` row requires a validated native running observation with the same evidence timestamp.
+The observation's own `validUntil` must cover the entire 15-second snapshot validity interval;
+otherwise the 0.5.3 decoder rejects the frame. An unknown or ended row cannot carry a current
+`running=true` observation. The current Codex producer uses a native active
+task and last recognized event within 105 seconds of capture, then expires that observation 120
+seconds after the event. A missing or stale event remains explicitly unknown; a native terminal
+event reports ended. This is a bounded transcript inference, so an abrupt exit without a terminal
+event can leave running visible until the two-minute deadline.
+
 The Orchid dispatch record supplies `tokenBudget` and `budgetSource`; a sourced zero is retained as
 zero, while null means neither an issue override nor a route default was set. A validated Codex or
 Claude dispatch source reports `router: direct` with the transport in `harness`; `agy` and
@@ -606,5 +615,5 @@ matrix digest. Missing or invalid receipts leave it typed unavailable. The decod
 The coordinator decided 2026-09-27 that the route default applies unless the issue overrides it;
 Eric can overrule. Child budgets and nonnative router identity need their own attributed evidence. `endedAt`
 remains null because the current native run record has last activity, not an exact terminal time.
-The 0.5.2 package version is release preparation only; the owner-authorized tag described above
+The 0.5.3 package version is release preparation only; the owner-authorized tag described above
 is required before npm publication.

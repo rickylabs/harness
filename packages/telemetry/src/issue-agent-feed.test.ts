@@ -24,11 +24,61 @@ const run = (id: string, parentId: string | null, outcome: RunRecord["outcome"] 
   identity: { provider: "native-provider", model: "native-model", effort: null, profile: null },
   usage: {}, outcome, linkedIssues: [], origin: "PRIVATE-PATH-CANARY", quota: [] });
 const runs = [run("PRIVATE-NATIVE-ROOT", null, "complete"), run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT")];
-const build = (d: DispatchEvidence = dispatch, native: readonly RunRecord[] = runs) => {
-  const observations = buildAgentObservations({ dispatches: [d], runs: native, observedAt: later,
+const build = (d: DispatchEvidence = dispatch, native: readonly RunRecord[] = runs, capturedAt = later) => {
+  const observations = buildAgentObservations({ dispatches: [d], runs: native, observedAt: capturedAt,
     sourceBound: true, dispatchComplete: true, nativeComplete: true });
   return buildIssueAgentTreeSnapshot({ observations, dispatches: [d], runs: native });
 };
+
+it("measures running for a bound native task through the full frame validity", () => {
+  const capture = "2026-01-01T00:01:31.000Z";
+  const active = [run("PRIVATE-NATIVE-ROOT", null, "running"),
+    run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT", "running")];
+  const snapshot = build(dispatch, active, capture);
+  assert.equal(snapshot.complete, true);
+  const agents = snapshot.issues[0]?.dispatches[0]?.agents ?? [];
+  assert.equal(agents.length, 2);
+  for (const agent of agents) {
+    assert.equal(agent.liveness.state, "running");
+    assert.equal(agent.liveness.evidence, "runtime-observation");
+    assert.equal(agent.liveness.observedAt, later);
+    assert.equal(agent.observation.running.value, true);
+    assert.equal(agent.observation.running.validUntil, "2026-01-01T00:02:01.000Z");
+  }
+  assert.ok(readIssueAgentTreeSnapshot(snapshot).ok);
+  assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
+});
+
+it("expires running before frame validity can outlive the native activity window", () => {
+  const active = [run("PRIVATE-NATIVE-ROOT", null, "running"),
+    run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT", "running")];
+  const edge = build(dispatch, active, "2026-01-01T00:01:46.000Z"); // event age 105 seconds
+  assert.equal(edge.issues[0]?.dispatches[0]?.agents.every(agent => agent.liveness.state === "running"), true);
+  const expired = build(dispatch, active, "2026-01-01T00:01:46.001Z");
+  assert.equal(expired.issues[0]?.dispatches[0]?.agents.every(agent =>
+    agent.liveness.state === "unknown" && agent.observation.running.reason === "source_stale"), true);
+  const future = build(dispatch, [{ ...run("PRIVATE-NATIVE-ROOT", null, "running"),
+    updatedAt: "2026-01-01T00:00:02.000Z" }], later);
+  assert.equal(future.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "unknown");
+});
+
+it("terminal outcome wins, then a fresh native task restores running without an unknown flip", () => {
+  const capture = "2026-01-01T00:00:03.000Z";
+  const ended = build(dispatch, [run("PRIVATE-NATIVE-ROOT", null, "complete"), runs[1]!], capture);
+  const rootOf = (snapshot: ReturnType<typeof build>) => snapshot.issues[0]?.dispatches[0]?.agents
+    .find(agent => agent.observation.parentAgentId.state === "confirmed-root");
+  assert.equal(rootOf(ended)?.liveness.state, "ended");
+  assert.equal(rootOf(ended)?.observation.running.value, null);
+  const resumed = build(dispatch, [{ ...run("PRIVATE-NATIVE-ROOT", null, "running"),
+    updatedAt: "2026-01-01T00:00:02.000Z" }, runs[1]!], capture);
+  assert.equal(rootOf(resumed)?.liveness.state, "running");
+  assert.equal(rootOf(resumed)?.observation.running.value, true);
+  const failed = build(dispatch, [{ ...run("PRIVATE-NATIVE-ROOT", null, "failed"),
+    updatedAt: "2026-01-01T00:00:02.000Z", terminalCause: "error" }, runs[1]!], capture);
+  assert.equal(rootOf(failed)?.liveness.state, "ended");
+  assert.equal(rootOf(failed)?.observation.running.value, null);
+  assert.equal(rootOf(failed)?.terminalOutcome.value, "failed");
+});
 
 it("groups issue, dispatch, root and child without leaking native identity or paths", () => {
   const snapshot = build();
