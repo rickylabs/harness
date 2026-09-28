@@ -17,6 +17,8 @@ export interface IssueAgentFeedOptions {
   readonly limit: number;
   readonly env: Readonly<Record<string, string | undefined>>;
   readonly now: string;
+  /** Canonical, lower-case owner/repo#number. Omit for the full cockpit feed. */
+  readonly issueKey?: string;
 }
 
 const PRE_DISPATCH_MS = 600_000;
@@ -38,12 +40,16 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     const [owner, name] = dispatch.issue.repo.split("/");
     if (!owner || !name) continue;
     const key = `${owner.toLowerCase()}/${name.toLowerCase()}#${dispatch.issue.number}`;
+    if (options.issueKey !== undefined && key !== options.issueKey) continue;
     let group = groups.get(key);
     if (!group) { group = { repo: { owner, name }, issueNumber: dispatch.issue.number, dispatches: [] }; groups.set(key, group); }
     group.dispatches.push(dispatch);
   }
   const ordered = [...groups.values()].sort((a, b) =>
     Math.max(...b.dispatches.map(d => Date.parse(d.observedAt!))) - Math.max(...a.dispatches.map(d => Date.parse(d.observedAt!))));
+  if (options.issueKey !== undefined && ordered.length === 0) {
+    return unavailableSnapshot(options.now, orchid.degraded ? "source_unavailable" : "source_not_bound");
+  }
   const entries: { repo: IssueAgentTree["repo"]; issueNumber: number; snapshot: IssueAgentTreeSnapshot }[] = [];
   let remainingBytes = MAX_FRAME_TRANSCRIPT_BYTES;
   for (const group of ordered.slice(0, MAX_AGENT_OBSERVATIONS)) {
@@ -71,6 +77,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true });
     entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs: scan.runs });
   }
+  // A malformed receipt cannot be proven unrelated to a scoped issue.
   return combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,
     globalReason: groups.size > MAX_AGENT_OBSERVATIONS ? "scan_limit" : orchid.degraded ? "source_unavailable" : null });
 }
@@ -92,7 +99,7 @@ export interface IssueAgentFeedDependencies {
 
 /** `--watch` writes full snapshots and heartbeats; every new process starts seq 0. */
 export async function issueAgentFeedCommand(args: readonly string[], deps: IssueAgentFeedDependencies = {}): Promise<number> {
-  let home = homedir(), limit = 500, intervalMs = 5000, watch = false, json = false;
+  let home = homedir(), limit = 500, intervalMs = 5000, watch = false, json = false, issueKey: string | undefined;
   const seen = new Set<string>();
   try {
     for (let i = 0; i < args.length; i++) {
@@ -103,6 +110,11 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
       else if (flag === "--json") json = true;
       else if (flag === "--home" && args[i + 1]?.startsWith("/")) home = args[++i]!;
       else if (flag === "--limit" && /^[1-9]\d*$/.test(args[i + 1] ?? "")) limit = Number(args[++i]);
+      else if (flag === "--issue") {
+        const match = /^([A-Za-z0-9][A-Za-z0-9-]{0,38})\/([A-Za-z0-9][A-Za-z0-9._-]{0,99})#([1-9]\d*)$/.exec(args[++i] ?? "");
+        if (!match || !Number.isSafeInteger(Number(match[3]))) throw Error();
+        issueKey = `${match[1]!.toLowerCase()}/${match[2]!.toLowerCase()}#${Number(match[3])}`;
+      }
       else if (flag === "--interval-ms" && /^[1-9]\d*$/.test(args[i + 1] ?? "")) intervalMs = Number(args[++i]);
       else throw Error();
     }
@@ -132,7 +144,7 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
       if (stopped) break;
       const at = clock();
       let snapshot: IssueAgentTreeSnapshot;
-      try { snapshot = await collect({ home, limit, env, now: at }); }
+      try { snapshot = await collect({ home, limit, env, now: at, ...(issueKey === undefined ? {} : { issueKey }) }); }
       catch { snapshot = unavailableSnapshot(at); }
       if (stopped) break;
       const decoded = readIssueAgentTreeSnapshot(snapshot);

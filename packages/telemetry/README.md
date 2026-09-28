@@ -783,6 +783,10 @@ consumer gets a new full snapshot. The cockpit backend, not this process, persis
 events to its own clients. Each snapshot expires 15 seconds after `observedAt`; a stale feed is
 unknown, not still running. `issue-agents --json` reads one snapshot for diagnosis. Missing or
 degraded evidence is reported as incomplete, with explicit unknown budget and liveness fields.
+For one issue, add `--issue owner/repo#number` to `--json` or `--watch`. The command scans only
+that issue's dispatches and returns exit 0 when its tree is complete, even if unrelated old
+issues are incomplete; an absent or incomplete requested issue returns exit 3. The unscoped
+cockpit feed still reports every issue and its aggregate completeness.
 `--interval-ms` accepts 100–10000 milliseconds. If a scan lasts past its 15-second validity
 deadline, the command emits an incomplete snapshot. Slash-bearing native display labels are
 withheld because this public feed cannot safely distinguish them from relative paths.
