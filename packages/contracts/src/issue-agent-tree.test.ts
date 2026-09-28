@@ -34,6 +34,26 @@ it("decodes a grouped opaque dispatch tree with explicit unknowns", () => {
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.budget.tokenLimit, null);
 });
+it("accepts bounded activity and rejects mismatched usage, raw paths, and unsourced timeline events", () => {
+  const s = snapshot();
+  const withNode = (agent: unknown) => ({ ...s, issues: [{ ...s.issues[0],
+    dispatches: [{ dispatchId, agents: [agent] }] }] });
+  const step = { id: "step_" + "d".repeat(64), at, kind: "command", toolName: "exec_command",
+    commandHead: "git status", filePath: null, summary: "Ran git status", source: "codex-rollout" };
+  const event = { id: "event_" + "e".repeat(64), at, kind: "dispatched", action: null,
+    relatedAgentId: null, source: "dispatch", outcome: null };
+  const populated = { ...node, activity: { availability: "available", reason: null, observedAt: at, steps: [step] },
+    tokenUsage: { usedTokens: 7, budgetTokens: null, observedAt: at, source: "codex-token-count", reason: null },
+    timeline: { events: [event], truncated: false } };
+  assert.equal(read(withNode(populated)).ok, true);
+  assert.equal(read(withNode({ ...populated, tokenUsage: { ...populated.tokenUsage, budgetTokens: 1000 } })).ok, false);
+  assert.equal(read(withNode({ ...populated, activity: { ...populated.activity,
+    steps: [{ ...step, filePath: "/private/host/path" }] } })).ok, false);
+  assert.equal(read(withNode({ ...populated, timeline: { ...populated.timeline,
+    events: [{ ...event, kind: "goal-complete" }] } })).ok, false);
+  assert.equal(read(withNode({ ...populated, timeline: { ...populated.timeline,
+    events: [{ ...event, kind: "action-accepted", source: "action-receipt", action: "stop" }] } })).ok, true);
+});
 it("decodes verified stop phases and rejects a stop receipt posing as terminal proof", () => {
   const base = snapshot();
   const withNode = (agent: unknown) => ({ ...base, issues: [{ ...base.issues[0],

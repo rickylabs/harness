@@ -4,11 +4,12 @@ import { readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_HISTORY, M
   MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, unavailableAgentCost,
   projectRouteIdentity,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
-  type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+  type AgentTimelineEvent, type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
+import type { PublicActionReceipt } from "./action-receipt-cli.js";
 
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 const opaque = (kind: "agent" | "assignment", value: string) => `${kind}_${digest(kind + "\0" + value)}`;
@@ -32,6 +33,13 @@ function publicObservation(observation: AgentObservation): AgentObservation {
 const time = (value: string | undefined, latest: string): string | null =>
   value && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) &&
     Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value && value <= latest ? value : null;
+const event = (agentId: string, kind: AgentTimelineEvent["kind"], at: string,
+  source: AgentTimelineEvent["source"], relatedAgentId: string | null = null,
+  outcome: AgentTimelineEvent["outcome"] = null): AgentTimelineEvent => ({
+    id: `event_${digest([agentId, kind, at, relatedAgentId ?? "", outcome ?? ""].join("\0"))}`,
+    at, kind, action: null, relatedAgentId, source, outcome });
+const orderedEvents = (events: readonly AgentTimelineEvent[]) => [...events]
+  .sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
 
 function history(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string,
   root: boolean): readonly AgentHistoryEvent[] {
@@ -58,7 +66,7 @@ function history(observation: AgentObservation, dispatch: DispatchEvidence, run:
 }
 
 function node(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string,
-  localCapacity: HostCapacityReading | undefined): IssueAgentTreeAgent {
+  localCapacity: HostCapacityReading | undefined, actions: readonly PublicActionReceipt[], actionsComplete: boolean): IssueAgentTreeAgent {
   const root = observation.parentAgentId.state !== "known-parent";
   const provenAncestry = observation.parentAgentId.state === "confirmed-root" || observation.parentAgentId.state === "known-parent";
   const harness = root ? safe(dispatch.harness ?? dispatch.source, "dispatch") : safe(run?.source, "native");
@@ -132,18 +140,51 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     Number.isSafeInteger(run.nativeDepth) && run.nativeDepth >= 1
     ? { value: run.nativeDepth, source: "native", reason: null }
     : { value: null, source: "unavailable", reason: !root && run !== undefined ? "measurement_missing" : "source_not_bound" };
+  const budget = root ? dispatch.budget ?? { tokenLimit: null, source: "unavailable", reason: "source_not_bound" } as const
+    : { tokenLimit: null, source: "unavailable", reason: "source_not_bound" } as const;
+  const steps = (run?.activitySteps ?? []).filter(step => time(step.at, now) !== null).slice(0, 20);
+  const activity: NonNullable<IssueAgentTreeAgent["activity"]> = run !== undefined && time(run.updatedAt, now) !== null
+    ? { availability: "available", reason: null, observedAt: run.updatedAt, steps }
+    : { availability: "unavailable", reason: "source_not_bound", observedAt: null, steps: [] };
+  const input = run?.usage.inputTokens, output = run?.usage.outputTokens;
+  const measured = (run?.source === "codex" || run?.source === "claude") && input !== undefined && output !== undefined && Number.isSafeInteger(input) && Number.isSafeInteger(output) &&
+    input >= 0 && output >= 0 && Number.isSafeInteger(input + output) && time(run?.updatedAt, now) !== null;
+  const tokenUsage: NonNullable<IssueAgentTreeAgent["tokenUsage"]> = measured
+    ? { usedTokens: input! + output!, budgetTokens: budget.tokenLimit, observedAt: run!.updatedAt,
+        source: run!.source === "codex" ? "codex-token-count" : "claude-usage", reason: null }
+    : { usedTokens: null, budgetTokens: budget.tokenLimit, observedAt: null, source: "unavailable",
+        reason: run === undefined ? "source_not_bound" : "measurement_missing" };
+  const events: AgentTimelineEvent[] = [];
+  if (root && time(dispatch.observedAt, now) !== null) events.push(event(observation.agentId, "dispatched", dispatch.observedAt!, "dispatch"));
+  if (start !== null) events.push(event(observation.agentId, "started", start, "native"));
+  if (liveness.state === "ended" && terminalOutcome.value !== null) {
+    const end = liveness.evidence === "native-outcome" ? outcomeAt : liveness.observedAt;
+    if (end !== null) events.push(event(observation.agentId, "ended", end, "terminal", null, terminalOutcome.value));
+  }
+  for (const receipt of actions) {
+    const at = time(receipt.observedAt ?? undefined, now);
+    if (at === null || receipt.agentId !== observation.agentId || receipt.dispatchId !== observation.assignment.id ||
+        receipt.repository?.toLowerCase() !== `${observation.repo.owner}/${observation.repo.name}`.toLowerCase() ||
+        receipt.issueNumber !== observation.issueNumber || receipt.action === null ||
+        (receipt.outcome !== "accepted" && receipt.outcome !== "rejected")) continue;
+    events.push({ id: `event_${digest([observation.agentId, receipt.operationId, receipt.outcome].join("\0"))}`,
+      at, kind: receipt.outcome === "accepted" ? "action-accepted" : "action-rejected",
+      action: receipt.action, relatedAgentId: null, source: "action-receipt", outcome: null });
+  }
+  const timeline: NonNullable<IssueAgentTreeAgent["timeline"]> = {
+    events: orderedEvents(events).slice(-32), truncated: !actionsComplete || events.length > 32 };
   return { dispatchId: observation.assignment.id, observation: placedObservation, harness, provider, router,
     routePolicy: observation.parentAgentId.state === "confirmed-root" ? dispatch.routePolicy ?? unavailablePolicy : unavailablePolicy, model,
     location: { host, container: unplaced, seat: unplaced }, nativeDepth,
-    budget: root ? dispatch.budget ?? { tokenLimit: null, source: "unavailable", reason: "source_not_bound" }
-      : { tokenLimit: null, source: "unavailable", reason: "source_not_bound" },
+    budget,
     quotaRegime: seam === "codex" || seam === "claude" ? { value: "subscription", reason: null }
       : { value: null, reason: "source_not_bound" },
     liveness, actionState, endedBy, terminalOutcome, startedAt: start, startedAtReason: start === null ? "run_not_found" : null,
     endedAt: endedBy === "stop" ? stopAt : endedBy === "timeout" || endedBy === "teardown" ? teardownAt : null,
     endedAtReason: endedBy === null ? "measurement_missing" : null,
     transcript: { value: null, reason: "source_not_bound" },
-    history: history(observation, dispatch, run, now, root), historyTruncated: false };
+    history: history(observation, dispatch, run, now, root), historyTruncated: false,
+    activity, tokenUsage, timeline };
 }
 
 /** Invalid or partial ancestry is never repackaged as a complete tree. */
@@ -152,6 +193,8 @@ export function buildIssueAgentTreeSnapshot(input: {
   readonly dispatches: readonly DispatchEvidence[];
   readonly runs: readonly RunRecord[];
   readonly localCapacity?: HostCapacityReading;
+  readonly actions?: readonly PublicActionReceipt[];
+  readonly actionsComplete?: boolean;
 }): IssueAgentTreeSnapshot {
   const { dispatches, runs } = input;
   const dispatchById = new Map(dispatches.map(d => [opaque("assignment", d.runId), d]));
@@ -188,12 +231,20 @@ export function buildIssueAgentTreeSnapshot(input: {
     const rootRun = observation.parentAgentId.state === "known-parent" ? undefined :
       resolveOrchidNativeRoot(dispatch, runs) ?? runs.find(r => r.source === dispatch.source && r.id === dispatch.external && r.parentId === null);
     const run = observation.parentAgentId.state === "known-parent" ? nativeById.get(observation.agentId) : rootRun;
-    agents.push(node(observation, dispatch, run, observations.observedAt, input.localCapacity));
+    agents.push(node(observation, dispatch, run, observations.observedAt, input.localCapacity,
+      input.actions ?? [], input.actionsComplete ?? false));
   }
   const rows: IssueAgentTree[] = [...issues.values()].map(issue => ({ repo: issue.repo, issueNumber: issue.issueNumber,
     complete: true, reason: null,
-    dispatches: [...issue.dispatches].map(([dispatchId, agents]) => ({ dispatchId,
-      agents: agents.sort((a, b) => a.observation.agentId.localeCompare(b.observation.agentId)) }))
+    dispatches: [...issue.dispatches].map(([dispatchId, agents]) => {
+      const root = agents.find(agent => agent.observation.parentAgentId.state === "confirmed-root");
+      const childEvents = root === undefined ? [] : agents.filter(agent => agent.observation.parentAgentId.value === root.observation.agentId &&
+        agent.startedAt !== null).map(agent => event(root.observation.agentId, "subagent-spawned", agent.startedAt!, "native", agent.observation.agentId));
+      const decorated = root === undefined ? agents : agents.map(agent => agent === root ? { ...agent,
+        timeline: { events: orderedEvents([...(agent.timeline?.events ?? []), ...childEvents]).slice(-32),
+          truncated: (agent.timeline?.events.length ?? 0) + childEvents.length > 32 } } : agent);
+      return { dispatchId, agents: decorated.sort((a, b) => a.observation.agentId.localeCompare(b.observation.agentId)) };
+    })
       .sort((a, b) => a.dispatchId.localeCompare(b.dispatchId)) }))
     .sort((a, b) => a.repo.owner.localeCompare(b.repo.owner) || a.repo.name.localeCompare(b.repo.name) || a.issueNumber - b.issueNumber);
   const snapshot: IssueAgentTreeSnapshot = { schema: 1, protocol: 1, observedAt: observations.observedAt,

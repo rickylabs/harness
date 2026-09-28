@@ -665,3 +665,32 @@ outcome is then `cancelled`, sourced from `teardown-observation`; the later obse
 `endedAt`. A timeout comment, issue closure, teardown intent, or either observation alone never
 proves termination. The two measurements have separate bounded history events. Native terminal
 outcomes and verified cockpit stops keep their existing precedence.
+
+## Recent agent work and timeline in 0.11.0
+
+Each bound issue-tree agent has three additive fields. `activity` contains at most 20 recent
+assistant-origin steps, newest first, with an opaque stable ID, source, time, kind, and a small
+description. Codex rollout `response_item` tool calls and assistant messages, and Claude transcript
+assistant tool-use and text blocks, are reduced before projection. Tool names and command heads use
+fixed allowlists; paths must be repository-relative. Freeform assistant text becomes the fixed
+`Agent message` label. Prompts, tool output, raw arguments, native IDs and local paths never enter
+the frame. A missing bound run reports typed unavailable rather than an empty claim of activity.
+
+`tokenUsage` reports the bound agent's input plus output tokens and that same agent's budget. Codex
+uses the latest cumulative `token_count`; Claude sums each identified assistant message once.
+Reasoning and cache counts are subsets and are not added again. Missing counts and child budgets
+remain null with a reason, never zero. The existing quota, metered cost, run-token, and local
+capacity rows stay separate.
+
+`timeline` carries at most 32 chronological events with opaque stable IDs. Dispatch, native start,
+measured native child spawn, validated action receipt, and verified terminal state have distinct
+sources. An accepted stop receipt is a delivery event, never proof of termination; ending still
+requires native terminal evidence or both Orchid absence observations. `truncated` flags a bounded
+or unavailable action receipt scan. Goal update and complete kinds are reserved for a future
+verified Orchid notification writer; the current issue feed does not emit them. The issue-scoped
+native reader presently binds Codex only. Claude parsing is available, while Claude issue-tree
+publication waits for a validated native binding and bounded scoped reader.
+
+Older frames without these optional fields remain decodable. A producer emitting 0.11.0 fields
+requires a 0.11.0 consumer because earlier decoders reject unknown agent keys. Upgrade consumers
+before deploying the new producer.

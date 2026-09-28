@@ -96,6 +96,19 @@ describe("parseClaudeTranscript", () => {
     assert.equal(run?.usage.outputTokens, 3);
   });
 
+  it("counts a repeated assistant UUID once and retains sanitized tool activity", () => {
+    const row = assistant({ input_tokens: 6, output_tokens: 2 }, {
+      message: { role: "assistant", model: "claude-opus-5", usage: { input_tokens: 6, output_tokens: 2 },
+        content: [{ type: "tool_use", name: "Read", input: { file_path: "src/index.ts" } }] },
+    });
+    const run = parseRun(lines(user("PRIVATE-PROMPT-CANARY"), row, row), "fixture-origin");
+    assert.equal(run?.usage.inputTokens, 6);
+    assert.equal(run?.usage.outputTokens, 2);
+    assert.equal(run?.activitySteps?.length, 1);
+    assert.equal(run?.activitySteps?.[0]?.filePath, "src/index.ts");
+    assert.ok(!JSON.stringify(run?.activitySteps).includes("PRIVATE-"));
+  });
+
   it("prefers the session's own name over the first prompt", () => {
     // Both are prose and neither survives onto the record, so the issue numbers are what makes the
     // precedence observable: #98 comes from the session name and #7 from the prompt it replaced.

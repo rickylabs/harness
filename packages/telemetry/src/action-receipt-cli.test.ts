@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { readActionReceipt } from "./action-receipt-cli.js";
+import { readActionReceipt, readActionReceipts } from "./action-receipt-cli.js";
 import { ORCHID_DISPATCH_ROOT } from "./orchid-dispatch.js";
 
 const operationId = "123e4567-e89b-42d3-a456-426614174000";
@@ -71,4 +71,23 @@ it("requires a scoped UUID and optional digest on the CLI", () => {
     { encoding: "utf8" });
   assert.equal(cli.status, 2); assert.equal(cli.stdout, "");
   assert.equal(cli.stderr, "action-receipt: invalid command line\n");
+});
+it("enumerates only a complete bounded private receipt spool", async () => {
+  const { root, operation } = await fixture();
+  await writeFile(join(operation, "result.json"), JSON.stringify(accepted()), { mode: 0o600 });
+  const complete = await readActionReceipts(root);
+  assert.equal(complete.complete, true);
+  assert.equal(complete.receipts.length, 1);
+  assert.equal(complete.receipts[0]?.outcome, "accepted");
+  assert.ok(!JSON.stringify(complete).includes("PRIVATE-"));
+  const pending = join(root, "actions", "323e4567-e89b-42d3-a456-426614174000");
+  await mkdir(pending, { mode: 0o700 });
+  const partial = await readActionReceipts(root);
+  assert.equal(partial.complete, false);
+  assert.equal(partial.receipts.length, 1); // One in-progress operation cannot blank older proof.
+  const linked = join(root, "actions", "223e4567-e89b-42d3-a456-426614174000");
+  await symlink(operation, linked);
+  const unsafe = await readActionReceipts(root);
+  assert.equal(unsafe.complete, false);
+  assert.deepEqual(unsafe.receipts, []);
 });

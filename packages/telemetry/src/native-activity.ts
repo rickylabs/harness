@@ -1,0 +1,100 @@
+/** Small public-safe native activity facts; raw tool input and prose never leave this reader. */
+import { createHash } from "node:crypto";
+import type { AgentActivityStep } from "@rickylabs/harness-contracts";
+
+type Source = AgentActivityStep["source"];
+const object = (value: unknown): Record<string, unknown> | null => value !== null && typeof value === "object" &&
+  !Array.isArray(value) ? value as Record<string, unknown> : null;
+const stamp = (value: unknown): string | null => {
+  if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) return null;
+  return new Date(value).toISOString();
+};
+const knownTools = new Set(["functions.exec", "exec_command", "apply_patch", "read_file", "write_file",
+  "Bash", "Read", "Edit", "Write", "Glob", "Grep", "Task", "NotebookEdit"]);
+const tool = (value: unknown): string | null => typeof value === "string" && knownTools.has(value) ? value : null;
+const relativeFile = (value: unknown): string | null => typeof value === "string" && value.length <= 256 &&
+  /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(value) &&
+  !value.split("/").some(part => part === "." || part === "..") ? value : null;
+const safeSubcommands: Readonly<Record<string, ReadonlySet<string>>> = {
+  git: new Set(["status", "diff", "log", "show", "branch", "fetch", "commit", "push", "pull", "checkout", "merge", "worktree"]),
+  pnpm: new Set(["build", "test", "lint", "typecheck"]),
+  go: new Set(["test", "build", "vet"]),
+  deno: new Set(["task", "test", "lint", "fmt"]),
+};
+const safeCommands = new Set(["git", "pnpm", "npm", "node", "go", "deno", "cargo", "python", "python3", "pytest", "ls", "cat", "grep", "rg", "sed", "find", "wc"]);
+function commandHead(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const words = value.trim().split(/\s+/);
+  const first = words[0];
+  if (!first || !safeCommands.has(first)) return null;
+  const second = words[1];
+  return second && safeSubcommands[first]?.has(second) ? `${first} ${second}` : first;
+}
+/** Reject, do not partly print, prose that may contain a secret or operator location. */
+function args(value: unknown): Record<string, unknown> | null {
+  if (typeof value === "string" && value.length <= 4096) {
+    try { return object(JSON.parse(value)); } catch { return null; }
+  }
+  return object(value);
+}
+const id = (source: Source, origin: string, line: number, part: number) =>
+  `step_${createHash("sha256").update(`${source}\0${origin}\0${line}\0${part}`).digest("hex")}`;
+function step(source: Source, origin: string, line: number, part: number, at: unknown,
+  kind: AgentActivityStep["kind"], toolName: string | null, command: string | null,
+  filePath: string | null, summary: string | null): AgentActivityStep | null {
+  const time = stamp(at);
+  return time === null ? null : { id: id(source, origin, line, part), at: time, kind,
+    toolName, commandHead: command, filePath, summary, source };
+}
+function fromTool(source: Source, origin: string, line: number, part: number, at: unknown,
+  name: unknown, input: unknown): AgentActivityStep | null {
+  const toolName = tool(name);
+  const parsed = args(input);
+  const command = commandHead(parsed?.["cmd"] ?? parsed?.["command"]);
+  const filePath = relativeFile(parsed?.["filePath"] ?? parsed?.["file_path"] ?? parsed?.["path"]);
+  const kind = command !== null ? "command" : filePath !== null ? "file" : "tool";
+  const summary = command !== null ? `Ran ${command}` : filePath !== null ? "Opened a repository file"
+    : toolName !== null ? `Used ${toolName}` : "Used a tool";
+  return step(source, origin, line, part, at, kind, toolName, command, filePath, summary);
+}
+
+/** Only assistant-originated Codex items become steps; never prompts, tool outputs or reasoning. */
+export function codexActivity(raw: unknown, origin: string, line: number): readonly AgentActivityStep[] {
+  const envelope = object(raw), payload = object(envelope?.["payload"]);
+  if (envelope?.["type"] !== "response_item" || payload === null) return [];
+  const at = envelope["timestamp"];
+  if (payload["type"] === "function_call" || payload["type"] === "custom_tool_call") {
+    const found = fromTool("codex-rollout", origin, line, 0, at, payload["name"], payload["arguments"] ?? payload["input"]);
+    return found === null ? [] : [found];
+  }
+  if (payload["type"] !== "message" || payload["role"] !== "assistant" || !Array.isArray(payload["content"])) return [];
+  return payload["content"].flatMap((part, i) => {
+    const content = object(part);
+    if (content?.["type"] !== "output_text") return [];
+    const found = step("codex-rollout", origin, line, i, at, "message", null, null, null, "Agent message");
+    return found === null ? [] : [found];
+  });
+}
+
+/** Claude assistant text and tool-use blocks only; user text and tool results are excluded. */
+export function claudeActivity(raw: unknown, origin: string, line: number): readonly AgentActivityStep[] {
+  const envelope = object(raw), message = object(envelope?.["message"]);
+  if (envelope?.["type"] !== "assistant" || message === null || !Array.isArray(message["content"])) return [];
+  return message["content"].flatMap((part, i) => {
+    const content = object(part);
+    if (content?.["type"] === "tool_use") {
+      const found = fromTool("claude-transcript", origin, line, i, envelope["timestamp"], content["name"], content["input"]);
+      return found === null ? [] : [found];
+    }
+    if (content?.["type"] !== "text") return [];
+    const found = step("claude-transcript", origin, line, i, envelope["timestamp"], "message", null, null, null,
+      "Agent message");
+    return found === null ? [] : [found];
+  });
+}
+
+/** Keep only the latest bounded records, newest first, with stable IDs across rescans. */
+export function recentActivity(rows: readonly AgentActivityStep[]): readonly AgentActivityStep[] {
+  const unique = new Map(rows.map(row => [row.id, row]));
+  return [...unique.values()].sort((a, b) => b.at.localeCompare(a.at) || b.id.localeCompare(a.id)).slice(0, 20);
+}

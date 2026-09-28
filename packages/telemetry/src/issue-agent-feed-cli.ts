@@ -9,6 +9,7 @@ import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FR
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
+import { readActionReceipts } from "./action-receipt-cli.js";
 import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
 import { matchesOrchidNativeRootIdentity } from "./orchid-native-binding.js";
 import { HOST_CAPACITY_PLACEMENT_HOST, readLocalHostCapacity } from "./host-capacity.js";
@@ -40,6 +41,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   const nowMs = Date.parse(options.now);
   if (!Number.isFinite(nowMs) || orchid.reason !== null) return unavailableSnapshot(options.now, "source_unavailable");
   const localCapacity = await readLocalHostCapacity(options.now, options.env[HOST_CAPACITY_PLACEMENT_HOST]);
+  const actionScan = await readActionReceipts(options.env[ORCHID_DISPATCH_ROOT]);
   const groups = new Map<string, { repo: IssueAgentTree["repo"]; issueNumber: number; dispatches: DispatchEvidence[] }>();
   for (const dispatch of orchid.dispatches) {
     if (!dispatch.issue) continue;
@@ -82,7 +84,8 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     }
     const observations = buildAgentObservations({ dispatches: group.dispatches, runs: scan.runs,
       observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true });
-    entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs: scan.runs, localCapacity });
+    entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs: scan.runs,
+      localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete });
   }
   // A malformed receipt cannot be proven unrelated to a scoped issue.
   return combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,

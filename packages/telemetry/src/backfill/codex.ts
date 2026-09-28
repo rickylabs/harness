@@ -12,6 +12,7 @@
  */
 
 import { linkedIssuesOf, type QuotaReading, type RunRecord, type RunUsage } from "../model.js";
+import { codexActivity, recentActivity } from "../native-activity.js";
 import {
   isoFromMillis,
   NoteTally,
@@ -152,8 +153,9 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
   let terminalCause: RunRecord["terminalCause"];
   const usage: Record<string, number> = {};
   const quota: QuotaReading[] = [];
+  let activity: NonNullable<RunRecord["activitySteps"]> = [];
 
-  for (const raw of text.split("\n")) {
+  for (const [lineNumber, raw] of text.split("\n").entries()) {
     if (raw.trim().length === 0) continue;
     const parsed = parseLineWithReason(raw);
     if (parsed.line === null) {
@@ -161,6 +163,8 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
       continue;
     }
     const line = parsed.line as Envelope;
+    const steps = codexActivity(line, origin, lineNumber);
+    if (steps.length > 0) activity = recentActivity([...activity, ...steps]);
 
     // An unread record does not get to say when this run was last active. Finding F-9 on #105.
     const known = typeof line.type === "string" && KNOWN_TYPES.has(line.type);
@@ -273,6 +277,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
       branch: null,
       identity: { model, effort, provider, profile: null },
       usage: usage as RunUsage,
+      activitySteps: activity,
       outcome,
       terminalCause,
       linkedIssues: linkedIssuesOf(cwd, title),
