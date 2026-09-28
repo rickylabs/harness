@@ -1,16 +1,30 @@
 /** Project existing dispatch and native telemetry evidence. This module collects nothing. */
 import { createHash } from "node:crypto";
-import { MAX_AGENT_OBSERVATIONS, projectRouteIdentity, readAgentObservations, unavailableAgentCost,
-  unavailableOrchidRouteReasons, type AgentObservation, type AgentObservations, type AgentObservedValue } from "@rickylabs/harness-contracts";
+import { ISSUE_AGENT_TREE_FRESH_MS, MAX_AGENT_OBSERVATIONS, projectRouteIdentity, readAgentObservations, unavailableAgentCost,
+  unavailableOrchidRouteReasons, type AgentObservation, type AgentObservations, type AgentObservedValue,
+  type AgentUnavailableReason } from "@rickylabs/harness-contracts";
 import { projectAgentCost } from "./agent-cost.js";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 const opaque = (kind: "agent" | "assignment", value: string) => `${kind}_${digest(kind + "\0" + value)}`;
-const missing = <T>(reason: "source_not_bound" | "identity_unavailable" | "observer-unavailable" = "source_not_bound"): AgentObservedValue<T> =>
+const missing = <T>(reason: AgentUnavailableReason = "source_not_bound"): AgentObservedValue<T> =>
   ({ value: null, reason, observedAt: null, validUntil: null, revision: null });
 const nativeKey = (source: string, id: string) => `${source}\0${id}`;
+// A consumer may display a tree for its full 15-second validity. Reserve that
+// interval inside the two-minute native-activity window before claiming running.
+const NATIVE_RUNNING_MS = 120_000;
+function measuredRunning(run: RunRecord, capturedAt: string): AgentObservedValue<boolean> {
+  if (run.outcome !== "running") return missing("measurement_missing");
+  const eventMs = Date.parse(run.updatedAt), captureMs = Date.parse(capturedAt);
+  if (!Number.isFinite(eventMs) || !Number.isFinite(captureMs) ||
+      new Date(eventMs).toISOString() !== run.updatedAt || eventMs > captureMs ||
+      eventMs + NATIVE_RUNNING_MS < captureMs + ISSUE_AGENT_TREE_FRESH_MS) return missing("source_stale");
+  return { value: true, reason: null, observedAt: run.updatedAt,
+    validUntil: new Date(eventMs + NATIVE_RUNNING_MS).toISOString(),
+    revision: digest(JSON.stringify({ source: run.source, id: run.id, event: run.updatedAt, signal: "native-task-running" })) };
+}
 export function buildAgentObservations(input: {
   readonly dispatches: readonly DispatchEvidence[];
   readonly runs: readonly RunRecord[];
@@ -71,8 +85,11 @@ export function buildAgentObservations(input: {
   if (roots.size > 0 && !input.nativeComplete) { reason = "ancestry_unavailable"; return finish(); }
   // Bind only after every root identity and completeness fence has passed.
   for (const [key, root] of roots) {
-    const cost = projectAgentCost(native.get(key)!, input.observedAt);
-    const bound = { ...root, cost, revision: digest(JSON.stringify({ prior: root.revision, cost })) };
+    const run = native.get(key)!;
+    const cost = projectAgentCost(run, input.observedAt);
+    const running = measuredRunning(run, input.observedAt);
+    const bound = { ...root, cost, running,
+      revision: digest(JSON.stringify({ prior: root.revision, cost, running })) };
     agents[agents.indexOf(root)] = bound;
     roots.set(key, bound);
   }
@@ -89,11 +106,12 @@ export function buildAgentObservations(input: {
       if (agents.length === MAX_AGENT_OBSERVATIONS) { agents.length = 0; reason = "scan_limit"; return finish(); }
       const observedAt = run.updatedAt;
       const cost = projectAgentCost(run, input.observedAt);
+      const running = measuredRunning(run, input.observedAt);
       const child: AgentObservation = { agentId: opaque("agent", key), repo: parent.repo, issueNumber: parent.issueNumber,
         assignment: parent.assignment, parentAgentId: { state: "known-parent", value: parent.agentId, reason: null },
-        workspace: missing(), pane: missing(), tab: missing(), terminal: missing(), running: missing("identity_unavailable"),
+        workspace: missing(), pane: missing(), tab: missing(), terminal: missing(), running,
         route: projectRouteIdentity(null), cost, observedAt,
-        revision: digest(JSON.stringify({ parent: parent.agentId, observedAt, outcome: run.outcome, cost })),
+        revision: digest(JSON.stringify({ parent: parent.agentId, observedAt, outcome: run.outcome, cost, running })),
       };
       agents.push(child); assigned.set(key, child); changed = true;
     }

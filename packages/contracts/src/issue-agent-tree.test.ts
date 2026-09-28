@@ -32,6 +32,30 @@ it("decodes a grouped opaque dispatch tree with explicit unknowns", () => {
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.budget.tokenLimit, null);
 });
+it("requires a running measurement to cover its entire public frame", () => {
+  const base = snapshot();
+  const measured = { value: true, reason: null, observedAt: at, validUntil: base.validUntil, revision: rev } as const;
+  const runningNode = { ...node, observation: { ...observation, running: measured },
+    liveness: { state: "running", evidence: "runtime-observation", observedAt: at, reason: null } } as const;
+  const withNode = (agent: unknown) => ({ ...base, issues: [{ ...base.issues[0], dispatches: [{ dispatchId, agents: [agent] }] }] });
+  assert.equal(read(withNode(runningNode)).ok, true); // Equality at the frame deadline is valid.
+  assert.equal(read(withNode({ ...runningNode, observation: { ...observation,
+    running: { ...measured, validUntil: "2026-01-01T00:00:14.999Z" } } })).ok, false);
+  assert.equal(read(withNode({ ...runningNode, observation: { ...observation,
+    running: { ...measured, validUntil: null } } })).ok, false);
+  assert.equal(read(withNode({ ...runningNode, observation: { ...observation,
+    running: { ...measured, value: false } } })).ok, false);
+  assert.equal(read(withNode({ ...runningNode, observation })).ok, false);
+  assert.equal(read(withNode({ ...runningNode, liveness: { ...runningNode.liveness,
+    observedAt: "2025-12-31T23:59:59.000Z" } })).ok, false);
+  assert.equal(read(withNode({ ...runningNode, liveness: node.liveness })).ok, false);
+  assert.equal(read(withNode({ ...runningNode, liveness: { state: "ended", evidence: "native-outcome",
+    observedAt: at, reason: null }, terminalOutcome: { value: "succeeded", source: "native-outcome",
+    observedAt: at, reason: null } })).ok, false);
+  assert.equal(read(withNode(node)).ok, true); // Existing unknown rows remain valid.
+  assert.equal(read(withNode({ ...node, liveness: { state: "ended", evidence: "native-outcome",
+    observedAt: at, reason: null } })).ok, true);
+});
 it("retains sourced zero, rejects invalid budgets and unsupported router claims", () => {
   const s = snapshot();
   const mutate = (patch: Record<string, unknown>) => ({ ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId, agents: [{ ...node, ...patch }] }] }] });

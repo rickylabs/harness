@@ -1,0 +1,10 @@
+# Worklog — issue-agent-measured-running--p0
+
+- 2026-09-27 23:37 UTC — Fresh worktree created at merged baseline 377e68a; read doctrine, code, contract validator and native parser.
+- 2026-09-27 23:40 UTC — Locked design and requested independent F/G review before product mutation.
+- 2026-09-27 23:46 UTC — Independent F/G PASS after replacing goal-active with native task recency and tightening the 105/120-second frame bound.
+- 2026-09-27 23:49 UTC — Implemented root/child measured running; Node 24 contracts and telemetry suites passed (telemetry 626/626). Expiry-direction and terminal-guard mutations each failed focused tests; restored tests passed.
+- 2026-09-27 23:50 UTC — #393 live proof yielded route-default 300,000,000 in the dispatch receipt, but no native binding across 50 samples. Posted redacted partial evidence to #381; no status acceptance claim. Independent implementation review and full build started.
+- 2026-09-27 23:55 UTC — Independent implementation review FAIL_FIX found decoder running-leaf expiry gap. Expanded F/G PASS authorized contract fix; implemented 0.5.3 decoder and README note. Node 24 contracts/telemetry suites pass. Deadline and evidence-time guard mutations went red; restored focused tests green. Final full build and independent re-review started.
+- 2026-09-27 23:59 UTC — Re-review D2 found ended/unknown could carry `running=true`; added inverse decoder guard and negative tests. Removing guard made focused tests red, restoration green. Final Node 24 contracts 244/244, telemetry 626/626, full build 13/13, and offline installed-consumer 0.5.3 gates pass. Diff check and private-data scan clean. Awaiting independent PASS before commit/PR.
+- 2026-09-28 00:00 UTC — Independent implementation re-review PASS. Reviewer independently verified expired and contradictory decoder frames reject and a valid running frame decodes, with focused contract test 11/11. Ready to commit and open PR; live-home proof S1 remains failed for absent dispatcher binding.

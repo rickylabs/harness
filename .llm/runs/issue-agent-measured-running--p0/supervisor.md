@@ -1,0 +1,3 @@
+# Supervisor — issue-agent-measured-running--p0
+
+Harness seat, 2026-09-27 UTC. Baseline `origin/main` 377e68a on branch `fix/issue-agent-measured-running--p0`, fresh prescribed worktree. Coordinator owns merge, Orchid config, restart, and live dispatch. Mutation surface after Gate G: `packages/telemetry/src/{agent-observations,issue-agent-feed,issue-agent-feed-cli,codex-thread-connection,backfill/codex}*`, `packages/contracts/src/issue-agent-tree*`, `packages/contracts/package.json`, and `packages/contracts/README.md` only after the scope-expanded gate, this run directory, and generated CLI reference only if the public command changes. Do not edit Orchid, private receipts, labels, sibling repositories, or live config.

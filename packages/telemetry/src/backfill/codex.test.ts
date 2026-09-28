@@ -159,6 +159,9 @@ describe("parseCodexRollout", () => {
 
     const finished = `${started}\n${JSON.stringify({ timestamp: "2026-09-04T21:20:00.000Z", type: "event_msg", payload: { type: "task_complete", turn_id: "t1", duration_ms: 1080000 } })}`;
     assert.equal(parseRun(finished, "o")?.outcome, "complete");
+    const resumed = `${finished}\n${JSON.stringify({ timestamp: "2026-09-04T21:20:01.000Z", type: "event_msg", payload: { type: "task_started" } })}`;
+    assert.equal(parseRun(resumed, "o")?.outcome, "running");
+    assert.equal(parseRun(resumed, "o")?.updatedAt, "2026-09-04T21:20:01.000Z");
 
     const errored = `${started}\n${JSON.stringify({ timestamp: "2026-09-04T21:03:00.000Z", type: "event_msg", payload: { type: "stream_error", message: "upstream reset" } })}`;
     assert.equal(parseRun(errored, "o")?.outcome, "failed");
