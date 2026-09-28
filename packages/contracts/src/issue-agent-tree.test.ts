@@ -34,6 +34,52 @@ it("decodes a grouped opaque dispatch tree with explicit unknowns", () => {
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.budget.tokenLimit, null);
 });
+it("reads sourced effort and exact opaque parent links while preserving old frames", () => {
+  const s = snapshot();
+  const root = { ...node, effort: unknown, parentAgentId: null };
+  const childObservation = { ...observation, agentId: "agent_" + "d".repeat(64),
+    parentAgentId: { state: "known-parent", value: observation.agentId, reason: null } };
+  const child = { ...node, observation: childObservation,
+    harness: { value: "codex", source: "native", reason: null },
+    effort: unknown, parentAgentId: observation.agentId };
+  const tree = (agents: unknown[]) => ({ ...s, issues: [{ ...s.issues[0],
+    dispatches: [{ dispatchId, agents }] }] });
+  assert.equal(read(tree([root, child])).ok, true);
+  assert.equal(read(tree([root, { ...child, parentAgentId: "agent_" + "e".repeat(64) }])).ok, false);
+  assert.equal(read(tree([root, { ...child, parentAgentId: null }])).ok, false);
+  assert.equal(read(tree([{ ...root, parentAgentId: childObservation.agentId }, child])).ok, false);
+  assert.equal(read(tree([root, { ...child, effort: { value: "high", source: "dispatch", reason: null } }])).ok, false);
+  const routedObservation = { ...observation, route: projectRouteIdentity({ requested: {
+    provider: { value: "fixture-provider", source: "request.modelProvider" },
+    model: { value: "fixture-model", source: "request.model" },
+    effort: { value: "high", source: "request.effort" },
+  } }) };
+  const routed = { ...root, observation: routedObservation,
+    effort: { value: "high", source: "dispatch", reason: null } };
+  assert.equal(read(tree([routed])).ok, true);
+  assert.equal(read(tree([{ ...routed, effort: unknown }])).ok, false);
+  assert.equal(read(tree([{ ...routed, effort: { value: "low", source: "dispatch", reason: null } }])).ok, false);
+  assert.equal(read(s).ok, true);
+});
+it("accepts only screened activity targets tied to their typed tool evidence", () => {
+  const s = snapshot();
+  const step = { id: "step_" + "d".repeat(64), at, kind: "command", toolName: "exec_command",
+    commandHead: "git status", filePath: null, summary: "Ran git status", source: "codex-rollout" };
+  const tree = (entry: unknown) => ({ ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId, agents: [
+    { ...node, activity: { availability: "available", reason: null, observedAt: at, steps: [entry] } } ] }] }] });
+  assert.equal(read(tree({ ...step, target: { kind: "command", value: "git status" } })).ok, true);
+  assert.equal(read(tree({ ...step, target: { kind: "command", value: "git log" } })).ok, false);
+  assert.equal(read(tree({ ...step, target: { kind: "file", value: "main.ts" } })).ok, false);
+  assert.equal(read(tree({ ...step, target: { kind: "search", value: "private secret" } })).ok, false);
+  const file = { ...step, kind: "file", toolName: "Read", commandHead: null, filePath: "src/main.ts" };
+  assert.equal(read(tree({ ...file, target: { kind: "file", value: "main.ts" } })).ok, true);
+  assert.equal(read(tree({ ...file, target: { kind: "file", value: "secret-token.ts" } })).ok, false);
+  assert.equal(read(tree({ ...file, filePath: "src/secret-token.ts", target: null })).ok, false);
+  const search = { ...step, kind: "tool", toolName: "Grep", commandHead: null };
+  assert.equal(read(tree({ ...search, target: { kind: "search", value: "route status" } })).ok, true);
+  assert.equal(read(tree({ ...search, target: { kind: "search", value: "Use recovery code 482916" } })).ok, false);
+  assert.equal(read(tree(step)).ok, true);
+});
 it("accepts bounded activity and rejects mismatched usage, raw paths, and unsourced timeline events", () => {
   const s = snapshot();
   const withNode = (agent: unknown) => ({ ...s, issues: [{ ...s.issues[0],

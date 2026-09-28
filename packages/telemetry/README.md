@@ -807,6 +807,12 @@ addresses, secrets and long opaque tokens; unsafe text stays a fixed generic lab
 flags or arguments. The 0.11.1 contract shares the producer's screened-text rule, including
 short recovery-code-like prose; unsafe summaries are refused rather than published.
 
+The 0.13.0 issue-agent feed adds an exact bound-route effort value on roots and an opaque verified
+parent ID on children. Native children do not inherit the root's effort. Each native activity step
+can carry a typed short target: allowlisted command head, screened file basename, or a screened
+Grep/Glob query. The same public screen runs in the producer and contract decoder; unsafe targets
+are null, never truncated or echoed.
+
 Cwd, Git origin and goal objective default to `redacted`. `includeSensitive:true` in the library or `--private` on the CLI permits those fields for an authenticated private consumer only. Never log that payload. Native IDs, session IDs, rollout paths and previews are always excluded; public thread references reuse existing opaque native-child IDs. `codexThreadEvidence(snapshot)` is the counts/availability/reasons-only projection for publishable evidence.
 
 Defaults: 500 rows, 30-second read/request deadline, 50 rows per page. Hard caps: 5000 rows, 202 pages, 1 MiB per frame, 8 outstanding RPCs, 128 buffered goal notifications. Both archived states and all declared native source kinds are included; list-side rollout repair is disabled. Overflow/disconnect is explicit. Sequence numbers are connection-local, not durable replay cursors. The snapshot is not atomic with the stream, and cross-process notification delivery is not claimed. See [RFC 0003](../../docs/rfcs/0003-codex-thread-read-stream.md).

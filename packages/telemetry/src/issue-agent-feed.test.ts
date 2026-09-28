@@ -97,6 +97,10 @@ it("groups issue, dispatch, root and child without leaking native identity or pa
   const root = agents.find(a => a.observation.parentAgentId.state === "confirmed-root")!;
   const child = agents.find(a => a.observation.parentAgentId.state === "known-parent")!;
   assert.equal(child.observation.parentAgentId.value, root.observation.agentId);
+  assert.equal(root.parentAgentId, null);
+  assert.equal(child.parentAgentId, root.observation.agentId);
+  assert.deepEqual(root.effort, { value: "high", source: "dispatch", reason: null });
+  assert.deepEqual(child.effort, { value: null, source: "unavailable", reason: "source_not_bound" });
   assert.deepEqual(root.budget, { tokenLimit: 1000, source: "issue-override", reason: null });
   assert.deepEqual(child.budget, { tokenLimit: null, source: "unavailable", reason: "source_not_bound" });
   assert.deepEqual(root.nativeDepth, { value: null, source: "unavailable", reason: "source_not_bound" });
@@ -347,6 +351,7 @@ it("retains earlier bound issues when aggregate bytes exceed the contract cap", 
       issues: { issueNumber: number; dispatches: { dispatchId: string; agents: {
         dispatchId: string; observation: { agentId: string; issueNumber: number;
           assignment: { id: string }; parentAgentId: { state: string; value: string | null } };
+        parentAgentId: string | null;
         provider: unknown; model: unknown; location: { host: unknown; container: unknown; seat: unknown };
         history: { dispatchId: string; kind: string; at: string }[]; historyTruncated: boolean }[] }[] }[] };
     const issueNumber = 1000 + i;
@@ -364,6 +369,7 @@ it("retains earlier bound issues when aggregate bytes exceed the contract cap", 
       const child = agent.observation.parentAgentId.state === "known-parent";
       agent.observation.agentId = child ? childId : rootId;
       if (child) agent.observation.parentAgentId.value = rootId;
+      agent.parentAgentId = child ? rootId : null;
       (agent.observation as unknown as { routeObservedReasons: unknown }).routeObservedReasons =
         Object.fromEntries(["transport", "model", "effort", "tier", "role"].map(field => [field,
           { status: "unknown", reasonCode: "observer-unavailable", reason: ORCHID_OBSERVER_REASON }]));

@@ -698,6 +698,15 @@ delivery or rejection reasons; an `ended` event names the verified native outcom
 or teardown. Receipt delivery by itself does not produce `ended`. The decoder accepts older events
 without `reason`, but checks new terminal reasons against the agent's measured terminal source.
 
+In 0.13.0, each agent can add `effort` and `parentAgentId`. Root effort comes only from its bound
+requested dispatch route and is a closed thinking-level value; children remain explicitly unavailable
+until their own route is measured. `parentAgentId` is null for a confirmed root and equals the
+verified opaque parent ID for a child. The decoder checks it against the existing ancestry evidence;
+older frames without either field still read. Activity steps can add `target` with a closed kind:
+an allowlisted command head, a repository file basename, or a screened search query. Targets are
+rejected whole when unsafe; repository-relative path segments pass that screen too. No flags, raw
+paths, arguments, or unbounded transcript text are copied.
+
 Older frames without these optional fields remain decodable. A producer emitting 0.12.0 timeline
 reasons requires a 0.12.0 consumer because earlier decoders reject unknown event keys. Upgrade
 consumers before deploying the new producer.
