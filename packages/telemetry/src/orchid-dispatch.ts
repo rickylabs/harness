@@ -170,11 +170,12 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
           route, routeObservedReasons: receipt.reasons, issue: { repo: issue.repo, number: issue.number as number }, parentRunId: null,
           location: { paneId: location.paneId, workspaceId: location.workspaceId },
           dispatchState: input.state as "launching" | "dispatched" | "uncertain" };
-        await readOrchidNativeBinding(record, key, dispatch);
         const stop = await readOrchidStopObservation(root, record, { runId: dispatch.runId,
           repository: issue.repo as string, issueNumber: issue.number as number,
           host: dispatch.host ?? null, paneId: location.paneId as string, workspaceId: location.workspaceId as string });
-        dispatches.push(stop === undefined ? dispatch : { ...dispatch, stop });
+        const boundDispatch = stop === undefined ? dispatch : { ...dispatch, stop };
+        await readOrchidNativeBinding(record, key, boundDispatch);
+        dispatches.push(boundDispatch);
       } catch { notes.add("orchid-dispatch: binding_unavailable"); }
     }
   } catch { notes.add("orchid-dispatch: source_unavailable"); }
