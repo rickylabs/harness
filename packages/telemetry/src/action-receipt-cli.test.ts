@@ -37,6 +37,37 @@ it("projects only bounded public delivery fields from one private operation", as
   assert.ok(!cli.stdout.includes("PRIVATE-")); assert.ok(!cli.stdout.includes(root));
 });
 
+it("reads bounded budget and exact-pin retry receipts, rejecting false success", async () => {
+  const replacementAgentId = `agent_${"e".repeat(64)}`;
+  const replacementDispatchId = `assignment_${"f".repeat(64)}`;
+  for (const row of [
+    { action: "raise_budget", reason: "goal_budget_updated" },
+    { action: "retry", reason: "retry_dispatched", replacementAgentId, replacementDispatchId },
+  ]) {
+    const { root, operation } = await fixture();
+    await writeFile(join(operation, "result.json"), JSON.stringify({ ...accepted(), ...row }), { mode: 0o600 });
+    const result = await readActionReceipt(root, operationId);
+    assert.equal(result.outcome, "accepted"); assert.equal(result.reason, row.reason);
+    assert.equal(result.replacementDispatchId, row.replacementDispatchId ?? null);
+    assert.ok(!JSON.stringify(result).includes("PRIVATE-"));
+  }
+  for (const row of [
+    { action: "retry", reason: "retry_dispatched", replacementAgentId },
+    { action: "retry", reason: "retry_dispatched", replacementAgentId, replacementDispatchId: "PRIVATE-NATIVE-ID" },
+    { action: "raise_budget", reason: "retry_dispatched" },
+  ]) {
+    const { root, operation } = await fixture();
+    await writeFile(join(operation, "result.json"), JSON.stringify({ ...accepted(), ...row }), { mode: 0o600 });
+    assert.equal((await readActionReceipt(root, operationId)).reason, "receipt_invalid");
+  }
+  for (const reason of ["budget_ceiling_exceeded", "retry_pins_unavailable", "retry_terminal_unproven"]) {
+    const { root, operation } = await fixture();
+    await writeFile(join(operation, "result.json"), JSON.stringify({ ...accepted(), action: "retry", outcome: "rejected", reason }), { mode: 0o600 });
+    const result = await readActionReceipt(root, operationId);
+    assert.equal(result.outcome, "rejected"); assert.equal(result.reason, reason);
+  }
+});
+
 it("returns the conflicting digest rejection without replacing the primary result", async () => {
   const { root, operation } = await fixture();
   await writeFile(join(operation, "result.json"), JSON.stringify(accepted()), { mode: 0o600 });

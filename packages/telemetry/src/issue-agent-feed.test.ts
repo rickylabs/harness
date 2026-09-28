@@ -173,6 +173,13 @@ it("binds measured activity, token numerator, child spawn, and immutable action 
     ?.timeline?.events.find(event => event.kind === "action-accepted")?.reason, "workspace_close_delivered");
   assert.equal(stopped.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId === rootId)
     ?.timeline?.events.some(event => event.kind === "ended"), false);
+  for (const [action, reason] of [["raise_budget", "goal_budget_updated"], ["retry", "retry_dispatched"]] as const) {
+    const projected = buildIssueAgentTreeSnapshot({ observations, dispatches: [dispatch], runs: [rootRun, childRun],
+      actions: [{ ...accepted, action, reason }], actionsComplete: true });
+    const row = projected.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId === rootId);
+    assert.equal(row?.timeline?.events.find(event => event.kind === "action-accepted")?.reason, reason);
+    assert.equal(readIssueAgentTreeSnapshot(projected).ok, true);
+  }
   const malformed = buildIssueAgentTreeSnapshot({ observations, dispatches: [dispatch], runs: [rootRun, childRun],
     actions: [{ ...accepted, reason: "PRIVATE-RAW-REASON" }], actionsComplete: true });
   const protectedTimeline = malformed.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId === rootId)?.timeline;
