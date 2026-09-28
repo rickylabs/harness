@@ -89,6 +89,9 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const parentAgentId = observation.parentAgentId.state === "known-parent" ? observation.parentAgentId.value : null;
   const router = provenAncestry && dispatch.router?.value === "direct" && dispatch.router.source === "dispatch" &&
     (dispatch.source === "codex" || dispatch.source === "claude") ? dispatch.router : unavailable;
+  const unboundRevision = { value: null, scope: "root-dispatch", source: "unavailable", reason: "source_not_bound" } as const;
+  const profileRevision = provenAncestry ? dispatch.profileRevision ?? unboundRevision : unboundRevision;
+  const matrixRevision = provenAncestry ? dispatch.matrixRevision ?? unboundRevision : unboundRevision;
   const start = time(run?.startedAt, now);
   const outcomeAt = time(run?.updatedAt, now);
   const seatAt = root ? time(dispatch.stop?.seatObservedAt ?? undefined, now) : null;
@@ -198,6 +201,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     events: orderedEvents(events).slice(-32), truncated: !actionsComplete || invalidActionReason || events.length > 32 };
   return { dispatchId: observation.assignment.id, observation: placedObservation, harness, provider, router,
     routePolicy: observation.parentAgentId.state === "confirmed-root" ? dispatch.routePolicy ?? unavailablePolicy : unavailablePolicy, model,
+    profileRevision, matrixRevision,
     effort, parentAgentId,
     location: { host, container: unplaced, seat: unplaced }, nativeDepth,
     budget,

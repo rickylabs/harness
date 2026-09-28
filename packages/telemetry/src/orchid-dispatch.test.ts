@@ -36,6 +36,40 @@ it("certifies only the configured short host matching the private reservation", 
     assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.host, null);
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
+it("binds launch revisions to the private profile and matrix receipts with typed fallback", async () => {
+  const issueID = "fixture-issue", repo = "example/target", briefDigest = "b".repeat(64);
+  const reservation = createHash("sha256").update(issueID + "\0" + repo + "\0" + briefDigest).digest("hex");
+  const profileRevision = "c".repeat(40), matrixRevision = "d".repeat(40);
+  const s = await setup(reservation);
+  const binding = { IssueID: issueID, Repo: repo, BriefDigest: briefDigest, Host: "fixture-node", ProfileRevision: profileRevision };
+  const receipt = { schemaVersion: 1, resolution: { sourceRevision: matrixRevision, digest: "b".repeat(64),
+    resolvedAt: "2026-01-01T00:00:00.000Z", selected: { logicalModel: "fixture-logical", physicalModel: "fixture-model" } },
+    requested: { transport: "codex", model: "fixture-model", effort: "high", tier: "feature", role: "implementation" },
+    observed: Object.fromEntries(["transport", "model", "effort", "tier", "role"].map(field => [field,
+      { status: "unknown", reasonCode: "observer-unavailable", reason: "No independent runtime observation is available." }])) };
+  const pin = (value: string) => ({ value, scope: "root-dispatch", source: "dispatch", reason: null });
+  const missing = (reason: string) => ({ value: null, scope: "root-dispatch", source: "unavailable", reason });
+  try {
+    await s.write({ ...fixture, runId: "orchid-" + reservation, host: "fixture-node", profileRevision, matrixRevision });
+    await writeFile(join(s.record, "binding.json"), JSON.stringify(binding), { mode: 0o600 });
+    await writeFile(join(s.record, "receipt.json"), JSON.stringify(receipt), { mode: 0o600 });
+    let row = (await readOrchidDispatches(s.root)).dispatches[0];
+    assert.deepEqual(row?.profileRevision, pin(profileRevision));
+    assert.deepEqual(row?.matrixRevision, pin(matrixRevision));
+    await writeFile(join(s.record, "binding.json"), JSON.stringify({ ...binding, ProfileRevision: "e".repeat(40) }));
+    row = (await readOrchidDispatches(s.root)).dispatches[0];
+    assert.deepEqual(row?.profileRevision, missing("binding_invalid"));
+    assert.deepEqual(row?.matrixRevision, pin(matrixRevision));
+    await writeFile(join(s.record, "binding.json"), JSON.stringify(binding));
+    await writeFile(join(s.record, "receipt.json"), JSON.stringify({ ...receipt, resolution: {
+      ...receipt.resolution, sourceRevision: "e".repeat(40) } }));
+    assert.deepEqual((await readOrchidDispatches(s.root)).dispatches[0]?.matrixRevision, missing("binding_invalid"));
+    await s.write({ ...fixture, runId: "orchid-" + reservation, host: "fixture-node" });
+    row = (await readOrchidDispatches(s.root)).dispatches[0];
+    assert.deepEqual(row?.profileRevision, missing("source_not_bound"));
+    assert.deepEqual(row?.matrixRevision, missing("source_not_bound"));
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
 it("carries validated Orchid observed reasons and withholds corrupt receipt text", async () => {
   const s = await setup();
   const reason = "No independent runtime observation is available.";

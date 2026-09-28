@@ -117,6 +117,21 @@ it("groups issue, dispatch, root and child without leaking native identity or pa
   assert.equal(root.endedAt, null); // updatedAt is last activity, even after a terminal outcome.
   assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
 });
+it("projects bound root-dispatch revisions on root and child, and marks an old writer unavailable", () => {
+  const pinned: DispatchEvidence = { ...dispatch,
+    profileRevision: { value: "c".repeat(40), scope: "root-dispatch", source: "dispatch", reason: null },
+    matrixRevision: { value: "d".repeat(40), scope: "root-dispatch", source: "dispatch", reason: null } };
+  const agents = build(pinned).issues[0]?.dispatches[0]?.agents ?? [];
+  assert.equal(agents.length, 2);
+  assert.deepEqual(agents.map(agent => agent.profileRevision), [pinned.profileRevision, pinned.profileRevision]);
+  assert.deepEqual(agents.map(agent => agent.matrixRevision), [pinned.matrixRevision, pinned.matrixRevision]);
+  assert.ok(readIssueAgentTreeSnapshot(build(pinned)).ok);
+  const old = build().issues[0]?.dispatches[0]?.agents ?? [];
+  for (const agent of old) {
+    assert.deepEqual(agent.profileRevision, { value: null, scope: "root-dispatch", source: "unavailable", reason: "source_not_bound" });
+    assert.deepEqual(agent.matrixRevision, { value: null, scope: "root-dispatch", source: "unavailable", reason: "source_not_bound" });
+  }
+});
 it("binds measured activity, token numerator, child spawn, and immutable action to the exact agent", () => {
   const rootRun = { ...run("PRIVATE-NATIVE-ROOT", null, "running"), usage: { inputTokens: 8, outputTokens: 3,
     reasoningTokens: 2, cacheReadTokens: 5 }, activitySteps: [{ id: "step_" + "a".repeat(64), at,

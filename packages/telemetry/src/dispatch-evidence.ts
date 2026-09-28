@@ -1,7 +1,7 @@
 /** Reads dispatch receipts from the existing telemetry log; no collection or inferred joins. */
 import { projectRouteIdentity, type RouteIdentityEvidence } from "@rickylabs/subagents";
 import type { OrchidRouteObservedReasons } from "@rickylabs/harness-contracts";
-import type { AgentBudget, AgentRoutePolicy, AgentTreeValue } from "@rickylabs/harness-contracts";
+import type { AgentBudget, AgentLaunchRevision, AgentRoutePolicy, AgentTreeValue } from "@rickylabs/harness-contracts";
 import type { LiveFile } from "./live.js";
 import type { RunSource } from "./model.js";
 
@@ -29,6 +29,9 @@ export interface DispatchEvidence {
   readonly router?: AgentTreeValue;
   /** Bound private matrix receipt, distinct from the gateway. */
   readonly routePolicy?: AgentRoutePolicy;
+  /** Exact pins of the root dispatch, each independently tied to its source receipt. */
+  readonly profileRevision?: AgentLaunchRevision;
+  readonly matrixRevision?: AgentLaunchRevision;
   /** Bound, separately verified Orchid stop observations for the root only. */
   readonly stop?: { readonly seatObservedAt: string | null; readonly processObservedAt: string | null };
   /** Bound, separately verified ordinary teardown observations for the root only. */
