@@ -163,6 +163,24 @@ export interface IssueAgentTreeDispatch {
   readonly dispatchId: string;
   readonly agents: readonly IssueAgentTreeAgent[];
 }
+/** Closed Orchid pre-launch refusals. Inconclusive post-launch outcomes are excluded. */
+export const ISSUE_LAUNCH_REFUSAL_REASONS = [
+  "goal-budget-invalid", "goal-objective-invalid", "codex-effort-invalid", "receipt-owner-invalid",
+  "source-missing", "source-invalid", "revision-invalid", "receipt-root-invalid", "target-revision-invalid",
+  "issue-invalid", "issue-identity-missing", "brief-routing-invalid", "grant-conflict", "pin-invalid",
+  "profile-invalid", "profile-unavailable", "override-worklog-unavailable", "authorization-required",
+  "authorization-invalid", "override-required", "override-invalid", "route-unavailable", "routing-invalid",
+  "resolution-failed", "quota-unavailable", "harness-conflict", "router-unsupported", "host-unavailable",
+  "receipt-persistence-failed", "dispatch-persistence-failed",
+] as const;
+export type IssueLaunchRefusalReason = typeof ISSUE_LAUNCH_REFUSAL_REASONS[number];
+export interface IssueLaunchRefusal {
+  readonly state: "refused";
+  readonly reason: IssueLaunchRefusalReason;
+  readonly at: string;
+  readonly dispatchId: string;
+  readonly source: "orchid";
+}
 export interface IssueAgentTree {
   readonly repo: RepoRef;
   readonly issueNumber: number;
@@ -170,6 +188,8 @@ export interface IssueAgentTree {
   readonly complete: boolean;
   readonly reason: AgentObservations["reason"];
   readonly dispatches: readonly IssueAgentTreeDispatch[];
+  /** Additive in 0.14: a verified issue-level refusal needs no agent row. */
+  readonly launchRefusal?: IssueLaunchRefusal;
 }
 export interface IssueAgentTreeSnapshot {
   readonly schema: 1;
@@ -501,7 +521,10 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
     const legacyPartials = new Set<number>();
     for (const rawIssue of array(row.issues, MAX_AGENT_OBSERVATIONS)) {
       const legacy = !Object.hasOwn(rawIssue as object, "complete") && !Object.hasOwn(rawIssue as object, "reason");
-      const issue = record(rawIssue, legacy ? ["repo", "issueNumber", "dispatches"] : ["repo", "issueNumber", "complete", "reason", "dispatches"]);
+      const hasRefusal = Object.hasOwn(rawIssue as object, "launchRefusal");
+      const issue = record(rawIssue, legacy ? ["repo", "issueNumber", "dispatches"] :
+        ["repo", "issueNumber", "complete", "reason", "dispatches", ...(hasRefusal ? ["launchRefusal"] : [])]);
+      if (legacy && hasRefusal) return bad();
       const legacyPartial = legacy && !row.complete && row.reason === "ancestry_unavailable";
       const issueComplete = legacy ? !legacyPartial : issue.complete;
       const issueReason = legacyPartial ? "ancestry_unavailable" : legacy ? null : issue.reason;
@@ -514,6 +537,17 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
       const issueKey = `${repo.owner.toLowerCase()}/${repo.name.toLowerCase()}#${issue.issueNumber}`;
       if (issueKeys.has(issueKey)) return bad("ambiguous-ancestry");
       issueKeys.add(issueKey);
+      let launchRefusal: IssueLaunchRefusal | undefined;
+      if (hasRefusal) {
+        const refusal = record(issue.launchRefusal, ["state", "reason", "at", "dispatchId", "source"]);
+        if (refusal.state !== "refused" || refusal.source !== "orchid" ||
+            !ISSUE_LAUNCH_REFUSAL_REASONS.includes(refusal.reason as IssueLaunchRefusalReason) ||
+            typeof refusal.dispatchId !== "string" || !/^assignment_[a-f0-9]{64}$/.test(refusal.dispatchId)) return bad();
+        const at = stamp(refusal.at);
+        if (at > observedAt) return bad();
+        launchRefusal = { state: "refused", reason: refusal.reason as IssueLaunchRefusalReason,
+          at, dispatchId: refusal.dispatchId, source: "orchid" };
+      }
       const dispatches: IssueAgentTreeDispatch[] = [];
       const dispatchIds = new Set<string>();
       for (const rawDispatch of array(issue.dispatches, MAX_AGENT_OBSERVATIONS)) {
@@ -534,10 +568,11 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
         }
         dispatches.push({ dispatchId: dispatch.dispatchId, agents });
       }
-      if (legacyPartial ? dispatches.length === 0 : issueComplete ? dispatches.length === 0 : dispatches.length !== 0) return bad();
+      if (legacyPartial ? dispatches.length === 0 : issueComplete ? dispatches.length === 0 && launchRefusal === undefined : dispatches.length !== 0) return bad();
       if (legacyPartial) legacyPartials.add(issues.length);
       issues.push({ repo: { owner: repo.owner, name: repo.name }, issueNumber: issue.issueNumber,
-        complete: issueComplete, reason: issueReason as IssueAgentTree["reason"], dispatches });
+        complete: issueComplete, reason: issueReason as IssueAgentTree["reason"], dispatches,
+        ...(launchRefusal === undefined ? {} : { launchRefusal }) });
     }
     if (agentCount > MAX_AGENT_OBSERVATIONS) return bad("oversized");
     if (row.complete && issues.some(issue => !issue.complete)) return bad();

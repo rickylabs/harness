@@ -34,6 +34,21 @@ it("decodes a grouped opaque dispatch tree with explicit unknowns", () => {
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.budget.tokenLimit, null);
 });
+it("accepts a source-bound launch refusal with no agent and rejects unsourced or unsafe reasons", () => {
+  const s = snapshot();
+  const refusal = { state: "refused", reason: "routing-invalid", at, dispatchId, source: "orchid" };
+  const issue = { ...s.issues[0]!, dispatches: [], launchRefusal: refusal };
+  const withRefusal = (value: unknown) => ({ ...s, issues: [{ ...issue, launchRefusal: value }] });
+  const result = read({ ...s, issues: [issue] });
+  assert.equal(result.ok, true);
+  if (result.ok) assert.deepEqual(result.snapshot.issues[0]?.launchRefusal, refusal);
+  assert.equal(read({ ...s, issues: [{ ...issue, launchRefusal: undefined }] }).ok, false);
+  assert.equal(read(withRefusal({ ...refusal, reason: "PRIVATE-issue-content" })).ok, false);
+  assert.equal(read(withRefusal({ ...refusal, reason: "goal-prompt-unconfirmed" })).ok, false);
+  assert.equal(read(withRefusal({ ...refusal, at: "2026-01-01T00:00:01.000Z" })).ok, false);
+  assert.equal(read(withRefusal({ ...refusal, dispatchId: "PRIVATE-NATIVE-ID" })).ok, false);
+  assert.equal(read({ ...s, issues: [{ ...s.issues[0], dispatches: [] }] }).ok, false);
+});
 it("reads sourced effort and exact opaque parent links while preserving old frames", () => {
   const s = snapshot();
   const root = { ...node, effort: unknown, parentAgentId: null };
