@@ -557,7 +557,7 @@ owner-controlled process before a downstream application pins its new decoder.
 
 `IssueAgentTreeSnapshot` groups the validated `AgentObservation` collection by repository and
 issue, then by opaque stable dispatch ID. Each agent keeps its existing parent evidence, location,
-route evidence, and three separate cost rows. New fields name harness, provider, router, model,
+route evidence, and separate cost rows. New fields name harness, provider, router, model,
 token budget and its source, quota regime, liveness with explicit unknown, start/end times, and a
 bounded typed history. The decoder rejects native IDs, extra fields, invalid budgets, and partial
 ancestry passed off as complete. A native child provider is not renamed to router, and a root budget
@@ -565,8 +565,8 @@ is not inherited by a child.
 
 Each agent and history event repeats the enclosing dispatch ID so the cockpit can join only to its
 accepted dispatch receipt. The snapshot has a 15-second `validUntil` bound. Host, container and seat
-are individually nullable and distinguish dispatch placement from runtime observation; the current
-producer has no public-safe source for these three and reports typed unavailable values. A terminal
+are individually nullable and distinguish dispatch placement from runtime observation; 0.6.0 adds
+verified dispatch-host placement while container and seat remain unavailable. A terminal
 native outcome reports succeeded, failed or cancelled only when its exact cause is known; an
 ambiguous failure remains unknown. `endedAt` stays unavailable until an exact terminal timestamp
 exists. Missing budget, route, model, quota, time and sanitized transcript
@@ -615,5 +615,20 @@ matrix digest. Missing or invalid receipts leave it typed unavailable. The decod
 The coordinator decided 2026-09-27 that the route default applies unless the issue overrides it;
 Eric can overrule. Child budgets and nonnative router identity need their own attributed evidence. `endedAt`
 remains null because the current native run record has last activity, not an exact terminal time.
-The 0.5.3 package version is release preparation only; the owner-authorized tag described above
-is required before npm publication.
+The 0.5.3 package was published after its owner-authorized tag.
+
+## Host placement and capacity in 0.6.0
+
+The issue tree now reports a configured short dispatch host only after `dispatch.json` and
+private `binding.json` agree on it and the binding matches the reservation. Root and native
+children of that dispatch share the placement. Missing or inconsistent host evidence remains
+`source_not_bound`. SSH targets and addresses are never public placement evidence.
+
+`AgentCost.localCapacity` is an additive fourth row with `scope: host`; the existing
+subscription, metered USD and run-token rows remain separate. An available capacity
+measurement must name the exact placed host and remain valid for the full issue-tree frame.
+The current cgroup reader explicitly cannot certify the dispatch host, so the producer
+reports `observer-unavailable` on a placed host and `source_not_bound` without placement.
+No RAM or GPU amount is inferred. The 0.6.0 decoder accepts 0.5.x observations without
+the fourth row and normalizes it to unavailable. Publication follows the merged PR and
+package dry run.

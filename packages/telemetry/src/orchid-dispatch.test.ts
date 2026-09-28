@@ -1,5 +1,6 @@
 /** All dispatch, pane and source values in these fixtures are synthetic. */
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, writeFile, rm, symlink, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -12,13 +13,29 @@ const fixture = { schemaVersion: 1, runId: "orchid-" + key,
   issue: { repo: "example/inbox", number: 42 }, parentRunId: null, source: "codex",
   provider: "fixture-router", model: "fixture-model", effort: "high", profile: "leaf", state: "dispatched",
   location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" } };
-async function setup() {
+async function setup(reservation = key) {
   const root = await mkdtemp(join(tmpdir(), "orchid-read-"));
-  const dir = join(root, key, "record");
+  const dir = join(root, reservation, "record");
   await mkdir(dir, { recursive: true, mode: 0o700 });
   const file = join(dir, "dispatch.json");
   return { root, file, record: dir, write: (value: unknown) => writeFile(file, JSON.stringify(value), { mode: 0o600 }) };
 }
+it("certifies only the configured short host matching the private reservation", async () => {
+  const issueID = "fixture-issue", repo = "example/target", briefDigest = "b".repeat(64);
+  const reservation = createHash("sha256").update(issueID + "\0" + repo + "\0" + briefDigest).digest("hex");
+  const s = await setup(reservation);
+  const binding = { IssueID: issueID, Repo: repo, BriefDigest: briefDigest, Host: "fixture-node" };
+  try {
+    await s.write({ ...fixture, runId: "orchid-" + reservation, host: "fixture-node" });
+    await writeFile(join(s.record, "binding.json"), JSON.stringify(binding), { mode: 0o600 });
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.host, "fixture-node");
+    await writeFile(join(s.record, "binding.json"), JSON.stringify({ ...binding, Host: "other-fixture" }));
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.host, null);
+    await writeFile(join(s.record, "binding.json"), JSON.stringify(binding));
+    await s.write({ ...fixture, runId: "orchid-" + reservation, host: "fixture.invalid" });
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.host, null);
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
 it("carries validated Orchid observed reasons and withholds corrupt receipt text", async () => {
   const s = await setup();
   const reason = "No independent runtime observation is available.";

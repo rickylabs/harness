@@ -20,13 +20,14 @@ const observe = (runs: RunRecord[], dispatches: DispatchEvidence[] = [dispatch],
   runs, dispatches, observedAt: now, sourceBound: true, dispatchComplete: true, nativeComplete });
 const checkAvailable = () => {
   const cost = projectAgentCost(run(), now);
-  assert.ok(Object.values(cost).every(row => row.availability === "available"));
+  assert.ok([cost.subscriptionHeadroom, cost.meteredSpend, cost.runTokens].every(row => row.availability === "available"));
+  assert.equal(cost.localCapacity.reason, "source_not_bound");
   return cost;
 };
 const unavailable = (row: { availability: string; measurement: unknown; reason: string | null }, reason: string) => {
   assert.equal(row.availability, "unavailable"); assert.equal(row.measurement, null); assert.equal(row.reason, reason);
 };
-it("cost: roots and children receive only their own usage, with three distinct rows", () => {
+it("cost: roots and children receive own usage and a separate unavailable host-capacity row", () => {
   const root = run(), child = run({ id: "PRIVATE-CHILD", parentId: root.id, usage: { inputTokens: 1, costUsd: 0 } });
   const result = observe([root, child]);
   assert.ok(readAgentObservations(result).ok); assert.equal(result.complete, true); assert.equal(result.agents.length, 2);
@@ -35,18 +36,20 @@ it("cost: roots and children receive only their own usage, with three distinct r
   assert.deepEqual(r.cost, projectAgentCost(root, now)); assert.deepEqual(c.cost, projectAgentCost(child, now));
   assert.deepEqual(c.cost.runTokens.measurement, { inputTokens: 1 });
   assert.equal(c.cost.meteredSpend.measurement?.amount, 0);
-  assert.deepEqual(Object.keys(r.cost), ["subscriptionHeadroom", "meteredSpend", "runTokens"]);
+  assert.deepEqual(Object.keys(r.cost), ["subscriptionHeadroom", "meteredSpend", "runTokens", "localCapacity"]);
   assert.equal(r.cost.subscriptionHeadroom.scope, "subscription_account");
   assert.equal(r.cost.meteredSpend.scope, "run"); assert.equal(r.cost.runTokens.scope, "run");
   assert.equal(JSON.stringify(result).includes("PRIVATE-"), false);
 });
 it("cost: absent is unavailable while reported zero remains available", () => {
   const empty = projectAgentCost(run({ usage: {}, quota: [] }), now);
-  for (const row of Object.values(empty)) unavailable(row, "measurement_missing");
+  for (const row of [empty.subscriptionHeadroom, empty.meteredSpend, empty.runTokens]) unavailable(row, "measurement_missing");
+  unavailable(empty.localCapacity, "source_not_bound");
   const zero = projectAgentCost(run({ usage: { inputTokens: 0, outputTokens: 0, costUsd: 0 }, quota: [quota({ usedPercent: 100 })] }), now);
   assert.deepEqual(zero.runTokens.measurement, { inputTokens: 0, outputTokens: 0 });
   assert.equal(zero.meteredSpend.measurement?.amount, 0); assert.equal(zero.subscriptionHeadroom.measurement?.remainingPercent, 0);
-  assert.ok(Object.values(zero).every(row => row.availability === "available"));
+  assert.ok([zero.subscriptionHeadroom, zero.meteredSpend, zero.runTokens].every(row => row.availability === "available"));
+  unavailable(zero.localCapacity, "source_not_bound");
   unavailable(projectAgentCost(run({ usage: { costUsd: 0 } }), now).runTokens, "measurement_missing");
   unavailable(projectAgentCost(run({ usage: { inputTokens: 0 } }), now).meteredSpend, "measurement_missing");
 });

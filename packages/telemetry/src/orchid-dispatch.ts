@@ -6,7 +6,7 @@ import { dirname, isAbsolute, join, resolve } from "node:path";
 import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents";
 import { ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
   type OrchidRouteObservedReasons, type AgentBudget, type AgentRoutePolicy } from "@rickylabs/harness-contracts";
-import { readOrchidNativeBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
+import { readOrchidNativeBinding, readOrchidHostBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
 export const ORCHID_DISPATCH_ROOT = "DSH_TELEMETRY_DISPATCH_ROOT";
@@ -159,6 +159,7 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
           } // Invalid budget metadata withholds only the budget, not the dispatch tree.
         }
         const dispatch: DispatchEvidence = { observedAt: at, revision, linkageBasis: "dispatcher-confirmed", runId: input.runId as string, external: null,
+          host: await readOrchidHostBinding(record, key, input.host, revision),
           source: input.source === "codex" || input.source === "claude" ? input.source : null,
           harness: input.source as "codex" | "claude" | "agy", budget,
           router: input.source === "codex" || input.source === "claude"

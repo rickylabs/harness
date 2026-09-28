@@ -10,6 +10,8 @@ const keyFor = (source: string, identity: string) => digest(source + "\0" + iden
 const bindings = new WeakMap<DispatchEvidence, { key: string | null }>();
 // Same bound for the private binding (which includes the profile) and snapshot reread.
 const MAX_BYTES = 262_144;
+const placementName = (value: unknown): value is string => typeof value === "string" &&
+  /^[A-Za-z][A-Za-z0-9_-]{0,62}$/.test(value);
 async function readPrivate(file: string): Promise<Buffer> {
   const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
@@ -20,6 +22,18 @@ async function readPrivate(file: string): Promise<Buffer> {
     if (bytesRead > MAX_BYTES) throw new Error();
     return bytes.subarray(0, bytesRead);
   } finally { await handle.close(); }
+}
+/** Certify the dispatch host against the private reservation, never an SSH target. */
+export async function readOrchidHostBinding(record: string, reservation: string, expected: unknown, dispatchRevision: string): Promise<string | null> {
+  if (!placementName(expected)) return null;
+  try {
+    const binding = JSON.parse((await readPrivate(join(record, "binding.json"))).toString("utf8")) as Record<string, unknown>;
+    if (binding.Host !== expected || typeof binding.IssueID !== "string" || typeof binding.Repo !== "string" ||
+      typeof binding.BriefDigest !== "string" || !/^[a-f0-9]{64}$/.test(binding.BriefDigest) ||
+      digest(binding.IssueID + "\0" + binding.Repo + "\0" + binding.BriefDigest) !== reservation ||
+      digest(await readPrivate(join(record, "dispatch.json"))) !== dispatchRevision) return null;
+    return expected;
+  } catch { return null; }
 }
 /** Consume only the writer's dispatched Codex binding, tied to its reservation and selected route.
  * Writer contract: orchid a94ba978904354d2d13a632ad1806def81ac07ae,

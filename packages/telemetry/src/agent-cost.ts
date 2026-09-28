@@ -71,5 +71,7 @@ function subscriptionHeadroom(run: RunRecord, capturedAt: string): AgentCost["su
 /** Caller proves unique run attribution; this function never joins by issue, prose or location. */
 export function projectAgentCost(run: RunRecord, capturedAt: string): AgentCost {
   if (!Number.isFinite(time(capturedAt))) return unavailableAgentCost("binding_invalid");
-  return { subscriptionHeadroom: subscriptionHeadroom(run, capturedAt), ...runUsage(run, capturedAt) };
+  return { subscriptionHeadroom: subscriptionHeadroom(run, capturedAt), ...runUsage(run, capturedAt),
+    // Existing cgroup capacity is not an observation of the bound dispatch host.
+    localCapacity: unavailableAgentCost("source_not_bound").localCapacity };
 }

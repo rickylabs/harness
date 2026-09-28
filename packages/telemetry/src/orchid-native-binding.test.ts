@@ -67,7 +67,7 @@ it("private binding: resolves the existing parent tree without exporting native 
     for (const row of result.agents) {
       assert.equal(row.running.value, null);
       assert.ok(Object.values(row.route.observed).every(field => field.value === null));
-      assert.equal(Object.keys(row.cost).length, 3);
+      assert.equal(Object.keys(row.cost).length, 4);
       assert.ok(Object.values(row.cost).every(cost => cost.availability === "unavailable"));
     }
     assert.equal(rows[0]!.external, null);
