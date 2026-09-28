@@ -313,6 +313,17 @@ describe("parseClaudeTranscript, on a transcript it cannot fully read", () => {
     assert.equal(run?.updatedAt, "2026-09-04T22:00:00.000Z");
   });
 
+  it("deliberately skips the three types from the earlier census without moving the clock", () => {
+    for (const type of ["frame-link", "artifact-autoreact-ledger", "artifact-comment-monitor"]) {
+      assert.equal(KNOWN_TYPES.has(type), false, `${type} must not be read as activity`);
+      assert.ok(OBSERVED_UNREAD_TYPES.get(type)?.trim(), `${type} needs a reason`);
+      const text = lines(user("go"), { type, timestamp: "2026-09-05T09:00:00.000Z" });
+      const { run, notes } = parseClaudeTranscript(text, "o");
+      assert.deepEqual(notes, [], `${type} is deliberately unread, not unknown`);
+      assert.equal(run?.updatedAt, "2026-09-04T22:00:00.000Z");
+    }
+  });
+
   it("still reports a type in neither list, so a genuine discovery is not silenced", () => {
     const text = lines(user("go"), { type: "warp-drive", timestamp: "2026-09-05T09:00:00.000Z" });
     const { notes } = parseClaudeTranscript(text, "o");

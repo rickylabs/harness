@@ -89,11 +89,10 @@ export const KNOWN_TYPES: ReadonlySet<string> = new Set([
  * parser was reporting ordinary traffic as degradation. The test suite already states the cost of
  * that: notes for ordinary traffic are the fastest way to teach an operator to ignore them.
  *
- * None of these can understate `updatedAt`, and that is now structural rather than lucky. Twelve of
- * the thirteen carry no timestamp field at all, so there is nothing for a clock to read. The
- * thirteenth, `file-history-delta`, carries one alongside a `messageId`: it is metadata anchored to
- * a message record that this parser already reads, so its time is derivative and letting it move
- * the clock independently would add nothing while risking a claim about activity nobody parsed.
+ * None of the thirteen types in the 2026-09-14 re-census can understate `updatedAt`. Twelve carry
+ * no timestamp field at all. The thirteenth, `file-history-delta`, has a derivative timestamp
+ * anchored by `messageId` to a message record this parser already reads. Three types seen in the
+ * earlier census are also declared unread below; their activity-time semantics remain unverified.
  *
  * Re-censused 2026-09-14 over 445 transcripts. The shape of a store is the input, not a constant:
  * this census shares only two types with the one taken while shipping #246, and the three that
@@ -114,10 +113,13 @@ export const KNOWN_TYPES: ReadonlySet<string> = new Set([
 export const OBSERVED_UNREAD_TYPES: ReadonlyMap<string, string> = new Map([
   ["agent-name", "no timestamp field; names a subagent, not an activity"],
   ["ai-title", "no timestamp field; a generated session title"],
+  ["artifact-autoreact-ledger", "artifact reaction bookkeeping; activity-time semantics unverified"],
+  ["artifact-comment-monitor", "artifact comment-monitor bookkeeping; activity-time semantics unverified"],
   ["cost-state", "no timestamp field; carries startTime and totals, not an activity instant"],
   ["failed", "no timestamp field; a subagent outcome keyed by agentId"],
   ["file-history-delta", "timestamp is derivative; anchored by messageId to a record already read"],
   ["file-history-snapshot", "no timestamp field; keyed by messageId"],
+  ["frame-link", "frame association metadata; activity-time semantics unverified"],
   ["fork-context-ref", "no timestamp field; a pointer to a forked context"],
   ["launched", "no timestamp field; carries nothing but its own type"],
   ["permission-mode", "no timestamp field; records a mode, not an activity"],
