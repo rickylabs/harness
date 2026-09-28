@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **349/424 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 7 invisible**
+`[################----]` **351/426 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 7 invisible**
 
-_Latest board activity: 2026-09-28T20:07:30Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-28T20:27:42Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -135,7 +135,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 154/182 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 6 invisible
+`[##########--]` 156/184 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 6 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -143,7 +143,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 2 queued | `impl` |
-| _(no epic)_ | `[##########--]` 124/146 done · 3 running · 2 queued · 3 blocked · 9 abandoned · 5 invisible | — |
+| _(no epic)_ | `[##########--]` 126/148 done · 3 running · 2 queued · 3 blocked · 9 abandoned · 5 invisible | — |
 
 ## Waiting to start
 
@@ -185,7 +185,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  349/424 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 7 invisible
+# rickylabs/harness  [################----]  351/426 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 7 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  195/242 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -466,7 +466,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  154/182 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 6 invisible
+## (no milestone)  [################----]  156/184 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 6 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -663,6 +663,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #428 fix(telemetry): reject code-like activity and preserve timeline truncation (p0)
     shipped              PR429 fix(telemetry): screen code-like activity and retain timeline truncation (p0)
     shipped              #430 SSE live-push proof: watch a short native child review (p0)
+    shipped              #437 Expose sourced effort, safe activity targets, and opaque parent IDs
+    shipped              PR438 Expose sourced effort, screened activity targets, and opaque parent IDs
 ```
 
 </details>
