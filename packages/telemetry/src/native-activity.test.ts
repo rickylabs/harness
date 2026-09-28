@@ -11,6 +11,7 @@ it("publishes only bounded safe assistant activity from a Codex rollout", () => 
   assert.equal(step.commandHead, "git status");
   assert.equal(step.filePath, null);
   assert.equal(step.summary, "Ran git status");
+  assert.deepEqual(step.target, { kind: "command", value: "git status" });
   assert.equal(codexActivity(command, origin, 3)[0]?.id, step.id);
   const wrapped = codexActivity({ ...command, payload: { ...command.payload,
     name: "functions.exec", arguments: JSON.stringify({ code: "return 1" }) } }, origin, 6)[0]!;
@@ -33,11 +34,28 @@ it("reads Claude assistant tool use while excluding user text and unknown tool n
   const steps = claudeActivity(row, "PRIVATE-ORIGIN-CANARY", 1);
   assert.equal(steps.length, 3);
   assert.equal(steps[0]?.filePath, "src/main.ts");
+  assert.deepEqual(steps[0]?.target, { kind: "file", value: "main.ts" });
   assert.equal(steps[1]?.toolName, null);
   assert.equal(steps[1]?.commandHead, null);
+  assert.equal(steps[1]?.target, null);
   assert.equal(steps[2]?.summary, "Agent message");
   assert.equal(claudeActivity({ ...row, type: "user" }, "o", 1).length, 0);
   assert.ok(!JSON.stringify(steps).includes("CANARY"));
+});
+it("screens short search targets and file basenames without echoing raw paths or queries", () => {
+  const call = (name: string, input: unknown) => claudeActivity({ type: "assistant", timestamp: at,
+    message: { content: [{ type: "tool_use", name, input }] } }, "PRIVATE-ORIGIN-CANARY", 7)[0]!;
+  assert.deepEqual(call("Grep", { pattern: "route status" }).target, { kind: "search", value: "route status" });
+  assert.equal(call("Grep", { pattern: "PRIVATE-URL-CANARY https://private.invalid" }).target, null);
+  assert.equal(call("Grep", { pattern: "Use recovery code 482916" }).target, null);
+  assert.deepEqual(call("Read", { file_path: "src/agent-detail.ts" }).target, { kind: "file", value: "agent-detail.ts" });
+  assert.equal(call("Read", { file_path: "/private/host/path" }).target, null);
+  assert.equal(call("Read", { file_path: "src/secret-token.txt" }).target, null);
+  assert.equal(call("Read", { file_path: "src/secret-token.txt" }).filePath, null);
+  assert.equal(call("Read", { file_path: "src/PRIVATE-PATH-CANARY.txt" }).filePath, null);
+  assert.ok(!JSON.stringify([call("Grep", { pattern: "PRIVATE-URL-CANARY https://private.invalid" }),
+    call("Read", { file_path: "/private/host/path" }),
+    call("Read", { file_path: "src/PRIVATE-PATH-CANARY.txt" })]).includes("PRIVATE-"));
 });
 
 it("publishes only the single in-progress Codex plan step after the full privacy screen", () => {

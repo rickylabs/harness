@@ -24,6 +24,18 @@ export function publicActivityText(value: unknown): string | null {
       /\b\d{6,8}\b|\b\d{3}(?:[ -]\d{3})+\b|\b[A-Z0-9]{4}(?:-[A-Z0-9]{4})+\b/.test(candidate)) return null;
   return candidate;
 }
+export const AGENT_EFFORTS = ["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"] as const;
+export type AgentActivityTargetKind = "command" | "file" | "search";
+/** Reject the whole target when it does not pass the same public prose screen. */
+export function publicActivityTarget(kind: AgentActivityTargetKind, value: unknown): string | null {
+  if (typeof value !== "string" || value.length > 120 || value !== value.trim()) return null;
+  if (kind === "file") {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$/.test(value) || value.includes("..")) return null;
+    return publicActivityText(value.replace(/[._-]+/g, " ")) === null ? null : value;
+  }
+  if (kind === "command" && !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}(?: [A-Za-z0-9][A-Za-z0-9_.-]{0,31})?$/.test(value)) return null;
+  return publicActivityText(value) === value ? value : null;
+}
 export const AGENT_HISTORY_KINDS = ["dispatch-observed", "run-started-observed", "run-activity-observed", "stop-seat-observed", "stop-process-observed", "teardown-seat-observed", "teardown-process-observed"] as const;
 export type AgentHistoryKind = typeof AGENT_HISTORY_KINDS[number];
 export interface AgentHistoryEvent { readonly dispatchId: string; readonly kind: AgentHistoryKind; readonly at: string }
@@ -72,6 +84,8 @@ export interface AgentActivityStep {
   /** Repository-relative only; an absolute native path is never published. */
   readonly filePath: string | null;
   readonly summary: string | null;
+  /** Additive in the next contracts minor; a screened, tool-specific display target. */
+  readonly target?: { readonly kind: AgentActivityTargetKind; readonly value: string } | null;
   readonly source: "codex-rollout" | "claude-transcript";
 }
 export type AgentActivity =
@@ -117,6 +131,10 @@ export interface IssueAgentTreeAgent {
   /** Matrix policy is separate from the gateway; its digest comes from a bound receipt. */
   readonly routePolicy: AgentRoutePolicy;
   readonly model: AgentTreeValue;
+  /** Additive: request effort for this exact agent; never inherited by a child. */
+  readonly effort?: AgentTreeValue;
+  /** Additive: verified opaque parent identity, null for a confirmed root. */
+  readonly parentAgentId?: string | null;
   readonly location: AgentTreeLocation;
   readonly budget: AgentBudget;
   /** A child's measured native spawn depth; roots and legacy frames remain unavailable. */
@@ -257,7 +275,8 @@ function activityRow(value: unknown, capturedAt: string): AgentActivity {
   if (observedAt > capturedAt) return bad();
   const ids = new Set<string>();
   const decoded = steps.map(value => {
-    const s = record(value, ["id", "at", "kind", "toolName", "commandHead", "filePath", "summary", "source"]);
+    const s = record(value, ["id", "at", "kind", "toolName", "commandHead", "filePath", "summary", "source",
+      ...(Object.hasOwn(value as object, "target") ? ["target"] : [])]);
     if (typeof s.id !== "string" || !/^step_[a-f0-9]{64}$/.test(s.id) || ids.has(s.id)) return bad();
     ids.add(s.id);
     const at = stamp(s.at);
@@ -267,11 +286,29 @@ function activityRow(value: unknown, capturedAt: string): AgentActivity {
     if (s.commandHead !== null && (typeof s.commandHead !== "string" ||
         !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}(?: [A-Za-z0-9][A-Za-z0-9_.-]{0,31})?$/.test(s.commandHead))) return bad();
     if (s.filePath !== null && (typeof s.filePath !== "string" || s.filePath.length > 256 ||
-        !/^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(s.filePath) || s.filePath.split("/").some(part => part === "." || part === ".."))) return bad();
+        !/^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(s.filePath) ||
+        s.filePath.split("/").some(part => part === "." || part === ".." ||
+          publicActivityTarget("file", part) === null))) return bad();
     if (s.summary !== null && publicActivityText(s.summary) !== s.summary) return bad();
+    let target: AgentActivityStep["target"];
+    if (Object.hasOwn(s, "target")) {
+      if (s.target === null) target = null;
+      else {
+        const t = record(s.target, ["kind", "value"]);
+        if (t.kind !== "command" && t.kind !== "file" && t.kind !== "search") return bad();
+        if (publicActivityTarget(t.kind, t.value) !== t.value) return bad();
+        if (t.kind === "command" && (s.kind !== "command" || s.commandHead !== t.value)) return bad();
+        if (t.kind === "file" && (s.kind !== "file" || typeof s.filePath !== "string" ||
+          !["read_file", "write_file", "Read", "Edit", "Write", "NotebookEdit"].includes(s.toolName as string) ||
+          s.filePath.split("/").at(-1) !== t.value)) return bad();
+        if (t.kind === "search" && (s.toolName !== "Grep" && s.toolName !== "Glob")) return bad();
+        target = { kind: t.kind, value: t.value as string };
+      }
+    }
     return { id: s.id, at, kind: s.kind as AgentActivityStep["kind"], toolName: s.toolName as string | null,
       commandHead: s.commandHead as string | null, filePath: s.filePath as string | null,
-      summary: s.summary as string | null, source: s.source as AgentActivityStep["source"] };
+      summary: s.summary as string | null, source: s.source as AgentActivityStep["source"],
+      ...(Object.hasOwn(s, "target") ? { target: target ?? null } : {}) };
   });
   for (let i = 1; i < decoded.length; i++) if (decoded[i - 1]!.at < decoded[i]!.at) return bad();
   return { availability: "available", reason: null, observedAt, steps: decoded };
@@ -328,6 +365,8 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   const keys = ["dispatchId", "observation", "harness", "provider", "router", "model", "location", "budget", "quotaRegime", "liveness", "terminalOutcome", "startedAt", "startedAtReason", "endedAt", "endedAtReason", "transcript", "history", "historyTruncated"];
   const row = record(value, [...keys,
     ...(Object.hasOwn(value as object, "routePolicy") ? ["routePolicy"] : []),
+    ...(Object.hasOwn(value as object, "effort") ? ["effort"] : []),
+    ...(Object.hasOwn(value as object, "parentAgentId") ? ["parentAgentId"] : []),
     ...(Object.hasOwn(value as object, "nativeDepth") ? ["nativeDepth"] : []),
     ...(Object.hasOwn(value as object, "actionState") ? ["actionState"] : []),
     ...(Object.hasOwn(value as object, "endedBy") ? ["endedBy"] : []),
@@ -416,6 +455,12 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   if (router.value !== null && router.source !== "dispatch") return bad();
   const routePolicy = Object.hasOwn(row, "routePolicy") ? policyRow(row.routePolicy)
     : { value: null, digest: null, source: "unavailable", reason: "source_not_bound" } as const;
+  const effort = Object.hasOwn(row, "effort") ? valueRow(row.effort) : undefined;
+  if (effort?.value !== null && effort?.value !== undefined &&
+      (effort.source !== "dispatch" || !AGENT_EFFORTS.includes(effort.value as typeof AGENT_EFFORTS[number]))) return bad();
+  const parentAgentId = Object.hasOwn(row, "parentAgentId") ? row.parentAgentId : undefined;
+  if (parentAgentId !== undefined && parentAgentId !== null &&
+      (typeof parentAgentId !== "string" || !/^agent_[a-f0-9]{64}$/.test(parentAgentId))) return bad();
   const nativeDepth = Object.hasOwn(row, "nativeDepth") ? depthRow(row.nativeDepth)
     : { value: null, source: "unavailable", reason: "source_not_bound" } as const;
   const timeline = Object.hasOwn(row, "timeline") ? timelineRow(row.timeline, capturedAt) : undefined;
@@ -428,7 +473,10 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
         (endedBy === null && terminalOutcome.source !== "native-outcome")) return bad();
   }
   return { dispatchId, observation: row.observation, harness: valueRow(row.harness), provider: valueRow(row.provider),
-    router, routePolicy, model: valueRow(row.model), location, budget: decodedBudget, nativeDepth,
+    router, routePolicy, model: valueRow(row.model),
+    ...(effort === undefined ? {} : { effort }),
+    ...(parentAgentId === undefined ? {} : { parentAgentId: parentAgentId as string | null }),
+    location, budget: decodedBudget, nativeDepth,
     quotaRegime, liveness, actionState, endedBy, terminalOutcome, startedAt, startedAtReason, endedAt, endedAtReason,
     transcript: { value: null, reason: "source_not_bound" }, history, historyTruncated: row.historyTruncated,
     ...(Object.hasOwn(row, "activity") ? { activity: activityRow(row.activity, capturedAt) } : {}),
@@ -514,6 +562,14 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
               running.validUntil === null || running.validUntil < validUntil) return bad();
         } else if (running?.value === true) return bad();
         const parent = safe.get(a.observation.agentId)?.parentAgentId;
+        if (a.parentAgentId !== undefined && a.parentAgentId !== (parent?.state === "known-parent" ? parent.value : null)) return bad();
+        if (a.effort !== undefined) {
+          const requested = parent?.state === "confirmed-root" ? safe.get(a.observation.agentId)?.route.requested.effort.value : null;
+          const known = typeof requested === "string" && AGENT_EFFORTS.includes(requested as typeof AGENT_EFFORTS[number]);
+          if (known ? a.effort.value !== requested || a.effort.source !== "dispatch"
+            : a.effort.value !== null || a.effort.source !== "unavailable" ||
+              a.effort.reason !== (requested === null ? "source_not_bound" : "binding_invalid")) return bad();
+        }
         if (a.nativeDepth.value !== null && (parent?.state !== "known-parent" || a.harness.source !== "native")) return bad();
         if (parent?.state === "known-parent") {
           if (a.budget.tokenLimit !== null || a.provider.source === "dispatch" || a.model.source === "dispatch" ||

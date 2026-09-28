@@ -1,6 +1,6 @@
 /** Small public-safe native activity facts; raw tool input and prose never leave this reader. */
 import { createHash } from "node:crypto";
-import { publicActivityText, type AgentActivityStep } from "@rickylabs/harness-contracts";
+import { publicActivityTarget, publicActivityText, type AgentActivityStep } from "@rickylabs/harness-contracts";
 
 type Source = AgentActivityStep["source"];
 const object = (value: unknown): Record<string, unknown> | null => value !== null && typeof value === "object" &&
@@ -12,10 +12,12 @@ const stamp = (value: unknown): string | null => {
 const knownTools = new Set(["functions.exec", "exec_command", "apply_patch", "read_file", "write_file",
   "Bash", "Read", "Edit", "Write", "Glob", "Grep", "Task", "NotebookEdit", "update_plan",
   "functions.update_plan", "TodoWrite"]);
+const fileTools = new Set(["read_file", "write_file", "Read", "Edit", "Write", "NotebookEdit"]);
 const tool = (value: unknown): string | null => typeof value === "string" && knownTools.has(value) ? value : null;
 const relativeFile = (value: unknown): string | null => typeof value === "string" && value.length <= 256 &&
   /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(value) &&
-  !value.split("/").some(part => part === "." || part === "..") ? value : null;
+  value.split("/").every(part => part !== "." && part !== ".." &&
+    publicActivityTarget("file", part) !== null) ? value : null;
 const safeSubcommands: Readonly<Record<string, ReadonlySet<string>>> = {
   git: new Set(["status", "diff", "log", "show", "branch", "fetch", "commit", "push", "pull", "checkout", "merge", "worktree"]),
   pnpm: new Set(["build", "test", "lint", "typecheck"]),
@@ -52,10 +54,10 @@ const id = (source: Source, origin: string, line: number, part: number) =>
   `step_${createHash("sha256").update(`${source}\0${origin}\0${line}\0${part}`).digest("hex")}`;
 function step(source: Source, origin: string, line: number, part: number, at: unknown,
   kind: AgentActivityStep["kind"], toolName: string | null, command: string | null,
-  filePath: string | null, summary: string | null): AgentActivityStep | null {
+  filePath: string | null, summary: string | null, target: AgentActivityStep["target"] = null): AgentActivityStep | null {
   const time = stamp(at);
   return time === null ? null : { id: id(source, origin, line, part), at: time, kind,
-    toolName, commandHead: command, filePath, summary, source };
+    toolName, commandHead: command, filePath, summary, target, source };
 }
 function fromTool(source: Source, origin: string, line: number, part: number, at: unknown,
   name: unknown, input: unknown): AgentActivityStep | null {
@@ -73,7 +75,15 @@ function fromTool(source: Source, origin: string, line: number, part: number, at
   const kind = command !== null ? "command" : filePath !== null ? "file" : "tool";
   const summary = command !== null ? `Ran ${command}` : filePath !== null ? "Opened a repository file"
     : toolName !== null ? `Used ${toolName}` : "Used a tool";
-  return step(source, origin, line, part, at, kind, toolName, command, filePath, summary);
+  const basename = toolName !== null && fileTools.has(toolName) ? filePath?.split("/").at(-1) ?? null : null;
+  const search = toolName === "Grep" || toolName === "Glob"
+    ? publicActivityTarget("search", parsed?.["pattern"] ?? parsed?.["query"]) : null;
+  const target: AgentActivityStep["target"] = command !== null && publicActivityTarget("command", command) !== null
+    ? { kind: "command", value: command }
+    : search !== null ? { kind: "search", value: search }
+      : basename !== null && publicActivityTarget("file", basename) !== null
+        ? { kind: "file", value: basename } : null;
+  return step(source, origin, line, part, at, kind, toolName, command, filePath, summary, target);
 }
 
 /** Only assistant-originated Codex items become steps; never prompts, tool outputs or reasoning. */

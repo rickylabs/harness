@@ -1,7 +1,7 @@
 /** Pure per-issue projection of the existing dispatcher/native ancestry join. */
 import { createHash } from "node:crypto";
 import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_REJECTED_REASONS, MAX_AGENT_HISTORY, MAX_AGENT_OBSERVATIONS,
-  MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, unavailableAgentCost,
+  MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, AGENT_EFFORTS, unavailableAgentCost,
   projectRouteIdentity,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
   type AgentTimelineEvent, type AgentTimelineReason, type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
@@ -80,6 +80,13 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const harness = root ? safe(dispatch.harness ?? dispatch.source, "dispatch") : safe(run?.source, "native");
   const provider = root ? safe(observation.route.requested.provider.value, "dispatch") : safe(run?.identity.provider, "native");
   const model = root ? safe(observation.route.requested.model.value, "dispatch") : safe(run?.identity.model, "native");
+  const requestedEffort = observation.parentAgentId.state === "confirmed-root"
+    ? observation.route.requested.effort.value : null;
+  const effort: AgentTreeValue = typeof requestedEffort === "string" &&
+    AGENT_EFFORTS.includes(requestedEffort as typeof AGENT_EFFORTS[number])
+    ? { value: requestedEffort, source: "dispatch", reason: null }
+    : requestedEffort !== null ? { value: null, source: "unavailable", reason: "binding_invalid" } : unavailable;
+  const parentAgentId = observation.parentAgentId.state === "known-parent" ? observation.parentAgentId.value : null;
   const router = provenAncestry && dispatch.router?.value === "direct" && dispatch.router.source === "dispatch" &&
     (dispatch.source === "codex" || dispatch.source === "claude") ? dispatch.router : unavailable;
   const start = time(run?.startedAt, now);
@@ -191,6 +198,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     events: orderedEvents(events).slice(-32), truncated: !actionsComplete || invalidActionReason || events.length > 32 };
   return { dispatchId: observation.assignment.id, observation: placedObservation, harness, provider, router,
     routePolicy: observation.parentAgentId.state === "confirmed-root" ? dispatch.routePolicy ?? unavailablePolicy : unavailablePolicy, model,
+    effort, parentAgentId,
     location: { host, container: unplaced, seat: unplaced }, nativeDepth,
     budget,
     quotaRegime: seam === "codex" || seam === "claude" ? { value: "subscription", reason: null }
