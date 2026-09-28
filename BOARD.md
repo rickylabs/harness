@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **321/395 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
+`[################----]` **322/397 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-28T09:50:09Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-28T10:11:27Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (22)
+## Moving now (23)
 
 Something could be acting on these right now.
 
@@ -40,6 +40,7 @@ Something could be acting on these right now.
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
 | [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl-eval` | `e3` |
 | [#300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision](https://github.com/rickylabs/harness/issues/300) | `impl-eval` | `e3` |
+| [PR409 feat: expose measured native child depth in issue tree](https://github.com/rickylabs/harness/pull/409) | `ready-merge` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -59,12 +60,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#381 Dispatcher must write thread goal and sub-agent ancestry](https://github.com/rickylabs/harness/issues/381) | — | — |
 
-## Anomalies (25)
+## Anomalies (26)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
+- **#409** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
@@ -126,14 +128,14 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 127/153 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
+`[#########---]` 128/155 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 8/10 done · 2 queued | `impl` |
-| _(no epic)_ | `[##########--]` 107/127 done · 3 running · 2 queued · 3 blocked · 9 abandoned · 3 invisible | — |
+| _(no epic)_ | `[##########--]` 108/129 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
@@ -175,7 +177,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  321/395 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [################----]  322/397 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -456,7 +458,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  127/153 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [################----]  128/155 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -621,6 +623,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR404 Align packaged routing catalog with Eric's corrected tiers (p1)
     shipped              #406 Reduce issue-agent watch disk scans with file events and bounded safety rescan (p1)
     shipped              PR407 perf(telemetry): reduce issue-agent watch disk scans (p1)
+    shipped              #408 Expose measured native child depth in issue agent trees (p1)
+    ready-merge          PR409 feat: expose measured native child depth in issue tree (p1)
 ```
 
 </details>
