@@ -41,7 +41,7 @@ it("reads bounded budget and exact-pin retry receipts, rejecting false success",
   const replacementAgentId = `agent_${"e".repeat(64)}`;
   const replacementDispatchId = `assignment_${"f".repeat(64)}`;
   for (const row of [
-    { action: "raise_budget", reason: "goal_budget_updated" },
+    { action: "raise_budget", reason: "goal_budget_updated", tokenBudget: 1_500 },
     { action: "retry", reason: "retry_dispatched", replacementAgentId, replacementDispatchId },
   ]) {
     const { root, operation } = await fixture();
@@ -49,12 +49,16 @@ it("reads bounded budget and exact-pin retry receipts, rejecting false success",
     const result = await readActionReceipt(root, operationId);
     assert.equal(result.outcome, "accepted"); assert.equal(result.reason, row.reason);
     assert.equal(result.replacementDispatchId, row.replacementDispatchId ?? null);
+    assert.equal(result.tokenBudget, row.tokenBudget ?? null);
     assert.ok(!JSON.stringify(result).includes("PRIVATE-"));
   }
   for (const row of [
     { action: "retry", reason: "retry_dispatched", replacementAgentId },
     { action: "retry", reason: "retry_dispatched", replacementAgentId, replacementDispatchId: "PRIVATE-NATIVE-ID" },
     { action: "raise_budget", reason: "retry_dispatched" },
+    { action: "raise_budget", reason: "goal_budget_updated", tokenBudget: -1 },
+    { action: "raise_budget", reason: "goal_budget_updated", tokenBudget: "PRIVATE-NATIVE-ID" },
+    { action: "retry", reason: "retry_dispatched", replacementAgentId, replacementDispatchId, tokenBudget: 1_500 },
   ]) {
     const { root, operation } = await fixture();
     await writeFile(join(operation, "result.json"), JSON.stringify({ ...accepted(), ...row }), { mode: 0o600 });

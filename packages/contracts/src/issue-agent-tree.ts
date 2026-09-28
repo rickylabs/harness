@@ -49,7 +49,7 @@ export type AgentLaunchRevision =
   | { readonly value: null; readonly scope: "root-dispatch"; readonly source: "unavailable";
       readonly reason: AgentUnavailableReason };
 export type AgentBudget =
-  | { readonly tokenLimit: number; readonly source: "issue-override" | "route-default"; readonly reason: null }
+  | { readonly tokenLimit: number; readonly source: "issue-override" | "route-default" | "action-receipt"; readonly reason: null }
   | { readonly tokenLimit: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
 export type AgentNativeDepth =
   | { readonly value: number; readonly source: "native"; readonly reason: null }
@@ -426,8 +426,9 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   const budget = record(row.budget, ["tokenLimit", "source", "reason"]);
   let decodedBudget: AgentBudget;
   if (budget.tokenLimit === null && budget.source === "unavailable") decodedBudget = { tokenLimit: null, source: "unavailable", reason: reason(budget.reason) };
-  else if ((budget.source === "issue-override" || budget.source === "route-default") &&
-    typeof budget.tokenLimit === "number" && Number.isSafeInteger(budget.tokenLimit) && budget.tokenLimit >= 0 && budget.reason === null) {
+  else if ((budget.source === "issue-override" || budget.source === "route-default" || budget.source === "action-receipt") &&
+    typeof budget.tokenLimit === "number" && Number.isSafeInteger(budget.tokenLimit) &&
+    (budget.source === "action-receipt" ? budget.tokenLimit > 0 : budget.tokenLimit >= 0) && budget.reason === null) {
     decodedBudget = { tokenLimit: budget.tokenLimit, source: budget.source, reason: null };
   } else return bad();
   const quota = record(row.quotaRegime, ["value", "reason"]);
