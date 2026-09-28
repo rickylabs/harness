@@ -787,6 +787,11 @@ For one issue, add `--issue owner/repo#number` to `--json` or `--watch`. The com
 that issue's dispatches and returns exit 0 when its tree is complete, even if unrelated old
 issues are incomplete; an absent or incomplete requested issue returns exit 3. The unscoped
 cockpit feed still reports every issue and its aggregate completeness.
+For the host-scoped capacity row, set `DSH_TELEMETRY_PLACEMENT_HOST` to this machine's
+operator-configured short dispatch placement name. If it is unset, the row reports
+`host_identity_unset`; a different placement host reports `binding_invalid`. The reader
+uses `/proc/meminfo` and all AMD DRM card VRAM pairs in sysfs, with per-card values and
+checked aggregate values. Missing files remain unavailable rather than becoming zero.
 `--interval-ms` accepts 100–10000 milliseconds. If a scan lasts past its 15-second validity
 deadline, the command emits an incomplete snapshot. Slash-bearing native display labels are
 withheld because this public feed cannot safely distinguish them from relative paths.

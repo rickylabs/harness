@@ -627,8 +627,12 @@ children of that dispatch share the placement. Missing or inconsistent host evid
 `AgentCost.localCapacity` is an additive fourth row with `scope: host`; the existing
 subscription, metered USD and run-token rows remain separate. An available capacity
 measurement must name the exact placed host and remain valid for the full issue-tree frame.
-The current cgroup reader explicitly cannot certify the dispatch host, so the producer
-reports `observer-unavailable` on a placed host and `source_not_bound` without placement.
-No RAM or GPU amount is inferred. The 0.6.0 decoder accepts 0.5.x observations without
-the fourth row and normalizes it to unavailable. Publication follows the merged PR and
-package dry run.
+The cgroup reader cannot certify the dispatch host. The issue feed instead reads
+`MemTotal` and `MemAvailable` from local `/proc/meminfo` and every local AMD DRM card's
+`mem_info_vram_used` and `mem_info_vram_total` from sysfs. It publishes a measured row
+only when the operator sets `DSH_TELEMETRY_PLACEMENT_HOST` to the exact verified placement
+name. With no configured name it reports `host_identity_unset` without reading local files.
+Missing or malformed files and a host mismatch retain named unavailable reasons. A missing
+GPU never becomes a zero reading. Version 0.7.0 adds optional per-card VRAM readings whose
+sum must equal the aggregate. The decoder accepts 0.5.x observations without the fourth row
+and normalizes it to unavailable. Version 0.6.0 was published from its tagged merge.

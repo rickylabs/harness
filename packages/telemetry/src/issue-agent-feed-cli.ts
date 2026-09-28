@@ -10,6 +10,7 @@ import { buildAgentObservations } from "./agent-observations.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
 import { matchesOrchidNativeRootIdentity } from "./orchid-native-binding.js";
+import { HOST_CAPACITY_PLACEMENT_HOST, readLocalHostCapacity } from "./host-capacity.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
 export interface IssueAgentFeedOptions {
@@ -34,6 +35,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   const orchid = await readOrchidDispatches(options.env[ORCHID_DISPATCH_ROOT]);
   const nowMs = Date.parse(options.now);
   if (!Number.isFinite(nowMs) || orchid.reason !== null) return unavailableSnapshot(options.now, "source_unavailable");
+  const localCapacity = await readLocalHostCapacity(options.now, options.env[HOST_CAPACITY_PLACEMENT_HOST]);
   const groups = new Map<string, { repo: IssueAgentTree["repo"]; issueNumber: number; dispatches: DispatchEvidence[] }>();
   for (const dispatch of orchid.dispatches) {
     if (!dispatch.issue) continue;
@@ -75,7 +77,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     }
     const observations = buildAgentObservations({ dispatches: group.dispatches, runs: scan.runs,
       observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true });
-    entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs: scan.runs });
+    entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs: scan.runs, localCapacity });
   }
   // A malformed receipt cannot be proven unrelated to a scoped issue.
   return combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,

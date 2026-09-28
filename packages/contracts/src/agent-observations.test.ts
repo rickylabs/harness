@@ -88,13 +88,20 @@ it("validates measured rows separately with source revisions and validity, prese
     meteredSpend: { ...f.cost.meteredSpend, ...base, measurement: { amount: 0.25, currency: "USD", accounting: "reported" } as const },
     runTokens: { ...f.cost.runTokens, ...base, measurement: { inputTokens: 100, cacheReadTokens: 80 } },
     localCapacity: { ...f.cost.localCapacity, ...base, measurement: { host: "fixture-node", ramUsedBytes: 100,
-      ramTotalBytes: 200, vramUsedBytes: null, vramTotalBytes: null } },
+      ramTotalBytes: 200, vramUsedBytes: 25, vramTotalBytes: 50,
+      cards: [{ card: "card0", vramUsedBytes: 10, vramTotalBytes: 20 },
+        { card: "card1", vramUsedBytes: 15, vramTotalBytes: 30 }] } },
   };
   assert.ok(readAgentObservations(envelope([{ ...f, cost }])).ok);
   refusal(envelope([{ ...f, cost: { ...cost, localCapacity: { ...cost.localCapacity, measurement: {
     ...cost.localCapacity.measurement, host: "fixture.invalid" } } } }]), "invalid");
   refusal(envelope([{ ...f, cost: { ...cost, localCapacity: { ...cost.localCapacity, measurement: {
     ...cost.localCapacity.measurement, ramUsedBytes: 201 } } } }]), "invalid");
+  refusal(envelope([{ ...f, cost: { ...cost, localCapacity: { ...cost.localCapacity, measurement: {
+    ...cost.localCapacity.measurement, vramUsedBytes: 24 } } } }]), "invalid");
+  refusal(envelope([{ ...f, cost: { ...cost, localCapacity: { ...cost.localCapacity, measurement: {
+    ...cost.localCapacity.measurement, cards: [{ card: "card0", vramUsedBytes: 10, vramTotalBytes: 20 },
+      { card: "card0", vramUsedBytes: 15, vramTotalBytes: 30 }] } } } }]), "invalid");
   const legacy = { ...cost } as Record<string, unknown>;
   delete legacy.localCapacity;
   const old = readAgentObservations(envelope([{ ...f, cost: legacy as unknown as AgentObservation["cost"] }]));

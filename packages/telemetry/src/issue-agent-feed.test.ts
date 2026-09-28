@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { ORCHID_OBSERVER_REASON, projectRouteIdentity, readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+import { ORCHID_OBSERVER_REASON, projectRouteIdentity, readIssueAgentTreeSnapshot, unavailableAgentCost } from "@rickylabs/harness-contracts";
 import { buildAgentObservations } from "./agent-observations.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { HostCapacityReading } from "./host-capacity.js";
 import type { RunRecord } from "./model.js";
 
 const at = "2026-01-01T00:00:00.000Z", later = "2026-01-01T00:00:01.000Z";
@@ -24,10 +25,12 @@ const run = (id: string, parentId: string | null, outcome: RunRecord["outcome"] 
   identity: { provider: "native-provider", model: "native-model", effort: null, profile: null },
   usage: {}, outcome, linkedIssues: [], origin: "PRIVATE-PATH-CANARY", quota: [] });
 const runs = [run("PRIVATE-NATIVE-ROOT", null, "complete"), run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT")];
-const build = (d: DispatchEvidence = dispatch, native: readonly RunRecord[] = runs, capturedAt = later) => {
+const build = (d: DispatchEvidence = dispatch, native: readonly RunRecord[] = runs, capturedAt = later,
+  localCapacity?: HostCapacityReading) => {
   const observations = buildAgentObservations({ dispatches: [d], runs: native, observedAt: capturedAt,
     sourceBound: true, dispatchComplete: true, nativeComplete: true });
-  return buildIssueAgentTreeSnapshot({ observations, dispatches: [d], runs: native });
+  return buildIssueAgentTreeSnapshot({ observations, dispatches: [d], runs: native,
+    ...(localCapacity === undefined ? {} : { localCapacity }) });
 };
 
 it("measures running for a bound native task through the full frame validity", () => {
@@ -117,6 +120,42 @@ it("projects a certified dispatch host through root and child while withholding 
   assert.equal(unbound.issues[0]?.dispatches[0]?.agents[0]?.location.host.reason, "source_not_bound");
   assert.equal(unbound.issues[0]?.dispatches[0]?.agents[0]?.observation.cost.localCapacity.reason, "source_not_bound");
   assert.ok(readIssueAgentTreeSnapshot(placed).ok);
+});
+it("binds a measured capacity row only to the exact local placement host", () => {
+  const measurement = { host: "fixture-node", ramUsedBytes: 1024, ramTotalBytes: 4096,
+    vramUsedBytes: 256, vramTotalBytes: 2048,
+    cards: [{ card: "card0", vramUsedBytes: 256, vramTotalBytes: 2048 }] };
+  const available: HostCapacityReading = { host: "fixture-node", cost: {
+    kind: "local_capacity", unit: "bytes", source: "dsh-telemetry.host-capacity", scope: "host",
+    availability: "available", measurement, reason: null, observedAt: later,
+    validUntil: "2026-01-01T00:00:16.000Z", revision: "c".repeat(64),
+  } };
+  const placed = { ...dispatch, host: "fixture-node" };
+  const matching = build(placed, runs, later, available);
+  assert.equal(matching.complete, true);
+  for (const agent of matching.issues[0]?.dispatches[0]?.agents ?? []) {
+    assert.equal(agent.observation.cost.localCapacity.availability, "available");
+    assert.deepEqual(agent.observation.cost.localCapacity.measurement, measurement);
+  }
+  assert.ok(readIssueAgentTreeSnapshot(matching).ok);
+  const other: HostCapacityReading = { ...available, host: "other-fixture",
+    cost: { ...available.cost, availability: "available", reason: null,
+      measurement: { ...measurement, host: "other-fixture" } } };
+  const mismatch = build(placed, runs, later, other);
+  for (const agent of mismatch.issues[0]?.dispatches[0]?.agents ?? []) {
+    assert.equal(agent.observation.cost.localCapacity.availability, "unavailable");
+    assert.equal(agent.observation.cost.localCapacity.reason, "binding_invalid");
+    assert.equal(agent.observation.cost.localCapacity.measurement, null);
+  }
+  assert.ok(readIssueAgentTreeSnapshot(mismatch).ok);
+  const lyingObserver = build(placed, runs, later, { ...available, host: "other-fixture" });
+  for (const agent of lyingObserver.issues[0]?.dispatches[0]?.agents ?? []) {
+    assert.equal(agent.observation.cost.localCapacity.reason, "binding_invalid");
+  }
+  const unset = build(placed, runs, later, { host: null, cost: unavailableAgentCost("host_identity_unset").localCapacity });
+  for (const agent of unset.issues[0]?.dispatches[0]?.agents ?? []) {
+    assert.equal(agent.observation.cost.localCapacity.reason, "host_identity_unset");
+  }
 });
 it("keeps router unavailable when the dispatch has no validated gateway", () => {
   const snapshot = build({ ...dispatch,

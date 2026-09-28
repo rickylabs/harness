@@ -6,6 +6,7 @@ import { readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_HISTORY, M
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
   type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
+import type { HostCapacityReading } from "./host-capacity.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
 
@@ -45,7 +46,8 @@ function history(observation: AgentObservation, dispatch: DispatchEvidence, run:
   return rows.sort((a, b) => a.at.localeCompare(b.at) || a.kind.localeCompare(b.kind)).slice(0, MAX_AGENT_HISTORY);
 }
 
-function node(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string): IssueAgentTreeAgent {
+function node(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string,
+  localCapacity: HostCapacityReading | undefined): IssueAgentTreeAgent {
   const root = observation.parentAgentId.state !== "known-parent";
   const provenAncestry = observation.parentAgentId.state === "confirmed-root" || observation.parentAgentId.state === "known-parent";
   const harness = root ? safe(dispatch.harness ?? dispatch.source, "dispatch") : safe(run?.source, "native");
@@ -71,9 +73,19 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const host = provenAncestry && dispatch.host && /^[A-Za-z][A-Za-z0-9_-]{0,62}$/.test(dispatch.host) &&
     time(dispatch.observedAt, now) !== null
     ? { value: dispatch.host, basis: "placement", observedAt: dispatch.observedAt!, reason: null } as const : unplaced;
-  // The existing cgroup reader explicitly lacks proof that its scope is this
-  // dispatch host. A bound host alone never makes a capacity reading available.
-  const capacity = unavailableAgentCost(host.value === null ? "source_not_bound" : "observer-unavailable").localCapacity;
+  const missingCapacity = (reason: "source_not_bound" | "observer-unavailable" | "binding_invalid" | "source_stale") =>
+    unavailableAgentCost(reason).localCapacity;
+  const capacity = host.value === null ? missingCapacity("source_not_bound")
+    : localCapacity === undefined ? missingCapacity("observer-unavailable")
+    : localCapacity.host === null && localCapacity.cost.reason === "host_identity_unset" ? localCapacity.cost
+    : localCapacity.host !== host.value ? missingCapacity("binding_invalid")
+    : localCapacity.cost.availability === "available" &&
+      (localCapacity.cost.measurement.host !== host.value || localCapacity.cost.observedAt! > now)
+      ? missingCapacity("binding_invalid")
+    : localCapacity.cost.availability === "available" &&
+      (localCapacity.cost.validUntil === null || Date.parse(localCapacity.cost.validUntil) < Date.parse(now) + ISSUE_AGENT_TREE_FRESH_MS)
+      ? missingCapacity("source_stale")
+    : localCapacity.cost;
   const placedObservation = { ...observation, cost: { ...observation.cost, localCapacity: capacity },
     revision: digest(JSON.stringify({ prior: observation.revision, host: host.value, capacity })) };
   const seam = run?.source ?? dispatch.source;
@@ -94,6 +106,7 @@ export function buildIssueAgentTreeSnapshot(input: {
   readonly observations: AgentObservations;
   readonly dispatches: readonly DispatchEvidence[];
   readonly runs: readonly RunRecord[];
+  readonly localCapacity?: HostCapacityReading;
 }): IssueAgentTreeSnapshot {
   const { dispatches, runs } = input;
   const observations: AgentObservations = { ...input.observations,
@@ -122,7 +135,7 @@ export function buildIssueAgentTreeSnapshot(input: {
     const rootRun = observation.parentAgentId.state === "known-parent" ? undefined :
       resolveOrchidNativeRoot(dispatch, runs) ?? runs.find(r => r.source === dispatch.source && r.id === dispatch.external && r.parentId === null);
     const run = observation.parentAgentId.state === "known-parent" ? nativeById.get(observation.agentId) : rootRun;
-    agents.push(node(observation, dispatch, run, observations.observedAt));
+    agents.push(node(observation, dispatch, run, observations.observedAt, input.localCapacity));
   }
   const rows: IssueAgentTree[] = [...issues.values()].map(issue => ({ repo: issue.repo, issueNumber: issue.issueNumber,
     complete: true, reason: null,
