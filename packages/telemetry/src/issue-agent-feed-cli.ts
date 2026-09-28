@@ -77,9 +77,9 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true });
     entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs: scan.runs });
   }
+  // A malformed receipt cannot be proven unrelated to a scoped issue.
   return combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,
-    globalReason: groups.size > MAX_AGENT_OBSERVATIONS ? "scan_limit" :
-      options.issueKey === undefined && orchid.degraded ? "source_unavailable" : null });
+    globalReason: groups.size > MAX_AGENT_OBSERVATIONS ? "scan_limit" : orchid.degraded ? "source_unavailable" : null });
 }
 
 function unavailableSnapshot(at: string, reason: IssueAgentTreeSnapshot["reason"] = "source_unavailable"): IssueAgentTreeSnapshot {
