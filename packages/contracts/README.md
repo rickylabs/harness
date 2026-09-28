@@ -715,3 +715,19 @@ never projected as refusals. Older frames without this optional issue field rema
 Older frames without these optional fields remain decodable. A producer emitting 0.12.0 timeline
 reasons requires a 0.12.0 consumer because earlier decoders reject unknown event keys. Upgrade
 consumers before deploying the new producer.
+
+## Repo profiles and Cockpit workflow revisions (0.15.0)
+
+`ProfileRef` names a pinned target-repo Markdown profile and NetScript matrix revision. It carries
+the kind, role, tier and sourced token budget, with digests instead of instructions or model choices.
+`WorkflowRevision` is an immutable Cockpit DB phase graph; each phase references a profile and
+exposes only opaque writer-scope IDs. Cockpit keeps writer file ownership and approval/rollback
+records privately. `RoutineRevision` pins a workflow and exposes its trigger kind or schedule,
+overlap and missed-run policy; GitHub trigger filters are digest-only. A wake-up creates or labels
+an issue, and Orchid remains the launcher.
+
+`WorkflowRun` and `WorkflowAttempt` carry closed pending/running/blocked/ended states, closed
+outcomes, one of four block kinds, and independent run-token and metered-USD-micro rows. A missing
+measurement is `null` with a named reason; measured zero remains zero. The exported readers reject
+unknown fields, raw prompts, paths and invalid source/state combinations. These are additive
+contract types; this release does not claim a live Cockpit workflow producer or dispatcher.
