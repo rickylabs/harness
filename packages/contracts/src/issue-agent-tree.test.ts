@@ -62,6 +62,12 @@ it("accepts bounded activity and rejects mismatched usage, raw paths, and unsour
     events: [{ ...event, kind: "goal-complete" }] } })).ok, false);
   assert.equal(read(withNode({ ...populated, timeline: { ...populated.timeline,
     events: [{ ...event, kind: "action-accepted", source: "action-receipt", action: "stop" }] } })).ok, true);
+  const accepted = { ...event, kind: "action-accepted", source: "action-receipt", action: "steer",
+    reason: "prompt_delivered" };
+  assert.equal(read(withNode({ ...populated, timeline: { events: [accepted], truncated: false } })).ok, true);
+  for (const reason of ["/private/raw/path", "native-complete", "workspace_close_delivered"]) {
+    assert.equal(read(withNode({ ...populated, timeline: { events: [{ ...accepted, reason }], truncated: false } })).ok, false);
+  }
 });
 it("decodes verified stop phases and rejects a stop receipt posing as terminal proof", () => {
   const base = snapshot();
@@ -79,6 +85,11 @@ it("decodes verified stop phases and rejects a stop receipt posing as terminal p
     endedBy: "stop", terminalOutcome: { value: "cancelled", source: "stop-observation", observedAt: at, reason: null },
     startedAt: at, startedAtReason: null, endedAt: at, endedAtReason: null };
   assert.equal(read(withNode(stopped)).ok, true);
+  const ended = { id: "event_" + "e".repeat(64), at, kind: "ended", action: null,
+    relatedAgentId: null, source: "terminal", outcome: "cancelled", reason: "stop" };
+  assert.equal(read(withNode({ ...stopped, timeline: { events: [ended], truncated: false } })).ok, true);
+  assert.equal(read(withNode({ ...stopped, timeline: { events: [{ ...ended, reason: "timeout" }], truncated: false } })).ok, false);
+  assert.equal(read(withNode({ ...stopped, timeline: { events: [{ ...ended, reason: "/private/raw/path" }], truncated: false } })).ok, false);
   assert.equal(read(withNode({ ...stopped, actionState: stopping.actionState })).ok, false);
   assert.equal(read(withNode({ ...stopped, endedAt: null, endedAtReason: "measurement_missing" })).ok, false);
   assert.equal(read(withNode({ ...stopped, terminalOutcome: { ...stopped.terminalOutcome, value: "succeeded" } })).ok, false);

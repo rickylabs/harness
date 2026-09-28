@@ -73,6 +73,7 @@ it("terminal outcome wins, then a fresh native task restores running without an 
   const rootOf = (snapshot: ReturnType<typeof build>) => snapshot.issues[0]?.dispatches[0]?.agents
     .find(agent => agent.observation.parentAgentId.state === "confirmed-root");
   assert.equal(rootOf(ended)?.liveness.state, "ended");
+  assert.equal(rootOf(ended)?.timeline?.events.find(event => event.kind === "ended")?.reason, "native-complete");
   assert.equal(rootOf(ended)?.observation.running.value, null);
   const resumed = build(dispatch, [{ ...run("PRIVATE-NATIVE-ROOT", null, "running"),
     updatedAt: "2026-01-01T00:00:02.000Z" }, runs[1]!], capture);
@@ -83,6 +84,7 @@ it("terminal outcome wins, then a fresh native task restores running without an 
   assert.equal(rootOf(failed)?.liveness.state, "ended");
   assert.equal(rootOf(failed)?.observation.running.value, null);
   assert.equal(rootOf(failed)?.terminalOutcome.value, "failed");
+  assert.equal(rootOf(failed)?.timeline?.events.find(event => event.kind === "ended")?.reason, "native-error");
 });
 
 it("groups issue, dispatch, root and child without leaking native identity or paths", () => {
@@ -140,7 +142,24 @@ it("binds measured activity, token numerator, child spawn, and immutable action 
   assert.deepEqual(root.timeline?.events.map(event => event.kind), ["dispatched", "started", "subagent-spawned", "action-accepted"]);
   assert.equal(root.timeline?.events.find(event => event.kind === "subagent-spawned")?.relatedAgentId, child.observation.agentId);
   assert.equal(root.timeline?.events.filter(event => event.kind === "action-accepted").length, 1);
+  assert.equal(root.timeline?.events.find(event => event.kind === "action-accepted")?.reason, "prompt_delivered");
   assert.equal(child.timeline?.events.some(event => event.kind === "action-accepted"), false);
+  const rejected = buildIssueAgentTreeSnapshot({ observations, dispatches: [dispatch], runs: [rootRun, childRun],
+    actions: [{ ...accepted, outcome: "rejected", reason: "identity_mismatch" }], actionsComplete: true });
+  assert.equal(rejected.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId === rootId)
+    ?.timeline?.events.find(event => event.kind === "action-rejected")?.reason, "identity_mismatch");
+  const stopped = buildIssueAgentTreeSnapshot({ observations, dispatches: [dispatch], runs: [rootRun, childRun],
+    actions: [{ ...accepted, action: "stop", reason: "workspace_close_delivered" }], actionsComplete: true });
+  assert.equal(stopped.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId === rootId)
+    ?.timeline?.events.find(event => event.kind === "action-accepted")?.reason, "workspace_close_delivered");
+  assert.equal(stopped.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId === rootId)
+    ?.timeline?.events.some(event => event.kind === "ended"), false);
+  const malformed = buildIssueAgentTreeSnapshot({ observations, dispatches: [dispatch], runs: [rootRun, childRun],
+    actions: [{ ...accepted, reason: "PRIVATE-RAW-REASON" }], actionsComplete: true });
+  const protectedTimeline = malformed.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId === rootId)?.timeline;
+  assert.equal(protectedTimeline?.events.some(event => event.kind === "action-accepted"), false);
+  assert.equal(protectedTimeline?.truncated, true);
+  assert.ok(!JSON.stringify(malformed).includes("PRIVATE-RAW-REASON"));
   assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
 });
 it("preserves incomplete action and event-overflow truncation when child spawn decorates the root", () => {
@@ -360,11 +379,13 @@ it("requires verified seat AND native process absence to end a stopped root", ()
   const receiptOnly = root({ seatObservedAt: null, processObservedAt: null });
   assert.equal(receiptOnly?.liveness.state, "running");
   assert.equal(receiptOnly?.actionState.state, "unknown");
+  assert.equal(receiptOnly?.timeline?.events.some(event => event.kind === "ended"), false);
   const seatOnly = root({ seatObservedAt: seatAt, processObservedAt: null });
   assert.equal(seatOnly?.actionState.state, "stopping");
   assert.equal(seatOnly?.liveness.state, "unknown");
   assert.equal(seatOnly?.endedBy, null);
   assert.equal(seatOnly?.terminalOutcome.value, null);
+  assert.equal(seatOnly?.timeline?.events.some(event => event.kind === "ended"), false);
   assert.ok(seatOnly?.history.some(event => event.kind === "stop-seat-observed"));
   const processOnly = root({ seatObservedAt: null, processObservedAt: processAt });
   assert.equal(processOnly?.actionState.state, "unknown");
@@ -375,6 +396,7 @@ it("requires verified seat AND native process absence to end a stopped root", ()
   assert.equal(both?.endedBy, "stop");
   assert.deepEqual(both?.terminalOutcome, { value: "cancelled", source: "stop-observation", observedAt: processAt, reason: null });
   assert.equal(both?.endedAt, processAt);
+  assert.equal(both?.timeline?.events.find(event => event.kind === "ended")?.reason, "stop");
   assert.ok(both?.history.some(event => event.kind === "stop-process-observed"));
   for (const state of [{ seatObservedAt: seatAt, processObservedAt: null },
     { seatObservedAt: seatAt, processObservedAt: processAt }]) {
@@ -395,6 +417,7 @@ it("masks stale running at teardown seat absence and ends only after process abs
   assert.equal(seatOnly?.observation.running.value, null);
   assert.equal(seatOnly?.endedBy, null);
   assert.equal(seatOnly?.terminalOutcome.value, null);
+  assert.equal(seatOnly?.timeline?.events.some(event => event.kind === "ended"), false);
   assert.ok(seatOnly?.history.some(event => event.kind === "teardown-seat-observed"));
   const processOnly = root({ cause: "timeout", seatObservedAt: null, processObservedAt: processAt });
   assert.equal(processOnly?.liveness.state, "running");
@@ -403,8 +426,11 @@ it("masks stale running at teardown seat absence and ends only after process abs
   assert.equal(both?.endedBy, "timeout");
   assert.deepEqual(both?.terminalOutcome, { value: "cancelled", source: "teardown-observation", observedAt: processAt, reason: null });
   assert.equal(both?.endedAt, processAt);
+  assert.equal(both?.timeline?.events.find(event => event.kind === "ended")?.reason, "timeout");
   assert.ok(both?.history.some(event => event.kind === "teardown-process-observed"));
   assert.equal(root({ cause: "teardown", seatObservedAt: seatAt, processObservedAt: processAt })?.endedBy, "teardown");
+  assert.equal(root({ cause: "teardown", seatObservedAt: seatAt, processObservedAt: processAt })
+    ?.timeline?.events.find(event => event.kind === "ended")?.reason, "teardown");
   for (const state of [{ cause: "timeout", seatObservedAt: seatAt, processObservedAt: null },
     { cause: "timeout", seatObservedAt: seatAt, processObservedAt: processAt }] as const) {
     assert.ok(readIssueAgentTreeSnapshot(build({ ...dispatch, teardown: state }, active, captured)).ok);
