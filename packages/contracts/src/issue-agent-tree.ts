@@ -43,6 +43,11 @@ export type AgentTreeValueSource = "dispatch" | "native" | "unavailable";
 export type AgentTreeValue =
   | { readonly value: string; readonly source: "dispatch" | "native"; readonly reason: null }
   | { readonly value: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
+/** Pins the root dispatch context; on a child this does not claim the child loaded that profile. */
+export type AgentLaunchRevision =
+  | { readonly value: string; readonly scope: "root-dispatch"; readonly source: "dispatch"; readonly reason: null }
+  | { readonly value: null; readonly scope: "root-dispatch"; readonly source: "unavailable";
+      readonly reason: AgentUnavailableReason };
 export type AgentBudget =
   | { readonly tokenLimit: number; readonly source: "issue-override" | "route-default"; readonly reason: null }
   | { readonly tokenLimit: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
@@ -130,6 +135,10 @@ export interface IssueAgentTreeAgent {
   readonly router: AgentTreeValue;
   /** Matrix policy is separate from the gateway; its digest comes from a bound receipt. */
   readonly routePolicy: AgentRoutePolicy;
+  /** Additive in 0.15: exact pinned target-repo commit, scoped to this root dispatch. */
+  readonly profileRevision?: AgentLaunchRevision;
+  /** Additive in 0.15: exact pinned NetScript matrix commit, scoped to this root dispatch. */
+  readonly matrixRevision?: AgentLaunchRevision;
   readonly model: AgentTreeValue;
   /** Additive: request effort for this exact agent; never inherited by a child. */
   readonly effort?: AgentTreeValue;
@@ -255,6 +264,16 @@ function valueRow(value: unknown): AgentTreeValue {
   if (row.source === "unavailable" && row.value === null) return { value: null, source: "unavailable", reason: reason(row.reason) };
   if ((row.source !== "dispatch" && row.source !== "native") || row.reason !== null) return bad();
   return { value: label(row.value), source: row.source, reason: null };
+}
+function launchRevisionRow(value: unknown): AgentLaunchRevision {
+  const row = record(value, ["value", "scope", "source", "reason"]);
+  if (row.scope !== "root-dispatch") return bad();
+  if (row.source === "unavailable" && row.value === null) return {
+    value: null, scope: "root-dispatch", source: "unavailable", reason: reason(row.reason),
+  };
+  if (row.source !== "dispatch" || row.reason !== null ||
+      typeof row.value !== "string" || !/^[a-f0-9]{40}$/.test(row.value)) return bad();
+  return { value: row.value, scope: "root-dispatch", source: "dispatch", reason: null };
 }
 function depthRow(value: unknown): AgentNativeDepth {
   const row = record(value, ["value", "source", "reason"]);
@@ -385,6 +404,8 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   const keys = ["dispatchId", "observation", "harness", "provider", "router", "model", "location", "budget", "quotaRegime", "liveness", "terminalOutcome", "startedAt", "startedAtReason", "endedAt", "endedAtReason", "transcript", "history", "historyTruncated"];
   const row = record(value, [...keys,
     ...(Object.hasOwn(value as object, "routePolicy") ? ["routePolicy"] : []),
+    ...(Object.hasOwn(value as object, "profileRevision") ? ["profileRevision"] : []),
+    ...(Object.hasOwn(value as object, "matrixRevision") ? ["matrixRevision"] : []),
     ...(Object.hasOwn(value as object, "effort") ? ["effort"] : []),
     ...(Object.hasOwn(value as object, "parentAgentId") ? ["parentAgentId"] : []),
     ...(Object.hasOwn(value as object, "nativeDepth") ? ["nativeDepth"] : []),
@@ -475,6 +496,11 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   if (router.value !== null && router.source !== "dispatch") return bad();
   const routePolicy = Object.hasOwn(row, "routePolicy") ? policyRow(row.routePolicy)
     : { value: null, digest: null, source: "unavailable", reason: "source_not_bound" } as const;
+  const hasProfileRevision = Object.hasOwn(row, "profileRevision");
+  const hasMatrixRevision = Object.hasOwn(row, "matrixRevision");
+  if (hasProfileRevision !== hasMatrixRevision) return bad();
+  const profileRevision = hasProfileRevision ? launchRevisionRow(row.profileRevision) : undefined;
+  const matrixRevision = hasMatrixRevision ? launchRevisionRow(row.matrixRevision) : undefined;
   const effort = Object.hasOwn(row, "effort") ? valueRow(row.effort) : undefined;
   if (effort?.value !== null && effort?.value !== undefined &&
       (effort.source !== "dispatch" || !AGENT_EFFORTS.includes(effort.value as typeof AGENT_EFFORTS[number]))) return bad();
@@ -494,6 +520,7 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   }
   return { dispatchId, observation: row.observation, harness: valueRow(row.harness), provider: valueRow(row.provider),
     router, routePolicy, model: valueRow(row.model),
+    ...(profileRevision === undefined ? {} : { profileRevision, matrixRevision: matrixRevision! }),
     ...(effort === undefined ? {} : { effort }),
     ...(parentAgentId === undefined ? {} : { parentAgentId: parentAgentId as string | null }),
     location, budget: decodedBudget, nativeDepth,
@@ -587,6 +614,15 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
       if (!read.ok) return bad(read.reason === "oversized" ? "oversized" : read.reason === "ambiguous-ancestry" ? "ambiguous-ancestry" : "invalid");
       const safe = new Map(read.observation.agents.map(a => [a.agentId, a]));
       const publicAgents = new Map(all.map(a => [a.observation.agentId, a]));
+      for (const dispatch of issue.dispatches) {
+        const root = dispatch.agents.find(a => safe.get(a.observation.agentId)?.parentAgentId.state === "confirmed-root");
+        for (const a of dispatch.agents) {
+          for (const field of ["profileRevision", "matrixRevision"] as const) {
+            const pin = a[field];
+            if (pin?.value !== null && pin !== undefined && root?.[field]?.value !== pin.value) return bad();
+          }
+        }
+      }
       for (const a of all) {
         const capacity = safe.get(a.observation.agentId)?.cost.localCapacity;
         if (capacity?.availability === "available" && (a.location.host.value === null ||

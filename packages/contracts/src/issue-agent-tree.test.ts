@@ -76,6 +76,25 @@ it("reads sourced effort and exact opaque parent links while preserving old fram
   assert.equal(read(tree([{ ...routed, effort: { value: "low", source: "dispatch", reason: null } }])).ok, false);
   assert.equal(read(s).ok, true);
 });
+it("binds optional profile and matrix revisions to the root dispatch for every agent row", () => {
+  const s = snapshot();
+  const pin = { value: "a".repeat(40), scope: "root-dispatch", source: "dispatch", reason: null } as const;
+  const second = { ...pin, value: "b".repeat(40) };
+  const root = { ...node, profileRevision: pin, matrixRevision: second };
+  const child = { ...node, observation: { ...observation, agentId: "agent_" + "d".repeat(64),
+    parentAgentId: { state: "known-parent", value: observation.agentId, reason: null } },
+    harness: { value: "codex", source: "native", reason: null },
+    profileRevision: pin, matrixRevision: second };
+  const tree = (agents: unknown[]) => ({ ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId, agents }] }] });
+  assert.equal(read(tree([root, child])).ok, true);
+  assert.equal(read(tree([node])).ok, true); // Older producer remains readable.
+  assert.equal(read(tree([{ ...root, matrixRevision: undefined }])).ok, false);
+  assert.equal(read(tree([{ ...root, profileRevision: { ...pin, value: "/private/path" } }])).ok, false);
+  assert.equal(read(tree([{ ...root, profileRevision: { ...pin, source: "native" } }])).ok, false);
+  assert.equal(read(tree([root, { ...child, matrixRevision: { ...pin, value: "c".repeat(40) } }])).ok, false);
+  assert.equal(read(tree([root, { ...child, profileRevision: { value: null, scope: "root-dispatch",
+    source: "unavailable", reason: "source_not_bound" } }])).ok, true);
+});
 it("accepts only screened activity targets tied to their typed tool evidence", () => {
   const s = snapshot();
   const step = { id: "step_" + "d".repeat(64), at, kind: "command", toolName: "exec_command",

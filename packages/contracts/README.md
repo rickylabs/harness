@@ -731,3 +731,9 @@ outcomes, one of four block kinds, and independent run-token and metered-USD-mic
 measurement is `null` with a named reason; measured zero remains zero. The exported readers reject
 unknown fields, raw prompts, paths and invalid source/state combinations. These are additive
 contract types; this release does not claim a live Cockpit workflow producer or dispatcher.
+
+An issue-tree agent can also carry `profileRevision` and `matrixRevision` as a pair. Each is the
+exact pinned commit from the root dispatch, with `scope: root-dispatch` and a typed unavailable
+reason when the receipt cannot bind it. A child's copy identifies its dispatch context; it does
+not claim the child loaded that profile. The decoder checks child pins against the verified root
+and continues to accept older frames without either field.
