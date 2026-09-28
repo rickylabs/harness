@@ -144,8 +144,24 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     assert.equal(frame.issues[1]?.complete, true);
     assert.equal(frame.issues[1]?.dispatches[0]?.agents.length, 2);
     assert.ok(!JSON.stringify(frame).includes(rootId));
+    const scoped = new Capture();
+    const command = ["--json", "--issue", "example/project#387", "--home", home, "--limit", "20"];
+    assert.equal(await issueAgentFeedCommand(command, { output: scoped, now: () => "2026-09-27T22:00:00.000Z",
+      env: { [ORCHID_DISPATCH_ROOT]: receipts } }), 0);
+    const scopedFrame = JSON.parse(scoped.lines[0]!);
+    assert.equal(scopedFrame.complete, true);
+    assert.deepEqual(scopedFrame.issues.map((row: { issueNumber: number }) => row.issueNumber), [387]);
+    const missing = new Capture();
+    assert.equal(await issueAgentFeedCommand(["--json", "--issue", "example/project#999", "--home", home],
+      { output: missing, now: () => "2026-09-27T22:00:00.000Z", env: { [ORCHID_DISPATCH_ROOT]: receipts } }), 3);
+    assert.equal(JSON.parse(missing.lines[0]!).reason, "source_not_bound");
   } finally {
     await rm(home, { recursive: true, force: true });
     await rm(receipts, { recursive: true, force: true });
+  }
+});
+it("rejects malformed scoped issue selectors before collecting", async () => {
+  for (const issue of ["387", "example/project#0", "example/project#99999999999999999999", "example/../project#387"]) {
+    assert.equal(await issueAgentFeedCommand(["--json", "--issue", issue], { collect: async () => { throw Error("must not collect"); } }), 2);
   }
 });

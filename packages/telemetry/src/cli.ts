@@ -98,7 +98,7 @@ const USAGE = `dsh-telemetry — board activity, read from disk, with no agent a
 
 usage:
   dsh-telemetry codex-threads [--limit <n>] [--private] [--watch]  native thread JSON / goal JSONL
-  dsh-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--interval-ms <n>]  per-issue agent trees
+  dsh-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--issue <owner/repo#number>] [--interval-ms <n>]  per-issue agent trees
   dsh-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
   dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
