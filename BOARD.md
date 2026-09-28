@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **314/387 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible**
+`[################----]` **314/388 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-28T04:37:54Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-28T04:52:51Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -59,7 +59,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#381 Dispatcher must write thread goal and sub-agent ancestry](https://github.com/rickylabs/harness/issues/381) | — | — |
 
-## Anomalies (23)
+## Anomalies (24)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -89,6 +89,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#395** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#396** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#397** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#400** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#387** — is in milestone (none) but its epic #39 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 
@@ -124,25 +125,26 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 120/145 done · 4 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
+`[#########---]` 120/146 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 7/8 done · 1 queued | `impl` |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 7/9 done · 2 queued | `impl` |
 | _(no epic)_ | `[##########--]` 101/121 done · 3 running · 2 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>23 filed, nothing started</summary>
+<summary>24 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator](https://github.com/rickylabs/harness/issues/273) | `triage` | `e11` |
 | [#275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON](https://github.com/rickylabs/harness/issues/275) | `triage` | `e11` |
 | [#397 Live proof: native goal, budget, child and run states](https://github.com/rickylabs/harness/issues/397) | `triage` | `e9` |
+| [#400 Live proof: native goal read-back and notifications](https://github.com/rickylabs/harness/issues/400) | `triage` | `e9` |
 | [#287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts](https://github.com/rickylabs/harness/issues/287) | `triage` | `e3` |
 | [#290 Spike S12 — Evidence path: transcript and quota meters for UHP runs](https://github.com/rickylabs/harness/issues/290) | `triage` | `e3` |
 | [#331 Incident: three sweeps, sixteen candidates, sixteen live — and the only unrecovered one was found by naming convention](https://github.com/rickylabs/harness/issues/331) | `triage` | — |
@@ -172,7 +174,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  314/387 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [################----]  314/388 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -453,7 +455,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  120/145 done · 4 running · 3 queued · 5 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [################----]  120/146 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -478,7 +480,7 @@ Open, and carrying no `status:` label — real work no column can see.
     research             #349 Brainstorm: dual-agent mailbox pilot contract (draft)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]  (epic is in M1 — dsh coordinator foundation)
-    [##############--] 7/8 done · 1 queued
+    [############----] 7/9 done · 2 queued
     shipped              PR386 feat(telemetry): versioned per-issue agent feed (p0)
     shipped              #387 Proof: one native child in the issue-agent feed (p1)
     shipped              #392 Proof: route-default goal, live status and one native child (p0)
@@ -487,6 +489,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #395 Proof: live native binding and parent-child status (p0)
     shipped              #396 Proof: live root and native child status after Orchid repair (p0)
     triage               #397 Live proof: native goal, budget, child and run states (p0)
+    triage               #400 Live proof: native goal read-back and notifications (p0)
 
   (no epic)
     no status            PR1 docs(harness): stage B — discovery corpus (draft)
