@@ -10,7 +10,8 @@ const stamp = (value: unknown): string | null => {
   return new Date(value).toISOString();
 };
 const knownTools = new Set(["functions.exec", "exec_command", "apply_patch", "read_file", "write_file",
-  "Bash", "Read", "Edit", "Write", "Glob", "Grep", "Task", "NotebookEdit"]);
+  "Bash", "Read", "Edit", "Write", "Glob", "Grep", "Task", "NotebookEdit", "update_plan",
+  "functions.update_plan", "TodoWrite"]);
 const tool = (value: unknown): string | null => typeof value === "string" && knownTools.has(value) ? value : null;
 const relativeFile = (value: unknown): string | null => typeof value === "string" && value.length <= 256 &&
   /^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(value) &&
@@ -23,6 +24,11 @@ const safeSubcommands: Readonly<Record<string, ReadonlySet<string>>> = {
 };
 const safeCommands = new Set(["git", "pnpm", "npm", "node", "go", "deno", "cargo", "python", "python3", "pytest", "ls", "cat", "grep", "rg", "sed", "find", "wc"]);
 function commandHead(value: unknown): string | null {
+  if (Array.isArray(value)) {
+    if (value.length !== 3 || !["bash", "/bin/bash", "sh", "/bin/sh"].includes(value[0]) ||
+        value[1] !== "-lc" || typeof value[2] !== "string") return null;
+    value = value[2];
+  }
   if (typeof value !== "string") return null;
   const words = value.trim().split(/\s+/);
   const first = words[0];
@@ -31,6 +37,22 @@ function commandHead(value: unknown): string | null {
   return second && safeSubcommands[first]?.has(second) ? `${first} ${second}` : first;
 }
 /** Reject, do not partly print, prose that may contain a secret or operator location. */
+function safeText(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  if (/[\x00-\x1f\x7f]/.test(value)) return null;
+  const candidate = value.trim();
+  if (candidate.length < 3 || candidate.length > 120 ||
+      !/^[A-Za-z0-9][A-Za-z0-9 .,;:!?()'_-]*$/.test(candidate) ||
+      /(?:secret|password|credential|private|bearer|token|api.?key|github_pat_|gh[pousr]_|\bsk-[A-Za-z0-9]{12,})/i.test(candidate) ||
+      /(?:\b\d{1,3}(?:\.\d{1,3}){3}\b|\b[a-f0-9]{24,}\b|[A-Za-z0-9_-]{32,})/i.test(candidate)) return null;
+  return candidate;
+}
+function firstSentence(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trimStart();
+  const sentence = text.match(/^[^\r\n]*?[.!?](?=\s|$)/)?.[0] ?? text;
+  return safeText(sentence);
+}
 function args(value: unknown): Record<string, unknown> | null {
   if (typeof value === "string" && value.length <= 4096) {
     try { return object(JSON.parse(value)); } catch { return null; }
@@ -50,6 +72,13 @@ function fromTool(source: Source, origin: string, line: number, part: number, at
   name: unknown, input: unknown): AgentActivityStep | null {
   const toolName = tool(name);
   const parsed = args(input);
+  const plan = name === "update_plan" || name === "functions.update_plan" ? parsed?.["plan"]
+    : name === "TodoWrite" ? parsed?.["todos"] : null;
+  if (Array.isArray(plan) && plan.length <= 32) {
+    const current = plan.filter(item => object(item)?.["status"] === "in_progress");
+    const text = current.length === 1 ? safeText(object(current[0])?.[name === "TodoWrite" ? "content" : "step"]) : null;
+    if (text !== null) return step(source, origin, line, part, at, "message", toolName, null, null, text);
+  }
   const command = commandHead(parsed?.["cmd"] ?? parsed?.["command"]);
   const filePath = relativeFile(parsed?.["filePath"] ?? parsed?.["file_path"] ?? parsed?.["path"]);
   const kind = command !== null ? "command" : filePath !== null ? "file" : "tool";
@@ -71,7 +100,8 @@ export function codexActivity(raw: unknown, origin: string, line: number): reado
   return payload["content"].flatMap((part, i) => {
     const content = object(part);
     if (content?.["type"] !== "output_text") return [];
-    const found = step("codex-rollout", origin, line, i, at, "message", null, null, null, "Agent message");
+    const found = step("codex-rollout", origin, line, i, at, "message", null, null, null,
+      firstSentence(content["text"]) ?? "Agent message");
     return found === null ? [] : [found];
   });
 }
@@ -88,7 +118,7 @@ export function claudeActivity(raw: unknown, origin: string, line: number): read
     }
     if (content?.["type"] !== "text") return [];
     const found = step("claude-transcript", origin, line, i, envelope["timestamp"], "message", null, null, null,
-      "Agent message");
+      firstSentence(content["text"]) ?? "Agent message");
     return found === null ? [] : [found];
   });
 }
