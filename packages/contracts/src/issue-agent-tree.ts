@@ -104,10 +104,18 @@ export type AgentTokenUsage =
       readonly source: "codex-token-count" | "claude-usage"; readonly reason: null }
   | { readonly usedTokens: null; readonly budgetTokens: number | null; readonly observedAt: null;
       readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
+export const AGENT_ACTION_ACCEPTED_REASONS = {
+  stop: "workspace_close_delivered", steer: "prompt_delivered", send: "prompt_delivered",
+  raise_budget: "goal_budget_updated", retry: "retry_dispatched",
+} as const;
+export type AgentActionKind = keyof typeof AGENT_ACTION_ACCEPTED_REASONS;
 export const AGENT_ACTION_REJECTED_REASONS = ["digest_conflict", "request_invalid", "payload_invalid", "action_invalid",
   "repository_mismatch", "identity_mismatch", "agent_not_stoppable", "agent_not_running", "agent_not_live",
-  "retry_requires_terminal_successor_contract"] as const;
-export type AgentTimelineReason = "prompt_delivered" | "workspace_close_delivered" |
+  "retry_requires_terminal_successor_contract", "goal_not_raiseable", "budget_ceiling_unset", "budget_ceiling_exceeded",
+  "budget_not_increased", "retry_unavailable", "retry_issue_unavailable", "retry_target_unavailable",
+  "retry_pins_unavailable", "retry_terminal_unproven", "retry_in_flight", "retry_preflight_unavailable",
+  "dispatch_lookup_limit", "dispatch_receipt_unavailable"] as const;
+export type AgentTimelineReason = typeof AGENT_ACTION_ACCEPTED_REASONS[AgentActionKind] |
   typeof AGENT_ACTION_REJECTED_REASONS[number] | "native-complete" | "native-error" | "native-cancelled" |
   "stop" | "timeout" | "teardown";
 export interface AgentTimelineEvent {
@@ -115,7 +123,7 @@ export interface AgentTimelineEvent {
   readonly at: string;
   readonly kind: "dispatched" | "started" | "subagent-spawned" | "goal-updated" | "goal-complete" |
     "action-accepted" | "action-rejected" | "ended";
-  readonly action: "steer" | "stop" | "retry" | "send" | null;
+  readonly action: AgentActionKind | null;
   readonly relatedAgentId: string | null;
   readonly source: "dispatch" | "native" | "goal" | "action-receipt" | "terminal";
   readonly outcome: "succeeded" | "failed" | "cancelled" | null;
@@ -381,12 +389,12 @@ function timelineRow(value: unknown, capturedAt: string): AgentTimeline {
       "action-rejected": "action-receipt", ended: "terminal" } as const;
     if (!Object.hasOwn(kinds, e.kind as string) || e.source !== kinds[e.kind as keyof typeof kinds]) return bad();
     const actionKind = e.kind === "action-accepted" || e.kind === "action-rejected";
-    if (actionKind ? !["steer", "stop", "retry", "send"].includes(e.action as string) : e.action !== null) return bad();
+    if (actionKind ? !Object.hasOwn(AGENT_ACTION_ACCEPTED_REASONS, e.action as string) : e.action !== null) return bad();
     if (e.kind === "subagent-spawned" ? typeof e.relatedAgentId !== "string" || !/^agent_[a-f0-9]{64}$/.test(e.relatedAgentId) : e.relatedAgentId !== null) return bad();
     if (e.kind === "ended" ? !["succeeded", "failed", "cancelled"].includes(e.outcome as string) : e.outcome !== null) return bad();
     if (hasReason) {
       const validReason = e.kind === "action-accepted"
-        ? e.reason === (e.action === "stop" ? "workspace_close_delivered" : "prompt_delivered")
+        ? e.reason === AGENT_ACTION_ACCEPTED_REASONS[e.action as AgentActionKind]
         : e.kind === "action-rejected" ? AGENT_ACTION_REJECTED_REASONS.includes(e.reason as typeof AGENT_ACTION_REJECTED_REASONS[number])
           : e.kind === "ended" ? ["native-complete", "native-error", "native-cancelled", "stop", "timeout", "teardown"].includes(e.reason as string)
             : e.reason === null;

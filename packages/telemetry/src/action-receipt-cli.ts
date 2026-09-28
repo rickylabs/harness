@@ -3,6 +3,7 @@ import { constants } from "node:fs";
 import { lstat, open, opendir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { ORCHID_DISPATCH_ROOT } from "./orchid-dispatch.js";
+import { AGENT_ACTION_ACCEPTED_REASONS, AGENT_ACTION_REJECTED_REASONS, type AgentActionKind } from "@rickylabs/harness-contracts";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const digest = /^[0-9a-f]{64}$/;
@@ -10,14 +11,15 @@ const agent = /^agent_[0-9a-f]{64}$/;
 const assignment = /^assignment_[0-9a-f]{64}$/;
 const message = /^message_[0-9a-f]{64}$/;
 const repository = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
-const actions = new Set(["stop", "steer", "retry", "send"]);
-const acceptedReasons = new Set(["workspace_close_delivered", "prompt_delivered"]);
-const rejectedReasons = new Set(["digest_conflict", "request_invalid", "payload_invalid", "action_invalid", "repository_mismatch",
-  "identity_mismatch", "agent_not_stoppable", "agent_not_running", "agent_not_live", "retry_requires_terminal_successor_contract"]);
+const actions = new Set(Object.keys(AGENT_ACTION_ACCEPTED_REASONS));
+const acceptedReasons = new Set(Object.values(AGENT_ACTION_ACCEPTED_REASONS));
+const rejectedReasons = new Set<string>(AGENT_ACTION_REJECTED_REASONS);
 const unknownReasons = new Set(["delivery_unobserved", "receipt_missing_after_fence", "job_not_found", "dispatch_binding_unavailable",
   "dispatch_receipt_unavailable", "dispatch_binding_mismatch", "native_identity_invalid", "native_identity_unavailable",
   "seat_unavailable", "seat_observation_unavailable", "seat_identity_unavailable", "stop_fence_unavailable",
-  "stop_delivery_unconfirmed", "prompt_delivery_unconfirmed"]);
+  "stop_delivery_unconfirmed", "prompt_delivery_unconfirmed", "goal_budget_update_unconfirmed",
+  "goal_state_persistence_failed", "retry_fence_unavailable", "retry_reopen_unconfirmed", "retry_issue_changed",
+  "retry_launch_unconfirmed"]);
 const object = (value: unknown): Record<string, unknown> | null => value !== null && typeof value === "object" && !Array.isArray(value)
   ? value as Record<string, unknown> : null;
 
@@ -27,13 +29,15 @@ export interface PublicActionReceipt {
   readonly requestDigest: string | null;
   readonly repository: string | null;
   readonly issueNumber: number | null;
-  readonly action: "stop" | "steer" | "retry" | "send" | null;
+  readonly action: AgentActionKind | null;
   readonly agentId: string | null;
   readonly dispatchId: string | null;
   readonly outcome: "accepted" | "rejected" | "unknown";
   readonly reason: string;
   readonly observedAt: string | null;
   readonly replacementAgentId: string | null;
+  /** Present on a source-proven accepted retry. Older receipts omit this additive field. */
+  readonly replacementDispatchId?: string | null;
   readonly messageId: string | null;
 }
 export interface ActionReceiptScan {
@@ -105,21 +109,26 @@ async function readActionReceiptAtRoot(root: string, operationId: string, wanted
     const reason = receipt.reason;
     if (typeof reason !== "string" || !(outcome === "accepted" ? acceptedReasons : outcome === "rejected" ? rejectedReasons : unknownReasons).has(reason))
       return unavailable(operationId, wanted, "receipt_invalid");
-    const action = safeOptional(receipt.action, /^(stop|steer|retry|send)$/);
+    const action = safeOptional(receipt.action, /^(stop|steer|retry|send|raise_budget)$/);
     const repo = safeOptional(receipt.repository, repository);
     const issueNumber = receipt.issueNumber === undefined || receipt.issueNumber === 0 ? null
       : Number.isSafeInteger(receipt.issueNumber) && (receipt.issueNumber as number) > 0 ? receipt.issueNumber as number : undefined;
     const agentId = safeOptional(receipt.agentId, agent), dispatchId = safeOptional(receipt.dispatchId, assignment);
-    const replacementAgentId = safeOptional(receipt.replacementAgentId, agent), messageId = safeOptional(receipt.messageId, message);
+    const replacementAgentId = safeOptional(receipt.replacementAgentId, agent);
+    const replacementDispatchId = safeOptional(receipt.replacementDispatchId, assignment);
+    const messageId = safeOptional(receipt.messageId, message);
     const observedAt = time(receipt.observedAt);
-    if (action === undefined || repo === undefined || issueNumber === undefined || agentId === undefined || dispatchId === undefined || replacementAgentId === undefined ||
+    if (action === undefined || repo === undefined || issueNumber === undefined || agentId === undefined || dispatchId === undefined || replacementAgentId === undefined || replacementDispatchId === undefined ||
         messageId === undefined || observedAt === null || (action !== null && !actions.has(action)) ||
-        (outcome === "accepted" && ((action === "stop") !== (reason === "workspace_close_delivered") || action === null ||
-          repo === null || issueNumber === null || agentId === null || dispatchId === null)))
+        (outcome === "accepted" && (action === null || reason !== AGENT_ACTION_ACCEPTED_REASONS[action as AgentActionKind] ||
+          repo === null || issueNumber === null || agentId === null || dispatchId === null ||
+          (action === "retry" ? replacementAgentId === null || replacementDispatchId === null
+            : replacementAgentId !== null || replacementDispatchId !== null))) ||
+        (outcome !== "accepted" && (replacementAgentId !== null || replacementDispatchId !== null)))
       return unavailable(operationId, wanted, "receipt_invalid");
     return { schemaVersion: 1, operationId, requestDigest: receipt.requestDigest as string, repository: repo, issueNumber,
       action: action as PublicActionReceipt["action"],
-      agentId, dispatchId, outcome, reason, observedAt, replacementAgentId, messageId };
+      agentId, dispatchId, outcome, reason, observedAt, replacementAgentId, replacementDispatchId, messageId };
   } catch (error) {
     return unavailable(operationId, wanted, (error as NodeJS.ErrnoException).code === "ENOENT" ? "receipt_missing" : "source_unavailable");
   }

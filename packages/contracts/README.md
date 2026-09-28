@@ -737,3 +737,13 @@ exact pinned commit from the root dispatch, with `scope: root-dispatch` and a ty
 reason when the receipt cannot bind it. A child's copy identifies its dispatch context; it does
 not claim the child loaded that profile. The decoder checks child pins against the verified root
 and continues to accept older frames without either field.
+
+## Action receipts and timeline (0.16.0)
+
+The action vocabulary adds `raise_budget` and source-proven `retry`. Accepted receipts use
+`goal_budget_updated` and `retry_dispatched` respectively; a retry carries the replacement
+agent and dispatch IDs. Missing pins, incomplete terminal proof, an in-flight retry, and budget
+ceiling failures have closed rejection codes. Ambiguous writes and launch effects remain `unknown`
+with closed reasons. The issue timeline reports delivery outcomes on the original agent; a receipt
+never proves that the replacement ran or that a raised budget was consumed. Older action rows
+remain readable.

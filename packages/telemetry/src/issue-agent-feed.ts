@@ -1,6 +1,6 @@
 /** Pure per-issue projection of the existing dispatcher/native ancestry join. */
 import { createHash } from "node:crypto";
-import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_REJECTED_REASONS, MAX_AGENT_HISTORY, MAX_AGENT_OBSERVATIONS,
+import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_ACCEPTED_REASONS, AGENT_ACTION_REJECTED_REASONS, MAX_AGENT_HISTORY, MAX_AGENT_OBSERVATIONS,
   MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, AGENT_EFFORTS, unavailableAgentCost,
   projectRouteIdentity,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
@@ -189,7 +189,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
         receipt.issueNumber !== observation.issueNumber || receipt.action === null ||
         (receipt.outcome !== "accepted" && receipt.outcome !== "rejected")) continue;
     const validReason = receipt.outcome === "accepted"
-      ? receipt.reason === (receipt.action === "stop" ? "workspace_close_delivered" : "prompt_delivered")
+      ? receipt.reason === AGENT_ACTION_ACCEPTED_REASONS[receipt.action]
       : AGENT_ACTION_REJECTED_REASONS.includes(receipt.reason as typeof AGENT_ACTION_REJECTED_REASONS[number]);
     if (!validReason) { invalidActionReason = true; continue; }
     events.push({ id: `event_${digest([observation.agentId, receipt.operationId, receipt.outcome].join("\0"))}`,

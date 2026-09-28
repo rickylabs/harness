@@ -145,6 +145,13 @@ it("accepts bounded activity and rejects mismatched usage, raw paths, and unsour
   const accepted = { ...event, kind: "action-accepted", source: "action-receipt", action: "steer",
     reason: "prompt_delivered" };
   assert.equal(read(withNode({ ...populated, timeline: { events: [accepted], truncated: false } })).ok, true);
+  for (const [action, reason] of [["raise_budget", "goal_budget_updated"], ["retry", "retry_dispatched"]]) {
+    assert.equal(read(withNode({ ...populated, timeline: { events: [{ ...accepted, action, reason }], truncated: false } })).ok, true);
+    assert.equal(read(withNode({ ...populated, timeline: { events: [{ ...accepted, action, reason: "prompt_delivered" }], truncated: false } })).ok, false);
+  }
+  for (const reason of ["budget_ceiling_exceeded", "retry_pins_unavailable", "retry_terminal_unproven"]) {
+    assert.equal(read(withNode({ ...populated, timeline: { events: [{ ...accepted, kind: "action-rejected", reason }], truncated: false } })).ok, true);
+  }
   for (const reason of ["/private/raw/path", "native-complete", "workspace_close_delivered"]) {
     assert.equal(read(withNode({ ...populated, timeline: { events: [{ ...accepted, reason }], truncated: false } })).ok, false);
   }
