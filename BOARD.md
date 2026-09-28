@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **315/391 done · 24 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
+`[################----]` **316/391 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible**
 
-_Latest board activity: 2026-09-28T06:13:59Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-28T06:21:08Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (24)
+## Moving now (23)
 
 Something could be acting on these right now.
 
@@ -41,7 +41,6 @@ Something could be acting on these right now.
 | [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl-eval` | `e3` |
 | [#300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision](https://github.com/rickylabs/harness/issues/300) | `impl-eval` | `e3` |
 | [PR402 Measure host capacity only for verified placement](https://github.com/rickylabs/harness/pull/402) | `ready-merge` | — |
-| [PR403 Add issue-scoped agent feed query](https://github.com/rickylabs/harness/pull/403) | `ready-merge` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -67,7 +66,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 **`closed-but-unshipped`**
 
-- **#403** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#402** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
@@ -128,14 +127,14 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 121/149 done · 6 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
+`[#########---]` 122/149 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[#########---]` 7/9 done · 2 queued | `impl` |
-| _(no epic)_ | `[#########---]` 102/124 done · 5 running · 2 queued · 3 blocked · 9 abandoned · 3 invisible | — |
+| _(no epic)_ | `[#########---]` 103/124 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 3 invisible | — |
 
 ## Waiting to start
 
@@ -177,7 +176,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  315/391 done · 24 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
+# rickylabs/harness  [################----]  316/391 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 5 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  194/242 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -458,7 +457,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [################----]  121/149 done · 6 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
+## (no milestone)  [################----]  122/149 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 4 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -618,7 +617,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR399 fix(telemetry): declare legacy Claude records intentionally unread (p3)
     shipped              PR401 Expose dispatch host placement and host-scoped capacity row (p1)
     ready-merge          PR402 Measure host capacity only for verified placement (p1)
-    ready-merge          PR403 Add issue-scoped agent feed query (p1)
+    shipped              PR403 Add issue-scoped agent feed query (p1)
 ```
 
 </details>
