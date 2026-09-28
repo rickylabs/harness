@@ -644,3 +644,13 @@ rollout measured `source.subagent.thread_spawn.depth` with a matching parent ide
 root's depth and a child's missing or invalid measurement remain typed unavailable; tree
 position is never used as a substitute. The decoder accepts older frames without this field
 and normalizes them to `source_not_bound`.
+
+## Verified stop state in 0.9.0
+
+`actionState` distinguishes a stop whose seat has disappeared (`stopping`) from one whose
+seat and captured native process tree are both verified absent (`stopped`). A stop delivery
+receipt alone leaves the action state unknown. While stopping, liveness is unknown because
+the previous runtime observation is stale. Only both independent observations permit
+`liveness: ended`, `endedBy: stop`, and a cancelled terminal outcome sourced from the stop
+observation. Each observation has a separate bounded history event. Older frames without
+`actionState` and `endedBy` decode to unknown and null.
