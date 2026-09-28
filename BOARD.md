@@ -4,7 +4,7 @@
 
 `[################----]` **354/430 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible**
 
-_Latest board activity: 2026-09-28T21:34:34Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-28T21:44:20Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -49,7 +49,7 @@ Something could be acting on these right now.
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 
-## Not on the board (3)
+## Not on the board (2)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -57,7 +57,6 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
-| [PR442 feat(contracts): add profile and workflow revisions](https://github.com/rickylabs/harness/pull/442) | — | — |
 
 ## Anomalies (36)
 
@@ -66,6 +65,10 @@ Open, and carrying no `status:` label — real work no column can see.
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+
+**`closed-without-status`**
+
+- **#442** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -112,7 +115,6 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#370** — open item has no status label, so it appears in no column
 - **#422** — open item has no status label, so it appears in no column
-- **#442** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -670,7 +672,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #439 Show Orchid launch refusals on issue feed without an agent
     shipped              PR440 feat(telemetry): project issue launch refusals
     shipped              PR441 feat(profiles): validate pinned Markdown metadata
-    no status            PR442 feat(contracts): add profile and workflow revisions (draft)
+    no status            PR442 feat(contracts): add profile and workflow revisions
 ```
 
 </details>
