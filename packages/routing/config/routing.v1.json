@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "harness-compiled-table-transcription",
   "provenance": {
-    "description": "Compatibility transcription of packages/routing/src/{models,policy}.ts and packages/llm-local/src/capability.ts at 4c813fe10218e471f5d78a2dc45bd805ec260749; source/topic/date: repository compiled routing and observed placement data, consulted 2026-09-07. Wire model ids, not CLI keys. Not a fleet instance or parity result. sonnet-5, z-ai/glm-5.2, x-ai/grok-4.5 and gemini-3.6-flash-high have no key in the fresh full matrix export; later schema/parity steps own that gap. 2026-09-14: the transcription claim above holds only at that sha -- packages/routing/src/{models,policy}.ts no longer exist on main, and this document has since been edited directly (complex-lane evaluators, the third implementation lane, fable-5.1, and the split of the `open` bucket into vendor families). It is now the source, not a copy of one. Lane names and tier evaluator bindings are explicit data; legacy aliases preserve callers. Model choices remain the PR baseline, not a claim of fleet parity."
+    "description": "Packaged Harness routing catalog, evolved from compiled routing and placement data at commit 4c813fe10218e471f5d78a2dc45bd805ec260749 (consulted 2026-09-07) and edited directly since 2026-09-14. Native Codex and Claude choices reflect Eric's 2026-09-27 routing set: Astra for architecture or highly complex work, Sol high otherwise, Luna low for extremely simple tasks; Opus 5.5 high by default and Fable 5.1 for complex architecture. Exact native model IDs were checked against installed Codex CLI 0.157.1 and Claude Code 2.1.283 on 2026-09-28. This packaged catalog is not proof of executable fleet parity."
   },
   "families": [
     "anthropic",
@@ -39,29 +39,25 @@
     "docs_polish"
   ],
   "models": {
-    "gpt-5.6-sol": {
+    "gpt-6-sol": {
       "family": "openai",
-      "label": "Gpt 5.6 Sol"
+      "label": "GPT-6 Sol"
     },
     "gpt-6-astra": {
       "family": "openai",
-      "label": "Gpt 6 Astra"
+      "label": "GPT-6 Astra"
     },
-    "gpt-5.6-luna": {
+    "gpt-6-luna": {
       "family": "openai",
-      "label": "Gpt 5.6 Luna"
+      "label": "GPT-6 Luna"
     },
-    "fable-5.1": {
+    "claude-fable-5-1": {
       "family": "anthropic",
-      "label": "Fable 5.1"
+      "label": "Claude Fable 5.1"
     },
-    "opus-5": {
+    "claude-opus-5-5": {
       "family": "anthropic",
-      "label": "Opus 5"
-    },
-    "sonnet-5": {
-      "family": "anthropic",
-      "label": "Sonnet 5"
+      "label": "Claude Opus 5.5"
     },
     "gemini-3.6-flash-high": {
       "family": "google",
@@ -134,8 +130,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-sol",
-            "effort": "low"
+            "model": "gpt-6-sol",
+            "effort": "high"
           },
           "when": [],
           "note": "small_scoped_slices"
@@ -164,8 +160,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-sol",
-            "effort": "medium"
+            "model": "gpt-6-sol",
+            "effort": "high"
           },
           "when": []
         },
@@ -194,7 +190,7 @@
             "harness": "codex",
             "transport": "native",
             "model": "gpt-6-astra",
-            "effort": "medium"
+            "effort": "high"
           },
           "when": [],
           "note": "large_or_cross_cutting_slices"
@@ -203,7 +199,7 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-sol",
+            "model": "gpt-6-sol",
             "effort": "high"
           },
           "when": [
@@ -235,10 +231,11 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-luna",
-            "effort": "max"
+            "model": "gpt-6-luna",
+            "effort": "low"
           },
-          "when": []
+          "when": [],
+          "note": "extremely_simple_tasks_only"
         },
         {
           "route": {
@@ -264,8 +261,8 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5.1",
-            "effort": "medium"
+            "model": "claude-fable-5-1",
+            "effort": "high"
           },
           "when": [],
           "subscription": "included",
@@ -275,7 +272,7 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-sol",
+            "model": "gpt-6-sol",
             "effort": "high"
           },
           "when": [
@@ -292,7 +289,7 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "opus-5",
+            "model": "claude-opus-5-5",
             "effort": "high"
           },
           "when": [],
@@ -303,7 +300,7 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-sol",
+            "model": "gpt-6-sol",
             "effort": "high"
           },
           "when": [
@@ -371,7 +368,7 @@
             "harness": "codex",
             "transport": "native",
             "model": "gpt-6-astra",
-            "effort": "medium"
+            "effort": "high"
           },
           "when": [],
           "certifies": "moonshot",
@@ -381,8 +378,8 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5.1",
-            "effort": "medium"
+            "model": "claude-fable-5-1",
+            "effort": "high"
           },
           "when": [
             "token-limit",
@@ -430,7 +427,7 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "sonnet-5",
+            "model": "claude-opus-5-5",
             "effort": "high"
           },
           "when": [],
@@ -441,7 +438,7 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-luna",
+            "model": "gpt-6-sol",
             "effort": "high"
           },
           "when": [
@@ -474,16 +471,10 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-sol",
-            "effort": "medium"
+            "model": "gpt-6-sol",
+            "effort": "high"
           },
           "when": [],
-          "effortEscalations": [
-            {
-              "condition": "large_changeset",
-              "effort": "high"
-            }
-          ],
           "note": "single_pass_opposite_family_audit_of_generated_docs_changeset"
         }
       ]
@@ -496,8 +487,8 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5.1",
-            "effort": "medium"
+            "model": "claude-opus-5-5",
+            "effort": "high"
           },
           "when": [],
           "subscription": "included",
@@ -505,10 +496,10 @@
         },
         {
           "route": {
-            "harness": "claude",
+            "harness": "codex",
             "transport": "native",
-            "model": "opus-5",
-            "effort": "xhigh"
+            "model": "gpt-6-sol",
+            "effort": "high"
           },
           "when": [
             "token-limit"
@@ -537,8 +528,8 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "opus-5",
-            "effort": "medium"
+            "model": "claude-opus-5-5",
+            "effort": "high"
           },
           "when": [],
           "subscription": "included",
@@ -548,8 +539,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-luna",
-            "effort": "max"
+            "model": "gpt-6-sol",
+            "effort": "high"
           },
           "when": [
             "token-limit"
@@ -565,8 +556,8 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "opus-5",
-            "effort": "low"
+            "model": "claude-opus-5-5",
+            "effort": "high"
           },
           "when": []
         }
@@ -595,8 +586,8 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5.1",
-            "effort": "medium"
+            "model": "claude-opus-5-5",
+            "effort": "high"
           },
           "when": [],
           "certifies": "openai",
@@ -606,7 +597,7 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-sol",
+            "model": "gpt-6-sol",
             "effort": "high"
           },
           "when": [],
@@ -650,8 +641,8 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5.1",
-            "effort": "medium"
+            "model": "claude-opus-5-5",
+            "effort": "high"
           },
           "when": [],
           "certifies": "openai",
@@ -661,8 +652,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-sol",
-            "effort": "xhigh"
+            "model": "gpt-6-sol",
+            "effort": "high"
           },
           "when": [],
           "certifies": "anthropic"
@@ -705,8 +696,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-5.6-sol",
-            "effort": "xhigh"
+            "model": "gpt-6-sol",
+            "effort": "high"
           },
           "when": [],
           "certifies": "anthropic"
@@ -721,24 +712,12 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "opus-5",
+            "model": "claude-opus-5-5",
             "effort": "high"
           },
           "when": [],
           "certifies": "openai",
           "note": "pairs_with_light_implementation"
-        },
-        {
-          "route": {
-            "harness": "claude",
-            "transport": "native",
-            "model": "sonnet-5",
-            "effort": "high"
-          },
-          "when": [
-            "token-limit"
-          ],
-          "certifies": "openai"
         },
         {
           "route": {
@@ -765,24 +744,12 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5.1",
-            "effort": "low"
+            "model": "claude-opus-5-5",
+            "effort": "high"
           },
           "when": [],
           "certifies": "openai",
           "subscription": "included"
-        },
-        {
-          "route": {
-            "harness": "claude",
-            "transport": "native",
-            "model": "opus-5",
-            "effort": "low"
-          },
-          "when": [
-            "token-limit"
-          ],
-          "certifies": "openai"
         },
         {
           "route": {
@@ -809,8 +776,8 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "fable-5.1",
-            "effort": "medium"
+            "model": "claude-fable-5-1",
+            "effort": "high"
           },
           "when": [],
           "certifies": "openai",
@@ -820,8 +787,8 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "opus-5",
-            "effort": "medium"
+            "model": "claude-opus-5-5",
+            "effort": "high"
           },
           "when": [
             "token-limit"
@@ -853,24 +820,12 @@
           "route": {
             "harness": "claude",
             "transport": "native",
-            "model": "opus-5",
-            "effort": "medium"
+            "model": "claude-opus-5-5",
+            "effort": "high"
           },
           "when": [],
           "certifies": "openai",
           "note": "pairs_with_fast_iteration"
-        },
-        {
-          "route": {
-            "harness": "claude",
-            "transport": "native",
-            "model": "sonnet-5",
-            "effort": "high"
-          },
-          "when": [
-            "token-limit"
-          ],
-          "certifies": "openai"
         },
         {
           "route": {
@@ -1079,7 +1034,7 @@
         "backend": "lm-studio",
         "verdict": "refused",
         "reason": "unusably-slow",
-        "why": "It segfaults on Vulkan, and LM Studio's answer to that is a CPU fallback at roughly 3 tok/s \u2014 which is worse than a refusal, because it succeeds. A lane routed here does not fail; it takes an hour and looks like a hung agent."
+        "why": "It segfaults on Vulkan, and LM Studio's answer to that is a CPU fallback at roughly 3 tok/s — which is worse than a refusal, because it succeeds. A lane routed here does not fail; it takes an hour and looks like a hung agent."
       },
       {
         "model": "n5air/ling-3.0-flash",
