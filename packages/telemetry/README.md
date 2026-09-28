@@ -804,7 +804,8 @@ The 0.11.0 `activity.steps` producer reads the single `in_progress` item from a 
 only its first sentence. Both use a reject-not-truncate 120-character screen for controls, paths,
 addresses, secrets and long opaque tokens; unsafe text stays a fixed generic label. An exact
 `bash`/`sh -lc` command array can supply a safe command head from its inner command, still without
-flags or arguments. These refinements change no 0.11.0 wire field or published decoder.
+flags or arguments. The 0.11.1 contract shares the producer's screened-text rule, including
+short recovery-code-like prose; unsafe summaries are refused rather than published.
 
 Cwd, Git origin and goal objective default to `redacted`. `includeSensitive:true` in the library or `--private` on the CLI permits those fields for an authenticated private consumer only. Never log that payload. Native IDs, session IDs, rollout paths and previews are always excluded; public thread references reuse existing opaque native-child IDs. `codexThreadEvidence(snapshot)` is the counts/availability/reasons-only projection for publishable evidence.
 

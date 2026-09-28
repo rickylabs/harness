@@ -9,6 +9,21 @@ export const MAX_ISSUE_AGENT_TREE_BYTES = 2_097_152;
 export const MAX_AGENT_HISTORY = 16;
 export const MAX_AGENT_ACTIVITY_STEPS = 20;
 export const MAX_AGENT_TIMELINE_EVENTS = 32;
+/** One canonical screen for producer prose and its public snapshot decoder. */
+export function publicActivityText(value: unknown): string | null {
+  if (typeof value !== "string" || /[\x00-\x1f\x7f]/.test(value)) return null;
+  const candidate = value.trim();
+  const fixedDottedTool = candidate === "Used functions.exec" || candidate === "Used functions.update_plan";
+  if (candidate.length < 3 || candidate.length > 120 ||
+      !/^[A-Za-z0-9][A-Za-z0-9 .,;:!?()'_-]*$/.test(candidate) ||
+      /(?:secret|password|credential|private|bearer|token|api.?key|github_pat_|gh[pousr]_|\bsk-[A-Za-z0-9]{12,})/i.test(candidate) ||
+      /(?:\b\d{1,3}(?:\.\d{1,3}){3}\b|\b[a-f0-9]{24,}\b|[A-Za-z0-9_-]{32,})/i.test(candidate) ||
+      (!fixedDottedTool && /\b[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+\b/i.test(candidate)) ||
+      /\b(?:recovery|backup|verification|one[- ]time|otp|mfa|2fa|passcode|pin)\b/i.test(candidate) ||
+      /\b(?:code|key)\s+[A-Za-z0-9-]*\d[A-Za-z0-9-]*\b/i.test(candidate) ||
+      /\b\d{6,8}\b|\b\d{3}(?:[ -]\d{3})+\b|\b[A-Z0-9]{4}(?:-[A-Z0-9]{4})+\b/.test(candidate)) return null;
+  return candidate;
+}
 export const AGENT_HISTORY_KINDS = ["dispatch-observed", "run-started-observed", "run-activity-observed", "stop-seat-observed", "stop-process-observed", "teardown-seat-observed", "teardown-process-observed"] as const;
 export type AgentHistoryKind = typeof AGENT_HISTORY_KINDS[number];
 export interface AgentHistoryEvent { readonly dispatchId: string; readonly kind: AgentHistoryKind; readonly at: string }
@@ -245,8 +260,7 @@ function activityRow(value: unknown, capturedAt: string): AgentActivity {
         !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}(?: [A-Za-z0-9][A-Za-z0-9_.-]{0,31})?$/.test(s.commandHead))) return bad();
     if (s.filePath !== null && (typeof s.filePath !== "string" || s.filePath.length > 256 ||
         !/^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(s.filePath) || s.filePath.split("/").some(part => part === "." || part === ".."))) return bad();
-    if (s.summary !== null && (typeof s.summary !== "string" || s.summary.length < 1 || s.summary.length > 120 ||
-        !/^[\x20-\x7e]+$/.test(s.summary) || /(?:https?:\/\/|\/home\/|\/Users\/|\/root\/|\bBearer\s|github_pat_|gh[pousr]_|sk-[A-Za-z0-9]{12,})/i.test(s.summary))) return bad();
+    if (s.summary !== null && publicActivityText(s.summary) !== s.summary) return bad();
     return { id: s.id, at, kind: s.kind as AgentActivityStep["kind"], toolName: s.toolName as string | null,
       commandHead: s.commandHead as string | null, filePath: s.filePath as string | null,
       summary: s.summary as string | null, source: s.source as AgentActivityStep["source"] };

@@ -242,7 +242,8 @@ export function buildIssueAgentTreeSnapshot(input: {
         agent.startedAt !== null).map(agent => event(root.observation.agentId, "subagent-spawned", agent.startedAt!, "native", agent.observation.agentId));
       const decorated = root === undefined ? agents : agents.map(agent => agent === root ? { ...agent,
         timeline: { events: orderedEvents([...(agent.timeline?.events ?? []), ...childEvents]).slice(-32),
-          truncated: (agent.timeline?.events.length ?? 0) + childEvents.length > 32 } } : agent);
+          truncated: (agent.timeline?.truncated ?? false) ||
+            (agent.timeline?.events.length ?? 0) + childEvents.length > 32 } } : agent);
       return { dispatchId, agents: decorated.sort((a, b) => a.observation.agentId.localeCompare(b.observation.agentId)) };
     })
       .sort((a, b) => a.dispatchId.localeCompare(b.dispatchId)) }))
