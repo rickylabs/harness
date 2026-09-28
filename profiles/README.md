@@ -2,6 +2,15 @@
 
 A **profile** is the working process a dispatched agent adopts before it does anything else.
 
+Each `profiles/<name>.md` begins with validated YAML frontmatter: `name`, `title`,
+`role`, `description`, `skills`, `permissions`, and `guardrails`. The `name` equals
+the filename stem. `role` names a NetScript worker role or `coordinator` and must
+agree with the existing `routing` table row below the frontmatter. Keep that row:
+Orchid's current resolver reads it. Frontmatter has no model, effort, transport,
+fallback, or budget override; the pinned matrix and dispatch resolver supply those.
+The permissions and guardrails describe requested policy; they do not grant a seat
+new capabilities. Run `pnpm run check:profiles` for field-specific errors.
+
 The dispatcher injects this line into every brief that names one:
 
 > FIRST read `profiles/<name>.md` in the repo root (if present) — it defines your working
