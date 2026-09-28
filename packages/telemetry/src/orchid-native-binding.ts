@@ -23,17 +23,22 @@ async function readPrivate(file: string): Promise<Buffer> {
     return bytes.subarray(0, bytesRead);
   } finally { await handle.close(); }
 }
-/** Certify the dispatch host against the private reservation, never an SSH target. */
-export async function readOrchidHostBinding(record: string, reservation: string, expected: unknown, dispatchRevision: string): Promise<string | null> {
-  if (!placementName(expected)) return null;
+/** Certify launch fields against the private reservation and exact dispatch snapshot. */
+export async function readOrchidLaunchBinding(record: string, reservation: string, expectedHost: unknown,
+  expectedProfileRevision: unknown, dispatchRevision: string): Promise<{ host: string | null; profileRevision: string | null }> {
+  const unavailable = { host: null, profileRevision: null };
   try {
     const binding = JSON.parse((await readPrivate(join(record, "binding.json"))).toString("utf8")) as Record<string, unknown>;
-    if (binding.Host !== expected || typeof binding.IssueID !== "string" || typeof binding.Repo !== "string" ||
+    if (typeof binding.IssueID !== "string" || typeof binding.Repo !== "string" ||
       typeof binding.BriefDigest !== "string" || !/^[a-f0-9]{64}$/.test(binding.BriefDigest) ||
       digest(binding.IssueID + "\0" + binding.Repo + "\0" + binding.BriefDigest) !== reservation ||
-      digest(await readPrivate(join(record, "dispatch.json"))) !== dispatchRevision) return null;
-    return expected;
-  } catch { return null; }
+      digest(await readPrivate(join(record, "dispatch.json"))) !== dispatchRevision) return unavailable;
+    return {
+      host: placementName(expectedHost) && binding.Host === expectedHost ? expectedHost : null,
+      profileRevision: typeof expectedProfileRevision === "string" && /^[a-f0-9]{40}$/.test(expectedProfileRevision) &&
+        binding.ProfileRevision === expectedProfileRevision ? expectedProfileRevision : null,
+    };
+  } catch { return unavailable; }
 }
 /** Consume only the writer's dispatched Codex binding, tied to its reservation and selected route.
  * Writer contract: orchid a94ba978904354d2d13a632ad1806def81ac07ae,

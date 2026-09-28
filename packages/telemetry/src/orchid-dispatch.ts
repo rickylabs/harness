@@ -5,8 +5,8 @@ import { lstat, open, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents";
 import { ISSUE_LAUNCH_REFUSAL_REASONS, ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
-  type OrchidRouteObservedReasons, type AgentBudget, type AgentRoutePolicy } from "@rickylabs/harness-contracts";
-import { readOrchidNativeBinding, readOrchidHostBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
+  type OrchidRouteObservedReasons, type AgentBudget, type AgentRoutePolicy, type AgentLaunchRevision } from "@rickylabs/harness-contracts";
+import { readOrchidNativeBinding, readOrchidLaunchBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import { readOrchidStopObservation } from "./orchid-stop-observation.js";
 import { readOrchidTeardownObservation } from "./orchid-teardown-observation.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
@@ -20,17 +20,18 @@ export type OrchidDispatchUnavailableReason =
   | "symlink"
   | "git_ancestor";
 const hash = /^[a-f0-9]{64}$/;
+const commit = /^[a-f0-9]{40}$/;
 const label = (value: unknown): value is string => typeof value === "string" &&
   value.length <= 256 && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value);
 const object = (value: unknown): Record<string, unknown> | null =>
   value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 /** Receipt reasons are public only after exact source, route and fixed-text validation. */
 async function readRouteObservedReasons(record: string, source: string, model: string): Promise<{
-  readonly reasons: OrchidRouteObservedReasons; readonly policy: AgentRoutePolicy;
+  readonly reasons: OrchidRouteObservedReasons; readonly policy: AgentRoutePolicy; readonly matrixRevision: string | null;
 }> {
   const unavailable = { reasons: unavailableOrchidRouteReasons(), policy: {
     value: null, digest: null, source: "unavailable", reason: "source_not_bound",
-  } as const };
+  } as const, matrixRevision: null };
   try {
     const file = await open(join(record, "receipt.json"), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
     let raw: Buffer;
@@ -62,7 +63,10 @@ async function readRouteObservedReasons(record: string, source: string, model: s
     return { reasons: result as OrchidRouteObservedReasons,
       policy: typeof digest === "string" && hash.test(digest)
         ? { value: "netscript-matrix", digest, source: "dispatch", reason: null }
-        : unavailable.policy };
+        : unavailable.policy,
+      matrixRevision: typeof digest === "string" && hash.test(digest) &&
+        typeof resolution?.sourceRevision === "string" && commit.test(resolution.sourceRevision)
+        ? resolution.sourceRevision : null };
   } catch { return unavailable; }
 }
 export interface OrchidDispatchRead {
@@ -206,6 +210,15 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
           Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp ? timestamp : undefined;
         if (at === undefined) throw new Error();
         const receipt = await readRouteObservedReasons(record, input.source as string, input.model as string);
+        const launch = await readOrchidLaunchBinding(record, key, input.host, input.profileRevision, revision);
+        const oldWriter = !Object.hasOwn(input, "profileRevision") && !Object.hasOwn(input, "matrixRevision");
+        const pin = (value: string | null, reason: "source_not_bound" | "binding_invalid"): AgentLaunchRevision => value === null
+          ? { value: null, scope: "root-dispatch", source: "unavailable", reason }
+          : { value, scope: "root-dispatch", source: "dispatch", reason: null };
+        const unavailableReason = oldWriter ? "source_not_bound" : "binding_invalid";
+        const profileRevision = pin(launch.profileRevision, unavailableReason);
+        const matrixRevision = pin(typeof input.matrixRevision === "string" && commit.test(input.matrixRevision) &&
+          receipt.matrixRevision === input.matrixRevision ? input.matrixRevision : null, unavailableReason);
         // Old writers have neither field. New writers must supply a bound, nonnegative limit and its
         // source together. A malformed budget never becomes an invented route default.
         let budget: AgentBudget = { tokenLimit: null, source: "unavailable", reason: "source_not_bound" };
@@ -217,7 +230,7 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
           } // Invalid budget metadata withholds only the budget, not the dispatch tree.
         }
         const dispatch: DispatchEvidence = { observedAt: at, revision, linkageBasis: "dispatcher-confirmed", runId: input.runId as string, external: null,
-          host: await readOrchidHostBinding(record, key, input.host, revision),
+          host: launch.host, profileRevision, matrixRevision,
           source: input.source === "codex" || input.source === "claude" ? input.source : null,
           harness: input.source as "codex" | "claude" | "agy", budget,
           router: input.source === "codex" || input.source === "claude"
