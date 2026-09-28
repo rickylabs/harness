@@ -41,6 +41,10 @@ it("decodes verified stop phases and rejects a stop receipt posing as terminal p
   const stopping = { ...node, actionState: { state: "stopping", observedAt: at, reason: null } };
   assert.equal(read(withNode(stopping)).ok, true);
   assert.equal(read(withNode({ ...stopping, endedBy: "stop" })).ok, false);
+  const independentlyEnded = { ...stopping,
+    liveness: { state: "ended", evidence: "native-outcome", observedAt: at, reason: null },
+    terminalOutcome: { value: "succeeded", source: "native-outcome", observedAt: at, reason: null } };
+  assert.equal(read(withNode(independentlyEnded)).ok, true);
   const stopped = { ...node, actionState: { state: "stopped", observedAt: at, reason: null },
     liveness: { state: "ended", evidence: "stop-observation", observedAt: at, reason: null },
     endedBy: "stop", terminalOutcome: { value: "cancelled", source: "stop-observation", observedAt: at, reason: null },

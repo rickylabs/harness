@@ -653,4 +653,5 @@ receipt alone leaves the action state unknown. While stopping, liveness is unkno
 the previous runtime observation is stale. Only both independent observations permit
 `liveness: ended`, `endedBy: stop`, and a cancelled terminal outcome sourced from the stop
 observation. Each observation has a separate bounded history event. Older frames without
-`actionState` and `endedBy` decode to unknown and null.
+`actionState` and `endedBy` decode to unknown and null. A separately verified native terminal
+outcome remains valid while stop verification is still in progress.

@@ -224,7 +224,7 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   if (actionState.observedAt !== null && actionState.observedAt > capturedAt) return bad();
   const endedBy = Object.hasOwn(row, "endedBy") ? row.endedBy : null;
   if (endedBy !== null && endedBy !== "stop") return bad();
-  if (actionState.state === "stopping" && liveness.state !== "unknown") return bad();
+  if (actionState.state === "stopping" && liveness.state === "running") return bad();
   if (actionState.state === "stopped" && liveness.state === "running") return bad();
   if (liveness.state === "ended" && liveness.evidence === "stop-observation" && (actionState.state !== "stopped" || endedBy !== "stop")) return bad();
   if (endedBy === "stop" && (liveness.state !== "ended" || liveness.evidence !== "stop-observation")) return bad();
