@@ -70,6 +70,16 @@ describe("isoFromUnixSeconds", () => {
   });
 });
 
+it("retains only sanitized assistant steps beside cumulative Codex usage", () => {
+  const run = parseRun(lines(meta, { timestamp: "2026-09-04T21:00:02.000Z", type: "response_item",
+    payload: { type: "function_call", name: "exec_command",
+      arguments: JSON.stringify({ cmd: "git status PRIVATE-ARG-CANARY" }) } },
+  tokenCount({ input_tokens: 8, output_tokens: 3 }, "2026-09-04T21:00:03.000Z")), "fixture-origin");
+  assert.equal(run?.activitySteps?.[0]?.commandHead, "git status");
+  assert.equal(run?.usage.inputTokens, 8);
+  assert.ok(!JSON.stringify(run?.activitySteps).includes("PRIVATE-"));
+});
+
 describe("quotaFromRateLimits", () => {
   it("reads the window position and the plan out of the block", () => {
     const reading = quotaFromRateLimits(

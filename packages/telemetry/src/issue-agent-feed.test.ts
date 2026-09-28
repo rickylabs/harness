@@ -6,6 +6,7 @@ import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./i
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { RunRecord } from "./model.js";
+import type { PublicActionReceipt } from "./action-receipt-cli.js";
 
 const at = "2026-01-01T00:00:00.000Z", later = "2026-01-01T00:00:01.000Z";
 const route = projectRouteIdentity({ requested: {
@@ -108,6 +109,38 @@ it("groups issue, dispatch, root and child without leaking native identity or pa
   assert.ok(root.history.every(event => event.dispatchId === root.dispatchId));
   assert.equal(root.liveness.state, "ended");
   assert.equal(root.endedAt, null); // updatedAt is last activity, even after a terminal outcome.
+  assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
+});
+it("binds measured activity, token numerator, child spawn, and immutable action to the exact agent", () => {
+  const rootRun = { ...run("PRIVATE-NATIVE-ROOT", null, "running"), usage: { inputTokens: 8, outputTokens: 3,
+    reasoningTokens: 2, cacheReadTokens: 5 }, activitySteps: [{ id: "step_" + "a".repeat(64), at,
+      kind: "command", toolName: "exec_command", commandHead: "git status", filePath: null,
+      summary: "Ran git status", source: "codex-rollout" }] } as RunRecord;
+  const childRun = { ...run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT", "running"), nativeDepth: 1,
+    usage: { inputTokens: 2, outputTokens: 1 } } as RunRecord;
+  const observations = buildAgentObservations({ dispatches: [dispatch], runs: [rootRun, childRun],
+    observedAt: later, sourceBound: true, dispatchComplete: true, nativeComplete: true });
+  const rootId = observations.agents.find(agent => agent.parentAgentId.state === "confirmed-root")!.agentId;
+  const accepted: PublicActionReceipt = { schemaVersion: 1, operationId: "00000000-0000-4000-8000-000000000001",
+    requestDigest: "a".repeat(64), repository: "example/project", issueNumber: 42, action: "steer",
+    agentId: rootId, dispatchId: observations.agents[0]!.assignment.id, outcome: "accepted",
+    reason: "prompt_delivered", observedAt: later, replacementAgentId: null, messageId: null };
+  const snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: [dispatch], runs: [rootRun, childRun],
+    actions: [accepted, { ...accepted, operationId: "00000000-0000-4000-8000-000000000002", issueNumber: 43 }],
+    actionsComplete: true });
+  assert.equal(snapshot.complete, true);
+  const agents = snapshot.issues[0]!.dispatches[0]!.agents;
+  const root = agents.find(agent => agent.observation.agentId === rootId)!;
+  const child = agents.find(agent => agent.observation.agentId !== rootId)!;
+  assert.equal(root.tokenUsage?.usedTokens, 11);
+  assert.equal(root.tokenUsage?.budgetTokens, 1000);
+  assert.equal(child.tokenUsage?.usedTokens, 3);
+  assert.equal(child.tokenUsage?.budgetTokens, null);
+  assert.equal(root.activity?.steps[0]?.summary, "Ran git status");
+  assert.deepEqual(root.timeline?.events.map(event => event.kind), ["dispatched", "started", "subagent-spawned", "action-accepted"]);
+  assert.equal(root.timeline?.events.find(event => event.kind === "subagent-spawned")?.relatedAgentId, child.observation.agentId);
+  assert.equal(root.timeline?.events.filter(event => event.kind === "action-accepted").length, 1);
+  assert.equal(child.timeline?.events.some(event => event.kind === "action-accepted"), false);
   assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
 });
 it("never infers native child depth from the projected parent edge", () => {

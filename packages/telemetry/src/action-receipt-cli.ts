@@ -1,6 +1,6 @@
 /** Scoped, public-safe view of one Orchid action delivery receipt. */
 import { constants } from "node:fs";
-import { lstat, open, realpath } from "node:fs/promises";
+import { lstat, open, opendir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { ORCHID_DISPATCH_ROOT } from "./orchid-dispatch.js";
 
@@ -35,6 +35,11 @@ export interface PublicActionReceipt {
   readonly observedAt: string | null;
   readonly replacementAgentId: string | null;
   readonly messageId: string | null;
+}
+export interface ActionReceiptScan {
+  readonly receipts: readonly PublicActionReceipt[];
+  /** False when the spool is absent, malformed, or exceeds this bounded reader. */
+  readonly complete: boolean;
 }
 const unavailable = (operationId: string, requestDigest: string | null, reason: string): PublicActionReceipt => ({
   schemaVersion: 1, operationId, requestDigest, repository: null, issueNumber: null, action: null, agentId: null, dispatchId: null,
@@ -78,6 +83,13 @@ export async function readActionReceipt(root: string | undefined, operationId: s
   if (root === undefined) return unavailable(operationId, wanted, "source_not_bound");
   try {
     if (!await privateRoot(root)) return unavailable(operationId, wanted, "source_unavailable");
+    return await readActionReceiptAtRoot(root, operationId, wanted);
+  } catch (error) {
+    return unavailable(operationId, wanted, (error as NodeJS.ErrnoException).code === "ENOENT" ? "receipt_missing" : "source_unavailable");
+  }
+}
+async function readActionReceiptAtRoot(root: string, operationId: string, wanted: string | null): Promise<PublicActionReceipt> {
+  try {
     const actionsDir = join(root, "actions"), opDir = join(actionsDir, operationId);
     if (!await privateDir(actionsDir) || !await privateDir(opDir)) return unavailable(operationId, wanted, "receipt_missing");
     const intent = await privateJSON(join(opDir, "intent.json"));
@@ -111,6 +123,31 @@ export async function readActionReceipt(root: string | undefined, operationId: s
   } catch (error) {
     return unavailable(operationId, wanted, (error as NodeJS.ErrnoException).code === "ENOENT" ? "receipt_missing" : "source_unavailable");
   }
+}
+
+/** Bounded enumeration for the issue timeline; each row still passes the exact private reader. */
+export async function readActionReceipts(root: string | undefined): Promise<ActionReceiptScan> {
+  if (root === undefined) return { receipts: [], complete: false };
+  try {
+    if (!await privateRoot(root) || !await privateDir(join(root, "actions"))) return { receipts: [], complete: false };
+    const entries: string[] = [];
+    for await (const entry of await opendir(join(root, "actions"))) {
+      if (!entry.isDirectory() || !uuid.test(entry.name) || entries.length === 128)
+        return { receipts: [], complete: false };
+      entries.push(entry.name);
+    }
+    const receipts: PublicActionReceipt[] = [];
+    let complete = true;
+    for (const operationId of entries) {
+      const receipt = await readActionReceiptAtRoot(root, operationId, null);
+      if (receipt.outcome === "unknown" &&
+          (receipt.reason.startsWith("receipt_") || receipt.reason === "source_unavailable")) {
+        complete = false; continue;
+      }
+      receipts.push(receipt);
+    }
+    return { receipts, complete };
+  } catch { return { receipts: [], complete: false }; }
 }
 
 /** No private path or text enters stdout or fixed diagnostics. */

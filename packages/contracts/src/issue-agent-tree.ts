@@ -7,6 +7,8 @@ export const ISSUE_AGENT_TREE_SCHEMA = 1 as const;
 export const ISSUE_AGENT_TREE_FRESH_MS = 15_000;
 export const MAX_ISSUE_AGENT_TREE_BYTES = 2_097_152;
 export const MAX_AGENT_HISTORY = 16;
+export const MAX_AGENT_ACTIVITY_STEPS = 20;
+export const MAX_AGENT_TIMELINE_EVENTS = 32;
 export const AGENT_HISTORY_KINDS = ["dispatch-observed", "run-started-observed", "run-activity-observed", "stop-seat-observed", "stop-process-observed", "teardown-seat-observed", "teardown-process-observed"] as const;
 export type AgentHistoryKind = typeof AGENT_HISTORY_KINDS[number];
 export interface AgentHistoryEvent { readonly dispatchId: string; readonly kind: AgentHistoryKind; readonly at: string }
@@ -45,6 +47,41 @@ export type AgentTerminalOutcome =
   | { readonly value: "succeeded" | "failed" | "cancelled"; readonly source: "native-outcome" | "stop-observation" | "teardown-observation"; readonly observedAt: string; readonly reason: null }
   | { readonly value: null; readonly source: "unavailable"; readonly observedAt: null; readonly reason: AgentUnavailableReason };
 
+/** Public-safe, bounded descriptions of the bound native agent's recent work. */
+export interface AgentActivityStep {
+  readonly id: string;
+  readonly at: string;
+  readonly kind: "tool" | "command" | "file" | "message";
+  readonly toolName: string | null;
+  readonly commandHead: string | null;
+  /** Repository-relative only; an absolute native path is never published. */
+  readonly filePath: string | null;
+  readonly summary: string | null;
+  readonly source: "codex-rollout" | "claude-transcript";
+}
+export type AgentActivity =
+  | { readonly availability: "available"; readonly reason: null; readonly observedAt: string;
+      readonly steps: readonly AgentActivityStep[] }
+  | { readonly availability: "unavailable"; readonly reason: AgentUnavailableReason; readonly observedAt: null;
+      readonly steps: readonly [] };
+/** Input + output is the total; reasoning and cache counts are subsets. */
+export type AgentTokenUsage =
+  | { readonly usedTokens: number; readonly budgetTokens: number | null; readonly observedAt: string;
+      readonly source: "codex-token-count" | "claude-usage"; readonly reason: null }
+  | { readonly usedTokens: null; readonly budgetTokens: number | null; readonly observedAt: null;
+      readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
+export interface AgentTimelineEvent {
+  readonly id: string;
+  readonly at: string;
+  readonly kind: "dispatched" | "started" | "subagent-spawned" | "goal-updated" | "goal-complete" |
+    "action-accepted" | "action-rejected" | "ended";
+  readonly action: "steer" | "stop" | "retry" | "send" | null;
+  readonly relatedAgentId: string | null;
+  readonly source: "dispatch" | "native" | "goal" | "action-receipt" | "terminal";
+  readonly outcome: "succeeded" | "failed" | "cancelled" | null;
+}
+export interface AgentTimeline { readonly events: readonly AgentTimelineEvent[]; readonly truncated: boolean }
+
 export interface IssueAgentTreeAgent {
   /** Equals both enclosing dispatchId and observation.assignment.id. */
   readonly dispatchId: string;
@@ -76,6 +113,10 @@ export interface IssueAgentTreeAgent {
   readonly transcript: { readonly value: null; readonly reason: "source_not_bound" };
   readonly history: readonly AgentHistoryEvent[];
   readonly historyTruncated: boolean;
+  /** Additive in contracts 0.11; absent on earlier producers. */
+  readonly activity?: AgentActivity;
+  readonly tokenUsage?: AgentTokenUsage;
+  readonly timeline?: AgentTimeline;
 }
 export interface IssueAgentTreeDispatch {
   readonly dispatchId: string;
@@ -182,13 +223,84 @@ function placement(value: unknown, capturedAt: string): AgentPlacementValue {
   if (observedAt > capturedAt) return bad();
   return { value: label(row.value), basis: row.basis, observedAt, reason: null };
 }
+function activityRow(value: unknown, capturedAt: string): AgentActivity {
+  const row = record(value, ["availability", "reason", "observedAt", "steps"]);
+  const steps = array(row.steps, MAX_AGENT_ACTIVITY_STEPS);
+  if (row.availability === "unavailable" && row.observedAt === null && steps.length === 0) {
+    return { availability: "unavailable", reason: reason(row.reason), observedAt: null, steps: [] };
+  }
+  if (row.availability !== "available" || row.reason !== null) return bad();
+  const observedAt = stamp(row.observedAt);
+  if (observedAt > capturedAt) return bad();
+  const ids = new Set<string>();
+  const decoded = steps.map(value => {
+    const s = record(value, ["id", "at", "kind", "toolName", "commandHead", "filePath", "summary", "source"]);
+    if (typeof s.id !== "string" || !/^step_[a-f0-9]{64}$/.test(s.id) || ids.has(s.id)) return bad();
+    ids.add(s.id);
+    const at = stamp(s.at);
+    if (at > observedAt || !["tool", "command", "file", "message"].includes(s.kind as string) ||
+        (s.source !== "codex-rollout" && s.source !== "claude-transcript")) return bad();
+    if (s.toolName !== null && (typeof s.toolName !== "string" || !/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(s.toolName))) return bad();
+    if (s.commandHead !== null && (typeof s.commandHead !== "string" ||
+        !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}(?: [A-Za-z0-9][A-Za-z0-9_.-]{0,31})?$/.test(s.commandHead))) return bad();
+    if (s.filePath !== null && (typeof s.filePath !== "string" || s.filePath.length > 256 ||
+        !/^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(s.filePath) || s.filePath.split("/").some(part => part === "." || part === ".."))) return bad();
+    if (s.summary !== null && (typeof s.summary !== "string" || s.summary.length < 1 || s.summary.length > 120 ||
+        !/^[\x20-\x7e]+$/.test(s.summary) || /(?:https?:\/\/|\/home\/|\/Users\/|\/root\/|\bBearer\s|github_pat_|gh[pousr]_|sk-[A-Za-z0-9]{12,})/i.test(s.summary))) return bad();
+    return { id: s.id, at, kind: s.kind as AgentActivityStep["kind"], toolName: s.toolName as string | null,
+      commandHead: s.commandHead as string | null, filePath: s.filePath as string | null,
+      summary: s.summary as string | null, source: s.source as AgentActivityStep["source"] };
+  });
+  for (let i = 1; i < decoded.length; i++) if (decoded[i - 1]!.at < decoded[i]!.at) return bad();
+  return { availability: "available", reason: null, observedAt, steps: decoded };
+}
+function tokenUsageRow(value: unknown, capturedAt: string, budgetTokens: number | null): AgentTokenUsage {
+  const row = record(value, ["usedTokens", "budgetTokens", "observedAt", "source", "reason"]);
+  if (row.budgetTokens !== budgetTokens) return bad();
+  if (row.usedTokens === null && row.observedAt === null && row.source === "unavailable") {
+    return { usedTokens: null, budgetTokens, observedAt: null, source: "unavailable", reason: reason(row.reason) };
+  }
+  if (typeof row.usedTokens !== "number" || !Number.isSafeInteger(row.usedTokens) || row.usedTokens < 0 ||
+      (row.source !== "codex-token-count" && row.source !== "claude-usage") || row.reason !== null) return bad();
+  const observedAt = stamp(row.observedAt);
+  if (observedAt > capturedAt) return bad();
+  return { usedTokens: row.usedTokens, budgetTokens, observedAt, source: row.source, reason: null };
+}
+function timelineRow(value: unknown, capturedAt: string): AgentTimeline {
+  const row = record(value, ["events", "truncated"]);
+  if (typeof row.truncated !== "boolean") return bad();
+  const ids = new Set<string>();
+  const events = array(row.events, MAX_AGENT_TIMELINE_EVENTS).map(value => {
+    const e = record(value, ["id", "at", "kind", "action", "relatedAgentId", "source", "outcome"]);
+    if (typeof e.id !== "string" || !/^event_[a-f0-9]{64}$/.test(e.id) || ids.has(e.id)) return bad();
+    ids.add(e.id);
+    const at = stamp(e.at);
+    if (at > capturedAt) return bad();
+    const kinds = { dispatched: "dispatch", started: "native", "subagent-spawned": "native",
+      "goal-updated": "goal", "goal-complete": "goal", "action-accepted": "action-receipt",
+      "action-rejected": "action-receipt", ended: "terminal" } as const;
+    if (!Object.hasOwn(kinds, e.kind as string) || e.source !== kinds[e.kind as keyof typeof kinds]) return bad();
+    const actionKind = e.kind === "action-accepted" || e.kind === "action-rejected";
+    if (actionKind ? !["steer", "stop", "retry", "send"].includes(e.action as string) : e.action !== null) return bad();
+    if (e.kind === "subagent-spawned" ? typeof e.relatedAgentId !== "string" || !/^agent_[a-f0-9]{64}$/.test(e.relatedAgentId) : e.relatedAgentId !== null) return bad();
+    if (e.kind === "ended" ? !["succeeded", "failed", "cancelled"].includes(e.outcome as string) : e.outcome !== null) return bad();
+    return { id: e.id, at, kind: e.kind as AgentTimelineEvent["kind"], action: e.action as AgentTimelineEvent["action"],
+      relatedAgentId: e.relatedAgentId as string | null, source: e.source as AgentTimelineEvent["source"],
+      outcome: e.outcome as AgentTimelineEvent["outcome"] };
+  });
+  for (let i = 1; i < events.length; i++) if (events[i - 1]!.at > events[i]!.at) return bad();
+  return { events, truncated: row.truncated };
+}
 function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<IssueAgentTreeAgent, "observation"> & { readonly observation: unknown } {
   const keys = ["dispatchId", "observation", "harness", "provider", "router", "model", "location", "budget", "quotaRegime", "liveness", "terminalOutcome", "startedAt", "startedAtReason", "endedAt", "endedAtReason", "transcript", "history", "historyTruncated"];
   const row = record(value, [...keys,
     ...(Object.hasOwn(value as object, "routePolicy") ? ["routePolicy"] : []),
     ...(Object.hasOwn(value as object, "nativeDepth") ? ["nativeDepth"] : []),
     ...(Object.hasOwn(value as object, "actionState") ? ["actionState"] : []),
-    ...(Object.hasOwn(value as object, "endedBy") ? ["endedBy"] : [])]);
+    ...(Object.hasOwn(value as object, "endedBy") ? ["endedBy"] : []),
+    ...(Object.hasOwn(value as object, "activity") ? ["activity"] : []),
+    ...(Object.hasOwn(value as object, "tokenUsage") ? ["tokenUsage"] : []),
+    ...(Object.hasOwn(value as object, "timeline") ? ["timeline"] : [])]);
   if (row.dispatchId !== dispatchId) return bad("ambiguous-ancestry");
   const budget = record(row.budget, ["tokenLimit", "source", "reason"]);
   let decodedBudget: AgentBudget;
@@ -276,7 +388,10 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   return { dispatchId, observation: row.observation, harness: valueRow(row.harness), provider: valueRow(row.provider),
     router, routePolicy, model: valueRow(row.model), location, budget: decodedBudget, nativeDepth,
     quotaRegime, liveness, actionState, endedBy, terminalOutcome, startedAt, startedAtReason, endedAt, endedAtReason,
-    transcript: { value: null, reason: "source_not_bound" }, history, historyTruncated: row.historyTruncated };
+    transcript: { value: null, reason: "source_not_bound" }, history, historyTruncated: row.historyTruncated,
+    ...(Object.hasOwn(row, "activity") ? { activity: activityRow(row.activity, capturedAt) } : {}),
+    ...(Object.hasOwn(row, "tokenUsage") ? { tokenUsage: tokenUsageRow(row.tokenUsage, capturedAt, decodedBudget.tokenLimit) } : {}),
+    ...(Object.hasOwn(row, "timeline") ? { timeline: timelineRow(row.timeline, capturedAt) } : {}) };
 }
 
 /** Strictly decode grouped ancestry before a cockpit stores or renders it. */

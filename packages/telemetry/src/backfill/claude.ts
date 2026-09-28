@@ -35,6 +35,7 @@
 import { basename } from "node:path";
 
 import { linkedIssuesOf, type LaunchIdentity, type RunRecord, type RunUsage } from "../model.js";
+import { claudeActivity, recentActivity } from "../native-activity.js";
 import {
   NoteTally,
   type JsonObject,
@@ -180,8 +181,11 @@ export function parseClaudeTranscript(
   let model: string | null = null;
   let effort: string | null = null;
   const usage: Record<string, number> = {};
+  const countedMessages = new Set<string>();
+  const activityMessages = new Set<string>();
+  let activity: NonNullable<RunRecord["activitySteps"]> = [];
 
-  for (const raw of text.split("\n")) {
+  for (const [lineNumber, raw] of text.split("\n").entries()) {
     if (raw.trim().length === 0) continue;
     const parsed = parseLineWithReason(raw);
     if (parsed.line === null) {
@@ -189,6 +193,14 @@ export function parseClaudeTranscript(
       continue;
     }
     const line = parsed.line as Line;
+    const activityId = str(line.uuid);
+    if (activityId === null || !activityMessages.has(activityId)) {
+      const steps = claudeActivity(line, origin, lineNumber);
+      if (steps.length > 0) {
+        activity = recentActivity([...activity, ...steps]);
+        if (activityId !== null) activityMessages.add(activityId);
+      }
+    }
 
     sessionId ??= str(line.sessionId);
     // Any line, not every line: a transcript that holds a sidechain turn at all was written by a
@@ -232,7 +244,11 @@ export function parseClaudeTranscript(
         model = str(message["model"]) ?? model;
         effort = str(line.effort) ?? effort;
         const reported = obj(message["usage"]);
-        if (reported !== null) addUsage(usage, reported);
+        const messageId = str(line.uuid);
+        if (reported !== null && (messageId === null || !countedMessages.has(messageId))) {
+          addUsage(usage, reported);
+          if (messageId !== null) countedMessages.add(messageId);
+        }
       }
     }
   }
@@ -267,6 +283,7 @@ export function parseClaudeTranscript(
       branch,
       identity,
       usage: usage as RunUsage,
+      activitySteps: activity,
       // The Claude store writes no completion marker: a finished session and a session whose process
       // died mid-turn produce the same file. Reporting `unknown` is the honest reading; a caller
       // with a clock can compare `updatedAt` against now, but that is a judgement, not a fact.

@@ -141,6 +141,8 @@ export interface RunRecord {
   readonly branch: string | null;
   readonly identity: LaunchIdentity;
   readonly usage: RunUsage;
+  /** Sanitized, bounded native work steps; never raw transcript content. */
+  readonly activitySteps?: readonly import("@rickylabs/harness-contracts").AgentActivityStep[];
   readonly outcome: RunOutcome;
   /** Exact terminal signal, when the native reader can distinguish failure from cancellation. */
   readonly terminalCause?: "error" | "cancelled" | undefined;
