@@ -15,6 +15,7 @@ const unplaced = { value: null, basis: "unavailable", observedAt: null, reason: 
 const node = { dispatchId, observation, harness: { value: "codex", source: "dispatch", reason: null }, provider: unknown,
   router: unknown, routePolicy: { value: null, digest: null, source: "unavailable", reason: "source_not_bound" },
   model: unknown, location: { host: unplaced, container: unplaced, seat: unplaced },
+  nativeDepth: unknown,
   budget: { tokenLimit: null, source: "unavailable", reason: "source_not_bound" }, quotaRegime: { value: "subscription", reason: null },
   liveness: { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" },
   terminalOutcome: { value: null, source: "unavailable", observedAt: null, reason: "measurement_missing" },
@@ -93,6 +94,26 @@ it("rejects child claims that cannot be attributed to child evidence", () => {
     agents: [routed, { ...child, router: { value: "direct", source: "dispatch", reason: null } }] }] }] };
   assert.equal(read(inherited).ok, true);
   assert.equal(read(withChild({ routePolicy: { value: "netscript-matrix", digest: rev, source: "dispatch", reason: null } })).ok, false);
+  assert.equal(read(withChild({ nativeDepth: { value: 1, source: "native", reason: null } })).ok, true);
+  assert.equal(read(withChild({ nativeDepth: { value: 0, source: "native", reason: null } })).ok, false);
+  assert.equal(read(withChild({ nativeDepth: { value: 1.5, source: "native", reason: null } })).ok, false);
+  assert.equal(read(withChild({ nativeDepth: { value: 1, source: "dispatch", reason: null } })).ok, false);
+  assert.equal(read(withChild({ nativeDepth: { value: null, source: "native", reason: null } })).ok, false);
+  assert.equal(read(withChild({ nativeDepth: { value: 1, source: "native", reason: null },
+    harness: { value: "codex", source: "dispatch", reason: null } })).ok, false);
+});
+it("accepts legacy frames without native depth but rejects measured depth on a root", () => {
+  const s = snapshot();
+  const withRoot = (nativeDepth: unknown) => ({ ...s, issues: [{ ...s.issues[0], dispatches: [{
+    dispatchId, agents: [{ ...node, nativeDepth }],
+  }] }] });
+  assert.equal(read(withRoot({ value: 1, source: "native", reason: null })).ok, false);
+  const { nativeDepth: _legacy, ...legacyNode } = node;
+  const legacy = { ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId, agents: [legacyNode] }] }] };
+  const result = read(legacy);
+  assert.equal(result.ok, true);
+  if (result.ok) assert.deepEqual(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.nativeDepth,
+    { value: null, source: "unavailable", reason: "source_not_bound" });
 });
 it("reads a 0.5.0 frame without routePolicy as typed unavailable", () => {
   const { routePolicy: _legacy, ...legacyNode } = node;

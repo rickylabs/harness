@@ -12,10 +12,25 @@ it("keeps child identity distinct from the shared tree session and reads its par
   assert.equal(run?.parentId, "fixture-parent");
 });
 it("reads the older thread_spawn parent and preserves legacy session-only identity", () => {
-  assert.equal(parse({ ...base, source: { subagent: { thread_spawn: {
+  const child = parse({ ...base, source: { subagent: { thread_spawn: {
     parent_thread_id: "fixture-parent", depth: 1,
-  } } } }).run?.parentId, "fixture-parent");
+  } } } }).run;
+  assert.equal(child?.parentId, "fixture-parent");
+  assert.equal(child?.nativeDepth, 1);
   assert.equal(parse({ session_id: "fixture-legacy" }).run?.id, "fixture-legacy");
+});
+it("keeps depth absent without a valid native spawn measurement bound to the accepted parent", () => {
+  const spawn = (depth: unknown, parent_thread_id: unknown = "fixture-parent") =>
+    parse({ ...base, source: { subagent: { thread_spawn: { parent_thread_id, depth } } } }).run;
+  for (const depth of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, "1", null]) {
+    assert.equal(spawn(depth)?.nativeDepth, undefined);
+  }
+  assert.equal(spawn(1, null)?.nativeDepth, undefined);
+  assert.equal(parse({ ...base, parent_thread_id: "fixture-other", source: { subagent: {
+    thread_spawn: { parent_thread_id: "fixture-parent", depth: 1 },
+  } } }).run?.nativeDepth, undefined);
+  assert.equal(parse({ ...base, parent_thread_id: "fixture-parent" }).run?.nativeDepth, undefined);
+  assert.equal(parse({ ...base, source: { subagent: { thread_spawn: { depth: 1 } } } }).run?.nativeDepth, undefined);
 });
 it("never treats a fork as a parent or accepts malformed, conflicting or self parents", () => {
   assert.equal(parse({ ...base, forked_from_id: "fixture-fork" }).run?.parentId, null);

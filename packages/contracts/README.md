@@ -636,3 +636,11 @@ Missing or malformed files and a host mismatch retain named unavailable reasons.
 GPU never becomes a zero reading. Version 0.7.0 adds optional per-card VRAM readings whose
 sum must equal the aggregate. The decoder accepts 0.5.x observations without the fourth row
 and normalizes it to unavailable. Version 0.6.0 was published from its tagged merge.
+
+## Native child depth in 0.8.0
+
+`IssueAgentTreeAgent.nativeDepth` reports a positive integer only when the native Codex child
+rollout measured `source.subagent.thread_spawn.depth` with a matching parent identity. The
+root's depth and a child's missing or invalid measurement remain typed unavailable; tree
+position is never used as a substitute. The decoder accepts older frames without this field
+and normalizes them to `source_not_bound`.

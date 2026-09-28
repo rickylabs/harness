@@ -24,7 +24,8 @@ const run = (id: string, parentId: string | null, outcome: RunRecord["outcome"] 
   id, parentId, source: "codex", startedAt: at, updatedAt: later, branch: null,
   identity: { provider: "native-provider", model: "native-model", effort: null, profile: null },
   usage: {}, outcome, linkedIssues: [], origin: "PRIVATE-PATH-CANARY", quota: [] });
-const runs = [run("PRIVATE-NATIVE-ROOT", null, "complete"), run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT")];
+const runs = [run("PRIVATE-NATIVE-ROOT", null, "complete"),
+  { ...run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT"), nativeDepth: 1 }];
 const build = (d: DispatchEvidence = dispatch, native: readonly RunRecord[] = runs, capturedAt = later,
   localCapacity?: HostCapacityReading) => {
   const observations = buildAgentObservations({ dispatches: [d], runs: native, observedAt: capturedAt,
@@ -95,6 +96,8 @@ it("groups issue, dispatch, root and child without leaking native identity or pa
   assert.equal(child.observation.parentAgentId.value, root.observation.agentId);
   assert.deepEqual(root.budget, { tokenLimit: 1000, source: "issue-override", reason: null });
   assert.deepEqual(child.budget, { tokenLimit: null, source: "unavailable", reason: "source_not_bound" });
+  assert.deepEqual(root.nativeDepth, { value: null, source: "unavailable", reason: "source_not_bound" });
+  assert.deepEqual(child.nativeDepth, { value: 1, source: "native", reason: null });
   assert.deepEqual(child.provider, { value: "native-provider", source: "native", reason: null });
   assert.deepEqual(root.router, { value: "direct", source: "dispatch", reason: null });
   assert.deepEqual(child.router, { value: "direct", source: "dispatch", reason: null });
@@ -106,6 +109,15 @@ it("groups issue, dispatch, root and child without leaking native identity or pa
   assert.equal(root.liveness.state, "ended");
   assert.equal(root.endedAt, null); // updatedAt is last activity, even after a terminal outcome.
   assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
+});
+it("never infers native child depth from the projected parent edge", () => {
+  const missing = build(dispatch, [runs[0]!, run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT")]);
+  const child = missing.issues[0]?.dispatches[0]?.agents.find(a => a.observation.parentAgentId.state === "known-parent");
+  assert.deepEqual(child?.nativeDepth, { value: null, source: "unavailable", reason: "measurement_missing" });
+  const invalid = build(dispatch, [runs[0]!, { ...runs[1]!, nativeDepth: 0 }]);
+  const invalidChild = invalid.issues[0]?.dispatches[0]?.agents.find(a => a.observation.parentAgentId.state === "known-parent");
+  assert.equal(invalidChild?.nativeDepth.value, null);
+  assert.ok(readIssueAgentTreeSnapshot(missing).ok);
 });
 it("projects a certified dispatch host through root and child while withholding unverified capacity", () => {
   const placed = build({ ...dispatch, host: "fixture-node" });
