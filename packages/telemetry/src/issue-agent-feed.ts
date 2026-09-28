@@ -49,6 +49,10 @@ function history(observation: AgentObservation, dispatch: DispatchEvidence, run:
     const process = time(dispatch.stop?.processObservedAt ?? undefined, now);
     if (seat !== null) rows.push({ dispatchId, kind: "stop-seat-observed", at: seat });
     if (process !== null) rows.push({ dispatchId, kind: "stop-process-observed", at: process });
+    const teardownSeat = time(dispatch.teardown?.seatObservedAt ?? undefined, now);
+    const teardownProcess = time(dispatch.teardown?.processObservedAt ?? undefined, now);
+    if (teardownSeat !== null) rows.push({ dispatchId, kind: "teardown-seat-observed", at: teardownSeat });
+    if (teardownProcess !== null) rows.push({ dispatchId, kind: "teardown-process-observed", at: teardownProcess });
   }
   return rows.sort((a, b) => a.at.localeCompare(b.at) || a.kind.localeCompare(b.kind)).slice(0, MAX_AGENT_HISTORY);
 }
@@ -67,6 +71,10 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const seatAt = root ? time(dispatch.stop?.seatObservedAt ?? undefined, now) : null;
   const processAt = root ? time(dispatch.stop?.processObservedAt ?? undefined, now) : null;
   const stopAt = seatAt !== null && processAt !== null ? (seatAt > processAt ? seatAt : processAt) : null;
+  const teardownSeatAt = root ? time(dispatch.teardown?.seatObservedAt ?? undefined, now) : null;
+  const teardownProcessAt = root ? time(dispatch.teardown?.processObservedAt ?? undefined, now) : null;
+  const teardownAt = teardownSeatAt !== null && teardownProcessAt !== null
+    ? (teardownSeatAt > teardownProcessAt ? teardownSeatAt : teardownProcessAt) : null;
   const actionState: IssueAgentTreeAgent["actionState"] = stopAt !== null
     ? { state: "stopped", observedAt: stopAt, reason: null }
     : seatAt !== null ? { state: "stopping", observedAt: seatAt, reason: null }
@@ -74,14 +82,19 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const liveness: IssueAgentTreeAgent["liveness"] = (run?.outcome === "complete" || run?.outcome === "failed") && outcomeAt !== null
     ? { state: "ended", evidence: "native-outcome", observedAt: now, reason: null }
     : stopAt !== null ? { state: "ended", evidence: "stop-observation", observedAt: stopAt, reason: null }
+    : teardownAt !== null ? { state: "ended", evidence: "teardown-observation", observedAt: teardownAt, reason: null }
     : seatAt !== null ? { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" }
+    : teardownSeatAt !== null ? { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" }
     : observation.running.value === true && observation.running.observedAt !== null
       ? { state: "running", evidence: "runtime-observation", observedAt: observation.running.observedAt, reason: null }
       : { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" };
-  const endedBy: IssueAgentTreeAgent["endedBy"] = liveness.state === "ended" && liveness.evidence === "stop-observation" ? "stop" : null;
+  const endedBy: IssueAgentTreeAgent["endedBy"] = liveness.state === "ended" && liveness.evidence === "stop-observation" ? "stop"
+    : liveness.state === "ended" && liveness.evidence === "teardown-observation" ? dispatch.teardown!.cause : null;
   const terminalOutcome: IssueAgentTreeAgent["terminalOutcome"] = liveness.state === "ended"
     ? liveness.evidence === "stop-observation"
       ? { value: "cancelled", source: "stop-observation", observedAt: stopAt!, reason: null }
+    : liveness.evidence === "teardown-observation"
+      ? { value: "cancelled", source: "teardown-observation", observedAt: teardownAt!, reason: null }
     : run!.outcome === "complete"
       ? { value: "succeeded", source: "native-outcome", observedAt: now, reason: null }
       : run!.terminalCause === "error" || run!.terminalCause === "cancelled"
@@ -105,8 +118,14 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
       (localCapacity.cost.validUntil === null || Date.parse(localCapacity.cost.validUntil) < Date.parse(now) + ISSUE_AGENT_TREE_FRESH_MS)
       ? missingCapacity("source_stale")
     : localCapacity.cost;
-  const placedObservation = { ...observation, cost: { ...observation.cost, localCapacity: capacity },
-    revision: digest(JSON.stringify({ prior: observation.revision, host: host.value, capacity })) };
+  // A verified seat absence supersedes a still-fresh native activity claim.
+  // Clear the observation itself so the strict decoder and action consumers
+  // cannot retain a contradictory running bit beside unknown/ended liveness.
+  const running = liveness.state !== "running" && observation.running.value === true
+    ? { value: null, reason: "measurement_missing", observedAt: null, validUntil: null, revision: null } as const
+    : observation.running;
+  const placedObservation = { ...observation, running, cost: { ...observation.cost, localCapacity: capacity },
+    revision: digest(JSON.stringify({ prior: observation.revision, running, host: host.value, capacity })) };
   const seam = run?.source ?? dispatch.source;
   const nativeDepth: IssueAgentTreeAgent["nativeDepth"] = !root && run?.source === "codex" &&
     run.parentId !== null && typeof run.nativeDepth === "number" &&
@@ -121,7 +140,8 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     quotaRegime: seam === "codex" || seam === "claude" ? { value: "subscription", reason: null }
       : { value: null, reason: "source_not_bound" },
     liveness, actionState, endedBy, terminalOutcome, startedAt: start, startedAtReason: start === null ? "run_not_found" : null,
-    endedAt: endedBy === "stop" ? stopAt : null, endedAtReason: endedBy === "stop" ? null : "measurement_missing",
+    endedAt: endedBy === "stop" ? stopAt : endedBy === "timeout" || endedBy === "teardown" ? teardownAt : null,
+    endedAtReason: endedBy === null ? "measurement_missing" : null,
     transcript: { value: null, reason: "source_not_bound" },
     history: history(observation, dispatch, run, now, root), historyTruncated: false };
 }

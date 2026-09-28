@@ -8,6 +8,7 @@ import { ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReas
   type OrchidRouteObservedReasons, type AgentBudget, type AgentRoutePolicy } from "@rickylabs/harness-contracts";
 import { readOrchidNativeBinding, readOrchidHostBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import { readOrchidStopObservation } from "./orchid-stop-observation.js";
+import { readOrchidTeardownObservation } from "./orchid-teardown-observation.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
 export const ORCHID_DISPATCH_ROOT = "DSH_TELEMETRY_DISPATCH_ROOT";
@@ -173,7 +174,12 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         const stop = await readOrchidStopObservation(root, record, { runId: dispatch.runId,
           repository: issue.repo as string, issueNumber: issue.number as number,
           host: dispatch.host ?? null, paneId: location.paneId as string, workspaceId: location.workspaceId as string });
-        const boundDispatch = stop === undefined ? dispatch : { ...dispatch, stop };
+        const teardown = await readOrchidTeardownObservation(record, { runId: dispatch.runId,
+          repository: issue.repo as string, issueNumber: issue.number as number,
+          host: dispatch.host ?? null, paneId: location.paneId as string, workspaceId: location.workspaceId as string });
+        // Bind the final object: native identity is held in a private WeakMap.
+        const boundDispatch = { ...dispatch, ...(stop === undefined ? {} : { stop }),
+          ...(teardown === undefined ? {} : { teardown }) };
         await readOrchidNativeBinding(record, key, boundDispatch);
         dispatches.push(boundDispatch);
       } catch { notes.add("orchid-dispatch: binding_unavailable"); }

@@ -655,3 +655,13 @@ the previous runtime observation is stale. Only both independent observations pe
 observation. Each observation has a separate bounded history event. Older frames without
 `actionState` and `endedBy` decode to unknown and null. A separately verified native terminal
 outcome remains valid while stop verification is still in progress.
+
+## Verified timeout and teardown state in 0.10.0
+
+The feed clears an old running claim to unknown once Orchid verifies that the exact pane and
+workspace are absent. It reports `liveness: ended` with `endedBy: timeout` or `teardown` only
+after Orchid separately verifies that the captured native process tree is gone. The terminal
+outcome is then `cancelled`, sourced from `teardown-observation`; the later observation supplies
+`endedAt`. A timeout comment, issue closure, teardown intent, or either observation alone never
+proves termination. The two measurements have separate bounded history events. Native terminal
+outcomes and verified cockpit stops keep their existing precedence.

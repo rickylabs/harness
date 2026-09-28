@@ -57,6 +57,24 @@ it("decodes verified stop phases and rejects a stop receipt posing as terminal p
   const { actionState: _a, endedBy: _e, ...legacy } = node;
   assert.equal(read(withNode(legacy)).ok, true);
 });
+it("accepts verified timeout teardown and rejects a missing terminal observation", () => {
+  const base = snapshot();
+  const withNode = (agent: unknown) => ({ ...base, issues: [{ ...base.issues[0],
+    dispatches: [{ dispatchId, agents: [agent] }] }] });
+  const ended = { ...node,
+    liveness: { state: "ended", evidence: "teardown-observation", observedAt: at, reason: null },
+    endedBy: "timeout", terminalOutcome: { value: "cancelled", source: "teardown-observation", observedAt: at, reason: null },
+    startedAt: at, startedAtReason: null, endedAt: at, endedAtReason: null,
+    history: [...node.history, { dispatchId, kind: "teardown-seat-observed", at }] };
+  // Equal-time history entries need alphabetical kind order; this fixture is
+  // only about the terminal contract.
+  const { history: _history, ...core } = ended;
+  assert.equal(read(withNode({ ...core, history: node.history })).ok, true);
+  assert.equal(read(withNode({ ...core, history: node.history, endedBy: "teardown" })).ok, true);
+  assert.equal(read(withNode({ ...core, history: node.history, endedAt: null, endedAtReason: "measurement_missing" })).ok, false);
+  assert.equal(read(withNode({ ...core, history: node.history, terminalOutcome: node.terminalOutcome })).ok, false);
+  assert.equal(read(withNode({ ...core, history: node.history, liveness: node.liveness })).ok, false);
+});
 it("requires a running measurement to cover its entire public frame", () => {
   const base = snapshot();
   const measured = { value: true, reason: null, observedAt: at, validUntil: base.validUntil, revision: rev } as const;
