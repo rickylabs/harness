@@ -18,6 +18,7 @@
 
 import { codexThreadsCommand } from "./codex-threads-cli.js";
 import { issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
+import { actionReceiptCommand } from "./action-receipt-cli.js";
 import { open, readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { isAbsolute, join } from "node:path";
@@ -98,6 +99,7 @@ const USAGE = `dsh-telemetry — board activity, read from disk, with no agent a
 
 usage:
   dsh-telemetry codex-threads [--limit <n>] [--private] [--watch]  native thread JSON / goal JSONL
+  dsh-telemetry action-receipt --json --operation <uuid> [--digest <sha256>]  sanitized Orchid delivery
   dsh-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--issue <owner/repo#number>] [--interval-ms <n>]  per-issue agent trees
   dsh-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
@@ -146,6 +148,14 @@ Exit 1 emits no document and a fixed diagnostic. Pending approvals remain not-ob
 It reads one selected Codex native file, with source-root and enrolled worktree checks.
 Exit 0 means the selected source was read; exit 3 withholds the run with typed coverage.
 Invalid descriptors exit 1 with a fixed diagnostic and no JSON. No home scan or network.
+
+"action-receipt" reads one owner-only Orchid delivery result from DSH_TELEMETRY_DISPATCH_ROOT.
+It requires --json and --operation with a lowercase UUID; --digest selects that request's
+primary result or immutable digest-conflict rejection. Output contains only bounded issue,
+opaque agent/dispatch identifiers, digest, action, delivery outcome, fixed reason and time.
+Private host, pane, native session, idempotency key and action text never leave the reader.
+Exit 0 means an accepted or rejected delivery result was read; exit 3 means unknown or unread.
+Delivery never proves execution; use the separate issue-agent feed for observed state.
 
 "record" reads JSONL on stdin — one {"runId","kind","at","detail"} object per line, "at"
 and "detail" optional. A bad line loses that line and is named; an empty batch is not an
@@ -473,6 +483,7 @@ function whereItWrites(flags: Flags): number {
 export async function main(argv: readonly string[], services: SourceServices = defaultSourceServices(), observationOptions: RepositoryRunReadOptions = {}): Promise<number> {
   if (argv[0] === "codex-threads") return codexThreadsCommand(argv.slice(1));
   if (argv[0] === "issue-agents") return issueAgentFeedCommand(argv.slice(1));
+  if (argv[0] === "action-receipt") return actionReceiptCommand(argv.slice(1));
   if (argv.includes("run-observation")) {
     if (argv.length !== 3 || argv[0] !== "run-observation" || argv[1] !== "--source" || !argv[2] || !isAbsolute(argv[2]) || /[\x00-\x1f\x7f]/.test(argv[2])) {
       process.stderr.write("run-observation: invalid command line\n");
