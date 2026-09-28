@@ -134,6 +134,8 @@ export interface RunRecord {
   readonly source: RunSource;
   /** The parent session, for subagent trees. `null` for a top-level run. */
   readonly parentId: string | null;
+  /** Native spawn depth, only when a child session measured it beside its parent identity. */
+  readonly nativeDepth?: number;
   readonly startedAt: string;
   readonly updatedAt: string;
   readonly branch: string | null;

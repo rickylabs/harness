@@ -17,6 +17,9 @@ export type AgentTreeValue =
 export type AgentBudget =
   | { readonly tokenLimit: number; readonly source: "issue-override" | "route-default"; readonly reason: null }
   | { readonly tokenLimit: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
+export type AgentNativeDepth =
+  | { readonly value: number; readonly source: "native"; readonly reason: null }
+  | { readonly value: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
 export type AgentRoutePolicy =
   | { readonly value: "netscript-matrix"; readonly digest: string; readonly source: "dispatch"; readonly reason: null }
   | { readonly value: null; readonly digest: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
@@ -53,6 +56,8 @@ export interface IssueAgentTreeAgent {
   readonly model: AgentTreeValue;
   readonly location: AgentTreeLocation;
   readonly budget: AgentBudget;
+  /** A child's measured native spawn depth; roots and legacy frames remain unavailable. */
+  readonly nativeDepth: AgentNativeDepth;
   readonly quotaRegime: AgentQuotaRegime;
   readonly liveness: AgentTreeLiveness;
   readonly terminalOutcome: AgentTerminalOutcome;
@@ -143,6 +148,15 @@ function valueRow(value: unknown): AgentTreeValue {
   if ((row.source !== "dispatch" && row.source !== "native") || row.reason !== null) return bad();
   return { value: label(row.value), source: row.source, reason: null };
 }
+function depthRow(value: unknown): AgentNativeDepth {
+  const row = record(value, ["value", "source", "reason"]);
+  if (row.value === null && row.source === "unavailable") {
+    return { value: null, source: "unavailable", reason: reason(row.reason) };
+  }
+  if (row.source !== "native" || row.reason !== null || typeof row.value !== "number" ||
+      !Number.isSafeInteger(row.value) || row.value < 1) return bad();
+  return { value: row.value, source: "native", reason: null };
+}
 function policyRow(value: unknown): AgentRoutePolicy {
   const row = record(value, ["value", "digest", "source", "reason"]);
   if (row.value === null && row.digest === null && row.source === "unavailable") {
@@ -164,7 +178,9 @@ function placement(value: unknown, capturedAt: string): AgentPlacementValue {
 }
 function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<IssueAgentTreeAgent, "observation"> & { readonly observation: unknown } {
   const keys = ["dispatchId", "observation", "harness", "provider", "router", "model", "location", "budget", "quotaRegime", "liveness", "terminalOutcome", "startedAt", "startedAtReason", "endedAt", "endedAtReason", "transcript", "history", "historyTruncated"];
-  const row = record(value, Object.hasOwn(value as object, "routePolicy") ? [...keys, "routePolicy"] : keys);
+  const row = record(value, [...keys,
+    ...(Object.hasOwn(value as object, "routePolicy") ? ["routePolicy"] : []),
+    ...(Object.hasOwn(value as object, "nativeDepth") ? ["nativeDepth"] : [])]);
   if (row.dispatchId !== dispatchId) return bad("ambiguous-ancestry");
   const budget = record(row.budget, ["tokenLimit", "source", "reason"]);
   let decodedBudget: AgentBudget;
@@ -222,8 +238,10 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   if (router.value !== null && router.source !== "dispatch") return bad();
   const routePolicy = Object.hasOwn(row, "routePolicy") ? policyRow(row.routePolicy)
     : { value: null, digest: null, source: "unavailable", reason: "source_not_bound" } as const;
+  const nativeDepth = Object.hasOwn(row, "nativeDepth") ? depthRow(row.nativeDepth)
+    : { value: null, source: "unavailable", reason: "source_not_bound" } as const;
   return { dispatchId, observation: row.observation, harness: valueRow(row.harness), provider: valueRow(row.provider),
-    router, routePolicy, model: valueRow(row.model), location, budget: decodedBudget,
+    router, routePolicy, model: valueRow(row.model), location, budget: decodedBudget, nativeDepth,
     quotaRegime, liveness, terminalOutcome, startedAt, startedAtReason, endedAt, endedAtReason,
     transcript: { value: null, reason: "source_not_bound" }, history, historyTruncated: row.historyTruncated };
 }
@@ -306,6 +324,7 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
               running.validUntil === null || running.validUntil < validUntil) return bad();
         } else if (running?.value === true) return bad();
         const parent = safe.get(a.observation.agentId)?.parentAgentId;
+        if (a.nativeDepth.value !== null && (parent?.state !== "known-parent" || a.harness.source !== "native")) return bad();
         if (parent?.state === "known-parent") {
           if (a.budget.tokenLimit !== null || a.provider.source === "dispatch" || a.model.source === "dispatch" ||
               a.harness.source === "dispatch" || a.routePolicy.value !== null) return bad();

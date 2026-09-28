@@ -89,9 +89,14 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const placedObservation = { ...observation, cost: { ...observation.cost, localCapacity: capacity },
     revision: digest(JSON.stringify({ prior: observation.revision, host: host.value, capacity })) };
   const seam = run?.source ?? dispatch.source;
+  const nativeDepth: IssueAgentTreeAgent["nativeDepth"] = !root && run?.source === "codex" &&
+    run.parentId !== null && typeof run.nativeDepth === "number" &&
+    Number.isSafeInteger(run.nativeDepth) && run.nativeDepth >= 1
+    ? { value: run.nativeDepth, source: "native", reason: null }
+    : { value: null, source: "unavailable", reason: !root && run !== undefined ? "measurement_missing" : "source_not_bound" };
   return { dispatchId: observation.assignment.id, observation: placedObservation, harness, provider, router,
     routePolicy: observation.parentAgentId.state === "confirmed-root" ? dispatch.routePolicy ?? unavailablePolicy : unavailablePolicy, model,
-    location: { host, container: unplaced, seat: unplaced },
+    location: { host, container: unplaced, seat: unplaced }, nativeDepth,
     budget: root ? dispatch.budget ?? { tokenLimit: null, source: "unavailable", reason: "source_not_bound" }
       : { tokenLimit: null, source: "unavailable", reason: "source_not_bound" },
     quotaRegime: seam === "codex" || seam === "claude" ? { value: "subscription", reason: null }
