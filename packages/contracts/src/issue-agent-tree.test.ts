@@ -18,6 +18,7 @@ const node = { dispatchId, observation, harness: { value: "codex", source: "disp
   nativeDepth: unknown,
   budget: { tokenLimit: null, source: "unavailable", reason: "source_not_bound" }, quotaRegime: { value: "subscription", reason: null },
   liveness: { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" },
+  actionState: { state: "unknown", observedAt: null, reason: "source_not_bound" }, endedBy: null,
   terminalOutcome: { value: null, source: "unavailable", observedAt: null, reason: "measurement_missing" },
   startedAt: null, startedAtReason: "run_not_found", endedAt: null, endedAtReason: "measurement_missing",
   transcript: { value: null, reason: "source_not_bound" },
@@ -32,6 +33,29 @@ it("decodes a grouped opaque dispatch tree with explicit unknowns", () => {
   const result = read(snapshot());
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.budget.tokenLimit, null);
+});
+it("decodes verified stop phases and rejects a stop receipt posing as terminal proof", () => {
+  const base = snapshot();
+  const withNode = (agent: unknown) => ({ ...base, issues: [{ ...base.issues[0],
+    dispatches: [{ dispatchId, agents: [agent] }] }] });
+  const stopping = { ...node, actionState: { state: "stopping", observedAt: at, reason: null } };
+  assert.equal(read(withNode(stopping)).ok, true);
+  assert.equal(read(withNode({ ...stopping, endedBy: "stop" })).ok, false);
+  const independentlyEnded = { ...stopping,
+    liveness: { state: "ended", evidence: "native-outcome", observedAt: at, reason: null },
+    terminalOutcome: { value: "succeeded", source: "native-outcome", observedAt: at, reason: null } };
+  assert.equal(read(withNode(independentlyEnded)).ok, true);
+  const stopped = { ...node, actionState: { state: "stopped", observedAt: at, reason: null },
+    liveness: { state: "ended", evidence: "stop-observation", observedAt: at, reason: null },
+    endedBy: "stop", terminalOutcome: { value: "cancelled", source: "stop-observation", observedAt: at, reason: null },
+    startedAt: at, startedAtReason: null, endedAt: at, endedAtReason: null };
+  assert.equal(read(withNode(stopped)).ok, true);
+  assert.equal(read(withNode({ ...stopped, actionState: stopping.actionState })).ok, false);
+  assert.equal(read(withNode({ ...stopped, endedAt: null, endedAtReason: "measurement_missing" })).ok, false);
+  assert.equal(read(withNode({ ...stopped, terminalOutcome: { ...stopped.terminalOutcome, value: "succeeded" } })).ok, false);
+  assert.equal(read(withNode({ ...node, terminalOutcome: stopped.terminalOutcome })).ok, false);
+  const { actionState: _a, endedBy: _e, ...legacy } = node;
+  assert.equal(read(withNode(legacy)).ok, true);
 });
 it("requires a running measurement to cover its entire public frame", () => {
   const base = snapshot();

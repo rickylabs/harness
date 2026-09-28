@@ -33,7 +33,8 @@ const time = (value: string | undefined, latest: string): string | null =>
   value && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value) &&
     Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value && value <= latest ? value : null;
 
-function history(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string): readonly AgentHistoryEvent[] {
+function history(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string,
+  root: boolean): readonly AgentHistoryEvent[] {
   const rows: AgentHistoryEvent[] = [];
   const dispatchId = observation.assignment.id;
   if (observation.parentAgentId.state !== "known-parent" && time(dispatch.observedAt, now) !== null) {
@@ -43,6 +44,12 @@ function history(observation: AgentObservation, dispatch: DispatchEvidence, run:
   const activity = time(run?.updatedAt, now);
   if (started !== null) rows.push({ dispatchId, kind: "run-started-observed", at: started });
   if (activity !== null && (started === null || activity > started)) rows.push({ dispatchId, kind: "run-activity-observed", at: activity });
+  if (root) {
+    const seat = time(dispatch.stop?.seatObservedAt ?? undefined, now);
+    const process = time(dispatch.stop?.processObservedAt ?? undefined, now);
+    if (seat !== null) rows.push({ dispatchId, kind: "stop-seat-observed", at: seat });
+    if (process !== null) rows.push({ dispatchId, kind: "stop-process-observed", at: process });
+  }
   return rows.sort((a, b) => a.at.localeCompare(b.at) || a.kind.localeCompare(b.kind)).slice(0, MAX_AGENT_HISTORY);
 }
 
@@ -57,13 +64,25 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     (dispatch.source === "codex" || dispatch.source === "claude") ? dispatch.router : unavailable;
   const start = time(run?.startedAt, now);
   const outcomeAt = time(run?.updatedAt, now);
+  const seatAt = root ? time(dispatch.stop?.seatObservedAt ?? undefined, now) : null;
+  const processAt = root ? time(dispatch.stop?.processObservedAt ?? undefined, now) : null;
+  const stopAt = seatAt !== null && processAt !== null ? (seatAt > processAt ? seatAt : processAt) : null;
+  const actionState: IssueAgentTreeAgent["actionState"] = stopAt !== null
+    ? { state: "stopped", observedAt: stopAt, reason: null }
+    : seatAt !== null ? { state: "stopping", observedAt: seatAt, reason: null }
+      : { state: "unknown", observedAt: null, reason: "source_not_bound" };
   const liveness: IssueAgentTreeAgent["liveness"] = (run?.outcome === "complete" || run?.outcome === "failed") && outcomeAt !== null
     ? { state: "ended", evidence: "native-outcome", observedAt: now, reason: null }
+    : stopAt !== null ? { state: "ended", evidence: "stop-observation", observedAt: stopAt, reason: null }
+    : seatAt !== null ? { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" }
     : observation.running.value === true && observation.running.observedAt !== null
       ? { state: "running", evidence: "runtime-observation", observedAt: observation.running.observedAt, reason: null }
       : { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" };
+  const endedBy: IssueAgentTreeAgent["endedBy"] = liveness.state === "ended" && liveness.evidence === "stop-observation" ? "stop" : null;
   const terminalOutcome: IssueAgentTreeAgent["terminalOutcome"] = liveness.state === "ended"
-    ? run!.outcome === "complete"
+    ? liveness.evidence === "stop-observation"
+      ? { value: "cancelled", source: "stop-observation", observedAt: stopAt!, reason: null }
+    : run!.outcome === "complete"
       ? { value: "succeeded", source: "native-outcome", observedAt: now, reason: null }
       : run!.terminalCause === "error" || run!.terminalCause === "cancelled"
         ? { value: run!.terminalCause === "error" ? "failed" : "cancelled", source: "native-outcome", observedAt: now, reason: null }
@@ -101,9 +120,10 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
       : { tokenLimit: null, source: "unavailable", reason: "source_not_bound" },
     quotaRegime: seam === "codex" || seam === "claude" ? { value: "subscription", reason: null }
       : { value: null, reason: "source_not_bound" },
-    liveness, terminalOutcome, startedAt: start, startedAtReason: start === null ? "run_not_found" : null,
-    endedAt: null, endedAtReason: "measurement_missing", transcript: { value: null, reason: "source_not_bound" },
-    history: history(observation, dispatch, run, now), historyTruncated: false };
+    liveness, actionState, endedBy, terminalOutcome, startedAt: start, startedAtReason: start === null ? "run_not_found" : null,
+    endedAt: endedBy === "stop" ? stopAt : null, endedAtReason: endedBy === "stop" ? null : "measurement_missing",
+    transcript: { value: null, reason: "source_not_bound" },
+    history: history(observation, dispatch, run, now, root), historyTruncated: false };
 }
 
 /** Invalid or partial ancestry is never repackaged as a complete tree. */
@@ -114,8 +134,17 @@ export function buildIssueAgentTreeSnapshot(input: {
   readonly localCapacity?: HostCapacityReading;
 }): IssueAgentTreeSnapshot {
   const { dispatches, runs } = input;
+  const dispatchById = new Map(dispatches.map(d => [opaque("assignment", d.runId), d]));
   const observations: AgentObservations = { ...input.observations,
-    agents: input.observations.agents.map(publicObservation),
+    agents: input.observations.agents.map(raw => {
+      const publicRow = publicObservation(raw);
+      const dispatch = dispatchById.get(raw.assignment.id);
+      const seat = raw.parentAgentId.state === "confirmed-root"
+        ? time(dispatch?.stop?.seatObservedAt ?? undefined, input.observations.observedAt) : null;
+      return seat === null ? publicRow : { ...publicRow,
+        running: { value: null, reason: "source_stale", observedAt: null, validUntil: null, revision: null } as const,
+        revision: digest(JSON.stringify({ prior: publicRow.revision, stopSeat: seat })) };
+    }),
     revision: digest(JSON.stringify({ prior: input.observations.revision, publicRoute: true })) };
   const empty = (reason: IssueAgentTreeSnapshot["reason"]): IssueAgentTreeSnapshot => ({
     schema: 1, protocol: 1, observedAt: observations.observedAt,
@@ -125,7 +154,6 @@ export function buildIssueAgentTreeSnapshot(input: {
   const checked = readAgentObservations(observations);
   if (!checked.ok && observations.agents.length > 0) return empty("ancestry_unavailable");
   if (!observations.complete && observations.reason !== "ancestry_unavailable") return empty(observations.reason);
-  const dispatchById = new Map(dispatches.map(d => [opaque("assignment", d.runId), d]));
   const nativeById = new Map<string, RunRecord>();
   for (const run of runs) nativeById.set(opaque("agent", run.source + "\0" + run.id), run);
   const issues = new Map<string, { repo: IssueAgentTree["repo"]; issueNumber: number; dispatches: Map<string, IssueAgentTreeAgent[]> }>();

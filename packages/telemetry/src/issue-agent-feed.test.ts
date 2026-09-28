@@ -297,3 +297,34 @@ it("retains earlier bound issues when aggregate bytes exceed the contract cap", 
   assert.equal(combined.issues[0]?.complete, true);
   assert.equal(readIssueAgentTreeSnapshot(combined).ok, true);
 });
+
+it("requires verified seat AND native process absence to end a stopped root", () => {
+  const active = [run("PRIVATE-NATIVE-ROOT", null, "running")];
+  const captured = "2026-01-01T00:00:04.000Z";
+  const seatAt = "2026-01-01T00:00:02.000Z", processAt = "2026-01-01T00:00:03.000Z";
+  const root = (stop: NonNullable<DispatchEvidence["stop"]>) => build({ ...dispatch, stop }, active, captured)
+    .issues[0]?.dispatches[0]?.agents[0];
+  const receiptOnly = root({ seatObservedAt: null, processObservedAt: null });
+  assert.equal(receiptOnly?.liveness.state, "running");
+  assert.equal(receiptOnly?.actionState.state, "unknown");
+  const seatOnly = root({ seatObservedAt: seatAt, processObservedAt: null });
+  assert.equal(seatOnly?.actionState.state, "stopping");
+  assert.equal(seatOnly?.liveness.state, "unknown");
+  assert.equal(seatOnly?.endedBy, null);
+  assert.equal(seatOnly?.terminalOutcome.value, null);
+  assert.ok(seatOnly?.history.some(event => event.kind === "stop-seat-observed"));
+  const processOnly = root({ seatObservedAt: null, processObservedAt: processAt });
+  assert.equal(processOnly?.actionState.state, "unknown");
+  assert.equal(processOnly?.liveness.state, "running");
+  const both = root({ seatObservedAt: seatAt, processObservedAt: processAt });
+  assert.equal(both?.actionState.state, "stopped");
+  assert.deepEqual(both?.liveness, { state: "ended", evidence: "stop-observation", observedAt: processAt, reason: null });
+  assert.equal(both?.endedBy, "stop");
+  assert.deepEqual(both?.terminalOutcome, { value: "cancelled", source: "stop-observation", observedAt: processAt, reason: null });
+  assert.equal(both?.endedAt, processAt);
+  assert.ok(both?.history.some(event => event.kind === "stop-process-observed"));
+  for (const state of [{ seatObservedAt: seatAt, processObservedAt: null },
+    { seatObservedAt: seatAt, processObservedAt: processAt }]) {
+    assert.ok(readIssueAgentTreeSnapshot(build({ ...dispatch, stop: state }, active, captured)).ok);
+  }
+});

@@ -29,6 +29,8 @@ export interface DispatchEvidence {
   readonly router?: AgentTreeValue;
   /** Bound private matrix receipt, distinct from the gateway. */
   readonly routePolicy?: AgentRoutePolicy;
+  /** Bound, separately verified Orchid stop observations for the root only. */
+  readonly stop?: { readonly seatObservedAt: string | null; readonly processObservedAt: string | null };
 
 }
 
