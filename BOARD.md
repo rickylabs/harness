@@ -4,7 +4,7 @@
 
 `[################----]` **337/413 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 7 invisible**
 
-_Latest board activity: 2026-09-28T16:37:30Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-28T16:42:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -31,7 +31,7 @@ Something could be acting on these right now.
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `impl-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees](https://github.com/rickylabs/harness/issues/373) | `impl-eval` | — |
-| [PR425 feat: per-agent activity, tokens and sourced timeline](https://github.com/rickylabs/harness/pull/425) | `impl-eval` | — |
+| [PR425 feat: per-agent activity, tokens and sourced timeline](https://github.com/rickylabs/harness/pull/425) | `ready-merge` | — |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -59,12 +59,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
 
-## Anomalies (29)
+## Anomalies (30)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
+- **#425** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
@@ -646,7 +647,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #422 Alpha proof source: Cockpit tier and role rerun
     shipped              PR423 Preserve tier and role in shared swarm dispatch
     shipped              #424 [rickylabs/harness#422] Alpha proof source: Cockpit tier and role rerun
-    impl-eval            PR425 feat: per-agent activity, tokens and sourced timeline (draft, p0)
+    ready-merge          PR425 feat: per-agent activity, tokens and sourced timeline (p0)
 ```
 
 </details>
