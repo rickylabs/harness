@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "harness-compiled-table-transcription",
   "provenance": {
-    "description": "Packaged Harness routing catalog, evolved from compiled routing and placement data at commit 4c813fe10218e471f5d78a2dc45bd805ec260749 (consulted 2026-09-07) and edited directly since 2026-09-14. Native Codex and Claude choices reflect Eric's 2026-09-27 routing set: Astra for architecture or highly complex work, Sol high otherwise, Luna low for extremely simple tasks; Opus 5.5 high by default and Fable 5.1 for complex architecture. Exact native model IDs were checked against installed Codex CLI 0.157.1 and Claude Code 2.1.283 on 2026-09-28. This packaged catalog is not proof of executable fleet parity."
+    "description": "Packaged Harness routing catalog, evolved from compiled routing and placement data at commit 4c813fe10218e471f5d78a2dc45bd805ec260749 (consulted 2026-09-07) and edited directly since 2026-09-14. Native Codex and Claude choices reflect Eric's 2026-09-27 routing set: Astra for architecture or highly complex work, Sol high otherwise, Luna max for extremely simple tasks; Opus 5.5 high by default and Fable 5.1 for complex architecture. Exact native model IDs were checked against installed Codex CLI 0.158.0 and Claude Code 2.1.283 on 2026-09-28. This packaged catalog is not proof of executable fleet parity. Coordinator primaries follow Eric's 2026-09-28 correction: Sol medium for small project, project and milestone; Sol high for framework."
   },
   "families": [
     "anthropic",
@@ -232,7 +232,7 @@
             "harness": "codex",
             "transport": "native",
             "model": "gpt-6-luna",
-            "effort": "low"
+            "effort": "max"
           },
           "when": [],
           "note": "extremely_simple_tasks_only"
@@ -278,6 +278,66 @@
           "when": [
             "token-limit"
           ]
+        }
+      ]
+    },
+    {
+      "lane": "coordinator_small_project",
+      "purpose": "orchestration",
+      "chain": [
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-6-sol",
+            "effort": "medium"
+          },
+          "when": []
+        }
+      ]
+    },
+    {
+      "lane": "coordinator_project",
+      "purpose": "orchestration",
+      "chain": [
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-6-sol",
+            "effort": "medium"
+          },
+          "when": []
+        }
+      ]
+    },
+    {
+      "lane": "coordinator_framework",
+      "purpose": "orchestration",
+      "chain": [
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-6-sol",
+            "effort": "high"
+          },
+          "when": []
+        }
+      ]
+    },
+    {
+      "lane": "coordinator_milestone",
+      "purpose": "orchestration",
+      "chain": [
+        {
+          "route": {
+            "harness": "codex",
+            "transport": "native",
+            "model": "gpt-6-sol",
+            "effort": "medium"
+          },
+          "when": []
         }
       ]
     },
