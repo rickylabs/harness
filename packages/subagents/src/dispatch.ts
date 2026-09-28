@@ -547,6 +547,17 @@ const TOKEN_BUDGET = /^\d+(?:\.\d+)?[kKmM]?$/;
 function encodingProblems(request: DispatchRequest): readonly string[] {
   const problems: string[] = [];
 
+  // The renderer omits empty values. A present but empty route would otherwise
+  // silently become a partial or absent route on the issue divybot reads.
+  if (request.tier !== undefined || request.role !== undefined) {
+    if (request.tier === undefined || goTrimSpace(request.tier) === "") {
+      problems.push("tier must be nonempty when a matrix route is supplied");
+    }
+    if (request.role === undefined || goTrimSpace(request.role) === "") {
+      problems.push("role must be nonempty when a matrix route is supplied");
+    }
+  }
+
   for (const [key, read] of FIELD_ORDER) {
     const value = read(request);
     if (value === undefined || value === "") continue;

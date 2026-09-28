@@ -52,6 +52,17 @@ describe("renderSwarm", () => {
     assert.throws(() => renderSwarm({ ...full, tier: "feature", role: "deep-research" }),
       /canonical underscore/);
   });
+  it("refuses empty or whitespace matrix fields before the renderer can omit them", () => {
+    for (const routed of [
+      { ...full, tier: "", role: "implementation" },
+      { ...full, tier: "   ", role: "implementation" },
+      { ...full, tier: "feature", role: "" },
+      { ...full, tier: "feature", role: "   " },
+    ]) {
+      assert.ok(validateDispatch(routed).some((problem) => /must be nonempty/.test(problem)));
+      assert.throws(() => renderSwarm(routed), DispatchEncodingError);
+    }
+  });
   it("emits the documented grammar in a fixed field order", () => {
     assert.equal(
       renderSwarm(full),
