@@ -297,6 +297,9 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
       const safe = new Map(read.observation.agents.map(a => [a.agentId, a]));
       const publicAgents = new Map(all.map(a => [a.observation.agentId, a]));
       for (const a of all) {
+        const capacity = safe.get(a.observation.agentId)?.cost.localCapacity;
+        if (capacity?.availability === "available" && (a.location.host.value === null ||
+          capacity.measurement.host !== a.location.host.value || capacity.validUntil === null || capacity.validUntil < validUntil)) return bad();
         const running = safe.get(a.observation.agentId)?.running;
         if (a.liveness.state === "running") {
           if (running?.value !== true || running.observedAt !== a.liveness.observedAt ||

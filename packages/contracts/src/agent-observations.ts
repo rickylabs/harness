@@ -47,6 +47,11 @@ export interface AgentCost {
   }>;
   /** These components overlap. There is deliberately no invented total. */
   readonly runTokens: CostRow<"run_tokens", "tokens", "dsh-telemetry.runs", "run", Omit<RunUsage, "costUsd">>;
+  /** Available only from a verified observer of the exact dispatch host. */
+  readonly localCapacity: CostRow<"local_capacity", "bytes", "dsh-telemetry.host-capacity", "host", {
+    readonly host: string; readonly ramUsedBytes: number; readonly ramTotalBytes: number | null;
+    readonly vramUsedBytes: number | null; readonly vramTotalBytes: number | null;
+  }>;
 }
 export interface AgentObservation {
   readonly agentId: string;
@@ -84,6 +89,7 @@ export function unavailableAgentCost(reason: AgentUnavailableReason = "source_no
     subscriptionHeadroom: { kind: "subscription_headroom", unit: "percent_remaining", source: "dsh-telemetry.governance.usage", scope: "subscription_account", ...absent },
     meteredSpend: { kind: "metered_spend", unit: "currency", source: "dsh-telemetry.runs", scope: "run", ...absent },
     runTokens: { kind: "run_tokens", unit: "tokens", source: "dsh-telemetry.runs", scope: "run", ...absent },
+    localCapacity: { kind: "local_capacity", unit: "bytes", source: "dsh-telemetry.host-capacity", scope: "host", ...absent },
   };
 }
 
@@ -196,10 +202,15 @@ function routeObservedReasons(value: unknown): OrchidRouteObservedReasons {
   return result as OrchidRouteObservedReasons;
 }
 function cost(value: unknown, at: string): AgentCost {
-  const r = record(value, ["subscriptionHeadroom", "meteredSpend", "runTokens"]);
+  // Read older 0.5.x frames while new producers always emit the fourth row.
+  const r = record(value, ["subscriptionHeadroom", "meteredSpend", "runTokens"], ["localCapacity"]);
   const expected = unavailableAgentCost();
   const result = {} as AgentCost;
-  for (const key of ["subscriptionHeadroom", "meteredSpend", "runTokens"] as const) {
+  for (const key of ["subscriptionHeadroom", "meteredSpend", "runTokens", "localCapacity"] as const) {
+    if (key === "localCapacity" && r[key] === undefined) {
+      Object.assign(result, { localCapacity: expected.localCapacity });
+      continue;
+    }
     const row = record(r[key], ["kind", "unit", "source", "scope", "availability", "measurement", "reason", "observedAt", "validUntil", "revision"]);
     for (const f of ["kind", "unit", "source", "scope"] as const) if (row[f] !== expected[key][f]) return bad();
     const available = row.availability === "available";
@@ -209,7 +220,7 @@ function cost(value: unknown, at: string): AgentCost {
       if (row.availability !== "unavailable" || row.measurement !== null) return bad();
       decoded = { ...expected[key], ...m, reason: choice(row.reason, AGENT_UNAVAILABLE_REASONS) };
     } else {
-      if (row.reason !== null || (key === "subscriptionHeadroom" && m.validUntil === null)) return bad();
+      if (row.reason !== null || ((key === "subscriptionHeadroom" || key === "localCapacity") && m.validUntil === null)) return bad();
       let measurement: unknown;
       if (key === "subscriptionHeadroom") {
         const x = record(row.measurement, ["remainingPercent", "windowMinutes", "resetsAt"]);
@@ -220,6 +231,16 @@ function cost(value: unknown, at: string): AgentCost {
         const x = record(row.measurement, ["amount", "currency", "accounting"]);
         if (x.currency !== "USD" || x.accounting !== "reported") return bad();
         measurement = { amount: number(x.amount, Number.MAX_VALUE, false), currency: "USD", accounting: "reported" };
+      } else if (key === "localCapacity") {
+        const x = record(row.measurement, ["host", "ramUsedBytes", "ramTotalBytes", "vramUsedBytes", "vramTotalBytes"]);
+        const host = text(x.host, /^[A-Za-z][A-Za-z0-9_-]{0,62}$/, 63);
+        const ramUsedBytes = number(x.ramUsedBytes);
+        const ramTotalBytes = x.ramTotalBytes === null ? null : number(x.ramTotalBytes);
+        const vramUsedBytes = x.vramUsedBytes === null ? null : number(x.vramUsedBytes);
+        const vramTotalBytes = x.vramTotalBytes === null ? null : number(x.vramTotalBytes);
+        if ((ramTotalBytes !== null && ramUsedBytes > ramTotalBytes) ||
+          (vramUsedBytes !== null && vramTotalBytes !== null && vramUsedBytes > vramTotalBytes)) return bad();
+        measurement = { host, ramUsedBytes, ramTotalBytes, vramUsedBytes, vramTotalBytes };
       } else {
         const keys = ["inputTokens", "outputTokens", "reasoningTokens", "cacheReadTokens", "cacheWriteTokens"];
         const x = record(row.measurement, [], keys);

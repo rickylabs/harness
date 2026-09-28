@@ -104,6 +104,20 @@ it("groups issue, dispatch, root and child without leaking native identity or pa
   assert.equal(root.endedAt, null); // updatedAt is last activity, even after a terminal outcome.
   assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
 });
+it("projects a certified dispatch host through root and child while withholding unverified capacity", () => {
+  const placed = build({ ...dispatch, host: "fixture-node" });
+  assert.equal(placed.complete, true);
+  for (const agent of placed.issues[0]?.dispatches[0]?.agents ?? []) {
+    assert.deepEqual(agent.location.host, { value: "fixture-node", basis: "placement", observedAt: at, reason: null });
+    assert.equal(agent.observation.cost.localCapacity.scope, "host");
+    assert.equal(agent.observation.cost.localCapacity.availability, "unavailable");
+    assert.equal(agent.observation.cost.localCapacity.reason, "observer-unavailable");
+  }
+  const unbound = build({ ...dispatch, host: "fixture.invalid" });
+  assert.equal(unbound.issues[0]?.dispatches[0]?.agents[0]?.location.host.reason, "source_not_bound");
+  assert.equal(unbound.issues[0]?.dispatches[0]?.agents[0]?.observation.cost.localCapacity.reason, "source_not_bound");
+  assert.ok(readIssueAgentTreeSnapshot(placed).ok);
+});
 it("keeps router unavailable when the dispatch has no validated gateway", () => {
   const snapshot = build({ ...dispatch,
     router: { value: null, source: "unavailable", reason: "source_not_bound" },

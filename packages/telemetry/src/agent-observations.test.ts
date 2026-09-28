@@ -72,7 +72,7 @@ it("dispatch-only: emits one decodable unknown agent without a native binding", 
     assert.equal(agent.running.reason, "observer-unavailable");
     assert.equal(agent.pane.value, dispatch.location?.paneId);
     assert.equal(agent.workspace.value, dispatch.location?.workspaceId);
-    assert.deepEqual(Object.keys(agent.cost), ["subscriptionHeadroom", "meteredSpend", "runTokens"]);
+    assert.deepEqual(Object.keys(agent.cost), ["subscriptionHeadroom", "meteredSpend", "runTokens", "localCapacity"]);
     for (const row of Object.values(agent.cost)) {
       assert.equal(row.availability, "unavailable");
       assert.equal(row.measurement, null);

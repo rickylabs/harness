@@ -17,6 +17,8 @@ export interface DispatchEvidence {
   readonly issue?: { readonly repo: string; readonly number: number } | null;
   readonly parentRunId?: string | null;
   readonly location?: { readonly paneId: string; readonly workspaceId: string } | null;
+  /** Configured short name, certified against the private native binding. */
+  readonly host?: string | null;
   /** Dispatch acknowledgement is not evidence of current liveness. */
   readonly dispatchState?: "launching" | "dispatched" | "uncertain";
   /** Sanitized dispatch-side identity; native RunSource cannot represent agy. */

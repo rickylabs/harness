@@ -1,7 +1,7 @@
 /** Pure per-issue projection of the existing dispatcher/native ancestry join. */
 import { createHash } from "node:crypto";
 import { readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_HISTORY, MAX_AGENT_OBSERVATIONS,
-  MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS,
+  MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, unavailableAgentCost,
   projectRouteIdentity,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
   type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
@@ -68,10 +68,18 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
         : { value: null, source: "unavailable", observedAt: null, reason: "measurement_missing" }
     : { value: null, source: "unavailable", observedAt: null, reason: "measurement_missing" };
   const unplaced = { value: null, basis: "unavailable", observedAt: null, reason: "source_not_bound" } as const;
+  const host = provenAncestry && dispatch.host && /^[A-Za-z][A-Za-z0-9_-]{0,62}$/.test(dispatch.host) &&
+    time(dispatch.observedAt, now) !== null
+    ? { value: dispatch.host, basis: "placement", observedAt: dispatch.observedAt!, reason: null } as const : unplaced;
+  // The existing cgroup reader explicitly lacks proof that its scope is this
+  // dispatch host. A bound host alone never makes a capacity reading available.
+  const capacity = unavailableAgentCost(host.value === null ? "source_not_bound" : "observer-unavailable").localCapacity;
+  const placedObservation = { ...observation, cost: { ...observation.cost, localCapacity: capacity },
+    revision: digest(JSON.stringify({ prior: observation.revision, host: host.value, capacity })) };
   const seam = run?.source ?? dispatch.source;
-  return { dispatchId: observation.assignment.id, observation, harness, provider, router,
+  return { dispatchId: observation.assignment.id, observation: placedObservation, harness, provider, router,
     routePolicy: observation.parentAgentId.state === "confirmed-root" ? dispatch.routePolicy ?? unavailablePolicy : unavailablePolicy, model,
-    location: { host: unplaced, container: unplaced, seat: unplaced },
+    location: { host, container: unplaced, seat: unplaced },
     budget: root ? dispatch.budget ?? { tokenLimit: null, source: "unavailable", reason: "source_not_bound" }
       : { tokenLimit: null, source: "unavailable", reason: "source_not_bound" },
     quotaRegime: seam === "codex" || seam === "claude" ? { value: "subscription", reason: null }

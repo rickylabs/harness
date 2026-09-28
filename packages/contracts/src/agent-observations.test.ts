@@ -21,7 +21,7 @@ function fixture(n = 1): AgentObservation {
 const envelope = (agents: readonly AgentObservation[] = [fixture()]): AgentObservations =>
   ({ schema: 1, protocol: 1, observedAt: at, revision: rev, complete: true, reason: null, agents });
 const refusal = (v: unknown, reason: string) => assert.deepEqual(readAgentObservations(v), { ok: false, reason });
-it("reads a whole tree with opaque identity, canonical mismatch evidence and three unavailable cost rows", () => {
+it("reads a whole tree with opaque identity, canonical mismatch evidence and four separate cost rows", () => {
   const child: AgentObservation = { ...fixture(2), parentAgentId: { state: "known-parent", value: id(1), reason: null } };
   const input = envelope([child, fixture()]);
   const read = readAgentObservations(input);
@@ -32,6 +32,7 @@ it("reads a whole tree with opaque identity, canonical mismatch evidence and thr
   assert.equal(read.observation.agents[0]?.cost.subscriptionHeadroom.unit, "percent_remaining");
   assert.equal(read.observation.agents[0]?.cost.meteredSpend.unit, "currency");
   assert.equal(read.observation.agents[0]?.cost.runTokens.unit, "tokens");
+  assert.equal(read.observation.agents[0]?.cost.localCapacity.scope, "host");
 });
 it("rejects unknown versions, incomplete reads and oversized arrays without returning any prefix", () => {
   refusal({ ...envelope(), schema: 2 }, "unsupported-schema");
@@ -86,8 +87,19 @@ it("validates measured rows separately with source revisions and validity, prese
     subscriptionHeadroom: { ...f.cost.subscriptionHeadroom, ...base, measurement: { remainingPercent: 75, windowMinutes: 60, resetsAt: null } },
     meteredSpend: { ...f.cost.meteredSpend, ...base, measurement: { amount: 0.25, currency: "USD", accounting: "reported" } as const },
     runTokens: { ...f.cost.runTokens, ...base, measurement: { inputTokens: 100, cacheReadTokens: 80 } },
+    localCapacity: { ...f.cost.localCapacity, ...base, measurement: { host: "fixture-node", ramUsedBytes: 100,
+      ramTotalBytes: 200, vramUsedBytes: null, vramTotalBytes: null } },
   };
   assert.ok(readAgentObservations(envelope([{ ...f, cost }])).ok);
+  refusal(envelope([{ ...f, cost: { ...cost, localCapacity: { ...cost.localCapacity, measurement: {
+    ...cost.localCapacity.measurement, host: "fixture.invalid" } } } }]), "invalid");
+  refusal(envelope([{ ...f, cost: { ...cost, localCapacity: { ...cost.localCapacity, measurement: {
+    ...cost.localCapacity.measurement, ramUsedBytes: 201 } } } }]), "invalid");
+  const legacy = { ...cost } as Record<string, unknown>;
+  delete legacy.localCapacity;
+  const old = readAgentObservations(envelope([{ ...f, cost: legacy as unknown as AgentObservation["cost"] }]));
+  assert.ok(old.ok);
+  assert.equal(old.observation.agents[0]?.cost.localCapacity.reason, "source_not_bound");
   refusal(envelope([{ ...f, cost: { ...cost, subscriptionHeadroom: { ...cost.subscriptionHeadroom, measurement: { remainingPercent: 101, windowMinutes: 60, resetsAt: null } } } }]), "invalid");
   refusal(envelope([{ ...f, cost: { ...cost, runTokens: { ...cost.runTokens, validUntil: "2025-12-31T23:00:00.000Z" } } }]), "invalid");
 });
