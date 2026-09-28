@@ -2,6 +2,7 @@
 import { randomUUID, createHash } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
 import { homedir } from "node:os";
+import { performance } from "node:perf_hooks";
 import type { Writable } from "node:stream";
 import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, readIssueAgentTreeSnapshot,
   type IssueAgentTree, type IssueAgentTreeFrame, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
@@ -11,6 +12,7 @@ import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./i
 import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
 import { matchesOrchidNativeRootIdentity } from "./orchid-native-binding.js";
 import { HOST_CAPACITY_PLACEMENT_HOST, readLocalHostCapacity } from "./host-capacity.js";
+import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
 export interface IssueAgentFeedOptions {
@@ -20,6 +22,8 @@ export interface IssueAgentFeedOptions {
   readonly now: string;
   /** Canonical, lower-case owner/repo#number. Omit for the full cockpit feed. */
   readonly issueKey?: string;
+  /** Private paths for a watch loop; never enter the public snapshot. */
+  readonly watchFiles?: Set<string>;
 }
 
 const PRE_DISPATCH_MS = 600_000;
@@ -69,6 +73,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       { limit: Math.min(options.limit, MAX_ISSUE_FILES), codexWindows: windows,
         codexRootMatches: id => group.dispatches.some(dispatch => matchesOrchidNativeRootIdentity(dispatch, id)),
         maxTranscriptBytes: MAX_TRANSCRIPT_BYTES, maxTotalBytes: remainingBytes });
+    for (const run of scan.runs) if (run.source === "codex") options.watchFiles?.add(run.origin);
     remainingBytes -= scan.bytesRead;
     if (scan.degraded) {
       entry.snapshot = unavailableSnapshot(options.now,
@@ -96,8 +101,13 @@ export interface IssueAgentFeedDependencies {
   readonly now?: () => string;
   readonly generation?: () => string;
   readonly wait?: (ms: number, signal: AbortSignal) => Promise<void>;
+  readonly elapsed?: () => number;
+  readonly changes?: IssueFeedChanges;
   readonly env?: Readonly<Record<string, string | undefined>>;
 }
+
+/** Below the 15-second contract freshness limit, including scan time. */
+const SAFETY_RESCAN_MS = 12_000;
 
 /** `--watch` writes full snapshots and heartbeats; every new process starts seq 0. */
 export async function issueAgentFeedCommand(args: readonly string[], deps: IssueAgentFeedDependencies = {}): Promise<number> {
@@ -126,10 +136,15 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
   const clock = deps.now ?? (() => new Date().toISOString());
   const collect = deps.collect ?? collectIssueAgentTree;
   const wait = deps.wait ?? ((ms: number, signal: AbortSignal) => sleep(ms, undefined, { signal }));
+  const elapsed = deps.elapsed ?? (() => performance.now());
   const env = deps.env ?? process.env;
+  const changes = watch ? deps.changes ?? (deps.collect === undefined
+    ? openIssueFeedChanges(env[ORCHID_DISPATCH_ROOT], defaultRoots(home).codexSessions!) : undefined) : undefined;
   const generation = deps.generation?.() ?? randomUUID();
   const abort = new AbortController();
   let stopped = false, seq = 0;
+  let cached: IssueAgentTreeSnapshot | undefined;
+  let scannedAt = Number.NEGATIVE_INFINITY;
   let rejectWrite: ((error: Error) => void) | undefined;
   const stop = () => { stopped = true; abort.abort(); rejectWrite?.(Error("output closed")); };
   output.on("error", stop); output.on("close", stop);
@@ -144,26 +159,39 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
   try {
     do {
       if (stopped) break;
-      const at = clock();
-      let snapshot: IssueAgentTreeSnapshot;
-      try { snapshot = await collect({ home, limit, env, now: at, ...(issueKey === undefined ? {} : { issueKey }) }); }
-      catch { snapshot = unavailableSnapshot(at); }
+      const changed = changes?.consume() ?? false;
+      const scan = cached === undefined || changed || elapsed() - scannedAt >= SAFETY_RESCAN_MS;
+      let snapshot = cached;
+      if (scan) {
+        const at = clock(), files = new Set<string>();
+        try { snapshot = await collect({ home, limit, env, now: at, watchFiles: files,
+          ...(issueKey === undefined ? {} : { issueKey }) }); }
+        catch { snapshot = unavailableSnapshot(at); }
+        changes?.setFiles(files);
+        scannedAt = elapsed();
+      }
       if (stopped) break;
+      if (snapshot === undefined) throw Error();
       const decoded = readIssueAgentTreeSnapshot(snapshot);
-      if (!decoded.ok) snapshot = unavailableSnapshot(at, decoded.reason === "oversized" ? "scan_limit" : "source_unavailable");
+      if (!decoded.ok) snapshot = unavailableSnapshot(clock(), decoded.reason === "oversized" ? "scan_limit" : "source_unavailable");
       else snapshot = decoded.snapshot;
       const emittedAt = clock();
-      if (emittedAt >= snapshot.validUntil) snapshot = unavailableSnapshot(emittedAt, "source_unavailable");
+      if (emittedAt >= snapshot.validUntil) {
+        // An event may be missed, but a heartbeat may not extend the last disk observation.
+        snapshot = unavailableSnapshot(emittedAt, "source_unavailable"); cached = undefined;
+      } else cached = snapshot;
       if (watch) {
         const frame: IssueAgentTreeFrame = { type: "snapshot", generation, sequence: seq++, snapshot };
         await write(frame);
       } else await write(snapshot);
       if (!watch) return snapshot.complete ? 0 : 3;
-      try { await wait(intervalMs, abort.signal); } catch { if (!stopped) throw Error(); }
+      const untilSafety = Math.max(1, SAFETY_RESCAN_MS - (elapsed() - scannedAt));
+      try { await wait(Math.min(intervalMs, untilSafety), abort.signal); } catch { if (!stopped) throw Error(); }
     } while (!stopped);
     return 0;
   } catch { process.stderr.write("issue-agents: output unavailable\n"); return 3; }
   finally {
+    changes?.close();
     process.removeListener("SIGINT", stop); process.removeListener("SIGTERM", stop);
     output.removeListener("error", stop); output.removeListener("close", stop);
   }

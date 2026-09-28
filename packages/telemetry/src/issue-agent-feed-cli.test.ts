@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { it } from "node:test";
 import { Writable } from "node:stream";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, open, rm, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, mkdtemp, open, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { collectIssueAgentTree, issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
 import { ORCHID_DISPATCH_ROOT } from "./orchid-dispatch.js";
 import type { IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 
 const at = "2026-01-01T00:00:00.000Z";
 const snapshot = (complete: boolean): IssueAgentTreeSnapshot => ({ schema: 1, protocol: 1, observedAt: at,
@@ -23,10 +24,12 @@ class Capture extends Writable {
 
 it("emits sequenced full snapshots, heartbeat, and degradation after success", async () => {
   const output = new Capture(); let calls = 0, waits = 0;
+  let dirty = false;
+  const changes: IssueFeedChanges = { consume() { const value = dirty; dirty = false; return value; }, setFiles() {}, close() {} };
   const code = await issueAgentFeedCommand(["--watch", "--interval-ms", "100"], {
-    output, now: () => at, generation: () => "generation-a", env: {},
+    output, now: () => at, generation: () => "generation-a", env: {}, changes,
     collect: async () => { calls++; if (calls === 3) throw Error("PRIVATE-PATH-CANARY"); return snapshot(true); },
-    wait: async () => { if (++waits === 3) output.emit("close"); },
+    wait: async () => { if (++waits < 3) dirty = true; else output.emit("close"); },
   });
   assert.equal(code, 0);
   const frames = output.lines.map(line => JSON.parse(line));
@@ -35,6 +38,74 @@ it("emits sequenced full snapshots, heartbeat, and degradation after success", a
   assert.deepEqual(frames.map(f => f.snapshot.complete), [true, true, false]);
   assert.equal(frames[2].snapshot.reason, "source_unavailable");
   assert.ok(!output.lines.join("").includes("PRIVATE-"));
+});
+it("heartbeats retain the last observation and a missed event recovers by the safety deadline", async () => {
+  const output = new Capture(); let elapsed = 0, scans = 0;
+  const times: number[] = [];
+  const changes: IssueFeedChanges = { consume: () => false, setFiles() {}, close() {} };
+  const code = await issueAgentFeedCommand(["--watch", "--interval-ms", "5000"], {
+    output, changes, generation: () => "generation-safety", elapsed: () => elapsed,
+    now: () => new Date(Date.parse(at) + elapsed).toISOString(),
+    collect: async options => {
+      scans++; times.push(elapsed);
+      return { ...snapshot(true), observedAt: options.now,
+        validUntil: new Date(Date.parse(options.now) + 15_000).toISOString() };
+    },
+    wait: async ms => { elapsed += ms; if (elapsed >= 25_000) output.emit("close"); },
+  });
+  assert.equal(code, 0);
+  assert.deepEqual(times, [0, 12_000, 24_000]);
+  assert.equal(scans, 3);
+  const frames = output.lines.map(line => JSON.parse(line));
+  assert.deepEqual(frames.map(f => f.snapshot.observedAt), [at, at, at,
+    new Date(Date.parse(at) + 12_000).toISOString(), new Date(Date.parse(at) + 12_000).toISOString(),
+    new Date(Date.parse(at) + 12_000).toISOString(), new Date(Date.parse(at) + 24_000).toISOString()]);
+  assert.ok(frames.every(f => f.snapshot.complete));
+});
+it("a source change collects at the next heartbeat without waiting for the safety scan", async () => {
+  const output = new Capture(); let elapsed = 0, dirty = false, scans = 0;
+  const changes: IssueFeedChanges = { consume() { const changed = dirty; dirty = false; return changed; }, setFiles() {}, close() {} };
+  const code = await issueAgentFeedCommand(["--watch"], {
+    output, changes, elapsed: () => elapsed, now: () => new Date(Date.parse(at) + elapsed).toISOString(),
+    collect: async options => { scans++; return { ...snapshot(true), observedAt: options.now,
+      validUntil: new Date(Date.parse(options.now) + 15_000).toISOString() }; },
+    wait: async ms => { elapsed += ms; if (elapsed === 5000) dirty = true; else output.emit("close"); },
+  });
+  assert.equal(code, 0);
+  assert.equal(scans, 2);
+  assert.deepEqual(output.lines.map(line => JSON.parse(line).snapshot.observedAt),
+    [at, new Date(Date.parse(at) + 5000).toISOString()]);
+});
+it("filesystem hints ignore unrelated appends but notice bound files, new files and receipts", async () => {
+  const root = await mkdtemp(join(tmpdir(), "issue-watch-"));
+  const receipts = join(root, "receipts"), sessions = join(root, "sessions");
+  const day = join(sessions, "2026", "09", "28");
+  const record = join(receipts, "fixture", "record");
+  await mkdir(day, { recursive: true }); await mkdir(record, { recursive: true });
+  const selected = join(day, "selected.jsonl"), unrelated = join(day, "unrelated.jsonl");
+  await writeFile(selected, "a"); await writeFile(unrelated, "a");
+  const changes = openIssueFeedChanges(receipts, sessions);
+  const eventually = async () => {
+    for (let i = 0; i < 30; i++) {
+      if (changes.consume()) return true;
+      await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    return false;
+  };
+  try {
+    changes.setFiles(new Set([selected]));
+    await new Promise(resolve => setTimeout(resolve, 50));
+    changes.consume();
+    await appendFile(unrelated, "b");
+    await new Promise(resolve => setTimeout(resolve, 50));
+    assert.equal(changes.consume(), false);
+    await appendFile(selected, "b");
+    assert.equal(await eventually(), true);
+    await writeFile(join(day, "new.jsonl"), "a");
+    assert.equal(await eventually(), true);
+    await writeFile(join(record, "binding.json"), "{}");
+    assert.equal(await eventually(), true);
+  } finally { changes.close(); await rm(root, { recursive: true, force: true }); }
 });
 it("a new process generation starts with seq zero and one-shot reports incompleteness", async () => {
   const output = new Capture();
