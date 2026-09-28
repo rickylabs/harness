@@ -49,6 +49,15 @@ it("accepts bounded activity and rejects mismatched usage, raw paths, and unsour
   assert.equal(read(withNode({ ...populated, tokenUsage: { ...populated.tokenUsage, budgetTokens: 1000 } })).ok, false);
   assert.equal(read(withNode({ ...populated, activity: { ...populated.activity,
     steps: [{ ...step, filePath: "/private/host/path" }] } })).ok, false);
+  for (const summary of ["Use recovery code 482916", "Check backup code ABCD-EFGH",
+    "Enter OTP 482916", "Check recovery phrase", "Enter 482916", "Use ABCD-EFGH"]) {
+    assert.equal(read(withNode({ ...populated, activity: { ...populated.activity,
+      steps: [{ ...step, summary }] } })).ok, false);
+  }
+  assert.equal(read(withNode({ ...populated, activity: { ...populated.activity,
+    steps: [{ ...step, summary: "Review code coverage" }] } })).ok, true);
+  assert.equal(read(withNode({ ...populated, activity: { ...populated.activity,
+    steps: [{ ...step, toolName: "functions.exec", commandHead: null, summary: "Used functions.exec" }] } })).ok, true);
   assert.equal(read(withNode({ ...populated, timeline: { ...populated.timeline,
     events: [{ ...event, kind: "goal-complete" }] } })).ok, false);
   assert.equal(read(withNode({ ...populated, timeline: { ...populated.timeline,

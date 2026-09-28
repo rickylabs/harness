@@ -12,6 +12,9 @@ it("publishes only bounded safe assistant activity from a Codex rollout", () => 
   assert.equal(step.filePath, null);
   assert.equal(step.summary, "Ran git status");
   assert.equal(codexActivity(command, origin, 3)[0]?.id, step.id);
+  const wrapped = codexActivity({ ...command, payload: { ...command.payload,
+    name: "functions.exec", arguments: JSON.stringify({ code: "return 1" }) } }, origin, 6)[0]!;
+  assert.equal(wrapped.summary, "Used functions.exec");
   const text = { timestamp: at, type: "response_item", payload: { type: "message", role: "assistant",
     content: [{ type: "output_text", text: "PRIVATE-PROMPT-CANARY https://private.invalid secret" }] } };
   assert.equal(codexActivity(text, origin, 4)[0]?.summary, "Agent message");
@@ -47,6 +50,9 @@ it("publishes only the single in-progress Codex plan step after the full privacy
   assert.equal(active.summary, "Review the parser");
   assert.equal(call([{ step: "Review the parser", status: "pending" }]).summary, "Used update_plan");
   assert.equal(call([{ step: "Secret credential", status: "in_progress" }]).summary, "Used update_plan");
+  assert.equal(call([{ step: "Use recovery code 482916", status: "in_progress" }]).summary, "Used update_plan");
+  assert.equal(call([{ step: "Check backup code ABCD-EFGH", status: "in_progress" }]).summary, "Used update_plan");
+  assert.equal(call([{ step: "Check recovery phrase", status: "in_progress" }]).summary, "Used update_plan");
   assert.equal(call([{ step: "Review the parser ".repeat(8), status: "in_progress" }]).summary, "Used update_plan");
   assert.equal(call([{ step: "One", status: "in_progress" }, { step: "Two", status: "in_progress" }]).summary, "Used update_plan");
 });
@@ -59,6 +65,9 @@ it("uses the Claude TodoWrite in-progress content without publishing unsafe text
     "Read the contract");
   assert.equal(call([{ content: "PRIVATE-URL-CANARY https://private.invalid", status: "in_progress" }]).summary,
     "Used TodoWrite");
+  assert.equal(call([{ content: "Use verification code 482916", status: "in_progress" }]).summary,
+    "Used TodoWrite");
+  assert.equal(call([{ content: "Use ABCD-EFGH", status: "in_progress" }]).summary, "Used TodoWrite");
   assert.equal(call([{ content: "Review the parser ".repeat(8), status: "in_progress" }]).summary, "Used TodoWrite");
   assert.equal(call([{ content: "Pending only", status: "pending" }]).summary, "Used TodoWrite");
 });
@@ -73,6 +82,10 @@ it("uses the first safe assistant sentence, and never truncates or echoes privat
   assert.equal(text("Read /fixture/path. Then continue."), "Agent message");
   assert.equal(text("Visit example.invalid. Then continue."), "Agent message");
   assert.equal(text("Check credential material. Then continue."), "Agent message");
+  assert.equal(text("Use recovery code 482916. Then continue."), "Agent message");
+  assert.equal(text("Enter OTP 482916. Then continue."), "Agent message");
+  assert.equal(text("Enter 482916. Then continue."), "Agent message");
+  assert.equal(text("Review code coverage. Then continue."), "Review code coverage.");
   const claude = claudeActivity({ timestamp: at, type: "assistant", message: { content: [
     { type: "text", text: "Run focused tests. Then review." },
   ] } }, "fixture-origin", 4)[0]!;

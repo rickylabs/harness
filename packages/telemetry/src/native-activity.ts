@@ -1,6 +1,6 @@
 /** Small public-safe native activity facts; raw tool input and prose never leave this reader. */
 import { createHash } from "node:crypto";
-import type { AgentActivityStep } from "@rickylabs/harness-contracts";
+import { publicActivityText, type AgentActivityStep } from "@rickylabs/harness-contracts";
 
 type Source = AgentActivityStep["source"];
 const object = (value: unknown): Record<string, unknown> | null => value !== null && typeof value === "object" &&
@@ -36,22 +36,11 @@ function commandHead(value: unknown): string | null {
   const second = words[1];
   return second && safeSubcommands[first]?.has(second) ? `${first} ${second}` : first;
 }
-/** Reject, do not partly print, prose that may contain a secret or operator location. */
-function safeText(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  if (/[\x00-\x1f\x7f]/.test(value)) return null;
-  const candidate = value.trim();
-  if (candidate.length < 3 || candidate.length > 120 ||
-      !/^[A-Za-z0-9][A-Za-z0-9 .,;:!?()'_-]*$/.test(candidate) ||
-      /(?:secret|password|credential|private|bearer|token|api.?key|github_pat_|gh[pousr]_|\bsk-[A-Za-z0-9]{12,})/i.test(candidate) ||
-      /(?:\b\d{1,3}(?:\.\d{1,3}){3}\b|\b[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+\b|\b[a-f0-9]{24,}\b|[A-Za-z0-9_-]{32,})/i.test(candidate)) return null;
-  return candidate;
-}
 function firstSentence(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const text = value.trimStart();
   const sentence = text.match(/^[^\r\n]*?[.!?](?=\s|$)/)?.[0] ?? text;
-  return safeText(sentence);
+  return publicActivityText(sentence);
 }
 function args(value: unknown): Record<string, unknown> | null {
   if (typeof value === "string" && value.length <= 4096) {
@@ -76,7 +65,7 @@ function fromTool(source: Source, origin: string, line: number, part: number, at
     : name === "TodoWrite" ? parsed?.["todos"] : null;
   if (Array.isArray(plan) && plan.length <= 32) {
     const current = plan.filter(item => object(item)?.["status"] === "in_progress");
-    const text = current.length === 1 ? safeText(object(current[0])?.[name === "TodoWrite" ? "content" : "step"]) : null;
+    const text = current.length === 1 ? publicActivityText(object(current[0])?.[name === "TodoWrite" ? "content" : "step"]) : null;
     if (text !== null) return step(source, origin, line, part, at, "message", toolName, null, null, text);
   }
   const command = commandHead(parsed?.["cmd"] ?? parsed?.["command"]);

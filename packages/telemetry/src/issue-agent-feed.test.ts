@@ -143,6 +143,26 @@ it("binds measured activity, token numerator, child spawn, and immutable action 
   assert.equal(child.timeline?.events.some(event => event.kind === "action-accepted"), false);
   assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
 });
+it("preserves incomplete action and event-overflow truncation when child spawn decorates the root", () => {
+  const observations = buildAgentObservations({ dispatches: [dispatch], runs, observedAt: later,
+    sourceBound: true, dispatchComplete: true, nativeComplete: true });
+  const rootId = observations.agents.find(agent => agent.parentAgentId.state === "confirmed-root")!.agentId;
+  const project = (actions: PublicActionReceipt[], actionsComplete: boolean) =>
+    buildIssueAgentTreeSnapshot({ observations, dispatches: [dispatch], runs, actions, actionsComplete });
+  const rootOf = (actions: PublicActionReceipt[], actionsComplete: boolean) =>
+    project(actions, actionsComplete).issues[0]!.dispatches[0]!.agents.find(agent =>
+      agent.observation.agentId === rootId)!;
+  assert.equal(rootOf([], false).timeline?.truncated, true);
+  assert.equal(rootOf([], true).timeline?.truncated, false);
+  const actions: PublicActionReceipt[] = Array.from({ length: 36 }, (_, i) => ({
+    schemaVersion: 1, operationId: `00000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`,
+    requestDigest: "a".repeat(64), repository: "example/project", issueNumber: 42, action: "steer",
+    agentId: rootId, dispatchId: observations.agents[0]!.assignment.id, outcome: "accepted",
+    reason: "prompt_delivered", observedAt: later, replacementAgentId: null, messageId: null,
+  }));
+  assert.equal(rootOf(actions, true).timeline?.events.length, 32);
+  assert.equal(rootOf(actions, true).timeline?.truncated, true);
+});
 it("never infers native child depth from the projected parent edge", () => {
   const missing = build(dispatch, [runs[0]!, run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT")]);
   const child = missing.issues[0]?.dispatches[0]?.agents.find(a => a.observation.parentAgentId.state === "known-parent");
