@@ -12,6 +12,7 @@
  */
 
 import type { GovernanceView } from "./observations.js";
+import type { TokenSamples } from "./token-samples.js";
 
 /**
  * Which store a run was recovered from.
@@ -141,6 +142,8 @@ export interface RunRecord {
   readonly branch: string | null;
   readonly identity: LaunchIdentity;
   readonly usage: RunUsage;
+  /** Bounded native cumulative samples; omitted by sources without measured history. */
+  readonly tokenSamples?: TokenSamples;
   /** Sanitized, bounded native work steps; never raw transcript content. */
   readonly activitySteps?: readonly import("@rickylabs/harness-contracts").AgentActivityStep[];
   readonly outcome: RunOutcome;

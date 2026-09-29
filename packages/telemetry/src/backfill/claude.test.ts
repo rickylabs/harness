@@ -78,6 +78,7 @@ describe("parseClaudeTranscript", () => {
       cacheReadTokens: 900,
       cacheWriteTokens: 7,
     });
+    assert.deepEqual(run.tokenSamples?.points, [{ at: "2026-09-04T22:05:00.000Z", usedTokens: 14 }]);
     assert.equal(run.origin, "/store/a.jsonl");
   });
 
@@ -94,6 +95,10 @@ describe("parseClaudeTranscript", () => {
     );
     assert.equal(run?.usage.inputTokens, 30);
     assert.equal(run?.usage.outputTokens, 3);
+    assert.deepEqual(run?.tokenSamples?.points, [
+      { at: "2026-09-04T22:05:00.000Z", usedTokens: 11 },
+      { at: "2026-09-04T22:09:00.000Z", usedTokens: 33 },
+    ]);
   });
 
   it("counts a repeated assistant UUID once and retains sanitized tool activity", () => {
@@ -104,6 +109,7 @@ describe("parseClaudeTranscript", () => {
     const run = parseRun(lines(user("PRIVATE-PROMPT-CANARY"), row, row), "fixture-origin");
     assert.equal(run?.usage.inputTokens, 6);
     assert.equal(run?.usage.outputTokens, 2);
+    assert.deepEqual(run?.tokenSamples?.points, [{ at: "2026-09-04T22:05:00.000Z", usedTokens: 8 }]);
     assert.equal(run?.activitySteps?.length, 1);
     assert.equal(run?.activitySteps?.[0]?.filePath, "src/index.ts");
     assert.ok(!JSON.stringify(run?.activitySteps).includes("PRIVATE-"));

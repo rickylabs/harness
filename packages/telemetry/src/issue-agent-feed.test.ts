@@ -134,11 +134,14 @@ it("projects bound root-dispatch revisions on root and child, and marks an old w
 });
 it("binds measured activity, token numerator, child spawn, and immutable action to the exact agent", () => {
   const rootRun = { ...run("PRIVATE-NATIVE-ROOT", null, "running"), usage: { inputTokens: 8, outputTokens: 3,
-    reasoningTokens: 2, cacheReadTokens: 5 }, activitySteps: [{ id: "step_" + "a".repeat(64), at,
+    reasoningTokens: 2, cacheReadTokens: 5 }, tokenSamples: { points: [
+      { at, usedTokens: 5 }, { at: later, usedTokens: 11 }], truncated: false, invalid: false },
+    activitySteps: [{ id: "step_" + "a".repeat(64), at,
       kind: "command", toolName: "exec_command", commandHead: "git status", filePath: null,
       summary: "Ran git status", source: "codex-rollout" }] } as RunRecord;
   const childRun = { ...run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT", "running"), nativeDepth: 1,
-    usage: { inputTokens: 2, outputTokens: 1 } } as RunRecord;
+    usage: { inputTokens: 2, outputTokens: 1 }, tokenSamples: { points: [{ at: later, usedTokens: 3 }],
+      truncated: false, invalid: false } } as RunRecord;
   const observations = buildAgentObservations({ dispatches: [dispatch], runs: [rootRun, childRun],
     observedAt: later, sourceBound: true, dispatchComplete: true, nativeComplete: true });
   const rootId = observations.agents.find(agent => agent.parentAgentId.state === "confirmed-root")!.agentId;
@@ -157,6 +160,13 @@ it("binds measured activity, token numerator, child spawn, and immutable action 
   assert.equal(root.tokenUsage?.budgetTokens, 1000);
   assert.equal(child.tokenUsage?.usedTokens, 3);
   assert.equal(child.tokenUsage?.budgetTokens, null);
+  assert.deepEqual(root.resourceHistory?.tokens, { points: [
+    { at, usedTokens: 5 }, { at: later, usedTokens: 11 }], truncated: false,
+    source: "codex-token-count", reason: null });
+  assert.deepEqual(root.resourceHistory?.budgets, { points: [
+    { at, tokenLimit: 1_000, source: "issue-override" }], truncated: false, reason: null });
+  assert.deepEqual(child.resourceHistory?.budgets, { points: [], truncated: false, reason: "source_not_bound" });
+  assert.equal(child.resourceHistory?.tokens.points.at(-1)?.usedTokens, 3);
   const raised: PublicActionReceipt = { ...accepted, action: "raise_budget", reason: "goal_budget_updated", tokenBudget: 1_500 };
   const projectRaised = (row: PublicActionReceipt, actionsComplete = true) => buildIssueAgentTreeSnapshot({
     observations, dispatches: [dispatch], runs: [rootRun, childRun], actions: [row], actionsComplete });
@@ -166,6 +176,10 @@ it("binds measured activity, token numerator, child spawn, and immutable action 
   assert.deepEqual(raisedRoot?.budget, { tokenLimit: 1_500, source: "action-receipt", reason: null });
   assert.equal(raisedRoot?.tokenUsage?.budgetTokens, 1_500);
   assert.equal(raisedChild?.budget.tokenLimit, null);
+  assert.deepEqual(raisedRoot?.resourceHistory?.budgets, { points: [
+    { at, tokenLimit: 1_000, source: "issue-override" },
+    { at: later, tokenLimit: 1_500, source: "action-receipt" }], truncated: false, reason: null });
+  assert.equal(raisedChild?.resourceHistory?.budgets.reason, "source_not_bound");
   assert.equal(readIssueAgentTreeSnapshot(raisedSnapshot).ok, true);
   for (const unsafe of [
     { ...raised, agentId: `agent_${"e".repeat(64)}` },
@@ -177,9 +191,12 @@ it("binds measured activity, token numerator, child spawn, and immutable action 
     const unraised = projectRaised(unsafe);
     const unraisedRoot = unraised.issues[0]?.dispatches[0]?.agents.find(agent => agent.observation.agentId === rootId);
     assert.equal(unraisedRoot?.budget.tokenLimit, 1_000);
+    assert.equal(unraisedRoot?.resourceHistory?.budgets.points.length, 1);
   }
   assert.equal(projectRaised(raised, false).issues[0]?.dispatches[0]?.agents
     .find(agent => agent.observation.agentId === rootId)?.budget.tokenLimit, 1_000);
+  assert.equal(projectRaised(raised, false).issues[0]?.dispatches[0]?.agents
+    .find(agent => agent.observation.agentId === rootId)?.resourceHistory?.budgets.reason, "source_incomplete");
   assert.equal(root.activity?.steps[0]?.summary, "Ran git status");
   assert.deepEqual(root.timeline?.events.map(event => event.kind), ["dispatched", "started", "subagent-spawned", "action-accepted"]);
   assert.equal(root.timeline?.events.find(event => event.kind === "subagent-spawned")?.relatedAgentId, child.observation.agentId);

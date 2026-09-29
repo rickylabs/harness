@@ -42,6 +42,46 @@ it("accepts a sourced current budget only as a positive receipt value on the roo
   assert.equal(read(withBudget({ tokenLimit: 0, source: "action-receipt", reason: null })).ok, false);
   assert.equal(read(withBudget({ tokenLimit: "PRIVATE-BUDGET", source: "action-receipt", reason: null })).ok, false);
 });
+it("decodes bounded source-backed resource history and rejects invented child budgets", () => {
+  const s = snapshot();
+  const budget = { tokenLimit: 1_000, source: "route-default", reason: null } as const;
+  const usage = { usedTokens: 7, budgetTokens: 1_000, observedAt: at,
+    source: "codex-token-count", reason: null } as const;
+  const resourceHistory = { tokens: { points: [{ at, usedTokens: 7 }], truncated: false,
+    source: "codex-token-count", reason: null },
+    budgets: { points: [{ at, tokenLimit: 1_000, source: "route-default" }],
+      truncated: false, reason: null } } as const;
+  const root = { ...node, parentAgentId: null, budget, tokenUsage: usage, resourceHistory };
+  const tree = (agents: unknown[]) => ({ ...s, issues: [{ ...s.issues[0],
+    dispatches: [{ dispatchId, agents }] }] });
+  assert.equal(read(tree([root])).ok, true);
+  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
+    tokens: { ...resourceHistory.tokens, points: [{ at, usedTokens: 8 }] } } }])).ok, false);
+  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
+    tokens: { ...resourceHistory.tokens, points: [{ at, usedTokens: Number.MAX_SAFE_INTEGER + 1 }] } } }])).ok, false);
+  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
+    tokens: { ...resourceHistory.tokens, points: [{ at: "2026-02-30T00:00:00.000Z", usedTokens: 7 }] } } }])).ok, false);
+  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
+    budgets: { ...resourceHistory.budgets, points: [{ at, tokenLimit: 900, source: "route-default" }] } } }])).ok, false);
+  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
+    budgets: { ...resourceHistory.budgets, points: [{ at, tokenLimit: 0, source: "route-default" }] } } }])).ok, false);
+  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
+    budgets: { ...resourceHistory.budgets, points: [{ at, tokenLimit: 1_000, source: "action-receipt" }] } } }])).ok, false);
+  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
+    tokens: { ...resourceHistory.tokens, truncated: true } } }])).ok, false);
+  const childObservation = { ...observation, agentId: "agent_" + "d".repeat(64),
+    parentAgentId: { state: "known-parent", value: observation.agentId, reason: null } };
+  const child = { ...root, observation: childObservation, parentAgentId: observation.agentId,
+    harness: { value: "codex", source: "native", reason: null },
+    budget: node.budget, tokenUsage: { ...usage, budgetTokens: null },
+    resourceHistory: { tokens: resourceHistory.tokens,
+      budgets: { points: [], truncated: false, reason: "source_not_bound" } } };
+  assert.equal(read(tree([root, child])).ok, true);
+  assert.equal(read(tree([root, { ...child, budget, tokenUsage: usage, resourceHistory }])).ok, false);
+  assert.equal(read(tree([{ ...node, resourceHistory: { tokens: { points: [], truncated: false,
+    source: "unavailable", reason: "source_not_bound" }, budgets: { points: [], truncated: false,
+    reason: "source_not_bound" } } }])).ok, true);
+});
 it("accepts a source-bound launch refusal with no agent and rejects unsourced or unsafe reasons", () => {
   const s = snapshot();
   const refusal = { state: "refused", reason: "routing-invalid", at, dispatchId, source: "orchid" };

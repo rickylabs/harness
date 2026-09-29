@@ -36,6 +36,7 @@ import { basename } from "node:path";
 
 import { linkedIssuesOf, type LaunchIdentity, type RunRecord, type RunUsage } from "../model.js";
 import { claudeActivity, recentActivity } from "../native-activity.js";
+import { TokenSampleCollector } from "../token-samples.js";
 import {
   NoteTally,
   type JsonObject,
@@ -181,6 +182,7 @@ export function parseClaudeTranscript(
   let model: string | null = null;
   let effort: string | null = null;
   const usage: Record<string, number> = {};
+  const tokenSamples = new TokenSampleCollector();
   const countedMessages = new Set<string>();
   const activityMessages = new Set<string>();
   let activity: NonNullable<RunRecord["activitySteps"]> = [];
@@ -247,6 +249,9 @@ export function parseClaudeTranscript(
         const messageId = str(line.uuid);
         if (reported !== null && (messageId === null || !countedMessages.has(messageId))) {
           addUsage(usage, reported);
+          if (Object.hasOwn(reported, "input_tokens") && Object.hasOwn(reported, "output_tokens"))
+            tokenSamples.observe(at, usage.inputTokens, usage.outputTokens);
+          else tokenSamples.observe(at, undefined, undefined);
           if (messageId !== null) countedMessages.add(messageId);
         }
       }
@@ -283,6 +288,7 @@ export function parseClaudeTranscript(
       branch,
       identity,
       usage: usage as RunUsage,
+      tokenSamples: tokenSamples.snapshot(),
       activitySteps: activity,
       // The Claude store writes no completion marker: a finished session and a session whose process
       // died mid-turn produce the same file. Reporting `unknown` is the honest reading; a caller

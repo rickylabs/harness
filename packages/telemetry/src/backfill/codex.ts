@@ -13,6 +13,7 @@
 
 import { linkedIssuesOf, type QuotaReading, type RunRecord, type RunUsage } from "../model.js";
 import { codexActivity, recentActivity } from "../native-activity.js";
+import { TokenSampleCollector } from "../token-samples.js";
 import {
   isoFromMillis,
   NoteTally,
@@ -152,6 +153,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
   let outcome: RunRecord["outcome"] = "unknown";
   let terminalCause: RunRecord["terminalCause"];
   const usage: Record<string, number> = {};
+  const tokenSamples = new TokenSampleCollector();
   const quota: QuotaReading[] = [];
   let activity: NonNullable<RunRecord["activitySteps"]> = [];
 
@@ -242,6 +244,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
           const value = num(total[wire]);
           if (value !== null) usage[field] = value;
         }
+        tokenSamples.observe(at, total["input_tokens"], total["output_tokens"]);
       }
       const limits = obj(payload["rate_limits"]);
       const reading = limits === null ? null : quotaFromRateLimits(limits, lastAt ?? "");
@@ -277,6 +280,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
       branch: null,
       identity: { model, effort, provider, profile: null },
       usage: usage as RunUsage,
+      tokenSamples: tokenSamples.snapshot(),
       activitySteps: activity,
       outcome,
       terminalCause,
