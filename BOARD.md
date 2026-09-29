@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **395/474 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 11 invisible**
+`[################----]` **395/478 done · 26 running · 23 queued · 8 blocked · 15 abandoned · 11 invisible**
 
-_Latest board activity: 2026-09-29T13:42:00Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-29T14:10:07Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (22)
+## Moving now (26)
 
 Something could be acting on these right now.
 
@@ -49,6 +49,10 @@ Something could be acting on these right now.
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 | [#485 Proof: Claude child running from matched hook ID](https://github.com/rickylabs/harness/issues/485) | `impl` | — |
+| [#487 [rickylabs/harness#466] App video: live Sol leaf dispatch and actions](https://github.com/rickylabs/harness/issues/487) | `plan` | — |
+| [#488 Preserve explicit OpenRouter launcher admission in Harness routing](https://github.com/rickylabs/harness/issues/488) | `ready-merge` | — |
+| [PR489 feat(routing): preserve explicit OpenRouter launcher admission](https://github.com/rickylabs/harness/pull/489) | `ready-merge` | — |
+| [#490 App video retake: scoped agent review and live actions](https://github.com/rickylabs/harness/issues/490) | `impl` | — |
 
 ## Not on the board (3)
 
@@ -60,13 +64,15 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
 | [#466 App video: live Sol leaf dispatch and actions](https://github.com/rickylabs/harness/issues/466) | — | — |
 
-## Anomalies (36)
+## Anomalies (38)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#488** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#489** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -119,7 +125,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 195/243 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 2 invisible
+`[#########---]` 195/244 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 2 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -134,11 +140,11 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
-| _(no epic)_ | `[#########---]` 6/8 done · 1 blocked · 1 invisible | — |
+| _(no epic)_ | `[########----]` 6/9 done · 1 running · 1 blocked · 1 invisible | — |
 
 ### (no milestone)
 
-`[##########--]` 200/231 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 9 invisible
+`[##########--]` 200/234 done · 8 running · 3 queued · 5 blocked · 9 abandoned · 9 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -146,7 +152,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 170/195 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 7 invisible | — |
+| _(no epic)_ | `[##########--]` 170/198 done · 7 running · 2 queued · 3 blocked · 9 abandoned · 7 invisible | — |
 
 ## Waiting to start
 
@@ -187,9 +193,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  395/474 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 11 invisible
+# rickylabs/harness  [################----]  395/478 done · 26 running · 23 queued · 8 blocked · 15 abandoned · 11 invisible
 
-## M1 — dsh coordinator foundation  [################----]  195/243 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 2 invisible
+## M1 — dsh coordinator foundation  [###############-----]  195/244 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 2 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -468,8 +474,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
     no status            #466 App video: live Sol leaf dispatch and actions
+    impl                 #490 App video retake: scoped agent review and live actions
 
-## (no milestone)  [#################---]  200/231 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 9 invisible
+## (no milestone)  [#################---]  200/234 done · 8 running · 3 queued · 5 blocked · 9 abandoned · 9 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -715,6 +722,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR484 Fix Claude child hook ID correlation
     impl                 #485 Proof: Claude child running from matched hook ID
     shipped              PR486 Select independent evaluator from fleet routing data
+    plan                 #487 [rickylabs/harness#466] App video: live Sol leaf dispatch and actions
+    ready-merge          #488 Preserve explicit OpenRouter launcher admission in Harness routing
+    ready-merge          PR489 feat(routing): preserve explicit OpenRouter launcher admission
 ```
 
 </details>
