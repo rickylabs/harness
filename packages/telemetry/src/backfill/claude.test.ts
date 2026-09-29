@@ -115,6 +115,33 @@ describe("parseClaudeTranscript", () => {
     assert.ok(!JSON.stringify(run?.activitySteps).includes("PRIVATE-"));
   });
 
+  it("counts one response once although Claude Code writes a line per content block", () => {
+    // Each content block of one API response gets its own line and UUID, and every line repeats the
+    // response's usage. Summing per line doubled Claude token counts on the live issue feed.
+    const block = (uuid: string, at: string, usage: Record<string, number>, id = "msg_1") =>
+      assistant(usage, { uuid, timestamp: at, message: { id, role: "assistant", model: "claude-opus-5", usage } });
+    const full = { input_tokens: 4, output_tokens: 250, cache_read_input_tokens: 9000, cache_creation_input_tokens: 70 };
+    const run = parseRun(
+      lines(
+        user("go"),
+        block("a1", "2026-09-04T22:05:00.000Z", full),
+        block("a2", "2026-09-04T22:05:01.000Z", full),
+        block("a3", "2026-09-04T22:05:02.000Z", { ...full, output_tokens: 400 }),
+        block("a4", "2026-09-04T22:05:03.000Z", { ...full, output_tokens: 300 }),
+        block("b1", "2026-09-04T22:06:00.000Z", { input_tokens: 1, output_tokens: 10, cache_read_input_tokens: 9100 }, "msg_2"),
+      ),
+      "o",
+    );
+    // msg_1 counts once at its largest output; a later smaller line never subtracts. msg_2 adds.
+    assert.deepEqual(run?.usage, { inputTokens: 5, outputTokens: 410, cacheReadTokens: 18100, cacheWriteTokens: 70 });
+    assert.deepEqual(run?.tokenSamples?.points, [
+      { at: "2026-09-04T22:05:00.000Z", usedTokens: 254 },
+      { at: "2026-09-04T22:05:02.000Z", usedTokens: 404 },
+      { at: "2026-09-04T22:06:00.000Z", usedTokens: 415 },
+    ]);
+    assert.equal(run?.tokenSamples?.invalid, false);
+  });
+
   it("prefers the session's own name over the first prompt", () => {
     // Both are prose and neither survives onto the record, so the issue numbers are what makes the
     // precedence observable: #98 comes from the session name and #7 from the prompt it replaced.

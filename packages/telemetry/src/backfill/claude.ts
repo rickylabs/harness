@@ -146,8 +146,15 @@ const obj = (value: unknown): JsonObject | null =>
     ? (value as JsonObject)
     : null;
 
-/** Add only the fields the vendor actually reported: an absent count is not a zero. */
-function addUsage(into: Record<string, number>, usage: JsonObject): void {
+/**
+ * Add only the fields the vendor actually reported: an absent count is not a zero.
+ *
+ * Claude Code writes one transcript line per content block of a response, each repeating that
+ * response's usage, and a later line can carry a larger output count than an earlier one. A
+ * response is therefore counted once, at the largest value seen for each field: a repeated line
+ * adds only its growth over what that response already contributed, and never subtracts.
+ */
+function addUsage(into: Record<string, number>, counted: Record<string, number>, usage: JsonObject): void {
   const map: Record<string, keyof RunUsage> = {
     input_tokens: "inputTokens",
     output_tokens: "outputTokens",
@@ -156,7 +163,11 @@ function addUsage(into: Record<string, number>, usage: JsonObject): void {
   };
   for (const [wire, field] of Object.entries(map)) {
     const value = num(usage[wire]);
-    if (value !== undefined) into[field] = (into[field] ?? 0) + value;
+    if (value === undefined) continue;
+    const growth = value - (counted[field] ?? 0);
+    if (growth <= 0 && counted[field] !== undefined) continue;
+    into[field] = (into[field] ?? 0) + growth;
+    counted[field] = value;
   }
 }
 
@@ -183,7 +194,8 @@ export function parseClaudeTranscript(
   let effort: string | null = null;
   const usage: Record<string, number> = {};
   const tokenSamples = new TokenSampleCollector();
-  const countedMessages = new Set<string>();
+  // Per response: the usage already added for it, field by field.
+  const countedMessages = new Map<string, Record<string, number>>();
   const activityMessages = new Set<string>();
   let activity: NonNullable<RunRecord["activitySteps"]> = [];
 
@@ -246,13 +258,18 @@ export function parseClaudeTranscript(
         model = str(message["model"]) ?? model;
         effort = str(line.effort) ?? effort;
         const reported = obj(message["usage"]);
-        const messageId = str(line.uuid);
-        if (reported !== null && (messageId === null || !countedMessages.has(messageId))) {
-          addUsage(usage, reported);
+        // The response id groups the lines of one response; a line without one stands alone by its UUID.
+        const messageId = str(message["id"]) ?? str(line.uuid);
+        if (reported !== null) {
+          let counted = messageId === null ? {} : countedMessages.get(messageId);
+          if (counted === undefined) {
+            counted = {};
+            countedMessages.set(messageId!, counted);
+          }
+          addUsage(usage, counted, reported);
           if (Object.hasOwn(reported, "input_tokens") && Object.hasOwn(reported, "output_tokens"))
             tokenSamples.observe(at, usage.inputTokens, usage.outputTokens);
           else tokenSamples.observe(at, undefined, undefined);
-          if (messageId !== null) countedMessages.add(messageId);
         }
       }
     }
