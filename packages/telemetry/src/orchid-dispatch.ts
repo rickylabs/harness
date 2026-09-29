@@ -26,7 +26,7 @@ const label = (value: unknown): value is string => typeof value === "string" &&
 const object = (value: unknown): Record<string, unknown> | null =>
   value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 /** Receipt reasons are public only after exact source, route and fixed-text validation. */
-async function readRouteObservedReasons(record: string, source: string, model: string): Promise<{
+async function readRouteObservedReasons(record: string, source: string, model: string, dispatchMatrixSource: unknown): Promise<{
   readonly reasons: OrchidRouteObservedReasons; readonly policy: AgentRoutePolicy; readonly matrixRevision: string | null;
 }> {
   const unavailable = { reasons: unavailableOrchidRouteReasons(), policy: {
@@ -60,11 +60,17 @@ async function readRouteObservedReasons(record: string, source: string, model: s
     }
     const resolution = object(receipt.resolution);
     const digest = resolution?.digest;
+    // Both absent is a historical NetScript writer. New Harness writers must
+    // bind the same repository in dispatch.json and the immutable policy receipt.
+    const policyName = dispatchMatrixSource === undefined && resolution?.sourceRepository === undefined
+      ? "netscript-matrix"
+      : dispatchMatrixSource === "rickylabs/harness" && resolution?.sourceRepository === "rickylabs/harness"
+        ? "harness-matrix" : null;
     return { reasons: result as OrchidRouteObservedReasons,
-      policy: typeof digest === "string" && hash.test(digest)
-        ? { value: "netscript-matrix", digest, source: "dispatch", reason: null }
-        : unavailable.policy,
-      matrixRevision: typeof digest === "string" && hash.test(digest) &&
+      policy: policyName !== null && typeof digest === "string" && hash.test(digest)
+        ? { value: policyName, digest, source: "dispatch", reason: null }
+        : { value: null, digest: null, source: "unavailable", reason: "binding_invalid" },
+      matrixRevision: policyName !== null && typeof digest === "string" && hash.test(digest) &&
         typeof resolution?.sourceRevision === "string" && commit.test(resolution.sourceRevision)
         ? resolution.sourceRevision : null };
   } catch { return unavailable; }
@@ -209,7 +215,7 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         const at = typeof timestamp === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(timestamp) &&
           Number.isFinite(Date.parse(timestamp)) && new Date(timestamp).toISOString() === timestamp ? timestamp : undefined;
         if (at === undefined) throw new Error();
-        const receipt = await readRouteObservedReasons(record, input.source as string, input.model as string);
+        const receipt = await readRouteObservedReasons(record, input.source as string, input.model as string, input.matrixSource);
         const launch = await readOrchidLaunchBinding(record, key, input.host, input.profileRevision, revision);
         const oldWriter = !Object.hasOwn(input, "profileRevision") && !Object.hasOwn(input, "matrixRevision");
         const pin = (value: string | null, reason: "source_not_bound" | "binding_invalid"): AgentLaunchRevision => value === null

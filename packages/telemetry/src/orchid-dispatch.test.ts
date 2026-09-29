@@ -86,6 +86,31 @@ it("carries validated Orchid observed reasons and withholds corrupt receipt text
     assert.equal(first?.routeObservedReasons?.model.reason, reason);
     assert.deepEqual(first?.routePolicy, { value: "netscript-matrix", digest: "b".repeat(64), source: "dispatch", reason: null });
     assert.equal(first?.routeObservedReasons?.transport.reasonCode, "observer-unavailable");
+    const harnessReceipt = { ...receipt, resolution: { ...receipt.resolution, sourceRepository: "rickylabs/harness" } };
+    const harnessDispatch = { ...fixture, matrixSource: "rickylabs/harness", matrixRevision: "a".repeat(40) };
+    await s.write(harnessDispatch);
+    await writeFile(path, JSON.stringify(harnessReceipt));
+    let sourced = (await readOrchidDispatches(s.root)).dispatches[0];
+    assert.deepEqual(sourced?.routePolicy, { value: "harness-matrix", digest: "b".repeat(64), source: "dispatch", reason: null });
+    assert.equal(sourced?.matrixRevision?.value, "a".repeat(40));
+    await s.write({ ...fixture, matrixRevision: "a".repeat(40) });
+    sourced = (await readOrchidDispatches(s.root)).dispatches[0];
+    assert.equal(sourced?.routePolicy?.value, null); // receipt only
+    assert.equal(sourced?.matrixRevision?.value, null);
+    await s.write(harnessDispatch);
+    await writeFile(path, JSON.stringify(receipt));
+    sourced = (await readOrchidDispatches(s.root)).dispatches[0];
+    assert.equal(sourced?.routePolicy?.value, null); // dispatch only
+    await s.write({ ...harnessDispatch, matrixSource: "example/unknown" });
+    await writeFile(path, JSON.stringify({ ...harnessReceipt, resolution: { ...receipt.resolution, sourceRepository: "example/unknown" } }));
+    sourced = (await readOrchidDispatches(s.root)).dispatches[0];
+    assert.equal(sourced?.routePolicy?.value, null); // unsupported source cannot become trusted policy
+    await s.write({ ...harnessDispatch, matrixSource: "example/other" });
+    await writeFile(path, JSON.stringify(harnessReceipt));
+    sourced = (await readOrchidDispatches(s.root)).dispatches[0];
+    assert.equal(sourced?.routePolicy?.value, null); // conflicting sources
+    await s.write(fixture);
+    await writeFile(path, JSON.stringify(receipt));
     // Orchid's requested effort can differ from the effective dispatch effort.
     assert.equal(receipt.requested.effort, "medium");
     assert.equal(fixture.effort, "high");

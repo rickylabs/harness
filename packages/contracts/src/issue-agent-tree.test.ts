@@ -287,6 +287,8 @@ it("retains sourced zero, rejects invalid budgets and unsupported router claims"
   assert.equal(read(mutate({ harness: { value: "opencode", source: "dispatch", reason: null },
     router: { value: "openai", source: "dispatch", reason: null } })).ok, false);
   assert.equal(read(mutate({ routePolicy: { value: "netscript-matrix", digest: rev, source: "dispatch", reason: null } })).ok, true);
+  assert.equal(read(mutate({ routePolicy: { value: "harness-matrix", digest: rev, source: "dispatch", reason: null } })).ok, true);
+  assert.equal(read(mutate({ routePolicy: { value: "unknown-matrix", digest: rev, source: "dispatch", reason: null } })).ok, false);
   assert.equal(read(mutate({ routePolicy: { value: "netscript-matrix", digest: "PRIVATE-CANARY", source: "dispatch", reason: null } })).ok, false);
   assert.equal(read(mutate({ model: { value: "home/agent/private", source: "native", reason: null } })).ok, false);
   assert.equal(read(mutate({ location: { ...node.location, host: { value: "home/agent/private", basis: "placement", observedAt: at, reason: null } } })).ok, false);
