@@ -814,3 +814,12 @@ native identifiers and unbound attempt references are rejected.
 This is a sourced fact for Cockpit's workflow ledger, not an owner approval. Cockpit still
 checks reviewer identity, cross-vendor policy, allowed actions and its separate approval boundary
 before releasing a phase. It retains the private evidence behind the opaque ID.
+
+## Verifier presence at workflow save (0.22.0)
+
+`readWorkflowRevisionForSave` applies the existing bounded revision reader, then requires every
+phase that declares a `verifierRole` to have a directly dependent evaluator phase with that role.
+It returns a per-field `verifier_missing` error when the evaluator is absent or disconnected.
+`readWorkflowRevision` and bundle import remain compatible with older stored revisions; Cockpit
+uses the strict reader before approving a new draft. The reader validates graph shape, not route
+authority or private writer-file ownership, which Cockpit must check against its pinned sources.
