@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **400/481 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 12 invisible**
+`[################----]` **400/482 done · 24 running · 23 queued · 8 blocked · 15 abandoned · 12 invisible**
 
-_Latest board activity: 2026-09-29T14:56:58Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-29T15:37:31Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (23)
+## Moving now (24)
 
 Something could be acting on these right now.
 
@@ -50,6 +50,7 @@ Something could be acting on these right now.
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 | [#490 App video retake: scoped agent review and live actions](https://github.com/rickylabs/harness/issues/490) | `impl` | — |
 | [#493 Prove sourced Claude child terminal state after root teardown](https://github.com/rickylabs/harness/issues/493) | `impl` | — |
+| [#494 [rickylabs/harness#490] App video retake: scoped agent review and live actions](https://github.com/rickylabs/harness/issues/494) | `plan` | — |
 
 ## Not on the board (2)
 
@@ -137,7 +138,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 205/237 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 10 invisible
+`[##########--]` 205/238 done · 6 running · 3 queued · 5 blocked · 9 abandoned · 10 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -145,7 +146,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 175/201 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 8 invisible | — |
+| _(no epic)_ | `[##########--]` 175/202 done · 5 running · 2 queued · 3 blocked · 9 abandoned · 8 invisible | — |
 
 ## Waiting to start
 
@@ -186,7 +187,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  400/481 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 12 invisible
+# rickylabs/harness  [################----]  400/482 done · 24 running · 23 queued · 8 blocked · 15 abandoned · 12 invisible
 
 ## M1 — dsh coordinator foundation  [###############-----]  195/244 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 2 invisible
 
@@ -469,7 +470,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #466 App video: live Sol leaf dispatch and actions
     impl                 #490 App video retake: scoped agent review and live actions
 
-## (no milestone)  [#################---]  205/237 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 10 invisible
+## (no milestone)  [#################---]  205/238 done · 6 running · 3 queued · 5 blocked · 9 abandoned · 10 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -721,6 +722,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #491 End verified Claude children only after root process absence
     shipped              PR492 End verified Claude child after root process absence
     impl                 #493 Prove sourced Claude child terminal state after root teardown
+    plan                 #494 [rickylabs/harness#490] App video retake: scoped agent review and live actions
 ```
 
 </details>
