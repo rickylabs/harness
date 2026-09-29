@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **403/486 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 14 invisible**
+`[################----]` **405/487 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 14 invisible**
 
-_Latest board activity: 2026-09-29T18:55:37Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-29T19:36:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (23)
+## Moving now (22)
 
 Something could be acting on these right now.
 
@@ -49,7 +49,6 @@ Something could be acting on these right now.
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 | [PR495 test(telemetry): app-video-retake--490 review evidence](https://github.com/rickylabs/harness/pull/495) | `impl-eval` | — |
-| [#497 Video proof: app-dispatched Claude root with one native sub-agent](https://github.com/rickylabs/harness/issues/497) | `impl` | — |
 
 ## Not on the board (2)
 
@@ -118,7 +117,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 195/245 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
+`[#########---]` 196/245 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -133,11 +132,11 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
-| _(no epic)_ | `[#######-----]` 6/10 done · 1 running · 1 blocked · 2 invisible | — |
+| _(no epic)_ | `[########----]` 7/10 done · 1 blocked · 2 invisible | — |
 
 ### (no milestone)
 
-`[##########--]` 208/241 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 11 invisible
+`[##########--]` 209/242 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 11 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -145,7 +144,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 178/205 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 9 invisible | — |
+| _(no epic)_ | `[##########--]` 179/206 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 9 invisible | — |
 
 ## Waiting to start
 
@@ -186,9 +185,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  403/486 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 14 invisible
+# rickylabs/harness  [################----]  405/487 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 14 invisible
 
-## M1 — dsh coordinator foundation  [###############-----]  195/245 done · 18 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
+## M1 — dsh coordinator foundation  [################----]  196/245 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -468,9 +467,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
     no status            #466 App video: live Sol leaf dispatch and actions
     no status            #490 App video retake: scoped agent review and live actions
-    impl                 #497 Video proof: app-dispatched Claude root with one native sub-agent
+    shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
 
-## (no milestone)  [#################---]  208/241 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 11 invisible
+## (no milestone)  [#################---]  209/242 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 11 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -726,6 +725,7 @@ Open, and carrying no `status:` label — real work no column can see.
     impl-eval            PR495 test(telemetry): app-video-retake--490 review evidence (draft)
     shipped              PR496 feat(routing): port the matrix query viewer from NetScript (p2)
     shipped              PR498 chore(runs): record the owner override for feature/implementation (p1)
+    shipped              #499 [rickylabs/harness#497] Video proof: app-dispatched Claude root with one native sub-agent
 ```
 
 </details>
