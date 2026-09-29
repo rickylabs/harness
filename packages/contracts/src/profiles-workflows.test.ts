@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { it } from "node:test";
-import { encodeWorkflowRevisionBundle, readProfileRef, readRoutineRevision,
+import { encodeWorkflowRevisionBundle, MAX_ROUTINE_WAKE_COALESCE, readProfileRef, readRoutineRevision,
+  readRoutineWake,
   readWorkflowRevision, readWorkflowRevisionBundle, readWorkflowRun } from "./profiles-workflows.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
@@ -17,6 +18,9 @@ const workflow = { schema: 1, workflowId: id, revision: digest, createdByRunId: 
   phases: [phase, { ...phase, id: "review", dependsOn: ["plan"], writerScopeIds: ["scope_" + "d".repeat(32)] }] } as const;
 const routine = { schema: 1, routineId: id2, revision: digest, workflowId: id, workflowRevision: digest,
   trigger: { kind: "label", filterDigest: digest }, overlapPolicy: "coalesce", missedRunPolicy: "skip" } as const;
+const wake = { schema: 1, routineId: id2, routineRevision: digest, workflowId: id,
+  workflowRevision: digest, triggerKind: "label", idempotencyKey: "c".repeat(64),
+  coalesceCount: 2, firstObservedAt: at, lastObservedAt: "2026-09-28T21:25:00.123456790Z" } as const;
 const unknown = { value: null, source: "unavailable", observedAt: null, reason: "source_not_bound" } as const;
 const attempt = { id: id2, phaseId: "plan", state: "blocked", outcome: null, blockKind: "needs_input",
   dispatchId: null, agentId: null, startedAt: null, endedAt: null,
@@ -102,6 +106,39 @@ it("reads routine policies but not raw filters, paths or an invalid schedule", (
   assert.ok(fields(readRoutineRevision({ ...routine, trigger: { kind: "schedule", cron: "rm -rf /",
     timeZone: "/private/host" } })).includes("routine.trigger.cron"));
   assert.ok(fields(readRoutineRevision({ ...routine, overlapPolicy: "run_twice" })).includes("routine.overlapPolicy"));
+});
+
+it("binds a bounded wake to its routine revision without claiming an effect", () => {
+  const read = readRoutineWake(wake, routine);
+  assert.equal(read.ok, true);
+  if (read.ok) {
+    assert.equal(read.value.coalesceCount, 2);
+    assert.equal(Object.hasOwn(read.value, "issueCreated"), false);
+    assert.equal(Object.hasOwn(read.value, "dispatchId"), false);
+  }
+  assert.ok(fields(readRoutineWake({ ...wake, routineRevision: "d".repeat(64) }, routine))
+    .includes("wake.routineRevision"));
+  assert.ok(fields(readRoutineWake({ ...wake, workflowRevision: "d".repeat(64) }, routine))
+    .includes("wake.workflowRevision"));
+  assert.ok(fields(readRoutineWake({ ...wake, triggerKind: "schedule" }, routine))
+    .includes("wake.triggerKind"));
+  assert.ok(fields(readRoutineWake(wake, { ...routine, overlapPolicy: "skip" }))
+    .includes("wake.coalesceCount"));
+  assert.ok(fields(readRoutineWake(wake, { ...routine, trigger: { kind: "label", filterDigest: digest,
+    label: "private fixture" } })).includes("source.routine.trigger.label"));
+});
+
+it("rejects raw trigger identity, zero or unbounded fan-in, and nanosecond time reversal", () => {
+  assert.ok(fields(readRoutineWake({ ...wake, idempotencyKey: "private-event-key" }, routine))
+    .includes("wake.idempotencyKey"));
+  assert.ok(fields(readRoutineWake({ ...wake, triggerPayload: "private fixture" }, routine))
+    .includes("wake.triggerPayload"));
+  for (const count of [0, -1, 1.5, MAX_ROUTINE_WAKE_COALESCE + 1])
+    assert.ok(fields(readRoutineWake({ ...wake, coalesceCount: count }, routine))
+      .includes("wake.coalesceCount"));
+  assert.ok(fields(readRoutineWake({ ...wake,
+    lastObservedAt: "2026-09-28T21:25:00.123456788Z" }, routine))
+    .includes("wake.lastObservedAt"));
 });
 
 it("retains blocked claims and separates measured zero from unknown cost", () => {

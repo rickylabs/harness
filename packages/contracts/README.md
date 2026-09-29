@@ -784,3 +784,19 @@ instructions, paths, actors, grants and extra fields. A successful read is **dat
 not grant access, approve a draft, change the active revision or write to storage. Cockpit must
 authorize the scope, resolve the pinned profile and route, and append its own reviewed revision
 and decision ledger entries when importing.
+
+## Routine wake facts (0.20.0)
+
+`readRoutineWake(value, source)` validates a bounded public observation against a validated
+`RoutineRevision` from Cockpit storage. The wake carries exact routine/workflow pins, the
+trigger kind, an opaque 256-bit hex idempotency key, first/last observed times, and a coalesce
+count from 1 through `MAX_ROUTINE_WAKE_COALESCE`. The reader rejects mismatched pins or
+trigger kind, raw event payloads, malformed keys, count overflow and reversed timestamps
+even when both timestamps fall in the same millisecond.
+Counts above one require a coalescing overlap or missed-run policy in the bound revision.
+
+Cockpit owns trigger identity, key generation, authorization, deduplication and scheduling;
+it must not publish a plain hash of guessable event data as the key.
+This record reports trigger observations only; it does not assert that Cockpit created an
+issue or that Orchid launched an agent. The caller must supply the immutable revision from
+its trusted storage, not a revision supplied by the wake sender.
