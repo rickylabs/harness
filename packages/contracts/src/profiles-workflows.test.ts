@@ -3,7 +3,8 @@ import { createHash } from "node:crypto";
 import { it } from "node:test";
 import { encodeWorkflowRevisionBundle, MAX_ROUTINE_WAKE_COALESCE, readProfileRef, readRoutineRevision,
   readRoutineWake,
-  readWorkflowReviewObservation, readWorkflowRevision, readWorkflowRevisionBundle,
+  readWorkflowReviewObservation, readWorkflowRevision, readWorkflowRevisionForSave,
+  readWorkflowRevisionBundle,
   readWorkflowRun } from "./profiles-workflows.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
@@ -98,6 +99,28 @@ it("reads an immutable DAG and rejects cycles, duplicate phases and writer paths
   assert.ok(fields(readWorkflowRevision({ ...workflow, phases: [
     { ...phase, writerScopeIds: ["src/private/file.ts"] }] })).includes("workflow.phases[0].writerScopeIds[0]"));
   assert.ok(fields(readWorkflowRevision({ ...workflow, instructions: "raw agent prompt" })).includes("workflow.instructions"));
+});
+
+it("requires a directly dependent evaluator when saving, without rejecting older reads", () => {
+  const evaluatorProfile = { ...profile, name: "plan-reviewer", title: "Plan reviewer",
+    role: "plan_evaluation", tier: "straightforward" } as const;
+  const evaluator = { ...phase, id: "review", profile: evaluatorProfile, dependsOn: ["plan"],
+    writerScopeIds: ["scope_" + "d".repeat(32)], outputKind: "report", verifierRole: null } as const;
+  const saveable = { ...workflow, phases: [phase, evaluator] };
+  assert.equal(readWorkflowRevisionForSave(saveable).ok, true);
+  assert.equal(readWorkflowRevision(workflow).ok, true);
+  assert.ok(fields(readWorkflowRevisionForSave(workflow)).includes("workflow.phases[0].verifierRole"));
+  assert.ok(fields(readWorkflowRevisionForSave({ ...workflow, phases: [phase] }))
+    .includes("workflow.phases[0].verifierRole"));
+  assert.ok(fields(readWorkflowRevisionForSave({ ...saveable,
+    phases: [phase, { ...evaluator, dependsOn: [] }] }))
+    .includes("workflow.phases[0].verifierRole"));
+  assert.ok(fields(readWorkflowRevisionForSave({ ...saveable,
+    phases: [phase, { ...evaluator, profile }] }))
+    .includes("workflow.phases[0].verifierRole"));
+  assert.ok(fields(readWorkflowRevisionForSave({ ...saveable,
+    phases: [phase, { ...evaluator, instructions: "private fixture" }] }))
+    .includes("workflow.phases[1].instructions"));
 });
 
 it("binds allow, block and escalate to an ended, separate evaluator attempt", () => {

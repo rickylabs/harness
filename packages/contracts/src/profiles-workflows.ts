@@ -343,6 +343,19 @@ function validateWorkflowRevision(value: unknown, out: Problem[]) {
 export function readWorkflowRevision(value: unknown): WorkflowRead<WorkflowRevision> {
   return safeRead(value, "workflow", validateWorkflowRevision);
 }
+/** New drafts must include the evaluator they declare. Stored revisions remain readable above. */
+export function readWorkflowRevisionForSave(value: unknown): WorkflowRead<WorkflowRevision> {
+  const read = readWorkflowRevision(value);
+  if (!read.ok) return read;
+  const problems: Problem[] = [];
+  read.value.phases.forEach((phase, i) => {
+    if (phase.verifierRole === null) return;
+    const present = read.value.phases.some(candidate =>
+      candidate.profile.role === phase.verifierRole && candidate.dependsOn.includes(phase.id));
+    if (!present) problem(problems, `workflow.phases[${i}].verifierRole`, "verifier_missing");
+  });
+  return result(read.value, problems);
+}
 function validateWorkflowBundle(value: unknown, out: Problem[], withDigest: boolean, ordered: boolean) {
   const v = record(value, "bundle", ["schema", "kind", "workflowId", "revisions", "decisions",
     ...(withDigest ? ["bundleDigest"] : [])], [], out);
