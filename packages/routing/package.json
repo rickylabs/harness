@@ -13,16 +13,18 @@
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json",
-    "./config/*.json": "./config/*.json"
+    "./config/*.json": "./config/*.json",
+    "./matrix/*": "./matrix/*"
   },
   "files": [
     "dist",
-    "config"
+    "config",
+    "matrix"
   ],
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --emitDeclarationOnly",
-    "test": "tsc -b && node --test \"dist/**/*.test.js\"",
+    "test": "tsc -b && node --test \"dist/**/*.test.js\" matrix/*.test.mjs",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
