@@ -2,6 +2,7 @@
 name: leaf
 title: Implementation teammate
 role: implementation
+defaultTier: feature
 description: Delivers one scoped change through a gated pull request.
 skills:
   - use harness
