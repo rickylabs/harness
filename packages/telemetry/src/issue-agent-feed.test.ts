@@ -97,6 +97,8 @@ it("ends a verified Claude sidechain only after its own dispatch has seat and pr
   const before = tree(claudeDispatch);
   assert.equal(child(before)?.liveness.state, "unknown"); // matched Stop, no fresh Start
   assert.equal(child(before)?.endedAt, null);
+  const transcriptTurnEnd = tree(claudeDispatch, [native[0]!, { ...native[1]!, outcome: "complete" }]);
+  assert.equal(child(transcriptTurnEnd)?.liveness.state, "unknown"); // no Claude session completion marker
   assert.equal(child(tree(claudeDispatch, native, new Map([[childEventKey(rootId, childId), later]])))
     ?.liveness.state, "running"); // resume after Stop is a new running observation
   const seatOnly = tree({ ...claudeDispatch, teardown: { cause: "teardown", seatObservedAt: seatAt,
