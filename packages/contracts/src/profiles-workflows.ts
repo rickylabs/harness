@@ -33,7 +33,7 @@ export interface ProfileRef {
   /** Exact target-repository commit and digest of profiles/<name>.md. */
   readonly profileRevision: string;
   readonly profileDigest: string;
-  /** Exact pinned NetScript matrix commit. */
+  /** Exact pinned matrix source commit. */
   readonly matrixRevision: string;
   readonly guardrailDigest: string;
   readonly budget: ProfileBudget;
@@ -159,6 +159,22 @@ export type WorkflowReviewObservation = {
       readonly evidenceId: string }
   | { readonly status: "reviewer_error"; readonly verdict: null; readonly evidenceId: null }
 );
+
+/** Cockpit's private artifact ledger supplies this opaque reference after a phase dispatch ends. */
+export interface WorkflowArtifactObservation {
+  readonly schema: 1;
+  readonly runId: string;
+  readonly workflowId: string;
+  readonly workflowRevision: string;
+  readonly phaseId: string;
+  readonly attemptId: string;
+  readonly dispatchId: string;
+  readonly artifactId: string;
+  readonly outputKind: WorkflowPhase["outputKind"];
+  readonly outputSchemaDigest: string;
+  readonly source: "artifact-ledger";
+  readonly observedAt: string;
+}
 
 type Problem = { field: string; code: string };
 /** Copy only bounded JSON data so a decoded contract never retains caller objects or runs getters. */
@@ -663,5 +679,50 @@ export function readWorkflowReviewObservation(value: unknown, runSource: unknown
     if (time(v.observedAt) && time(reviewer?.endedAt) &&
         utcNanoseconds(v.observedAt as string) < utcNanoseconds(reviewer!.endedAt!))
       problem(out, "review.observedAt", "before_reviewer_end");
+  });
+}
+
+/** Validates the public claim; the caller must independently verify the private ledger row exists. */
+export function readWorkflowArtifactObservation(value: unknown, runSource: unknown,
+    revisionSource: unknown): WorkflowRead<WorkflowArtifactObservation> {
+  const run = readWorkflowRun(runSource);
+  if (!run.ok) return { ok: false, problems: run.problems.map(entry => ({
+    field: `source.${entry.field}`, code: entry.code })) };
+  const revision = readWorkflowRevision(revisionSource);
+  if (!revision.ok) return { ok: false, problems: revision.problems.map(entry => ({
+    field: `source.${entry.field}`, code: entry.code })) };
+  if (run.value.workflowId !== revision.value.workflowId ||
+      run.value.workflowRevision !== revision.value.revision)
+    return { ok: false, problems: [{ field: "source.workflowRevision", code: "mismatch" }] };
+  return safeRead(value, "artifact", (copy, out) => {
+    const v = record(copy, "artifact", ["schema", "runId", "workflowId", "workflowRevision",
+      "phaseId", "attemptId", "dispatchId", "artifactId", "outputKind",
+      "outputSchemaDigest", "source", "observedAt"], [], out);
+    if (!v) return;
+    field(out, "artifact.schema", v.schema, x => x === 1);
+    field(out, "artifact.runId", v.runId, x => uuid(x) && x === run.value.id);
+    field(out, "artifact.workflowId", v.workflowId, x => uuid(x) && x === run.value.workflowId);
+    field(out, "artifact.workflowRevision", v.workflowRevision,
+      x => digest(x) && x === run.value.workflowRevision);
+    field(out, "artifact.attemptId", v.attemptId, uuid);
+    const attempt = run.value.attempts.find(item => item.id === v.attemptId);
+    if (!attempt || attempt.state !== "ended" || attempt.outcome !== "succeeded")
+      problem(out, "artifact.attemptId", "successful_terminal_source_required");
+    field(out, "artifact.phaseId", v.phaseId,
+      x => phaseId(x) && x === attempt?.phaseId);
+    const phase = revision.value.phases.find(item => item.id === v.phaseId);
+    if (!phase) problem(out, "artifact.phaseId", "pinned_phase_required");
+    field(out, "artifact.dispatchId", v.dispatchId,
+      x => opaqueDispatch(x) && x === attempt?.dispatchId);
+    field(out, "artifact.artifactId", v.artifactId, uuid);
+    field(out, "artifact.outputKind", v.outputKind,
+      x => x === phase?.outputKind);
+    field(out, "artifact.outputSchemaDigest", v.outputSchemaDigest,
+      x => digest(x) && x === phase?.outputSchemaDigest);
+    field(out, "artifact.source", v.source, x => x === "artifact-ledger");
+    field(out, "artifact.observedAt", v.observedAt, time);
+    if (time(v.observedAt) && time(attempt?.endedAt) &&
+        utcNanoseconds(v.observedAt as string) < utcNanoseconds(attempt!.endedAt!))
+      problem(out, "artifact.observedAt", "before_attempt_end");
   });
 }

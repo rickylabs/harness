@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { it } from "node:test";
 import { encodeWorkflowRevisionBundle, MAX_ROUTINE_WAKE_COALESCE, readProfileRef, readRoutineRevision,
   readRoutineWake,
-  readWorkflowReviewObservation, readWorkflowRevision, readWorkflowRevisionForSave,
+  readWorkflowArtifactObservation, readWorkflowReviewObservation, readWorkflowRevision, readWorkflowRevisionForSave,
   readWorkflowRevisionBundle,
   readWorkflowRun } from "./profiles-workflows.js";
 
@@ -136,6 +136,36 @@ it("serializes shared writer scopes only when phases are transitively ordered", 
     .includes("workflow.phases[1].writerScopeIds[0]"));
   assert.equal(readWorkflowRevisionForSave({ ...workflow, phases: [first,
     { ...last, dependsOn: [], writerScopeIds: ["scope_" + "f".repeat(32)] }] }).ok, true);
+});
+
+it("binds a phase artifact to a successful ended dispatch and pinned output", () => {
+  const dispatchId = "assignment_" + "e".repeat(64);
+  const ended = { ...attempt, state: "ended", outcome: "succeeded", blockKind: null,
+    dispatchId, startedAt: at, endedAt: at } as const;
+  const sourceRun = { ...run, state: "running", blockKind: null, attempts: [ended] };
+  const observation = { schema: 1, runId: id2, workflowId: id, workflowRevision: digest,
+    phaseId: "plan", attemptId: id2, dispatchId, artifactId: id3, outputKind: "plan",
+    outputSchemaDigest: digest, source: "artifact-ledger",
+    observedAt: "2026-09-28T21:25:00.123456790Z" } as const;
+  assert.equal(readWorkflowArtifactObservation(observation, sourceRun, workflow).ok, true);
+  const badAttempt = (changed: Record<string, unknown>) => fields(readWorkflowArtifactObservation(
+    observation, { ...sourceRun, attempts: [{ ...ended, ...changed }] }, workflow));
+  assert.ok(badAttempt({ state: "running", outcome: null, endedAt: null }).includes("artifact.attemptId"));
+  assert.ok(badAttempt({ outcome: "failed" }).includes("artifact.attemptId"));
+  assert.ok(badAttempt({ dispatchId: null }).includes("artifact.dispatchId"));
+  assert.ok(fields(readWorkflowArtifactObservation({ ...observation,
+    observedAt: "2026-09-28T21:25:00.123456788Z" }, sourceRun, workflow))
+    .includes("artifact.observedAt"));
+  assert.ok(fields(readWorkflowArtifactObservation({ ...observation,
+    outputKind: "report" }, sourceRun, workflow)).includes("artifact.outputKind"));
+  assert.ok(fields(readWorkflowArtifactObservation({ ...observation,
+    outputSchemaDigest: "c".repeat(64) }, sourceRun, workflow)).includes("artifact.outputSchemaDigest"));
+  assert.ok(fields(readWorkflowArtifactObservation({ ...observation,
+    workflowRevision: "c".repeat(64) }, sourceRun, workflow)).includes("artifact.workflowRevision"));
+  assert.ok(fields(readWorkflowArtifactObservation({ ...observation,
+    artifactId: "private/file" }, sourceRun, workflow)).includes("artifact.artifactId"));
+  assert.ok(fields(readWorkflowArtifactObservation({ ...observation,
+    content: "private text" }, sourceRun, workflow)).includes("artifact.content"));
 });
 
 it("binds allow, block and escalate to an ended, separate evaluator attempt", () => {
