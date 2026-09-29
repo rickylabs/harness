@@ -12,7 +12,7 @@ Shipped by [`packages/board`](../../../packages/board). This page is *what it do
 | code | name | meaning |
 | --- | --- | --- |
 | `0` | `ok` | clean: the board was read and it agrees with itself |
-| `1` | `anomalies` | the board contradicts itself (check only) |
+| `1` | `anomalies` | the board contradicts itself (check), or a current check on the pull request fails (checks) |
 | `2` | `usage` | the command line was wrong |
 | `3` | `unavailable` | no usable transport: gh missing, unauthenticated, or unable to reach GitHub |
 | `4` | `failed` | dsh-board itself failed |
@@ -33,6 +33,8 @@ usage:
   dsh-board digest [--repo <owner/name>]     the board as a markdown page, for committing
   dsh-board snapshot [--repo <owner/name>]   the projection as JSON
   dsh-board doctor                           report transport and detected repository
+  dsh-board checks --pr <n> [--repo <owner/name>] [--pretty]
+                                             latest run per check on the PR head; exit 1 if one fails
 
 options:
   --repo <owner/name>   repository to project; defaults to the one in the working directory
@@ -42,7 +44,7 @@ options:
 
 exit codes:
   0  clean: the board was read and it agrees with itself
-  1  the board contradicts itself (check only)
+  1  the board contradicts itself (check), or a current check on the pull request fails (checks)
   2  the command line was wrong
   3  no usable transport: gh missing, unauthenticated, or unable to reach GitHub
   4  dsh-board itself failed

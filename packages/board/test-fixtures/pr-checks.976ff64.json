@@ -1,0 +1,2194 @@
+{
+  "source": "rickylabs/netscript",
+  "sourceRevision": "976ff64811130f21f7d44cd93dc5a69a4dcfb74e",
+  "sourcePath": ".llm/tools/agentic/github/pr-checks.ts",
+  "cases": [
+    {
+      "name": "empty",
+      "runs": [],
+      "jobs": [],
+      "result": {
+        "merged": [],
+        "checks": [],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "single pass",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "fail failure",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-fail"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": false,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "failure",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-fail"
+            }
+          ],
+          "currentFailures": 1
+        },
+        "exit": 1,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":false,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"failure\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-fail\"}],\"currentFailures\":1}"
+      }
+    },
+    {
+      "name": "fail action_required",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "action_required",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "action_required",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "action_required",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-fail"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": false,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "action_required",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-fail"
+            }
+          ],
+          "currentFailures": 1
+        },
+        "exit": 1,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":false,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"action_required\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-fail\"}],\"currentFailures\":1}"
+      }
+    },
+    {
+      "name": "fail startup_failure",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "startup_failure",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "startup_failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "startup_failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-fail"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": false,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "startup_failure",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-fail"
+            }
+          ],
+          "currentFailures": 1
+        },
+        "exit": 1,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":false,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"startup_failure\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-fail\"}],\"currentFailures\":1}"
+      }
+    },
+    {
+      "name": "fail timed_out",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "timed_out",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "timed_out",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "timed_out",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-fail"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": false,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "timed_out",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-fail"
+            }
+          ],
+          "currentFailures": 1
+        },
+        "exit": 1,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":false,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"timed_out\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-fail\"}],\"currentFailures\":1}"
+      }
+    },
+    {
+      "name": "non-fail conclusion neutral",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "neutral",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "neutral",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "neutral",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "neutral",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"neutral\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "non-fail conclusion skipped",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "skipped",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "skipped",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "skipped",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "skipped",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"skipped\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "non-fail conclusion stale",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "stale",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "stale",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "stale",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "stale",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"stale\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "non-fail conclusion null",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": null,
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": null,
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":null,\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "cancelled",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "cancelled",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "cancelled",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "cancelled"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "cancelled",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "cancelled"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"cancelled\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"cancelled\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "pending queued",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "queued",
+          "conclusion": null,
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "queued",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "queued",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "pending"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "queued",
+              "conclusion": null,
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "pending"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"queued\",\"conclusion\":null,\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"pending\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "pending in_progress",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "in_progress",
+          "conclusion": null,
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "in_progress",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "in_progress",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "pending"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "in_progress",
+              "conclusion": null,
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "pending"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"in_progress\",\"conclusion\":null,\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"pending\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "pending waiting",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "waiting",
+          "conclusion": null,
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "waiting",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "waiting",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "pending"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "waiting",
+              "conclusion": null,
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "pending"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"waiting\",\"conclusion\":null,\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"pending\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "pending requested",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "requested",
+          "conclusion": null,
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "requested",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "requested",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "pending"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "requested",
+              "conclusion": null,
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "pending"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"requested\",\"conclusion\":null,\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"pending\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "other head is stale",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "OLD",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "OLD",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "OLD",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "stale-post-merge"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "OLD",
+              "status": "completed",
+              "conclusion": "failure",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "stale-post-merge"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"OLD\",\"status\":\"completed\",\"conclusion\":\"failure\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"stale-post-merge\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "started after merge is stale",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T12:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "mergedAt": "2026-08-03T11:00:00Z",
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T12:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T12:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "stale-post-merge"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T12:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "stale-post-merge"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T12:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"stale-post-merge\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "started before merge is current",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "mergedAt": "2026-08-03T11:00:00Z",
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-fail"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": false,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "failure",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-fail"
+            }
+          ],
+          "currentFailures": 1
+        },
+        "exit": 1,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":false,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"failure\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-fail\"}],\"currentFailures\":1}"
+      }
+    },
+    {
+      "name": "later same name supersedes",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        },
+        {
+          "id": 2,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:05:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          },
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:05:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "superseded"
+          },
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:05:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "failure",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "superseded"
+            },
+            {
+              "id": 2,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T10:05:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"failure\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"superseded\"},{\"id\":2,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T10:05:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "tie on time breaks by id",
+      "runs": [
+        {
+          "id": 7,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        },
+        {
+          "id": 3,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 7,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          },
+          {
+            "id": 3,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 7,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-pass"
+          },
+          {
+            "id": 3,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "superseded"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 7,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-pass"
+            },
+            {
+              "id": 3,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "failure",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "superseded"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":7,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-pass\"},{\"id\":3,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"failure\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"superseded\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "latest attempt beats a later start",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T11:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [
+        {
+          "id": 200,
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:03:00Z",
+          "check_run_url": "https://api.github.com/repos/o/n/check-runs/2",
+          "run_id": 10,
+          "run_attempt": 2
+        }
+      ],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T11:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          },
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T11:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "superseded"
+          },
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true,
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "failure",
+              "started_at": "2026-08-03T11:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "superseded"
+            },
+            {
+              "id": 2,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:03:00Z",
+              "latest_attempt": true,
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"failure\",\"started_at\":\"2026-08-03T11:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"superseded\"},{\"id\":2,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:03:00Z\",\"latest_attempt\":true,\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "job supersedes stale failed run",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [
+        {
+          "id": 200,
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:02:00Z",
+          "completed_at": "2026-08-03T10:03:00Z",
+          "check_run_url": "https://api.github.com/repos/o/n/check-runs/2",
+          "run_id": 10,
+          "run_attempt": 2
+        }
+      ],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          },
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:02:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "superseded"
+          },
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:02:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true,
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "failure",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "superseded"
+            },
+            {
+              "id": 2,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T10:02:00Z",
+              "completed_at": "2026-08-03T10:03:00Z",
+              "latest_attempt": true,
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"failure\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"superseded\"},{\"id\":2,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T10:02:00Z\",\"completed_at\":\"2026-08-03T10:03:00Z\",\"latest_attempt\":true,\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "job supersedes stale cancellation",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [
+        {
+          "id": 200,
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:02:00Z",
+          "completed_at": "2026-08-03T10:03:00Z",
+          "check_run_url": "https://api.github.com/repos/o/n/check-runs/2",
+          "run_id": 10,
+          "run_attempt": 2
+        }
+      ],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "cancelled",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          },
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:02:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "cancelled",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "superseded"
+          },
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:02:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true,
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "cancelled",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "superseded"
+            },
+            {
+              "id": 2,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T10:02:00Z",
+              "completed_at": "2026-08-03T10:03:00Z",
+              "latest_attempt": true,
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"cancelled\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"superseded\"},{\"id\":2,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T10:02:00Z\",\"completed_at\":\"2026-08-03T10:03:00Z\",\"latest_attempt\":true,\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "failed latest job stays failing",
+      "runs": [
+        {
+          "id": 1,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [
+        {
+          "id": 200,
+          "name": "test",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T10:02:00Z",
+          "completed_at": "2026-08-03T10:03:00Z",
+          "check_run_url": "https://api.github.com/repos/o/n/check-runs/2",
+          "run_id": 10,
+          "run_attempt": 2
+        }
+      ],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          },
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:02:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "superseded"
+          },
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:02:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true,
+            "classification": "current-fail"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": false,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "superseded"
+            },
+            {
+              "id": 2,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "failure",
+              "started_at": "2026-08-03T10:02:00Z",
+              "completed_at": "2026-08-03T10:03:00Z",
+              "latest_attempt": true,
+              "classification": "current-fail"
+            }
+          ],
+          "currentFailures": 1
+        },
+        "exit": 1,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":false,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"superseded\"},{\"id\":2,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"failure\",\"started_at\":\"2026-08-03T10:02:00Z\",\"completed_at\":\"2026-08-03T10:03:00Z\",\"latest_attempt\":true,\"classification\":\"current-fail\"}],\"currentFailures\":1}"
+      }
+    },
+    {
+      "name": "job replaces its own check run and keeps its url",
+      "runs": [
+        {
+          "id": 2,
+          "name": "test",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z",
+          "html_url": "https://example/2"
+        }
+      ],
+      "jobs": [
+        {
+          "id": 200,
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:02:00Z",
+          "completed_at": "2026-08-03T10:03:00Z",
+          "check_run_url": "https://api.github.com/repos/o/n/check-runs/2",
+          "run_id": 10,
+          "run_attempt": 2
+        }
+      ],
+      "result": {
+        "merged": [
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:02:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "html_url": "https://example/2",
+            "latest_attempt": true
+          }
+        ],
+        "checks": [
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:02:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "html_url": "https://example/2",
+            "latest_attempt": true,
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 2,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T10:02:00Z",
+              "completed_at": "2026-08-03T10:03:00Z",
+              "html_url": "https://example/2",
+              "latest_attempt": true,
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":2,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T10:02:00Z\",\"completed_at\":\"2026-08-03T10:03:00Z\",\"html_url\":\"https://example/2\",\"latest_attempt\":true,\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "job without start uses workflow run start",
+      "runs": [],
+      "jobs": [
+        {
+          "id": 200,
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": null,
+          "completed_at": "2026-08-03T10:03:00Z",
+          "check_run_url": "https://api.github.com/repos/o/n/check-runs/2",
+          "run_id": 10,
+          "run_attempt": 2,
+          "workflow_run_started_at": "2026-08-03T09:00:00Z"
+        }
+      ],
+      "result": {
+        "merged": [
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T09:00:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true
+          }
+        ],
+        "checks": [
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T09:00:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true,
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 2,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T09:00:00Z",
+              "completed_at": "2026-08-03T10:03:00Z",
+              "latest_attempt": true,
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":2,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T09:00:00Z\",\"completed_at\":\"2026-08-03T10:03:00Z\",\"latest_attempt\":true,\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "job without any start uses epoch",
+      "runs": [],
+      "jobs": [
+        {
+          "id": 200,
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": null,
+          "completed_at": "2026-08-03T10:03:00Z",
+          "check_run_url": "https://api.github.com/repos/o/n/check-runs/2",
+          "run_id": 10,
+          "run_attempt": 2
+        }
+      ],
+      "result": {
+        "merged": [
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "1970-01-01T00:00:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true
+          }
+        ],
+        "checks": [
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "1970-01-01T00:00:00Z",
+            "completed_at": "2026-08-03T10:03:00Z",
+            "latest_attempt": true,
+            "classification": "current-pass"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 2,
+              "name": "test",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "1970-01-01T00:00:00Z",
+              "completed_at": "2026-08-03T10:03:00Z",
+              "latest_attempt": true,
+              "classification": "current-pass"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":2,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"1970-01-01T00:00:00Z\",\"completed_at\":\"2026-08-03T10:03:00Z\",\"latest_attempt\":true,\"classification\":\"current-pass\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "pending job",
+      "runs": [],
+      "jobs": [
+        {
+          "id": 200,
+          "name": "test",
+          "status": "in_progress",
+          "conclusion": null,
+          "started_at": "2026-08-03T10:02:00Z",
+          "completed_at": null,
+          "check_run_url": "https://api.github.com/repos/o/n/check-runs/2",
+          "run_id": 10,
+          "run_attempt": 2
+        }
+      ],
+      "result": {
+        "merged": [
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "in_progress",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:02:00Z",
+            "completed_at": null,
+            "latest_attempt": true
+          }
+        ],
+        "checks": [
+          {
+            "id": 2,
+            "name": "test",
+            "head_sha": "H",
+            "status": "in_progress",
+            "conclusion": null,
+            "started_at": "2026-08-03T10:02:00Z",
+            "completed_at": null,
+            "latest_attempt": true,
+            "classification": "pending"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": true,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 2,
+              "name": "test",
+              "head_sha": "H",
+              "status": "in_progress",
+              "conclusion": null,
+              "started_at": "2026-08-03T10:02:00Z",
+              "completed_at": null,
+              "latest_attempt": true,
+              "classification": "pending"
+            }
+          ],
+          "currentFailures": 0
+        },
+        "exit": 0,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":true,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":2,\"name\":\"test\",\"head_sha\":\"H\",\"status\":\"in_progress\",\"conclusion\":null,\"started_at\":\"2026-08-03T10:02:00Z\",\"completed_at\":null,\"latest_attempt\":true,\"classification\":\"pending\"}],\"currentFailures\":0}"
+      }
+    },
+    {
+      "name": "two names mixed",
+      "runs": [
+        {
+          "id": 1,
+          "name": "a",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        },
+        {
+          "id": 2,
+          "name": "b",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T10:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        },
+        {
+          "id": 3,
+          "name": "a",
+          "head_sha": "H",
+          "status": "completed",
+          "conclusion": "failure",
+          "started_at": "2026-08-03T09:00:00Z",
+          "completed_at": "2026-08-03T10:01:00Z"
+        }
+      ],
+      "jobs": [],
+      "result": {
+        "merged": [
+          {
+            "id": 1,
+            "name": "a",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          },
+          {
+            "id": 2,
+            "name": "b",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          },
+          {
+            "id": 3,
+            "name": "a",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T09:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z"
+          }
+        ],
+        "checks": [
+          {
+            "id": 1,
+            "name": "a",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-pass"
+          },
+          {
+            "id": 2,
+            "name": "b",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T10:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "current-fail"
+          },
+          {
+            "id": 3,
+            "name": "a",
+            "head_sha": "H",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-08-03T09:00:00Z",
+            "completed_at": "2026-08-03T10:01:00Z",
+            "classification": "superseded"
+          }
+        ],
+        "report": {
+          "gate": "pr-checks",
+          "ok": false,
+          "repo": "o/n",
+          "pr": 7,
+          "headSha": "H",
+          "evaluatedAt": "2026-08-03T12:30:00.000Z",
+          "checks": [
+            {
+              "id": 1,
+              "name": "a",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "success",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-pass"
+            },
+            {
+              "id": 2,
+              "name": "b",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "failure",
+              "started_at": "2026-08-03T10:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "current-fail"
+            },
+            {
+              "id": 3,
+              "name": "a",
+              "head_sha": "H",
+              "status": "completed",
+              "conclusion": "failure",
+              "started_at": "2026-08-03T09:00:00Z",
+              "completed_at": "2026-08-03T10:01:00Z",
+              "classification": "superseded"
+            }
+          ],
+          "currentFailures": 1
+        },
+        "exit": 1,
+        "json": "{\"gate\":\"pr-checks\",\"ok\":false,\"repo\":\"o/n\",\"pr\":7,\"headSha\":\"H\",\"evaluatedAt\":\"2026-08-03T12:30:00.000Z\",\"checks\":[{\"id\":1,\"name\":\"a\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"success\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-pass\"},{\"id\":2,\"name\":\"b\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"failure\",\"started_at\":\"2026-08-03T10:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"current-fail\"},{\"id\":3,\"name\":\"a\",\"head_sha\":\"H\",\"status\":\"completed\",\"conclusion\":\"failure\",\"started_at\":\"2026-08-03T09:00:00Z\",\"completed_at\":\"2026-08-03T10:01:00Z\",\"classification\":\"superseded\"}],\"currentFailures\":1}"
+      }
+    },
+    {
+      "name": "invalid job url",
+      "runs": [],
+      "jobs": [
+        {
+          "id": 200,
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:02:00Z",
+          "completed_at": "2026-08-03T10:03:00Z",
+          "check_run_url": "https://api.github.com/repos/o/n/check-runs/x",
+          "run_id": 10,
+          "run_attempt": 2
+        }
+      ],
+      "error": "Invalid Actions job check_run_url: https://api.github.com/repos/o/n/check-runs/x"
+    },
+    {
+      "name": "zero job id url",
+      "runs": [],
+      "jobs": [
+        {
+          "id": 200,
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "started_at": "2026-08-03T10:02:00Z",
+          "completed_at": "2026-08-03T10:03:00Z",
+          "check_run_url": "https://api.github.com/repos/o/n/check-runs/0",
+          "run_id": 10,
+          "run_attempt": 2
+        }
+      ],
+      "error": "Invalid Actions job check_run_url: https://api.github.com/repos/o/n/check-runs/0"
+    }
+  ],
+  "casesSha256": "f05589d850b84942d2798d87fa22f572e9f5d436f72978acd50dc261372bdcb2"
+}
