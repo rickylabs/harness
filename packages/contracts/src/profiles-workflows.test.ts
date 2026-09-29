@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { it } from "node:test";
-import { readProfileRef, readWorkflowRevision, readRoutineRevision, readWorkflowRun } from "./profiles-workflows.js";
+import { encodeWorkflowRevisionBundle, readProfileRef, readRoutineRevision,
+  readWorkflowRevision, readWorkflowRevisionBundle, readWorkflowRun } from "./profiles-workflows.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const id2 = "22222222-2222-4222-8222-222222222222";
@@ -24,6 +26,52 @@ const run = { schema: 1, id: id2, workflowId: id, workflowRevision: digest, scop
   createdAt: at, updatedAt: at } as const;
 const fields = (v: { readonly ok: boolean; readonly problems?: readonly { readonly field: string }[] }) =>
   v.ok ? [] : v.problems?.map(p => p.field) ?? [];
+const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
+
+it("exports canonical revision and decision facts and imports only bound bytes", async () => {
+  const next = { ...workflow, revision: "c".repeat(64) };
+  const decision = { position: 2, action: "draft_approved", fromRevision: null,
+    toRevision: next.revision, decidedAt: at, reasonDigest: digest };
+  const prior = { position: 1, action: "draft_approved", fromRevision: null,
+    toRevision: workflow.revision, decidedAt: at, reasonDigest: digest };
+  const bundle = { schema: 1, kind: "workflow_revision_bundle", workflowId: id,
+    revisions: [next, workflow], decisions: [decision, prior] };
+  const first = await encodeWorkflowRevisionBundle(bundle, sha256);
+  const second = await encodeWorkflowRevisionBundle({ decisions: [prior, decision],
+    revisions: [workflow, next], workflowId: id, kind: "workflow_revision_bundle", schema: 1 }, sha256);
+  assert.equal(first.ok, true);
+  assert.deepEqual(first, second);
+  if (!first.ok) return;
+  const imported = await readWorkflowRevisionBundle(first.value, sha256);
+  assert.equal(imported.ok, true);
+  if (imported.ok) {
+    assert.deepEqual(imported.value.revisions.map(row => row.revision), [digest, next.revision]);
+    assert.deepEqual(imported.value.decisions.map(row => row.position), [1, 2]);
+    assert.equal(Object.hasOwn(imported.value, "activeRevision"), false);
+  }
+  const tampered = first.value.replace(`"reasonDigest":"${digest}"`, `"reasonDigest":"${"d".repeat(64)}"`);
+  assert.ok(fields(await readWorkflowRevisionBundle(tampered, sha256)).includes("bundle.bundleDigest"));
+  assert.ok(fields(await readWorkflowRevisionBundle(`${first.value}\n`, sha256)).includes("bundle"));
+  assert.ok(fields(await readWorkflowRevisionBundle(first.value.replace('{"bundleDigest":',
+    '{"bundleDigest":"' + "e".repeat(64) + '","bundleDigest":'), sha256)).includes("bundle"));
+});
+
+it("refuses unknown ledger revisions, mixed workflows, and instruction text", async () => {
+  const base = { schema: 1, kind: "workflow_revision_bundle", workflowId: id,
+    revisions: [workflow], decisions: [] };
+  assert.ok(fields(await encodeWorkflowRevisionBundle({ ...base, decisions: [{
+    position: 0, action: "draft_approved", fromRevision: null, toRevision: "f".repeat(64),
+    decidedAt: at, reasonDigest: digest }] }, sha256)).includes("bundle.decisions[0].toRevision"));
+  assert.ok(fields(await encodeWorkflowRevisionBundle({ ...base,
+    revisions: [{ ...workflow, workflowId: id2 }] }, sha256)).includes("bundle.revisions[0].workflowId"));
+  assert.ok(fields(await encodeWorkflowRevisionBundle({ ...base,
+    revisions: [{ ...workflow, phases: [{ ...phase, profile: { ...profile,
+      instructions: "private fixture" } }] }] }, sha256)).includes("bundle.revisions[0].phases[0].profile.instructions"));
+  assert.ok(fields(await encodeWorkflowRevisionBundle({ ...base,
+    revisions: [workflow, { ...workflow }] }, sha256)).includes("bundle.revisions"));
+  assert.ok(fields(await encodeWorkflowRevisionBundle(base, () => { throw new Error("missing hash"); }))
+    .includes("bundle.bundleDigest"));
+});
 
 it("reads pinned profile refs and refuses executable metadata or unsourced budget", () => {
   assert.equal(readProfileRef(profile).ok, true);

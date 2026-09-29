@@ -57,6 +57,28 @@ export interface WorkflowRevision {
   readonly createdByRunId: string | null;
   readonly phases: readonly WorkflowPhase[];
 }
+/** Portable revision facts only. Cockpit retains private definitions, actors and approval authority. */
+export interface WorkflowTransferDecision {
+  readonly position: number;
+  readonly action: "draft_approved" | "rollback" | "revoked";
+  readonly fromRevision: string | null;
+  readonly toRevision: string | null;
+  readonly decidedAt: string;
+  readonly reasonDigest: string;
+}
+export interface WorkflowRevisionBundlePayload {
+  readonly schema: 1;
+  readonly kind: "workflow_revision_bundle";
+  readonly workflowId: string;
+  readonly revisions: readonly WorkflowRevision[];
+  readonly decisions: readonly WorkflowTransferDecision[];
+}
+export interface WorkflowRevisionBundle extends WorkflowRevisionBundlePayload {
+  /** SHA-256 of the canonical UTF-8 payload without this field. */
+  readonly bundleDigest: string;
+}
+/** The caller supplies its platform's SHA-256; this package remains browser/native portable. */
+export type WorkflowSha256 = (bytes: Uint8Array) => string | Promise<string>;
 export type RoutineTrigger =
   | { readonly kind: "schedule"; readonly cron: string; readonly timeZone: string }
   | { readonly kind: "label" | "pull_request" | "ci_red"; readonly filterDigest: string };
@@ -287,6 +309,114 @@ function validateWorkflowRevision(value: unknown, out: Problem[]) {
 }
 export function readWorkflowRevision(value: unknown): WorkflowRead<WorkflowRevision> {
   return safeRead(value, "workflow", validateWorkflowRevision);
+}
+function validateWorkflowBundle(value: unknown, out: Problem[], withDigest: boolean, ordered: boolean) {
+  const v = record(value, "bundle", ["schema", "kind", "workflowId", "revisions", "decisions",
+    ...(withDigest ? ["bundleDigest"] : [])], [], out);
+  if (!v) return;
+  field(out, "bundle.schema", v.schema, x => x === 1);
+  field(out, "bundle.kind", v.kind, x => x === "workflow_revision_bundle");
+  field(out, "bundle.workflowId", v.workflowId, uuid);
+  if (withDigest) field(out, "bundle.bundleDigest", v.bundleDigest, digest);
+  const revisionIds: string[] = [];
+  if (!Array.isArray(v.revisions) || v.revisions.length < 1 || v.revisions.length > 32) {
+    problem(out, "bundle.revisions", "invalid");
+  } else {
+    v.revisions.forEach((revision, i) => {
+      const nested: Problem[] = [];
+      validateWorkflowRevision(revision, nested);
+      for (const entry of nested) problem(out, entry.field.replace(/^workflow/, `bundle.revisions[${i}]`), entry.code);
+      const row = obj(revision);
+      if (row && digest(row.revision)) revisionIds.push(row.revision as string);
+      if (row && row.workflowId !== v.workflowId) problem(out, `bundle.revisions[${i}].workflowId`, "mismatch");
+    });
+    if (new Set(revisionIds).size !== revisionIds.length) problem(out, "bundle.revisions", "duplicate_revision");
+    if (ordered && revisionIds.some((id, i) => i > 0 && revisionIds[i - 1]! >= id))
+      problem(out, "bundle.revisions", "noncanonical_order");
+  }
+  const known = new Set(revisionIds);
+  if (!Array.isArray(v.decisions) || v.decisions.length > 128) {
+    problem(out, "bundle.decisions", "invalid");
+  } else {
+    let previous = -1;
+    v.decisions.forEach((decision, i) => {
+      const path = `bundle.decisions[${i}]`;
+      const row = record(decision, path, ["position", "action", "fromRevision", "toRevision",
+        "decidedAt", "reasonDigest"], [], out);
+      if (!row) return;
+      field(out, `${path}.position`, row.position, nonnegative);
+      if (ordered && nonnegative(row.position) && (row.position as number) <= previous)
+        problem(out, `${path}.position`, "noncanonical_order");
+      if (nonnegative(row.position)) previous = row.position as number;
+      field(out, `${path}.action`, row.action, x => member(x, ["draft_approved", "rollback", "revoked"]));
+      for (const key of ["fromRevision", "toRevision"] as const) {
+        field(out, `${path}.${key}`, row[key], x => x === null || digest(x));
+        if (typeof row[key] === "string" && digest(row[key]) && !known.has(row[key]))
+          problem(out, `${path}.${key}`, "unknown_revision");
+      }
+      field(out, `${path}.decidedAt`, row.decidedAt, time);
+      field(out, `${path}.reasonDigest`, row.reasonDigest, digest);
+      if (row.action === "draft_approved" && row.toRevision === null ||
+          row.action === "rollback" && (row.fromRevision === null || row.toRevision === null ||
+            row.fromRevision === row.toRevision) ||
+          row.action === "revoked" && (row.fromRevision === null || row.toRevision !== null))
+        problem(out, path, "action_revisions_mismatch");
+    });
+  }
+}
+/** JSON objects have sorted keys; arrays retain their contract order. No clocks or runtime IDs are added. */
+function canonicalWorkflowJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalWorkflowJson).join(",")}]`;
+  if (value !== null && typeof value === "object") {
+    const fields = Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0);
+    return `{${fields.map(([key, item]) => `${JSON.stringify(key)}:${canonicalWorkflowJson(item)}`).join(",")}}`;
+  }
+  const encoded = JSON.stringify(value);
+  if (encoded === undefined) throw new Error("non_json_value");
+  return encoded;
+}
+/** Export all selected revisions and screened ledger facts in one deterministic, content-bound file. */
+export async function encodeWorkflowRevisionBundle(value: unknown, sha256: WorkflowSha256): Promise<WorkflowRead<string>> {
+  const copied = safeRead<WorkflowRevisionBundlePayload>(value, "bundle",
+    (row, out) => validateWorkflowBundle(row, out, false, false));
+  if (!copied.ok) return copied;
+  const ordered: WorkflowRevisionBundlePayload = { ...copied.value,
+    revisions: [...copied.value.revisions].sort((a, b) => a.revision < b.revision ? -1 : a.revision > b.revision ? 1 : 0),
+    decisions: [...copied.value.decisions].sort((a, b) => a.position - b.position) };
+  const checked = safeRead<WorkflowRevisionBundlePayload>(ordered, "bundle",
+    (row, out) => validateWorkflowBundle(row, out, false, true));
+  if (!checked.ok) return checked;
+  const payloadText = canonicalWorkflowJson(checked.value);
+  let bundleDigest: string;
+  try { bundleDigest = await sha256(new TextEncoder().encode(payloadText)); }
+  catch { return { ok: false, problems: [{ field: "bundle.bundleDigest", code: "hash_unavailable" }] }; }
+  if (!digest(bundleDigest)) return { ok: false, problems: [{ field: "bundle.bundleDigest", code: "hash_invalid" }] };
+  const text = canonicalWorkflowJson({ ...checked.value, bundleDigest });
+  if (new TextEncoder().encode(text).length > 1_048_576)
+    return { ok: false, problems: [{ field: "bundle", code: "input_limit" }] };
+  return { ok: true, value: text };
+}
+/** Import verifies exact bytes and digest; it never approves a revision or advances Cockpit's head. */
+export async function readWorkflowRevisionBundle(text: unknown,
+  sha256: WorkflowSha256): Promise<WorkflowRead<WorkflowRevisionBundle>> {
+  if (typeof text !== "string" || new TextEncoder().encode(text).length > 1_048_576)
+    return { ok: false, problems: [{ field: "bundle", code: "input_limit" }] };
+  let parsed: unknown;
+  try { parsed = JSON.parse(text); }
+  catch { return { ok: false, problems: [{ field: "bundle", code: "invalid_json" }] }; }
+  const copied = safeRead<WorkflowRevisionBundle>(parsed, "bundle",
+    (row, out) => validateWorkflowBundle(row, out, true, true));
+  if (!copied.ok) return copied;
+  if (canonicalWorkflowJson(copied.value) !== text)
+    return { ok: false, problems: [{ field: "bundle", code: "noncanonical_json" }] };
+  const { bundleDigest, ...payload } = copied.value;
+  let measured: string;
+  try { measured = await sha256(new TextEncoder().encode(canonicalWorkflowJson(payload))); }
+  catch { return { ok: false, problems: [{ field: "bundle.bundleDigest", code: "hash_unavailable" }] }; }
+  if (!digest(measured) || measured !== bundleDigest)
+    return { ok: false, problems: [{ field: "bundle.bundleDigest", code: "digest_mismatch" }] };
+  return copied;
 }
 function validateRoutineRevision(value: unknown, out: Problem[]) {
   const v = record(value, "routine", ["schema", "routineId", "revision", "workflowId",
