@@ -9,8 +9,9 @@ import { childEventKey, readClaudeChildStarts } from "./claude-child-events.js";
 const now = "2026-01-01T00:01:00.000Z";
 const rootSession = "fixture-root";
 const child = "agent-fixture";
+const hookChild = "fixture";
 const row = (event: "SubagentStart" | "SubagentStop", at: string, extra: Record<string, unknown> = {}) =>
-  ({ event, sessionId: rootSession, agentId: child, observedAt: at, ...extra });
+  ({ event, sessionId: rootSession, agentId: hookChild, observedAt: at, ...extra });
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "claude-child-events-"));
   await chmod(root, 0o700);
@@ -43,6 +44,8 @@ it("rejects stale, future, wrong-session and malformed evidence; ignores an unre
   }
   await s.put(row("SubagentStart", "2026-01-01T00:00:30.000Z", { agentId: "internal-child" }));
   assert.equal((await s.read()).size, 0);
+  await s.put(row("SubagentStart", "2026-01-01T00:00:30.000Z", { agentId: child }));
+  assert.equal((await s.read()).size, 0); // Never match a double-prefixed hook ID.
   assert.equal((await readClaudeChildStarts(s.root, "wrong-root", [child], now)).size, 0);
 });
 
