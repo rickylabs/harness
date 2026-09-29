@@ -782,10 +782,15 @@ changes to selected rollouts trigger a disk scan at the next heartbeat. Set the 
 `DSH_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT` to the private owner-mode Claude hook event directory
 to admit a fresh child `SubagentStart` as running only after the verified root dispatch and
 native child ID match. A later `SubagentStop` clears running to unknown; that callback alone is
-never terminal evidence. A verified in-session Claude child ends as cancelled only after the
-same root dispatch has separate seat-absent and native-process-absent observations. A later
-matched Start restores running; the transcript has no independent child-completion marker.
-Unsafe, stale, absent or unmatched files leave the child unknown.
+never terminal evidence. A verified in-session Claude child ends natively when its direct
+parent session enqueues the task-notification for exactly that child with status `completed`
+(succeeded) or `failed` (failed), at or after the child's start and its last transcript record.
+The notice's anchored header must name an Agent that session launched, as recorded in Claude's own
+tool result; the header's single status line is read, never the child's summary or result. Any
+other status, a second status line, or a resumed child's later records leave it unknown. Otherwise
+it ends as cancelled only after the same root dispatch has separate seat-absent and
+native-process-absent observations. A later matched Start restores running. Unsafe, stale,
+absent or unmatched files leave the child unknown.
 The reader watches that directory for new events. A 12-second safety scan
 recovers missed filesystem events before the 15-second freshness deadline. A heartbeat between
 scans keeps the original `observedAt` and `validUntil`; it never renews evidence by itself.

@@ -9,7 +9,7 @@ import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_ACCEPTE
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
-import { processedInputTokens, type RunRecord } from "./model.js";
+import { processedInputTokens, type ClaudeChildCompletion, type RunRecord } from "./model.js";
 import type { PublicActionReceipt } from "./action-receipt-cli.js";
 
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -105,7 +105,7 @@ function history(observation: AgentObservation, dispatch: DispatchEvidence, run:
 
 function node(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string,
   localCapacity: HostCapacityReading | undefined, actions: readonly PublicActionReceipt[], actionsComplete: boolean,
-  verifiedClaudeChild: boolean): IssueAgentTreeAgent {
+  verifiedClaudeChild: boolean, childCompletion: ClaudeChildCompletion | null): IssueAgentTreeAgent {
   const root = observation.parentAgentId.state !== "known-parent";
   const provenAncestry = observation.parentAgentId.state === "confirmed-root" || observation.parentAgentId.state === "known-parent";
   const harness = root ? safe(dispatch.harness ?? dispatch.source, "dispatch") : safe(run?.source, "native");
@@ -147,6 +147,14 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     ? (teardownSeatAt > teardownProcessAt ? teardownSeatAt : teardownProcessAt) : null;
   const teardownAt = !childObservationAfter(teardownSeatAt, teardownProcessAt, teardownCandidate)
     ? null : teardownCandidate;
+  // A verified Claude child ends natively only on its parent's own task-notification for exactly this
+  // child: completed or failed, at or after its start and its last transcript record, and not
+  // superseded by a later matched Start. Any other status, or any doubt, leaves the rules below.
+  const completionAt = verifiedClaudeChild && childCompletion !== null && childCompletion.status !== "other"
+    ? time(childCompletion.at, now) : null;
+  const childEndAt = completionAt !== null && start !== null && completionAt >= start &&
+    outcomeAt !== null && outcomeAt <= completionAt &&
+    (laterChildStart === null || laterChildStart <= completionAt) ? completionAt : null;
   const actionState: IssueAgentTreeAgent["actionState"] = stopAt !== null
     ? { state: "stopped", observedAt: stopAt, reason: null }
     : seatAt !== null ? { state: "stopping", observedAt: seatAt, reason: null }
@@ -155,6 +163,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     (run?.outcome === "complete" || run?.outcome === "failed") && outcomeAt !== null;
   const liveness: IssueAgentTreeAgent["liveness"] = nativeTerminal
     ? { state: "ended", evidence: "native-outcome", observedAt: now, reason: null }
+    : childEndAt !== null ? { state: "ended", evidence: "native-outcome", observedAt: childEndAt, reason: null }
     : stopAt !== null ? { state: "ended", evidence: "stop-observation", observedAt: stopAt, reason: null }
     : teardownAt !== null ? { state: "ended", evidence: "teardown-observation", observedAt: teardownAt, reason: null }
     : seatAt !== null ? { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" }
@@ -169,6 +178,8 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
       ? { value: "cancelled", source: "stop-observation", observedAt: stopAt!, reason: null }
     : liveness.evidence === "teardown-observation"
       ? { value: "cancelled", source: "teardown-observation", observedAt: teardownAt!, reason: null }
+    : childEndAt !== null
+      ? { value: childCompletion!.status === "completed" ? "succeeded" : "failed", source: "native-outcome", observedAt: childEndAt, reason: null }
     : run!.outcome === "complete"
       ? { value: "succeeded", source: "native-outcome", observedAt: now, reason: null }
       : run!.terminalCause === "error" || run!.terminalCause === "cancelled"
@@ -271,7 +282,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   if (root && time(dispatch.observedAt, now) !== null) events.push(event(observation.agentId, "dispatched", dispatch.observedAt!, "dispatch"));
   if (start !== null) events.push(event(observation.agentId, "started", start, "native"));
   if (liveness.state === "ended" && terminalOutcome.value !== null) {
-    const end = liveness.evidence === "native-outcome" ? outcomeAt : liveness.observedAt;
+    const end = liveness.evidence === "native-outcome" && childEndAt === null ? outcomeAt : liveness.observedAt;
     const endReason: AgentTimelineReason = endedBy ?? (terminalOutcome.value === "succeeded" ? "native-complete"
       : terminalOutcome.value === "failed" ? "native-error" : "native-cancelled");
     if (end !== null) events.push(event(observation.agentId, "ended", end, "terminal", null, terminalOutcome.value, endReason));
@@ -303,8 +314,9 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     quotaRegime: seam === "codex" || seam === "claude" ? { value: "subscription", reason: null }
       : { value: null, reason: "source_not_bound" },
     liveness, actionState, endedBy, terminalOutcome, startedAt: start, startedAtReason: start === null ? "run_not_found" : null,
-    endedAt: endedBy === "stop" ? stopAt : endedBy === "timeout" || endedBy === "teardown" ? teardownAt : null,
-    endedAtReason: endedBy === null ? "measurement_missing" : null,
+    endedAt: endedBy === "stop" ? stopAt : endedBy === "timeout" || endedBy === "teardown" ? teardownAt
+      : liveness.state === "ended" && childEndAt !== null ? childEndAt : null,
+    endedAtReason: endedBy === null && !(liveness.state === "ended" && childEndAt !== null) ? "measurement_missing" : null,
     transcript: { value: null, reason: "source_not_bound" },
     history: history(observation, dispatch, run, now, root), historyTruncated: false,
     activity, tokenUsage, resourceHistory, timeline };
@@ -358,8 +370,11 @@ export function buildIssueAgentTreeSnapshot(input: {
       ? resolveOrchidNativeRoot(dispatch, runs) ?? runs.find(r => r.source === dispatch.source && r.id === dispatch.external && r.parentId === null)
       : rootRun;
     const verifiedClaudeChild = verifiedClaudeSidechain(observation, dispatch, run, boundRoot, runs, observations.agents);
+    // The notification lands in the child's direct parent session; ids are unique among Claude runs here.
+    const parentRun = verifiedClaudeChild ? runs.find(candidate => candidate.source === "claude" && candidate.id === run!.parentId) : undefined;
+    const childCompletion = parentRun?.childCompletions?.find(entry => entry.childId === run!.id) ?? null;
     agents.push(node(observation, dispatch, run, observations.observedAt, input.localCapacity,
-      input.actions ?? [], input.actionsComplete ?? false, verifiedClaudeChild));
+      input.actions ?? [], input.actionsComplete ?? false, verifiedClaudeChild, childCompletion));
   }
   const rows: IssueAgentTree[] = [...issues.values()].map(issue => ({ repo: issue.repo, issueNumber: issue.issueNumber,
     complete: true, reason: null,

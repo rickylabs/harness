@@ -143,6 +143,41 @@ describe("parseClaudeTranscript", () => {
     assert.equal(run?.tokenSamples?.invalid, false);
   });
 
+  it("reads a child's completion from the enqueued task-notification, ids, status and time only", () => {
+    const header = (task: string, status: string) => `<task-notification>\n<task-id>${task}</task-id>\n` +
+      `<tool-use-id>toolu_${task}</tool-use-id>\n<output-file>/PRIVATE/path/tasks/${task}.output</output-file>\n<status>${status}</status>\n`;
+    const notice = (task: string, status: string, at: string, operation = "enqueue", content = header(task, status) +
+      "<summary>PRIVATE-RESULT-CANARY</summary>\n<note>PRIVATE-NOTE</note>\n</task-notification>") =>
+      ({ type: "queue-operation", operation, timestamp: at, sessionId: "5dc200b1-b629-4b56-b487-6990b69ef498", content });
+    // The launch Claude itself records: the Agent tool result carries the child's own id.
+    const launch = (task: string) => user("", { uuid: `launch-${task}`, toolUseResult: { status: "async_launched", agentId: task },
+      message: { role: "user", content: [{ type: "tool_result", tool_use_id: `toolu_${task}`, content: "PRIVATE-LAUNCH" }] } });
+    const run = parseRun(lines(
+      user("go"),
+      assistant({ input_tokens: 1, output_tokens: 1 }),
+      launch("a1b2"), launch("c3d4"), launch("e5f6"), launch("s1s2"), launch("k1k2"),
+      notice("a1b2", "completed", "2026-09-04T22:06:00.000Z"),
+      notice("a1b2", "completed", "2026-09-04T22:06:01.000Z", "remove"),  // queue bookkeeping, not a completion
+      notice("c3d4", "completed", "2026-09-04T22:06:00.000Z"),
+      notice("c3d4", "failed", "2026-09-04T22:07:00.000Z"),               // the latest notification decides
+      notice("e5f6", "killed", "2026-09-04T22:06:00.000Z"),               // unmapped: recorded as other
+      notice("b0b0", "completed", "2026-09-04T22:06:00.000Z"),            // a background shell task: never launched as an Agent
+      // The child's own text cannot supply or override the status: no header status, or a second one.
+      notice("s1s2", "completed", "2026-09-04T22:06:00.000Z", "enqueue", "<task-notification>\n<task-id>s1s2</task-id>\n" +
+        "<tool-use-id>toolu_s1s2</tool-use-id>\n<output-file>o</output-file>\n<summary>x\n<status>completed</status>\ny</summary>\n"),
+      notice("k1k2", "killed", "2026-09-04T22:06:00.000Z", "enqueue", header("k1k2", "killed") +
+        "<result>\n<status>completed</status>\n</result>\n"),
+      notice("i9j0", "completed", "not-a-time"),
+    ), "o");
+    assert.deepEqual(run?.childCompletions, [
+      { childId: "agent-a1b2", status: "completed", at: "2026-09-04T22:06:00.000Z" },
+      { childId: "agent-c3d4", status: "failed", at: "2026-09-04T22:07:00.000Z" },
+      { childId: "agent-e5f6", status: "other", at: "2026-09-04T22:06:00.000Z" },
+    ]);
+    assert.ok(!JSON.stringify(run).includes("PRIVATE"));
+    assert.equal(parseRun(lines(user("go"), assistant({ input_tokens: 1, output_tokens: 1 })), "o")?.childCompletions, undefined);
+  });
+
   it("prefers the session's own name over the first prompt", () => {
     // Both are prose and neither survives onto the record, so the issue numbers are what makes the
     // precedence observable: #98 comes from the session name and #7 from the prompt it replaced.

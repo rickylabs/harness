@@ -6,7 +6,7 @@ import { childEventKey } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { HostCapacityReading } from "./host-capacity.js";
-import type { RunRecord } from "./model.js";
+import type { ClaudeChildCompletion, RunRecord } from "./model.js";
 import type { PublicActionReceipt } from "./action-receipt-cli.js";
 
 const at = "2026-01-01T00:00:00.000Z", later = "2026-01-01T00:00:01.000Z";
@@ -139,6 +139,50 @@ it("ends a verified Claude sidechain only after its own dispatch has seat and pr
   const preChildSeat = tree({ ...claudeDispatch, teardown: { cause: "teardown",
     seatObservedAt: "2025-12-31T23:59:59.000Z", processObservedAt: processAt } });
   assert.notEqual(child(preChildSeat)?.liveness.state, "ended");
+});
+
+it("ends a verified Claude child on its parent's own completion notification, fail-closed otherwise", () => {
+  const rootId = "fixture-claude-root", childId = "agent-fixture-child";
+  const claudeDispatch = { ...dispatch, source: "claude" as const, harness: "claude" as const, external: rootId };
+  const native = [{ ...run(rootId, null), source: "claude" as const },
+    { ...run(childId, rootId), source: "claude" as const, nativeDepth: 1 }];
+  const capturedAt = "2026-01-01T00:00:30.000Z", doneAt = "2026-01-01T00:00:05.000Z";
+  const completion = (over: Partial<ClaudeChildCompletion> = {}): ClaudeChildCompletion =>
+    ({ childId, status: "completed", at: doneAt, ...over });
+  const tree = (completions: readonly ClaudeChildCompletion[], d: DispatchEvidence = claudeDispatch,
+    starts = new Map<string, string>(), extra: readonly RunRecord[] = []) => {
+    const runs = [{ ...native[0]!, childCompletions: completions }, native[1]!, ...extra];
+    const observations = buildAgentObservations({ dispatches: [claudeDispatch], runs,
+      observedAt: capturedAt, sourceBound: true, dispatchComplete: true, nativeComplete: true, claudeChildStarts: starts });
+    return buildIssueAgentTreeSnapshot({ observations, dispatches: [d], runs });
+  };
+  const child = (snapshot: ReturnType<typeof tree>) => snapshot.issues[0]?.dispatches[0]?.agents
+    .find(agent => agent.observation.parentAgentId.state === "known-parent");
+  const completed = tree([completion()]);
+  assert.deepEqual(child(completed)?.liveness, { state: "ended", evidence: "native-outcome", observedAt: doneAt, reason: null });
+  assert.deepEqual(child(completed)?.terminalOutcome, { value: "succeeded", source: "native-outcome", observedAt: doneAt, reason: null });
+  assert.deepEqual([child(completed)?.endedAt, child(completed)?.endedAtReason, child(completed)?.endedBy], [doneAt, null, null]);
+  assert.equal(child(completed)?.timeline?.events.find(event => event.kind === "ended")?.at, doneAt);
+  assert.ok(readIssueAgentTreeSnapshot(completed).ok);
+  assert.equal(child(tree([completion({ status: "failed" })]))?.terminalOutcome.value, "failed");
+  // Fail-closed: every doubt leaves the child unknown rather than ended.
+  for (const doubt of [
+    tree([completion({ status: "other" })]),                                   // unmapped status
+    tree([completion({ childId: "agent-other-child" })]),                      // another child's notification
+    tree([completion({ at: "2026-01-01T00:00:00.500Z" })]),                    // before the child's last record
+    tree([completion({ at: "2025-12-31T23:59:59.000Z" })]),                    // before the child started
+    tree([], claudeDispatch, new Map(), [{ ...run("fixture-other-session", null), source: "claude" as const,
+      childCompletions: [completion()] }]),                                     // another session's notification
+  ]) assert.deepEqual([child(doubt)?.liveness.state, child(doubt)?.terminalOutcome.value], ["unknown", null]);
+  // A later matched Start is a resume: running again, not ended.
+  assert.equal(child(tree([completion()], claudeDispatch,
+    new Map([[childEventKey(rootId, childId), "2026-01-01T00:00:20.000Z"]])))?.liveness.state, "running");
+  // The child's own completion stays the truthful end when its root is torn down later.
+  const tornDown = tree([completion()], { ...claudeDispatch, teardown: { cause: "teardown",
+    seatObservedAt: "2026-01-01T00:00:12.000Z", processObservedAt: "2026-01-01T00:00:14.000Z" } });
+  assert.deepEqual([child(tornDown)?.liveness.evidence, child(tornDown)?.terminalOutcome.value, child(tornDown)?.endedAt],
+    ["native-outcome", "succeeded", doneAt]);
+  assert.ok(readIssueAgentTreeSnapshot(tornDown).ok);
 });
 
 it("expires running before frame validity can outlive the native activity window", () => {
