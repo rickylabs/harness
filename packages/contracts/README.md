@@ -687,8 +687,8 @@ contains cached input; reasoning is a subset of output and is not added again. C
 assistant response once, and adds its cache reads and cache writes to input, because Claude
 reports both beside an input count that excludes them. The two figures therefore mean the same
 thing. Missing counts and child budgets remain null with a reason, never zero. The existing quota,
-metered cost, run-token (with input, output, cache read and cache write as separate fields) and
-local capacity rows stay separate.
+metered cost, run-token (each token kind as its own field) and local capacity rows stay
+separate.
 
 `timeline` carries at most 32 chronological events with opaque stable IDs. Dispatch, native start,
 measured native child spawn, validated action receipt, and verified terminal state have distinct
@@ -765,8 +765,8 @@ change the launch budget; rejected, unknown, mismatched or malformed receipts ca
 
 Each issue-tree agent can add `resourceHistory` with separate `tokens` and `budgets` series.
 Token points are the cumulative `tokenUsage` figure (processed input plus output, as above) at
-native Codex `token_count` or deduplicated Claude assistant usage timestamps. The producer keeps the first and latest 15 changes, reports
-`truncated`, and publishes no text, paths or native IDs. A missing, unsafe, decreasing or
+native Codex `token_count` or deduplicated Claude assistant usage timestamps. The producer keeps
+the first and latest 15 changes, reports `truncated`, and publishes no text, paths or native IDs. A missing, unsafe, decreasing or
 inconsistent series is unavailable with a named reason; it is never filled with zeroes.
 
 Budget points belong to the root only: the dispatch's sourced launch budget followed by
