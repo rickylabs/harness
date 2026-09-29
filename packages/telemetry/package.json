@@ -27,7 +27,7 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --emitDeclarationOnly",
-    "test": "tsc -b && node --test \"dist/**/*.test.js\"",
+    "test": "tsc -b && node --test \"dist/**/*.test.js\" \"hooks/*.test.mjs\"",
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {

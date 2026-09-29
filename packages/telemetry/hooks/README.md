@@ -1,0 +1,9 @@
+# Claude child lifecycle reporter
+
+Claude documents `SubagentStart` and `SubagentStop` command hooks with a parent `session_id` and child `agent_id` ([hook reference](https://code.claude.com/docs/en/hooks#subagentstart)). The stop hook can be blocked by another hook, so its callback is an **observation**, not proof that the child ended. Internal and interactive Claude agents can also fire these hooks. A feed reader must match both IDs to an independently verified dispatch binding and known child before using an observation.
+
+The operator installs `claude-child-reporter.sh` and `claude-child-reporter.mjs` together. Configure one `SubagentStart` and one `SubagentStop` command hook invoking the shell script with the matching event name as its argument. Set each hook's `timeout` to `2` seconds. The shell wrapper imposes a 1.5-second process limit, discards all output, and always exits zero. It makes no hook decision and never asks Claude to continue or block. Do not install until the reviewed reporter PR is merged and the private storage location is provisioned.
+
+Set `HARNESS_CLAUDE_CHILD_EVENT_ROOT` to an existing operator-owned directory with mode 0700 in the Claude execution home. An unset variable is a no-op, so other seats in a shared home are unaffected. The reporter rejects symlinked or non-private roots and files. It appends JSONL to owner-only mode-0600 files named by SHA-256 of the session ID. Each row has only `event`, `sessionId`, `agentId`, and `observedAt`; it does not write the hook's prompt, message, transcript path, or other fields. A file caps at 1 MiB; oversized input is discarded. Missing or invalid storage and malformed input are silent successes.
+
+This package does not yet read these rows into issue liveness. `SubagentStart` is a possible sourced running observation after dispatch/child correlation; `SubagentStop` alone cannot assert terminal state. Installation and live settings changes belong to N5 Ops after review.
