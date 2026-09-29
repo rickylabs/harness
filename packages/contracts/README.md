@@ -769,3 +769,18 @@ unavailable because a child budget is not bound. An incomplete action scan makes
 history unavailable, while the existing current budget retains its own source-backed value.
 Both series are bounded at 16 points and checked against the current agent value. Older frames
 without `resourceHistory` continue to decode.
+
+## Workflow revision transfer (0.19.0)
+
+`encodeWorkflowRevisionBundle` writes a deterministic UTF-8 JSON export of one workflow's
+selected public revisions and screened approval/rollback ledger facts. Revision IDs and decision
+positions are sorted; object keys are sorted; no export time or random ID is added. The required
+SHA-256 callback hashes the canonical payload without `bundleDigest`, so the contract works in
+Node, browsers and native clients without a platform dependency.
+
+`readWorkflowRevisionBundle` accepts only the exact canonical encoding with a matching digest.
+It validates every revision, profile pin, phase dependency and ledger reference, and rejects raw
+instructions, paths, actors, grants and extra fields. A successful read is **data only**: it does
+not grant access, approve a draft, change the active revision or write to storage. Cockpit must
+authorize the scope, resolve the pinned profile and route, and append its own reviewed revision
+and decision ledger entries when importing.
