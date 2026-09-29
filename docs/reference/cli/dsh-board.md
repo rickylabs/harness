@@ -11,10 +11,10 @@ Shipped by [`packages/board`](../../../packages/board). This page is *what it do
 
 | code | name | meaning |
 | --- | --- | --- |
-| `0` | `ok` | clean: the board was read and it agrees with itself |
-| `1` | `anomalies` | the board contradicts itself (check only) |
+| `0` | `ok` | clean: the board was read and it agrees with itself, or no current check on the pull request fails (checks) |
+| `1` | `anomalies` | the board contradicts itself (check), or a current check on the pull request fails (checks) |
 | `2` | `usage` | the command line was wrong |
-| `3` | `unavailable` | no usable transport: gh missing, unauthenticated, or unable to reach GitHub |
+| `3` | `unavailable` | no usable transport: gh missing, unauthenticated, unable to reach GitHub, or an answer of the wrong shape |
 | `4` | `failed` | dsh-board itself failed |
 
 Read from `EXIT` and `EXIT_MEANINGS` in [`packages/board/src/cli.ts`](../../../packages/board/src/cli.ts). The `exit codes`
@@ -33,6 +33,9 @@ usage:
   dsh-board digest [--repo <owner/name>]     the board as a markdown page, for committing
   dsh-board snapshot [--repo <owner/name>]   the projection as JSON
   dsh-board doctor                           report transport and detected repository
+  dsh-board checks --pr <n> [--repo <owner/name>] [--pretty]
+                                             latest run per check on the PR head; exit 1 if one fails
+                                             (`checks` must come first; board options do not apply)
 
 options:
   --repo <owner/name>   repository to project; defaults to the one in the working directory
@@ -41,10 +44,10 @@ options:
   --at <iso8601>        timestamp to record on the snapshot (default: now)
 
 exit codes:
-  0  clean: the board was read and it agrees with itself
-  1  the board contradicts itself (check only)
+  0  clean: the board was read and it agrees with itself, or no current check on the pull request fails (checks)
+  1  the board contradicts itself (check), or a current check on the pull request fails (checks)
   2  the command line was wrong
-  3  no usable transport: gh missing, unauthenticated, or unable to reach GitHub
+  3  no usable transport: gh missing, unauthenticated, unable to reach GitHub, or an answer of the wrong shape
   4  dsh-board itself failed
 ```
 

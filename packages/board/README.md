@@ -8,7 +8,15 @@ dsh-board columns    # the kanban view
 dsh-board check      # exit 1 when the board contradicts itself
 dsh-board snapshot   # the projection as JSON
 dsh-board doctor     # transport and repository detection
+dsh-board checks --pr <n>   # latest run per check on the PR head; exit 1 if one currently fails
 ```
+
+`checks` is the read-only pull-request check rollup ported from NetScript's `agentic:pr-checks`, with
+the same classification, one-line JSON report and `--pretty` text. `src/pr-checks.ts` imports only
+`node:` built-ins, so Deno can also run it from a pinned URL, with `--allow-run=gh --allow-env
+--allow-read` (spawning `gh` needs the environment). Its GET-only `gh api` reads never see a token. A
+`gh` failure, unparseable output or an answer of the wrong shape exits 3, a wrong command line 2 and
+an internal fault 4, so exit 1 only ever means a current check fails.
 
 ## What it is for
 

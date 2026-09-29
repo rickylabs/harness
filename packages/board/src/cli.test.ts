@@ -56,6 +56,7 @@ function harness(over: Partial<CliDeps> = {}): Harness {
     now: () => AT,
     stdout: (text) => out.push(text),
     stderr: (text) => err.push(text),
+    ghApi: async () => { throw new Error("no network in tests"); },
     ...over,
   };
   // Count fetches even when the caller supplied its own, so "did this command reach the network"
