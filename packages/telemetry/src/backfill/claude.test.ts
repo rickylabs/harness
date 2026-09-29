@@ -78,7 +78,8 @@ describe("parseClaudeTranscript", () => {
       cacheReadTokens: 900,
       cacheWriteTokens: 7,
     });
-    assert.deepEqual(run.tokenSamples?.points, [{ at: "2026-09-04T22:05:00.000Z", usedTokens: 14 }]);
+    // Used tokens count every processed input token: 10 uncached + 900 cache read + 7 cache write + 4 out.
+    assert.deepEqual(run.tokenSamples?.points, [{ at: "2026-09-04T22:05:00.000Z", usedTokens: 921 }]);
     assert.equal(run.origin, "/store/a.jsonl");
   });
 
@@ -135,9 +136,9 @@ describe("parseClaudeTranscript", () => {
     // msg_1 counts once at its largest output; a later smaller line never subtracts. msg_2 adds.
     assert.deepEqual(run?.usage, { inputTokens: 5, outputTokens: 410, cacheReadTokens: 18100, cacheWriteTokens: 70 });
     assert.deepEqual(run?.tokenSamples?.points, [
-      { at: "2026-09-04T22:05:00.000Z", usedTokens: 254 },
-      { at: "2026-09-04T22:05:02.000Z", usedTokens: 404 },
-      { at: "2026-09-04T22:06:00.000Z", usedTokens: 415 },
+      { at: "2026-09-04T22:05:00.000Z", usedTokens: 9324 },
+      { at: "2026-09-04T22:05:02.000Z", usedTokens: 9474 },
+      { at: "2026-09-04T22:06:00.000Z", usedTokens: 18585 },
     ]);
     assert.equal(run?.tokenSamples?.invalid, false);
   });

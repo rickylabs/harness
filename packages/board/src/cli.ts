@@ -24,6 +24,7 @@ import { fetchItems, TransportUnavailable, detectRepoSlug } from "./github.js";
 import type { FetchResult } from "./github.js";
 import { DEFAULT_LANE_PREFIX } from "./labels.js";
 import { projectBoard } from "./project.js";
+import { defaultPrChecksDeps, runPrChecks, type GhApiRunner } from "./pr-checks.js";
 import { renderAnomalies, renderColumns, renderHierarchy, renderCompleteness } from "./render.js";
 
 /** The command's contract with whatever called it. Disjoint; nothing falls through to another. */
@@ -43,10 +44,10 @@ export const EXIT = {
  * and so does `docs/reference/cli/dsh-board.md`, which `pnpm run check:docs` byte-compares.
  */
 export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
-  ok: "clean: the board was read and it agrees with itself",
-  anomalies: "the board contradicts itself (check only)",
+  ok: "clean: the board was read and it agrees with itself, or no current check on the pull request fails (checks)",
+  anomalies: "the board contradicts itself (check), or a current check on the pull request fails (checks)",
   usage: "the command line was wrong",
-  unavailable: "no usable transport: gh missing, unauthenticated, or unable to reach GitHub",
+  unavailable: "no usable transport: gh missing, unauthenticated, unable to reach GitHub, or an answer of the wrong shape",
   failed: "dsh-board itself failed",
 };
 
@@ -63,6 +64,9 @@ usage:
   dsh-board digest [--repo <owner/name>]     the board as a markdown page, for committing
   dsh-board snapshot [--repo <owner/name>]   the projection as JSON
   dsh-board doctor                           report transport and detected repository
+  dsh-board checks --pr <n> [--repo <owner/name>] [--pretty]
+                                             latest run per check on the PR head; exit 1 if one fails
+                                             (\`checks\` must come first; board options do not apply)
 
 options:
   --repo <owner/name>   repository to project; defaults to the one in the working directory
@@ -89,6 +93,7 @@ export interface CliDeps {
   now: () => string;
   stdout: (text: string) => void;
   stderr: (text: string) => void;
+  ghApi: GhApiRunner;
 }
 
 const defaultDeps = (): CliDeps => ({
@@ -98,6 +103,7 @@ const defaultDeps = (): CliDeps => ({
   now: () => new Date().toISOString(),
   stdout: (text) => process.stdout.write(text),
   stderr: (text) => process.stderr.write(text),
+  ghApi: defaultPrChecksDeps().runner,
 });
 
 function parseArgs(argv: readonly string[]): { command: string; options: Options } {
@@ -144,6 +150,13 @@ function parseArgs(argv: readonly string[]): { command: string; options: Options
 
 /** Run the command. Returns the exit code; never throws for an expected failure. */
 export async function main(argv: readonly string[], deps: CliDeps = defaultDeps()): Promise<number> {
+  // `checks` reads one pull request, not the board, and owns its own options.
+  if (argv[0] === "checks") {
+    const rest = argv.slice(1);
+    const defaultRepo = rest.includes("--repo") ? undefined
+      : process.env["GITHUB_REPOSITORY"] ?? (await deps.detectRepoSlug(deps.cwd())) ?? undefined;
+    return runPrChecks(rest, { runner: deps.ghApi, defaultRepo, now: deps.now, stdout: deps.stdout, stderr: deps.stderr });
+  }
   let command: string;
   let options: Options;
   try {

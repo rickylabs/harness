@@ -681,11 +681,14 @@ fixed `Agent message` or tool label. The screen rejects code-like credentials as
 addresses and long opaque strings. Prompts, tool output, raw arguments, native IDs and local paths never enter
 the frame. A missing bound run reports typed unavailable rather than an empty claim of activity.
 
-`tokenUsage` reports the bound agent's input plus output tokens and that same agent's budget. Codex
-uses the latest cumulative `token_count`; Claude sums each identified assistant message once.
-Reasoning and cache counts are subsets and are not added again. Missing counts and child budgets
-remain null with a reason, never zero. The existing quota, metered cost, run-token, and local
-capacity rows stay separate.
+`tokenUsage` reports every input token the bound agent's model processed, plus its output tokens,
+and that same agent's budget. Codex uses the latest cumulative `token_count`, whose input already
+contains cached input; reasoning is a subset of output and is not added again. Claude counts each
+assistant response once, and adds its cache reads and cache writes to input, because Claude
+reports both beside an input count that excludes them. The two figures therefore mean the same
+thing. Missing counts and child budgets remain null with a reason, never zero. The existing quota,
+metered cost, run-token (each token kind as its own field) and local capacity rows stay
+separate.
 
 `timeline` carries at most 32 chronological events with opaque stable IDs. Dispatch, native start,
 measured native child spawn, validated action receipt, and verified terminal state have distinct
@@ -761,9 +764,9 @@ change the launch budget; rejected, unknown, mismatched or malformed receipts ca
 ## Per-agent token and budget history (0.18.0)
 
 Each issue-tree agent can add `resourceHistory` with separate `tokens` and `budgets` series.
-Token points are cumulative input plus output at native Codex `token_count` or deduplicated
-Claude assistant usage timestamps. The producer keeps the first and latest 15 changes, reports
-`truncated`, and publishes no text, paths or native IDs. A missing, unsafe, decreasing or
+Token points are the cumulative `tokenUsage` figure (processed input plus output, as above) at
+native Codex `token_count` or deduplicated Claude assistant usage timestamps. The producer keeps
+the first and latest 15 changes, reports `truncated`, and publishes no text, paths or native IDs. A missing, unsafe, decreasing or
 inconsistent series is unavailable with a named reason; it is never filled with zeroes.
 
 Budget points belong to the root only: the dispatch's sourced launch budget followed by
