@@ -118,6 +118,11 @@ it("binds allow, block and escalate to an ended, separate evaluator attempt", ()
     assert.equal(readWorkflowReviewObservation({ ...observation, verdict }, sourceRun, pinned).ok, true);
   assert.equal(readWorkflowReviewObservation({ ...observation, status: "reviewer_error",
     verdict: null, evidenceId: null }, sourceRun, pinned).ok, true);
+  assert.equal(readWorkflowReviewObservation({ ...observation, status: "reviewer_error",
+    verdict: null, evidenceId: null }, { ...sourceRun,
+    attempts: [subject, { ...reviewer, outcome: "failed" }] }, pinned).ok, true);
+  assert.ok(fields(readWorkflowReviewObservation({ ...observation, runId: id3 }, sourceRun, pinned))
+    .includes("review.runId"));
   assert.ok(fields(readWorkflowReviewObservation({ ...observation, status: "reviewer_error" }, sourceRun, pinned))
     .includes("review.verdict"));
   assert.ok(fields(readWorkflowReviewObservation({ ...observation, verdict: null }, sourceRun, pinned))
@@ -140,6 +145,9 @@ it("binds allow, block and escalate to an ended, separate evaluator attempt", ()
   assert.ok(fields(readWorkflowReviewObservation(observation, { ...sourceRun,
     attempts: [subject, { ...reviewer, state: "running", outcome: null, endedAt: null }] }, pinned))
     .includes("review.reviewerAttemptId"));
+  assert.ok(fields(readWorkflowReviewObservation(observation, { ...sourceRun,
+    attempts: [{ ...subject, state: "running", outcome: null, endedAt: null }, reviewer] }, pinned))
+    .includes("review.subjectAttemptId"));
   assert.ok(fields(readWorkflowReviewObservation({ ...observation,
     observedAt: "2026-09-28T21:25:00.123456789Z" }, sourceRun, pinned))
     .includes("review.observedAt"));
