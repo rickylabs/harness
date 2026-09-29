@@ -5,6 +5,7 @@ export type PackageName = typeof PACKAGE_NAME;
 export * from "./schema.js";
 export * from "./document.js";
 export * from "./fleet.js";
+export * from "./fleet-evaluator.js";
 export * from "./load.js";
 export * from "./configuration.js";
 
