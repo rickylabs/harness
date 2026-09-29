@@ -93,6 +93,22 @@ export interface RoutineRevision {
   readonly overlapPolicy: "coalesce" | "skip" | "enqueue";
   readonly missedRunPolicy: "skip" | "enqueue_one";
 }
+/** A bounded Cockpit trigger observation. It makes no issue-creation or launch claim. */
+export interface RoutineWake {
+  readonly schema: 1;
+  readonly routineId: string;
+  readonly routineRevision: string;
+  readonly workflowId: string;
+  readonly workflowRevision: string;
+  readonly triggerKind: RoutineTrigger["kind"];
+  /** Opaque 256-bit hex key minted by Cockpit; never a plain hash of guessable trigger data. */
+  readonly idempotencyKey: string;
+  /** Number of trigger observations represented by this wake, including the first. */
+  readonly coalesceCount: number;
+  readonly firstObservedAt: string;
+  readonly lastObservedAt: string;
+}
+export const MAX_ROUTINE_WAKE_COALESCE = 1_000_000;
 export type WorkflowCostRow<S extends string> =
   | { readonly value: number; readonly source: S; readonly observedAt: string; readonly reason: null }
   | { readonly value: null; readonly source: "unavailable"; readonly observedAt: null;
@@ -443,6 +459,41 @@ function validateRoutineRevision(value: unknown, out: Problem[]) {
 }
 export function readRoutineRevision(value: unknown): WorkflowRead<RoutineRevision> {
   return safeRead(value, "routine", validateRoutineRevision);
+}
+function utcNanoseconds(value: string): bigint {
+  const [seconds, fraction = "0"] = value.slice(0, -1).split(".");
+  return BigInt(Date.parse(`${seconds}Z`)) * 1_000_000n + BigInt(fraction.padEnd(9, "0"));
+}
+/** Bind a public wake to Cockpit's validated immutable routine revision. */
+export function readRoutineWake(value: unknown, source: unknown): WorkflowRead<RoutineWake> {
+  const bound = readRoutineRevision(source);
+  if (!bound.ok) return { ok: false, problems: bound.problems.map(entry => ({
+    field: `source.${entry.field}`, code: entry.code })) };
+  return safeRead(value, "wake", (copy, out) => {
+    const v = record(copy, "wake", ["schema", "routineId", "routineRevision", "workflowId",
+      "workflowRevision", "triggerKind", "idempotencyKey", "coalesceCount",
+      "firstObservedAt", "lastObservedAt"], [], out);
+    if (!v) return;
+    field(out, "wake.schema", v.schema, x => x === 1);
+    field(out, "wake.routineId", v.routineId, x => uuid(x) && x === bound.value.routineId);
+    field(out, "wake.routineRevision", v.routineRevision,
+      x => digest(x) && x === bound.value.revision);
+    field(out, "wake.workflowId", v.workflowId, x => uuid(x) && x === bound.value.workflowId);
+    field(out, "wake.workflowRevision", v.workflowRevision,
+      x => digest(x) && x === bound.value.workflowRevision);
+    field(out, "wake.triggerKind", v.triggerKind, x => x === bound.value.trigger.kind);
+    field(out, "wake.idempotencyKey", v.idempotencyKey, digest);
+    field(out, "wake.coalesceCount", v.coalesceCount,
+      x => nonnegative(x) && (x as number) >= 1 && (x as number) <= MAX_ROUTINE_WAKE_COALESCE);
+    if (nonnegative(v.coalesceCount) && (v.coalesceCount as number) > 1 &&
+        bound.value.overlapPolicy !== "coalesce" && bound.value.missedRunPolicy !== "enqueue_one")
+      problem(out, "wake.coalesceCount", "policy_mismatch");
+    field(out, "wake.firstObservedAt", v.firstObservedAt, time);
+    field(out, "wake.lastObservedAt", v.lastObservedAt, time);
+    if (time(v.firstObservedAt) && time(v.lastObservedAt) &&
+        utcNanoseconds(v.lastObservedAt as string) < utcNanoseconds(v.firstObservedAt as string))
+      problem(out, "wake.lastObservedAt", "before_first");
+  });
 }
 function validateCost(value: unknown, path: string, source: string, out: Problem[]) {
   const v = record(value, path, ["value", "source", "observedAt", "reason"], [], out);
