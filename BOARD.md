@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **383/462 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 10 invisible**
+`[################----]` **385/464 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 10 invisible**
 
-_Latest board activity: 2026-09-29T11:06:30Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-29T11:28:46Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -48,7 +48,7 @@ Something could be acting on these right now.
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
-| [#474 Proof: bound Claude working state and root terminal feed](https://github.com/rickylabs/harness/issues/474) | `impl` | — |
+| [#475 fix(contracts): serialize shared workflow writer scopes at save](https://github.com/rickylabs/harness/issues/475) | `ready-merge` | — |
 
 ## Not on the board (3)
 
@@ -60,13 +60,14 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
 | [#466 App video: live Sol leaf dispatch and actions](https://github.com/rickylabs/harness/issues/466) | — | — |
 
-## Anomalies (36)
+## Anomalies (37)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#475** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -138,7 +139,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 188/219 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 8 invisible
+`[##########--]` 190/221 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 8 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -146,7 +147,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 2 queued | `impl` |
-| _(no epic)_ | `[##########--]` 158/183 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 7 invisible | — |
+| _(no epic)_ | `[##########--]` 160/185 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 7 invisible | — |
 
 ## Waiting to start
 
@@ -188,7 +189,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  383/462 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 10 invisible
+# rickylabs/harness  [################----]  385/464 done · 22 running · 24 queued · 8 blocked · 15 abandoned · 10 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  195/243 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 2 invisible
 
@@ -470,7 +471,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
     no status            #466 App video: live Sol leaf dispatch and actions
 
-## (no milestone)  [#################---]  188/219 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 8 invisible
+## (no milestone)  [#################---]  190/221 done · 5 running · 4 queued · 5 blocked · 9 abandoned · 8 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -703,7 +704,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #471 Proof: Claude native binding and root plus child issue feed
     shipped              #472 Proof: Claude native SessionStart binding and child feed
     shipped              PR473 Show source-backed Claude root running state
-    impl                 #474 Proof: bound Claude working state and root terminal feed
+    shipped              #474 Proof: bound Claude working state and root terminal feed
+    ready-merge          #475 fix(contracts): serialize shared workflow writer scopes at save
+    shipped              PR476 fix(contracts): serialize shared workflow writer scopes
 ```
 
 </details>
