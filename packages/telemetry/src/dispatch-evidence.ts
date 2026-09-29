@@ -37,6 +37,8 @@ export interface DispatchEvidence {
   /** Bound, separately verified ordinary teardown observations for the root only. */
   readonly teardown?: { readonly cause: "timeout" | "teardown"; readonly seatObservedAt: string | null;
     readonly processObservedAt: string | null };
+  /** Verified, short-lived exact-session Herdr working observation for a Claude root. */
+  readonly claudeWorkingAt?: string;
 
 }
 

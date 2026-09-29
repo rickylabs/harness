@@ -9,6 +9,7 @@ import { ISSUE_LAUNCH_REFUSAL_REASONS, ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIEL
 import { readOrchidNativeBinding, readOrchidLaunchBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import { readOrchidStopObservation } from "./orchid-stop-observation.js";
 import { readOrchidTeardownObservation } from "./orchid-teardown-observation.js";
+import { readOrchidClaudeStatus } from "./orchid-claude-status.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
 export const ORCHID_DISPATCH_ROOT = "DSH_TELEMETRY_DISPATCH_ROOT";
@@ -256,6 +257,8 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         const boundDispatch = { ...dispatch, ...(stop === undefined ? {} : { stop }),
           ...(teardown === undefined ? {} : { teardown }) };
         await readOrchidNativeBinding(record, key, boundDispatch);
+        const claudeWorkingAt = await readOrchidClaudeStatus(record, boundDispatch);
+        if (claudeWorkingAt !== null) Object.assign(boundDispatch, { claudeWorkingAt });
         dispatches.push(boundDispatch);
       } catch { notes.add("orchid-dispatch: binding_unavailable"); }
     }
