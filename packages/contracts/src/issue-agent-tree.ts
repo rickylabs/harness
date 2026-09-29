@@ -56,7 +56,7 @@ export type AgentNativeDepth =
   | { readonly value: number; readonly source: "native"; readonly reason: null }
   | { readonly value: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
 export type AgentRoutePolicy =
-  | { readonly value: "netscript-matrix"; readonly digest: string; readonly source: "dispatch"; readonly reason: null }
+  | { readonly value: "netscript-matrix" | "harness-matrix"; readonly digest: string; readonly source: "dispatch"; readonly reason: null }
   | { readonly value: null; readonly digest: null; readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
 export type AgentQuotaRegime =
   | { readonly value: "subscription" | "metered" | "local"; readonly reason: null }
@@ -319,9 +319,9 @@ function policyRow(value: unknown): AgentRoutePolicy {
   if (row.value === null && row.digest === null && row.source === "unavailable") {
     return { value: null, digest: null, source: "unavailable", reason: reason(row.reason) };
   }
-  if (row.value !== "netscript-matrix" || row.source !== "dispatch" || row.reason !== null ||
+  if ((row.value !== "netscript-matrix" && row.value !== "harness-matrix") || row.source !== "dispatch" || row.reason !== null ||
       typeof row.digest !== "string" || !/^[a-f0-9]{64}$/.test(row.digest)) return bad();
-  return { value: "netscript-matrix", digest: row.digest, source: "dispatch", reason: null };
+  return { value: row.value, digest: row.digest, source: "dispatch", reason: null };
 }
 function placement(value: unknown, capturedAt: string): AgentPlacementValue {
   const row = record(value, ["value", "basis", "observedAt", "reason"]);

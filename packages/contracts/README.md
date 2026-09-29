@@ -609,8 +609,11 @@ zero, while null means neither an issue override nor a route default was set. A 
 Claude dispatch source reports `router: direct` with the transport in `harness`; `agy` and
 opencode remain unavailable until a validated gateway source is bound. A child inherits `direct`
 only through validated parent ancestry. The separate
-`routePolicy` value is `netscript-matrix` only when a matching private receipt supplies a valid
-matrix digest. Missing or invalid receipts leave it typed unavailable. The decoder accepts older
+`routePolicy` is `netscript-matrix` for a historical matching private receipt whose source
+identity fields are both absent. In 0.23.0, it is `harness-matrix` only when the Orchid
+dispatch and immutable receipt both name `rickylabs/harness` and the digest is valid.
+One-sided, conflicting or unknown source identities leave the policy and matrix revision
+typed unavailable. The decoder accepts older
 0.5.0 frames without `routePolicy` and normalizes that field to unavailable.
 The coordinator decided 2026-09-27 that the route default applies unless the issue overrides it;
 Eric can overrule. Child budgets and nonnative router identity need their own attributed evidence. `endedAt`
