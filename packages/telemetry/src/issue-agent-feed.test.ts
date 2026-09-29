@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { it } from "node:test";
 import { ORCHID_OBSERVER_REASON, projectRouteIdentity, readIssueAgentTreeSnapshot, unavailableAgentCost } from "@rickylabs/harness-contracts";
 import { buildAgentObservations } from "./agent-observations.js";
+import { childEventKey } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { HostCapacityReading } from "./host-capacity.js";
@@ -52,6 +53,30 @@ it("measures running for a bound native task through the full frame validity", (
   }
   assert.ok(readIssueAgentTreeSnapshot(snapshot).ok);
   assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
+});
+
+it("shows a matched Claude child Start as running, while Stop leaves it unknown", () => {
+  const rootId = "fixture-claude-root", childId = "agent-fixture-child";
+  const claudeDispatch = { ...dispatch, source: "claude" as const, harness: "claude" as const, external: rootId };
+  const native = [{ ...run(rootId, null), source: "claude" as const },
+    { ...run(childId, rootId), source: "claude" as const, nativeDepth: 1 }];
+  const capturedAt = "2026-01-01T00:00:30.000Z";
+  const tree = (starts: ReadonlyMap<string, string>) => {
+    const observations = buildAgentObservations({ dispatches: [claudeDispatch], runs: native,
+      observedAt: capturedAt, sourceBound: true, dispatchComplete: true, nativeComplete: true,
+      claudeChildStarts: starts });
+    return buildIssueAgentTreeSnapshot({ observations, dispatches: [claudeDispatch], runs: native });
+  };
+  const first = tree(new Map([[childEventKey(rootId, childId), later]]));
+  const firstChild = first.issues[0]?.dispatches[0]?.agents.find(a => a.parentAgentId !== null);
+  assert.equal(firstChild?.liveness.state, "running");
+  assert.equal(firstChild?.liveness.evidence, "runtime-observation");
+  assert.ok(readIssueAgentTreeSnapshot(first).ok);
+  const afterStop = tree(new Map());
+  const stoppedChild = afterStop.issues[0]?.dispatches[0]?.agents.find(a => a.parentAgentId !== null);
+  assert.equal(stoppedChild?.liveness.state, "unknown");
+  assert.equal(stoppedChild?.terminalOutcome.value, null);
+  assert.ok(!JSON.stringify(first).includes(rootId) && !JSON.stringify(first).includes(childId));
 });
 
 it("expires running before frame validity can outlive the native activity window", () => {
