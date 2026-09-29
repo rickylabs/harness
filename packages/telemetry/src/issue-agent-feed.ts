@@ -50,6 +50,35 @@ const event = (agentId: string, kind: AgentTimelineEvent["kind"], at: string,
 const orderedEvents = (events: readonly AgentTimelineEvent[]) => [...events]
   .sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id));
 
+/** Require the exact bound root and an unbroken native sidechain before sharing its process observation. */
+function verifiedClaudeSidechain(observation: AgentObservation, dispatch: DispatchEvidence,
+  run: RunRecord | undefined, rootRun: RunRecord | undefined, runs: readonly RunRecord[],
+  observations: readonly AgentObservation[]): boolean {
+  if (observation.parentAgentId.state !== "known-parent" || dispatch.source !== "claude" ||
+      run?.source !== "claude" || run.parentId === null || rootRun?.source !== "claude" ||
+      rootRun.parentId !== null || rootRun.id === run.id ||
+      !observations.some(row => row.assignment.id === observation.assignment.id &&
+        row.parentAgentId.state === "confirmed-root" && row.agentId === opaque("agent", dispatch.runId))) return false;
+  const byId = new Map<string, RunRecord>();
+  for (const candidate of runs.filter(candidate => candidate.source === "claude")) {
+    if (byId.has(candidate.id)) return false;
+    byId.set(candidate.id, candidate);
+  }
+  let current = run;
+  const seen = new Set<string>();
+  while (current.parentId !== null && !seen.has(current.id)) {
+    seen.add(current.id);
+    const parent = byId.get(current.parentId);
+    if (!parent) return false;
+    const expectedParent = parent.id === rootRun.id
+      ? opaque("agent", dispatch.runId) : opaque("agent", `claude\0${parent.id}`);
+    if (current === run && observation.parentAgentId.value !== expectedParent) return false;
+    if (parent.id === rootRun.id) return true;
+    current = parent;
+  }
+  return false;
+}
+
 function history(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string,
   root: boolean): readonly AgentHistoryEvent[] {
   const rows: AgentHistoryEvent[] = [];
@@ -75,7 +104,8 @@ function history(observation: AgentObservation, dispatch: DispatchEvidence, run:
 }
 
 function node(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string,
-  localCapacity: HostCapacityReading | undefined, actions: readonly PublicActionReceipt[], actionsComplete: boolean): IssueAgentTreeAgent {
+  localCapacity: HostCapacityReading | undefined, actions: readonly PublicActionReceipt[], actionsComplete: boolean,
+  verifiedClaudeChild: boolean): IssueAgentTreeAgent {
   const root = observation.parentAgentId.state !== "known-parent";
   const provenAncestry = observation.parentAgentId.state === "confirmed-root" || observation.parentAgentId.state === "known-parent";
   const harness = root ? safe(dispatch.harness ?? dispatch.source, "dispatch") : safe(run?.source, "native");
@@ -95,18 +125,35 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const matrixRevision = provenAncestry ? dispatch.matrixRevision ?? unboundRevision : unboundRevision;
   const start = time(run?.startedAt, now);
   const outcomeAt = time(run?.updatedAt, now);
-  const seatAt = root ? time(dispatch.stop?.seatObservedAt ?? undefined, now) : null;
-  const processAt = root ? time(dispatch.stop?.processObservedAt ?? undefined, now) : null;
-  const stopAt = seatAt !== null && processAt !== null ? (seatAt > processAt ? seatAt : processAt) : null;
-  const teardownSeatAt = root ? time(dispatch.teardown?.seatObservedAt ?? undefined, now) : null;
-  const teardownProcessAt = root ? time(dispatch.teardown?.processObservedAt ?? undefined, now) : null;
-  const teardownAt = teardownSeatAt !== null && teardownProcessAt !== null
+  // A Claude sidechain shares its verified root's native process. Only the
+  // paired, same-dispatch seat and process absence can end that child.
+  const processScope = root || verifiedClaudeChild;
+  const laterChildStart = verifiedClaudeChild && observation.running.value === true
+    ? time(observation.running.observedAt ?? undefined, now) : null;
+  const afterLatestStart = (at: string | null): string | null =>
+    at !== null && laterChildStart !== null && laterChildStart > at ? null : at;
+  const seatAt = afterLatestStart(processScope ? time(dispatch.stop?.seatObservedAt ?? undefined, now) : null);
+  const processAt = afterLatestStart(processScope ? time(dispatch.stop?.processObservedAt ?? undefined, now) : null);
+  const stopCandidate = seatAt !== null && processAt !== null ? (seatAt > processAt ? seatAt : processAt) : null;
+  const childObservationAfter = (seat: string | null, process: string | null, terminal: string | null): boolean =>
+    !verifiedClaudeChild || start !== null && seat !== null && process !== null && terminal !== null &&
+      seat >= start && process >= start &&
+      (observation.running.observedAt === null || observation.running.observedAt <= terminal);
+  const stopAt = !childObservationAfter(seatAt, processAt, stopCandidate)
+    ? null : stopCandidate;
+  const teardownSeatAt = afterLatestStart(processScope ? time(dispatch.teardown?.seatObservedAt ?? undefined, now) : null);
+  const teardownProcessAt = afterLatestStart(processScope ? time(dispatch.teardown?.processObservedAt ?? undefined, now) : null);
+  const teardownCandidate = teardownSeatAt !== null && teardownProcessAt !== null
     ? (teardownSeatAt > teardownProcessAt ? teardownSeatAt : teardownProcessAt) : null;
+  const teardownAt = !childObservationAfter(teardownSeatAt, teardownProcessAt, teardownCandidate)
+    ? null : teardownCandidate;
   const actionState: IssueAgentTreeAgent["actionState"] = stopAt !== null
     ? { state: "stopped", observedAt: stopAt, reason: null }
     : seatAt !== null ? { state: "stopping", observedAt: seatAt, reason: null }
       : { state: "unknown", observedAt: null, reason: "source_not_bound" };
-  const liveness: IssueAgentTreeAgent["liveness"] = (run?.outcome === "complete" || run?.outcome === "failed") && outcomeAt !== null
+  const nativeTerminal = !(run?.source === "claude" && !root) &&
+    (run?.outcome === "complete" || run?.outcome === "failed") && outcomeAt !== null;
+  const liveness: IssueAgentTreeAgent["liveness"] = nativeTerminal
     ? { state: "ended", evidence: "native-outcome", observedAt: now, reason: null }
     : stopAt !== null ? { state: "ended", evidence: "stop-observation", observedAt: stopAt, reason: null }
     : teardownAt !== null ? { state: "ended", evidence: "teardown-observation", observedAt: teardownAt, reason: null }
@@ -307,8 +354,12 @@ export function buildIssueAgentTreeSnapshot(input: {
     const rootRun = observation.parentAgentId.state === "known-parent" ? undefined :
       resolveOrchidNativeRoot(dispatch, runs) ?? runs.find(r => r.source === dispatch.source && r.id === dispatch.external && r.parentId === null);
     const run = observation.parentAgentId.state === "known-parent" ? nativeById.get(observation.agentId) : rootRun;
+    const boundRoot = observation.parentAgentId.state === "known-parent"
+      ? resolveOrchidNativeRoot(dispatch, runs) ?? runs.find(r => r.source === dispatch.source && r.id === dispatch.external && r.parentId === null)
+      : rootRun;
+    const verifiedClaudeChild = verifiedClaudeSidechain(observation, dispatch, run, boundRoot, runs, observations.agents);
     agents.push(node(observation, dispatch, run, observations.observedAt, input.localCapacity,
-      input.actions ?? [], input.actionsComplete ?? false));
+      input.actions ?? [], input.actionsComplete ?? false, verifiedClaudeChild));
   }
   const rows: IssueAgentTree[] = [...issues.values()].map(issue => ({ repo: issue.repo, issueNumber: issue.issueNumber,
     complete: true, reason: null,
