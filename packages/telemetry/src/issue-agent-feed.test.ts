@@ -79,6 +79,66 @@ it("shows a matched Claude child Start as running, while Stop leaves it unknown"
   assert.ok(!JSON.stringify(first).includes(rootId) && !JSON.stringify(first).includes(childId));
 });
 
+it("ends a verified Claude sidechain only after its own dispatch has seat and process absence", () => {
+  const rootId = "fixture-claude-root", childId = "agent-fixture-child";
+  const claudeDispatch = { ...dispatch, source: "claude" as const, harness: "claude" as const, external: rootId };
+  const native = [{ ...run(rootId, null), source: "claude" as const },
+    { ...run(childId, rootId), source: "claude" as const, nativeDepth: 1 }];
+  const capturedAt = "2026-01-01T00:00:30.000Z";
+  const seatAt = "2026-01-01T00:00:12.000Z", processAt = "2026-01-01T00:00:14.000Z";
+  const tree = (d: DispatchEvidence, projected = native, starts = new Map<string, string>()) => {
+    const observations = buildAgentObservations({ dispatches: [claudeDispatch], runs: native,
+      observedAt: capturedAt, sourceBound: true, dispatchComplete: true, nativeComplete: true,
+      claudeChildStarts: starts });
+    return buildIssueAgentTreeSnapshot({ observations, dispatches: [d], runs: projected });
+  };
+  const child = (snapshot: ReturnType<typeof tree>) => snapshot.issues[0]?.dispatches[0]?.agents
+    .find(agent => agent.observation.parentAgentId.state === "known-parent");
+  const before = tree(claudeDispatch);
+  assert.equal(child(before)?.liveness.state, "unknown"); // matched Stop, no fresh Start
+  assert.equal(child(before)?.endedAt, null);
+  assert.equal(child(tree(claudeDispatch, native, new Map([[childEventKey(rootId, childId), later]])))
+    ?.liveness.state, "running"); // resume after Stop is a new running observation
+  const seatOnly = tree({ ...claudeDispatch, teardown: { cause: "teardown", seatObservedAt: seatAt,
+    processObservedAt: null } });
+  assert.equal(child(seatOnly)?.liveness.state, "unknown");
+  assert.equal(child(seatOnly)?.terminalOutcome.value, null);
+  const processOnly = tree({ ...claudeDispatch, teardown: { cause: "teardown", seatObservedAt: null,
+    processObservedAt: processAt } });
+  assert.equal(child(processOnly)?.liveness.state, "unknown");
+  const teardown = { ...claudeDispatch, teardown: { cause: "teardown" as const,
+    seatObservedAt: seatAt, processObservedAt: processAt } };
+  const ended = tree(teardown);
+  assert.equal(child(ended)?.liveness.state, "ended");
+  assert.equal(child(ended)?.liveness.evidence, "teardown-observation");
+  assert.equal(child(ended)?.endedAt, processAt);
+  assert.equal(child(ended)?.endedBy, "teardown");
+  assert.deepEqual(child(ended)?.terminalOutcome, { value: "cancelled", source: "teardown-observation",
+    observedAt: processAt, reason: null });
+  assert.equal(child(ended)?.timeline?.events.find(event => event.kind === "ended")?.reason, "teardown");
+  assert.ok(readIssueAgentTreeSnapshot(ended).ok);
+  const resumedAfterOldObservation = tree(teardown, native,
+    new Map([[childEventKey(rootId, childId), "2026-01-01T00:00:20.000Z"]]));
+  assert.equal(child(resumedAfterOldObservation)?.liveness.state, "running");
+  const stopped = tree({ ...claudeDispatch, stop: { seatObservedAt: seatAt, processObservedAt: processAt } });
+  assert.equal(child(stopped)?.endedBy, "stop");
+  assert.equal(child(stopped)?.terminalOutcome.value, "cancelled");
+  const stopping = tree({ ...claudeDispatch, stop: { seatObservedAt: seatAt, processObservedAt: null } });
+  assert.equal(child(stopping)?.liveness.state, "unknown");
+  assert.equal(child(stopping)?.terminalOutcome.value, null);
+  const timedOut = tree({ ...claudeDispatch, teardown: { cause: "timeout",
+    seatObservedAt: seatAt, processObservedAt: processAt } });
+  assert.equal(child(timedOut)?.endedBy, "timeout");
+  assert.equal(child(timedOut)?.terminalOutcome.value, "cancelled");
+  const wrongRoot = tree({ ...teardown, external: "other-root" });
+  assert.notEqual(child(wrongRoot)?.liveness.state, "ended");
+  const wrongChild = tree(teardown, [native[0]!, { ...native[1]!, parentId: "other-root" }]);
+  assert.notEqual(child(wrongChild)?.liveness.state, "ended");
+  const preChildSeat = tree({ ...claudeDispatch, teardown: { cause: "teardown",
+    seatObservedAt: "2025-12-31T23:59:59.000Z", processObservedAt: processAt } });
+  assert.notEqual(child(preChildSeat)?.liveness.state, "ended");
+});
+
 it("expires running before frame validity can outlive the native activity window", () => {
   const active = [run("PRIVATE-NATIVE-ROOT", null, "running"),
     run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT", "running")];
