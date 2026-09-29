@@ -123,6 +123,21 @@ it("requires a directly dependent evaluator when saving, without rejecting older
     .includes("workflow.phases[1].instructions"));
 });
 
+it("serializes shared writer scopes only when phases are transitively ordered", () => {
+  const first = { ...phase, verifierRole: null } as const;
+  const middle = { ...first, id: "middle", dependsOn: ["plan"],
+    writerScopeIds: ["scope_" + "e".repeat(32)] } as const;
+  const last = { ...first, id: "last", dependsOn: ["middle"] } as const;
+  const serial = { ...workflow, phases: [first, middle, last] };
+  assert.equal(readWorkflowRevisionForSave(serial).ok, true);
+  const parallel = { ...workflow, phases: [first, { ...last, dependsOn: [] }] };
+  assert.equal(readWorkflowRevision(parallel).ok, true); // old stored revisions stay readable
+  assert.ok(fields(readWorkflowRevisionForSave(parallel))
+    .includes("workflow.phases[1].writerScopeIds[0]"));
+  assert.equal(readWorkflowRevisionForSave({ ...workflow, phases: [first,
+    { ...last, dependsOn: [], writerScopeIds: ["scope_" + "f".repeat(32)] }] }).ok, true);
+});
+
 it("binds allow, block and escalate to an ended, separate evaluator attempt", () => {
   const reviewerProfile = { ...profile, name: "plan-reviewer", title: "Plan reviewer",
     role: "plan_evaluation", tier: "straightforward" } as const;
