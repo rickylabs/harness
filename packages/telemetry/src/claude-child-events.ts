@@ -47,10 +47,13 @@ export async function readClaudeChildStarts(root: string | undefined, sessionId:
             typeof record.observedAt !== "string" || !ISO.test(record.observedAt)) return unavailable;
         const atMs = Date.parse(record.observedAt);
         if (!Number.isFinite(atMs) || new Date(atMs).toISOString() !== record.observedAt || atMs > nowMs) return unavailable;
-        if (!known.has(record.agentId)) continue; // Internal/unmatched Claude agents have no issue child.
-        const prior = latest.get(record.agentId);
+        // Claude's hook agent_id omits the literal prefix used by its transcript filename.
+        // The issue scanner has already verified that each known child is a transcript run.
+        const transcriptId = `agent-${record.agentId}`;
+        if (!known.has(transcriptId)) continue; // Internal/unmatched Claude agents have no issue child.
+        const prior = latest.get(transcriptId);
         if (prior && record.observedAt < prior.at) return unavailable;
-        latest.set(record.agentId, { event: record.event, at: record.observedAt });
+        latest.set(transcriptId, { event: record.event, at: record.observedAt });
       }
       for (const [id, event] of latest) {
         if (event.event === "SubagentStart" && Date.parse(event.at) + CLAUDE_CHILD_START_FRESH_MS >= nowMs)
