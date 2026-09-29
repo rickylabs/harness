@@ -1,0 +1,1277 @@
+{
+  "source": "rickylabs/netscript",
+  "sourceRevision": "e75161c32e8189b4cb6716b92e1bf16702648886",
+  "sourcePath": ".llm/tools/agentic/runtime/cli/delegation-matrix-table.ts",
+  "harnessMatrixRevision": "948919ef323164e8230cb6df12c9c554b5ecad58",
+  "casesSha256": "9cd9316305bc6bf1c67c63b6a6216eb5ee0e3fc87db9b40d1696f278f5d82cde",
+  "cases": [
+    {
+      "args": [],
+      "status": 0,
+      "stdout": "# Harness Agents — Model Matrix\n\nRoutes are read directly from the typed delegation matrix. `—` means not applicable.\n\n| Tier / complexity                                                                                                                  | Implementer (default) | Implementer (fallback)               | UI/UX (default) | UI/UX (fallback)            | Plan (default)   | Plan (fallback)                | Plan eval (default)      | Plan eval (fallback)                 | Impl eval (default)            | Impl eval (fallback)               | Vision eval (default)                     | Vision eval (fallback)                    | Doc writing (default)         | Doc writing (fallback)               | Deep research (default) | Deep research (fallback) |\n| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------ | --------------- | --------------------------- | ---------------- | ------------------------------ | ------------------------ | ------------------------------------ | ------------------------------ | ---------------------------------- | ----------------------------------------- | ----------------------------------------- | ----------------------------- | ------------------------------------ | ----------------------- | ------------------------ |\n| simple<br>Automation, simple fixes, and chores; low temperature and low complexity.                                                | Luna max              | Qwen 3.8 Flash Next provider default | Kimi K3 low     | MiniMax M3 provider default | —                | —                              | —                        | —                                    | MiniMax M3 provider default    | DeepSeek V4 Flash provider default | MiniMax M3 provider default               | DeepSeek V4 Flash Vision provider default | Gemini 3.8 Flash medium       | Opus 5 low                           | Gemini 3.8 Flash low    | Luna max                 |\n| straightforward<br>Straightforward implementations and features; medium temperature and medium complexity.                         | SOL high              | GLM 5.3 Flash provider default       | Kimi K3 high    | Gemini 3.8 Flash high       | SOL high         | GLM 5.3 Flash provider default | Opus 5 medium            | Qwen 3.8 Flash Next provider default | GLM 5.3 Flash provider default | DeepSeek V4 Pro provider default   | DeepSeek V4 Flash Vision provider default | Kimi K3 low                               | Gemini 3.8 Flash high         | Qwen 3.8 Flash Next provider default | Gemini 3.8 Flash medium | Luna max                 |\n| feature<br>Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity. | SOL high              | Muse Spark 1.3 xhigh                 | Kimi K3 high    | Gemini 3.8 Flash high       | Fable 5.1 low    | Muse Spark 1.3 xhigh           | GLM 5.3 provider default | Fable 5.1 low                        | Muse Spark 1.3 xhigh           | Opus 5 xhigh                       | Gemini 3.8 Flash high                     | Muse Spark 1.3 xhigh                      | Qwen 3.8 Max provider default | GLM 5.3 Flash provider default       | Gemini 3.8 Flash high   | Luna max                 |\n| complex<br>Complex implementations, fixes, and features; medium temperature and high complexity.                                   | Astra medium          | Fable 5.1 medium                     | Kimi K3 max     | Fable 5.1 medium            | Fable 5.1 medium | Muse Spark 1.3 max             | Muse Spark 1.3 max       | Grok 4.6 high                        | Muse Spark 1.3 max             | Muse Spark 1.3 max                 | Kimi K3 max                               | Gemini 3.8 Flash high                     | Fable 5.1 medium              | Qwen 3.8 Max provider default        | Gemini 3.8 Flash high   | Luna max                 |\n| architecture<br>Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.                            | Astra xhigh           | Fable 5.1 xhigh                      | Kimi K3 max     | Fable 5.1 medium            | Fable 5.1 xhigh  | Muse Spark 1.3 max             | Muse Spark 1.3 max       | Grok 4.6 xhigh                       | Grok 4.6 xhigh                 | Muse Spark 1.3 max                 | Kimi K3 max                               | Fable 5.1 high                            | Fable 5.1 high                | Qwen 3.8 Max provider default        | Gemini 3.8 Flash high   | Luna max                 |\n\n## Evaluation policies\n\n| Tier            | PLAN-EVAL loop                                                                                 | IMPL-EVAL loop                                                          | Documentation loop                                                      |\n| --------------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |\n| simple          | no roundtrip; re-steer same evaluator session                                                  | maximum unspecified by owner; re-steer same evaluator session           | max 2 roundtrips; re-steer same evaluator session                       |\n| straightforward | no roundtrip; repair fixable failure in flight; re-steer same evaluator session                | max 5 roundtrips; notify owner after 3; re-steer same evaluator session | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n| feature         | max 2 roundtrips; repair fixable failure in flight at round 2; re-steer same evaluator session | max 5 roundtrips; notify owner after 3; re-steer same evaluator session | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n| complex         | max 3 roundtrips; repair fixable failure in flight at round 3; re-steer same evaluator session | max 5 roundtrips; notify owner after 3; re-steer same evaluator session | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n| architecture    | max 1 roundtrips; escalate to owner at 2; re-steer same evaluator session                      | max 3 roundtrips; notify owner after 2; re-steer same evaluator session | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n\n## Coordinator / orchestrator matrix\n\n| Scope         | Default    | Fallback chain                  |\n| ------------- | ---------- | ------------------------------- |\n| small_project | SOL medium | Opus 5 low                      |\n| project       | SOL medium | Opus 5 medium                   |\n| framework     | SOL high   | Opus 5 xhigh                    |\n| milestone     | SOL medium | Fable 5.1 medium → Opus 5 xhigh |\n\n## CLI / provider precedence\n\n| Priority | Subscription / provider  | Model routing                     | CLI             | Use / fallback rule                                                        |\n| -------- | ------------------------ | --------------------------------- | --------------- | -------------------------------------------------------------------------- |\n| 1        | Claude subscription      | Claude models                     | Claude Code CLI | Native default for supported Claude models.                                |\n| 1        | Codex subscription       | OpenAI / Codex models             | Codex CLI       | Native default for supported OpenAI models.                                |\n| 1        | Google subscription      | Google / Gemini models            | Agy CLI         | Native default for supported Google models.                                |\n| 2        | GitHub Copilot Pro+      | Catalog-attested Copilot models   | OpenCode CLI    | After family-native subscriptions; before Go, Ollama, and OpenRouter.      |\n| 3        | OpenCode Go subscription | Models included in OpenCode Go    | OpenCode CLI    | Subscription-backed fallback before metered routes.                        |\n| 4        | Ollama subscription      | Models available through Ollama   | OpenCode CLI    | Fallback when native, Copilot, and Go routes are unavailable or exhausted. |\n| 5        | OpenRouter               | Required models unavailable above | OpenCode CLI    | Final fallback only.                                                       |\n\n## Hard routing rules\n\n- Generator and evaluator must use different vendor families and separate sessions.\n- `ui_ux` is owner-selected pure UI/UX specialization; incidental UI work stays on `implementation`.\n- `complex` and `architecture` require explicit owner or milestone-coordinator authority.\n- Owner matrix overrides require an exact `.llm/runs/**/worklog.md` entry and never waive evaluator independence.\n- Deep research uses Gemini 3.8 Flash by tier, with Luna max as its only model fallback; Claude, OpenCode Go, Ollama, and OpenRouter are forbidden for that role.\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"full\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"plan\": [],\n      \"plan_evaluation\": [],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": \"none\",\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": \"unspecified_by_owner\",\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_pro\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 0,\n        \"repairInFlightAt\": \"immediate\",\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"glm_5_3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 2,\n        \"repairInFlightAt\": 2,\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"astra\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 3,\n        \"repairInFlightAt\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"astra\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 1,\n        \"escalateToOwnerAt\": 2,\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 3,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ],\n  \"coordinators\": {\n    \"small_project\": [\n      {\n        \"model\": \"sol\",\n        \"effort\": \"medium\"\n      },\n      {\n        \"model\": \"opus_5\",\n        \"effort\": \"low\"\n      }\n    ],\n    \"project\": [\n      {\n        \"model\": \"sol\",\n        \"effort\": \"medium\"\n      },\n      {\n        \"model\": \"opus_5\",\n        \"effort\": \"medium\"\n      }\n    ],\n    \"framework\": [\n      {\n        \"model\": \"sol\",\n        \"effort\": \"high\"\n      },\n      {\n        \"model\": \"opus_5\",\n        \"effort\": \"xhigh\"\n      }\n    ],\n    \"milestone\": [\n      {\n        \"model\": \"sol\",\n        \"effort\": \"medium\"\n      },\n      {\n        \"model\": \"fable_5_1\",\n        \"effort\": \"medium\"\n      },\n      {\n        \"model\": \"opus_5\",\n        \"effort\": \"xhigh\"\n      }\n    ]\n  },\n  \"transportPriority\": [\n    \"claude\",\n    \"codex\",\n    \"agy\",\n    \"github_copilot\",\n    \"opencode_go\",\n    \"ollama\",\n    \"openrouter\"\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--help"
+      ],
+      "status": 0,
+      "stdout": "Usage: deno task agentic:matrix -- [options]\n\n  (no flags)                 Render the full workload, policy, coordinator, and CLI matrices\n  --tier <tier>              Render one workload row (standard aliases straightforward)\n  --role <role>                 Render one role across all tiers or the selected tier\n  --plan-evaluator              Shortcut for --role plan-eval\n  --impl-evaluator              Shortcut for --role impl-eval\n  --fallback-of <logical-model> List every declared fallback where the model is primary\n  --fallback <logical-model>    Alias for --fallback-of\n  --json                        Emit the selected view as structured JSON\n  --help                        Show this help\n\nRole aliases: impl, ui-ux, plan, plan-eval, impl-eval, vision-eval, docs, deep-research.\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "-h"
+      ],
+      "status": 0,
+      "stdout": "Usage: deno task agentic:matrix -- [options]\n\n  (no flags)                 Render the full workload, policy, coordinator, and CLI matrices\n  --tier <tier>              Render one workload row (standard aliases straightforward)\n  --role <role>                 Render one role across all tiers or the selected tier\n  --plan-evaluator              Shortcut for --role plan-eval\n  --impl-evaluator              Shortcut for --role impl-eval\n  --fallback-of <logical-model> List every declared fallback where the model is primary\n  --fallback <logical-model>    Alias for --fallback-of\n  --json                        Emit the selected view as structured JSON\n  --help                        Show this help\n\nRole aliases: impl, ui-ux, plan, plan-eval, impl-eval, vision-eval, docs, deep-research.\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--",
+        "--tier",
+        "feature"
+      ],
+      "status": 0,
+      "stdout": "# feature workload route\n\n| Tier / complexity                                                                                                                  | Implementer (default) | Implementer (fallback) | UI/UX (default) | UI/UX (fallback)      | Plan (default) | Plan (fallback)      | Plan eval (default)      | Plan eval (fallback) | Impl eval (default)  | Impl eval (fallback) | Vision eval (default) | Vision eval (fallback) | Doc writing (default)         | Doc writing (fallback)         | Deep research (default) | Deep research (fallback) |\n| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------------------- | --------------- | --------------------- | -------------- | -------------------- | ------------------------ | -------------------- | -------------------- | -------------------- | --------------------- | ---------------------- | ----------------------------- | ------------------------------ | ----------------------- | ------------------------ |\n| feature<br>Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity. | SOL high              | Muse Spark 1.3 xhigh   | Kimi K3 high    | Gemini 3.8 Flash high | Fable 5.1 low  | Muse Spark 1.3 xhigh | GLM 5.3 provider default | Fable 5.1 low        | Muse Spark 1.3 xhigh | Opus 5 xhigh         | Gemini 3.8 Flash high | Muse Spark 1.3 xhigh   | Qwen 3.8 Max provider default | GLM 5.3 Flash provider default | Gemini 3.8 Flash high   | Luna max                 |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "simple"
+      ],
+      "status": 0,
+      "stdout": "# simple workload route\n\n| Tier / complexity                                                                   | Implementer (default) | Implementer (fallback)               | UI/UX (default) | UI/UX (fallback)            | Plan (default) | Plan (fallback) | Plan eval (default) | Plan eval (fallback) | Impl eval (default)         | Impl eval (fallback)               | Vision eval (default)       | Vision eval (fallback)                    | Doc writing (default)   | Doc writing (fallback) | Deep research (default) | Deep research (fallback) |\n| ----------------------------------------------------------------------------------- | --------------------- | ------------------------------------ | --------------- | --------------------------- | -------------- | --------------- | ------------------- | -------------------- | --------------------------- | ---------------------------------- | --------------------------- | ----------------------------------------- | ----------------------- | ---------------------- | ----------------------- | ------------------------ |\n| simple<br>Automation, simple fixes, and chores; low temperature and low complexity. | Luna max              | Qwen 3.8 Flash Next provider default | Kimi K3 low     | MiniMax M3 provider default | —              | —               | —                   | —                    | MiniMax M3 provider default | DeepSeek V4 Flash provider default | MiniMax M3 provider default | DeepSeek V4 Flash Vision provider default | Gemini 3.8 Flash medium | Opus 5 low             | Gemini 3.8 Flash low    | Luna max                 |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "simple",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"tier\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"plan\": [],\n      \"plan_evaluation\": [],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": \"none\",\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": \"unspecified_by_owner\",\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "straightforward"
+      ],
+      "status": 0,
+      "stdout": "# straightforward workload route\n\n| Tier / complexity                                                                                          | Implementer (default) | Implementer (fallback)         | UI/UX (default) | UI/UX (fallback)      | Plan (default) | Plan (fallback)                | Plan eval (default) | Plan eval (fallback)                 | Impl eval (default)            | Impl eval (fallback)             | Vision eval (default)                     | Vision eval (fallback) | Doc writing (default) | Doc writing (fallback)               | Deep research (default) | Deep research (fallback) |\n| ---------------------------------------------------------------------------------------------------------- | --------------------- | ------------------------------ | --------------- | --------------------- | -------------- | ------------------------------ | ------------------- | ------------------------------------ | ------------------------------ | -------------------------------- | ----------------------------------------- | ---------------------- | --------------------- | ------------------------------------ | ----------------------- | ------------------------ |\n| straightforward<br>Straightforward implementations and features; medium temperature and medium complexity. | SOL high              | GLM 5.3 Flash provider default | Kimi K3 high    | Gemini 3.8 Flash high | SOL high       | GLM 5.3 Flash provider default | Opus 5 medium       | Qwen 3.8 Flash Next provider default | GLM 5.3 Flash provider default | DeepSeek V4 Pro provider default | DeepSeek V4 Flash Vision provider default | Kimi K3 low            | Gemini 3.8 Flash high | Qwen 3.8 Flash Next provider default | Gemini 3.8 Flash medium | Luna max                 |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "straightforward",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"tier\",\n  \"tiers\": [\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_pro\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 0,\n        \"repairInFlightAt\": \"immediate\",\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature"
+      ],
+      "status": 0,
+      "stdout": "# feature workload route\n\n| Tier / complexity                                                                                                                  | Implementer (default) | Implementer (fallback) | UI/UX (default) | UI/UX (fallback)      | Plan (default) | Plan (fallback)      | Plan eval (default)      | Plan eval (fallback) | Impl eval (default)  | Impl eval (fallback) | Vision eval (default) | Vision eval (fallback) | Doc writing (default)         | Doc writing (fallback)         | Deep research (default) | Deep research (fallback) |\n| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------------------- | --------------- | --------------------- | -------------- | -------------------- | ------------------------ | -------------------- | -------------------- | -------------------- | --------------------- | ---------------------- | ----------------------------- | ------------------------------ | ----------------------- | ------------------------ |\n| feature<br>Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity. | SOL high              | Muse Spark 1.3 xhigh   | Kimi K3 high    | Gemini 3.8 Flash high | Fable 5.1 low  | Muse Spark 1.3 xhigh | GLM 5.3 provider default | Fable 5.1 low        | Muse Spark 1.3 xhigh | Opus 5 xhigh         | Gemini 3.8 Flash high | Muse Spark 1.3 xhigh   | Qwen 3.8 Max provider default | GLM 5.3 Flash provider default | Gemini 3.8 Flash high   | Luna max                 |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"tier\",\n  \"tiers\": [\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"glm_5_3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 2,\n        \"repairInFlightAt\": 2,\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "complex"
+      ],
+      "status": 0,
+      "stdout": "# complex workload route\n\n| Tier / complexity                                                                                | Implementer (default) | Implementer (fallback) | UI/UX (default) | UI/UX (fallback) | Plan (default)   | Plan (fallback)    | Plan eval (default) | Plan eval (fallback) | Impl eval (default) | Impl eval (fallback) | Vision eval (default) | Vision eval (fallback) | Doc writing (default) | Doc writing (fallback)        | Deep research (default) | Deep research (fallback) |\n| ------------------------------------------------------------------------------------------------ | --------------------- | ---------------------- | --------------- | ---------------- | ---------------- | ------------------ | ------------------- | -------------------- | ------------------- | -------------------- | --------------------- | ---------------------- | --------------------- | ----------------------------- | ----------------------- | ------------------------ |\n| complex<br>Complex implementations, fixes, and features; medium temperature and high complexity. | Astra medium          | Fable 5.1 medium       | Kimi K3 max     | Fable 5.1 medium | Fable 5.1 medium | Muse Spark 1.3 max | Muse Spark 1.3 max  | Grok 4.6 high        | Muse Spark 1.3 max  | Muse Spark 1.3 max   | Kimi K3 max           | Gemini 3.8 Flash high  | Fable 5.1 medium      | Qwen 3.8 Max provider default | Gemini 3.8 Flash high   | Luna max                 |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "complex",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"tier\",\n  \"tiers\": [\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"astra\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 3,\n        \"repairInFlightAt\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "architecture"
+      ],
+      "status": 0,
+      "stdout": "# architecture workload route\n\n| Tier / complexity                                                                                       | Implementer (default) | Implementer (fallback) | UI/UX (default) | UI/UX (fallback) | Plan (default)  | Plan (fallback)    | Plan eval (default) | Plan eval (fallback) | Impl eval (default) | Impl eval (fallback) | Vision eval (default) | Vision eval (fallback) | Doc writing (default) | Doc writing (fallback)        | Deep research (default) | Deep research (fallback) |\n| ------------------------------------------------------------------------------------------------------- | --------------------- | ---------------------- | --------------- | ---------------- | --------------- | ------------------ | ------------------- | -------------------- | ------------------- | -------------------- | --------------------- | ---------------------- | --------------------- | ----------------------------- | ----------------------- | ------------------------ |\n| architecture<br>Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity. | Astra xhigh           | Fable 5.1 xhigh        | Kimi K3 max     | Fable 5.1 medium | Fable 5.1 xhigh | Muse Spark 1.3 max | Muse Spark 1.3 max  | Grok 4.6 xhigh       | Grok 4.6 xhigh      | Muse Spark 1.3 max   | Kimi K3 max           | Fable 5.1 high         | Fable 5.1 high        | Qwen 3.8 Max provider default | Gemini 3.8 Flash high   | Luna max                 |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "architecture",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"tier\",\n  \"tiers\": [\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"astra\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 1,\n        \"escalateToOwnerAt\": 2,\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 3,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "standard"
+      ],
+      "status": 0,
+      "stdout": "# straightforward workload route\n\n| Tier / complexity                                                                                          | Implementer (default) | Implementer (fallback)         | UI/UX (default) | UI/UX (fallback)      | Plan (default) | Plan (fallback)                | Plan eval (default) | Plan eval (fallback)                 | Impl eval (default)            | Impl eval (fallback)             | Vision eval (default)                     | Vision eval (fallback) | Doc writing (default) | Doc writing (fallback)               | Deep research (default) | Deep research (fallback) |\n| ---------------------------------------------------------------------------------------------------------- | --------------------- | ------------------------------ | --------------- | --------------------- | -------------- | ------------------------------ | ------------------- | ------------------------------------ | ------------------------------ | -------------------------------- | ----------------------------------------- | ---------------------- | --------------------- | ------------------------------------ | ----------------------- | ------------------------ |\n| straightforward<br>Straightforward implementations and features; medium temperature and medium complexity. | SOL high              | GLM 5.3 Flash provider default | Kimi K3 high    | Gemini 3.8 Flash high | SOL high       | GLM 5.3 Flash provider default | Opus 5 medium       | Qwen 3.8 Flash Next provider default | GLM 5.3 Flash provider default | DeepSeek V4 Pro provider default | DeepSeek V4 Flash Vision provider default | Kimi K3 low            | Gemini 3.8 Flash high | Qwen 3.8 Flash Next provider default | Gemini 3.8 Flash medium | Luna max                 |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "standard",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"tier\",\n  \"tiers\": [\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_pro\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 0,\n        \"repairInFlightAt\": \"immediate\",\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "workhorse"
+      ],
+      "status": 0,
+      "stdout": "# feature workload route\n\n| Tier / complexity                                                                                                                  | Implementer (default) | Implementer (fallback) | UI/UX (default) | UI/UX (fallback)      | Plan (default) | Plan (fallback)      | Plan eval (default)      | Plan eval (fallback) | Impl eval (default)  | Impl eval (fallback) | Vision eval (default) | Vision eval (fallback) | Doc writing (default)         | Doc writing (fallback)         | Deep research (default) | Deep research (fallback) |\n| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------------------- | --------------- | --------------------- | -------------- | -------------------- | ------------------------ | -------------------- | -------------------- | -------------------- | --------------------- | ---------------------- | ----------------------------- | ------------------------------ | ----------------------- | ------------------------ |\n| feature<br>Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity. | SOL high              | Muse Spark 1.3 xhigh   | Kimi K3 high    | Gemini 3.8 Flash high | Fable 5.1 low  | Muse Spark 1.3 xhigh | GLM 5.3 provider default | Fable 5.1 low        | Muse Spark 1.3 xhigh | Opus 5 xhigh         | Gemini 3.8 Flash high | Muse Spark 1.3 xhigh   | Qwen 3.8 Max provider default | GLM 5.3 Flash provider default | Gemini 3.8 Flash high   | Luna max                 |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "workhorse",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"tier\",\n  \"tiers\": [\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"glm_5_3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 2,\n        \"repairInFlightAt\": 2,\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "Feature"
+      ],
+      "status": 0,
+      "stdout": "# feature workload route\n\n| Tier / complexity                                                                                                                  | Implementer (default) | Implementer (fallback) | UI/UX (default) | UI/UX (fallback)      | Plan (default) | Plan (fallback)      | Plan eval (default)      | Plan eval (fallback) | Impl eval (default)  | Impl eval (fallback) | Vision eval (default) | Vision eval (fallback) | Doc writing (default)         | Doc writing (fallback)         | Deep research (default) | Deep research (fallback) |\n| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ---------------------- | --------------- | --------------------- | -------------- | -------------------- | ------------------------ | -------------------- | -------------------- | -------------------- | --------------------- | ---------------------- | ----------------------------- | ------------------------------ | ----------------------- | ------------------------ |\n| feature<br>Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity. | SOL high              | Muse Spark 1.3 xhigh   | Kimi K3 high    | Gemini 3.8 Flash high | Fable 5.1 low  | Muse Spark 1.3 xhigh | GLM 5.3 provider default | Fable 5.1 low        | Muse Spark 1.3 xhigh | Opus 5 xhigh         | Gemini 3.8 Flash high | Muse Spark 1.3 xhigh   | Qwen 3.8 Max provider default | GLM 5.3 Flash provider default | Gemini 3.8 Flash high   | Luna max                 |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "Feature",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"tier\",\n  \"tiers\": [\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"implementation\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"ui_ux\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"plan\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"plan_evaluation\": [\n        {\n          \"model\": \"glm_5_3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"implementation_evaluation\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"vision_evaluation\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"documentation\": [\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"deep_research\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"planPolicy\": {\n        \"maxRounds\": 2,\n        \"repairInFlightAt\": 2,\n        \"reSteerSameSession\": true\n      },\n      \"implementationPolicy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      },\n      \"documentationPolicy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "implementation"
+      ],
+      "status": 0,
+      "stdout": "# Implementation routes\n\n| Tier            | Default      | Fallback chain                       | Loop policy |\n| --------------- | ------------ | ------------------------------------ | ----------- |\n| simple          | Luna max     | Qwen 3.8 Flash Next provider default | —           |\n| straightforward | SOL high     | GLM 5.3 Flash provider default       | —           |\n| feature         | SOL high     | Muse Spark 1.3 xhigh                 | —           |\n| complex         | Astra medium | Fable 5.1 medium                     | —           |\n| architecture    | Astra xhigh  | Fable 5.1 xhigh                      | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "implementation",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"implementation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"astra\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"astra\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "implementation"
+      ],
+      "status": 0,
+      "stdout": "# Implementation routes\n\n| Tier    | Default  | Fallback chain       | Loop policy |\n| ------- | -------- | -------------------- | ----------- |\n| feature | SOL high | Muse Spark 1.3 xhigh | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "ui_ux"
+      ],
+      "status": 0,
+      "stdout": "# UI/UX implementation routes\n\n| Tier            | Default      | Fallback chain              | Loop policy |\n| --------------- | ------------ | --------------------------- | ----------- |\n| simple          | Kimi K3 low  | MiniMax M3 provider default | —           |\n| straightforward | Kimi K3 high | Gemini 3.8 Flash high       | —           |\n| feature         | Kimi K3 high | Gemini 3.8 Flash high       | —           |\n| complex         | Kimi K3 max  | Fable 5.1 medium            | —           |\n| architecture    | Kimi K3 max  | Fable 5.1 medium            | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "ui_ux",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"ui_ux\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "ui_ux"
+      ],
+      "status": 0,
+      "stdout": "# UI/UX implementation routes\n\n| Tier    | Default      | Fallback chain        | Loop policy |\n| ------- | ------------ | --------------------- | ----------- |\n| feature | Kimi K3 high | Gemini 3.8 Flash high | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "plan"
+      ],
+      "status": 0,
+      "stdout": "# Plan routes\n\n| Tier            | Default          | Fallback chain                 | Loop policy |\n| --------------- | ---------------- | ------------------------------ | ----------- |\n| simple          | —                | —                              | —           |\n| straightforward | SOL high         | GLM 5.3 Flash provider default | —           |\n| feature         | Fable 5.1 low    | Muse Spark 1.3 xhigh           | —           |\n| complex         | Fable 5.1 medium | Muse Spark 1.3 max             | —           |\n| architecture    | Fable 5.1 xhigh  | Muse Spark 1.3 max             | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "plan",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"plan\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": []\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "plan"
+      ],
+      "status": 0,
+      "stdout": "# Plan routes\n\n| Tier    | Default       | Fallback chain       | Loop policy |\n| ------- | ------------- | -------------------- | ----------- |\n| feature | Fable 5.1 low | Muse Spark 1.3 xhigh | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "plan_evaluation"
+      ],
+      "status": 0,
+      "stdout": "# PLAN-EVAL routes\n\n| Tier            | Default                  | Fallback chain                       | Loop policy                                                                                    |\n| --------------- | ------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------- |\n| simple          | —                        | —                                    | no roundtrip; re-steer same evaluator session                                                  |\n| straightforward | Opus 5 medium            | Qwen 3.8 Flash Next provider default | no roundtrip; repair fixable failure in flight; re-steer same evaluator session                |\n| feature         | GLM 5.3 provider default | Fable 5.1 low                        | max 2 roundtrips; repair fixable failure in flight at round 2; re-steer same evaluator session |\n| complex         | Muse Spark 1.3 max       | Grok 4.6 high                        | max 3 roundtrips; repair fixable failure in flight at round 3; re-steer same evaluator session |\n| architecture    | Muse Spark 1.3 max       | Grok 4.6 xhigh                       | max 1 roundtrips; escalate to owner at 2; re-steer same evaluator session                      |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "plan_evaluation",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"plan_evaluation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [],\n      \"policy\": {\n        \"maxRounds\": \"none\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 0,\n        \"repairInFlightAt\": \"immediate\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"glm_5_3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"repairInFlightAt\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 3,\n        \"repairInFlightAt\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 1,\n        \"escalateToOwnerAt\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "plan_evaluation"
+      ],
+      "status": 0,
+      "stdout": "# PLAN-EVAL routes\n\n| Tier    | Default                  | Fallback chain | Loop policy                                                                                    |\n| ------- | ------------------------ | -------------- | ---------------------------------------------------------------------------------------------- |\n| feature | GLM 5.3 provider default | Fable 5.1 low  | max 2 roundtrips; repair fixable failure in flight at round 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "implementation_evaluation"
+      ],
+      "status": 0,
+      "stdout": "# IMPL-EVAL routes\n\n| Tier            | Default                        | Fallback chain                     | Loop policy                                                             |\n| --------------- | ------------------------------ | ---------------------------------- | ----------------------------------------------------------------------- |\n| simple          | MiniMax M3 provider default    | DeepSeek V4 Flash provider default | maximum unspecified by owner; re-steer same evaluator session           |\n| straightforward | GLM 5.3 Flash provider default | DeepSeek V4 Pro provider default   | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| feature         | Muse Spark 1.3 xhigh           | Opus 5 xhigh                       | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| complex         | Muse Spark 1.3 max             | Muse Spark 1.3 max                 | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| architecture    | Grok 4.6 xhigh                 | Muse Spark 1.3 max                 | max 3 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "implementation_evaluation",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"implementation_evaluation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": \"unspecified_by_owner\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_pro\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 3,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "implementation_evaluation"
+      ],
+      "status": 0,
+      "stdout": "# IMPL-EVAL routes\n\n| Tier    | Default              | Fallback chain | Loop policy                                                             |\n| ------- | -------------------- | -------------- | ----------------------------------------------------------------------- |\n| feature | Muse Spark 1.3 xhigh | Opus 5 xhigh   | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "vision_evaluation"
+      ],
+      "status": 0,
+      "stdout": "# Vision evaluation routes\n\n| Tier            | Default                                   | Fallback chain                            | Loop policy                                                             |\n| --------------- | ----------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------- |\n| simple          | MiniMax M3 provider default               | DeepSeek V4 Flash Vision provider default | maximum unspecified by owner; re-steer same evaluator session           |\n| straightforward | DeepSeek V4 Flash Vision provider default | Kimi K3 low                               | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| feature         | Gemini 3.8 Flash high                     | Muse Spark 1.3 xhigh                      | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| complex         | Kimi K3 max                               | Gemini 3.8 Flash high                     | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| architecture    | Kimi K3 max                               | Fable 5.1 high                            | max 3 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "vision_evaluation",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"vision_evaluation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": \"unspecified_by_owner\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 3,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "vision_evaluation"
+      ],
+      "status": 0,
+      "stdout": "# Vision evaluation routes\n\n| Tier    | Default               | Fallback chain       | Loop policy                                                             |\n| ------- | --------------------- | -------------------- | ----------------------------------------------------------------------- |\n| feature | Gemini 3.8 Flash high | Muse Spark 1.3 xhigh | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "documentation"
+      ],
+      "status": 0,
+      "stdout": "# Documentation routes\n\n| Tier            | Default                       | Fallback chain                       | Loop policy                                                             |\n| --------------- | ----------------------------- | ------------------------------------ | ----------------------------------------------------------------------- |\n| simple          | Gemini 3.8 Flash medium       | Opus 5 low                           | max 2 roundtrips; re-steer same evaluator session                       |\n| straightforward | Gemini 3.8 Flash high         | Qwen 3.8 Flash Next provider default | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n| feature         | Qwen 3.8 Max provider default | GLM 5.3 Flash provider default       | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n| complex         | Fable 5.1 medium              | Qwen 3.8 Max provider default        | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n| architecture    | Fable 5.1 high                | Qwen 3.8 Max provider default        | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "documentation",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"documentation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "documentation"
+      ],
+      "status": 0,
+      "stdout": "# Documentation routes\n\n| Tier    | Default                       | Fallback chain                 | Loop policy                                                             |\n| ------- | ----------------------------- | ------------------------------ | ----------------------------------------------------------------------- |\n| feature | Qwen 3.8 Max provider default | GLM 5.3 Flash provider default | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "deep_research"
+      ],
+      "status": 0,
+      "stdout": "# Deep research routes\n\n| Tier            | Default                 | Fallback chain | Loop policy |\n| --------------- | ----------------------- | -------------- | ----------- |\n| simple          | Gemini 3.8 Flash low    | Luna max       | —           |\n| straightforward | Gemini 3.8 Flash medium | Luna max       | —           |\n| feature         | Gemini 3.8 Flash high   | Luna max       | —           |\n| complex         | Gemini 3.8 Flash high   | Luna max       | —           |\n| architecture    | Gemini 3.8 Flash high   | Luna max       | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "deep_research",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"deep_research\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "deep_research"
+      ],
+      "status": 0,
+      "stdout": "# Deep research routes\n\n| Tier    | Default               | Fallback chain | Loop policy |\n| ------- | --------------------- | -------------- | ----------- |\n| feature | Gemini 3.8 Flash high | Luna max       | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "impl"
+      ],
+      "status": 0,
+      "stdout": "# Implementation routes\n\n| Tier            | Default      | Fallback chain                       | Loop policy |\n| --------------- | ------------ | ------------------------------------ | ----------- |\n| simple          | Luna max     | Qwen 3.8 Flash Next provider default | —           |\n| straightforward | SOL high     | GLM 5.3 Flash provider default       | —           |\n| feature         | SOL high     | Muse Spark 1.3 xhigh                 | —           |\n| complex         | Astra medium | Fable 5.1 medium                     | —           |\n| architecture    | Astra xhigh  | Fable 5.1 xhigh                      | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "impl",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"implementation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"astra\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"astra\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "impl"
+      ],
+      "status": 0,
+      "stdout": "# Implementation routes\n\n| Tier    | Default  | Fallback chain       | Loop policy |\n| ------- | -------- | -------------------- | ----------- |\n| feature | SOL high | Muse Spark 1.3 xhigh | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "implementer"
+      ],
+      "status": 0,
+      "stdout": "# Implementation routes\n\n| Tier            | Default      | Fallback chain                       | Loop policy |\n| --------------- | ------------ | ------------------------------------ | ----------- |\n| simple          | Luna max     | Qwen 3.8 Flash Next provider default | —           |\n| straightforward | SOL high     | GLM 5.3 Flash provider default       | —           |\n| feature         | SOL high     | Muse Spark 1.3 xhigh                 | —           |\n| complex         | Astra medium | Fable 5.1 medium                     | —           |\n| architecture    | Astra xhigh  | Fable 5.1 xhigh                      | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "implementer",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"implementation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"sol\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"astra\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"astra\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "implementer"
+      ],
+      "status": 0,
+      "stdout": "# Implementation routes\n\n| Tier    | Default  | Fallback chain       | Loop policy |\n| ------- | -------- | -------------------- | ----------- |\n| feature | SOL high | Muse Spark 1.3 xhigh | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "ui"
+      ],
+      "status": 0,
+      "stdout": "# UI/UX implementation routes\n\n| Tier            | Default      | Fallback chain              | Loop policy |\n| --------------- | ------------ | --------------------------- | ----------- |\n| simple          | Kimi K3 low  | MiniMax M3 provider default | —           |\n| straightforward | Kimi K3 high | Gemini 3.8 Flash high       | —           |\n| feature         | Kimi K3 high | Gemini 3.8 Flash high       | —           |\n| complex         | Kimi K3 max  | Fable 5.1 medium            | —           |\n| architecture    | Kimi K3 max  | Fable 5.1 medium            | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "ui",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"ui_ux\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "ui"
+      ],
+      "status": 0,
+      "stdout": "# UI/UX implementation routes\n\n| Tier    | Default      | Fallback chain        | Loop policy |\n| ------- | ------------ | --------------------- | ----------- |\n| feature | Kimi K3 high | Gemini 3.8 Flash high | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "ux"
+      ],
+      "status": 0,
+      "stdout": "# UI/UX implementation routes\n\n| Tier            | Default      | Fallback chain              | Loop policy |\n| --------------- | ------------ | --------------------------- | ----------- |\n| simple          | Kimi K3 low  | MiniMax M3 provider default | —           |\n| straightforward | Kimi K3 high | Gemini 3.8 Flash high       | —           |\n| feature         | Kimi K3 high | Gemini 3.8 Flash high       | —           |\n| complex         | Kimi K3 max  | Fable 5.1 medium            | —           |\n| architecture    | Kimi K3 max  | Fable 5.1 medium            | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "ux",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"ui_ux\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "ux"
+      ],
+      "status": 0,
+      "stdout": "# UI/UX implementation routes\n\n| Tier    | Default      | Fallback chain        | Loop policy |\n| ------- | ------------ | --------------------- | ----------- |\n| feature | Kimi K3 high | Gemini 3.8 Flash high | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "ui-ux"
+      ],
+      "status": 0,
+      "stdout": "# UI/UX implementation routes\n\n| Tier            | Default      | Fallback chain              | Loop policy |\n| --------------- | ------------ | --------------------------- | ----------- |\n| simple          | Kimi K3 low  | MiniMax M3 provider default | —           |\n| straightforward | Kimi K3 high | Gemini 3.8 Flash high       | —           |\n| feature         | Kimi K3 high | Gemini 3.8 Flash high       | —           |\n| complex         | Kimi K3 max  | Fable 5.1 medium            | —           |\n| architecture    | Kimi K3 max  | Fable 5.1 medium            | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "ui-ux",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"ui_ux\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "ui-ux"
+      ],
+      "status": 0,
+      "stdout": "# UI/UX implementation routes\n\n| Tier    | Default      | Fallback chain        | Loop policy |\n| ------- | ------------ | --------------------- | ----------- |\n| feature | Kimi K3 high | Gemini 3.8 Flash high | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "plan-eval"
+      ],
+      "status": 0,
+      "stdout": "# PLAN-EVAL routes\n\n| Tier            | Default                  | Fallback chain                       | Loop policy                                                                                    |\n| --------------- | ------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------- |\n| simple          | —                        | —                                    | no roundtrip; re-steer same evaluator session                                                  |\n| straightforward | Opus 5 medium            | Qwen 3.8 Flash Next provider default | no roundtrip; repair fixable failure in flight; re-steer same evaluator session                |\n| feature         | GLM 5.3 provider default | Fable 5.1 low                        | max 2 roundtrips; repair fixable failure in flight at round 2; re-steer same evaluator session |\n| complex         | Muse Spark 1.3 max       | Grok 4.6 high                        | max 3 roundtrips; repair fixable failure in flight at round 3; re-steer same evaluator session |\n| architecture    | Muse Spark 1.3 max       | Grok 4.6 xhigh                       | max 1 roundtrips; escalate to owner at 2; re-steer same evaluator session                      |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "plan-eval",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"plan_evaluation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [],\n      \"policy\": {\n        \"maxRounds\": \"none\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 0,\n        \"repairInFlightAt\": \"immediate\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"glm_5_3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"repairInFlightAt\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 3,\n        \"repairInFlightAt\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 1,\n        \"escalateToOwnerAt\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "plan-eval"
+      ],
+      "status": 0,
+      "stdout": "# PLAN-EVAL routes\n\n| Tier    | Default                  | Fallback chain | Loop policy                                                                                    |\n| ------- | ------------------------ | -------------- | ---------------------------------------------------------------------------------------------- |\n| feature | GLM 5.3 provider default | Fable 5.1 low  | max 2 roundtrips; repair fixable failure in flight at round 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "impl-eval"
+      ],
+      "status": 0,
+      "stdout": "# IMPL-EVAL routes\n\n| Tier            | Default                        | Fallback chain                     | Loop policy                                                             |\n| --------------- | ------------------------------ | ---------------------------------- | ----------------------------------------------------------------------- |\n| simple          | MiniMax M3 provider default    | DeepSeek V4 Flash provider default | maximum unspecified by owner; re-steer same evaluator session           |\n| straightforward | GLM 5.3 Flash provider default | DeepSeek V4 Pro provider default   | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| feature         | Muse Spark 1.3 xhigh           | Opus 5 xhigh                       | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| complex         | Muse Spark 1.3 max             | Muse Spark 1.3 max                 | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| architecture    | Grok 4.6 xhigh                 | Muse Spark 1.3 max                 | max 3 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "impl-eval",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"implementation_evaluation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": \"unspecified_by_owner\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_pro\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 3,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "impl-eval"
+      ],
+      "status": 0,
+      "stdout": "# IMPL-EVAL routes\n\n| Tier    | Default              | Fallback chain | Loop policy                                                             |\n| ------- | -------------------- | -------------- | ----------------------------------------------------------------------- |\n| feature | Muse Spark 1.3 xhigh | Opus 5 xhigh   | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "implementation-eval"
+      ],
+      "status": 0,
+      "stdout": "# IMPL-EVAL routes\n\n| Tier            | Default                        | Fallback chain                     | Loop policy                                                             |\n| --------------- | ------------------------------ | ---------------------------------- | ----------------------------------------------------------------------- |\n| simple          | MiniMax M3 provider default    | DeepSeek V4 Flash provider default | maximum unspecified by owner; re-steer same evaluator session           |\n| straightforward | GLM 5.3 Flash provider default | DeepSeek V4 Pro provider default   | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| feature         | Muse Spark 1.3 xhigh           | Opus 5 xhigh                       | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| complex         | Muse Spark 1.3 max             | Muse Spark 1.3 max                 | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| architecture    | Grok 4.6 xhigh                 | Muse Spark 1.3 max                 | max 3 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "implementation-eval",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"implementation_evaluation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": \"unspecified_by_owner\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_pro\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 3,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "implementation-eval"
+      ],
+      "status": 0,
+      "stdout": "# IMPL-EVAL routes\n\n| Tier    | Default              | Fallback chain | Loop policy                                                             |\n| ------- | -------------------- | -------------- | ----------------------------------------------------------------------- |\n| feature | Muse Spark 1.3 xhigh | Opus 5 xhigh   | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "vision"
+      ],
+      "status": 0,
+      "stdout": "# Vision evaluation routes\n\n| Tier            | Default                                   | Fallback chain                            | Loop policy                                                             |\n| --------------- | ----------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------- |\n| simple          | MiniMax M3 provider default               | DeepSeek V4 Flash Vision provider default | maximum unspecified by owner; re-steer same evaluator session           |\n| straightforward | DeepSeek V4 Flash Vision provider default | Kimi K3 low                               | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| feature         | Gemini 3.8 Flash high                     | Muse Spark 1.3 xhigh                      | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| complex         | Kimi K3 max                               | Gemini 3.8 Flash high                     | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| architecture    | Kimi K3 max                               | Fable 5.1 high                            | max 3 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "vision",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"vision_evaluation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": \"unspecified_by_owner\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 3,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "vision"
+      ],
+      "status": 0,
+      "stdout": "# Vision evaluation routes\n\n| Tier    | Default               | Fallback chain       | Loop policy                                                             |\n| ------- | --------------------- | -------------------- | ----------------------------------------------------------------------- |\n| feature | Gemini 3.8 Flash high | Muse Spark 1.3 xhigh | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "vision-eval"
+      ],
+      "status": 0,
+      "stdout": "# Vision evaluation routes\n\n| Tier            | Default                                   | Fallback chain                            | Loop policy                                                             |\n| --------------- | ----------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------- |\n| simple          | MiniMax M3 provider default               | DeepSeek V4 Flash Vision provider default | maximum unspecified by owner; re-steer same evaluator session           |\n| straightforward | DeepSeek V4 Flash Vision provider default | Kimi K3 low                               | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| feature         | Gemini 3.8 Flash high                     | Muse Spark 1.3 xhigh                      | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| complex         | Kimi K3 max                               | Gemini 3.8 Flash high                     | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| architecture    | Kimi K3 max                               | Fable 5.1 high                            | max 3 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "vision-eval",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"vision_evaluation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": \"unspecified_by_owner\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 5,\n        \"notifyOwnerAfter\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"kimi_k3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 3,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "vision-eval"
+      ],
+      "status": 0,
+      "stdout": "# Vision evaluation routes\n\n| Tier    | Default               | Fallback chain       | Loop policy                                                             |\n| ------- | --------------------- | -------------------- | ----------------------------------------------------------------------- |\n| feature | Gemini 3.8 Flash high | Muse Spark 1.3 xhigh | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "docs"
+      ],
+      "status": 0,
+      "stdout": "# Documentation routes\n\n| Tier            | Default                       | Fallback chain                       | Loop policy                                                             |\n| --------------- | ----------------------------- | ------------------------------------ | ----------------------------------------------------------------------- |\n| simple          | Gemini 3.8 Flash medium       | Opus 5 low                           | max 2 roundtrips; re-steer same evaluator session                       |\n| straightforward | Gemini 3.8 Flash high         | Qwen 3.8 Flash Next provider default | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n| feature         | Qwen 3.8 Max provider default | GLM 5.3 Flash provider default       | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n| complex         | Fable 5.1 medium              | Qwen 3.8 Max provider default        | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n| architecture    | Fable 5.1 high                | Qwen 3.8 Max provider default        | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "docs",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"documentation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"notifyOwnerAfter\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "docs"
+      ],
+      "status": 0,
+      "stdout": "# Documentation routes\n\n| Tier    | Default                       | Fallback chain                 | Loop policy                                                             |\n| ------- | ----------------------------- | ------------------------------ | ----------------------------------------------------------------------- |\n| feature | Qwen 3.8 Max provider default | GLM 5.3 Flash provider default | max 2 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "research"
+      ],
+      "status": 0,
+      "stdout": "# Deep research routes\n\n| Tier            | Default                 | Fallback chain | Loop policy |\n| --------------- | ----------------------- | -------------- | ----------- |\n| simple          | Gemini 3.8 Flash low    | Luna max       | —           |\n| straightforward | Gemini 3.8 Flash medium | Luna max       | —           |\n| feature         | Gemini 3.8 Flash high   | Luna max       | —           |\n| complex         | Gemini 3.8 Flash high   | Luna max       | —           |\n| architecture    | Gemini 3.8 Flash high   | Luna max       | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "research",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"deep_research\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "research"
+      ],
+      "status": 0,
+      "stdout": "# Deep research routes\n\n| Tier    | Default               | Fallback chain | Loop policy |\n| ------- | --------------------- | -------------- | ----------- |\n| feature | Gemini 3.8 Flash high | Luna max       | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "deep-research"
+      ],
+      "status": 0,
+      "stdout": "# Deep research routes\n\n| Tier            | Default                 | Fallback chain | Loop policy |\n| --------------- | ----------------------- | -------------- | ----------- |\n| simple          | Gemini 3.8 Flash low    | Luna max       | —           |\n| straightforward | Gemini 3.8 Flash medium | Luna max       | —           |\n| feature         | Gemini 3.8 Flash high   | Luna max       | —           |\n| complex         | Gemini 3.8 Flash high   | Luna max       | —           |\n| architecture    | Gemini 3.8 Flash high   | Luna max       | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--role",
+        "deep-research",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"deep_research\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"low\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        },\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--role",
+        "deep-research"
+      ],
+      "status": 0,
+      "stdout": "# Deep research routes\n\n| Tier    | Default               | Fallback chain | Loop policy |\n| ------- | --------------------- | -------------- | ----------- |\n| feature | Gemini 3.8 Flash high | Luna max       | —           |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--plan-evaluator"
+      ],
+      "status": 0,
+      "stdout": "# PLAN-EVAL routes\n\n| Tier            | Default                  | Fallback chain                       | Loop policy                                                                                    |\n| --------------- | ------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------- |\n| simple          | —                        | —                                    | no roundtrip; re-steer same evaluator session                                                  |\n| straightforward | Opus 5 medium            | Qwen 3.8 Flash Next provider default | no roundtrip; repair fixable failure in flight; re-steer same evaluator session                |\n| feature         | GLM 5.3 provider default | Fable 5.1 low                        | max 2 roundtrips; repair fixable failure in flight at round 2; re-steer same evaluator session |\n| complex         | Muse Spark 1.3 max       | Grok 4.6 high                        | max 3 roundtrips; repair fixable failure in flight at round 3; re-steer same evaluator session |\n| architecture    | Muse Spark 1.3 max       | Grok 4.6 xhigh                       | max 1 roundtrips; escalate to owner at 2; re-steer same evaluator session                      |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--impl-evaluator"
+      ],
+      "status": 0,
+      "stdout": "# IMPL-EVAL routes\n\n| Tier            | Default                        | Fallback chain                     | Loop policy                                                             |\n| --------------- | ------------------------------ | ---------------------------------- | ----------------------------------------------------------------------- |\n| simple          | MiniMax M3 provider default    | DeepSeek V4 Flash provider default | maximum unspecified by owner; re-steer same evaluator session           |\n| straightforward | GLM 5.3 Flash provider default | DeepSeek V4 Pro provider default   | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| feature         | Muse Spark 1.3 xhigh           | Opus 5 xhigh                       | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| complex         | Muse Spark 1.3 max             | Muse Spark 1.3 max                 | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n| architecture    | Grok 4.6 xhigh                 | Muse Spark 1.3 max                 | max 3 roundtrips; notify owner after 2; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--plan-evaluator",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"plan_evaluation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [],\n      \"policy\": {\n        \"maxRounds\": \"none\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"straightforward\",\n      \"description\": \"Straightforward implementations and features; medium temperature and medium complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 0,\n        \"repairInFlightAt\": \"immediate\",\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"feature\",\n      \"description\": \"Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"glm_5_3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"low\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 2,\n        \"repairInFlightAt\": 2,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"complex\",\n      \"description\": \"Complex implementations, fixes, and features; medium temperature and high complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"high\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 3,\n        \"repairInFlightAt\": 3,\n        \"reSteerSameSession\": true\n      }\n    },\n    {\n      \"tier\": \"architecture\",\n      \"description\": \"Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        },\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": 1,\n        \"escalateToOwnerAt\": 2,\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--impl-evaluator",
+        "--tier",
+        "complex"
+      ],
+      "status": 0,
+      "stdout": "# IMPL-EVAL routes\n\n| Tier    | Default            | Fallback chain     | Loop policy                                                             |\n| ------- | ------------------ | ------------------ | ----------------------------------------------------------------------- |\n| complex | Muse Spark 1.3 max | Muse Spark 1.3 max | max 5 roundtrips; notify owner after 3; re-steer same evaluator session |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier",
+        "simple",
+        "--impl-evaluator",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"role\",\n  \"role\": \"implementation_evaluation\",\n  \"tiers\": [\n    {\n      \"tier\": \"simple\",\n      \"description\": \"Automation, simple fixes, and chores; low temperature and low complexity.\",\n      \"routes\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        },\n        {\n          \"model\": \"deepseek_v4_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ],\n      \"policy\": {\n        \"maxRounds\": \"unspecified_by_owner\",\n        \"reSteerSameSession\": true\n      }\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "luna"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Luna\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier   | Role           | Primary  | Fallback chain                       |\n| -------- | ------ | -------------- | -------- | ------------------------------------ |\n| workload | simple | Implementation | Luna max | Qwen 3.8 Flash Next provider default |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "luna",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"luna\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"simple\",\n      \"role\": \"implementation\",\n      \"primary\": {\n        \"model\": \"luna\",\n        \"effort\": \"max\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "sol"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for SOL\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope       | Tier            | Role           | Primary    | Fallback chain                  |\n| ----------- | --------------- | -------------- | ---------- | ------------------------------- |\n| workload    | straightforward | Implementation | SOL high   | GLM 5.3 Flash provider default  |\n| workload    | straightforward | Plan           | SOL high   | GLM 5.3 Flash provider default  |\n| workload    | feature         | Implementation | SOL high   | Muse Spark 1.3 xhigh            |\n| coordinator | small_project   | Coordinator    | SOL medium | Opus 5 low                      |\n| coordinator | project         | Coordinator    | SOL medium | Opus 5 medium                   |\n| coordinator | framework       | Coordinator    | SOL high   | Opus 5 xhigh                    |\n| coordinator | milestone       | Coordinator    | SOL medium | Fable 5.1 medium → Opus 5 xhigh |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "sol",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"sol\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"straightforward\",\n      \"role\": \"implementation\",\n      \"primary\": {\n        \"model\": \"sol\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"straightforward\",\n      \"role\": \"plan\",\n      \"primary\": {\n        \"model\": \"sol\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"feature\",\n      \"role\": \"implementation\",\n      \"primary\": {\n        \"model\": \"sol\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"coordinator\",\n      \"tier\": \"small_project\",\n      \"role\": \"coordinator\",\n      \"primary\": {\n        \"model\": \"sol\",\n        \"effort\": \"medium\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"low\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"coordinator\",\n      \"tier\": \"project\",\n      \"role\": \"coordinator\",\n      \"primary\": {\n        \"model\": \"sol\",\n        \"effort\": \"medium\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"coordinator\",\n      \"tier\": \"framework\",\n      \"role\": \"coordinator\",\n      \"primary\": {\n        \"model\": \"sol\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"coordinator\",\n      \"tier\": \"milestone\",\n      \"role\": \"coordinator\",\n      \"primary\": {\n        \"model\": \"sol\",\n        \"effort\": \"medium\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        },\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "astra"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Astra\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier         | Role           | Primary      | Fallback chain   |\n| -------- | ------------ | -------------- | ------------ | ---------------- |\n| workload | complex      | Implementation | Astra medium | Fable 5.1 medium |\n| workload | architecture | Implementation | Astra xhigh  | Fable 5.1 xhigh  |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "astra",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"astra\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"complex\",\n      \"role\": \"implementation\",\n      \"primary\": {\n        \"model\": \"astra\",\n        \"effort\": \"medium\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"architecture\",\n      \"role\": \"implementation\",\n      \"primary\": {\n        \"model\": \"astra\",\n        \"effort\": \"xhigh\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "opus_5"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Opus 5\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier            | Role      | Primary       | Fallback chain                       |\n| -------- | --------------- | --------- | ------------- | ------------------------------------ |\n| workload | straightforward | PLAN-EVAL | Opus 5 medium | Qwen 3.8 Flash Next provider default |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "opus_5",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"opus_5\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"straightforward\",\n      \"role\": \"plan_evaluation\",\n      \"primary\": {\n        \"model\": \"opus_5\",\n        \"effort\": \"medium\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "opus_5_5"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Opus 5.5\n\nNo selected context declares this model as its primary with a fallback.\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "opus_5_5",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"opus_5_5\",\n  \"matches\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "fable_5_1"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Fable 5.1\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier         | Role          | Primary          | Fallback chain                |\n| -------- | ------------ | ------------- | ---------------- | ----------------------------- |\n| workload | feature      | Plan          | Fable 5.1 low    | Muse Spark 1.3 xhigh          |\n| workload | complex      | Plan          | Fable 5.1 medium | Muse Spark 1.3 max            |\n| workload | complex      | Documentation | Fable 5.1 medium | Qwen 3.8 Max provider default |\n| workload | architecture | Plan          | Fable 5.1 xhigh  | Muse Spark 1.3 max            |\n| workload | architecture | Documentation | Fable 5.1 high   | Qwen 3.8 Max provider default |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "fable_5_1",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"fable_5_1\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"feature\",\n      \"role\": \"plan\",\n      \"primary\": {\n        \"model\": \"fable_5_1\",\n        \"effort\": \"low\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"complex\",\n      \"role\": \"plan\",\n      \"primary\": {\n        \"model\": \"fable_5_1\",\n        \"effort\": \"medium\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"complex\",\n      \"role\": \"documentation\",\n      \"primary\": {\n        \"model\": \"fable_5_1\",\n        \"effort\": \"medium\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"architecture\",\n      \"role\": \"plan\",\n      \"primary\": {\n        \"model\": \"fable_5_1\",\n        \"effort\": \"xhigh\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"architecture\",\n      \"role\": \"documentation\",\n      \"primary\": {\n        \"model\": \"fable_5_1\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"qwen_3_8_max\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "gemini_3_8_flash"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Gemini 3.8 Flash\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier            | Role              | Primary                 | Fallback chain                       |\n| -------- | --------------- | ----------------- | ----------------------- | ------------------------------------ |\n| workload | simple          | Documentation     | Gemini 3.8 Flash medium | Opus 5 low                           |\n| workload | simple          | Deep research     | Gemini 3.8 Flash low    | Luna max                             |\n| workload | straightforward | Documentation     | Gemini 3.8 Flash high   | Qwen 3.8 Flash Next provider default |\n| workload | straightforward | Deep research     | Gemini 3.8 Flash medium | Luna max                             |\n| workload | feature         | Vision evaluation | Gemini 3.8 Flash high   | Muse Spark 1.3 xhigh                 |\n| workload | feature         | Deep research     | Gemini 3.8 Flash high   | Luna max                             |\n| workload | complex         | Deep research     | Gemini 3.8 Flash high   | Luna max                             |\n| workload | architecture    | Deep research     | Gemini 3.8 Flash high   | Luna max                             |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "gemini_3_8_flash",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"gemini_3_8_flash\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"simple\",\n      \"role\": \"documentation\",\n      \"primary\": {\n        \"model\": \"gemini_3_8_flash\",\n        \"effort\": \"medium\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"low\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"simple\",\n      \"role\": \"deep_research\",\n      \"primary\": {\n        \"model\": \"gemini_3_8_flash\",\n        \"effort\": \"low\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"straightforward\",\n      \"role\": \"documentation\",\n      \"primary\": {\n        \"model\": \"gemini_3_8_flash\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"qwen_3_8_flash_next\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"straightforward\",\n      \"role\": \"deep_research\",\n      \"primary\": {\n        \"model\": \"gemini_3_8_flash\",\n        \"effort\": \"medium\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"feature\",\n      \"role\": \"vision_evaluation\",\n      \"primary\": {\n        \"model\": \"gemini_3_8_flash\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"feature\",\n      \"role\": \"deep_research\",\n      \"primary\": {\n        \"model\": \"gemini_3_8_flash\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"complex\",\n      \"role\": \"deep_research\",\n      \"primary\": {\n        \"model\": \"gemini_3_8_flash\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"architecture\",\n      \"role\": \"deep_research\",\n      \"primary\": {\n        \"model\": \"gemini_3_8_flash\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"luna\",\n          \"effort\": \"max\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "kimi_k3"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Kimi K3\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier            | Role                 | Primary      | Fallback chain              |\n| -------- | --------------- | -------------------- | ------------ | --------------------------- |\n| workload | simple          | UI/UX implementation | Kimi K3 low  | MiniMax M3 provider default |\n| workload | straightforward | UI/UX implementation | Kimi K3 high | Gemini 3.8 Flash high       |\n| workload | feature         | UI/UX implementation | Kimi K3 high | Gemini 3.8 Flash high       |\n| workload | complex         | UI/UX implementation | Kimi K3 max  | Fable 5.1 medium            |\n| workload | complex         | Vision evaluation    | Kimi K3 max  | Gemini 3.8 Flash high       |\n| workload | architecture    | UI/UX implementation | Kimi K3 max  | Fable 5.1 medium            |\n| workload | architecture    | Vision evaluation    | Kimi K3 max  | Fable 5.1 high              |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "kimi_k3",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"kimi_k3\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"simple\",\n      \"role\": \"ui_ux\",\n      \"primary\": {\n        \"model\": \"kimi_k3\",\n        \"effort\": \"low\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"minimax_m3\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"straightforward\",\n      \"role\": \"ui_ux\",\n      \"primary\": {\n        \"model\": \"kimi_k3\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"feature\",\n      \"role\": \"ui_ux\",\n      \"primary\": {\n        \"model\": \"kimi_k3\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"complex\",\n      \"role\": \"ui_ux\",\n      \"primary\": {\n        \"model\": \"kimi_k3\",\n        \"effort\": \"max\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"complex\",\n      \"role\": \"vision_evaluation\",\n      \"primary\": {\n        \"model\": \"kimi_k3\",\n        \"effort\": \"max\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"gemini_3_8_flash\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"architecture\",\n      \"role\": \"ui_ux\",\n      \"primary\": {\n        \"model\": \"kimi_k3\",\n        \"effort\": \"max\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"medium\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"architecture\",\n      \"role\": \"vision_evaluation\",\n      \"primary\": {\n        \"model\": \"kimi_k3\",\n        \"effort\": \"max\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"fable_5_1\",\n          \"effort\": \"high\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "glm_5_3_flash"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for GLM 5.3 Flash\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier            | Role      | Primary                        | Fallback chain                   |\n| -------- | --------------- | --------- | ------------------------------ | -------------------------------- |\n| workload | straightforward | IMPL-EVAL | GLM 5.3 Flash provider default | DeepSeek V4 Pro provider default |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "glm_5_3_flash",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"glm_5_3_flash\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"straightforward\",\n      \"role\": \"implementation_evaluation\",\n      \"primary\": {\n        \"model\": \"glm_5_3_flash\",\n        \"effort\": \"provider_default\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"deepseek_v4_pro\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "muse_spark_1_3"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Muse Spark 1.3\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier         | Role      | Primary              | Fallback chain     |\n| -------- | ------------ | --------- | -------------------- | ------------------ |\n| workload | feature      | IMPL-EVAL | Muse Spark 1.3 xhigh | Opus 5 xhigh       |\n| workload | complex      | PLAN-EVAL | Muse Spark 1.3 max   | Grok 4.6 high      |\n| workload | complex      | IMPL-EVAL | Muse Spark 1.3 max   | Muse Spark 1.3 max |\n| workload | architecture | PLAN-EVAL | Muse Spark 1.3 max   | Grok 4.6 xhigh     |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "muse_spark_1_3",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"muse_spark_1_3\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"feature\",\n      \"role\": \"implementation_evaluation\",\n      \"primary\": {\n        \"model\": \"muse_spark_1_3\",\n        \"effort\": \"xhigh\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"opus_5\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"complex\",\n      \"role\": \"plan_evaluation\",\n      \"primary\": {\n        \"model\": \"muse_spark_1_3\",\n        \"effort\": \"max\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"high\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"complex\",\n      \"role\": \"implementation_evaluation\",\n      \"primary\": {\n        \"model\": \"muse_spark_1_3\",\n        \"effort\": \"max\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"architecture\",\n      \"role\": \"plan_evaluation\",\n      \"primary\": {\n        \"model\": \"muse_spark_1_3\",\n        \"effort\": \"max\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"grok_4_6\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "grok_4_6"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Grok 4.6\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier         | Role      | Primary        | Fallback chain     |\n| -------- | ------------ | --------- | -------------- | ------------------ |\n| workload | architecture | IMPL-EVAL | Grok 4.6 xhigh | Muse Spark 1.3 max |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "grok_4_6",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"grok_4_6\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"architecture\",\n      \"role\": \"implementation_evaluation\",\n      \"primary\": {\n        \"model\": \"grok_4_6\",\n        \"effort\": \"xhigh\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"max\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "minimax_m3"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for MiniMax M3\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier   | Role              | Primary                     | Fallback chain                            |\n| -------- | ------ | ----------------- | --------------------------- | ----------------------------------------- |\n| workload | simple | IMPL-EVAL         | MiniMax M3 provider default | DeepSeek V4 Flash provider default        |\n| workload | simple | Vision evaluation | MiniMax M3 provider default | DeepSeek V4 Flash Vision provider default |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "minimax_m3",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"minimax_m3\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"simple\",\n      \"role\": \"implementation_evaluation\",\n      \"primary\": {\n        \"model\": \"minimax_m3\",\n        \"effort\": \"provider_default\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"deepseek_v4_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"simple\",\n      \"role\": \"vision_evaluation\",\n      \"primary\": {\n        \"model\": \"minimax_m3\",\n        \"effort\": \"provider_default\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"deepseek_v4_flash_vision\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "qwen_3_8_flash_next"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Qwen 3.8 Flash Next\n\nNo selected context declares this model as its primary with a fallback.\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "qwen_3_8_flash_next",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"qwen_3_8_flash_next\",\n  \"matches\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "Opus 5.5"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Opus 5.5\n\nNo selected context declares this model as its primary with a fallback.\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "Opus 5.5",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"opus_5_5\",\n  \"matches\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "opus-5-5"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Opus 5.5\n\nNo selected context declares this model as its primary with a fallback.\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback",
+        "opus-5-5",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"opus_5_5\",\n  \"matches\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "sol",
+        "--tier",
+        "feature"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for SOL\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier    | Role           | Primary  | Fallback chain       |\n| -------- | ------- | -------------- | -------- | -------------------- |\n| workload | feature | Implementation | SOL high | Muse Spark 1.3 xhigh |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "sol",
+        "--role",
+        "implementation",
+        "--json"
+      ],
+      "status": 0,
+      "stdout": "{\n  \"schemaVersion\": 1,\n  \"mode\": \"fallback\",\n  \"model\": \"sol\",\n  \"matches\": [\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"straightforward\",\n      \"role\": \"implementation\",\n      \"primary\": {\n        \"model\": \"sol\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"glm_5_3_flash\",\n          \"effort\": \"provider_default\"\n        }\n      ]\n    },\n    {\n      \"scope\": \"workload\",\n      \"tier\": \"feature\",\n      \"role\": \"implementation\",\n      \"primary\": {\n        \"model\": \"sol\",\n        \"effort\": \"high\"\n      },\n      \"fallbacks\": [\n        {\n          \"model\": \"muse_spark_1_3\",\n          \"effort\": \"xhigh\"\n        }\n      ]\n    }\n  ]\n}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "fable_5_1",
+        "--tier",
+        "complex",
+        "--role",
+        "plan"
+      ],
+      "status": 0,
+      "stdout": "# Declared fallbacks for Fable 5.1\n\nFallbacks are context-sensitive; every matching primary context is listed.\n\n| Scope    | Tier    | Role | Primary          | Fallback chain     |\n| -------- | ------- | ---- | ---------------- | ------------------ |\n| workload | complex | Plan | Fable 5.1 medium | Muse Spark 1.3 max |\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "--tier"
+      ],
+      "status": 2,
+      "stdout": "",
+      "stderr": "--tier requires a value\n"
+    },
+    {
+      "args": [
+        "--tier",
+        "--json"
+      ],
+      "status": 2,
+      "stdout": "",
+      "stderr": "--tier requires a value\n"
+    },
+    {
+      "args": [
+        "--tier",
+        "huge"
+      ],
+      "status": 2,
+      "stdout": "",
+      "stderr": "Unknown tier huge; expected simple, straightforward, feature, complex, architecture\n"
+    },
+    {
+      "args": [
+        "--role",
+        "boss"
+      ],
+      "status": 2,
+      "stdout": "",
+      "stderr": "Unknown role boss; expected implementation, ui_ux, plan, plan_evaluation, implementation_evaluation, vision_evaluation, documentation, deep_research\n"
+    },
+    {
+      "args": [
+        "--fallback-of",
+        "gpt-9"
+      ],
+      "status": 2,
+      "stdout": "",
+      "stderr": "Unknown logical model gpt-9; expected luna, sol, astra, fable_5_1, opus_5, opus_5_5, gemini_3_8_flash, qwen_3_8_flash_next, qwen_3_8_max, glm_5_3_flash, glm_5_3, muse_spark_1_3, minimax_m3, deepseek_v4_flash, deepseek_v4_flash_vision, deepseek_v4_pro, kimi_k3, grok_4_6\n"
+    },
+    {
+      "args": [
+        "--fallback-of"
+      ],
+      "status": 2,
+      "stdout": "",
+      "stderr": "--fallback-of requires a value\n"
+    },
+    {
+      "args": [
+        "--bogus"
+      ],
+      "status": 2,
+      "stdout": "",
+      "stderr": "Unknown argument: --bogus\n"
+    },
+    {
+      "args": [
+        "--",
+        "--"
+      ],
+      "status": 2,
+      "stdout": "",
+      "stderr": "Unknown argument: --\n"
+    },
+    {
+      "args": [
+        "--tier",
+        "feature",
+        "--"
+      ],
+      "status": 2,
+      "stdout": "",
+      "stderr": "Unknown argument: --\n"
+    }
+  ]
+}

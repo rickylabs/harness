@@ -8,3 +8,8 @@ workload/coordinator cell, ordered fallbacks, source catalog capability and tran
 The Harness matrix test compares the complete table exactly and retains every source catalog
 capability while preferring the newer Harness native Sol/Luna IDs. CI reads these frozen
 fixtures only; it does not import NetScript.
+
+`matrix-view.e75161c.json` records NetScript's `agentic:matrix` viewer at the full
+`sourceRevision`, reading this matrix pinned at `harnessMatrixRevision`: stdout, stderr and exit
+status for 131 argument vectors covering every view, alias, shortcut and refusal. `casesSha256`
+guards the recorded cases. `matrix-view.test.mjs` replays them against `cli/matrix-view.ts`.
