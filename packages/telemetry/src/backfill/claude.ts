@@ -34,7 +34,7 @@
 
 import { basename } from "node:path";
 
-import { linkedIssuesOf, type LaunchIdentity, type RunRecord, type RunUsage } from "../model.js";
+import { linkedIssuesOf, type ClaudeChildCompletion, type LaunchIdentity, type RunRecord, type RunUsage } from "../model.js";
 import { claudeActivity, recentActivity } from "../native-activity.js";
 import { TokenSampleCollector } from "../token-samples.js";
 import {
@@ -57,6 +57,8 @@ interface Line {
   readonly gitBranch?: unknown;
   readonly effort?: unknown;
   readonly message?: unknown;
+  readonly operation?: unknown;
+  readonly content?: unknown;
 }
 
 /**
@@ -171,6 +173,25 @@ function addUsage(into: Record<string, number>, counted: Record<string, number>,
   }
 }
 
+const TASK_NOTIFICATION = /^<task-notification>\n<task-id>([A-Za-z0-9_-]{1,128})<\/task-id>\n/;
+const TASK_STATUS = /\n<status>([a-z_]{1,32})<\/status>\n/;
+const CANONICAL_AT = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/;
+
+/**
+ * A background child's completion as its parent session received it: the enqueued
+ * task-notification. Only the task id, the status and the record time are read.
+ */
+function childCompletion(line: Line): ClaudeChildCompletion | null {
+  if (line.type !== "queue-operation" || line.operation !== "enqueue" || typeof line.content !== "string") return null;
+  const task = TASK_NOTIFICATION.exec(line.content), status = TASK_STATUS.exec(line.content);
+  const at = typeof line.timestamp === "string" && CANONICAL_AT.test(line.timestamp) &&
+    new Date(Date.parse(line.timestamp)).toISOString() === line.timestamp ? line.timestamp : null;
+  if (task === null || status === null || at === null) return null;
+  // Claude names the child's transcript after the task id with this literal prefix.
+  const mapped = status[1] === "completed" || status[1] === "failed" ? status[1] : "other";
+  return { childId: `agent-${task[1]}`, status: mapped, at };
+}
+
 /**
  * Reduce one transcript file to a run record.
  *
@@ -197,6 +218,7 @@ export function parseClaudeTranscript(
   // Per response: the usage already added for it, field by field.
   const countedMessages = new Map<string, Record<string, number>>();
   const activityMessages = new Set<string>();
+  const completions = new Map<string, ClaudeChildCompletion>();
   let activity: NonNullable<RunRecord["activitySteps"]> = [];
 
   for (const [lineNumber, raw] of text.split("\n").entries()) {
@@ -207,6 +229,12 @@ export function parseClaudeTranscript(
       continue;
     }
     const line = parsed.line as Line;
+    const completion = childCompletion(line);
+    if (completion !== null) {
+      const prior = completions.get(completion.childId);
+      // The latest notification per child decides; a later resume writes a newer one.
+      if (prior === undefined || prior.at <= completion.at) completions.set(completion.childId, completion);
+    }
     const activityId = str(line.uuid);
     if (activityId === null || !activityMessages.has(activityId)) {
       const steps = claudeActivity(line, origin, lineNumber);
@@ -307,6 +335,7 @@ export function parseClaudeTranscript(
       usage: usage as RunUsage,
       tokenSamples: tokenSamples.snapshot(),
       activitySteps: activity,
+      ...(completions.size > 0 ? { childCompletions: [...completions.values()] } : {}),
       // The Claude store writes no completion marker: a finished session and a session whose process
       // died mid-turn produce the same file. Reporting `unknown` is the honest reading; a caller
       // with a clock can compare `updatedAt` against now, but that is a judgement, not a fact.

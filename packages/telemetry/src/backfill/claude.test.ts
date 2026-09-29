@@ -142,6 +142,33 @@ describe("parseClaudeTranscript", () => {
     assert.equal(run?.tokenSamples?.invalid, false);
   });
 
+  it("reads a child's completion from the enqueued task-notification, ids, status and time only", () => {
+    const notice = (task: string, status: string, at: string, operation = "enqueue") => ({
+      type: "queue-operation", operation, timestamp: at, sessionId: "5dc200b1-b629-4b56-b487-6990b69ef498",
+      content: `<task-notification>\n<task-id>${task}</task-id>\n<tool-use-id>toolu_PRIVATE</tool-use-id>\n` +
+        `<output-file>/PRIVATE/path/tasks/${task}.output</output-file>\n<status>${status}</status>\n` +
+        "<summary>PRIVATE-RESULT-CANARY</summary>\n<note>PRIVATE-NOTE</note>\n</task-notification>",
+    });
+    const run = parseRun(lines(
+      user("go"),
+      assistant({ input_tokens: 1, output_tokens: 1 }),
+      notice("a1b2", "completed", "2026-09-04T22:06:00.000Z"),
+      notice("a1b2", "completed", "2026-09-04T22:06:01.000Z", "remove"),  // queue bookkeeping, not a completion
+      notice("c3d4", "completed", "2026-09-04T22:06:00.000Z"),
+      notice("c3d4", "failed", "2026-09-04T22:07:00.000Z"),               // the latest notification decides
+      notice("e5f6", "killed", "2026-09-04T22:06:00.000Z"),               // unmapped: recorded as other
+      { ...notice("g7h8", "completed", "2026-09-04T22:06:00.000Z"), content: "<task-notification>\n<status>completed</status>\n" },
+      { ...notice("i9j0", "completed", "not-a-time") },
+    ), "o");
+    assert.deepEqual(run?.childCompletions, [
+      { childId: "agent-a1b2", status: "completed", at: "2026-09-04T22:06:00.000Z" },
+      { childId: "agent-c3d4", status: "failed", at: "2026-09-04T22:07:00.000Z" },
+      { childId: "agent-e5f6", status: "other", at: "2026-09-04T22:06:00.000Z" },
+    ]);
+    assert.ok(!JSON.stringify(run).includes("PRIVATE"));
+    assert.equal(parseRun(lines(user("go"), assistant({ input_tokens: 1, output_tokens: 1 })), "o")?.childCompletions, undefined);
+  });
+
   it("prefers the session's own name over the first prompt", () => {
     // Both are prose and neither survives onto the record, so the issue numbers are what makes the
     // precedence observable: #98 comes from the session name and #7 from the prompt it replaced.

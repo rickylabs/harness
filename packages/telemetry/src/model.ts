@@ -27,6 +27,12 @@ export type RunSource = "claude" | "codex" | "opencode";
 export type RunOutcome = "running" | "complete" | "failed" | "unknown";
 
 /** Token and money cost. Every field is optional because no vendor reports all of them. */
+export interface ClaudeChildCompletion {
+  readonly childId: string;
+  readonly status: "completed" | "failed" | "other";
+  readonly at: string;
+}
+
 export interface RunUsage {
   readonly inputTokens?: number;
   readonly outputTokens?: number;
@@ -149,6 +155,12 @@ export interface RunRecord {
   readonly outcome: RunOutcome;
   /** Exact terminal signal, when the native reader can distinguish failure from cancellation. */
   readonly terminalCause?: "error" | "cancelled" | undefined;
+  /**
+   * Claude only: the latest task-notification this session received for each background child,
+   * reduced to the child's transcript run id, the notification status and its time. Never the
+   * notification's summary, result or output path. `other` is any status this reader does not map.
+   */
+  readonly childCompletions?: readonly ClaudeChildCompletion[];
   /** Issue and PR numbers this run points at, each carrying the evidence that produced it. */
   readonly linkedIssues: readonly IssueLink[];
   /**
