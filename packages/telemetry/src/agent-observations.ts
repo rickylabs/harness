@@ -4,6 +4,7 @@ import { ISSUE_AGENT_TREE_FRESH_MS, MAX_AGENT_OBSERVATIONS, projectRouteIdentity
   unavailableOrchidRouteReasons, type AgentObservation, type AgentObservations, type AgentObservedValue,
   type AgentUnavailableReason } from "@rickylabs/harness-contracts";
 import { projectAgentCost } from "./agent-cost.js";
+import { CLAUDE_CHILD_START_FRESH_MS, childEventKey } from "./claude-child-events.js";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
@@ -36,6 +37,21 @@ function measuredRunning(run: RunRecord, capturedAt: string): AgentObservedValue
     validUntil: new Date(eventMs + NATIVE_RUNNING_MS).toISOString(),
     revision: digest(JSON.stringify({ source: run.source, id: run.id, event: run.updatedAt, signal: "native-task-running" })) };
 }
+function claudeChildRunning(run: RunRecord, starts: ReadonlyMap<string, string> | undefined,
+  capturedAt: string): AgentObservedValue<boolean> {
+  if (run.source !== "claude" || run.parentId === null || run.outcome === "complete" || run.outcome === "failed")
+    return missing("measurement_missing");
+  const at = starts?.get(childEventKey(run.parentId, run.id));
+  if (at === undefined) return missing("measurement_missing");
+  const eventMs = Date.parse(at), captureMs = Date.parse(capturedAt);
+  if (!Number.isFinite(eventMs) || !Number.isFinite(captureMs) ||
+      new Date(eventMs).toISOString() !== at || eventMs > captureMs ||
+      eventMs + CLAUDE_CHILD_START_FRESH_MS < captureMs + ISSUE_AGENT_TREE_FRESH_MS) return missing("source_stale");
+  return { value: true, reason: null, observedAt: at,
+    validUntil: new Date(eventMs + CLAUDE_CHILD_START_FRESH_MS).toISOString(),
+    revision: digest(JSON.stringify({ source: "claude-child-hook", root: digest(run.parentId),
+      child: digest(run.id), event: at })) };
+}
 export function buildAgentObservations(input: {
   readonly dispatches: readonly DispatchEvidence[];
   readonly runs: readonly RunRecord[];
@@ -43,6 +59,8 @@ export function buildAgentObservations(input: {
   readonly sourceBound: boolean;
   readonly dispatchComplete: boolean;
   readonly nativeComplete: boolean;
+  /** Private, already screened latest Start events keyed by exact parent session and child ID. */
+  readonly claudeChildStarts?: ReadonlyMap<string, string>;
 }): AgentObservations {
   const agents: AgentObservation[] = [];
   let reason: AgentObservations["reason"] = !input.sourceBound ? "source_not_bound"
@@ -120,7 +138,9 @@ export function buildAgentObservations(input: {
       if (agents.length === MAX_AGENT_OBSERVATIONS) { agents.length = 0; reason = "scan_limit"; return finish(); }
       const observedAt = run.updatedAt;
       const cost = projectAgentCost(run, input.observedAt);
-      const running = measuredRunning(run, input.observedAt);
+      const nativeRunning = measuredRunning(run, input.observedAt);
+      const running = nativeRunning.value === true || run.source !== "claude" ? nativeRunning
+        : claudeChildRunning(run, input.claudeChildStarts, input.observedAt);
       const child: AgentObservation = { agentId: opaque("agent", key), repo: parent.repo, issueNumber: parent.issueNumber,
         assignment: parent.assignment, parentAgentId: { state: "known-parent", value: parent.agentId, reason: null },
         workspace: missing(), pane: missing(), tab: missing(), terminal: missing(), running,

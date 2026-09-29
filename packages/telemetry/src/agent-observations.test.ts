@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { it } from "node:test";
 import { projectRouteIdentity, readAgentObservations } from "@rickylabs/harness-contracts";
 import { buildAgentObservations } from "./agent-observations.js";
+import { childEventKey } from "./claude-child-events.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
 const at = "2026-01-01T00:00:00.000Z";
@@ -100,4 +101,27 @@ it("dispatch-only: validates before emitting and never clears fabricated runtime
   assert.equal(result.complete, false);
   assert.equal(readAgentObservations(result).ok, false);
   assert.deepEqual(result.agents, []);
+});
+
+it("projects only a fresh Start for a child under the exact bound Claude root", () => {
+  const observedAt = "2026-01-01T00:01:00.000Z";
+  const rootId = "fixture-root", childId = "agent-fixture";
+  const claudeDispatch = { ...dispatch, source: "claude" as const, external: rootId };
+  const claudeRuns = [
+    { ...run(rootId, null), source: "claude" as const },
+    { ...run(childId, rootId), source: "claude" as const },
+  ];
+  const base = { ...defaults, dispatches: [claudeDispatch], runs: claudeRuns, observedAt };
+  const childOf = (starts: ReadonlyMap<string, string>) => buildAgentObservations({ ...base, claudeChildStarts: starts })
+    .agents.find(agent => agent.parentAgentId.state === "known-parent")!;
+  const start = "2026-01-01T00:00:30.000Z";
+  const matched = childOf(new Map([[childEventKey(rootId, childId), start]]));
+  assert.equal(matched.running.value, true);
+  assert.equal(matched.running.observedAt, start);
+  assert.equal(childOf(new Map([[childEventKey("wrong-root", childId), start]])).running.value, null);
+  assert.equal(childOf(new Map([[childEventKey(rootId, "internal-child"), start]])).running.value, null);
+  assert.equal(childOf(new Map([[childEventKey(rootId, childId), "2025-12-31T23:59:00.000Z"]])).running.value, null);
+  assert.equal(childOf(new Map()).running.value, null); // Stop or missing signal never creates terminal evidence.
+  assert.ok(!JSON.stringify(matched).includes(rootId));
+  assert.ok(!JSON.stringify(matched).includes(childId));
 });
