@@ -19,6 +19,13 @@ catalog, the preferred native IDs, owner and privileged gates, fallback, role tr
 cross-vendor evaluator independence. It runs on the supported Node 24 floor. The frozen fixtures
 are source evidence, not runtime inputs.
 
+`deno run --no-config --no-lock matrix/cli/matrix-view.ts` is the human query viewer ported from
+NetScript's `agentic:matrix`: the full matrix as Markdown, `--tier`, `--role` (with aliases such as
+`impl-eval`), `--plan-evaluator`, `--impl-evaluator`, `--fallback-of <model>` and `--json` per
+view. It never replaces the closed table above; its full, tier and role JSON equals
+`matrixTable()`. `matrix-view.test.mjs` replays every recorded NetScript query, refusals included,
+from the frozen `matrix-view.e75161c.json` reference; only the help text's usage line differs.
+
 The legacy `routing.v1.json` profile remains readable until its consumers migrate. The
 version-2 document schema under `src/fleet.ts` remains a separate configuration reader; this
 pinned runtime is the dispatch authority for the Orchid/Cockpit cutover.
