@@ -721,7 +721,7 @@ consumers before deploying the new producer.
 
 ## Repo profiles and Cockpit workflow revisions (0.15.0)
 
-`ProfileRef` names a pinned target-repo Markdown profile and NetScript matrix revision. It carries
+`ProfileRef` names a pinned target-repo Markdown profile and matrix revision. It carries
 the kind, role, tier and sourced token budget, with digests instead of instructions or model choices.
 `WorkflowRevision` is an immutable Cockpit DB phase graph; each phase references a profile and
 exposes only opaque writer-scope IDs. Cockpit keeps writer file ownership and approval/rollback
@@ -826,3 +826,16 @@ It returns a per-field `verifier_missing` error when the evaluator is absent or 
 `readWorkflowRevision` and bundle import remain compatible with older stored revisions; Cockpit
 uses the strict reader before approving a new draft. The reader validates graph shape, not route
 authority or private writer-file ownership, which Cockpit must check against its pinned sources.
+
+## Phase artifact observations (0.24.0)
+
+`readWorkflowArtifactObservation(value, runSource, revisionSource)` binds an opaque Cockpit
+artifact ID to one successful ended attempt and its exact dispatch in a pinned workflow run.
+The output kind and schema digest must match the declared phase, and the observation cannot
+precede the attempt's end, including at nanosecond precision. Pending or failed attempts,
+wrong pins, raw artifact paths or content, and unknown fields are rejected.
+
+Cockpit supplies the run and revision from its trusted storage and separately verifies that
+the artifact ID exists in its private ledger. This public reference alone neither proves
+artifact storage nor releases the next phase; Cockpit still applies the dependency, reviewer
+and owner-approval gates before dispatching it.
