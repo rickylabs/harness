@@ -34,7 +34,7 @@
 
 import { basename } from "node:path";
 
-import { linkedIssuesOf, type LaunchIdentity, type RunRecord, type RunUsage } from "../model.js";
+import { linkedIssuesOf, processedInputTokens, type LaunchIdentity, type RunRecord, type RunUsage } from "../model.js";
 import { claudeActivity, recentActivity } from "../native-activity.js";
 import { TokenSampleCollector } from "../token-samples.js";
 import {
@@ -268,7 +268,7 @@ export function parseClaudeTranscript(
           }
           addUsage(usage, counted, reported);
           if (Object.hasOwn(reported, "input_tokens") && Object.hasOwn(reported, "output_tokens"))
-            tokenSamples.observe(at, usage.inputTokens, usage.outputTokens);
+            tokenSamples.observe(at, processedInputTokens("claude", usage), usage.outputTokens);
           else tokenSamples.observe(at, undefined, undefined);
         }
       }

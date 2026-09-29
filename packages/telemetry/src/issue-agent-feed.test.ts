@@ -219,6 +219,32 @@ it("projects bound root-dispatch revisions on root and child, and marks an old w
     assert.deepEqual(agent.matrixRevision, { value: null, scope: "root-dispatch", source: "unavailable", reason: "source_not_bound" });
   }
 });
+it("counts Claude cache reads and writes as used tokens, as Codex already does for cached input", () => {
+  // Claude's input_tokens excludes both cache kinds; Codex's includes cached input, so a Codex run keeps
+  // input + output (the next test's root, with a cache read, still reads 11) and a Claude run adds both back.
+  const claude: DispatchEvidence = { ...dispatch, source: "claude", harness: "claude" };
+  const rootRun = { ...run("PRIVATE-NATIVE-ROOT", null, "running"), source: "claude",
+    usage: { inputTokens: 8, outputTokens: 3, cacheReadTokens: 5 },
+    tokenSamples: { points: [{ at: later, usedTokens: 16 }], truncated: false, invalid: false } } as RunRecord;
+  const childRun = { ...run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT", "running"), source: "claude", nativeDepth: 1,
+    usage: { inputTokens: 10, outputTokens: 4, cacheReadTokens: 900, cacheWriteTokens: 7 },
+    tokenSamples: { points: [{ at: later, usedTokens: 921 }], truncated: false, invalid: false } } as RunRecord;
+  const agents = build(claude, [rootRun, childRun]).issues[0]!.dispatches[0]!.agents;
+  assert.equal(agents.length, 2);
+  const root = agents.find(agent => agent.observation.parentAgentId.state === "confirmed-root")!;
+  const child = agents.find(agent => agent.observation.parentAgentId.state !== "confirmed-root")!;
+  assert.deepEqual([root.tokenUsage?.usedTokens, root.tokenUsage?.source], [16, "claude-usage"]);
+  assert.deepEqual([child.tokenUsage?.usedTokens, child.tokenUsage?.source], [921, "claude-usage"]);
+  assert.deepEqual(child.resourceHistory?.tokens.points, [{ at: later, usedTokens: 921 }]);
+  // Each kind stays its own true row on the run's cost.
+  assert.deepEqual(child.observation.cost.runTokens.measurement,
+    { inputTokens: 10, outputTokens: 4, cacheReadTokens: 900, cacheWriteTokens: 7 });
+  // A malformed part never hides inside a plausible sum: 10 + (-5) + 4 would read as 9.
+  const malformed = { ...childRun, usage: { inputTokens: 10, outputTokens: 4, cacheReadTokens: -5 } } as RunRecord;
+  const bad = build(claude, [rootRun, malformed]).issues[0]!.dispatches[0]!.agents
+    .find(agent => agent.observation.parentAgentId.state !== "confirmed-root")!;
+  assert.deepEqual([bad.tokenUsage?.usedTokens, bad.tokenUsage?.reason], [null, "measurement_missing"]);
+});
 it("binds measured activity, token numerator, child spawn, and immutable action to the exact agent", () => {
   const rootRun = { ...run("PRIVATE-NATIVE-ROOT", null, "running"), usage: { inputTokens: 8, outputTokens: 3,
     reasoningTokens: 2, cacheReadTokens: 5 }, tokenSamples: { points: [
