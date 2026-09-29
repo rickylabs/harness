@@ -13,6 +13,48 @@ const fixture = { schemaVersion: 1, runId: "orchid-" + key,
   issue: { repo: "example/inbox", number: 42 }, parentRunId: null, source: "codex",
   provider: "fixture-router", model: "fixture-model", effort: "high", profile: "leaf", state: "dispatched",
   location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" } };
+
+it("binds a fresh Claude working status to the exact native root and never to a child", async () => {
+  const issueID = "fixture-issue", repo = "example/inbox", briefDigest = "b".repeat(64);
+  const reservation = createHash("sha256").update(issueID + "\0" + repo + "\0" + briefDigest).digest("hex");
+  const s = await setup(reservation);
+  const id = "fixture-native-session";
+  const binding = { IssueID: issueID, Repo: repo, BriefDigest: briefDigest, Host: "fixture-node",
+    NativeSessionID: id, Route: { transport: "claude", provider: "fixture-router", model: "fixture-model", effort: "high" } };
+  const status = (at: string, session = id) => ({ schemaVersion: 1, runId: "orchid-" + reservation,
+    nativeSessionId: session, host: "fixture-node", paneId: "fixture-pane", workspaceId: "fixture-workspace",
+    status: "working", observedAt: at });
+  const source = (idValue: string, parentId: string | null) => ({ id: idValue, parentId, source: "claude" as const,
+    startedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), branch: null,
+    identity: { model: null, effort: null, provider: null, profile: null }, usage: {}, outcome: "unknown" as const,
+    linkedIssues: [], origin: "PRIVATE-PATH-CANARY", quota: [] });
+  try {
+    await s.write({ ...fixture, runId: "orchid-" + reservation, source: "claude", host: "fixture-node" });
+    await writeFile(join(s.record, "binding.json"), JSON.stringify(binding), { mode: 0o600 });
+    const statusFile = join(s.record, "claude-status.json");
+    await writeFile(statusFile, JSON.stringify(status(new Date().toISOString())), { mode: 0o600 });
+    const first = (await readOrchidDispatches(s.root)).dispatches[0]!;
+    assert.ok(first.claudeWorkingAt);
+    const runs = [source(id, null), source("fixture-child", id)];
+    const observations = buildAgentObservations({ dispatches: [first], runs, observedAt: new Date().toISOString(),
+      sourceBound: true, dispatchComplete: true, nativeComplete: true });
+    assert.equal(observations.agents.find(agent => agent.parentAgentId.state === "confirmed-root")?.running.value, true);
+    assert.equal(observations.agents.find(agent => agent.parentAgentId.state === "known-parent")?.running.value, null);
+    for (const bad of [status(new Date().toISOString(), "other-session"),
+      { ...status(new Date().toISOString()), status: "done" }, { ...status(new Date().toISOString()), paneId: "other-pane" }]) {
+      await writeFile(statusFile, JSON.stringify(bad));
+      assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.claudeWorkingAt, undefined);
+    }
+    await writeFile(statusFile, JSON.stringify(status(new Date(Date.now() - 120_000).toISOString())));
+    const stale = (await readOrchidDispatches(s.root)).dispatches[0]!;
+    const staleObservations = buildAgentObservations({ dispatches: [stale], runs, observedAt: new Date().toISOString(),
+      sourceBound: true, dispatchComplete: true, nativeComplete: true });
+    assert.equal(staleObservations.agents.find(agent => agent.parentAgentId.state === "confirmed-root")?.running.value, null);
+    await writeFile(statusFile, JSON.stringify(status(new Date().toISOString())));
+    await chmod(statusFile, 0o644);
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.claudeWorkingAt, undefined);
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
 async function setup(reservation = key) {
   const root = await mkdtemp(join(tmpdir(), "orchid-read-"));
   const dir = join(root, reservation, "record");

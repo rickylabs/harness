@@ -15,6 +15,17 @@ const nativeKey = (source: string, id: string) => `${source}\0${id}`;
 // A consumer may display a tree for its full 15-second validity. Reserve that
 // interval inside the two-minute native-activity window before claiming running.
 const NATIVE_RUNNING_MS = 120_000;
+const CLAUDE_STATUS_MS = 90_000;
+function claudeStatusRunning(dispatch: DispatchEvidence, capturedAt: string): AgentObservedValue<boolean> {
+  if (dispatch.source !== "claude" || dispatch.claudeWorkingAt === undefined) return missing("measurement_missing");
+  const eventMs = Date.parse(dispatch.claudeWorkingAt), captureMs = Date.parse(capturedAt);
+  if (!Number.isFinite(eventMs) || !Number.isFinite(captureMs) ||
+      new Date(eventMs).toISOString() !== dispatch.claudeWorkingAt || eventMs > captureMs ||
+      eventMs + CLAUDE_STATUS_MS < captureMs + ISSUE_AGENT_TREE_FRESH_MS) return missing("source_stale");
+  return { value: true, reason: null, observedAt: dispatch.claudeWorkingAt,
+    validUntil: new Date(eventMs + CLAUDE_STATUS_MS).toISOString(),
+    revision: digest(JSON.stringify({ dispatch: dispatch.revision, event: dispatch.claudeWorkingAt, signal: "herdr-claude-working" })) };
+}
 function measuredRunning(run: RunRecord, capturedAt: string): AgentObservedValue<boolean> {
   if (run.outcome !== "running") return missing("measurement_missing");
   const eventMs = Date.parse(run.updatedAt), captureMs = Date.parse(capturedAt);
@@ -87,7 +98,10 @@ export function buildAgentObservations(input: {
   for (const [key, root] of roots) {
     const run = native.get(key)!;
     const cost = projectAgentCost(run, input.observedAt);
-    const running = measuredRunning(run, input.observedAt);
+    const sourceDispatch = dispatches.find(d => opaque("agent", d.runId) === root.agentId);
+    const nativeRunning = measuredRunning(run, input.observedAt);
+    const running = nativeRunning.value === true || sourceDispatch?.source !== "claude" ? nativeRunning
+      : claudeStatusRunning(sourceDispatch, input.observedAt);
     const bound = { ...root, cost, running,
       revision: digest(JSON.stringify({ prior: root.revision, cost, running })) };
     agents[agents.indexOf(root)] = bound;
