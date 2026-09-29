@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { LOGICAL_MODEL_IDS } from "./delegation-matrix.ts";
+import { DELEGATION_ROLES, LOGICAL_MODEL_IDS, WORKLOAD_TIERS } from "./delegation-matrix.ts";
 import { matrixTable } from "./cli/delegation-matrix-table.ts";
 import { fallbackMatches, runMatrixView } from "./cli/matrix-view.ts";
 
 // Recorded once from NetScript's viewer at the recorded SHA (it read this matrix pinned at
 // harnessMatrixRevision). CI replays frozen data and never installs, imports or reads NetScript.
 const reference = JSON.parse(readFileSync(new URL("../test-fixtures/matrix-view.e75161c.json", import.meta.url), "utf8"));
-const isHelp = args => args.includes("--help") || args.includes("-h");
+const isHelp = recorded => recorded.stdout.startsWith("Usage: ");
 
 test("the frozen NetScript viewer reference is intact and covers every mode", () => {
   assert.equal(reference.sourceRevision, "e75161c32e8189b4cb6716b92e1bf16702648886");
@@ -19,7 +19,9 @@ test("the frozen NetScript viewer reference is intact and covers every mode", ()
     assert.ok(flags.has(flag), flag);
   }
   assert.ok(reference.cases.some(c => c.args.length === 0));
-  assert.ok(reference.cases.filter(c => c.status === 2).length >= 9);
+  assert.ok(reference.cases.filter(c => c.status === 2).length >= 22);
+  // A `--` after an earlier bad argument must still be the reported refusal, as in NetScript.
+  assert.ok(reference.cases.some(c => c.args.join(" ") === "--tier huge --" && c.stderr === "Unknown argument: --\n"));
 });
 
 test("every recorded query renders byte-identically, including refusals", () => {
@@ -28,7 +30,7 @@ test("every recorded query renders byte-identically, including refusals", () => 
     const label = JSON.stringify(expected.args);
     assert.equal(actual.status, expected.status, label);
     assert.equal(actual.stderr, expected.stderr, label);
-    if (!isHelp(expected.args)) {
+    if (!isHelp(expected)) {
       assert.equal(actual.stdout, expected.stdout, label);
       continue;
     }
@@ -47,6 +49,16 @@ test("viewer JSON for full, tier and role modes is the stable table the bridge r
   assert.deepEqual(json(["--tier", "complex"]), matrixTable({ tier: "complex" }));
   assert.deepEqual(json(["--role", "impl-eval"]), matrixTable({ role: "implementation_evaluation" }));
   assert.deepEqual(json(["--tier", "feature", "--plan-evaluator"]), matrixTable({ tier: "feature", role: "plan_evaluation" }));
+  // Serialized, so a role without a loop policy (`policy: undefined`) is compared as emitted.
+  let views = 0;
+  for (const tier of [undefined, ...WORKLOAD_TIERS]) {
+    for (const role of [undefined, ...DELEGATION_ROLES]) {
+      const args = [...(tier ? ["--tier", tier] : []), ...(role ? ["--role", role] : []), "--json"];
+      assert.equal(runMatrixView(args).stdout, `${JSON.stringify(matrixTable({ tier, role }), null, 2)}\n`, args.join(" "));
+      views++;
+    }
+  }
+  assert.equal(views, 54);
 });
 
 test("fallback lookup lists every primary context, workload and coordinator", () => {

@@ -200,9 +200,10 @@ function requireValue(args: readonly string[], index: number, flag: string): str
   return value;
 }
 
-/** A leading `--` from `deno task x -- ...` is dropped; any other `--` is an unknown argument. */
+/** A leading `--` from `deno task x -- ...` is dropped; any other `--` is refused before parsing. */
 export function parseMatrixViewArgs(args: readonly string[]): MatrixViewOptions {
   const normalized = args[0] === TASK_SEPARATOR ? args.slice(1) : [...args];
+  if (normalized.includes(TASK_SEPARATOR)) throw new Error(`Unknown argument: ${TASK_SEPARATOR}`);
   const options: MatrixViewOptions = { json: false, help: false };
   for (let index = 0; index < normalized.length; index++) {
     const arg = normalized[index];
@@ -251,7 +252,22 @@ function workloadRow(tier: WorkloadTier): string[] {
   const cell = DELEGATION_MATRIX[tier];
   return [
     `${tier}<br>${WORKLOAD_TIER_DESCRIPTIONS[tier]}`,
-    ...DELEGATION_ROLES.flatMap(role => [displayRoute(cell[role][0]), fallbackRoutes(cell[role])]),
+    displayRoute(cell.implementation[0]),
+    fallbackRoutes(cell.implementation),
+    displayRoute(cell.ui_ux[0]),
+    fallbackRoutes(cell.ui_ux),
+    displayRoute(cell.plan[0]),
+    fallbackRoutes(cell.plan),
+    displayRoute(cell.plan_evaluation[0]),
+    fallbackRoutes(cell.plan_evaluation),
+    displayRoute(cell.implementation_evaluation[0]),
+    fallbackRoutes(cell.implementation_evaluation),
+    displayRoute(cell.vision_evaluation[0]),
+    fallbackRoutes(cell.vision_evaluation),
+    displayRoute(cell.documentation[0]),
+    fallbackRoutes(cell.documentation),
+    displayRoute(cell.deep_research[0]),
+    fallbackRoutes(cell.deep_research),
   ];
 }
 
