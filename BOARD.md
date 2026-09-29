@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **390/468 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 10 invisible**
+`[################----]` **390/471 done · 24 running · 23 queued · 8 blocked · 15 abandoned · 11 invisible**
 
-_Latest board activity: 2026-09-29T12:07:07Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-29T12:40:40Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (21)
+## Moving now (24)
 
 Something could be acting on these right now.
 
@@ -48,6 +48,9 @@ Something could be acting on these right now.
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
+| [#481 feat(telemetry): project sourced Claude child Start observations](https://github.com/rickylabs/harness/issues/481) | `ready-merge` | — |
+| [PR482 feat(telemetry): sourced Claude child running observations](https://github.com/rickylabs/harness/pull/482) | `ready-merge` | — |
+| [#483 Proof: Claude child Start and Stop in the issue feed](https://github.com/rickylabs/harness/issues/483) | `impl` | — |
 
 ## Not on the board (3)
 
@@ -59,13 +62,15 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
 | [#466 App video: live Sol leaf dispatch and actions](https://github.com/rickylabs/harness/issues/466) | — | — |
 
-## Anomalies (36)
+## Anomalies (38)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#481** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#482** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -137,26 +142,25 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 195/225 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 8 invisible
+`[##########--]` 195/228 done · 7 running · 3 queued · 5 blocked · 9 abandoned · 9 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
-| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 2 queued | `impl` |
-| _(no epic)_ | `[##########--]` 165/189 done · 3 running · 2 queued · 3 blocked · 9 abandoned · 7 invisible | — |
+| [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
+| _(no epic)_ | `[##########--]` 165/192 done · 6 running · 2 queued · 3 blocked · 9 abandoned · 7 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>24 filed, nothing started</summary>
+<summary>23 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator](https://github.com/rickylabs/harness/issues/273) | `triage` | `e11` |
 | [#275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON](https://github.com/rickylabs/harness/issues/275) | `triage` | `e11` |
-| [#397 Live proof: native goal, budget, child and run states](https://github.com/rickylabs/harness/issues/397) | `triage` | `e9` |
 | [#400 Live proof: native goal read-back and notifications](https://github.com/rickylabs/harness/issues/400) | `triage` | `e9` |
 | [#287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts](https://github.com/rickylabs/harness/issues/287) | `triage` | `e3` |
 | [#290 Spike S12 — Evidence path: transcript and quota meters for UHP runs](https://github.com/rickylabs/harness/issues/290) | `triage` | `e3` |
@@ -187,7 +191,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  390/468 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 10 invisible
+# rickylabs/harness  [################----]  390/471 done · 24 running · 23 queued · 8 blocked · 15 abandoned · 11 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  195/243 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 2 invisible
 
@@ -469,7 +473,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
     no status            #466 App video: live Sol leaf dispatch and actions
 
-## (no milestone)  [#################---]  195/225 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 8 invisible
+## (no milestone)  [#################---]  195/228 done · 7 running · 3 queued · 5 blocked · 9 abandoned · 9 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -498,7 +502,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR411 feat(telemetry): read sanitized Orchid action receipts (p1)
 
   E9 — Telemetry: the "status ?" killer #39  [impl]  (epic is in M1 — dsh coordinator foundation)
-    [##############--] 17/19 done · 2 queued
+    [##############--] 17/19 done · 1 queued · 1 invisible
     shipped              PR386 feat(telemetry): versioned per-issue agent feed (p0)
     shipped              #387 Proof: one native child in the issue-agent feed (p1)
     shipped              #392 Proof: route-default goal, live status and one native child (p0)
@@ -506,7 +510,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR394 fix: issue-agent-measured-running--p0 native running evidence (p0)
     shipped              #395 Proof: live native binding and parent-child status (p0)
     shipped              #396 Proof: live root and native child status after Orchid repair (p0)
-    triage               #397 Live proof: native goal, budget, child and run states (p0)
+    no status            #397 Live proof: native goal, budget, child and run states (p0)
     triage               #400 Live proof: native goal read-back and notifications (p0)
     shipped              #405 Live proof: host placement, capacity, native goal and child state (p0)
     shipped              #410 Live proof: native child depth and terminal goal notification (p0)
@@ -709,6 +713,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR478 feat(contracts): bind workflow phase artifact observations
     shipped              #479 feat(telemetry): record private Claude child lifecycle hook observations
     shipped              PR480 feat(telemetry): private Claude child lifecycle reporter
+    ready-merge          #481 feat(telemetry): project sourced Claude child Start observations
+    ready-merge          PR482 feat(telemetry): sourced Claude child running observations
+    impl                 #483 Proof: Claude child Start and Stop in the issue feed
 ```
 
 </details>
