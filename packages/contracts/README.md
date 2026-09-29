@@ -800,3 +800,17 @@ it must not publish a plain hash of guessable event data as the key.
 This record reports trigger observations only; it does not assert that Cockpit created an
 issue or that Orchid launched an agent. The caller must supply the immutable revision from
 its trusted storage, not a revision supplied by the wake sender.
+
+## Separate workflow reviewer observations (0.21.0)
+
+`readWorkflowReviewObservation(value, runSource, revisionSource)` binds a verdict to an ended
+subject attempt and an ended, distinct evaluator attempt in the same validated run and immutable
+revision. The evaluator phase must depend on the subject phase and have its declared verifier
+role. An observed verdict is `allow`, `block` or `escalate` and requires a successful reviewer
+attempt plus a random private-evidence lookup ID. A reviewer error has no verdict or evidence ID;
+it never grants release. Missing observations also do not grant release. Raw review prose,
+native identifiers and unbound attempt references are rejected.
+
+This is a sourced fact for Cockpit's workflow ledger, not an owner approval. Cockpit still
+checks reviewer identity, cross-vendor policy, allowed actions and its separate approval boundary
+before releasing a phase. It retains the private evidence behind the opaque ID.

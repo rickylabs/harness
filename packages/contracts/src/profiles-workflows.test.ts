@@ -3,10 +3,13 @@ import { createHash } from "node:crypto";
 import { it } from "node:test";
 import { encodeWorkflowRevisionBundle, MAX_ROUTINE_WAKE_COALESCE, readProfileRef, readRoutineRevision,
   readRoutineWake,
-  readWorkflowRevision, readWorkflowRevisionBundle, readWorkflowRun } from "./profiles-workflows.js";
+  readWorkflowReviewObservation, readWorkflowRevision, readWorkflowRevisionBundle,
+  readWorkflowRun } from "./profiles-workflows.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const id2 = "22222222-2222-4222-8222-222222222222";
+const id3 = "33333333-3333-4333-8333-333333333333";
+const id4 = "44444444-4444-4444-8444-444444444444";
 const commit = "a".repeat(40), digest = "b".repeat(64), writer = "scope_" + "c".repeat(32);
 const at = "2026-09-28T21:25:00.123456789Z";
 const profile = { name: "leaf", title: "Implementation teammate", kind: "leaf", role: "implementation", tier: "feature",
@@ -95,6 +98,57 @@ it("reads an immutable DAG and rejects cycles, duplicate phases and writer paths
   assert.ok(fields(readWorkflowRevision({ ...workflow, phases: [
     { ...phase, writerScopeIds: ["src/private/file.ts"] }] })).includes("workflow.phases[0].writerScopeIds[0]"));
   assert.ok(fields(readWorkflowRevision({ ...workflow, instructions: "raw agent prompt" })).includes("workflow.instructions"));
+});
+
+it("binds allow, block and escalate to an ended, separate evaluator attempt", () => {
+  const reviewerProfile = { ...profile, name: "plan-reviewer", title: "Plan reviewer",
+    role: "plan_evaluation", tier: "straightforward" } as const;
+  const reviewerPhase = { ...phase, id: "review", profile: reviewerProfile, dependsOn: ["plan"],
+    writerScopeIds: ["scope_" + "d".repeat(32)], outputKind: "report", verifierRole: null } as const;
+  const pinned = { ...workflow, phases: [phase, reviewerPhase] };
+  const subject = { ...attempt, id: id3, state: "ended", outcome: "succeeded", blockKind: null,
+    startedAt: at, endedAt: at } as const;
+  const reviewer = { ...subject, id: id4, phaseId: "review",
+    endedAt: "2026-09-28T21:25:00.123456790Z" } as const;
+  const sourceRun = { ...run, state: "running", blockKind: null, attempts: [subject, reviewer] };
+  const observation = { schema: 1, runId: id2, workflowId: id, workflowRevision: digest,
+    subjectAttemptId: id3, reviewerAttemptId: id4, status: "observed", verdict: "allow",
+    evidenceId: id, observedAt: "2026-09-28T21:25:00.123456791Z" } as const;
+  for (const verdict of ["allow", "block", "escalate"])
+    assert.equal(readWorkflowReviewObservation({ ...observation, verdict }, sourceRun, pinned).ok, true);
+  assert.equal(readWorkflowReviewObservation({ ...observation, status: "reviewer_error",
+    verdict: null, evidenceId: null }, sourceRun, pinned).ok, true);
+  assert.ok(fields(readWorkflowReviewObservation({ ...observation, status: "reviewer_error" }, sourceRun, pinned))
+    .includes("review.verdict"));
+  assert.ok(fields(readWorkflowReviewObservation({ ...observation, verdict: null }, sourceRun, pinned))
+    .includes("review.verdict"));
+  assert.ok(fields(readWorkflowReviewObservation({ ...observation, evidenceId: null }, sourceRun, pinned))
+    .includes("review.evidenceId"));
+  assert.ok(fields(readWorkflowReviewObservation({ ...observation, reviewerAttemptId: id3 }, sourceRun, pinned))
+    .includes("review.reviewerAttemptId"));
+  assert.ok(fields(readWorkflowReviewObservation({ ...observation, reviewerAttemptId: id }, sourceRun, pinned))
+    .includes("review.reviewerAttemptId"));
+  assert.ok(fields(readWorkflowReviewObservation(observation, sourceRun,
+    { ...pinned, phases: [phase, { ...reviewerPhase, dependsOn: [] }] }))
+    .includes("review.reviewerAttemptId"));
+  assert.ok(fields(readWorkflowReviewObservation(observation, sourceRun,
+    { ...pinned, phases: [phase, { ...reviewerPhase, profile }] }))
+    .includes("review.reviewerAttemptId"));
+  assert.ok(fields(readWorkflowReviewObservation(observation, { ...sourceRun,
+    attempts: [subject, { ...reviewer, outcome: "failed" }] }, pinned))
+    .includes("review.status"));
+  assert.ok(fields(readWorkflowReviewObservation(observation, { ...sourceRun,
+    attempts: [subject, { ...reviewer, state: "running", outcome: null, endedAt: null }] }, pinned))
+    .includes("review.reviewerAttemptId"));
+  assert.ok(fields(readWorkflowReviewObservation({ ...observation,
+    observedAt: "2026-09-28T21:25:00.123456789Z" }, sourceRun, pinned))
+    .includes("review.observedAt"));
+  assert.ok(fields(readWorkflowReviewObservation({ ...observation, reviewText: "private fixture" },
+    sourceRun, pinned)).includes("review.reviewText"));
+  assert.ok(fields(readWorkflowReviewObservation({ ...observation, evidenceId: "private/path" },
+    sourceRun, pinned)).includes("review.evidenceId"));
+  assert.ok(fields(readWorkflowReviewObservation(observation, sourceRun,
+    { ...pinned, revision: "c".repeat(64) })).includes("source.workflowRevision"));
 });
 
 it("reads routine policies but not raw filters, paths or an invalid schedule", () => {
