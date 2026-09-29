@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **375/455 done · 24 running · 24 queued · 8 blocked · 15 abandoned · 9 invisible**
+`[################----]` **376/456 done · 24 running · 24 queued · 8 blocked · 15 abandoned · 9 invisible**
 
-_Latest board activity: 2026-09-29T07:17:00Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-29T07:26:35Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -50,7 +50,7 @@ Something could be acting on these right now.
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 | [#464 Port pinned fleet routing authority into Harness](https://github.com/rickylabs/harness/issues/464) | `ready-merge` | — |
 | [PR465 Port pinned fleet routing matrix into Harness](https://github.com/rickylabs/harness/pull/465) | `ready-merge` | — |
-| [#467 Project pinned Harness matrix source identity in issue feed](https://github.com/rickylabs/harness/issues/467) | `impl` | — |
+| [PR468 Project pinned Harness matrix source identity](https://github.com/rickylabs/harness/pull/468) | `ready-merge` | — |
 
 ## Not on the board (3)
 
@@ -62,13 +62,14 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
 | [#466 App video: live Sol leaf dispatch and actions](https://github.com/rickylabs/harness/issues/466) | — | — |
 
-## Anomalies (36)
+## Anomalies (37)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#468** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -140,7 +141,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 180/212 done · 7 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
+`[##########--]` 181/213 done · 7 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -148,7 +149,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 2 queued | `impl` |
-| _(no epic)_ | `[##########--]` 150/176 done · 6 running · 2 queued · 3 blocked · 9 abandoned · 6 invisible | — |
+| _(no epic)_ | `[##########--]` 151/177 done · 6 running · 2 queued · 3 blocked · 9 abandoned · 6 invisible | — |
 
 ## Waiting to start
 
@@ -190,7 +191,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  375/455 done · 24 running · 24 queued · 8 blocked · 15 abandoned · 9 invisible
+# rickylabs/harness  [################----]  376/456 done · 24 running · 24 queued · 8 blocked · 15 abandoned · 9 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  195/243 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 2 invisible
 
@@ -472,7 +473,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
     no status            #466 App video: live Sol leaf dispatch and actions
 
-## (no milestone)  [################----]  180/212 done · 7 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
+## (no milestone)  [################----]  181/213 done · 7 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -698,7 +699,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR463 Require evaluator presence on workflow save
     ready-merge          #464 Port pinned fleet routing authority into Harness
     ready-merge          PR465 Port pinned fleet routing matrix into Harness
-    impl                 #467 Project pinned Harness matrix source identity in issue feed
+    shipped              #467 Project pinned Harness matrix source identity in issue feed
+    ready-merge          PR468 Project pinned Harness matrix source identity
 ```
 
 </details>
