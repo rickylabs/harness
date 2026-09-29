@@ -8,10 +8,12 @@ export const PROFILE_ROLES = ["implementation", "ui_ux", "plan", "plan_evaluatio
 export const WORKLOAD_TIERS = ["simple", "straightforward", "feature", "complex", "architecture"] as const;
 export const COORDINATOR_TIERS = ["small_project", "project", "framework", "milestone"] as const;
 export const WORKFLOW_BLOCK_KINDS = ["needs_input", "dependency", "capability", "transient"] as const;
+export const WORKFLOW_REVIEW_VERDICTS = ["allow", "block", "escalate"] as const;
 export type ProfileKind = typeof PROFILE_KINDS[number];
 export type ProfileRole = typeof PROFILE_ROLES[number];
 export type ProfileTier = typeof WORKLOAD_TIERS[number] | typeof COORDINATOR_TIERS[number];
 export type WorkflowBlockKind = typeof WORKFLOW_BLOCK_KINDS[number];
+export type WorkflowReviewVerdict = typeof WORKFLOW_REVIEW_VERDICTS[number];
 export type WorkflowOutcome = "succeeded" | "failed" | "cancelled";
 export type WorkflowState = "pending" | "running" | "blocked" | "ended";
 export type WorkflowUnavailableReason = "source_not_bound" | "source_unavailable" | "measurement_missing";
@@ -142,6 +144,21 @@ export interface WorkflowRun {
   readonly createdAt: string;
   readonly updatedAt: string;
 }
+/** A separate evaluator phase's sourced verdict. Owner approval remains a different record. */
+export type WorkflowReviewObservation = {
+  readonly schema: 1;
+  readonly runId: string;
+  readonly workflowId: string;
+  readonly workflowRevision: string;
+  readonly subjectAttemptId: string;
+  readonly reviewerAttemptId: string;
+  readonly observedAt: string;
+} & (
+  | { readonly status: "observed"; readonly verdict: WorkflowReviewVerdict;
+      /** Random private-evidence lookup ID, not a hash of reviewer prose. */
+      readonly evidenceId: string }
+  | { readonly status: "reviewer_error"; readonly verdict: null; readonly evidenceId: null }
+);
 
 type Problem = { field: string; code: string };
 /** Copy only bounded JSON data so a decoded contract never retains caller objects or runs getters. */
@@ -566,4 +583,53 @@ function validateWorkflowRun(value: unknown, out: Problem[]) {
 }
 export function readWorkflowRun(value: unknown): WorkflowRead<WorkflowRun> {
   return safeRead(value, "run", validateWorkflowRun);
+}
+/** A missing/error reviewer observation never grants permission to release a phase. */
+export function readWorkflowReviewObservation(value: unknown, runSource: unknown,
+    revisionSource: unknown): WorkflowRead<WorkflowReviewObservation> {
+  const run = readWorkflowRun(runSource);
+  if (!run.ok) return { ok: false, problems: run.problems.map(entry => ({
+    field: `source.${entry.field}`, code: entry.code })) };
+  const revision = readWorkflowRevision(revisionSource);
+  if (!revision.ok) return { ok: false, problems: revision.problems.map(entry => ({
+    field: `source.${entry.field}`, code: entry.code })) };
+  if (run.value.workflowId !== revision.value.workflowId ||
+      run.value.workflowRevision !== revision.value.revision)
+    return { ok: false, problems: [{ field: "source.workflowRevision", code: "mismatch" }] };
+  return safeRead(value, "review", (copy, out) => {
+    const v = record(copy, "review", ["schema", "runId", "workflowId", "workflowRevision",
+      "subjectAttemptId", "reviewerAttemptId", "status", "verdict", "evidenceId", "observedAt"], [], out);
+    if (!v) return;
+    field(out, "review.schema", v.schema, x => x === 1);
+    field(out, "review.runId", v.runId, x => uuid(x) && x === run.value.id);
+    field(out, "review.workflowId", v.workflowId, x => uuid(x) && x === run.value.workflowId);
+    field(out, "review.workflowRevision", v.workflowRevision,
+      x => digest(x) && x === run.value.workflowRevision);
+    field(out, "review.subjectAttemptId", v.subjectAttemptId, uuid);
+    field(out, "review.reviewerAttemptId", v.reviewerAttemptId, uuid);
+    const subject = run.value.attempts.find(item => item.id === v.subjectAttemptId);
+    const reviewer = run.value.attempts.find(item => item.id === v.reviewerAttemptId);
+    if (!subject || subject.state !== "ended") problem(out, "review.subjectAttemptId", "terminal_source_required");
+    if (!reviewer || reviewer.state !== "ended") problem(out, "review.reviewerAttemptId", "terminal_source_required");
+    if (subject && reviewer) {
+      if (subject.id === reviewer.id) problem(out, "review.reviewerAttemptId", "self_review");
+      const subjectPhase = revision.value.phases.find(item => item.id === subject.phaseId);
+      const reviewerPhase = revision.value.phases.find(item => item.id === reviewer.phaseId);
+      if (!subjectPhase || !reviewerPhase || !subjectPhase.verifierRole ||
+          reviewerPhase.profile.role !== subjectPhase.verifierRole ||
+          !reviewerPhase.dependsOn.includes(subjectPhase.id))
+        problem(out, "review.reviewerAttemptId", "verifier_phase_mismatch");
+    }
+    field(out, "review.status", v.status, x => member(x, ["observed", "reviewer_error"]));
+    field(out, "review.verdict", v.verdict,
+      x => v.status === "observed" ? member(x, WORKFLOW_REVIEW_VERDICTS) : x === null);
+    field(out, "review.evidenceId", v.evidenceId,
+      x => v.status === "observed" ? uuid(x) : x === null);
+    if (v.status === "observed" && reviewer?.outcome !== "succeeded")
+      problem(out, "review.status", "reviewer_success_required");
+    field(out, "review.observedAt", v.observedAt, time);
+    if (time(v.observedAt) && time(reviewer?.endedAt) &&
+        utcNanoseconds(v.observedAt as string) < utcNanoseconds(reviewer!.endedAt!))
+      problem(out, "review.observedAt", "before_reviewer_end");
+  });
 }
