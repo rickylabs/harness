@@ -10,10 +10,11 @@ provider precedence and per-launch effort evidence. There is no migration betwee
 sniffing and no default: a version is read from the `schemaVersion` integer, and the version-1
 functions keep version-1 parameter types so a fleet document cannot reach a lane resolver.
 
-There is no active global matrix, compiled model table, merge with defaults, or missing-document
-fallback. Every project supplies its own complete document. The profile explicitly selects the
-packaged [compatibility transcription](config/routing.v1.json); a deployment may replace that
-selection in its own patch layer.
+The legacy v1/v2 document loader remains configuration-first, with no missing-document fallback.
+The pinned fleet authority for Orchid and Cockpit now lives in [`matrix/`](matrix/): a complete
+role × tier matrix, logical model catalog, route resolver, owner override and evaluator rules.
+Those consumers will pin a Harness commit and import its source directly after cutover. The profile still selects
+the packaged [v1 compatibility transcription](config/routing.v1.json) until each consumer moves.
 
 ## Loading and provenance
 
@@ -191,12 +192,16 @@ Version 2 exports pure accessors — `roleOf`, `cellOf`, `loopOf`, `coordinatorC
 chooses.** Ordering candidates, selecting a launch by provider precedence and selecting the
 evaluator for the generator actually chosen are step 3 (#273).
 
-### No packaged version-2 document
+### Packaged fleet authority and version-2 document status
 
-The packaged document stays the version-1 transcription, and the bundle row still selects it. No
-fleet document ships, because a fleet instance needs families, launch identifiers and capabilities
-the matrix CLI does not export; inventing them here, or hand-transcribing them from another
-repository's source, is exactly what step 5 (#275) must do from an authoritative export.
+The packaged document stays the version-1 transcription, and the bundle row still selects it. No fleet-shaped version-2 JSON document ships yet. The fleet authority is the typed
+[`matrix/delegation-matrix.ts`](matrix/delegation-matrix.ts) and its
+[`matrix/routing-policy.ts`](matrix/routing-policy.ts) resolver, ported from the clean pinned
+NetScript 0985265 source. The full JSON table for pinning is
+[`matrix/cli/delegation-matrix-table.ts`](matrix/cli/delegation-matrix-table.ts) with `--json`.
+Frozen source fixtures compare all 40 workload cells, 4 coordinator scopes and catalog
+capabilities without installing or reading NetScript during Harness CI. Harness keeps the
+newer gpt-6 native Sol/Luna IDs active and retains the source gpt-5.6 capabilities.
 
 [`test-fixtures/`](test-fixtures/) is neither exported nor packed. It holds the retained CLI export
 and a fleet-shaped version-2 document whose tiers, cells, loop policies, coordinators and provider

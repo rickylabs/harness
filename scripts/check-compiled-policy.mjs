@@ -1,4 +1,4 @@
-/** #271: keep executable routing assignments in the selected document, not runtime tables. */
+/** #271: guard legacy src route selection; the new pinned matrix/ authority has full parity and mutation gates. */
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join, relative } from 'node:path';
