@@ -4,7 +4,7 @@
 
 `[################----]` **370/449 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 9 invisible**
 
-_Latest board activity: 2026-09-29T05:07:54Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-29T05:11:27Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -48,8 +48,8 @@ Something could be acting on these right now.
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
-| [#460 Add source-bound workflow reviewer observation contract](https://github.com/rickylabs/harness/issues/460) | `impl` | — |
-| [PR461 Add source-bound workflow reviewer observations](https://github.com/rickylabs/harness/pull/461) | `impl` | — |
+| [#460 Add source-bound workflow reviewer observation contract](https://github.com/rickylabs/harness/issues/460) | `ready-merge` | — |
+| [PR461 Add source-bound workflow reviewer observations](https://github.com/rickylabs/harness/pull/461) | `ready-merge` | — |
 
 ## Not on the board (3)
 
@@ -690,8 +690,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR457 Add deterministic WorkflowRevision transfer contract
     shipped              #458 Add bounded routine wake-up contract
     shipped              PR459 Add bounded routine wake-up contract
-    impl                 #460 Add source-bound workflow reviewer observation contract
-    impl                 PR461 Add source-bound workflow reviewer observations (draft)
+    ready-merge          #460 Add source-bound workflow reviewer observation contract
+    ready-merge          PR461 Add source-bound workflow reviewer observations
 ```
 
 </details>
