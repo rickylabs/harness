@@ -79,15 +79,16 @@ it("a source change collects at the next heartbeat without waiting for the safet
 it("filesystem hints ignore unrelated appends but notice bound files, new files and receipts", async () => {
   const root = await mkdtemp(join(tmpdir(), "issue-watch-"));
   const receipts = join(root, "receipts"), sessions = join(root, "sessions"), claude = join(root, "claude");
+  const childEvents = join(root, "child-events");
   const day = join(sessions, "2026", "09", "28");
   const claudeProject = join(claude, "fixture-project");
   const record = join(receipts, "fixture", "record");
   await mkdir(day, { recursive: true }); await mkdir(record, { recursive: true });
-  await mkdir(claudeProject, { recursive: true });
+  await mkdir(claudeProject, { recursive: true }); await mkdir(childEvents, { recursive: true });
   const selected = join(day, "selected.jsonl"), unrelated = join(day, "unrelated.jsonl");
   const claudeSelected = join(claudeProject, "selected.jsonl");
   await writeFile(selected, "a"); await writeFile(unrelated, "a"); await writeFile(claudeSelected, "a");
-  const changes = openIssueFeedChanges(receipts, sessions, claude);
+  const changes = openIssueFeedChanges(receipts, sessions, claude, childEvents);
   const eventually = async () => {
     for (let i = 0; i < 30; i++) {
       if (changes.consume()) return true;
@@ -111,6 +112,13 @@ it("filesystem hints ignore unrelated appends but notice bound files, new files 
     await writeFile(join(claudeProject, "new.jsonl"), "a");
     assert.equal(await eventually(), true);
     await writeFile(join(record, "binding.json"), "{}");
+    assert.equal(await eventually(), true);
+    const childFile = join(childEvents, "fixture.jsonl");
+    await writeFile(childFile, "a");
+    assert.equal(await eventually(), true);
+    changes.setFiles(new Set([selected, claudeSelected, childFile]));
+    changes.consume();
+    await appendFile(childFile, "b");
     assert.equal(await eventually(), true);
   } finally { changes.close(); await rm(root, { recursive: true, force: true }); }
 });

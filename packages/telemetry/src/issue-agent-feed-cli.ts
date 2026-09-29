@@ -9,11 +9,12 @@ import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FR
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { scanClaudeIssue } from "./backfill/claude-issue.js";
 import { buildAgentObservations } from "./agent-observations.js";
+import { CLAUDE_CHILD_EVENT_ROOT, readClaudeChildStarts } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import { readActionReceipts } from "./action-receipt-cli.js";
 import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
 import type { OrchidLaunchState } from "./orchid-dispatch.js";
-import { matchesOrchidNativeRootIdentity } from "./orchid-native-binding.js";
+import { matchesOrchidNativeRootIdentity, resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import { HOST_CAPACITY_PLACEMENT_HOST, readLocalHostCapacity } from "./host-capacity.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
@@ -120,8 +121,19 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       runs.push(...scan.runs);
     }
     for (const run of runs) options.watchFiles?.add(run.origin);
+    const claudeChildStarts = new Map<string, string>();
+    for (const dispatch of group.dispatches) {
+      if (dispatch.source !== "claude") continue;
+      const root = resolveOrchidNativeRoot(dispatch, runs);
+      if (root === null) continue;
+      const children = runs.filter(run => run.source === "claude" && run.parentId === root.id).map(run => run.id);
+      const starts = await readClaudeChildStarts(options.env[CLAUDE_CHILD_EVENT_ROOT], root.id,
+        children, options.now, options.watchFiles);
+      for (const [key, at] of starts) claudeChildStarts.set(key, at);
+    }
     const observations = buildAgentObservations({ dispatches: group.dispatches, runs,
-      observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true });
+      observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true,
+      claudeChildStarts });
     entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs,
       localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete });
   }
@@ -191,7 +203,7 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
   const env = deps.env ?? process.env;
   const changes = watch ? deps.changes ?? (deps.collect === undefined
     ? openIssueFeedChanges(env[ORCHID_DISPATCH_ROOT], defaultRoots(home).codexSessions!,
-      defaultRoots(home).claudeProjects) : undefined) : undefined;
+      defaultRoots(home).claudeProjects, env[CLAUDE_CHILD_EVENT_ROOT]) : undefined) : undefined;
   const generation = deps.generation?.() ?? randomUUID();
   const abort = new AbortController();
   let stopped = false, seq = 0;
