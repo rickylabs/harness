@@ -40,7 +40,7 @@ export async function readOrchidLaunchBinding(record: string, reservation: strin
     };
   } catch { return unavailable; }
 }
-/** Consume only the writer's dispatched Codex binding, tied to its reservation and selected route.
+/** Consume only the writer's dispatched native binding, tied to its reservation and selected route.
  * Writer contract: orchid a94ba978904354d2d13a632ad1806def81ac07ae,
  * cmd/divybot/matrix.go (reservation key) and native_identity.go (NativeSessionID).
  * Invalid/missing evidence leaves a dispatch-only row; no native value or exception is returned.
@@ -48,7 +48,7 @@ export async function readOrchidLaunchBinding(record: string, reservation: strin
 export async function readOrchidNativeBinding(record: string, reservation: string, dispatch: DispatchEvidence): Promise<void> {
   bindings.set(dispatch, { key: null });
   try {
-    if (dispatch.dispatchState !== "dispatched" || dispatch.source !== "codex") return;
+    if (dispatch.dispatchState !== "dispatched" || (dispatch.source !== "codex" && dispatch.source !== "claude")) return;
     const raw = await readPrivate(join(record, "binding.json"));
     const binding = JSON.parse(raw.toString("utf8")) as Record<string, unknown>;
     const id = binding.NativeSessionID;
@@ -73,9 +73,10 @@ export function resolveOrchidNativeRoot(dispatch: DispatchEvidence, runs: readon
   return matches.length === 1 && matches[0]!.parentId === null ? matches[0]! : null;
 }
 /** Match a head identity to Orchid's private root without revealing either identity or key. */
-export function matchesOrchidNativeRootIdentity(dispatch: DispatchEvidence, id: string): boolean {
+export function matchesOrchidNativeRootIdentity(dispatch: DispatchEvidence, id: string,
+  source: "codex" | "claude"): boolean {
   const key = bindings.get(dispatch)?.key;
-  return key !== null && key !== undefined && dispatch.source === "codex" && keyFor("codex", id) === key;
+  return key !== null && key !== undefined && dispatch.source === source && keyFor(source, id) === key;
 }
 /** Private reader rows cannot acquire credentials from the legacy exported DispatchResult surface. */
 export function hasOrchidNativeBindingBoundary(dispatch: DispatchEvidence): boolean {

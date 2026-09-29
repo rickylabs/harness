@@ -7,6 +7,7 @@ import type { Writable } from "node:stream";
 import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, readIssueAgentTreeSnapshot,
   type IssueAgentTree, type IssueAgentTreeFrame, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
+import { scanClaudeIssue } from "./backfill/claude-issue.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import { readActionReceipts } from "./action-receipt-cli.js";
@@ -16,6 +17,7 @@ import { matchesOrchidNativeRootIdentity } from "./orchid-native-binding.js";
 import { HOST_CAPACITY_PLACEMENT_HOST, readLocalHostCapacity } from "./host-capacity.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { RunRecord } from "./model.js";
 
 export interface IssueAgentFeedOptions {
   readonly home: string;
@@ -86,27 +88,41 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
         complete: true, reason: null, issues: [issue] };
       continue;
     }
-    if (group.dispatches.some(d => d.source !== "codex" || d.observedAt === undefined)) continue;
+    if (group.dispatches.some(d => (d.source !== "codex" && d.source !== "claude") || d.observedAt === undefined)) continue;
     if (group.dispatches.length > MAX_ISSUE_DISPATCHES || remainingBytes <= 0 ||
         group.dispatches.some(d => nowMs > Date.parse(d.observedAt!) + MAX_DISPATCH_AGE_MS)) {
       entry.snapshot = unavailableSnapshot(options.now, "scan_limit"); continue;
     }
-    const windows = group.dispatches.map(d => ({ startMs: Date.parse(d.observedAt!) - PRE_DISPATCH_MS, endMs: nowMs }));
-    const codexSessions = defaultRoots(options.home).codexSessions;
-    const scan = await backfillFromDisk(codexSessions === undefined ? {} : { codexSessions },
-      { limit: Math.min(options.limit, MAX_ISSUE_FILES), codexWindows: windows,
-        codexRootMatches: id => group.dispatches.some(dispatch => matchesOrchidNativeRootIdentity(dispatch, id)),
-        maxTranscriptBytes: MAX_TRANSCRIPT_BYTES, maxTotalBytes: remainingBytes });
-    for (const run of scan.runs) if (run.source === "codex") options.watchFiles?.add(run.origin);
-    remainingBytes -= scan.bytesRead;
-    if (scan.degraded) {
-      entry.snapshot = unavailableSnapshot(options.now,
-        scan.notes.some(note => note.includes("only the") || note.includes("read bound") || note.includes("scan_limit")) ? "scan_limit" : "source_unavailable");
-      continue;
+    const issueFileLimit = Math.min(options.limit, MAX_ISSUE_FILES);
+    const runs: RunRecord[] = [];
+    const codexDispatches = group.dispatches.filter(d => d.source === "codex");
+    if (codexDispatches.length > 0) {
+      const windows = codexDispatches.map(d => ({ startMs: Date.parse(d.observedAt!) - PRE_DISPATCH_MS, endMs: nowMs }));
+      const codexSessions = defaultRoots(options.home).codexSessions;
+      const scan = await backfillFromDisk(codexSessions === undefined ? {} : { codexSessions },
+        { limit: issueFileLimit, codexWindows: windows,
+          codexRootMatches: id => codexDispatches.some(dispatch => matchesOrchidNativeRootIdentity(dispatch, id, "codex")),
+          maxTranscriptBytes: MAX_TRANSCRIPT_BYTES, maxTotalBytes: remainingBytes });
+      remainingBytes -= scan.bytesRead;
+      if (scan.degraded) {
+        entry.snapshot = unavailableSnapshot(options.now,
+          scan.notes.some(note => note.includes("only the") || note.includes("read bound") || note.includes("scan_limit")) ? "scan_limit" : "source_unavailable");
+        continue;
+      }
+      runs.push(...scan.runs);
     }
-    const observations = buildAgentObservations({ dispatches: group.dispatches, runs: scan.runs,
+    if (group.dispatches.some(d => d.source === "claude")) {
+      const scan = await scanClaudeIssue(defaultRoots(options.home).claudeProjects!,
+        id => group.dispatches.some(dispatch => matchesOrchidNativeRootIdentity(dispatch, id, "claude")),
+        issueFileLimit - runs.length, MAX_TRANSCRIPT_BYTES, remainingBytes);
+      remainingBytes -= scan.bytesRead;
+      if (scan.reason !== null) { entry.snapshot = unavailableSnapshot(options.now, scan.reason); continue; }
+      runs.push(...scan.runs);
+    }
+    for (const run of runs) options.watchFiles?.add(run.origin);
+    const observations = buildAgentObservations({ dispatches: group.dispatches, runs,
       observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true });
-    entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs: scan.runs,
+    entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs,
       localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete });
   }
   // A malformed receipt cannot be proven unrelated to a scoped issue.
@@ -174,7 +190,8 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
   const elapsed = deps.elapsed ?? (() => performance.now());
   const env = deps.env ?? process.env;
   const changes = watch ? deps.changes ?? (deps.collect === undefined
-    ? openIssueFeedChanges(env[ORCHID_DISPATCH_ROOT], defaultRoots(home).codexSessions!) : undefined) : undefined;
+    ? openIssueFeedChanges(env[ORCHID_DISPATCH_ROOT], defaultRoots(home).codexSessions!,
+      defaultRoots(home).claudeProjects) : undefined) : undefined;
   const generation = deps.generation?.() ?? randomUUID();
   const abort = new AbortController();
   let stopped = false, seq = 0;

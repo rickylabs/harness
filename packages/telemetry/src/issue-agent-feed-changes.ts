@@ -8,8 +8,9 @@ export interface IssueFeedChanges {
   close(): void;
 }
 
-/** Watch new receipts and rollouts, plus the bound rollout files from the last scan. */
-export function openIssueFeedChanges(receipts: string | undefined, sessions: string): IssueFeedChanges {
+/** Watch new receipts and native files, plus the bound files from the last scan. */
+export function openIssueFeedChanges(receipts: string | undefined, sessions: string,
+  claudeProjects?: string): IssueFeedChanges {
   let dirty = false;
   let closed = false;
   const roots = new Map<string, FSWatcher>();
@@ -29,7 +30,8 @@ export function openIssueFeedChanges(receipts: string | undefined, sessions: str
   };
   const refreshRoots = () => {
     if (closed) return;
-    for (const [path, kind] of [[receipts, "receipts"], [sessions, "sessions"]] as const) {
+    for (const [path, kind] of [[receipts, "receipts"], [sessions, "sessions"],
+      [claudeProjects, "sessions"]] as const) {
       if (!path || !isAbsolute(path) || roots.has(path)) continue;
       const watcher = attach(path, true, event => {
         // Existing unrelated rollouts append often. Only new names need a full scan.
@@ -46,7 +48,7 @@ export function openIssueFeedChanges(receipts: string | undefined, sessions: str
       refreshRoots();
       for (const [path, watcher] of files) if (!next.has(path)) { watcher.close(); files.delete(path); }
       for (const path of next) {
-        if (!inside(sessions, path) || files.has(path)) continue;
+        if (!(inside(sessions, path) || claudeProjects && inside(claudeProjects, path)) || files.has(path)) continue;
         const watcher = attach(path, false, () => { dirty = true; }, () => files.delete(path));
         if (watcher) files.set(path, watcher);
       }
