@@ -162,6 +162,7 @@ it("ends a verified Claude child on its parent's own completion notification, fa
   assert.deepEqual(child(completed)?.liveness, { state: "ended", evidence: "native-outcome", observedAt: doneAt, reason: null });
   assert.deepEqual(child(completed)?.terminalOutcome, { value: "succeeded", source: "native-outcome", observedAt: doneAt, reason: null });
   assert.deepEqual([child(completed)?.endedAt, child(completed)?.endedAtReason, child(completed)?.endedBy], [doneAt, null, null]);
+  assert.equal(child(completed)?.timeline?.events.find(event => event.kind === "ended")?.at, doneAt);
   assert.ok(readIssueAgentTreeSnapshot(completed).ok);
   assert.equal(child(tree([completion({ status: "failed" })]))?.terminalOutcome.value, "failed");
   // Fail-closed: every doubt leaves the child unknown rather than ended.

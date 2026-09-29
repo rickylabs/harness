@@ -784,8 +784,10 @@ to admit a fresh child `SubagentStart` as running only after the verified root d
 native child ID match. A later `SubagentStop` clears running to unknown; that callback alone is
 never terminal evidence. A verified in-session Claude child ends natively when its direct
 parent session enqueues the task-notification for exactly that child with status `completed`
-(succeeded) or `failed` (failed), at or after the child's start and its last transcript record;
-only the task id, status and record time are read. Any other status leaves it unknown. Otherwise
+(succeeded) or `failed` (failed), at or after the child's start and its last transcript record.
+The notice's anchored header must name an Agent that session launched, as recorded in Claude's own
+tool result; the header's single status line is read, never the child's summary or result. Any
+other status, a second status line, or a resumed child's later records leave it unknown. Otherwise
 it ends as cancelled only after the same root dispatch has separate seat-absent and
 native-process-absent observations. A later matched Start restores running. Unsafe, stale,
 absent or unmatched files leave the child unknown.

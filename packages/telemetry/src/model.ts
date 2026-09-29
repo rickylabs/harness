@@ -26,13 +26,14 @@ export type RunSource = "claude" | "codex" | "opencode";
 /** How a run ended, as far as its transcript can say. */
 export type RunOutcome = "running" | "complete" | "failed" | "unknown";
 
-/** Token and money cost. Every field is optional because no vendor reports all of them. */
+/** A Claude background child's completion as its parent session recorded it; ids, status and time only. */
 export interface ClaudeChildCompletion {
   readonly childId: string;
   readonly status: "completed" | "failed" | "other";
   readonly at: string;
 }
 
+/** Token and money cost. Every field is optional because no vendor reports all of them. */
 export interface RunUsage {
   readonly inputTokens?: number;
   readonly outputTokens?: number;

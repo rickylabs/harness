@@ -282,7 +282,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   if (root && time(dispatch.observedAt, now) !== null) events.push(event(observation.agentId, "dispatched", dispatch.observedAt!, "dispatch"));
   if (start !== null) events.push(event(observation.agentId, "started", start, "native"));
   if (liveness.state === "ended" && terminalOutcome.value !== null) {
-    const end = liveness.evidence === "native-outcome" ? outcomeAt : liveness.observedAt;
+    const end = liveness.evidence === "native-outcome" && childEndAt === null ? outcomeAt : liveness.observedAt;
     const endReason: AgentTimelineReason = endedBy ?? (terminalOutcome.value === "succeeded" ? "native-complete"
       : terminalOutcome.value === "failed" ? "native-error" : "native-cancelled");
     if (end !== null) events.push(event(observation.agentId, "ended", end, "terminal", null, terminalOutcome.value, endReason));
