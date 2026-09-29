@@ -28,6 +28,7 @@ import { resolveRoute, resolveFallback, tierPlan } from "./resolve.js";
 import { admitDispatch } from "./admit.js";
 import { checkEvaluator } from "./family.js";
 import * as fleetModule from "./fleet.js";
+import { selectFleetEvaluator } from "./fleet-evaluator.js";
 
 /* ── The two fixtures. X is the CLI evidence; F is the document under test. ─────────────────── */
 
@@ -914,6 +915,51 @@ describe("the declared rules version 2 has to be able to state", () => {
     assert.equal(feasibleEvaluator(F, generator, { model: "sol", effort: "medium" }, gate), false, "same family is never independent");
     assert.equal(feasibleCandidate(F, generator, roleOf(F, "implementation")), true);
     assert.equal(feasibleCandidate(F, { model: "absent", effort: "max" }, null), false);
+  });
+});
+
+/* ── #273 evaluator selection: the selected generator, not a remembered primary ────────────── */
+
+describe("fleet evaluator selection", () => {
+  it("matches the frozen matrix's first different-family certifier for every generator fallback", () => {
+    let checked = 0;
+    for (const tier of X.tiers) for (const [evaluatorRole, role] of Object.entries(F.roles)) {
+      if (role.certifies !== "any") continue;
+      for (const generatorRole of role.evaluates ?? []) {
+        const generators = tier[generatorRole] as readonly CliCandidate[];
+        const evaluators = tier[evaluatorRole] as readonly CliCandidate[];
+        for (const selectedGenerator of generators) {
+          const family = F.models[selectedGenerator.model]?.family;
+          const expected = evaluators.find(candidate => F.models[candidate.model]?.family !== family);
+          assert.ok(expected, `${tier.tier}/${generatorRole}/${selectedGenerator.model}`);
+          assert.deepEqual(selectFleetEvaluator(F, {
+            tier: tier.tier, generatorRole, selectedGenerator, evaluatorRole,
+          }), expected, `${tier.tier}/${generatorRole}/${selectedGenerator.model}`);
+          checked++;
+        }
+      }
+    }
+    assert.ok(checked >= 20, `only ${checked} generator/evaluator pairs checked`);
+  });
+
+  it("skips a same-family primary in a tailored document and refuses unsourced or non-certifying choices", () => {
+    const document = documentT();
+    document.tiers[0].cells.check.unshift({ model: "maker-a", effort: "one" });
+    const configuration = fleet(loaded(parseRoutingDocument(JSON.stringify(document), "tailored")).configuration);
+    const request = { tier: "only", generatorRole: "make",
+      selectedGenerator: { model: "maker-a", effort: "one" }, evaluatorRole: "check" };
+    assert.deepEqual(selectFleetEvaluator(configuration, request), { model: "checker-b", effort: "one" });
+    assert.throws(() => selectFleetEvaluator(configuration, { ...request,
+      selectedGenerator: { model: "checker-b", effort: "one" } }), /fleet evaluator unavailable/);
+    assert.throws(() => selectFleetEvaluator(configuration, { ...request, evaluatorRole: "make" }),
+      /fleet evaluator unavailable/);
+    // The loader rejects this broken policy; the selector must fail closed too if called directly.
+    const sameFamilyOnly: FleetRoutingConfiguration = {
+      ...configuration,
+      tiers: configuration.tiers.map(tier => ({ ...tier,
+        cells: { ...tier.cells, check: [tier.cells.check![0]!] } })),
+    };
+    assert.throws(() => selectFleetEvaluator(sameFamilyOnly, request), /fleet evaluator unavailable/);
   });
 });
 
