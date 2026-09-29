@@ -99,7 +99,7 @@ export type AgentActivity =
       readonly steps: readonly AgentActivityStep[] }
   | { readonly availability: "unavailable"; readonly reason: AgentUnavailableReason; readonly observedAt: null;
       readonly steps: readonly [] };
-/** Input + output is the total; reasoning and cache counts are subsets. */
+/** Processed input + output: Codex input already holds cached input; Claude adds cache read and write. Reasoning is a subset. */
 export type AgentTokenUsage =
   | { readonly usedTokens: number; readonly budgetTokens: number | null; readonly observedAt: string;
       readonly source: "codex-token-count" | "claude-usage"; readonly reason: null }

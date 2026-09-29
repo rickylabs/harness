@@ -239,6 +239,11 @@ it("counts Claude cache reads and writes as used tokens, as Codex already does f
   // Each kind stays its own true row on the run's cost.
   assert.deepEqual(child.observation.cost.runTokens.measurement,
     { inputTokens: 10, outputTokens: 4, cacheReadTokens: 900, cacheWriteTokens: 7 });
+  // A malformed part never hides inside a plausible sum: 10 + (-5) + 4 would read as 9.
+  const malformed = { ...childRun, usage: { inputTokens: 10, outputTokens: 4, cacheReadTokens: -5 } } as RunRecord;
+  const bad = build(claude, [rootRun, malformed]).issues[0]!.dispatches[0]!.agents
+    .find(agent => agent.observation.parentAgentId.state !== "confirmed-root")!;
+  assert.deepEqual([bad.tokenUsage?.usedTokens, bad.tokenUsage?.reason], [null, "measurement_missing"]);
 });
 it("binds measured activity, token numerator, child spawn, and immutable action to the exact agent", () => {
   const rootRun = { ...run("PRIVATE-NATIVE-ROOT", null, "running"), usage: { inputTokens: 8, outputTokens: 3,

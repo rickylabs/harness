@@ -48,7 +48,10 @@ export interface RunUsage {
 export function processedInputTokens(source: string, usage: RunUsage): number | undefined {
   if (usage.inputTokens === undefined) return undefined;
   if (source !== "claude") return usage.inputTokens;
-  return usage.inputTokens + (usage.cacheReadTokens ?? 0) + (usage.cacheWriteTokens ?? 0);
+  // Each part is checked on its own, so a malformed part cannot hide inside a plausible sum.
+  const parts = [usage.inputTokens, usage.cacheReadTokens ?? 0, usage.cacheWriteTokens ?? 0];
+  if (!parts.every(part => Number.isSafeInteger(part) && part >= 0)) return undefined;
+  return parts[0]! + parts[1]! + parts[2]!;
 }
 
 /**
