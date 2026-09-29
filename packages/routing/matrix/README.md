@@ -22,3 +22,8 @@ are source evidence, not runtime inputs.
 The legacy `routing.v1.json` profile remains readable until its consumers migrate. The
 version-2 document schema under `src/fleet.ts` remains a separate configuration reader; this
 pinned runtime is the dispatch authority for the Orchid/Cockpit cutover.
+
+`openrouter-launcher-policy.ts` carries the explicit four-ID admission set of the legacy
+OpenRouter remote-model launcher. It is separate from the model capability catalog: a catalog
+entry alone does not approve a paid launch. Retired IDs and proposed new IDs remain refused
+until a separate policy decision changes this set.
