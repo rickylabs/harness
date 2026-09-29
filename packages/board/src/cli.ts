@@ -44,10 +44,10 @@ export const EXIT = {
  * and so does `docs/reference/cli/dsh-board.md`, which `pnpm run check:docs` byte-compares.
  */
 export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
-  ok: "clean: the board was read and it agrees with itself",
+  ok: "clean: the board was read and it agrees with itself, or no current check on the pull request fails (checks)",
   anomalies: "the board contradicts itself (check), or a current check on the pull request fails (checks)",
   usage: "the command line was wrong",
-  unavailable: "no usable transport: gh missing, unauthenticated, or unable to reach GitHub",
+  unavailable: "no usable transport: gh missing, unauthenticated, unable to reach GitHub, or an answer of the wrong shape",
   failed: "dsh-board itself failed",
 };
 
@@ -66,6 +66,7 @@ usage:
   dsh-board doctor                           report transport and detected repository
   dsh-board checks --pr <n> [--repo <owner/name>] [--pretty]
                                              latest run per check on the PR head; exit 1 if one fails
+                                             (\`checks\` must come first; board options do not apply)
 
 options:
   --repo <owner/name>   repository to project; defaults to the one in the working directory

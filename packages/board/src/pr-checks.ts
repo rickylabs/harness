@@ -191,22 +191,35 @@ export class PrChecksUnavailable extends Error {}
 const exec = promisify(execFile);
 const ghApi: GhApiRunner = async (args) => {
   try {
-    const { stdout } = await exec("gh", [...args], { maxBuffer: 32 * 1024 * 1024 });
+    const { stdout } = await exec("gh", [...args], { maxBuffer: 256 * 1024 * 1024 });
     return stdout;
   } catch (error) {
-    const detail = error instanceof Error ? error.message : "the underlying error could not be read";
-    throw new PrChecksUnavailable(`gh api ${args[3]} failed: ${detail}`);
+    // NetScript's wording: the exit code and gh's own stderr, not the whole command line again.
+    const failure = (typeof error === "object" && error !== null ? error : {}) as { code?: unknown; stderr?: unknown };
+    const stderr = typeof failure.stderr === "string" ? failure.stderr.trim() : "";
+    const detail = stderr !== "" ? stderr : error instanceof Error ? error.message : "the underlying error could not be read";
+    throw new PrChecksUnavailable(`gh api ${args[3]} failed (${String(failure.code ?? "unknown")}): ${detail}`);
   }
 };
 
-async function read<T>(runner: GhApiRunner, endpoint: string, extra: readonly string[] = []): Promise<T> {
+async function read<T>(runner: GhApiRunner, endpoint: string, extra: readonly string[],
+  usable: (value: unknown) => boolean): Promise<T> {
   const text = await runner(["api", "--method", "GET", endpoint, ...extra]);
+  let value: unknown;
   try {
-    return JSON.parse(text) as T;
+    value = JSON.parse(text);
   } catch {
     throw new PrChecksUnavailable(`gh api ${endpoint} returned unparseable output`);
   }
+  // A payload of the wrong shape is GitHub failing us too; it must never reach the verdict.
+  if (!usable(value)) throw new PrChecksUnavailable(`gh api ${endpoint} returned an unexpected shape`);
+  return value as T;
 }
+
+const record = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+const pagesOf = (key: string) => (value: unknown): boolean =>
+  Array.isArray(value) && value.every((page) => record(page) && Array.isArray(page[key]));
 
 interface PullRequestResponse { readonly head: { readonly sha: string }; readonly merged_at: string | null }
 interface CheckRunsResponse { readonly check_runs: readonly CheckRun[] }
@@ -221,18 +234,20 @@ export async function fetchPrCheckReport(
   evaluatedAt: string,
   runner: GhApiRunner = ghApi,
 ): Promise<PrCheckReport> {
-  const pull = await read<PullRequestResponse>(runner, `repos/${repo}/pulls/${pr}`);
+  const pull = await read<PullRequestResponse>(runner, `repos/${repo}/pulls/${pr}`, [],
+    (value) => record(value) && record(value["head"]) && typeof value["head"]["sha"] === "string" &&
+      (value["merged_at"] === null || typeof value["merged_at"] === "string"));
   const headSha = pull.head.sha;
   const [checkPages, runPages] = await Promise.all([
     read<readonly CheckRunsResponse[]>(runner, `repos/${repo}/commits/${headSha}/check-runs?per_page=100`,
-      ["--paginate", "--slurp"]),
+      ["--paginate", "--slurp"], pagesOf("check_runs")),
     read<readonly WorkflowRunsResponse[]>(runner, `repos/${repo}/actions/runs?per_page=100`,
-      ["-f", `head_sha=${headSha}`, "--paginate", "--slurp"]),
+      ["-f", `head_sha=${headSha}`, "--paginate", "--slurp"], pagesOf("workflow_runs")),
   ]);
   const jobs: WorkflowJob[] = [];
   for (const run of runPages.flatMap((page) => page.workflow_runs).filter((run) => run.head_sha === headSha)) {
     const pages = await read<readonly WorkflowJobsResponse[]>(runner,
-      `repos/${repo}/actions/runs/${run.id}/jobs?filter=latest&per_page=100`, ["--paginate", "--slurp"]);
+      `repos/${repo}/actions/runs/${run.id}/jobs?filter=latest&per_page=100`, ["--paginate", "--slurp"], pagesOf("jobs"));
     jobs.push(...pages.flatMap((page) => page.jobs).map((job) => ({ ...job, workflow_run_started_at: run.run_started_at })));
   }
   let runs: CheckRun[];
@@ -290,7 +305,7 @@ export interface PrChecksDeps {
   readonly stderr: (text: string) => void;
 }
 
-/** Exit 0 when no current check fails, 1 when one does, 2 for a wrong command line, 3 when `gh` cannot answer. */
+/** Exit 0 when no current check fails, 1 when one does, 2 for a wrong command line, 3 when `gh` cannot give a usable answer. */
 export async function runPrChecks(argv: readonly string[], deps: PrChecksDeps): Promise<number> {
   let options: PrChecksOptions;
   try {
@@ -310,9 +325,18 @@ export async function runPrChecks(argv: readonly string[], deps: PrChecksDeps): 
   }
 }
 
+/** Deno without `--allow-env` throws on reading the environment; that only means no default. */
+function readEnv(name: string): string | undefined {
+  try {
+    return process.env[name];
+  } catch {
+    return undefined;
+  }
+}
+
 export const defaultPrChecksDeps = (): PrChecksDeps => ({
   runner: ghApi,
-  defaultRepo: process.env["GITHUB_REPOSITORY"],
+  defaultRepo: readEnv("GITHUB_REPOSITORY"),
   now: () => new Date().toISOString(),
   stdout: (text) => void process.stdout.write(text),
   stderr: (text) => void process.stderr.write(text),
@@ -321,6 +345,13 @@ export const defaultPrChecksDeps = (): PrChecksDeps => ({
 /* c8 ignore start — run directly (e.g. `deno run <pinned url>`), not when imported */
 if ((import.meta as { main?: boolean }).main === true) {
   const argv = process.argv.slice(2);
-  void runPrChecks(argv, defaultPrChecksDeps()).then((code) => { process.exitCode = code; });
+  void runPrChecks(argv, defaultPrChecksDeps()).then(
+    (code) => { process.exitCode = code; },
+    (error: unknown) => {
+      process.stderr.write(`internal error: ${error instanceof Error ? error.message : String(error)}\n`);
+      // Not 1: that means a current check fails, and a crash is not evidence of one.
+      process.exitCode = 4;
+    },
+  );
 }
 /* c8 ignore stop */

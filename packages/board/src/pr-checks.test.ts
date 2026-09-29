@@ -129,6 +129,13 @@ describe("reading a pull request", () => {
     assert.equal(await runPrChecks(["--repo", "o/n", "--pr", "7"], offline), 3);
     const garbled = deps(async () => "<html>proxy</html>");
     assert.equal(await runPrChecks(["--repo", "o/n", "--pr", "7"], garbled), 3);
+    // JSON of the wrong shape is GitHub failing too: never a crash, never a verdict.
+    for (const shape of [{}, { head: {} }, []]) {
+      const odd = deps(async () => JSON.stringify(shape));
+      assert.equal(await runPrChecks(["--repo", "o/n", "--pr", "7"], odd), 3, JSON.stringify(shape));
+    }
+    const oddPages = deps(scripted({ ...pullAnswers(), "repos/o/n/commits/H/check-runs": [{ nope: [] }] }).runner);
+    assert.equal(await runPrChecks(["--repo", "o/n", "--pr", "7"], oddPages), 3);
     // A malformed job link is GitHub's payload failing, not a verdict on the pull request.
     const badLink = deps(scripted(pullAnswers([{ ...job, check_run_url: "https://api.github.com/repos/o/n/check-runs/x" }])).runner);
     assert.equal(await runPrChecks(["--repo", "o/n", "--pr", "7"], badLink), 3);
