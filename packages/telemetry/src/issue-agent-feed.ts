@@ -1,10 +1,11 @@
 /** Pure per-issue projection of the existing dispatcher/native ancestry join. */
 import { createHash } from "node:crypto";
 import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_ACCEPTED_REASONS, AGENT_ACTION_REJECTED_REASONS, MAX_AGENT_HISTORY, MAX_AGENT_OBSERVATIONS,
-  MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, AGENT_EFFORTS, unavailableAgentCost,
+  MAX_ISSUE_AGENT_TREE_BYTES, MAX_AGENT_RESOURCE_POINTS, ISSUE_AGENT_TREE_FRESH_MS, AGENT_EFFORTS, unavailableAgentCost,
   projectRouteIdentity,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
-  type AgentTimelineEvent, type AgentTimelineReason, type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+  type AgentResourceHistory, type AgentTimelineEvent, type AgentTimelineReason,
+  type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
@@ -163,17 +164,19 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   // Each accepted raise receipt is written only after Orchid's native goal
   // notification, get read-back and state persistence. A missing or partial
   // action scan cannot supersede the original launch budget.
-  const raisedBudget = root && actionsComplete && launchBudget.tokenLimit !== null
-    ? actions.reduce<number | null>((highest, receipt) => {
+  const verifiedRaises = root && actionsComplete && launchBudget.tokenLimit !== null
+    ? actions.flatMap(receipt => {
       const at = receiptTime(receipt.observedAt ?? undefined, now);
       if (receipt.action !== "raise_budget" || receipt.outcome !== "accepted" ||
           receipt.reason !== "goal_budget_updated" || receipt.agentId !== observation.agentId ||
           receipt.dispatchId !== observation.assignment.id || receipt.issueNumber !== observation.issueNumber ||
           receipt.repository?.toLowerCase() !== `${observation.repo.owner}/${observation.repo.name}`.toLowerCase() ||
           at === null || typeof receipt.tokenBudget !== "number" || !Number.isSafeInteger(receipt.tokenBudget) ||
-          receipt.tokenBudget <= launchBudget.tokenLimit) return highest;
-      return Math.max(highest ?? launchBudget.tokenLimit, receipt.tokenBudget);
-    }, null) : null;
+          receipt.tokenBudget <= launchBudget.tokenLimit) return [];
+      return [{ at, tokenLimit: receipt.tokenBudget }];
+    }) : [];
+  const raisedBudget = verifiedRaises.reduce<number | null>((highest, receipt) =>
+    Math.max(highest ?? launchBudget.tokenLimit!, receipt.tokenLimit), null);
   const budget: IssueAgentTreeAgent["budget"] = raisedBudget === null ? launchBudget
     : { tokenLimit: raisedBudget, source: "action-receipt", reason: null };
   const steps = (run?.activitySteps ?? []).filter(step => time(step.at, now) !== null).slice(0, 20);
@@ -188,6 +191,35 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
         source: run!.source === "codex" ? "codex-token-count" : "claude-usage", reason: null }
     : { usedTokens: null, budgetTokens: budget.tokenLimit, observedAt: null, source: "unavailable",
         reason: run === undefined ? "source_not_bound" : "measurement_missing" };
+  const nativeSamples = run?.tokenSamples;
+  const tokenPoints = nativeSamples?.points.map(point => ({ at: time(point.at, now), usedTokens: point.usedTokens }));
+  const validTokenPoints = tokenUsage.usedTokens !== null && nativeSamples !== undefined && !nativeSamples.invalid &&
+    tokenPoints !== undefined && tokenPoints.length > 0 && tokenPoints.length <= MAX_AGENT_RESOURCE_POINTS &&
+    tokenPoints.every(point => point.at !== null && Number.isSafeInteger(point.usedTokens) && point.usedTokens >= 0) &&
+    tokenPoints.every((point, i) => i === 0 || point.at! > tokenPoints[i - 1]!.at! &&
+      point.usedTokens > tokenPoints[i - 1]!.usedTokens) &&
+    tokenPoints.at(-1)!.usedTokens === tokenUsage.usedTokens;
+  const tokens: AgentResourceHistory["tokens"] = validTokenPoints
+    ? { points: tokenPoints.map(point => ({ at: point.at!, usedTokens: point.usedTokens })),
+        truncated: nativeSamples.truncated, source: tokenUsage.source as "codex-token-count" | "claude-usage", reason: null }
+    : { points: [], truncated: false, source: "unavailable",
+        reason: nativeSamples?.invalid ? "source_incomplete" : run === undefined ? "source_not_bound" : "measurement_missing" };
+  const launchAt = root ? time(dispatch.observedAt, now) : null;
+  const budgetPoints = launchAt !== null && launchBudget.tokenLimit !== null
+    ? [{ at: launchAt, tokenLimit: launchBudget.tokenLimit, source: launchBudget.source },
+      ...verifiedRaises.map(raise => ({ ...raise, source: "action-receipt" as const }))]
+        .sort((a, b) => Date.parse(a.at) - Date.parse(b.at)) : [];
+  const validBudgetPoints = root && actionsComplete && budgetPoints.length > 0 &&
+    budgetPoints.every((point, i) => i === 0 || point.source === "action-receipt" &&
+      point.at > budgetPoints[i - 1]!.at && point.tokenLimit > budgetPoints[i - 1]!.tokenLimit) &&
+    budgetPoints.at(-1)!.tokenLimit === budget.tokenLimit && budgetPoints.at(-1)!.source === budget.source;
+  const budgets: AgentResourceHistory["budgets"] = validBudgetPoints
+    ? { points: budgetPoints.length <= MAX_AGENT_RESOURCE_POINTS ? budgetPoints :
+        [budgetPoints[0]!, ...budgetPoints.slice(-(MAX_AGENT_RESOURCE_POINTS - 1))],
+        truncated: budgetPoints.length > MAX_AGENT_RESOURCE_POINTS, reason: null }
+    : { points: [], truncated: false,
+        reason: !root ? "source_not_bound" : !actionsComplete ? "source_incomplete" : "measurement_missing" };
+  const resourceHistory: AgentResourceHistory = { tokens, budgets };
   const events: AgentTimelineEvent[] = [];
   if (root && time(dispatch.observedAt, now) !== null) events.push(event(observation.agentId, "dispatched", dispatch.observedAt!, "dispatch"));
   if (start !== null) events.push(event(observation.agentId, "started", start, "native"));
@@ -228,7 +260,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     endedAtReason: endedBy === null ? "measurement_missing" : null,
     transcript: { value: null, reason: "source_not_bound" },
     history: history(observation, dispatch, run, now, root), historyTruncated: false,
-    activity, tokenUsage, timeline };
+    activity, tokenUsage, resourceHistory, timeline };
 }
 
 /** Invalid or partial ancestry is never repackaged as a complete tree. */

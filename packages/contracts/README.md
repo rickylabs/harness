@@ -754,3 +754,18 @@ scan, the issue tree uses the highest confirmed raise for the exact root agent a
 marks its budget `source: action-receipt`, and uses that value as the token usage denominator.
 The child's budget stays unknown. Old receipts without this field remain readable and cannot
 change the launch budget; rejected, unknown, mismatched or malformed receipts cannot change it.
+
+## Per-agent token and budget history (0.18.0)
+
+Each issue-tree agent can add `resourceHistory` with separate `tokens` and `budgets` series.
+Token points are cumulative input plus output at native Codex `token_count` or deduplicated
+Claude assistant usage timestamps. The producer keeps the first and latest 15 changes, reports
+`truncated`, and publishes no text, paths or native IDs. A missing, unsafe, decreasing or
+inconsistent series is unavailable with a named reason; it is never filled with zeroes.
+
+Budget points belong to the root only: the dispatch's sourced launch budget followed by
+confirmed exact-root accepted `raise_budget` receipts. The child budget series remains
+unavailable because a child budget is not bound. An incomplete action scan makes root budget
+history unavailable, while the existing current budget retains its own source-backed value.
+Both series are bounded at 16 points and checked against the current agent value. Older frames
+without `resourceHistory` continue to decode.

@@ -7,6 +7,7 @@ export const ISSUE_AGENT_TREE_SCHEMA = 1 as const;
 export const ISSUE_AGENT_TREE_FRESH_MS = 15_000;
 export const MAX_ISSUE_AGENT_TREE_BYTES = 2_097_152;
 export const MAX_AGENT_HISTORY = 16;
+export const MAX_AGENT_RESOURCE_POINTS = 16;
 export const MAX_AGENT_ACTIVITY_STEPS = 20;
 export const MAX_AGENT_TIMELINE_EVENTS = 32;
 /** One canonical screen for producer prose and its public snapshot decoder. */
@@ -104,6 +105,25 @@ export type AgentTokenUsage =
       readonly source: "codex-token-count" | "claude-usage"; readonly reason: null }
   | { readonly usedTokens: null; readonly budgetTokens: number | null; readonly observedAt: null;
       readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
+/** Independent native cumulative samples and confirmed root budget changes; never an issue-wide sum. */
+export interface AgentTokenPoint { readonly at: string; readonly usedTokens: number }
+export interface AgentBudgetPoint {
+  readonly at: string;
+  readonly tokenLimit: number;
+  readonly source: "route-default" | "issue-override" | "action-receipt";
+}
+export type AgentTokenHistory =
+  | { readonly points: readonly AgentTokenPoint[]; readonly truncated: boolean;
+      readonly source: "codex-token-count" | "claude-usage"; readonly reason: null }
+  | { readonly points: readonly []; readonly truncated: false; readonly source: "unavailable";
+      readonly reason: AgentUnavailableReason };
+export type AgentBudgetHistory =
+  | { readonly points: readonly AgentBudgetPoint[]; readonly truncated: boolean; readonly reason: null }
+  | { readonly points: readonly []; readonly truncated: false; readonly reason: AgentUnavailableReason };
+export interface AgentResourceHistory {
+  readonly tokens: AgentTokenHistory;
+  readonly budgets: AgentBudgetHistory;
+}
 export const AGENT_ACTION_ACCEPTED_REASONS = {
   stop: "workspace_close_delivered", steer: "prompt_delivered", send: "prompt_delivered",
   raise_budget: "goal_budget_updated", retry: "retry_dispatched",
@@ -174,6 +194,8 @@ export interface IssueAgentTreeAgent {
   /** Additive in contracts 0.11; absent on earlier producers. */
   readonly activity?: AgentActivity;
   readonly tokenUsage?: AgentTokenUsage;
+  /** Additive: bounded native points and immutable budget effects; absent on older producers. */
+  readonly resourceHistory?: AgentResourceHistory;
   readonly timeline?: AgentTimeline;
 }
 export interface IssueAgentTreeDispatch {
@@ -372,6 +394,52 @@ function tokenUsageRow(value: unknown, capturedAt: string, budgetTokens: number 
   if (observedAt > capturedAt) return bad();
   return { usedTokens: row.usedTokens, budgetTokens, observedAt, source: row.source, reason: null };
 }
+function resourceHistoryRow(value: unknown, capturedAt: string, root: boolean,
+  budget: AgentBudget, usage: AgentTokenUsage | undefined): AgentResourceHistory {
+  const row = record(value, ["tokens", "budgets"]);
+  const tokens = record(row.tokens, ["points", "truncated", "source", "reason"]);
+  let tokenHistory: AgentTokenHistory;
+  if (tokens.source === "unavailable") {
+    if (tokens.reason === null || tokens.truncated !== false || array(tokens.points, 0).length !== 0) return bad();
+    tokenHistory = { points: [], truncated: false, source: "unavailable", reason: reason(tokens.reason) };
+  } else {
+    if ((tokens.source !== "codex-token-count" && tokens.source !== "claude-usage") ||
+        tokens.reason !== null || typeof tokens.truncated !== "boolean" ||
+        usage?.source !== tokens.source || usage.usedTokens === null) return bad();
+    const points = array(tokens.points, MAX_AGENT_RESOURCE_POINTS).map(point => {
+      const p = record(point, ["at", "usedTokens"]), at = stamp(p.at);
+      if (at > capturedAt || typeof p.usedTokens !== "number" || !Number.isSafeInteger(p.usedTokens) || p.usedTokens < 0) return bad();
+      return { at, usedTokens: p.usedTokens };
+    });
+    if (points.length === 0 || tokens.truncated && points.length !== MAX_AGENT_RESOURCE_POINTS ||
+        points.at(-1)!.usedTokens !== usage.usedTokens) return bad();
+    for (let i = 1; i < points.length; i++) if (points[i - 1]!.at >= points[i]!.at ||
+        points[i - 1]!.usedTokens >= points[i]!.usedTokens) return bad();
+    tokenHistory = { points, truncated: tokens.truncated, source: tokens.source, reason: null };
+  }
+  const budgets = record(row.budgets, ["points", "truncated", "reason"]);
+  let budgetHistory: AgentBudgetHistory;
+  if (budgets.reason !== null) {
+    if (budgets.truncated !== false || array(budgets.points, 0).length !== 0) return bad();
+    budgetHistory = { points: [], truncated: false, reason: reason(budgets.reason) };
+  } else {
+    if (!root || budget.tokenLimit === null || typeof budgets.truncated !== "boolean") return bad();
+    const points = array(budgets.points, MAX_AGENT_RESOURCE_POINTS).map(point => {
+      const p = record(point, ["at", "tokenLimit", "source"]), at = stamp(p.at);
+      if (at > capturedAt || typeof p.tokenLimit !== "number" || !Number.isSafeInteger(p.tokenLimit) ||
+          p.tokenLimit <= 0 || !["route-default", "issue-override", "action-receipt"].includes(p.source as string)) return bad();
+      return { at, tokenLimit: p.tokenLimit,
+        source: p.source as AgentBudgetPoint["source"] };
+    });
+    if (points.length === 0 || budgets.truncated && points.length !== MAX_AGENT_RESOURCE_POINTS ||
+        points[0]!.source === "action-receipt" || points.at(-1)!.tokenLimit !== budget.tokenLimit ||
+        points.at(-1)!.source !== budget.source) return bad();
+    for (let i = 1; i < points.length; i++) if (points[i]!.source !== "action-receipt" ||
+        points[i - 1]!.at >= points[i]!.at || points[i - 1]!.tokenLimit >= points[i]!.tokenLimit) return bad();
+    budgetHistory = { points, truncated: budgets.truncated, reason: null };
+  }
+  return { tokens: tokenHistory, budgets: budgetHistory };
+}
 function timelineRow(value: unknown, capturedAt: string): AgentTimeline {
   const row = record(value, ["events", "truncated"]);
   if (typeof row.truncated !== "boolean") return bad();
@@ -421,6 +489,7 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
     ...(Object.hasOwn(value as object, "endedBy") ? ["endedBy"] : []),
     ...(Object.hasOwn(value as object, "activity") ? ["activity"] : []),
     ...(Object.hasOwn(value as object, "tokenUsage") ? ["tokenUsage"] : []),
+    ...(Object.hasOwn(value as object, "resourceHistory") ? ["resourceHistory"] : []),
     ...(Object.hasOwn(value as object, "timeline") ? ["timeline"] : [])]);
   if (row.dispatchId !== dispatchId) return bad("ambiguous-ancestry");
   const budget = record(row.budget, ["tokenLimit", "source", "reason"]);
@@ -527,6 +596,10 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
     if (event.reason !== expected || event.outcome !== terminalOutcome.value ||
         (endedBy === null && terminalOutcome.source !== "native-outcome")) return bad();
   }
+  const tokenUsage = Object.hasOwn(row, "tokenUsage")
+    ? tokenUsageRow(row.tokenUsage, capturedAt, decodedBudget.tokenLimit) : undefined;
+  const resourceHistory = Object.hasOwn(row, "resourceHistory")
+    ? resourceHistoryRow(row.resourceHistory, capturedAt, parentAgentId === null, decodedBudget, tokenUsage) : undefined;
   return { dispatchId, observation: row.observation, harness: valueRow(row.harness), provider: valueRow(row.provider),
     router, routePolicy, model: valueRow(row.model),
     ...(profileRevision === undefined ? {} : { profileRevision, matrixRevision: matrixRevision! }),
@@ -536,7 +609,8 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
     quotaRegime, liveness, actionState, endedBy, terminalOutcome, startedAt, startedAtReason, endedAt, endedAtReason,
     transcript: { value: null, reason: "source_not_bound" }, history, historyTruncated: row.historyTruncated,
     ...(Object.hasOwn(row, "activity") ? { activity: activityRow(row.activity, capturedAt) } : {}),
-    ...(Object.hasOwn(row, "tokenUsage") ? { tokenUsage: tokenUsageRow(row.tokenUsage, capturedAt, decodedBudget.tokenLimit) } : {}),
+    ...(tokenUsage === undefined ? {} : { tokenUsage }),
+    ...(resourceHistory === undefined ? {} : { resourceHistory }),
     ...(timeline === undefined ? {} : { timeline }) };
 }
 

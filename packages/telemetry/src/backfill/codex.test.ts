@@ -146,6 +146,18 @@ describe("parseCodexRollout", () => {
       reasoningTokens: 12,
       cacheReadTokens: 250,
     });
+    assert.deepEqual(run?.tokenSamples, { points: [
+      { at: "2026-09-04T21:05:00.000Z", usedTokens: 110 },
+      { at: "2026-09-04T21:09:00.000Z", usedTokens: 330 },
+    ], truncated: false, invalid: false });
+  });
+
+  it("marks a partial native cumulative count unusable for history", () => {
+    const parsed = parseRun(lines(meta, turn,
+      tokenCount({ input_tokens: 100, output_tokens: 10 }, "2026-09-04T21:05:00.000Z"),
+      tokenCount({ input_tokens: 300 }, "2026-09-04T21:09:00.000Z")), "o");
+    assert.equal(parsed?.tokenSamples?.invalid, true);
+    assert.deepEqual(parsed?.tokenSamples?.points, []);
   });
 
   it("collects a quota reading per token_count, stamped with when it was observed", () => {
