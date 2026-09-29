@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **364/440 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible**
+`[################----]` **364/443 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 9 invisible**
 
-_Latest board activity: 2026-09-29T02:32:31Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-29T02:40:03Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (21)
+## Moving now (23)
 
 Something could be acting on these right now.
 
@@ -48,8 +48,10 @@ Something could be acting on these right now.
 | [#285 fix(coordinator): plan --event silently prints prose, so a piped telemetry record loses the decision](https://github.com/rickylabs/harness/issues/285) | `impl-eval` | — |
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
+| [#454 Record approved Claude proof route in run worklog](https://github.com/rickylabs/harness/issues/454) | `ready-merge` | — |
+| [PR455 Record approved Claude proof route worklog](https://github.com/rickylabs/harness/pull/455) | `ready-merge` | — |
 
-## Not on the board (2)
+## Not on the board (3)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -57,14 +59,17 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
+| [#453 Claude native root and child issue-feed proof](https://github.com/rickylabs/harness/issues/453) | — | — |
 
-## Anomalies (35)
+## Anomalies (38)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#454** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#455** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -111,6 +116,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#370** — open item has no status label, so it appears in no column
 - **#422** — open item has no status label, so it appears in no column
+- **#453** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -135,7 +141,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 169/198 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
+`[##########--]` 169/201 done · 6 running · 4 queued · 5 blocked · 9 abandoned · 8 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -143,7 +149,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 2 queued | `impl` |
-| _(no epic)_ | `[##########--]` 139/162 done · 3 running · 2 queued · 3 blocked · 9 abandoned · 6 invisible | — |
+| _(no epic)_ | `[##########--]` 139/165 done · 5 running · 2 queued · 3 blocked · 9 abandoned · 7 invisible | — |
 
 ## Waiting to start
 
@@ -185,7 +191,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  364/440 done · 21 running · 24 queued · 8 blocked · 15 abandoned · 8 invisible
+# rickylabs/harness  [################----]  364/443 done · 23 running · 24 queued · 8 blocked · 15 abandoned · 9 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  195/242 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 1 invisible
 
@@ -466,7 +472,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
 
-## (no milestone)  [#################---]  169/198 done · 4 running · 4 queued · 5 blocked · 9 abandoned · 7 invisible
+## (no milestone)  [################----]  169/201 done · 6 running · 4 queued · 5 blocked · 9 abandoned · 8 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -679,6 +685,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR450 Add per-agent token and root budget history to issue feed
     shipped              #451 Bind Claude root and native children to the issue agent feed
     shipped              PR452 Bind Claude native transcripts to the issue agent feed
+    no status            #453 Claude native root and child issue-feed proof
+    ready-merge          #454 Record approved Claude proof route in run worklog
+    ready-merge          PR455 Record approved Claude proof route worklog
 ```
 
 </details>
