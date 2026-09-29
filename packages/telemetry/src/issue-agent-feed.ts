@@ -9,7 +9,7 @@ import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_ACCEPTE
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
-import type { RunRecord } from "./model.js";
+import { processedInputTokens, type RunRecord } from "./model.js";
 import type { PublicActionReceipt } from "./action-receipt-cli.js";
 
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -230,7 +230,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const activity: NonNullable<IssueAgentTreeAgent["activity"]> = run !== undefined && time(run.updatedAt, now) !== null
     ? { availability: "available", reason: null, observedAt: run.updatedAt, steps }
     : { availability: "unavailable", reason: "source_not_bound", observedAt: null, steps: [] };
-  const input = run?.usage.inputTokens, output = run?.usage.outputTokens;
+  const input = run === undefined ? undefined : processedInputTokens(run.source, run.usage), output = run?.usage.outputTokens;
   const measured = (run?.source === "codex" || run?.source === "claude") && input !== undefined && output !== undefined && Number.isSafeInteger(input) && Number.isSafeInteger(output) &&
     input >= 0 && output >= 0 && Number.isSafeInteger(input + output) && time(run?.updatedAt, now) !== null;
   const tokenUsage: NonNullable<IssueAgentTreeAgent["tokenUsage"]> = measured
