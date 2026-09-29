@@ -28,10 +28,24 @@ test("the three real profiles have a validated, model-free manifest", () => {
     const result = validateProfileMarkdown(`${name}.md`, source);
     assert.deepEqual(result.problems, [], `${name}: ${JSON.stringify(result.problems)}`);
     assert.equal(result.value.name, name);
+    if (name === "leaf") assert.equal(result.value.defaultTier, "feature");
     for (const forbidden of ["model", "effort", "transport", "fallback", "budget"]) {
       assert.equal(Object.hasOwn(result.value, forbidden), false);
     }
   }
+});
+
+test("default tier is a known workload tier only on worker profiles", () => {
+  const withTier = valid.replace("role: implementation", "role: implementation\ndefaultTier: feature");
+  assert.deepEqual(codes(withTier), []);
+  assert.ok(codes(withTier.replace("defaultTier: feature", "defaultTier: invented"))
+    .includes("defaultTier:unknown_tier"));
+  assert.ok(codes(withTier.replace("defaultTier: feature", "defaultTier: null"))
+    .includes("defaultTier:unknown_tier"));
+  const coordinator = withTier.replace("role: implementation", "role: coordinator")
+    .replace("matrix \`implementation\` row; evaluator \`implementation_evaluation\`",
+      "coordinator matrix at \`milestone\` scope");
+  assert.ok(codes(coordinator).includes("defaultTier:unknown_tier"));
 });
 
 test("fields are reported separately and rejected without echoing their values", () => {

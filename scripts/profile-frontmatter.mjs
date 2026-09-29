@@ -2,11 +2,12 @@
 import yaml from "js-yaml";
 import { basename } from "node:path";
 
-const FIELDS = new Set(["name", "title", "role", "description", "skills", "permissions", "guardrails"]);
+const FIELDS = new Set(["name", "title", "role", "defaultTier", "description", "skills", "permissions", "guardrails"]);
 // Mirrored from the pinned NetScript delegation matrix; Orchid still checks the live matrix cell.
 const ROLES = new Set(["implementation", "ui_ux", "plan", "plan_evaluation",
   "implementation_evaluation", "vision_evaluation", "documentation", "deep_research", "coordinator"]);
 const SCOPES = new Set(["small_project", "project", "framework", "milestone"]);
+const WORKLOAD_TIERS = new Set(["simple", "straightforward", "feature", "complex", "architecture"]);
 const text = (value, limit) => typeof value === "string" && value.length > 0 && value.length <= limit &&
   value === value.trim() && !/[\p{Cc}\u2028\u2029]/u.test(value);
 const record = value => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -41,6 +42,10 @@ export function validateProfileMarkdown(path, markdown) {
   }
   const role = data.role;
   if (typeof role !== "string" || !ROLES.has(role)) fail("role", "unknown_role");
+  if (Object.hasOwn(data, "defaultTier") &&
+      (role === "coordinator" || typeof data.defaultTier !== "string" || !WORKLOAD_TIERS.has(data.defaultTier))) {
+    fail("defaultTier", "unknown_tier");
+  }
   for (const field of ["skills", "permissions", "guardrails"]) {
     const values = data[field];
     if (!Array.isArray(values) || values.length < 1 || values.length > 16) {
