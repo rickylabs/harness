@@ -343,7 +343,7 @@ function validateWorkflowRevision(value: unknown, out: Problem[]) {
 export function readWorkflowRevision(value: unknown): WorkflowRead<WorkflowRevision> {
   return safeRead(value, "workflow", validateWorkflowRevision);
 }
-/** New drafts must include the evaluator they declare. Stored revisions remain readable above. */
+/** New drafts must include their evaluator and serialize shared writers. Stored revisions remain readable. */
 export function readWorkflowRevisionForSave(value: unknown): WorkflowRead<WorkflowRevision> {
   const read = readWorkflowRevision(value);
   if (!read.ok) return read;
@@ -353,6 +353,25 @@ export function readWorkflowRevisionForSave(value: unknown): WorkflowRead<Workfl
     const present = read.value.phases.some(candidate =>
       candidate.profile.role === phase.verifierRole && candidate.dependsOn.includes(phase.id));
     if (!present) problem(problems, `workflow.phases[${i}].verifierRole`, "verifier_missing");
+  });
+  const phases = read.value.phases;
+  const byId = new Map(phases.map(phase => [phase.id, phase]));
+  const follows = (phaseId: string, predecessor: string, seen = new Set<string>()): boolean => {
+    if (seen.has(phaseId)) return false;
+    seen.add(phaseId);
+    return byId.get(phaseId)?.dependsOn.some(id =>
+      id === predecessor || follows(id, predecessor, seen)) ?? false;
+  };
+  phases.forEach((phase, i) => {
+    for (let j = 0; j < i; j++) {
+      const prior = phases[j]!;
+      if (follows(phase.id, prior.id) || follows(prior.id, phase.id)) continue;
+      phase.writerScopeIds.forEach((scope, k) => {
+        if (prior.writerScopeIds.includes(scope)) {
+          problem(problems, `workflow.phases[${i}].writerScopeIds[${k}]`, "concurrent_writer_scope");
+        }
+      });
+    }
   });
   return result(read.value, problems);
 }
