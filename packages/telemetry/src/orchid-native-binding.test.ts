@@ -133,14 +133,27 @@ it("private binding: missing, malformed, moved and route-mismatched bindings sta
     finally { await f.close(); }
   });
 });
+it("private binding: accepts an exact Claude root without exposing the private session ID", async () => {
+  const f = await fixture();
+  try {
+    await writeFile(f.dispatch, JSON.stringify({ ...snapshot, source: "claude" }), { mode: 0o600 });
+    await f.write({ ...baseBinding, Route: { ...baseBinding.Route, transport: "claude" } });
+    const rows = await f.read();
+    const result = project(rows, pair.map(r => ({ ...r, source: "claude" as const })));
+    assert.equal(result.complete, true);
+    assert.equal(result.agents.length, 2);
+    assert.ok(!JSON.stringify({ rows, result }).includes(rootIdentity));
+    unavailable(rows, pair); // Same ID on Codex cannot cross the source boundary.
+  } finally { await f.close(); }
+});
 it("private binding: cannot certify uncertain, launching or unsupported transport launches", async t => {
-  for (const change of [{ state: "uncertain" }, { state: "launching" }, { source: "claude" }]) {
+  for (const change of [{ state: "uncertain" }, { state: "launching" }, { source: "agy" }]) {
     await t.test(JSON.stringify(change), async () => {
       const f = await fixture();
       try {
         await writeFile(f.dispatch, JSON.stringify({ ...snapshot, ...change }));
         if (change.source) await f.write({ ...baseBinding, Route: { ...baseBinding.Route, transport: change.source } });
-        unavailable(await f.read(), change.source ? pair.map(r => ({ ...r, source: "claude" as const })) : pair);
+        unavailable(await f.read(), pair);
       } finally { await f.close(); }
     });
   }

@@ -78,13 +78,16 @@ it("a source change collects at the next heartbeat without waiting for the safet
 });
 it("filesystem hints ignore unrelated appends but notice bound files, new files and receipts", async () => {
   const root = await mkdtemp(join(tmpdir(), "issue-watch-"));
-  const receipts = join(root, "receipts"), sessions = join(root, "sessions");
+  const receipts = join(root, "receipts"), sessions = join(root, "sessions"), claude = join(root, "claude");
   const day = join(sessions, "2026", "09", "28");
+  const claudeProject = join(claude, "fixture-project");
   const record = join(receipts, "fixture", "record");
   await mkdir(day, { recursive: true }); await mkdir(record, { recursive: true });
+  await mkdir(claudeProject, { recursive: true });
   const selected = join(day, "selected.jsonl"), unrelated = join(day, "unrelated.jsonl");
-  await writeFile(selected, "a"); await writeFile(unrelated, "a");
-  const changes = openIssueFeedChanges(receipts, sessions);
+  const claudeSelected = join(claudeProject, "selected.jsonl");
+  await writeFile(selected, "a"); await writeFile(unrelated, "a"); await writeFile(claudeSelected, "a");
+  const changes = openIssueFeedChanges(receipts, sessions, claude);
   const eventually = async () => {
     for (let i = 0; i < 30; i++) {
       if (changes.consume()) return true;
@@ -93,7 +96,7 @@ it("filesystem hints ignore unrelated appends but notice bound files, new files 
     return false;
   };
   try {
-    changes.setFiles(new Set([selected]));
+    changes.setFiles(new Set([selected, claudeSelected]));
     await new Promise(resolve => setTimeout(resolve, 50));
     changes.consume();
     await appendFile(unrelated, "b");
@@ -101,7 +104,11 @@ it("filesystem hints ignore unrelated appends but notice bound files, new files 
     assert.equal(changes.consume(), false);
     await appendFile(selected, "b");
     assert.equal(await eventually(), true);
+    await appendFile(claudeSelected, "b");
+    assert.equal(await eventually(), true);
     await writeFile(join(day, "new.jsonl"), "a");
+    assert.equal(await eventually(), true);
+    await writeFile(join(claudeProject, "new.jsonl"), "a");
     assert.equal(await eventually(), true);
     await writeFile(join(record, "binding.json"), "{}");
     assert.equal(await eventually(), true);
@@ -226,6 +233,60 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     assert.equal(await issueAgentFeedCommand(["--json", "--issue", "example/project#999", "--home", home],
       { output: missing, now: () => "2026-09-27T22:00:00.000Z", env: { [ORCHID_DISPATCH_ROOT]: receipts } }), 3);
     assert.equal(JSON.parse(missing.lines[0]!).reason, "source_not_bound");
+  } finally {
+    await rm(home, { recursive: true, force: true });
+    await rm(receipts, { recursive: true, force: true });
+  }
+});
+it("binds one Claude root and native child into live steps, tokens and separate resource histories", async () => {
+  const home = await mkdtemp(join(tmpdir(), "issue-claude-home-"));
+  const receipts = await mkdtemp(join(tmpdir(), "issue-claude-receipts-"));
+  const issueId = "fixture-claude", repo = "example/project", brief = "b".repeat(64);
+  const key = createHash("sha256").update(`${issueId}\0${repo}\0${brief}`).digest("hex");
+  const record = join(receipts, key, "record"), sessionId = "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d";
+  const project = join(home, ".claude", "projects", "fixture-project");
+  const childFile = join(project, sessionId, "subagents", "agent-child.jsonl");
+  const when = "2026-09-29T00:00:01.000Z";
+  const transcript = (sidechain: boolean, input: number, output: number) => [
+    { type: "user", timestamp: "2026-09-29T00:00:00.000Z", sessionId,
+      uuid: "u1", isSidechain: sidechain, message: { role: "user", content: "PRIVATE-PROMPT-CANARY" } },
+    { type: "assistant", timestamp: when, sessionId,
+      uuid: "a1", isSidechain: sidechain, message: { role: "assistant", model: "fixture-model",
+        usage: { input_tokens: input, output_tokens: output },
+        content: [{ type: "text", text: "Review fixtures." }] } },
+  ].map(row => JSON.stringify(row)).join("\n") + "\n";
+  try {
+    await mkdir(record, { recursive: true, mode: 0o700 });
+    await mkdir(join(receipts, "actions"), { mode: 0o700 });
+    await mkdir(join(project, sessionId, "subagents"), { recursive: true });
+    await writeFile(join(record, "dispatch.json"), JSON.stringify({ schemaVersion: 1,
+      runId: `orchid-${key}`, issue: { repo, number: 451 }, parentRunId: null, source: "claude",
+      provider: "fixture-router", model: "fixture-model", effort: "high", profile: "leaf",
+      tokenBudget: 1000, budgetSource: "route", state: "dispatched",
+      observedAt: "2026-09-29T00:00:00.000Z",
+      location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" } }), { mode: 0o600 });
+    await writeFile(join(record, "binding.json"), JSON.stringify({ IssueID: issueId, Repo: repo,
+      BriefDigest: brief, Route: { transport: "claude", provider: "fixture-router", model: "fixture-model", effort: "high" },
+      NativeSessionID: sessionId }), { mode: 0o600 });
+    await writeFile(join(project, sessionId + ".jsonl"), transcript(false, 5, 2));
+    await writeFile(childFile, transcript(true, 3, 1));
+    const frame = await collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20,
+      now: "2026-09-29T00:00:10.000Z", issueKey: "example/project#451" });
+    assert.equal(frame.complete, true);
+    const agents = frame.issues[0]?.dispatches[0]?.agents ?? [];
+    assert.equal(agents.length, 2);
+    const root = agents.find(agent => agent.parentAgentId === null)!;
+    const child = agents.find(agent => agent.parentAgentId !== null)!;
+    assert.equal(root.activity?.steps.length, 1);
+    assert.equal(root.tokenUsage?.usedTokens, 7);
+    assert.equal(root.resourceHistory?.tokens.points.at(-1)?.usedTokens, 7);
+    assert.equal(root.resourceHistory?.budgets.points[0]?.tokenLimit, 1000);
+    assert.equal(child.tokenUsage?.usedTokens, 4);
+    assert.equal(child.resourceHistory?.tokens.points.at(-1)?.usedTokens, 4);
+    assert.equal(child.resourceHistory?.budgets.reason, "source_not_bound");
+    assert.equal(root.liveness.state, "unknown"); // Claude transcript has no task-start marker.
+    assert.ok(!JSON.stringify(frame).includes(sessionId));
+    assert.ok(!JSON.stringify(frame).includes("PRIVATE-"));
   } finally {
     await rm(home, { recursive: true, force: true });
     await rm(receipts, { recursive: true, force: true });
