@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **411/492 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 13 invisible**
+`[################----]` **412/493 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 13 invisible**
 
-_Latest board activity: 2026-09-30T07:43:15Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-30T09:27:57Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -136,7 +136,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 215/247 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 10 invisible
+`[##########--]` 216/248 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 10 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -144,7 +144,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 185/211 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 8 invisible | — |
+| _(no epic)_ | `[##########--]` 186/212 done · 4 running · 2 queued · 3 blocked · 9 abandoned · 8 invisible | — |
 
 ## Waiting to start
 
@@ -185,7 +185,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  411/492 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 13 invisible
+# rickylabs/harness  [################----]  412/493 done · 22 running · 23 queued · 8 blocked · 15 abandoned · 13 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  196/245 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
 
@@ -469,7 +469,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #490 App video retake: scoped agent review and live actions
     shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
 
-## (no milestone)  [#################---]  215/247 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 10 invisible
+## (no milestone)  [#################---]  216/248 done · 5 running · 3 queued · 5 blocked · 9 abandoned · 10 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -731,6 +731,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR502 feat(telemetry): end a Claude child on its parent's completion notice (p1)
     shipped              PR503 feat(board): port the pull-request check rollup from NetScript (p2)
     shipped              #504 [rickylabs/harness#453] Claude native root and child issue-feed proof
+    shipped              PR505 fix(contracts): hold issue-agent trees for 30 s, three watch intervals (p1)
 ```
 
 </details>
