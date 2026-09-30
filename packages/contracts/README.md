@@ -563,6 +563,11 @@ bounded typed history. The decoder rejects native IDs, extra fields, invalid bud
 ancestry passed off as complete. A native child provider is not renamed to router, and a root budget
 is not inherited by a child.
 
+Liveness is `running`, `idle`, `ended` or `unknown`. `idle` is a runtime observation that the agent
+has stopped at its prompt: it is not running, and it is not ended, because it can be prompted
+again. Its observation carries `running: false` with the same time and a validity at least as
+long as the frame's. A `false` running bit is accepted only beside `idle`.
+
 Each agent and history event repeats the enclosing dispatch ID so the cockpit can join only to its
 accepted dispatch receipt. The snapshot has a 30-second `validUntil` bound (0.25.0; earlier
 producers used 15 seconds, and the decoder still accepts either exact bound). Host, container and seat
@@ -853,3 +858,13 @@ or plus the earlier 15 seconds (`ISSUE_AGENT_TREE_ACCEPTED_FRESH_MS`), and nothi
 reader on 0.25.0 decodes frames from both older and newer producers. Upgrade readers before
 producers. A running observation must still cover the whole snapshot validity, so the Codex
 producer now keeps running only for native events at most 90 seconds old at capture.
+
+## Issue-agent liveness `idle` (0.26.0)
+
+`AgentTreeLiveness` gains `{ state: "idle", evidence: "runtime-observation", observedAt, reason: null }`
+for an agent observed stopped at its prompt (a Claude root that ended its turn). It is not
+terminal: `terminalOutcome` stays null, and a later `running` frame replaces it. The agent's
+observation then carries `running: { value: false, observedAt }` at the same time, with
+`validUntil` at least the frame's. `readIssueAgentTreeSnapshot` rejects `idle` without that false
+bit, and a false bit beside any other liveness. A reader before 0.26.0 rejects a frame that
+contains `idle`, so upgrade readers before producers.

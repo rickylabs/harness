@@ -1,4 +1,4 @@
-/** Read only a current, exact-session Claude working observation from Orchid. */
+/** Read only a current, exact-session Claude status observation from Orchid: working, or stopped at its prompt. */
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
@@ -21,7 +21,8 @@ async function privateJSON(path: string, limit: number): Promise<Record<string, 
   } finally { await file.close(); }
 }
 
-export async function readOrchidClaudeStatus(record: string, dispatch: DispatchEvidence): Promise<string | null> {
+export async function readOrchidClaudeStatus(record: string, dispatch: DispatchEvidence):
+  Promise<{ readonly state: "working" | "idle"; readonly at: string } | null> {
   if (dispatch.source !== "claude" || dispatch.dispatchState !== "dispatched" ||
       dispatch.location === null || dispatch.location === undefined || dispatch.host === null || dispatch.host === undefined) return null;
   try {
@@ -33,7 +34,7 @@ export async function readOrchidClaudeStatus(record: string, dispatch: DispatchE
       "host", "paneId", "workspaceId", "status", "observedAt"]) || row.schemaVersion !== 1 ||
       row.runId !== dispatch.runId || row.host !== dispatch.host ||
       row.paneId !== dispatch.location.paneId || row.workspaceId !== dispatch.location.workspaceId ||
-      row.status !== "working" || typeof row.nativeSessionId !== "string" ||
+      (row.status !== "working" && row.status !== "idle" && row.status !== "done") || typeof row.nativeSessionId !== "string" ||
       row.nativeSessionId !== binding.NativeSessionID ||
       !matchesOrchidNativeRootIdentity(dispatch, row.nativeSessionId, "claude") ||
       typeof dispatch.revision !== "string") return null;
@@ -52,6 +53,7 @@ export async function readOrchidClaudeStatus(record: string, dispatch: DispatchE
     if (typeof at !== "string" || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{1,9}Z$/.test(at)) return null;
     const ms = Date.parse(at);
     if (!Number.isFinite(ms) || ms > Date.now()) return null;
-    return new Date(ms).toISOString();
+    // herdr reports a Claude that has ended its turn as idle or done; both are stopped at the prompt.
+    return { state: row.status === "working" ? "working" : "idle", at: new Date(ms).toISOString() };
   } catch { return null; }
 }

@@ -34,16 +34,25 @@ it("binds a fresh Claude working status to the exact native root and never to a 
     const statusFile = join(s.record, "claude-status.json");
     await writeFile(statusFile, JSON.stringify(status(new Date().toISOString())), { mode: 0o600 });
     const first = (await readOrchidDispatches(s.root)).dispatches[0]!;
-    assert.ok(first.claudeWorkingAt);
+    assert.ok(first.claudeStatus);
     const runs = [source(id, null), source("fixture-child", id)];
     const observations = buildAgentObservations({ dispatches: [first], runs, observedAt: new Date().toISOString(),
       sourceBound: true, dispatchComplete: true, nativeComplete: true });
     assert.equal(observations.agents.find(agent => agent.parentAgentId.state === "confirmed-root")?.running.value, true);
     assert.equal(observations.agents.find(agent => agent.parentAgentId.state === "known-parent")?.running.value, null);
     for (const bad of [status(new Date().toISOString(), "other-session"),
-      { ...status(new Date().toISOString()), status: "done" }, { ...status(new Date().toISOString()), paneId: "other-pane" }]) {
+      { ...status(new Date().toISOString()), status: "blocked" }, { ...status(new Date().toISOString()), paneId: "other-pane" }]) {
       await writeFile(statusFile, JSON.stringify(bad));
-      assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.claudeWorkingAt, undefined);
+      assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.claudeStatus, undefined);
+    }
+    // herdr's idle and done both mean stopped at the prompt: observed not running, not unknown.
+    for (const stopped of ["idle", "done"]) {
+      await writeFile(statusFile, JSON.stringify({ ...status(new Date().toISOString()), status: stopped }));
+      const idle = (await readOrchidDispatches(s.root)).dispatches[0]!;
+      assert.equal(idle.claudeStatus?.state, "idle", stopped);
+      const idleRoot = buildAgentObservations({ dispatches: [idle], runs, observedAt: new Date().toISOString(),
+        sourceBound: true, dispatchComplete: true, nativeComplete: true }).agents.find(agent => agent.parentAgentId.state === "confirmed-root");
+      assert.equal(idleRoot?.running.value, false, stopped);
     }
     await writeFile(statusFile, JSON.stringify(status(new Date(Date.now() - 120_000).toISOString())));
     const stale = (await readOrchidDispatches(s.root)).dispatches[0]!;
@@ -52,7 +61,7 @@ it("binds a fresh Claude working status to the exact native root and never to a 
     assert.equal(staleObservations.agents.find(agent => agent.parentAgentId.state === "confirmed-root")?.running.value, null);
     await writeFile(statusFile, JSON.stringify(status(new Date().toISOString())));
     await chmod(statusFile, 0o644);
-    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.claudeWorkingAt, undefined);
+    assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.claudeStatus, undefined);
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
 async function setup(reservation = key) {

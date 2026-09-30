@@ -257,8 +257,8 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         const boundDispatch = { ...dispatch, ...(stop === undefined ? {} : { stop }),
           ...(teardown === undefined ? {} : { teardown }) };
         await readOrchidNativeBinding(record, key, boundDispatch);
-        const claudeWorkingAt = await readOrchidClaudeStatus(record, boundDispatch);
-        if (claudeWorkingAt !== null) Object.assign(boundDispatch, { claudeWorkingAt });
+        const claudeStatus = await readOrchidClaudeStatus(record, boundDispatch);
+        if (claudeStatus !== null) Object.assign(boundDispatch, { claudeStatus });
         dispatches.push(boundDispatch);
       } catch { notes.add("orchid-dispatch: binding_unavailable"); }
     }

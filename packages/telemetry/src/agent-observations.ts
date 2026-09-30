@@ -17,15 +17,20 @@ const nativeKey = (source: string, id: string) => `${source}\0${id}`;
 // interval inside the two-minute native-activity window before claiming running.
 const NATIVE_RUNNING_MS = 120_000;
 const CLAUDE_STATUS_MS = 90_000;
+// A fresh "working" row is running; a fresh idle row (herdr idle/done: the root ended its turn and
+// sits at its prompt) is observed not running. RUN-6 (2026-09-30): without the idle row, a root
+// that had finished showed Unknown.
 function claudeStatusRunning(dispatch: DispatchEvidence, capturedAt: string): AgentObservedValue<boolean> {
-  if (dispatch.source !== "claude" || dispatch.claudeWorkingAt === undefined) return missing("measurement_missing");
-  const eventMs = Date.parse(dispatch.claudeWorkingAt), captureMs = Date.parse(capturedAt);
+  const status = dispatch.claudeStatus;
+  if (dispatch.source !== "claude" || status === undefined) return missing("measurement_missing");
+  const eventMs = Date.parse(status.at), captureMs = Date.parse(capturedAt);
   if (!Number.isFinite(eventMs) || !Number.isFinite(captureMs) ||
-      new Date(eventMs).toISOString() !== dispatch.claudeWorkingAt || eventMs > captureMs ||
+      new Date(eventMs).toISOString() !== status.at || eventMs > captureMs ||
       eventMs + CLAUDE_STATUS_MS < captureMs + ISSUE_AGENT_TREE_FRESH_MS) return missing("source_stale");
-  return { value: true, reason: null, observedAt: dispatch.claudeWorkingAt,
+  return { value: status.state === "working", reason: null, observedAt: status.at,
     validUntil: new Date(eventMs + CLAUDE_STATUS_MS).toISOString(),
-    revision: digest(JSON.stringify({ dispatch: dispatch.revision, event: dispatch.claudeWorkingAt, signal: "herdr-claude-working" })) };
+    revision: digest(JSON.stringify({ dispatch: dispatch.revision, event: status.at,
+      signal: status.state === "working" ? "herdr-claude-working" : "herdr-claude-idle" })) };
 }
 function measuredRunning(run: RunRecord, capturedAt: string): AgentObservedValue<boolean> {
   if (run.outcome !== "running") return missing("measurement_missing");
