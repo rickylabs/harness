@@ -293,8 +293,16 @@ export function parseClaudeTranscript(
         line.type === "queue-operation")) turnEndedAt = null;
     if (line.type === "user") finalAnswer = false;
     if (line.type === "assistant") {
-      const content = obj(line.message)?.["content"];
-      finalAnswer = !(Array.isArray(content) && content.some(part => obj(part)?.["type"] === "tool_use"));
+      // Only the model's own answer finishes a turn. Claude Code also writes assistant lines itself
+      // (model "<synthetic>": an API error such as a usage limit or an overload, flagged
+      // isApiErrorMessage, or "No response requested.") and closes those turns too; they are not
+      // finished work.
+      const message = obj(line.message);
+      const content = message?.["content"];
+      const record = parsed.line as JsonObject;
+      finalAnswer = message !== null && message["model"] !== "<synthetic>" &&
+        record["isApiErrorMessage"] !== true && record["error"] === undefined &&
+        !(Array.isArray(content) && content.some(part => obj(part)?.["type"] === "tool_use"));
     }
     if (line.type === "system" && line.subtype === "turn_duration" && at !== null) turnEndedAt = finalAnswer ? at : null;
 

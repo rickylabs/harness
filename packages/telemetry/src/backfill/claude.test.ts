@@ -196,6 +196,16 @@ describe("parseClaudeTranscript", () => {
     assert.equal(parseRun(lines(user("go"), answer, end(at), user("continue", { uuid: "u3", timestamp: "2026-09-04T22:31:04.000Z" })))?.turnEndedAt, undefined);
     assert.equal(parseRun(lines(user("go"), answer, end(at), { type: "queue-operation", operation: "enqueue", content: "x",
       timestamp: "2026-09-04T22:06:00.000Z", sessionId }))?.turnEndedAt, undefined);
+    // Claude Code's own synthetic lines close a turn without finishing it: an API error (usage limit,
+    // overload, 5xx) and "No response requested.". A root that hit its quota did not succeed.
+    const apiError = assistant({ input_tokens: 0, output_tokens: 0 }, { isApiErrorMessage: true, error: "rate_limit",
+      message: { role: "assistant", model: "<synthetic>", usage: { input_tokens: 0, output_tokens: 0 },
+        content: [{ type: "text", text: "API Error: usage limit reached" }] } });
+    const noResponse = assistant({ input_tokens: 0, output_tokens: 0 }, { message: { role: "assistant", model: "<synthetic>",
+      usage: { input_tokens: 0, output_tokens: 0 }, content: [{ type: "text", text: "No response requested." }] } });
+    assert.equal(parseRun(lines(user("go"), apiError, end(at)))?.turnEndedAt, undefined);
+    assert.equal(parseRun(lines(user("go"), answer, user("more", { uuid: "u4" }), apiError, end(at)))?.turnEndedAt, undefined);
+    assert.equal(parseRun(lines(user("go"), noResponse, end(at)))?.turnEndedAt, undefined);
   });
 
   it("prefers the session's own name over the first prompt", () => {
