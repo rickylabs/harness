@@ -2,23 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **434/517 done · 22 running · 23 queued · 7 blocked · 16 abandoned · 15 invisible**
+`[################----]` **437/517 done · 22 running · 27 queued · 16 abandoned · 15 invisible**
 
-_Latest board activity: 2026-09-30T19:46:09Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
-
-## Waiting on you (7)
-
-Stopped on a decision only a person can make. No agent will pick these up.
-
-| item | column | epic |
-| --- | --- | --- |
-| [#313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN](https://github.com/rickylabs/harness/issues/313) | `triage` | — |
-| [#315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves](https://github.com/rickylabs/harness/issues/315) | `triage` | `e10` |
-| [#321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch](https://github.com/rickylabs/harness/issues/321) | `triage` | `e11` |
-| [#182 Consolidation pass — the Astra medium review of the shipped ground work](https://github.com/rickylabs/harness/issues/182) | `impl` | `e0` |
-| [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
-| [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
-| [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
+_Latest board activity: 2026-09-30T20:37:48Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (22)
 
@@ -58,17 +44,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
 
-## Anomalies (35)
+## Anomalies (34)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
-
-**`epic-closed-by-child`**
-
-- **#30** — is closed with 1 open child (#182); an umbrella closes when its last child does — reopen it, do not relabel it
 
 **`epic-milestone-conflict`**
 
@@ -116,47 +98,51 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 196/245 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
+`[#########---]` 196/245 done · 17 running · 23 queued · 6 abandoned · 3 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
-| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 29/33 done · 2 queued · 1 blocked · 1 abandoned | `impl` |
+| [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 29/33 done · 3 queued · 1 abandoned | `impl` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#######-----]` 6/10 done · 2 running · 2 queued | `triage` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
-| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 24/39 done · 7 running · 4 queued · 1 blocked · 3 abandoned | `triage` |
+| [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 24/39 done · 7 running · 5 queued · 3 abandoned | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 invisible | `triage` |
 | [E5 — Governance: tri-regime admission control](https://github.com/rickylabs/harness/issues/35) | `[####--------]` 3/8 done · 5 queued | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[#########---]` 30/38 done · 5 running · 1 queued · 2 abandoned | `impl` |
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
-| _(no epic)_ | `[########----]` 7/10 done · 1 blocked · 2 invisible | — |
+| _(no epic)_ | `[########----]` 7/10 done · 1 queued · 2 invisible | — |
 
 ### (no milestone)
 
-`[##########--]` 238/272 done · 5 running · 3 queued · 4 blocked · 10 abandoned · 12 invisible
+`[##########--]` 241/272 done · 5 running · 4 queued · 10 abandoned · 12 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
-| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[##########--]` 5/6 done · 1 blocked | `no status` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
+| [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[############]` 6/6 done | `no status` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 queued · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 208/236 done · 4 running · 2 queued · 2 blocked · 10 abandoned · 10 invisible | — |
+| _(no epic)_ | `[##########--]` 210/236 done · 4 running · 2 queued · 10 abandoned · 10 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>23 filed, nothing started</summary>
+<summary>27 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
 | [#273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator](https://github.com/rickylabs/harness/issues/273) | `triage` | `e11` |
 | [#275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON](https://github.com/rickylabs/harness/issues/275) | `triage` | `e11` |
+| [#313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN](https://github.com/rickylabs/harness/issues/313) | `triage` | — |
+| [#315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves](https://github.com/rickylabs/harness/issues/315) | `triage` | `e10` |
+| [#321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch](https://github.com/rickylabs/harness/issues/321) | `triage` | `e11` |
 | [#400 Live proof: native goal read-back and notifications](https://github.com/rickylabs/harness/issues/400) | `triage` | `e9` |
 | [#287 E3.8 — Contract alignment for UHP-hosted runs in @rickylabs/harness-contracts](https://github.com/rickylabs/harness/issues/287) | `triage` | `e3` |
 | [#290 Spike S12 — Evidence path: transcript and quota meters for UHP runs](https://github.com/rickylabs/harness/issues/290) | `triage` | `e3` |
+| [#294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE](https://github.com/rickylabs/harness/issues/294) | `triage` | `e3` |
 | [#331 Incident: three sweeps, sixteen candidates, sixteen live — and the only unrecovered one was found by naming convention](https://github.com/rickylabs/harness/issues/331) | `triage` | — |
 | [#361 fix(divybot): attribute quota refusals to transport and failed condition](https://github.com/rickylabs/harness/issues/361) | `triage` | — |
 | [#215 forge hands every read-only command a write-capable transport: `--dry-run` is a branch, not a type](https://github.com/rickylabs/harness/issues/215) | `triage` | `e7` |
@@ -184,9 +170,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  434/517 done · 22 running · 23 queued · 7 blocked · 16 abandoned · 15 invisible
+# rickylabs/harness  [################----]  437/517 done · 22 running · 27 queued · 16 abandoned · 15 invisible
 
-## M1 — dsh coordinator foundation  [################----]  196/245 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
+## M1 — dsh coordinator foundation  [################----]  196/245 done · 17 running · 23 queued · 6 abandoned · 3 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -208,7 +194,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR185 chore(scripts): keep the scratchpad out of the link check and out of git (p3)
 
   E10 — Docs: the front door, the reference, and the check that keeps them honest #140  [impl]
-    [##############--] 29/33 done · 2 queued · 1 blocked · 1 abandoned
+    [##############--] 29/33 done · 3 queued · 1 abandoned
     shipped              #141 E10.1 — Rewrite the root README from scratch (p1)
     shipped              #142 E10.2 — docs/ skeleton and the explanation set (p1)
     shipped              #143 E10.3 — Generated CLI reference with a drift test (p2)
@@ -241,7 +227,7 @@ Open, and carrying no `status:` label — real work no column can see.
     triage               #244 docs(runtime): enforce Node 24 floor and validate Node 26 target (p3)
     shipped              PR281 docs: describe the intended product and update operational guidance (p1)
     shipped              PR302 docs(concepts): record the 0.4.0 release the tag push made this page wrong about (p2)
-    triage               #315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves (p0, waiting on owner)
+    triage               #315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves (p0)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]
     [#########-------] 6/10 done · 2 running · 2 queued
@@ -274,7 +260,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR230 feat(dsh-app): carry board anomalies and fetch coverage in the projection (p1)
 
   E3 — Subagent providers over structured protocols #33  [triage]
-    [#########-------] 24/39 done · 7 running · 4 queued · 1 blocked · 3 abandoned
+    [#########-------] 24/39 done · 7 running · 5 queued · 3 abandoned
     shipped              #51 E3.1 — DispatchRequest and the SubagentProvider contract
     shipped              #52 E3.2 — provider-claude on @anthropic-ai/claude-agent-sdk
     triage               #53 E3.3 — provider-codex against the running app-server daemon
@@ -307,7 +293,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR291 docs(e3): hold the S10/S11/S12 dispatch — HarnessRouter CE is not deployed (p1)
     shipped              PR292 chore(subagents): prove route identity fails closed over UHP (S10) (p1)
     shipped              PR293 docs(seat3): record the closing-keyword hazard that retired issue 53 by accident (p1)
-    triage               #294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE (p1, waiting on owner)
+    triage               #294 Spike S11-gate — Workspace and PR round-trip on a live HarnessRouter CE (p1)
     shipped              PR295 feat(subagents): read UHP streams and continue sessions without guessing (S11) (p1)
     shipped              PR297 feat(subagents): dispatch, observe, steer and stop a run over UHP (provider-uhp) (p1)
     no status            PR298 feat(subagents): accept a UHP route whose model agrees, and refuse only the drifted lane (p1)
@@ -461,27 +447,27 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR221 fix(subagents): close the fourth lease door
     shipped              PR266 docs: record the locked three-layer architecture
     shipped              PR311 docs: same-input pairing works because of aim, not because the control works (p2)
-    triage               #313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN (p0, waiting on owner)
+    triage               #313 Seven of netscript's seventeen harness templates were never vendored, including the one that defines NOT_RUN (p0)
     shipped              PR314 chore(runs): redact an operator host and root login from a tracked worklog (p0)
     shipped              #316 Three gates cannot report inconclusive, so each reports a verdict it has not earned (p0)
     no status            #466 App video: live Sol leaf dispatch and actions
     no status            #490 App video retake: scoped agent review and live actions
     shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
 
-## (no milestone)  [#################---]  238/272 done · 5 running · 3 queued · 4 blocked · 10 abandoned · 12 invisible
+## (no milestone)  [#################---]  241/272 done · 5 running · 4 queued · 10 abandoned · 12 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
-    [#############---] 5/6 done · 1 blocked
+    [################] 6/6 done
     shipped              PR97 docs(root): state the four ratified decisions from #30 in README/AGENTS
-    impl                 #182 Consolidation pass — the Astra medium review of the shipped ground work (p1, waiting on owner)
+    shipped              #182 Consolidation pass — the Astra medium review of the shipped ground work (p1)
     shipped              #187 check:skill is blind in CI and unfixable locally: the skill renders live epics (p1)
     shipped              #202 board and forge disagree on what an epic is, and one of the labels does not exist (p1)
     shipped              PR232 fix(board,forge): agree on what marks an epic, and ship the label (p1)
     shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [###########-----] 7/10 done · 1 running · 1 blocked · 1 invisible
-    triage               #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0, waiting on owner)
+    [###########-----] 7/10 done · 1 running · 1 queued · 1 invisible
+    triage               #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0)
     shipped              PR339 docs(e11): charter enforcement plan and measured dual-agent pilot (p0)
     no status            #340 E11 I1: independent feature-tier plan evaluation for receipt checker (p0)
     shipped              #341 E11 I1: native fallback plan evaluation for receipt checker (p0)
@@ -572,7 +558,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR303 docs(architecture): lock v1 — the portable agent runtime
     shipped              #304 smoke: ratify ARCHITECTURE.md v1 as decision 0003 and record the dispatch receipt
     shipped              PR305 docs(doctrine): ratify ARCHITECTURE.md v1 as decision 0003 and record smoke receipt
-    triage               #306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment (waiting on owner)
+    shipped              #306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment
     shipped              PR307 docs(decisions): ADR 0003 — section 10's park evidence has half changed
     shipped              PR309 docs(architecture): an empty check result is not a pass
     shipped              PR310 docs(security): session identifiers are credential-class, and shape-matching cannot find them
@@ -591,7 +577,7 @@ Open, and carrying no `status:` label — real work no column can see.
     triage               #331 Incident: three sweeps, sixteen candidates, sixteen live — and the only unrecovered one was found by naming convention (p1)
     shipped              PR332 chore(uhp-dispatch-readiness--e3): retain the unimported-sweep incident
     shipped              PR333 fix(telemetry): declare token_usage_record unread, because its counts are read elsewhere
-    triage               #334 The run record cannot say what a cache write cost, or which turn was expensive (p3, waiting on owner)
+    shipped              #334 The run record cannot say what a cache write cost, or which turn was expensive (p3)
     shipped              PR335 chore(gates): run each gate's own guard before the gate it guards
     shipped              PR336 doctrine: publish what a chain of checks must say when it stops
     shipped              PR337 fix(gates): refuse in a sentence, and point at the doctrine file nothing pointed at
