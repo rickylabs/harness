@@ -789,7 +789,10 @@ The notice's anchored header must name an Agent that session launched, as record
 tool result; the header's single status line is read, never the child's summary or result. Any
 other status, a second status line, or a resumed child's later records leave it unknown. Otherwise
 it ends as cancelled only after the same root dispatch has separate seat-absent and
-native-process-absent observations. A later matched Start restores running. Unsafe, stale,
+native-process-absent observations. A later matched Start restores running. A Codex root or
+child that completes or fails on its own carries `endedAt` from the exact time of its own
+`task_complete`, `error`, `stream_error` or `turn_aborted` record, never from its last activity; a
+later `task_started` clears it. Without such a record, `endedAt` stays unavailable. Unsafe, stale,
 absent or unmatched files leave the child unknown.
 The reader watches that directory for new events. A 12-second safety scan
 recovers missed filesystem events before the 15-second freshness deadline. A heartbeat between

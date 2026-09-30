@@ -192,6 +192,22 @@ describe("parseCodexRollout", () => {
     assert.equal(parseRun(aborted, "o")?.terminalCause, "cancelled");
   });
 
+  it("records the exact time of the terminal record, not the last activity, and forgets it on resume", () => {
+    const started = lines(meta, turn, { timestamp: "2026-09-04T21:02:00.000Z", type: "event_msg", payload: { type: "task_started" } });
+    assert.equal(parseRun(started, "o")?.terminalAt, undefined);
+    const record = (timestamp: string, type: string) => JSON.stringify({ timestamp, type: "event_msg", payload: { type } });
+    // RUN-453: activity can follow the terminal record, so updatedAt is not the end.
+    const finished = `${started}\n${record("2026-09-04T21:20:00.000Z", "task_complete")}\n${record("2026-09-04T21:20:05.000Z", "agent_message")}`;
+    assert.equal(parseRun(finished, "o")?.outcome, "complete");
+    assert.equal(parseRun(finished, "o")?.updatedAt, "2026-09-04T21:20:05.000Z");
+    assert.equal(parseRun(finished, "o")?.terminalAt, "2026-09-04T21:20:00.000Z");
+    const resumed = `${finished}\n${record("2026-09-04T21:36:07.000Z", "task_started")}`;
+    assert.equal(parseRun(resumed, "o")?.outcome, "running");
+    assert.equal(parseRun(resumed, "o")?.terminalAt, undefined);
+    assert.equal(parseRun(`${started}\n${record("2026-09-04T21:03:00.000Z", "stream_error")}`, "o")?.terminalAt, "2026-09-04T21:03:00.000Z");
+    assert.equal(parseRun(`${started}\n${record("2026-09-04T21:04:00.000Z", "turn_aborted")}`, "o")?.terminalAt, "2026-09-04T21:04:00.000Z");
+  });
+
   it("says unknown when nothing in the file speaks to the outcome", () => {
     assert.equal(parseRun(lines(meta, turn), "o")?.outcome, "unknown");
   });

@@ -171,6 +171,13 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     : observation.running.value === true && observation.running.observedAt !== null
       ? { state: "running", evidence: "runtime-observation", observedAt: observation.running.observedAt, reason: null }
       : { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" };
+  // A native terminal outcome ends at its own record's time when the reader measured one
+  // (run.terminalAt: Codex task_complete / error / turn_aborted), never at updatedAt, which is only
+  // the last activity. Before this, a Codex child that finished showed "ended" with no end time
+  // (RUN-453, 2026-09-30); a run without an exact terminal time still has none.
+  const terminalAt = time(run?.terminalAt, now);
+  const nativeEndAt = liveness.state === "ended" && liveness.evidence === "native-outcome" && childEndAt === null &&
+    terminalAt !== null && start !== null && terminalAt >= start ? terminalAt : null;
   const endedBy: IssueAgentTreeAgent["endedBy"] = liveness.state === "ended" && liveness.evidence === "stop-observation" ? "stop"
     : liveness.state === "ended" && liveness.evidence === "teardown-observation" ? dispatch.teardown!.cause : null;
   const terminalOutcome: IssueAgentTreeAgent["terminalOutcome"] = liveness.state === "ended"
@@ -282,7 +289,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   if (root && time(dispatch.observedAt, now) !== null) events.push(event(observation.agentId, "dispatched", dispatch.observedAt!, "dispatch"));
   if (start !== null) events.push(event(observation.agentId, "started", start, "native"));
   if (liveness.state === "ended" && terminalOutcome.value !== null) {
-    const end = liveness.evidence === "native-outcome" && childEndAt === null ? outcomeAt : liveness.observedAt;
+    const end = liveness.evidence === "native-outcome" && childEndAt === null ? nativeEndAt ?? outcomeAt : liveness.observedAt;
     const endReason: AgentTimelineReason = endedBy ?? (terminalOutcome.value === "succeeded" ? "native-complete"
       : terminalOutcome.value === "failed" ? "native-error" : "native-cancelled");
     if (end !== null) events.push(event(observation.agentId, "ended", end, "terminal", null, terminalOutcome.value, endReason));
@@ -315,8 +322,9 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
       : { value: null, reason: "source_not_bound" },
     liveness, actionState, endedBy, terminalOutcome, startedAt: start, startedAtReason: start === null ? "run_not_found" : null,
     endedAt: endedBy === "stop" ? stopAt : endedBy === "timeout" || endedBy === "teardown" ? teardownAt
-      : liveness.state === "ended" && childEndAt !== null ? childEndAt : null,
-    endedAtReason: endedBy === null && !(liveness.state === "ended" && childEndAt !== null) ? "measurement_missing" : null,
+      : liveness.state === "ended" && childEndAt !== null ? childEndAt : nativeEndAt,
+    endedAtReason: endedBy === null && !(liveness.state === "ended" && childEndAt !== null) && nativeEndAt === null
+      ? "measurement_missing" : null,
     transcript: { value: null, reason: "source_not_bound" },
     history: history(observation, dispatch, run, now, root), historyTruncated: false,
     activity, tokenUsage, resourceHistory, timeline };

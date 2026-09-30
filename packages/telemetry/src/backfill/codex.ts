@@ -152,6 +152,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
   // true reading: nothing in the file says it ever finished.
   let outcome: RunRecord["outcome"] = "unknown";
   let terminalCause: RunRecord["terminalCause"];
+  let terminalAt: string | undefined;
   const usage: Record<string, number> = {};
   const tokenSamples = new TokenSampleCollector();
   const quota: QuotaReading[] = [];
@@ -251,10 +252,10 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
       if (reading !== null) quota.push(reading);
     }
 
-    if (kind === "task_started") { outcome = "running"; terminalCause = undefined; }
-    if (kind === "task_complete") { outcome = "complete"; terminalCause = undefined; }
-    if (kind === "error" || kind === "stream_error") { outcome = "failed"; terminalCause = "error"; }
-    if (kind === "turn_aborted") { outcome = "failed"; terminalCause = "cancelled"; }
+    if (kind === "task_started") { outcome = "running"; terminalCause = undefined; terminalAt = undefined; }
+    if (kind === "task_complete") { outcome = "complete"; terminalCause = undefined; terminalAt = at ?? undefined; }
+    if (kind === "error" || kind === "stream_error") { outcome = "failed"; terminalCause = "error"; terminalAt = at ?? undefined; }
+    if (kind === "turn_aborted") { outcome = "failed"; terminalCause = "cancelled"; terminalAt = at ?? undefined; }
   }
 
   if (parentInvalid || parents.size > 1 || (id !== null && parents.has(id))) {
@@ -284,6 +285,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
       activitySteps: activity,
       outcome,
       terminalCause,
+      ...(outcome !== "running" && outcome !== "unknown" && terminalAt !== undefined ? { terminalAt } : {}),
       linkedIssues: linkedIssuesOf(cwd, title),
       origin,
       quota,

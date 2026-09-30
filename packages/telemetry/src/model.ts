@@ -174,6 +174,12 @@ export interface RunRecord {
   /** Exact terminal signal, when the native reader can distinguish failure from cancellation. */
   readonly terminalCause?: "error" | "cancelled" | undefined;
   /**
+   * The time of the native record that set a terminal `outcome` (Codex `task_complete`, `error`,
+   * `turn_aborted`), cleared when a later `task_started` resumes the run. Unlike `updatedAt`, which
+   * is only the last record seen, this is an exact end time. Omitted when unknown.
+   */
+  readonly terminalAt?: string;
+  /**
    * Claude only: the latest task-notification this session received for each background child,
    * reduced to the child's transcript run id, the notification status and its time. Never the
    * notification's summary, result or output path. `other` is any status this reader does not map.
