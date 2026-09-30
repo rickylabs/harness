@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **432/517 done · 24 running · 23 queued · 7 blocked · 16 abandoned · 15 invisible**
+`[################----]` **434/517 done · 22 running · 23 queued · 7 blocked · 16 abandoned · 15 invisible**
 
-_Latest board activity: 2026-09-30T19:36:20Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-30T19:46:09Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (7)
 
@@ -20,7 +20,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (24)
+## Moving now (22)
 
 Something could be acting on these right now.
 
@@ -38,7 +38,6 @@ Something could be acting on these right now.
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
 | [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl-eval` | `e3` |
 | [#300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision](https://github.com/rickylabs/harness/issues/300) | `impl-eval` | `e3` |
-| [#328 Three unrecognised envelope types on a real Codex store, one at 17304 occurrences, and the reader says that means a class of record is going unread](https://github.com/rickylabs/harness/issues/328) | `impl-eval` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -49,7 +48,6 @@ Something could be acting on these right now.
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 | [PR495 test(telemetry): app-video-retake--490 review evidence](https://github.com/rickylabs/harness/pull/495) | `impl-eval` | — |
-| [PR529 feat(telemetry): publish account quota and opaque session usage](https://github.com/rickylabs/harness/pull/529) | `impl-eval` | — |
 
 ## Not on the board (2)
 
@@ -137,7 +135,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 236/272 done · 7 running · 3 queued · 4 blocked · 10 abandoned · 12 invisible
+`[##########--]` 238/272 done · 5 running · 3 queued · 4 blocked · 10 abandoned · 12 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -145,7 +143,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 206/236 done · 6 running · 2 queued · 2 blocked · 10 abandoned · 10 invisible | — |
+| _(no epic)_ | `[##########--]` 208/236 done · 4 running · 2 queued · 2 blocked · 10 abandoned · 10 invisible | — |
 
 ## Waiting to start
 
@@ -186,7 +184,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  432/517 done · 24 running · 23 queued · 7 blocked · 16 abandoned · 15 invisible
+# rickylabs/harness  [################----]  434/517 done · 22 running · 23 queued · 7 blocked · 16 abandoned · 15 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  196/245 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
 
@@ -470,7 +468,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #490 App video retake: scoped agent review and live actions
     shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
 
-## (no milestone)  [#################---]  236/272 done · 7 running · 3 queued · 4 blocked · 10 abandoned · 12 invisible
+## (no milestone)  [#################---]  238/272 done · 5 running · 3 queued · 4 blocked · 10 abandoned · 12 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -587,7 +585,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR325 fix(gates): give three aggregates a third state so none reports a verdict it has not earned
     shipped              PR326 fix(telemetry): make the Claude backfill say which types it chose not to read
     shipped              PR327 fix(gates): stop the stage runner reporting a killed stage as a failed one
-    impl-eval            #328 Three unrecognised envelope types on a real Codex store, one at 17304 occurrences, and the reader says that means a class of record is going unread (p3)
+    shipped              #328 Three unrecognised envelope types on a real Codex store, one at 17304 occurrences, and the reader says that means a class of record is going unread (p3)
     shipped              PR329 fix(coordinator): make plan and admit honour --event instead of ignoring it
     shipped              PR330 fix(telemetry): stop the Codex reader calling two envelopes unrecognised when a sibling reads one
     triage               #331 Incident: three sweeps, sixteen candidates, sixteen live — and the only unrecovered one was found by naming convention (p1)
@@ -756,7 +754,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #526 The governance read carries the dispatcher's transport availability (p1)
     shipped              PR527 feat(contracts): the governance read carries the dispatcher's transport availability (p1)
     shipped              PR528 chore(routing): adopt Sol 6.1 low and xhigh defaults
-    impl-eval            PR529 feat(telemetry): publish account quota and opaque session usage
+    shipped              PR529 feat(telemetry): publish account quota and opaque session usage
 ```
 
 </details>
