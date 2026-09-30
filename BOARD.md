@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **416/503 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 18 invisible**
+`[################----]` **421/507 done · 24 running · 23 queued · 8 blocked · 16 abandoned · 15 invisible**
 
-_Latest board activity: 2026-09-30T11:06:35Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-30T11:36:31Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (23)
+## Moving now (24)
 
 Something could be acting on these right now.
 
@@ -39,6 +39,8 @@ Something could be acting on these right now.
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
 | [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl-eval` | `e3` |
 | [#300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision](https://github.com/rickylabs/harness/issues/300) | `impl-eval` | `e3` |
+| [#517 A Claude child that works past its Start window is never shown running](https://github.com/rickylabs/harness/issues/517) | `impl-eval` | — |
+| [PR519 fix(telemetry): a Claude child stays running on its own activity past its Start window](https://github.com/rickylabs/harness/pull/519) | `impl-eval` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -49,9 +51,8 @@ Something could be acting on these right now.
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 | [PR495 test(telemetry): app-video-retake--490 review evidence](https://github.com/rickylabs/harness/pull/495) | `impl-eval` | — |
-| [#515 [rickylabs/harness#513] Claude issue-feed proof from the cockpit launch path (RESWEEP 4)](https://github.com/rickylabs/harness/issues/515) | `plan` | — |
 
-## Not on the board (5)
+## Not on the board (2)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -59,11 +60,8 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
-| [#508 Codex issue-feed proof from the cockpit launch path (RESWEEP)](https://github.com/rickylabs/harness/issues/508) | — | — |
-| [#511 Codex issue-feed proof from the cockpit launch path (RESWEEP 3)](https://github.com/rickylabs/harness/issues/511) | — | — |
-| [#513 Claude issue-feed proof from the cockpit launch path (RESWEEP 4)](https://github.com/rickylabs/harness/issues/513) | — | — |
 
-## Anomalies (38)
+## Anomalies (35)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -116,9 +114,6 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#370** — open item has no status label, so it appears in no column
 - **#422** — open item has no status label, so it appears in no column
-- **#508** — open item has no status label, so it appears in no column
-- **#511** — open item has no status label, so it appears in no column
-- **#513** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -143,7 +138,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 220/258 done · 6 running · 3 queued · 5 blocked · 9 abandoned · 15 invisible
+`[##########--]` 225/262 done · 7 running · 3 queued · 5 blocked · 10 abandoned · 12 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -151,7 +146,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 190/222 done · 5 running · 2 queued · 3 blocked · 9 abandoned · 13 invisible | — |
+| _(no epic)_ | `[##########--]` 195/226 done · 6 running · 2 queued · 3 blocked · 10 abandoned · 10 invisible | — |
 
 ## Waiting to start
 
@@ -192,7 +187,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  416/503 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 18 invisible
+# rickylabs/harness  [################----]  421/507 done · 24 running · 23 queued · 8 blocked · 16 abandoned · 15 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  196/245 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
 
@@ -476,7 +471,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #490 App video retake: scoped agent review and live actions
     shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
 
-## (no milestone)  [#################---]  220/258 done · 6 running · 3 queued · 5 blocked · 9 abandoned · 15 invisible
+## (no milestone)  [#################---]  225/262 done · 7 running · 3 queued · 5 blocked · 10 abandoned · 12 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -741,14 +736,18 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR505 fix(contracts): hold issue-agent trees for 30 s, three watch intervals (p1)
     shipped              #506 A Codex agent that finished on its own shows ended with no end time (p1)
     shipped              PR507 fix(telemetry): a Codex agent that finished on its own ends at its terminal record's time (p1)
-    no status            #508 Codex issue-feed proof from the cockpit launch path (RESWEEP)
+    shipped              #508 Codex issue-feed proof from the cockpit launch path (RESWEEP)
     shipped              #509 [rickylabs/harness#508] Codex issue-feed proof from the cockpit launch path (RESWEEP)
     no status            #510 [rickylabs/harness#508] Codex issue-feed proof from the cockpit launch path (RESWEEP)
-    no status            #511 Codex issue-feed proof from the cockpit launch path (RESWEEP 3)
+    shipped              #511 Codex issue-feed proof from the cockpit launch path (RESWEEP 3)
     no status            #512 [rickylabs/harness#511] Codex issue-feed proof from the cockpit launch path (RESWEEP 3)
-    no status            #513 Claude issue-feed proof from the cockpit launch path (RESWEEP 4)
+    shipped              #513 Claude issue-feed proof from the cockpit launch path (RESWEEP 4)
     shipped              #514 [rickylabs/harness#513] Claude issue-feed proof from the cockpit launch path (RESWEEP 4)
-    plan                 #515 [rickylabs/harness#513] Claude issue-feed proof from the cockpit launch path (RESWEEP 4)
+    shipped              #515 [rickylabs/harness#513] Claude issue-feed proof from the cockpit launch path (RESWEEP 4)
+    shipped              #516 [rickylabs/harness#513] Claude issue-feed proof from the cockpit launch path (RESWEEP 4)
+    impl-eval            #517 A Claude child that works past its Start window is never shown running (p1)
+    no status            PR518 fix(telemetry): a Claude child stays running on its own activity past its Start window (p1)
+    impl-eval            PR519 fix(telemetry): a Claude child stays running on its own activity past its Start window (p1)
 ```
 
 </details>
