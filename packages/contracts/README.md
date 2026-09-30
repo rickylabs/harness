@@ -563,6 +563,11 @@ bounded typed history. The decoder rejects native IDs, extra fields, invalid bud
 ancestry passed off as complete. A native child provider is not renamed to router, and a root budget
 is not inherited by a child.
 
+Liveness is `running`, `idle`, `ended` or `unknown`. `idle` is a runtime observation that the agent
+has stopped at its prompt: it is not running, and it is not ended, because it can be prompted
+again. Its observation carries `running: false` with the same time and a validity at least as
+long as the frame's. A `false` running bit is accepted only beside `idle`.
+
 Each agent and history event repeats the enclosing dispatch ID so the cockpit can join only to its
 accepted dispatch receipt. The snapshot has a 30-second `validUntil` bound (0.25.0; earlier
 producers used 15 seconds, and the decoder still accepts either exact bound). Host, container and seat

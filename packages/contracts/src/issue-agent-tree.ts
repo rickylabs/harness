@@ -74,6 +74,8 @@ export type AgentQuotaRegime =
 export type AgentTreeLiveness =
   | { readonly state: "unknown"; readonly evidence: null; readonly observedAt: null; readonly reason: AgentUnavailableReason }
   | { readonly state: "running"; readonly evidence: "runtime-observation"; readonly observedAt: string; readonly reason: null }
+  /** Observed stopped at its prompt: not running, and not ended (it can be prompted again). */
+  | { readonly state: "idle"; readonly evidence: "runtime-observation"; readonly observedAt: string; readonly reason: null }
   | { readonly state: "ended"; readonly evidence: "native-outcome" | "stop-observation" | "teardown-observation"; readonly observedAt: string; readonly reason: null };
 export type AgentActionState =
   | { readonly state: "unknown"; readonly observedAt: null; readonly reason: AgentUnavailableReason }
@@ -522,7 +524,7 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   const live = record(row.liveness, ["state", "evidence", "observedAt", "reason"]);
   let liveness: AgentTreeLiveness;
   if (live.state === "unknown" && live.evidence === null && live.observedAt === null) liveness = { state: "unknown", evidence: null, observedAt: null, reason: reason(live.reason) };
-  else if (live.state === "running" && live.evidence === "runtime-observation" && live.reason === null) liveness = { state: "running", evidence: "runtime-observation", observedAt: stamp(live.observedAt), reason: null };
+  else if ((live.state === "running" || live.state === "idle") && live.evidence === "runtime-observation" && live.reason === null) liveness = { state: live.state, evidence: "runtime-observation", observedAt: stamp(live.observedAt), reason: null };
   else if (live.state === "ended" && (live.evidence === "native-outcome" || live.evidence === "stop-observation" || live.evidence === "teardown-observation") && live.reason === null) liveness = { state: "ended", evidence: live.evidence, observedAt: stamp(live.observedAt), reason: null };
   else return bad();
   if (liveness.observedAt !== null && liveness.observedAt > capturedAt) return bad();
@@ -722,10 +724,10 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
         if (capacity?.availability === "available" && (a.location.host.value === null ||
           capacity.measurement.host !== a.location.host.value || capacity.validUntil === null || capacity.validUntil < validUntil)) return bad();
         const running = safe.get(a.observation.agentId)?.running;
-        if (a.liveness.state === "running") {
-          if (running?.value !== true || running.observedAt !== a.liveness.observedAt ||
+        if (a.liveness.state === "running" || a.liveness.state === "idle") {
+          if (running?.value !== (a.liveness.state === "running") || running.observedAt !== a.liveness.observedAt ||
               running.validUntil === null || running.validUntil < validUntil) return bad();
-        } else if (running?.value === true) return bad();
+        } else if (running?.value === true || running?.value === false) return bad();
         const parent = safe.get(a.observation.agentId)?.parentAgentId;
         if (a.parentAgentId !== undefined && a.parentAgentId !== (parent?.state === "known-parent" ? parent.value : null)) return bad();
         if (a.effort !== undefined) {

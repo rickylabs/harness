@@ -170,6 +170,8 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     : teardownSeatAt !== null ? { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" }
     : observation.running.value === true && observation.running.observedAt !== null
       ? { state: "running", evidence: "runtime-observation", observedAt: observation.running.observedAt, reason: null }
+    : observation.running.value === false && observation.running.observedAt !== null
+      ? { state: "idle", evidence: "runtime-observation", observedAt: observation.running.observedAt, reason: null }
       : { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" };
   // A native terminal outcome ends at its own record's time when the reader measured one
   // (run.terminalAt: Codex task_complete / error / turn_aborted), never at updatedAt, which is only
@@ -213,7 +215,8 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   // A verified seat absence supersedes a still-fresh native activity claim.
   // Clear the observation itself so the strict decoder and action consumers
   // cannot retain a contradictory running bit beside unknown/ended liveness.
-  const running = liveness.state !== "running" && observation.running.value === true
+  const running = (liveness.state !== "running" && observation.running.value === true) ||
+    (liveness.state !== "idle" && observation.running.value === false)
     ? { value: null, reason: "measurement_missing", observedAt: null, validUntil: null, revision: null } as const
     : observation.running;
   const placedObservation = { ...observation, running, cost: { ...observation.cost, localCapacity: capacity },

@@ -38,7 +38,8 @@ export interface DispatchEvidence {
   readonly teardown?: { readonly cause: "timeout" | "teardown"; readonly seatObservedAt: string | null;
     readonly processObservedAt: string | null };
   /** Verified, short-lived exact-session Herdr working observation for a Claude root. */
-  readonly claudeWorkingAt?: string;
+  /** Orchid's current herdr status for the bound Claude root: working, or stopped at its prompt. */
+  readonly claudeStatus?: { readonly state: "working" | "idle"; readonly at: string };
 
 }
 

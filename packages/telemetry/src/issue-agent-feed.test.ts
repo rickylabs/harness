@@ -81,6 +81,44 @@ it("shows a matched Claude child Start as running, while Stop leaves it unknown"
   assert.ok(!JSON.stringify(first).includes(rootId) && !JSON.stringify(first).includes(childId));
 });
 
+it("RUN-6: a Claude root stopped at its prompt is idle (observed not running), not unknown", () => {
+  // RUN-6 (2026-09-30), synthetic ids: the root worked until 11:22:26 and then sat at its prompt, which
+  // herdr reports as done. Orchid ticks every 30 s; before this, the done tick removed the working row and
+  // the app went from Running to Unknown.
+  const rootId = "fixture-claude-root";
+  const native = [{ ...run(rootId, null), source: "claude" as const, startedAt: "2026-09-30T11:20:43.000Z", updatedAt: "2026-09-30T11:22:26.000Z" }];
+  const tree = (claudeStatus: DispatchEvidence["claudeStatus"], capturedAt: string) => {
+    const d = { ...dispatch, source: "claude" as const, harness: "claude" as const, external: rootId,
+      ...(claudeStatus === undefined ? {} : { claudeStatus }) };
+    const observations = buildAgentObservations({ dispatches: [d], runs: native, observedAt: capturedAt,
+      sourceBound: true, dispatchComplete: true, nativeComplete: true });
+    const snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: [d], runs: native });
+    assert.ok(readIssueAgentTreeSnapshot(JSON.parse(JSON.stringify(snapshot))).ok, capturedAt);
+    return { snapshot, root: snapshot.issues[0]!.dispatches[0]!.agents[0]! };
+  };
+  const working = tree({ state: "working", at: "2026-09-30T11:22:26.000Z" }, "2026-09-30T11:22:30.000Z").root;
+  assert.equal(working.liveness.state, "running");
+  // The tick after the turn ended: herdr said done, so the row is idle.
+  const { snapshot, root: idle } = tree({ state: "idle", at: "2026-09-30T11:22:56.000Z" }, "2026-09-30T11:23:05.000Z");
+  assert.deepEqual(idle.liveness, { state: "idle", evidence: "runtime-observation", observedAt: "2026-09-30T11:22:56.000Z", reason: null });
+  assert.equal(idle.observation.running.value, false);
+  assert.equal(idle.terminalOutcome.value, null); // Not ended: it can be prompted again.
+  // No row (blocked, or no verified observation) and a stale idle row both stay unknown.
+  assert.equal(tree(undefined, "2026-09-30T11:23:05.000Z").root.liveness.state, "unknown");
+  assert.equal(tree({ state: "idle", at: "2026-09-30T11:22:56.000Z" }, "2026-09-30T11:24:00.000Z").root.liveness.state, "unknown");
+  // The poke at 11:31:04 made it work again: the next working tick is running again.
+  assert.equal(tree({ state: "working", at: "2026-09-30T11:31:26.000Z" }, "2026-09-30T11:31:30.000Z").root.liveness.state, "running");
+  // The strict reader refuses idle liveness that disagrees with its observation, and a false bit outside idle.
+  const tamper = (edit: (agent: Record<string, any>) => void) => {
+    const copy = JSON.parse(JSON.stringify(snapshot));
+    edit(copy.issues[0].dispatches[0].agents[0]);
+    return readIssueAgentTreeSnapshot(copy).ok;
+  };
+  assert.equal(tamper(agent => { agent.observation.running.value = true; }), false);
+  assert.equal(tamper(agent => { agent.liveness = { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" }; }), false);
+  assert.ok(!JSON.stringify(snapshot).includes(rootId));
+});
+
 it("ends a verified Claude sidechain only after its own dispatch has seat and process absence", () => {
   const rootId = "fixture-claude-root", childId = "agent-fixture-child";
   const claudeDispatch = { ...dispatch, source: "claude" as const, harness: "claude" as const, external: rootId };
