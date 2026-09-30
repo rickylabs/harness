@@ -13,7 +13,7 @@ const opaque = (kind: "agent" | "assignment", value: string) => `${kind}_${diges
 const missing = <T>(reason: AgentUnavailableReason = "source_not_bound"): AgentObservedValue<T> =>
   ({ value: null, reason, observedAt: null, validUntil: null, revision: null });
 const nativeKey = (source: string, id: string) => `${source}\0${id}`;
-// A consumer may display a tree for its full 15-second validity. Reserve that
+// A consumer may display a tree for its full validity (ISSUE_AGENT_TREE_FRESH_MS). Reserve that
 // interval inside the two-minute native-activity window before claiming running.
 const NATIVE_RUNNING_MS = 120_000;
 const CLAUDE_STATUS_MS = 90_000;

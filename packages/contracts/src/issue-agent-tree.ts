@@ -4,7 +4,17 @@ import { readAgentObservations, MAX_AGENT_OBSERVATIONS, AGENT_UNAVAILABLE_REASON
 import type { RepoRef } from "./snapshot.js";
 
 export const ISSUE_AGENT_TREE_SCHEMA = 1 as const;
-export const ISSUE_AGENT_TREE_FRESH_MS = 15_000;
+/**
+ * How long a produced issue-agent tree claims to hold. At the watch's 5-second cadence with 2-7 s
+ * reads, 15 s left about 3 s of slack, and one slow read expired the tree for every reader. 30 s
+ * is at least three times the effective cadence.
+ */
+export const ISSUE_AGENT_TREE_FRESH_MS = 30_000;
+/**
+ * The validity windows a reader accepts: the current one and the earlier 15-second one, so
+ * readers can upgrade before producers do. Any other window is refused, as before.
+ */
+export const ISSUE_AGENT_TREE_ACCEPTED_FRESH_MS: readonly number[] = [15_000, ISSUE_AGENT_TREE_FRESH_MS];
 export const MAX_ISSUE_AGENT_TREE_BYTES = 2_097_152;
 export const MAX_AGENT_HISTORY = 16;
 export const MAX_AGENT_RESOURCE_POINTS = 16;
@@ -234,7 +244,7 @@ export interface IssueAgentTreeSnapshot {
   readonly schema: 1;
   readonly protocol: 1;
   readonly observedAt: string;
-  /** A stopped 5-second producer is stale after 15 seconds. */
+  /** observedAt + ISSUE_AGENT_TREE_FRESH_MS: a stopped 5-second producer is stale after 30 seconds. */
   readonly validUntil: string;
   readonly revision: string;
   /** Dispatch/native ancestry coverage, not a claim that every optional field is observed. */
@@ -621,7 +631,8 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
     if (row.schema !== 1 || row.protocol !== 1) return bad("unsupported-schema");
     const observedAt = stamp(row.observedAt);
     const validUntil = stamp(row.validUntil);
-    if (validUntil !== new Date(Date.parse(observedAt) + ISSUE_AGENT_TREE_FRESH_MS).toISOString()) return bad();
+    if (!ISSUE_AGENT_TREE_ACCEPTED_FRESH_MS.some((ms) =>
+      validUntil === new Date(Date.parse(observedAt) + ms).toISOString())) return bad();
     if (typeof row.revision !== "string" || !/^[a-f0-9]{64}$/.test(row.revision) || typeof row.complete !== "boolean") return bad();
     if (row.complete ? row.reason !== null : !["source_not_bound", "source_unavailable", "binding_unavailable", "scan_limit", "ancestry_unavailable"].includes(row.reason as string)) return bad();
     const issues: IssueAgentTree[] = [];

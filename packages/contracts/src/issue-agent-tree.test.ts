@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
 import { projectRouteIdentity } from "./route.js";
-import { readIssueAgentTreeSnapshot, type IssueAgentTreeSnapshot } from "./issue-agent-tree.js";
+import { ISSUE_AGENT_TREE_FRESH_MS, readIssueAgentTreeSnapshot, type IssueAgentTreeSnapshot } from "./issue-agent-tree.js";
 import { unavailableAgentCost, type AgentObservation } from "./agent-observations.js";
 
 const at = "2026-01-01T00:00:00.000Z", rev = "a".repeat(64), dispatchId = "assignment_" + "b".repeat(64);
@@ -397,6 +397,16 @@ it("rejects a getter before reading its value", () => {
   Object.defineProperty(s, "issues", { enumerable: true, get() { called = true; throw Error("PRIVATE-CANARY"); } });
   assert.equal(read(s).ok, false);
   assert.equal(called, false);
+});
+it("accepts the 30-second validity and the legacy 15-second one, and nothing in between or beyond", () => {
+  const s = snapshot();
+  assert.equal(ISSUE_AGENT_TREE_FRESH_MS, 30_000);
+  assert.equal(read({ ...s, validUntil: "2026-01-01T00:00:30.000Z" }).ok, true);
+  assert.equal(read({ ...s, validUntil: "2026-01-01T00:00:15.000Z" }).ok, true);
+  for (const validUntil of ["2026-01-01T00:00:20.000Z", "2026-01-01T00:00:29.999Z",
+    "2026-01-01T00:00:30.001Z", "2026-01-01T00:00:45.000Z", "2026-01-01T00:00:00.000Z"]) {
+    assert.equal(read({ ...s, validUntil }).ok, false, validUntil);
+  }
 });
 it("pins dispatch identity and freshness, and separates placement from runtime and terminal evidence", () => {
   const s = snapshot();

@@ -564,7 +564,8 @@ ancestry passed off as complete. A native child provider is not renamed to route
 is not inherited by a child.
 
 Each agent and history event repeats the enclosing dispatch ID so the cockpit can join only to its
-accepted dispatch receipt. The snapshot has a 15-second `validUntil` bound. Host, container and seat
+accepted dispatch receipt. The snapshot has a 30-second `validUntil` bound (0.25.0; earlier
+producers used 15 seconds, and the decoder still accepts either exact bound). Host, container and seat
 are individually nullable and distinguish dispatch placement from runtime observation; 0.6.0 adds
 verified dispatch-host placement while container and seat remain unavailable. A terminal
 native outcome reports succeeded, failed or cancelled only when its exact cause is known; an
@@ -591,15 +592,15 @@ per-frame read bound. Other native transports report `binding_unavailable` until
 binding is implemented.
 
 `--interval-ms` defaults to 5000 and is capped at 10000 so a normal watch cadence stays within
-the 15-second validity bound. A scan that crosses its own validity deadline emits an incomplete
+the 30-second validity bound, three intervals at the default cadence. A scan that crosses its own validity deadline emits an incomplete
 snapshot. Public display labels reject slash paths; slash-bearing model IDs remain unavailable
 until a safely attributed grammar is defined.
 
 A `running` row requires a validated native running observation with the same evidence timestamp.
-The observation's own `validUntil` must cover the entire 15-second snapshot validity interval;
+The observation's own `validUntil` must cover the entire snapshot validity interval;
 otherwise the 0.5.3 decoder rejects the frame. An unknown or ended row cannot carry a current
 `running=true` observation. The current Codex producer uses a native active
-task and last recognized event within 105 seconds of capture, then expires that observation 120
+task and last recognized event within 90 seconds of capture, then expires that observation 120
 seconds after the event. A missing or stale event remains explicitly unknown; a native terminal
 event reports ended. This is a bounded transcript inference, so an abrupt exit without a terminal
 event can leave running visible until the two-minute deadline.
@@ -842,3 +843,13 @@ Cockpit supplies the run and revision from its trusted storage and separately ve
 the artifact ID exists in its private ledger. This public reference alone neither proves
 artifact storage nor releases the next phase; Cockpit still applies the dependency, reviewer
 and owner-approval gates before dispatching it.
+
+## Issue-agent tree validity (0.25.0)
+
+`ISSUE_AGENT_TREE_FRESH_MS` is now 30 seconds, three intervals of the default five-second watch
+cadence. A read that takes several seconds no longer lets a frame expire before its successor
+arrives. `readIssueAgentTreeSnapshot` accepts `validUntil` exactly `observedAt` plus 30 seconds
+or plus the earlier 15 seconds (`ISSUE_AGENT_TREE_ACCEPTED_FRESH_MS`), and nothing else, so a
+reader on 0.25.0 decodes frames from both older and newer producers. Upgrade readers before
+producers. A running observation must still cover the whole snapshot validity, so the Codex
+producer now keeps running only for native events at most 90 seconds old at capture.

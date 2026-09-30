@@ -42,6 +42,8 @@ it("measures running for a bound native task through the full frame validity", (
     run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT", "running")];
   const snapshot = build(dispatch, active, capture);
   assert.equal(snapshot.complete, true);
+  // Three watch intervals (5 s cadence, reads up to 7 s) fit inside one frame's validity.
+  assert.equal(Date.parse(snapshot.validUntil) - Date.parse(snapshot.observedAt), 30_000);
   const agents = snapshot.issues[0]?.dispatches[0]?.agents ?? [];
   assert.equal(agents.length, 2);
   for (const agent of agents) {
@@ -188,9 +190,9 @@ it("ends a verified Claude child on its parent's own completion notification, fa
 it("expires running before frame validity can outlive the native activity window", () => {
   const active = [run("PRIVATE-NATIVE-ROOT", null, "running"),
     run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT", "running")];
-  const edge = build(dispatch, active, "2026-01-01T00:01:46.000Z"); // event age 105 seconds
+  const edge = build(dispatch, active, "2026-01-01T00:01:31.000Z"); // event age 90 seconds
   assert.equal(edge.issues[0]?.dispatches[0]?.agents.every(agent => agent.liveness.state === "running"), true);
-  const expired = build(dispatch, active, "2026-01-01T00:01:46.001Z");
+  const expired = build(dispatch, active, "2026-01-01T00:01:31.001Z");
   assert.equal(expired.issues[0]?.dispatches[0]?.agents.every(agent =>
     agent.liveness.state === "unknown" && agent.observation.running.reason === "source_stale"), true);
   const future = build(dispatch, [{ ...run("PRIVATE-NATIVE-ROOT", null, "running"),
@@ -457,7 +459,7 @@ it("binds a measured capacity row only to the exact local placement host", () =>
   const available: HostCapacityReading = { host: "fixture-node", cost: {
     kind: "local_capacity", unit: "bytes", source: "dsh-telemetry.host-capacity", scope: "host",
     availability: "available", measurement, reason: null, observedAt: later,
-    validUntil: "2026-01-01T00:00:16.000Z", revision: "c".repeat(64),
+    validUntil: "2026-01-01T00:00:31.000Z", revision: "c".repeat(64),
   } };
   const placed = { ...dispatch, host: "fixture-node" };
   const matching = build(placed, runs, later, available);
