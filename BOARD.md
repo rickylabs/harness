@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **415/502 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 18 invisible**
+`[################----]` **416/503 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 18 invisible**
 
-_Latest board activity: 2026-09-30T10:32:28Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-30T11:06:35Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -49,7 +49,7 @@ Something could be acting on these right now.
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 | [PR495 test(telemetry): app-video-retake--490 review evidence](https://github.com/rickylabs/harness/pull/495) | `impl-eval` | — |
-| [#514 [rickylabs/harness#513] Claude issue-feed proof from the cockpit launch path (RESWEEP 4)](https://github.com/rickylabs/harness/issues/514) | `plan` | — |
+| [#515 [rickylabs/harness#513] Claude issue-feed proof from the cockpit launch path (RESWEEP 4)](https://github.com/rickylabs/harness/issues/515) | `plan` | — |
 
 ## Not on the board (5)
 
@@ -143,7 +143,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 219/257 done · 6 running · 3 queued · 5 blocked · 9 abandoned · 15 invisible
+`[##########--]` 220/258 done · 6 running · 3 queued · 5 blocked · 9 abandoned · 15 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -151,7 +151,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 189/221 done · 5 running · 2 queued · 3 blocked · 9 abandoned · 13 invisible | — |
+| _(no epic)_ | `[##########--]` 190/222 done · 5 running · 2 queued · 3 blocked · 9 abandoned · 13 invisible | — |
 
 ## Waiting to start
 
@@ -192,7 +192,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  415/502 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 18 invisible
+# rickylabs/harness  [################----]  416/503 done · 23 running · 23 queued · 8 blocked · 15 abandoned · 18 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  196/245 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
 
@@ -476,7 +476,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #490 App video retake: scoped agent review and live actions
     shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
 
-## (no milestone)  [#################---]  219/257 done · 6 running · 3 queued · 5 blocked · 9 abandoned · 15 invisible
+## (no milestone)  [#################---]  220/258 done · 6 running · 3 queued · 5 blocked · 9 abandoned · 15 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -747,7 +747,8 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #511 Codex issue-feed proof from the cockpit launch path (RESWEEP 3)
     no status            #512 [rickylabs/harness#511] Codex issue-feed proof from the cockpit launch path (RESWEEP 3)
     no status            #513 Claude issue-feed proof from the cockpit launch path (RESWEEP 4)
-    plan                 #514 [rickylabs/harness#513] Claude issue-feed proof from the cockpit launch path (RESWEEP 4)
+    shipped              #514 [rickylabs/harness#513] Claude issue-feed proof from the cockpit launch path (RESWEEP 4)
+    plan                 #515 [rickylabs/harness#513] Claude issue-feed proof from the cockpit launch path (RESWEEP 4)
 ```
 
 </details>
