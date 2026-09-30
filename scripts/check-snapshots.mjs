@@ -89,6 +89,7 @@ const SYNTHETIC_CONTRACT_FIXTURES = {
   "packages/contracts/test-fixtures/governance-read/degraded-log.json": "e10022e319cccd54e2313592e1901ddd0d0bb245f1cfa550519d5e6825d9d753",
   "packages/contracts/test-fixtures/governance-read/mixed-timeout.json": "458ab0f127467fb4ecbcebfd353350fd87e9cc369362a16ff33849d3ee57b341",
   "packages/contracts/test-fixtures/governance-read/stale.json": "42be209b2ae8bbb4b27764b0cfabcc36acc305d67c0b02acbb845f3234c51d8d",
+  "packages/contracts/test-fixtures/governance-read/transport-availability.json": "ef302bd910dd043de80a654a6f5e302f1b71ec1065cd382b3c052da568ef35f2",
   "packages/contracts/test-fixtures/governance-read/unavailable-not-configured.json": "fccae4390e0e2b50d2e1c83dbb2a41560c0fff2d3a2c68d0020c5dc208e94e5f"
 };
 

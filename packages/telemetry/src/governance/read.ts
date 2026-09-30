@@ -11,7 +11,8 @@ export function governanceRead(observed: ComposedGovernance, evaluatedAt: string
       : [observed.coverage.usage, observed.coverage.spend, observed.coverage.capacity, observed.coverage.admissions]
         .every(source => source.status === "not-configured") ? "not-configured" : "no-successful-sources"
     : null) satisfies UnavailableReason | null;
-  const document = { ...common, availability: view.availability, observedAt: view.observedAt,
+  const document = { ...common, ...(observed.transportAvailability === undefined ? {} : { transportAvailability: observed.transportAvailability }),
+    availability: view.availability, observedAt: view.observedAt,
     validUntil: view.validUntil, provenance: view.provenance, unavailableReason,
     state: view.state, admissions: view.admissions.map(a => ({ item: a.item.number, regime: a.regime,
       state: a.state, observedAt: a.observedAt, validUntil: a.validUntil, freshness: a.availability,

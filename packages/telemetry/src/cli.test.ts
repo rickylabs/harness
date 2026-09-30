@@ -787,6 +787,15 @@ async function cliProcess(args: string[], stdin = "", program?: string): Promise
 }
 
 describe("live governance CLI and services", () => {
+  it("TA (0.28.0): the descriptor key is optional; a configured source names one absolute path", () => {
+    assert.equal(parseSource(liveDescriptor()).transportAvailability, null);
+    assert.equal(parseSource({ ...liveDescriptor(), transportAvailability: null }).transportAvailability, null);
+    assert.deepEqual(parseSource({ ...liveDescriptor(), transportAvailability: { path: "/fixture/governance/transport-availability.json" } })
+      .transportAvailability, { path: "/fixture/governance/transport-availability.json" });
+    for (const bad of [{ path: "relative.json" }, { path: "/fixture/x.json", extra: 1 }, {}, "path", 1]) {
+      assert.throws(() => parseSource({ ...liveDescriptor(), transportAvailability: bad }));
+    }
+  });
   it("pins the env-only permission vector and minimizes child environment; no credential argv", async () => {
     const config = parseSource(liveDescriptor()).usage!;
     const command = usageCommand(config, USAGE_CANARY);
@@ -996,6 +1005,56 @@ describe("published governance one-shot command", () => {
     for (const canary of [USAGE_CANARY, SPEND_CANARY, PRIVATE_CANARY, d.usage.denoBin, d.usage.model, d.usage.credentialEnv, d.capacity.cgroupRoot]) assert.ok(!out.includes(canary));
     assert.ok(!out.includes('"detail"'));
     assert.equal(out, await readFile(new URL("../../contracts/test-fixtures/governance-read/mixed-timeout.json", import.meta.url), "utf8"));
+  });
+  // The exact bytes divybot's transport_availability.go writes (Go json.Marshal, millisecond UTC).
+  const DIVYBOT_SNAPSHOT = '{"schemaVersion":1,"observedAt":"2026-09-07T11:59:50.000Z","validUntil":"2026-09-07T12:00:50.000Z",' +
+    '"transports":[{"transport":"claude","available":false,"reason":"weekly-ceiling"},{"transport":"codex","available":true,"reason":null},' +
+    '{"transport":"agy","available":false,"reason":"no-capacity"}]}';
+  it("TA (0.28.0): divybot's snapshot, configured in the descriptor, becomes the installed-format document", async () => {
+    const d = liveDescriptor();
+    d.capacity.scopeLabel = "synthetic-cgroup";
+    const e = admissionEvent(); e.detail.item.number = 7;
+    await admissions([e]);
+    const snapshotPath = join(home, "governance", "transport-availability.json");
+    const reads: string[] = [];
+    const { code, out } = await invoke({ ...d, spend: null, transportAvailability: { path: snapshotPath } }, {
+      usage: async () => { throw new SourceError("timeout"); },
+      readPrivateText: async file => { reads.push(file); return DIVYBOT_SNAPSHOT; } });
+    assert.equal(code, EXIT.incomplete);
+    assert.deepEqual(reads, [snapshotPath]);
+    assert.ok(!out.includes(snapshotPath));
+    assert.equal(out, await readFile(new URL("../../contracts/test-fixtures/governance-read/transport-availability.json", import.meta.url), "utf8"));
+  });
+  it("TA (0.28.0): an unreadable or malformed snapshot is failed coverage and an incomplete document; unconfigured adds no keys", async () => {
+    // Complete on its own (T4/BI2), so only the transport availability source can make it incomplete.
+    const d = { ...liveDescriptor(), admissions: null };
+    const good = await invoke({ ...d, transportAvailability: { path: join(home, "ok.json") } },
+      { readPrivateText: async () => DIVYBOT_SNAPSHOT.replace("12:00:50.000Z", "12:10:00.000Z") });
+    assert.equal(good.code, EXIT.ok);
+    assert.equal(JSON.parse(good.out).complete, true);
+    assert.equal(JSON.parse(good.out).sources.transportAvailability.status, "read");
+    for (const [read, reason] of [
+      [async () => { throw new SourceError("file-unreadable"); }, "file-unreadable"],
+      [async () => "{not json", "non-json"],
+      [async () => DIVYBOT_SNAPSHOT.replace('"reason":null', '"reason":"no-capacity"'), "shape-mismatch"],
+      [async () => { throw new Error("PRIVATE_CANARY"); }, "file-unreadable"],
+    ] as const) {
+      const { code, out } = await invoke({ ...d, transportAvailability: { path: join(home, "absent.json") } }, { readPrivateText: read });
+      assert.equal(code, EXIT.incomplete);
+      const document = JSON.parse(out);
+      assert.deepEqual(document.sources.transportAvailability, { status: "failed", reason });
+      assert.equal(document.transportAvailability, null);
+      assert.equal(document.complete, false);
+      assert.ok(document.notes.includes(`transportAvailability: ${reason}`));
+      assert.equal(readGovernanceSnapshot(document).ok, true);
+      assert.ok(!out.includes("PRIVATE_CANARY"));
+    }
+    // A snapshot past its validity is discarded, not shown.
+    const stale = await invoke({ ...d, transportAvailability: { path: join(home, "stale.json") } },
+      { readPrivateText: async () => DIVYBOT_SNAPSHOT.replace("12:00:50.000Z", "11:59:55.000Z") });
+    assert.deepEqual(JSON.parse(stale.out).sources.transportAvailability, { status: "discarded", reason: "stale-source" });
+    const unconfigured = JSON.parse((await invoke(d)).out);
+    assert.ok(!Object.hasOwn(unconfigured, "transportAvailability") && !Object.hasOwn(unconfigured.sources, "transportAvailability"));
   });
   it("T3 rejects every unsupported flag and malformed time before source effects", async () => {
     let calls = 0;

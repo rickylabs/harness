@@ -10,7 +10,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const directory = "packages/contracts/test-fixtures/governance-read";
 const runFixture = "packages/contracts/test-fixtures/repository-run-observation/read.json";
 const names = ["admissions-only", "complete-without-admissions", "conflicting-admissions",
-  "degraded-log", "mixed-timeout", "stale", "unavailable-not-configured"];
+  "degraded-log", "mixed-timeout", "stale", "transport-availability", "unavailable-not-configured"];
 function probe(change, expected, diagnostic) {
   const scratch = mkdtempSync(join(tmpdir(), "snapshot-guard-"));
   // Exclude ambient Git index/worktree settings. Every git mutation is scratch-owned.
@@ -41,7 +41,7 @@ function track(scratch, file, body) {
     PATH: process.env.PATH, HOME: scratch, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null",
   } });
 }
-test("exact eight tracked fixtures pass", () => probe(() => {}, 0, /8 exact synthetic fixtures verified/));
+test("exact nine tracked fixtures pass", () => probe(() => {}, 0, /9 exact synthetic fixtures verified/));
 test("changed bytes fail even with identical JSON meaning", () => probe(scratch => {
   writeFileSync(target(scratch), readFileSync(target(scratch), "utf8") + "\n");
 }, 1, /exact SHA-256 match required/));

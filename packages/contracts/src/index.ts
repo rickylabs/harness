@@ -257,7 +257,8 @@ export type * from "./state-store.js";
 
 export {
   GOVERNANCE_READ_SCHEMA, GOVERNANCE_SOURCE_NAMES, SOURCE_FAILURE_REASONS, SOURCE_DISCARD_REASONS,
-  ADMISSION_DROP_REASONS, UNAVAILABLE_REASONS, readGovernanceSnapshot,
+  ADMISSION_DROP_REASONS, UNAVAILABLE_REASONS, MATRIX_TRANSPORTS, TRANSPORT_UNAVAILABLE_REASONS, readGovernanceSnapshot,
+  type MatrixTransport, type TransportUnavailableReason, type TransportAvailabilityRow, type TransportAvailability,
   type GovernanceSourceName, type SourceFailureReason, type SourceDiscardReason, type AdmissionDropReason,
   type UnavailableReason, type MeterCoverage, type AdmissionCoverage, type GovernanceSourceCoverage,
   type RecordedAdmission, type GovernanceReadSnapshot, type GovernanceReading,
