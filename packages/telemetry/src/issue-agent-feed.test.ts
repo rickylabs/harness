@@ -250,6 +250,27 @@ it("groups issue, dispatch, root and child without leaking native identity or pa
   assert.equal(root.endedAt, null); // updatedAt is last activity, even after a terminal outcome.
   assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
 });
+it("ends a Codex child that finished natively at its exact terminal record time, never at its last activity (RUN-453)", () => {
+  const ended = "2026-01-01T00:00:00.500Z";
+  const child = (extra: Partial<RunRecord>) => ({ ...run("PRIVATE-NATIVE-CHILD", "PRIVATE-NATIVE-ROOT", "complete"), nativeDepth: 1, ...extra });
+  const childOf = (native: RunRecord[]) => {
+    const snapshot = build(dispatch, native);
+    assert.ok(readIssueAgentTreeSnapshot(snapshot).ok);
+    return (snapshot.issues[0]?.dispatches[0]?.agents ?? []).find(a => a.observation.parentAgentId.state === "known-parent");
+  };
+  const measured = childOf([runs[0]!, child({ terminalAt: ended })]);
+  assert.equal(measured?.liveness.state, "ended");
+  assert.equal(measured?.endedAt, ended);
+  assert.equal(measured?.endedAtReason, null);
+  assert.deepEqual(measured?.timeline?.events.filter(e => e.kind === "ended").map(e => e.at), [ended]);
+  // No exact terminal time, or one before the start: still unknown, as before.
+  for (const extra of [{}, { terminalAt: "2025-12-31T23:59:59.000Z" }]) {
+    const unmeasured = childOf([runs[0]!, child(extra)]);
+    assert.equal(unmeasured?.liveness.state, "ended");
+    assert.equal(unmeasured?.endedAt, null);
+    assert.equal(unmeasured?.endedAtReason, "measurement_missing");
+  }
+});
 it("projects bound root-dispatch revisions on root and child, and marks an old writer unavailable", () => {
   const pinned: DispatchEvidence = { ...dispatch,
     profileRevision: { value: "c".repeat(40), scope: "root-dispatch", source: "dispatch", reason: null },
