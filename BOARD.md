@@ -4,7 +4,7 @@
 
 `[################----]` **431/516 done · 23 running · 23 queued · 8 blocked · 16 abandoned · 15 invisible**
 
-_Latest board activity: 2026-09-30T16:04:00Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-30T16:28:54Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -49,7 +49,7 @@ Something could be acting on these right now.
 | [#349 Brainstorm: dual-agent mailbox pilot contract (draft)](https://github.com/rickylabs/harness/issues/349) | `research` | `e11` |
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 | [PR495 test(telemetry): app-video-retake--490 review evidence](https://github.com/rickylabs/harness/pull/495) | `impl-eval` | — |
-| [PR528 chore(routing): default Codex work to Sol 6.1 xhigh](https://github.com/rickylabs/harness/pull/528) | `impl-eval` | — |
+| [PR528 chore(routing): adopt Sol 6.1 low and xhigh defaults](https://github.com/rickylabs/harness/pull/528) | `impl-eval` | — |
 
 ## Not on the board (2)
 
@@ -60,13 +60,14 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
 
-## Anomalies (35)
+## Anomalies (36)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#528** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 
 **`epic-closed-by-child`**
 
@@ -755,7 +756,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR525 fix(telemetry): a Claude root that finished before a teardown ends succeeded (p1)
     shipped              #526 The governance read carries the dispatcher's transport availability (p1)
     shipped              PR527 feat(contracts): the governance read carries the dispatcher's transport availability (p1)
-    impl-eval            PR528 chore(routing): default Codex work to Sol 6.1 xhigh
+    impl-eval            PR528 chore(routing): adopt Sol 6.1 low and xhigh defaults
 ```
 
 </details>
