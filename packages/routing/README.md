@@ -11,7 +11,8 @@ sniffing and no default: a version is read from the `schemaVersion` integer, and
 functions keep version-1 parameter types so a fleet document cannot reach a lane resolver.
 
 The legacy v1/v2 document loader remains configuration-first, with no missing-document fallback.
-The pinned fleet authority for Orchid and Cockpit now lives in [`matrix/`](matrix/): a complete
+The interim pinned fleet adapter for Orchid and Cockpit lives in [`matrix/`](matrix/), reading
+[versioned fleet data](config/routing.fleet.v2.json): a complete
 role × tier matrix, logical model catalog, route resolver, owner override and evaluator rules.
 Those consumers will pin a Harness commit and import its source directly after cutover. The profile still selects
 the packaged [v1 compatibility transcription](config/routing.v1.json) until each consumer moves.
@@ -111,8 +112,9 @@ filled, defaulted or coerced; absence never means a default.
 | `families`, `capabilities` | Opaque identifiers. A family cannot be `any` or `none`; capabilities may be an empty list |
 | `efforts` | As version 1: a nonempty `ordered` ladder plus an optional `unordered` vocabulary |
 | `providers` | Provider **identities** only, with an optional description. Accounts, subscriptions and client versions are step 4 (#274) |
+| optional `routers` | Complete provider-prefix vocabulary, as in v1. Omission preserves the earlier v2 vocabulary; an explicit empty catalog stays empty |
 | `providerPrecedence` | A permutation of the declared provider names: every one exactly once, so none is unreachable by silence |
-| `models` | Each key is the identifier cells reference. Each record binds a family, optional capabilities, optional `approvedRelayEvaluator: true`, and a nonempty `launches` list |
+| `models` | Each key is the identifier cells reference. Each record binds a family, optional `label`, unique `launcherAlias` for interim API approval, optional capabilities, optional `approvedRelayEvaluator: true`, and a nonempty `launches` list |
 | `roles` | What each role certifies and evaluates, what capabilities it requires, what restricts it, and whether it is owner-selected |
 | `tiers` | Ordered tiers, each with a cell per declared role, optional loop policies per generation role, and an optional `authorization` that makes it privileged |
 | `coordinators` | Ordered candidates per scope. An empty scope and an empty coordinator set are legal and explicit |

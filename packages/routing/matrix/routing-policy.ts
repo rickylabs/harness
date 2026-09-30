@@ -1,6 +1,8 @@
 /** Ported from the pinned fleet resolver at NetScript 0985265; Harness owns this policy. */
 /** Active route resolution derived from the owner-ratified delegation matrix. */
 
+import type { MatrixLoadedConfiguration } from './configuration-contract.ts';
+import { routeLaunchability, type LauncherInventory, type Launchability } from './launchability.ts';
 import { OPENCODE_TOOL } from './versions.ts';
 import type {
   AgentKind,
@@ -10,6 +12,9 @@ import type {
   SessionIdentity,
 } from './contract.ts';
 import {
+  MATRIX_AUTHORITY,
+  matrixAuthority,
+  type MatrixAuthority,
   assertOwnerMatrixOverride,
   assertPrivilegedTierAuthorization,
   COORDINATOR_MATRIX,
@@ -20,7 +25,6 @@ import {
   type LegacyRoutingLane,
   type LogicalModelId,
   MODEL_CATALOG,
-  MODEL_TRANSPORT_PRIORITY,
   modelFamily,
   type ModelRoute,
   type ModelTransport,
@@ -79,13 +83,15 @@ export const CANONICAL_COORDINATOR_POLICY: readonly CanonicalCoordinatorPolicy[]
 );
 
 export interface RouteAvailability {
+  /** Exact dispatch-host IDs. Missing observation remains unverified. */
+  readonly launcherInventory?: LauncherInventory;
   readonly unavailableModels?: readonly LogicalModelId[];
   readonly unavailableTransports?: readonly ModelTransport[];
 }
 
 export interface WorkloadRouteRequest extends RouteAvailability {
   readonly tier: WorkloadTier;
-  readonly role: DelegationRole;
+  readonly role: string;
   readonly generatorModel?: LogicalModelId;
   readonly worktree: string;
   readonly mobileRequired?: boolean;
@@ -104,6 +110,7 @@ export interface ResolvedDelegationRoute extends RouteIdentity {
   readonly family: ReturnType<typeof modelFamily>;
   readonly transport: ModelTransport;
   readonly requestedEffort: ModelRoute['effort'];
+  readonly launchability: Launchability;
   readonly privilegedTierAuthorization?: PrivilegedTierAuthorization;
   readonly ownerMatrixOverride?: OwnerMatrixOverride;
 }
@@ -128,13 +135,6 @@ const TRANSPORT_PROVIDER: Readonly<Record<ModelTransport, ProviderKind>> = {
   openrouter: 'openrouter',
 };
 
-const TRANSPORT_PROFILE = {
-  github_copilot: 'opencode-copilot',
-  opencode_go: 'opencode-go',
-  ollama: 'opencode-ollama',
-  openrouter: 'opencode-openrouter',
-} as const;
-
 function concreteEffort(effort: ModelRoute['effort']): Effort {
   return effort === 'provider_default' ? OPENCODE_TOOL.defaultVariant : effort;
 }
@@ -142,37 +142,33 @@ function concreteEffort(effort: ModelRoute['effort']): Effort {
 function resolveRouteChain(
   candidates: readonly ModelRoute[],
   request: RouteAvailability & {
-    readonly role?: DelegationRole;
+    readonly role?: string;
     readonly generatorModel?: LogicalModelId;
     readonly worktree: string;
     readonly mobileRequired?: boolean;
   },
+  authority: MatrixAuthority,
 ): ResolvedDelegationRoute {
   const unavailableModels = new Set(request.unavailableModels ?? []);
   const unavailableTransports = new Set(request.unavailableTransports ?? []);
-  const generatorFamily = request.generatorModel ? modelFamily(request.generatorModel) : undefined;
+  const generatorFamily = request.generatorModel ? modelFamily(request.generatorModel, authority) : undefined;
   for (const candidate of candidates) {
     if (unavailableModels.has(candidate.model)) continue;
-    const definition = MODEL_CATALOG[candidate.model];
+    const definition = authority.catalog[candidate.model];
+    if (!definition) throw new Error('unknown configured model');
     if (generatorFamily && definition.family === generatorFamily) continue;
     const capability = definition.capabilities.toSorted((left, right) =>
-      MODEL_TRANSPORT_PRIORITY.indexOf(left.transport) -
-      MODEL_TRANSPORT_PRIORITY.indexOf(right.transport)
+      authority.configuration.providerPrecedence.indexOf(left.transport) -
+      authority.configuration.providerPrecedence.indexOf(right.transport)
     ).find((entry) =>
       !unavailableTransports.has(entry.transport) &&
-      (!request.role || isTransportAllowedForRole(request.role, entry.transport, definition.family))
+      (!request.role || isTransportAllowedForRole(request.role, entry.transport, definition.family, authority, candidate.model, entry.launch))
     );
     if (!capability) continue;
-    return {
+    const route = {
       agent: TRANSPORT_AGENT[capability.transport],
       provider: TRANSPORT_PROVIDER[capability.transport],
-      ...(capability.transport in TRANSPORT_PROFILE
-        ? {
-          profileId: TRANSPORT_PROFILE[
-            capability.transport as keyof typeof TRANSPORT_PROFILE
-          ],
-        }
-        : {}),
+      ...(capability.profileId ? { profileId: capability.profileId } : {}),
       model: capability.model,
       effort: concreteEffort(candidate.effort),
       worktree: request.worktree,
@@ -182,27 +178,28 @@ function resolveRouteChain(
       transport: capability.transport,
       requestedEffort: candidate.effort,
     };
+    return { ...route, launchability: routeLaunchability(route, request.launcherInventory, authority) };
   }
   const pairing = generatorFamily ? ` opposite ${generatorFamily}` : '';
   throw new Error(`no available${pairing} route in the declared fallback chain`);
 }
 
 /** Resolves a workload role without consulting the retired flat lane table. */
-export function resolveWorkloadRoute(request: WorkloadRouteRequest): ResolvedDelegationRoute {
+export function resolveWorkloadRoute(request: WorkloadRouteRequest, authority: MatrixAuthority = MATRIX_AUTHORITY): ResolvedDelegationRoute {
   if (request.ownerMatrixOverride) {
-    assertOwnerMatrixOverride(request.tier, request.role, request.ownerMatrixOverride);
+    assertOwnerMatrixOverride(request.tier, request.role as DelegationRole, request.ownerMatrixOverride);
   } else {
-    assertPrivilegedTierAuthorization(request.tier, request.privilegedTierAuthorization);
+    assertPrivilegedTierAuthorization(request.tier, request.privilegedTierAuthorization, authority);
   }
-  const cell = DELEGATION_MATRIX[request.tier];
-  const candidates = request.ownerMatrixOverride
+  const cell = authority.matrix[request.tier];
+  if (!cell || !Object.hasOwn(authority.configuration.roles, request.role)) throw new Error('unknown configured tier or role');
+  const candidates: readonly ModelRoute[] = request.ownerMatrixOverride
     ? [request.ownerMatrixOverride.route]
-    : cell[request.role];
+    : (cell as unknown as Readonly<Record<string, readonly ModelRoute[]>>)[request.role]!;
   if (candidates.length === 0) {
     throw new Error(`${request.tier}/${request.role} is not applicable`);
   }
-  const evaluation = request.role === 'plan_evaluation' ||
-    request.role === 'implementation_evaluation' || request.role === 'vision_evaluation';
+  const evaluation = authority.configuration.roles[request.role]?.certifies !== undefined;
   if (evaluation && !request.generatorModel) {
     throw new Error(`${request.role} requires the selected generator model`);
   }
@@ -210,7 +207,7 @@ export function resolveWorkloadRoute(request: WorkloadRouteRequest): ResolvedDel
     ...resolveRouteChain(candidates, {
       ...request,
       role: request.ownerMatrixOverride ? undefined : request.role,
-    }),
+    }, authority),
     ...(request.privilegedTierAuthorization
       ? { privilegedTierAuthorization: request.privilegedTierAuthorization }
       : {}),
@@ -221,21 +218,36 @@ export function resolveWorkloadRoute(request: WorkloadRouteRequest): ResolvedDel
 /** Resolves an orchestrator/coordinator route from its dedicated matrix. */
 export function resolveCoordinatorRoute(
   request: CoordinatorRouteRequest,
+  authority: MatrixAuthority = MATRIX_AUTHORITY,
 ): ResolvedDelegationRoute {
-  return resolveRouteChain(COORDINATOR_MATRIX[request.tier], request);
+  const candidates = authority.coordinators[request.tier];
+  if (!candidates) throw new Error('unknown configured coordinator scope');
+  return resolveRouteChain(candidates, request, authority);
 }
 
 /** Evaluators must be both a different session and a different vendor family. */
 export function assertEvaluatorIndependence(
   generator: SessionIdentity & { readonly model: LogicalModelId },
   evaluator: SessionIdentity & { readonly model: LogicalModelId },
+  authority: MatrixAuthority = MATRIX_AUTHORITY,
 ): void {
   if (generator.sessionId === evaluator.sessionId) {
     throw new Error('generator and evaluator sessions must differ');
   }
-  if (modelFamily(generator.model) === modelFamily(evaluator.model)) {
+  if (modelFamily(generator.model, authority) === modelFamily(evaluator.model, authority)) {
     throw new Error('generator and evaluator model families must differ');
   }
+}
+
+/** #271 whole-document replacement. This never manufactures a loader result or a default. */
+export function configuredRoutingPolicy(loaded: MatrixLoadedConfiguration) {
+  const authority = matrixAuthority(loaded);
+  return {
+    authority,
+    resolveWorkloadRoute: (request: WorkloadRouteRequest) => resolveWorkloadRoute(request, authority),
+    resolveCoordinatorRoute: (request: CoordinatorRouteRequest) => resolveCoordinatorRoute(request, authority),
+    assertEvaluatorIndependence: (generator: SessionIdentity & { readonly model: LogicalModelId }, evaluator: SessionIdentity & { readonly model: LogicalModelId }) => assertEvaluatorIndependence(generator, evaluator, authority),
+  };
 }
 
 /** Explicit new-selection boundary for persisted pre-revamp lane values. */

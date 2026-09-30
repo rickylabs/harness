@@ -32,6 +32,7 @@ function ownerPolicy(value) {
   if (["luna", "sol"].includes(value.model) && Object.hasOwn(value, "effort")) {
     return { ...value, model: "sol", effort: value.model === "luna" ? "low" : "xhigh" };
   }
+  if (value.model === "grok_4_6" && Object.hasOwn(value, "effort")) return { ...value, model: "grok_4_7" };
   return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, ownerPolicy(child)]));
 }
 function markdownContent(output) {
@@ -42,7 +43,7 @@ function markdownContent(output) {
 }
 function currentMarkdown(output) {
   return output.replaceAll("Luna max", "SOL low")
-    .replace(/SOL (high|medium)/g, "SOL xhigh");
+    .replace(/SOL (high|medium)/g, "SOL xhigh").replaceAll("Grok 4.6", "Grok 4.7");
 }
 const recordedFallbacks = model => JSON.parse(reference.cases.find(recorded =>
   recorded.args.join(" ") === `--fallback ${model} --json`).stdout).matches;
@@ -51,18 +52,18 @@ const currentSolFallbacks = ownerPolicy([...recordedFallbacks("luna"), ...record
 function assertChangedFallback(args, actual) {
   const flag = Math.max(args.lastIndexOf("--fallback"), args.lastIndexOf("--fallback-of"));
   const model = args[flag + 1];
-  if (!["sol", "luna"].includes(model)) return false;
+  if (!["sol", "luna", "grok_4_6"].includes(model)) return false;
   const tier = args.includes("--tier") ? args[args.indexOf("--tier") + 1] : undefined;
   const role = args.includes("--role") ? args[args.indexOf("--role") + 1] : undefined;
-  const matches = model === "luna" ? [] : currentSolFallbacks.filter(match =>
+  const matches = model !== "sol" ? [] : currentSolFallbacks.filter(match =>
     (!tier || match.tier === tier) && (!role || match.role === role) &&
     (!(tier || role) || match.scope === "workload"));
   assert.deepEqual(JSON.parse(runMatrixView([...args, "--json"]).stdout),
     { schemaVersion: 1, mode: "fallback", model, matches }, JSON.stringify(args));
   if (!args.includes("--json")) {
-    assert.ok(actual.stdout.startsWith(`# Declared fallbacks for ${model === "sol" ? "SOL" : "Luna"}\n`));
+    assert.ok(actual.stdout.startsWith(`# Declared fallbacks for ${model === "sol" ? "SOL" : model === "luna" ? "Luna" : "Grok 4.6"}\n`));
     if (!matches.length) {
-      assert.equal(actual.stdout.trimEnd(), `# Declared fallbacks for Luna\n\nNo selected context declares this model as its primary with a fallback.`);
+      assert.equal(actual.stdout.trimEnd(), `# Declared fallbacks for ${model === "luna" ? "Luna" : "Grok 4.6"}\n\nNo selected context declares this model as its primary with a fallback.`);
     } else {
       const rows = markdownContent(actual.stdout).split("\n").filter(line => line.startsWith("|")).slice(1);
       assert.equal(rows.length, matches.length);
@@ -81,7 +82,7 @@ test("every recorded query preserves refusals and unrelated routes under the own
     const actual = runMatrixView(expected.args);
     const label = JSON.stringify(expected.args);
     assert.equal(actual.status, expected.status, label);
-    assert.equal(actual.stderr, expected.stderr, label);
+    assert.equal(actual.stderr, expected.stderr.startsWith("Unknown logical model ") ? expected.stderr.replace(/(; expected )[^\n]+/, `$1${LOGICAL_MODEL_IDS.join(", ")}`) : expected.stderr, label);
     if (!isHelp(expected)) {
       if (expected.status !== 0) {
         assert.equal(actual.stdout, expected.stdout, label);

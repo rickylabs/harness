@@ -1,0 +1,186 @@
+{
+  "lunaNative": {
+    "model": "luna",
+    "launch": 0
+  },
+  "lunaPreviousNative": {
+    "model": "luna",
+    "launch": 1
+  },
+  "lunaGo": {
+    "model": "luna",
+    "launch": 2
+  },
+  "solNative": {
+    "model": "sol",
+    "launch": 0
+  },
+  "solPreviousNative": {
+    "model": "sol",
+    "launch": 1
+  },
+  "solLegacyNative": {
+    "model": "sol",
+    "launch": 2
+  },
+  "astraNative": {
+    "model": "astra",
+    "launch": 0
+  },
+  "fable51Native": {
+    "model": "fable_5_1",
+    "launch": 0
+  },
+  "opus5Native": {
+    "model": "opus_5",
+    "launch": 0
+  },
+  "opus55Native": {
+    "model": "opus_5_5",
+    "launch": 0
+  },
+  "gemini38FlashNative": {
+    "model": "gemini_3_8_flash",
+    "launch": 0
+  },
+  "gemini38FlashCopilot": {
+    "model": "gemini_3_8_flash",
+    "launch": 1
+  },
+  "kimiK3Copilot": {
+    "model": "kimi_k3",
+    "launch": 0
+  },
+  "grok46Copilot": {
+    "model": "grok_4_6",
+    "launch": 0
+  },
+  "fable51Copilot": {
+    "model": "fable_5_1",
+    "launch": 1
+  },
+  "qwen38FlashNextGo": {
+    "model": "qwen_3_8_flash_next",
+    "launch": 0
+  },
+  "qwen38FlashNextOpenRouter": {
+    "model": "qwen_3_8_flash_next",
+    "launch": 1
+  },
+  "qwen38MaxGo": {
+    "model": "qwen_3_8_max",
+    "launch": 0
+  },
+  "qwen38MaxOpenRouter": {
+    "model": "qwen_3_8_max",
+    "launch": 1
+  },
+  "glm53FlashGo": {
+    "model": "glm_5_3_flash",
+    "launch": 0
+  },
+  "glm53FlashOllama": {
+    "model": "glm_5_3_flash",
+    "launch": 1
+  },
+  "glm53FlashOpenRouter": {
+    "model": "glm_5_3_flash",
+    "launch": 2
+  },
+  "glm53Go": {
+    "model": "glm_5_3",
+    "launch": 0
+  },
+  "glm53Ollama": {
+    "model": "glm_5_3",
+    "launch": 1
+  },
+  "glm53OpenRouter": {
+    "model": "glm_5_3",
+    "launch": 2
+  },
+  "museSpark13Go": {
+    "model": "muse_spark_1_3_contributor",
+    "launch": 0
+  },
+  "museSpark13OpenRouter": {
+    "model": "muse_spark_1_3_contributor",
+    "launch": 1
+  },
+  "minimaxM3Go": {
+    "model": "minimax_m3",
+    "launch": 0
+  },
+  "minimaxM3Ollama": {
+    "model": "minimax_m3",
+    "launch": 1
+  },
+  "minimaxM3OpenRouter": {
+    "model": "minimax_m3",
+    "launch": 2
+  },
+  "deepseekV4FlashGo": {
+    "model": "deepseek_v4_flash",
+    "launch": 0
+  },
+  "deepseekV4FlashOllama": {
+    "model": "deepseek_v4_flash",
+    "launch": 1
+  },
+  "deepseekV4FlashOpenRouter": {
+    "model": "deepseek_v4_flash",
+    "launch": 2
+  },
+  "deepseekV4FlashVisionGo": {
+    "model": "deepseek_v4_flash_vision",
+    "launch": 0
+  },
+  "deepseekV4FlashVisionOpenRouter": {
+    "model": "deepseek_v4_flash_vision",
+    "launch": 1
+  },
+  "deepseekV4ProGo": {
+    "model": "deepseek_v4_pro",
+    "launch": 0
+  },
+  "deepseekV4ProOllama": {
+    "model": "deepseek_v4_pro",
+    "launch": 1
+  },
+  "deepseekV4ProOpenRouter": {
+    "model": "deepseek_v4_pro",
+    "launch": 2
+  },
+  "kimiK3Go": {
+    "model": "kimi_k3",
+    "launch": 1
+  },
+  "kimiK3Ollama": {
+    "model": "kimi_k3",
+    "launch": 2
+  },
+  "kimiK3OpenRouter": {
+    "model": "kimi_k3",
+    "launch": 3
+  },
+  "grok46Go": {
+    "model": "grok_4_6",
+    "launch": 1
+  },
+  "grok46OpenRouter": {
+    "model": "grok_4_6",
+    "launch": 2
+  },
+  "grok47Go": {
+    "model": "grok_4_7",
+    "launch": 0
+  },
+  "grok47OpenRouter": {
+    "model": "grok_4_7",
+    "launch": 1
+  },
+  "museSpark13StandardOpenRouter": {
+    "model": "muse_spark_1_3",
+    "launch": 0
+  }
+}

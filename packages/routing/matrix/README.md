@@ -29,11 +29,42 @@ view. It never replaces the closed table above; its full, tier and role JSON equ
 from the frozen `matrix-view.e75161c.json` reference with the same owner decision applied;
 refusals and unrelated routes retain their source behavior.
 
-The legacy `routing.v1.json` profile remains readable until its consumers migrate. The
-version-2 document schema under `src/fleet.ts` remains a separate configuration reader; this
-pinned runtime is the dispatch authority for the Orchid/Cockpit cutover.
+The model catalog, labels, ordered cells, loop policies, coordinator scopes and provider precedence
+now come from [`routing.fleet.v2.json`](../config/routing.fleet.v2.json). This is an **interim**
+versioned routing document under [E11 / #270](https://github.com/rickylabs/harness/issues/270),
+not a substitute for provider discovery or the cockpit configuration editor. Its exact Grok 4.7
+and standard Muse Spark 1.3 IDs were measured and answered one-line OpenCode probes on 2026-09-30:
+Grok on Go and OpenRouter, standard Muse on OpenRouter. Contributor remains a separate catalog
+model; it does not replace the standard evaluator. Historical Grok 4.6 stays catalog-only.
+No Ollama Grok/Muse ID was served by this host's measured catalogs. Catalog inclusion elsewhere
+is not a successful launch claim. Effort support remains unknown.
 
-`openrouter-launcher-policy.ts` carries the explicit four-ID admission set of the legacy
-OpenRouter remote-model launcher. It is separate from the model capability catalog: a catalog
-entry alone does not approve a paid launch. Retired IDs and proposed new IDs remain refused
-until a separate policy decision changes this set.
+`configuredRoutingPolicy(loaded)` accepts a successful result of the #271 whole-document loader.
+The selected v2 document replaces the shipped catalog, cells, families and launcher approvals
+wholesale. It preserves source provenance and cannot merge with the shipped default. V1 inputs
+are refused. Load and validate the caller's document before constructing this adapter; an absent
+or invalid load is a refusal. Two disjoint document tests prove there is no retained default.
+The pinned raw-source bridge still imports the shipped, CI-validated JSON directly. Migrating
+those consumers to their own explicit document loaders is interim work tracked by #270; the
+bridge is not claimed to provide runtime #271 validation of arbitrary JSON. Existing executor
+vocabulary and provider-default effort are also explicitly interim. Compatibility model aliases
+are data references, not a second table of physical model IDs.
+
+The legacy `routing.v1.json` profile stays readable until its consumers migrate. Its approved
+Grok evaluator now uses the current owner ID. API spending approval is separate from model
+catalog membership: `openrouter-launcher-policy.ts` projects only explicit `launcherAlias`
+entries from the selected document. It admits the current standard Muse and Grok IDs while
+retaining the three unrelated legacy approvals; contributor and retired Grok IDs are refused.
+
+`matrix/opencode-preflight.ts` is a read-only dispatch-host check. It selects the route once,
+executes `opencode models <provider>` with a 15-second deadline and a 1 MiB output limit, and
+requires an exact provider/model line. An unavailable catalog or missing selected ID produces a
+named refusal containing the selected model and launcher. It never starts a turn or silently
+chooses another model. With no catalog observation, route resolution reports `unverified`.
+A successful catalog check proves configured launcher membership only; quota, reachability,
+effort support and independent observed evaluator identity remain separate requirements.
+
+From the `packages/routing` directory, send a workload-route request as JSON on stdin to
+`deno run --no-config --no-lock --allow-run=opencode --allow-read matrix/opencode-preflight.ts`.
+The output contains only status, launcher, model, logical model, family, requested effort and
+catalog timestamp, or fixed refusal fields. It omits worktree and session identifiers.
