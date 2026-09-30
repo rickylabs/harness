@@ -59,6 +59,7 @@ import { mapCapacity } from "./governance/capacity.js";
 import { composeGovernance, type ComposedGovernance } from "./governance/compose.js";
 import { collectRepositoryRunObservation, type RepositoryRunReadOptions } from "./repository-run-observation.js";
 import { governanceRead } from "./governance/read.js";
+import { mapTransportAvailability, readTransportAvailabilityFile } from "./governance/transport-availability.js";
 
 /**
  * What the command exited with, and what a caller should do about it.
@@ -708,6 +709,8 @@ export interface SourceServices {
   readonly usage: (command: UsageCommand) => Promise<unknown>;
   readonly fetch: typeof fetch;
   readonly readText: (path: string, maxBytes: number) => Promise<string>;
+  /** The private transport availability snapshot; defaults to the owner-only file reader. */
+  readonly readPrivateText?: (path: string) => Promise<string>;
 }
 export function usageCommand(source: UsageSource, credential: string): UsageCommand {
   const imports = {
@@ -786,7 +789,7 @@ async function readResponse(response: Response, maxBytes: number): Promise<unkno
   try { return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown; }
   catch { throw new SourceError("non-json"); }
 }
-async function isolatedLeg(read: () => Promise<Leg<RegimeStatus>>, fallback: "request-failed" | "cgroup-unreadable"): Promise<Leg<RegimeStatus>> {
+async function isolatedLeg<T = RegimeStatus>(read: () => Promise<Leg<T>>, fallback: "request-failed" | "cgroup-unreadable" | "file-unreadable"): Promise<Leg<T>> {
   try { return await read(); }
   catch (error) { return { ok: false, code: error instanceof SourceError ? error.code : fallback }; }
 }
@@ -827,6 +830,10 @@ export async function collectGovernance(source: GovernanceSource, log: LiveLog, 
       return mapCapacity(current, max, config, services.clock());
     }, "cgroup-unreadable"),
   ]);
+  const transportAvailability = source.transportAvailability
+    ? await isolatedLeg(async () => mapTransportAvailability(await (services.readPrivateText ?? readTransportAvailabilityFile)(source.transportAvailability!.path)), "file-unreadable")
+    : undefined;
   const completion = services.clock();
-  return { observed: composeGovernance(source, { usage, spend, capacity, events: log.files.flatMap(file => file.events), logDegraded: log.degraded }, completion, now ?? completion), completion };
+  return { observed: composeGovernance(source, { usage, spend, capacity, events: log.files.flatMap(file => file.events), logDegraded: log.degraded,
+    ...(transportAvailability === undefined ? {} : { transportAvailability }) }, completion, now ?? completion), completion };
 }

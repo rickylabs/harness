@@ -33,12 +33,14 @@ export interface GovernanceSource {
   readonly spend: SpendSource | null;
   readonly capacity: CapacitySource | null;
   readonly admissions: { readonly fromObservabilityLog: true } | null;
+  /** The dispatcher's private per-transport availability snapshot (0.28.0). Optional in a descriptor. */
+  readonly transportAvailability?: { readonly path: string } | null;
   readonly accountLabel: string;
 }
 export type SourceRefusal = "not-configured" | "credential-unbound" | "spawn-failed" | "timeout" |
   "oversize" | "non-json" | "shape-mismatch" | "request-failed" | "cgroup-unreadable" |
   "log-unreadable" | "no-admissions" | "admission-conflict" | "stale-source" | "future-source" |
-  "invalid-descriptor" | "envelope-invalid";
+  "invalid-descriptor" | "envelope-invalid" | "file-unreadable";
 export class SourceError extends Error {
   constructor(readonly code: SourceRefusal) { super(code); }
 }
@@ -87,7 +89,8 @@ function fields(value: Record<string, unknown>, names: readonly string[]): void 
 export function parseSource(value: unknown): GovernanceSource {
   try {
     const input = object(value);
-    fields(input, ["usage", "spend", "capacity", "admissions", "accountLabel"]);
+    fields(input, ["usage", "spend", "capacity", "admissions", "accountLabel",
+      ...(Object.hasOwn(input, "transportAvailability") ? ["transportAvailability"] : [])]);
     let usage: UsageSource | null = null;
     if (input.usage !== null) {
       const u = object(input.usage);
@@ -124,7 +127,14 @@ export function parseSource(value: unknown): GovernanceSource {
       fields(a, ["fromObservabilityLog"]);
       if (a.fromObservabilityLog !== true) throw new SourceError("shape-mismatch");
     }
-    return { usage, spend, capacity, admissions: input.admissions === null ? null : { fromObservabilityLog: true }, accountLabel: safeLabel(input.accountLabel) };
+    let transportAvailability: GovernanceSource["transportAvailability"] = null;
+    if (input.transportAvailability !== undefined && input.transportAvailability !== null) {
+      const t = object(input.transportAvailability);
+      fields(t, ["path"]);
+      transportAvailability = { path: path(t.path) };
+    }
+    return { usage, spend, capacity, admissions: input.admissions === null ? null : { fromObservabilityLog: true },
+      transportAvailability, accountLabel: safeLabel(input.accountLabel) };
   } catch { throw new SourceError("invalid-descriptor"); }
 }
 

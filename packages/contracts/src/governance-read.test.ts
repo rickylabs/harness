@@ -117,3 +117,43 @@ it("strict nested state shapes and numeric bounds", () => {
     (v: any) => { v.state.regimes[1].providers[0].provider = "x".repeat(257); },
   ]) { const input = fixture("complete-without-admissions"); change(input); refuse(input); }
 });
+
+// 0.28.0: the dispatcher's transport availability, a sibling source with its own validity.
+const withAvailability = (): any => fixture("transport-availability");
+for (const [name, modify] of [
+  ["TA one key without the other", (v: any) => { delete v.transportAvailability; }],
+  ["TA coverage without the body key", (v: any) => { delete v.sources.transportAvailability; }],
+  ["TA read coverage with a null body", (v: any) => { v.transportAvailability = null; }],
+  ["TA body without read coverage", (v: any) => { v.sources.transportAvailability = { status: "failed", reason: "file-unreadable" }; }],
+  ["TA body times differ from its coverage", (v: any) => { v.transportAvailability.observedAt = "2026-09-07T11:59:51.000Z"; }],
+  ["TA body from after the evaluation", (v: any) => {
+    for (const t of [v.transportAvailability, v.sources.transportAvailability]) { t.observedAt = "2026-09-07T12:00:01.000Z"; t.validUntil = "2026-09-07T12:01:01.000Z"; } }],
+  ["TA a transport missing", (v: any) => { v.transportAvailability.transports.pop(); }],
+  ["TA an extra transport", (v: any) => { v.transportAvailability.transports.push({ transport: "opencode", available: true, reason: null }); }],
+  ["TA transports out of order", (v: any) => { v.transportAvailability.transports.reverse(); }],
+  ["TA available with a reason", (v: any) => { v.transportAvailability.transports[1].reason = "no-capacity"; }],
+  ["TA unavailable without a reason", (v: any) => { v.transportAvailability.transports[0].reason = null; }],
+  ["TA an unknown reason is never reflected", (v: any) => { v.transportAvailability.transports[0].reason = "PRIVATE_CANARY"; }],
+  ["TA an extra row field", (v: any) => { v.transportAvailability.transports[0].PRIVATE_CANARY = "private-value"; }],
+  ["TA complete with failed coverage", (v: any) => { v.complete = true; v.sources.usage = { status: "not-configured" };
+    v.notes = ["pending approvals unobserved", "spend: not-configured"]; v.state.regimes[0].note = "usage: not-configured";
+    v.sources.transportAvailability = { status: "failed", reason: "file-unreadable" }; v.transportAvailability = null; }],
+] as const) it(name, () => { const value = withAvailability(); modify(value); refuse(value); });
+it("TA decodes failed, discarded and unavailable-document forms, and a stale read", () => {
+  const failed = withAvailability(); failed.sources.transportAvailability = { status: "failed", reason: "file-unreadable" }; failed.transportAvailability = null;
+  const discarded = withAvailability(); discarded.sources.transportAvailability = { status: "discarded", reason: "stale-source" }; discarded.transportAvailability = null;
+  const stale = withAvailability();
+  for (const t of [stale.transportAvailability, stale.sources.transportAvailability]) { t.observedAt = "2026-09-07T11:58:00.000Z"; t.validUntil = "2026-09-07T11:59:00.000Z"; }
+  stale.sources.transportAvailability.freshness = "stale";
+  const unavailable = fixture("unavailable-not-configured");
+  unavailable.sources.transportAvailability = withAvailability().sources.transportAvailability;
+  unavailable.transportAvailability = withAvailability().transportAvailability;
+  for (const value of [failed, discarded, stale, unavailable]) {
+    const read = readGovernanceSnapshot(value);
+    assert.equal(read.ok, true, JSON.stringify(read));
+    if (read.ok) assert.deepEqual(read.snapshot, value);
+  }
+  // A read coverage claiming fresh after its validUntil is refused, as for the meters.
+  stale.sources.transportAvailability.freshness = "fresh";
+  refuse(stale);
+});

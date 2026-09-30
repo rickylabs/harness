@@ -878,3 +878,19 @@ teardown's `liveness.observedAt`: the agent had completed its work and sat at it
 torn down. For a Claude root, that is its last turn closing on the final answer with nothing after.
 `endedBy`, `endedAt` and the `ended` timeline reason still record the teardown. A reader before
 0.27.0 rejects this pairing, so upgrade readers before producers.
+
+## Transport availability in the governance read (0.28.0)
+
+A governance document may carry the dispatcher's transport availability: which matrix transports
+(`MATRIX_TRANSPORTS`: `claude`, `codex`, `agy`) its admission would offer now, and why each other
+one is out (`TRANSPORT_UNAVAILABLE_REASONS`: `no-capacity`, `meter-unread`, `meter-stale`,
+`window-expired`, `5h-ceiling`, `weekly-ceiling`, `ceiling-misconfigured`). Two keys, always together:
+`sources.transportAvailability` (the usual meter coverage, provenance
+`reader:divybot-transport-availability`) and a top-level `transportAvailability`, non-null exactly
+when that coverage is `read`: `{ observedAt, validUntil, transports }`, with the coverage's own times,
+one row per transport in order, and `reason` null exactly when `available`. It has its own validity
+and is not part of the governance envelope, its `validUntil`, or `not-configured`. Failed or
+discarded coverage makes `complete` false. A document without the keys (every earlier one, and any
+producer that does not configure the source) decodes unchanged, so readers can upgrade first; a
+reader before 0.28.0 rejects a document that carries them. `SOURCE_FAILURE_REASONS` gains
+`file-unreadable`.

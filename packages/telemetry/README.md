@@ -432,7 +432,9 @@ explicitly configured readers through the shipped governance parser and projecti
 `--observations`. `--observations-from file:<absolute-envelope-path>` is an alias for the existing
 file reader: unchanged freshness and exit behavior, reread on each invocation.
 
-A descriptor has exactly `accountLabel`, `usage`, `spend`, `capacity`, and `admissions`. Each leg is
+A descriptor has exactly `accountLabel`, `usage`, `spend`, `capacity`, and `admissions`, and may add
+`transportAvailability` (0.28.0: `null` or `{ "path": "<absolute path>" }`, the dispatcher's private
+per-transport availability snapshot, an owner-only regular file). Each leg is
 explicitly `null` or an object with **all** the fields below; omitted fields and unknown fields are
 errors. There are no inferred source defaults. Keep the descriptor outside version control. Paths,
 model IDs, credential names and provider response metadata are never copied into governance output.
@@ -568,7 +570,10 @@ need no credentials, network or Deno. Live acceptance remains a separate coordin
 collects the explicitly configured sources once and emits one schema-1/protocol-1 governance JSON
 object. `--json` is accepted but unnecessary. The installed
 `@rickylabs/harness-contracts` root export `readGovernanceSnapshot` decodes it losslessly into typed
-source coverage, envelope/state and recorded admission refusals. See the
+source coverage, envelope/state and recorded admission refusals. A descriptor that configures
+`transportAvailability` adds `sources.transportAvailability` and a top-level `transportAvailability`
+(which matrix transports admission would offer, with its own validity); one that does not emits the
+document byte-for-byte as before. See the
 [contracts document](../contracts/README.md#governance-read-document-020).
 
 The command rejects missing descriptors, `file:`, `--observations`, `--items`, `--run`, `--kind`,

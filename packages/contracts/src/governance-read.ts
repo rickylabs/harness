@@ -7,10 +7,29 @@ export const GOVERNANCE_SOURCE_NAMES = ["usage", "spend", "capacity", "admission
 export type GovernanceSourceName = (typeof GOVERNANCE_SOURCE_NAMES)[number];
 
 export const SOURCE_FAILURE_REASONS = ["credential-unbound", "spawn-failed", "timeout", "oversize",
-  "non-json", "shape-mismatch", "request-failed", "cgroup-unreadable", "log-unreadable"] as const;
+  "non-json", "shape-mismatch", "request-failed", "cgroup-unreadable", "log-unreadable", "file-unreadable"] as const;
 export const SOURCE_DISCARD_REASONS = ["stale-source", "future-source", "shape-mismatch"] as const;
 export const ADMISSION_DROP_REASONS = ["admission-conflict", "stale-source", "shape-mismatch"] as const;
 export const UNAVAILABLE_REASONS = ["not-configured", "no-successful-sources", "envelope-invalid"] as const;
+
+/**
+ * Transport availability (0.28.0): which matrix transports the dispatcher's admission would offer
+ * now, and why each other one is out. It is a sibling of the governance state, not part of it: its
+ * own validity, never the envelope's, and absent from "not-configured".
+ */
+export const MATRIX_TRANSPORTS = ["claude", "codex", "agy"] as const;
+export type MatrixTransport = (typeof MATRIX_TRANSPORTS)[number];
+export const TRANSPORT_UNAVAILABLE_REASONS = ["no-capacity", "meter-unread", "meter-stale", "window-expired",
+  "5h-ceiling", "weekly-ceiling", "ceiling-misconfigured"] as const;
+export type TransportUnavailableReason = (typeof TRANSPORT_UNAVAILABLE_REASONS)[number];
+export type TransportAvailabilityRow =
+  | { readonly transport: MatrixTransport; readonly available: true; readonly reason: null }
+  | { readonly transport: MatrixTransport; readonly available: false; readonly reason: TransportUnavailableReason };
+export interface TransportAvailability {
+  readonly observedAt: string; readonly validUntil: string;
+  /** Exactly one row per MATRIX_TRANSPORTS member, in that order. */
+  readonly transports: readonly TransportAvailabilityRow[];
+}
 
 export type MeterCoverage =
   | { readonly status: "not-configured" }
@@ -28,6 +47,11 @@ export type AdmissionCoverage =
 export interface GovernanceSourceCoverage {
   readonly usage: MeterCoverage; readonly spend: MeterCoverage; readonly capacity: MeterCoverage;
   readonly admissions: AdmissionCoverage;
+  /**
+   * 0.28.0. Present exactly when the producer configures the source; a document without it (every
+   * document before 0.28.0) decodes unchanged, so readers can upgrade before producers.
+   */
+  readonly transportAvailability?: MeterCoverage;
   /** Pending approvals have no producer today. The only value is "not-observed". */
   readonly approvals: { readonly status: "not-observed" };
 }
@@ -46,13 +70,16 @@ export type GovernanceReadSnapshot =
       readonly observedAt: string; readonly validUntil: string; readonly provenance: string;
       readonly complete: boolean; readonly sources: GovernanceSourceCoverage;
       readonly state: GovernanceState; readonly admissions: readonly RecordedAdmission[];
-      readonly unavailableReason: null; readonly notes: readonly string[] }
+      readonly unavailableReason: null; readonly notes: readonly string[];
+      /** Present with sources.transportAvailability; non-null exactly when that coverage is "read". */
+      readonly transportAvailability?: TransportAvailability | null }
   | { readonly schema: 1; readonly protocol: 1; readonly producer: string;
       readonly evaluatedAt: string; readonly availability: "unavailable";
       readonly observedAt: null; readonly validUntil: null; readonly provenance: null;
       readonly complete: false; readonly sources: GovernanceSourceCoverage;
       readonly state: null; readonly admissions: readonly [];
-      readonly unavailableReason: UnavailableReason; readonly notes: readonly string[] };
+      readonly unavailableReason: UnavailableReason; readonly notes: readonly string[];
+      readonly transportAvailability?: TransportAvailability | null };
 export type SourceFailureReason = (typeof SOURCE_FAILURE_REASONS)[number];
 export type SourceDiscardReason = (typeof SOURCE_DISCARD_REASONS)[number];
 export type AdmissionDropReason = (typeof ADMISSION_DROP_REASONS)[number];
@@ -377,6 +404,30 @@ function meter(value: unknown, field: string, evaluated: number): MeterCoverage 
   const input = record(value, field, ["status", "observedAt", "validUntil", "freshness", "provenance"]);
   return { status: "read", ...interval(input, field, evaluated), provenance: identifier(input.provenance, `${field}.provenance`) };
 }
+function transportAvailability(value: unknown, coverage: MeterCoverage, evaluated: number): TransportAvailability | null {
+  const field = "transportAvailability";
+  if (coverage.status !== "read") {
+    if (value !== null) invalid(field, "requires read coverage");
+    return null;
+  }
+  const input = record(value, field, ["observedAt", "validUntil", "transports"]);
+  const observed = timestamp(input.observedAt, `${field}.observedAt`), until = timestamp(input.validUntil, `${field}.validUntil`);
+  if (observed.raw !== coverage.observedAt || until.raw !== coverage.validUntil || observed.ms > evaluated)
+    invalid(field, "contradicts its coverage");
+  const rows = array(input.transports, `${field}.transports`, MATRIX_TRANSPORTS.length);
+  if (rows.length !== MATRIX_TRANSPORTS.length) invalid(`${field}.transports`, "must list every matrix transport");
+  const transports = rows.map((value, i): TransportAvailabilityRow => {
+    const row = record(value, `${field}.transports[${i}]`, ["transport", "available", "reason"]);
+    if (row.transport !== MATRIX_TRANSPORTS[i]) invalid(`${field}.transports[${i}].transport`, "must follow MATRIX_TRANSPORTS order");
+    const transport = MATRIX_TRANSPORTS[i]!;
+    if (boolean(row.available, `${field}.transports[${i}].available`)) {
+      if (row.reason !== null) invalid(`${field}.transports[${i}].reason`, "must be null when available");
+      return { transport, available: true, reason: null };
+    }
+    return { transport, available: false, reason: choice(row.reason, TRANSPORT_UNAVAILABLE_REASONS, `${field}.transports[${i}].reason`) };
+  });
+  return { observedAt: observed.raw, validUntil: until.raw, transports };
+}
 function admissionCoverage(value: unknown): AdmissionCoverage {
   const field = "sources.admissions";
   const status = objectTag(value, "status", field);
@@ -419,9 +470,14 @@ export function readGovernanceSnapshot(value: unknown): GovernanceReading {
     const number = (v: unknown): number | null => typeof v === "number" && Number.isSafeInteger(v) ? v : null;
     const schema = number(schemaValue), protocol = number(protocolValue);
     if (schema !== GOVERNANCE_READ_SCHEMA || protocol !== 1) return { ok: false, reason: "unsupported-schema", schema, protocol };
-    const input = record(value, "document", ["schema", "protocol", "producer", "evaluatedAt", "availability", "observedAt", "validUntil", "provenance", "complete", "sources", "state", "admissions", "unavailableReason", "notes"]);
+    // A document without the source (every document before 0.28.0) has neither transportAvailability
+    // key, and decodes unchanged: readers can upgrade before producers.
+    const current = typeof value === "object" && value !== null && Object.hasOwn(value, "transportAvailability");
+    const input = record(value, "document", ["schema", "protocol", "producer", "evaluatedAt", "availability", "observedAt", "validUntil", "provenance", "complete", "sources", "state", "admissions", "unavailableReason", "notes",
+      ...(current ? ["transportAvailability"] : [])]);
     const evaluatedAt = timestamp(input.evaluatedAt, "evaluatedAt");
-    const source = record(input.sources, "sources", ["usage", "spend", "capacity", "admissions", "approvals"]);
+    const source = record(input.sources, "sources", ["usage", "spend", "capacity", "admissions", "approvals",
+      ...(current ? ["transportAvailability"] : [])]);
     const approvals = record(source.approvals, "sources.approvals", ["status"]);
     if (approvals.status !== "not-observed") invalid("sources.approvals", "must be not-observed");
     const sources: GovernanceSourceCoverage = {
@@ -429,9 +485,14 @@ export function readGovernanceSnapshot(value: unknown): GovernanceReading {
       spend: meter(source.spend, "sources.spend", evaluatedAt.ms),
       capacity: meter(source.capacity, "sources.capacity", evaluatedAt.ms),
       admissions: admissionCoverage(source.admissions), approvals: { status: "not-observed" },
+      ...(current ? { transportAvailability: meter(source.transportAvailability, "sources.transportAvailability", evaluatedAt.ms) } : {}),
     };
+    const coverage = sources.transportAvailability;
+    const availability = coverage === undefined ? undefined : transportAvailability(input.transportAvailability, coverage, evaluatedAt.ms);
+    const availabilityIncomplete = coverage?.status === "failed" || coverage?.status === "discarded";
     const notes = array(input.notes, "notes", 64).map((value, i) => text(value, `notes[${i}]`, PROSE_CAP));
-    const base = { schema: GOVERNANCE_READ_SCHEMA, protocol: 1 as const, producer: identifier(input.producer, "producer"), evaluatedAt: evaluatedAt.raw, sources, notes };
+    const base = { schema: GOVERNANCE_READ_SCHEMA, protocol: 1 as const, producer: identifier(input.producer, "producer"), evaluatedAt: evaluatedAt.raw, sources, notes,
+      ...(availability === undefined ? {} : { transportAvailability: availability }) };
     const admissions = array(input.admissions, "admissions", 1000).map((v, i) => admission(v, `admissions[${i}]`, evaluatedAt.ms));
     unique(admissions, a => `${a.item}:${a.regime}`, "admissions");
     admissions.sort((a, b) => a.item - b.item || compareStrings(a.regime, b.regime));
@@ -473,7 +534,7 @@ export function readGovernanceSnapshot(value: unknown): GovernanceReading {
     }
     if (expiries.length === 0 || Math.min(...expiries) !== until.ms) invalid("validUntil", "must be earliest retained expiry");
     const complete = boolean(input.complete, "complete");
-    if (complete && (meters.some(s => s.status === "failed" || s.status === "discarded") || ac.status === "failed" || (ac.status === "read" && ac.dropped.length > 0))) invalid("complete", "contradicts configured coverage");
+    if (complete && (meters.some(s => s.status === "failed" || s.status === "discarded") || ac.status === "failed" || (ac.status === "read" && ac.dropped.length > 0) || availabilityIncomplete)) invalid("complete", "contradicts configured coverage");
     return { ok: true, snapshot: { ...base, availability: fresh(until.ms, evaluatedAt.ms), observedAt: observed.raw,
       validUntil: until.raw, provenance: identifier(input.provenance, "provenance"), complete, state: parsedState, admissions, unavailableReason: null } };
   } catch (error) {
