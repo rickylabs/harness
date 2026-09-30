@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "harness-compiled-table-transcription",
   "provenance": {
-    "description": "Packaged Harness routing catalog, evolved from compiled routing and placement data at commit 4c813fe10218e471f5d78a2dc45bd805ec260749 (consulted 2026-09-07) and edited directly since 2026-09-14. Eric's 2026-09-30 decision makes gpt-6.1-sol at xhigh the Codex default for all work, including simple tasks and coordinator scopes, except architecture or highly complex work, which retains Astra. Claude routing remains Opus 5.5 high by default and Fable 5.1 for complex architecture. The gpt-6.1-sol xhigh route was verified with Codex CLI 0.159.2 on 2026-09-30. Earlier native model IDs remain in the catalog for compatibility. This packaged catalog is not proof of executable fleet parity."
+    "description": "Packaged Harness routing catalog, evolved from compiled routing and placement data at commit 4c813fe10218e471f5d78a2dc45bd805ec260749 (consulted 2026-09-07) and edited directly since 2026-09-14. Eric's 2026-09-30 decision makes gpt-6.1-sol at xhigh the Codex default for all work, including coordinator scopes, except architecture or highly complex work, which retains Astra. The same-day addendum replaces former Luna defaults for trivial work with Sol 6.1 low and supersedes any remaining Sonnet defaults with claude-sonnet-5-5. Claude routing remains Opus 5.5 high by default and Fable 5.1 for complex architecture. The gpt-6.1-sol xhigh route was verified with Codex CLI 0.159.2 on 2026-09-30. Earlier native model IDs remain in the catalog for compatibility. This packaged catalog is not proof of executable fleet parity."
   },
   "families": [
     "anthropic",
@@ -236,7 +236,7 @@
             "harness": "codex",
             "transport": "native",
             "model": "gpt-6.1-sol",
-            "effort": "xhigh"
+            "effort": "low"
           },
           "when": [],
           "note": "extremely_simple_tasks_only"

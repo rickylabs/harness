@@ -30,7 +30,7 @@ function ownerPolicy(value) {
   if (Array.isArray(value)) return value.map(ownerPolicy);
   if (!value || typeof value !== "object") return value;
   if (["luna", "sol"].includes(value.model) && Object.hasOwn(value, "effort")) {
-    return { ...value, model: "sol", effort: "xhigh" };
+    return { ...value, model: "sol", effort: value.model === "luna" ? "low" : "xhigh" };
   }
   return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, ownerPolicy(child)]));
 }
@@ -41,7 +41,7 @@ function markdownContent(output) {
     .join("\n");
 }
 function currentMarkdown(output) {
-  return output.replaceAll("Luna max", "SOL xhigh")
+  return output.replaceAll("Luna max", "SOL low")
     .replace(/SOL (high|medium)/g, "SOL xhigh");
 }
 const recordedFallbacks = model => JSON.parse(reference.cases.find(recorded =>
@@ -69,7 +69,7 @@ function assertChangedFallback(args, actual) {
       for (const [index, match] of matches.entries()) {
         const cells = rows[index].split("|");
         assert.deepEqual(cells.slice(1, 3), [match.scope, match.tier]);
-        assert.equal(cells[4], "SOL xhigh");
+        assert.equal(cells[4], `SOL ${match.primary.effort}`);
       }
     }
   }

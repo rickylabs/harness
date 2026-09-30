@@ -12,8 +12,8 @@ pre-check. `matrixTable()` provides the same data to tests. The JSON table has 5
 8 roles per tier and 4 coordinator scopes; empty cells and fallback order are significant.
 
 Harness has newer native Sol and Luna model IDs than the pinned NetScript source. The preferred
-Codex default is `gpt-6.1-sol` at `xhigh`, including simple tasks, coordinator scopes, and
-Codex research fallbacks. Complex and architecture implementation keep Astra and their
+Codex default is `gpt-6.1-sol` at `xhigh`, including coordinator scopes. Former Luna cells for simple tasks
+and Codex research fallbacks use `gpt-6.1-sol` at `low`. Complex and architecture implementation keep Astra and their
 existing efforts. Luna and older Sol capabilities remain in the catalog for compatibility,
 so no previously known physical model ID disappears. The `matrix.test.mjs` gate checks
 every source cell against the frozen pinned export plus the 2026-09-30 owner decision, every source capability against the ported

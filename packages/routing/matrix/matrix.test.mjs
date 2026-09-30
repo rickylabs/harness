@@ -28,7 +28,8 @@ const roles = [...DELEGATION_ROLES];
 function currentOwnerTable() {
   const expected = structuredClone(referenceTable.table);
   const update = routes => routes.map(candidate =>
-    ["luna", "sol"].includes(candidate.model) ? { model: "sol", effort: "xhigh" } : candidate);
+    candidate.model === "luna" ? { model: "sol", effort: "low" } :
+      candidate.model === "sol" ? { model: "sol", effort: "xhigh" } : candidate);
   for (const tier of expected.tiers) for (const role of roles) tier[role] = update(tier[role]);
   for (const scope of Object.keys(expected.coordinators)) expected.coordinators[scope] = update(expected.coordinators[scope]);
   return expected;
@@ -72,15 +73,18 @@ test("catalog retains each source capability and prefers newer Harness native ID
   assert.equal(resolveWorkloadRoute({ tier: "feature", role: "implementation", worktree: "." }).model, "gpt-6.1-sol");
 });
 
-test("all Codex defaults use Sol 6.1 xhigh except the unchanged Astra cells", () => {
+test("Codex uses Sol 6.1 low for former Luna cells, xhigh otherwise, and unchanged Astra", () => {
   for (const tier of ["simple", "straightforward", "feature"]) {
     const selected = resolveWorkloadRoute({ tier, role: "implementation", worktree: "." });
-    assert.deepEqual([selected.model, selected.effort], ["gpt-6.1-sol", "xhigh"], tier);
+    assert.deepEqual([selected.model, selected.effort], ["gpt-6.1-sol", tier === "simple" ? "low" : "xhigh"], tier);
   }
   for (const tier of WORKLOAD_TIERS) for (const role of roles) {
     for (const candidate of DELEGATION_MATRIX[tier][role]) {
       assert.notEqual(candidate.model, "luna", `${tier}/${role}`);
-      if (candidate.model === "sol") assert.equal(candidate.effort, "xhigh", `${tier}/${role}`);
+      if (candidate.model === "sol") {
+        const effort = role === "deep_research" || (tier === "simple" && role === "implementation") ? "low" : "xhigh";
+        assert.equal(candidate.effort, effort, `${tier}/${role}`);
+      }
     }
   }
   for (const tier of Object.keys(COORDINATOR_MATRIX)) {
