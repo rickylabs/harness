@@ -200,8 +200,9 @@ The packaged document stays the version-1 transcription, and the bundle row stil
 NetScript 0985265 source. The full JSON table for pinning is
 [`matrix/cli/delegation-matrix-table.ts`](matrix/cli/delegation-matrix-table.ts) with `--json`.
 Frozen source fixtures compare all 40 workload cells, 4 coordinator scopes and catalog
-capabilities without installing or reading NetScript during Harness CI. Harness keeps the
-newer gpt-6 native Sol/Luna IDs active and retains the source gpt-5.6 capabilities.
+capabilities without installing or reading NetScript during Harness CI. Harness selects Sol 6.1 at xhigh for ordinary Codex work, Sol 6.1 low for former Luna
+cells, and unchanged Astra routes for complex and architecture implementation. Earlier
+Sol/Luna capabilities remain available for compatibility.
 
 [`test-fixtures/`](test-fixtures/) is neither exported nor packed. It holds the retained CLI export
 and a fleet-shaped version-2 document whose tiers, cells, loop policies, coordinators and provider

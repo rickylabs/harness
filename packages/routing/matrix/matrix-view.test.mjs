@@ -24,14 +24,74 @@ test("the frozen NetScript viewer reference is intact and covers every mode", ()
   assert.ok(reference.cases.some(c => c.args.join(" ") === "--tier huge --" && c.stderr === "Unknown argument: --\n"));
 });
 
-test("every recorded query renders byte-identically, including refusals", () => {
+// Preserve the source recording. Compare changed routes against the owner policy,
+// ignoring only Markdown column padding that changes with the longer effort label.
+function ownerPolicy(value) {
+  if (Array.isArray(value)) return value.map(ownerPolicy);
+  if (!value || typeof value !== "object") return value;
+  if (["luna", "sol"].includes(value.model) && Object.hasOwn(value, "effort")) {
+    return { ...value, model: "sol", effort: value.model === "luna" ? "low" : "xhigh" };
+  }
+  return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, ownerPolicy(child)]));
+}
+function markdownContent(output) {
+  return output.split("\n")
+    .filter(line => !/^\|[ |:-]+\|$/.test(line))
+    .map(line => line.startsWith("|") ? line.split("|").map(cell => cell.trim()).join("|") : line)
+    .join("\n");
+}
+function currentMarkdown(output) {
+  return output.replaceAll("Luna max", "SOL low")
+    .replace(/SOL (high|medium)/g, "SOL xhigh");
+}
+const recordedFallbacks = model => JSON.parse(reference.cases.find(recorded =>
+  recorded.args.join(" ") === `--fallback ${model} --json`).stdout).matches;
+const currentSolFallbacks = ownerPolicy([...recordedFallbacks("luna"), ...recordedFallbacks("sol")]);
+
+function assertChangedFallback(args, actual) {
+  const flag = Math.max(args.lastIndexOf("--fallback"), args.lastIndexOf("--fallback-of"));
+  const model = args[flag + 1];
+  if (!["sol", "luna"].includes(model)) return false;
+  const tier = args.includes("--tier") ? args[args.indexOf("--tier") + 1] : undefined;
+  const role = args.includes("--role") ? args[args.indexOf("--role") + 1] : undefined;
+  const matches = model === "luna" ? [] : currentSolFallbacks.filter(match =>
+    (!tier || match.tier === tier) && (!role || match.role === role) &&
+    (!(tier || role) || match.scope === "workload"));
+  assert.deepEqual(JSON.parse(runMatrixView([...args, "--json"]).stdout),
+    { schemaVersion: 1, mode: "fallback", model, matches }, JSON.stringify(args));
+  if (!args.includes("--json")) {
+    assert.ok(actual.stdout.startsWith(`# Declared fallbacks for ${model === "sol" ? "SOL" : "Luna"}\n`));
+    if (!matches.length) {
+      assert.equal(actual.stdout.trimEnd(), `# Declared fallbacks for Luna\n\nNo selected context declares this model as its primary with a fallback.`);
+    } else {
+      const rows = markdownContent(actual.stdout).split("\n").filter(line => line.startsWith("|")).slice(1);
+      assert.equal(rows.length, matches.length);
+      for (const [index, match] of matches.entries()) {
+        const cells = rows[index].split("|");
+        assert.deepEqual(cells.slice(1, 3), [match.scope, match.tier]);
+        assert.equal(cells[4], `SOL ${match.primary.effort}`);
+      }
+    }
+  }
+  return true;
+}
+
+test("every recorded query preserves refusals and unrelated routes under the owner decision", () => {
   for (const expected of reference.cases) {
     const actual = runMatrixView(expected.args);
     const label = JSON.stringify(expected.args);
     assert.equal(actual.status, expected.status, label);
     assert.equal(actual.stderr, expected.stderr, label);
     if (!isHelp(expected)) {
-      assert.equal(actual.stdout, expected.stdout, label);
+      if (expected.status !== 0) {
+        assert.equal(actual.stdout, expected.stdout, label);
+      } else if (!assertChangedFallback(expected.args, actual)) {
+        if (expected.args.includes("--json")) {
+          assert.deepEqual(JSON.parse(actual.stdout), ownerPolicy(JSON.parse(expected.stdout)), label);
+        } else {
+          assert.equal(markdownContent(actual.stdout), markdownContent(currentMarkdown(expected.stdout)), label);
+        }
+      }
       continue;
     }
     // Only the usage line names the command; it points at Harness instead of the NetScript task.

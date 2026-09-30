@@ -12,9 +12,11 @@ pre-check. `matrixTable()` provides the same data to tests. The JSON table has 5
 8 roles per tier and 4 coordinator scopes; empty cells and fallback order are significant.
 
 Harness has newer native Sol and Luna model IDs than the pinned NetScript source. The preferred
-Codex capabilities are `gpt-6-sol` and `gpt-6-luna`; the older source capabilities remain in the
-catalog, so no previously known physical model ID disappears. The `matrix.test.mjs` gate checks
-every source cell against the frozen pinned export, every source capability against the ported
+Codex default is `gpt-6.1-sol` at `xhigh`, including coordinator scopes. Former Luna cells for simple tasks
+and Codex research fallbacks use `gpt-6.1-sol` at `low`. Complex and architecture implementation keep Astra and their
+existing efforts. Luna and older Sol capabilities remain in the catalog for compatibility,
+so no previously known physical model ID disappears. The `matrix.test.mjs` gate checks
+every source cell against the frozen pinned export plus the 2026-09-30 owner decision, every source capability against the ported
 catalog, the preferred native IDs, owner and privileged gates, fallback, role transport, and
 cross-vendor evaluator independence. It runs on the supported Node 24 floor. The frozen fixtures
 are source evidence, not runtime inputs.
@@ -24,7 +26,8 @@ NetScript's `agentic:matrix`: the full matrix as Markdown, `--tier`, `--role` (w
 `impl-eval`), `--plan-evaluator`, `--impl-evaluator`, `--fallback-of <model>` and `--json` per
 view. It never replaces the closed table above; its full, tier and role JSON equals
 `matrixTable()`. `matrix-view.test.mjs` replays every recorded NetScript query, refusals included,
-from the frozen `matrix-view.e75161c.json` reference; only the help text's usage line differs.
+from the frozen `matrix-view.e75161c.json` reference with the same owner decision applied;
+refusals and unrelated routes retain their source behavior.
 
 The legacy `routing.v1.json` profile remains readable until its consumers migrate. The
 version-2 document schema under `src/fleet.ts` remains a separate configuration reader; this
