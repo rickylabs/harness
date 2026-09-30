@@ -223,3 +223,7 @@ export { readDispatchEvidence, type DispatchEvidence } from "./dispatch-evidence
 export { buildAgentObservations } from "./agent-observations.js";
 
 export { openCodexThreadReader, CodexThreadReader, codexThreadEvidence, type CodexThreadReadOptions, type CodexThreadSnapshot, type CodexThreadObservation, type CodexGoalEvent } from "./codex-threads.js";
+export { collectAccountUsage, inferUnattributedUsage, readAccountUsageSource, sessionUsage, storedQuota,
+  usageScopeHash, type AccountUsageSource, type UsageStore, type UsageCollectOptions } from "./account-usage.js";
+export { codexAccountQuota, opaqueUsageRef, pollCodexAccountQuota, unavailableQuota,
+  type QuotaPollOptions, type QuotaPollResult } from "./account-quota.js";

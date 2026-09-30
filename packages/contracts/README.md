@@ -894,3 +894,47 @@ discarded coverage makes `complete` false. A document without the keys (every ea
 producer that does not configure the source) decodes unchanged, so readers can upgrade first; a
 reader before 0.28.0 rejects a document that carries them. `SOURCE_FAILURE_REASONS` gains
 `file-unreadable`.
+## Account usage projection (0.29.0)
+
+`AccountUsageEnvelope` is an additive subscription usage document, independent of API spend and
+governance admission. `readAccountUsageEnvelope(unknown)` validates and copies a closed, bounded
+document. Its fields are `schemaVersion: 1`, `generatedAt`, `quota`, `sessions`, `unattributed` and
+`coverage`. Old contract shapes are unchanged.
+
+Quota rows carry `vendor` (`codex` or `claude`), `accountRef`, `limitId`, `window` (`5h` or `weekly`),
+`usedPercent`, `resetsAt`, `observedAt`, `observedBy`, `source`, `availability` and `reason`. Preserve
+each account, meter and window separately. A direct account poll has `observedBy: null`; a stored
+reading has an opaque session ref. Unknown readings have null values and an unavailable reason.
+Percentages are measurements, never conversions from token counts. Freshness policy belongs to
+the consumer: compare the original `observedAt` with the current time, not `generatedAt`.
+
+Session rows carry `vendor`, `sessionRef`, explicit `seat`/`cwdLabel` display aliases, nullable
+`model`/`effort`, `startedAt`, `endedAt`, `observedAt`, `tokens`, `inputIncludesCached`, `availability`
+and `reason`. Counts are nullable nonnegative safe integers. The token fields are `input`, `cached`,
+`cacheWrite`, `output` and `reasoning`.
+
+| Vendor | Input meaning | `sessionProcessedTokens` |
+| --- | --- | --- |
+| Codex/OpenAI | Includes cached input | input + output |
+| Claude/Anthropic | Excludes cache reads and cache writes | input + cached + cacheWrite + output |
+
+Reasoning is already part of output. Missing required components make the processed total null;
+no component is manufactured as zero. `inputIncludesCached` is enforced against the vendor.
+
+Opaque refs use `sref:v1:<vendor>:<43 base64url characters>` for sessions and
+`aref:v1:<vendor>:<43 base64url characters>` for accounts. The producer HMACs the versioned identity
+with a private deployment key. The same key must be configured across contributing seats for stable
+refs; rotating it creates new refs and starts a new attribution baseline. Neither identities nor
+the key cross the wire. Display aliases are explicitly configured, never inferred from paths.
+
+An `unattributed` row carries `vendor`, `accountRef`, `limitId`, `window`, `from`, `to`,
+`usedPercentDelta`, `inferred: true` and `reason: "no_observed_session_activity"`. It only records a
+positive increase between readings in the same account/meter/window/reset epoch, with complete
+configured-store coverage and no owned session activity. Unknown ends, partial reads, changed
+source scope, reset crossings or unknown account/meter binding block inference. It does not
+identify the external actor or turn tokens into account percentages.
+
+Coverage names each vendor's `from`/`through` interval, `state` (`complete`, `partial`, `unavailable`)
+and `reason`. Complete means every explicitly configured owned store was read without gaps;
+unconfigured machines are outside that assertion. Both quota freshness and source coverage must
+remain visible to consumers.

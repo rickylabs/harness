@@ -32,6 +32,7 @@ usage:
   dsh-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--issue <owner/repo#number>] [--interval-ms <n>]  per-issue agent trees
   dsh-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
+  dsh-telemetry account-usage --source <descriptor> [--watch]  subscription quota and session token JSON
   dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
   dsh-telemetry status [options]     runs grouped by epic
   dsh-telemetry runs [options]       one line per run, newest first

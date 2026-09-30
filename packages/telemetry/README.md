@@ -845,3 +845,57 @@ Defaults: 500 rows, 30-second read/request deadline, 50 rows per page. Hard caps
 For `openCodexThreadReader`, `timeoutMs` bounds each request and the entire paged read (default 30000, maximum 60000 milliseconds). Either deadline reports `request_timeout`; raising the row limit does not extend it. Cross-page or cross-archive duplicate identities refuse the read because the snapshot is not atomic.
 
 A goal read rejected by the daemon with its exact request-bound `thread not found` response reports `thread_not_found`, preserves the thread row, and marks coverage incomplete. Other daemon error replies use `rpc_error`; transport failures remain `source_unavailable`, `source_closed` or `request_timeout`. Native error text and identities are never exported.
+## Account quota and session token usage
+
+`dsh-telemetry account-usage --source <descriptor>` emits an `AccountUsageEnvelope`.
+`--watch` emits JSONL and polls every 180 seconds. Neither command starts a model session.
+The new projection includes safe display aliases and opaque refs, token splits and separate
+weekly/5h account readings. Missing values stay null. A one-shot exits 3 when configured-store
+coverage is incomplete; its JSON remains useful. Invalid descriptor/key/state exits 1.
+
+The private descriptor has exactly these fields:
+
+```json
+{
+  "schemaVersion": 1,
+  "keyFile": "<private absolute key path>",
+  "stateFile": "<private absolute state path>",
+  "codex": { "bin": "<absolute Codex executable>", "home": null },
+  "stores": [
+    { "vendor": "codex", "seat": "seat-a", "cwdLabel": "project-a", "root": "<private absolute store root>", "accountIdentity": null },
+    { "vendor": "claude", "seat": "seat-a", "cwdLabel": "project-a", "root": "<private absolute store root>", "accountIdentity": null }
+  ]
+}
+```
+
+The key file must be a regular, non-symlink file, mode 600, containing at least 32 bytes of private
+random key material. Configure the same key across contributing seats. `codex: null` disables
+direct reads; `home` optionally binds the Codex configuration directory. Paths and raw identities
+remain inside the descriptor. Historical session account membership stays unknown unless the
+operator explicitly supplies `accountIdentity`; it is never guessed from the currently logged-in
+account. `seat` and `cwdLabel` are deliberate aliases, not hostnames or path basenames.
+
+The state file is mode 600 and stores the previous validated envelope and private source/key scope
+hash. Run one collector per state file. Missing/corrupt state, a changed descriptor or a rotated key
+starts a fresh inference baseline. A crash during a state write also loses that baseline safely.
+
+Measured with Codex CLI 0.159.2: `codex app-server --listen stdio://` answered `initialize`,
+`initialized`, `account/read` (`refreshToken: false`) and `account/rateLimits/read` without any
+thread/turn creation. The reader requests `excludeResetCreditDetails: true` for background polls,
+bounds time and bytes, and drains stderr without publishing it. The response includes exact
+durations, reset times, multiple meter buckets and an account identity which is HMACed locally.
+See the [official app-server documentation](https://learn.chatgpt.com/docs/app-server).
+
+Measured with Claude Code 2.1.285: `claude usage --help` returned global help, and
+`claude auth status --json` returned authentication metadata without quota fields. The tested CLI
+commands exposed no sessionless quota interface; this is a bounded negative measurement.
+The documented [`/usage` command](https://code.claude.com/docs/en/commands) runs inside a session.
+No Claude session was started to probe it. The sampled native store contained token usage but no
+quota readings, so direct Claude quota is explicitly unavailable. No undocumented endpoint or
+synthetic percentage is substituted.
+
+Codex reads both `token_count` quota windows and `token_usage_record` cumulative thread totals,
+including cache writes. Per-turn cumulative usage is retained separately inside telemetry.
+Response usage is not added to the same thread total. Claude retains its native response-id
+deduplication and separate cache read/write counts. For accounting and the attribution guard,
+see [the published contract](../contracts/README.md#account-usage-projection-0290).

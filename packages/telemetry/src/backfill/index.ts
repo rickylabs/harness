@@ -35,6 +35,8 @@ export interface BackfillRoots {
 export interface BackfillOptions {
   /** Runs to read per seam. A fleet accumulates thousands of transcripts. */
   readonly limit?: number;
+  /** Account usage: bound directory enumeration as well as transcript reads. */
+  readonly maxDirectoryEntries?: number;
   /**
    * Drop runs with no activity at or after this epoch-millisecond.
    *
@@ -229,6 +231,34 @@ async function collectJsonl(root: string): Promise<Scan> {
   return { kind: "found", files, skipped };
 }
 
+/** Streaming bounded variant for periodic account reads; a truncated tree is explicitly partial. */
+async function collectBoundedJsonl(root: string, cap: number): Promise<Scan> {
+  const files: Transcript[] = [];
+  let skipped = 0, visited = 0, limited = false;
+  const walk = async (dir: string, depth: number): Promise<void> => {
+    if (limited) return;
+    if (depth > 32) { limited = true; return; }
+    try {
+      if (!(await lstat(dir)).isDirectory()) { skipped++; return; }
+      const handle = await opendir(dir);
+      for await (const entry of handle) {
+        if (++visited > cap) { limited = true; break; }
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) await walk(path, depth + 1);
+        else if (entry.name.endsWith(".jsonl")) {
+          const found = await lstat(path).catch(() => null);
+          if (!entry.isFile() || !found?.isFile()) skipped++;
+          else files.push({ path, mtimeMs: found.mtimeMs });
+        }
+        if (limited) break;
+      }
+    } catch { skipped++; }
+  };
+  if (!Number.isSafeInteger(cap) || cap < 1 || cap > 100000) return { kind: "unreadable", reason: "invalid directory bound" };
+  await walk(root, 0);
+  return { kind: "found", files, skipped, limited };
+}
+
 /** Visit an offset-safe envelope around receipt dates; filename clocks may be local to another process. */
 async function collectCodexWindows(root: string, windows: NonNullable<BackfillOptions["codexWindows"]>, limit: number,
   offsetEnvelopeMs: number): Promise<Scan> {
@@ -320,7 +350,8 @@ export async function backfillFromDisk(
     const scan = seam === "codex" && options.codexWindows !== undefined
       ? await collectCodexWindows(root, options.codexWindows,
         options.codexRootMatches === undefined ? limit : CODEX_HEAD_CANDIDATES,
-        options.codexRootMatches === undefined ? 0 : 86_400_000) : await collectJsonl(root);
+        options.codexRootMatches === undefined ? 0 : 86_400_000) : options.maxDirectoryEntries === undefined
+        ? await collectJsonl(root) : await collectBoundedJsonl(root, options.maxDirectoryEntries);
     if (scan.kind === "absent") {
       notes.push(`${seam}: no store on this box — nothing has run here`);
       continue;
