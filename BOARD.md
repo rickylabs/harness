@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **421/511 done · 27 running · 23 queued · 8 blocked · 16 abandoned · 16 invisible**
+`[################----]` **423/511 done · 26 running · 23 queued · 8 blocked · 16 abandoned · 15 invisible**
 
-_Latest board activity: 2026-09-30T12:10:18Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-09-30T12:11:19Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Waiting on you (8)
 
@@ -21,7 +21,7 @@ Stopped on a decision only a person can make. No agent will pick these up.
 | [#334 The run record cannot say what a cache write cost, or which turn was expensive](https://github.com/rickylabs/harness/issues/334) | `triage` | — |
 | [#306 Escalation (§8): the mobile read path is gated on cockpit authorization; #93 merged, the block moved to atelier-cockpit#118 plus realm config and enrollment](https://github.com/rickylabs/harness/issues/306) | `triage` | — |
 
-## Moving now (27)
+## Moving now (26)
 
 Something could be acting on these right now.
 
@@ -41,7 +41,6 @@ Something could be acting on these right now.
 | [#300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision](https://github.com/rickylabs/harness/issues/300) | `impl-eval` | `e3` |
 | [#517 A Claude child that works past its Start window is never shown running](https://github.com/rickylabs/harness/issues/517) | `impl-eval` | — |
 | [PR519 fix(telemetry): a Claude child stays running on its own activity past its Start window](https://github.com/rickylabs/harness/pull/519) | `impl-eval` | — |
-| [PR521 fix(telemetry): a Claude root stopped at its prompt is idle, not unknown](https://github.com/rickylabs/harness/pull/521) | `impl-eval` | — |
 | [#522 An agent appending during the issue-feed scan drops the whole issue tree for one poll](https://github.com/rickylabs/harness/issues/522) | `impl-eval` | — |
 | [PR523 fix(telemetry): the issue feed reads transcripts as they stood at the capture](https://github.com/rickylabs/harness/pull/523) | `impl-eval` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
@@ -70,12 +69,9 @@ Open, and carrying no `status:` label — real work no column can see.
 
 **`closed-but-unshipped`**
 
-- **#521** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+- **#522** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+- **#523** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
-
-**`closed-without-status`**
-
-- **#520** — closed as completed, but carries no status label; delivered work the board cannot see
 
 **`epic-closed-by-child`**
 
@@ -146,7 +142,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 225/266 done · 10 running · 3 queued · 5 blocked · 10 abandoned · 13 invisible
+`[##########--]` 227/266 done · 9 running · 3 queued · 5 blocked · 10 abandoned · 12 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -154,7 +150,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 1 blocked · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 195/230 done · 9 running · 2 queued · 3 blocked · 10 abandoned · 11 invisible | — |
+| _(no epic)_ | `[##########--]` 197/230 done · 8 running · 2 queued · 3 blocked · 10 abandoned · 10 invisible | — |
 
 ## Waiting to start
 
@@ -195,7 +191,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  421/511 done · 27 running · 23 queued · 8 blocked · 16 abandoned · 16 invisible
+# rickylabs/harness  [################----]  423/511 done · 26 running · 23 queued · 8 blocked · 16 abandoned · 15 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  196/245 done · 17 running · 20 queued · 3 blocked · 6 abandoned · 3 invisible
 
@@ -479,7 +475,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #490 App video retake: scoped agent review and live actions
     shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
 
-## (no milestone)  [################----]  225/266 done · 10 running · 3 queued · 5 blocked · 10 abandoned · 13 invisible
+## (no milestone)  [#################---]  227/266 done · 9 running · 3 queued · 5 blocked · 10 abandoned · 12 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [#############---] 5/6 done · 1 blocked
@@ -756,8 +752,8 @@ Open, and carrying no `status:` label — real work no column can see.
     impl-eval            #517 A Claude child that works past its Start window is never shown running (p1)
     no status            PR518 fix(telemetry): a Claude child stays running on its own activity past its Start window (p1)
     impl-eval            PR519 fix(telemetry): a Claude child stays running on its own activity past its Start window (p1)
-    no status            #520 A Claude root stopped at its prompt shows Unknown instead of Not running (p1)
-    impl-eval            PR521 fix(telemetry): a Claude root stopped at its prompt is idle, not unknown (p1)
+    shipped              #520 A Claude root stopped at its prompt shows Unknown instead of Not running (p1)
+    shipped              PR521 fix(telemetry): a Claude root stopped at its prompt is idle, not unknown (p1)
     impl-eval            #522 An agent appending during the issue-feed scan drops the whole issue tree for one poll (p1)
     impl-eval            PR523 fix(telemetry): the issue feed reads transcripts as they stood at the capture (p1)
 ```
