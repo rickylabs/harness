@@ -104,6 +104,7 @@ usage:
   dsh-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--issue <owner/repo#number>] [--interval-ms <n>]  per-issue agent trees
   dsh-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
+  dsh-telemetry account-usage --source <descriptor> [--watch]  subscription quota and session token JSON
   dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
   dsh-telemetry status [options]     runs grouped by epic
   dsh-telemetry runs [options]       one line per run, newest first
@@ -482,6 +483,7 @@ function whereItWrites(flags: Flags): number {
 }
 
 export async function main(argv: readonly string[], services: SourceServices = defaultSourceServices(), observationOptions: RepositoryRunReadOptions = {}): Promise<number> {
+  if (argv[0] === "account-usage") return accountUsageCommand(argv.slice(1));
   if (argv[0] === "codex-threads") return codexThreadsCommand(argv.slice(1));
   if (argv[0] === "issue-agents") return issueAgentFeedCommand(argv.slice(1));
   if (argv[0] === "action-receipt") return actionReceiptCommand(argv.slice(1));
@@ -837,3 +839,4 @@ export async function collectGovernance(source: GovernanceSource, log: LiveLog, 
   return { observed: composeGovernance(source, { usage, spend, capacity, events: log.files.flatMap(file => file.events), logDegraded: log.degraded,
     ...(transportAvailability === undefined ? {} : { transportAvailability }) }, completion, now ?? completion), completion };
 }
+import { accountUsageCommand } from "./account-usage-cli.js";

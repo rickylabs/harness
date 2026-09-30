@@ -168,6 +168,8 @@ export interface RunRecord {
   readonly usage: RunUsage;
   /** Bounded native cumulative samples; omitted by sources without measured history. */
   readonly tokenSamples?: TokenSamples;
+  /** Codex per-turn cumulative usage, separate from the thread total; internal raw turn identity. */
+  readonly turnUsage?: readonly { readonly turnId: string; readonly observedAt: string; readonly usage: RunUsage }[];
   /** Sanitized, bounded native work steps; never raw transcript content. */
   readonly activitySteps?: readonly import("@rickylabs/harness-contracts").AgentActivityStep[];
   readonly outcome: RunOutcome;

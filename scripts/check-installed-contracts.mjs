@@ -97,11 +97,15 @@ try {
   assert.ok(existsSync(join(installedRoot, "dist/index.d.ts")) && existsSync(join(installedRoot, "dist/server.d.ts")));
   stage = "installed root/server runtime exports";
   writeFileSync(join(consumer, "runtime.mjs"), `import assert from 'node:assert/strict';
-import { readGovernanceSnapshot, readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_OBSERVATIONS, projectRouteIdentity, PROTOCOL_VERSION } from '@rickylabs/harness-contracts';
+import { readAccountUsageEnvelope, sessionProcessedTokens, readGovernanceSnapshot, readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_OBSERVATIONS, projectRouteIdentity, PROTOCOL_VERSION } from '@rickylabs/harness-contracts';
 import { projectRouteIdentity as routeExport } from '@rickylabs/harness-contracts/route';
 import { openHub } from '@rickylabs/harness-contracts/server';
 assert.equal(typeof readGovernanceSnapshot, 'function'); assert.equal(PROTOCOL_VERSION, 1);
 assert.equal(typeof openHub, 'function');
+assert.equal(typeof sessionProcessedTokens, 'function');
+const usageAt = '2026-01-01T00:00:00.000Z';
+assert.equal(readAccountUsageEnvelope({schemaVersion:1,generatedAt:usageAt,quota:[],sessions:[],unattributed:[],coverage:['codex','claude'].map(vendor => ({vendor,from:usageAt,through:usageAt,state:'unavailable',reason:'not-configured'}))}).ok, true);
+assert.deepEqual(readAccountUsageEnvelope({schemaVersion:99}), {ok:false,reason:'invalid'});
 assert.equal(projectRouteIdentity, routeExport);
 assert.equal(MAX_AGENT_OBSERVATIONS, 256);
 assert.equal(readAgentObservations({schema:1,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',revision:'a'.repeat(64),complete:true,reason:null,agents:[]}).ok, true);
@@ -115,7 +119,13 @@ console.log(JSON.stringify({ root: true, server: true, protocol: PROTOCOL_VERSIO
   stage = "installed root/server declaration compilation";
   writeFileSync(join(consumer, "consumer.ts"), `import { readRepositoryRunObservation, type RepositoryRunObservation, type RepositoryRunObservationReading, readGovernanceSnapshot, PROTOCOL_VERSION, type GovernanceReadSnapshot, type GovernanceReading } from '@rickylabs/harness-contracts';
 import { openHub, type Hub, type Delivery } from '@rickylabs/harness-contracts/server';
-import { readAgentObservations, readIssueAgentTreeSnapshot, type AgentObservation, type AgentObservationsReading, type IssueAgentTreeSnapshot, type RouteIdentityEvidence } from '@rickylabs/harness-contracts';
+import { readAccountUsageEnvelope, sessionProcessedTokens, type AccountUsageEnvelope, type SessionUsage, readAgentObservations, readIssueAgentTreeSnapshot, type AgentObservation, type AgentObservationsReading, type IssueAgentTreeSnapshot, type RouteIdentityEvidence } from '@rickylabs/harness-contracts';
+const accountUsage = readAccountUsageEnvelope({});
+function acceptUsage(value: AccountUsageEnvelope): string { return value.generatedAt; }
+function tokenTotal(value: SessionUsage): number | null { return sessionProcessedTokens(value); }
+if (accountUsage.ok) { acceptUsage(accountUsage.envelope); accountUsage.envelope.sessions.map(tokenTotal); }
+// @ts-expect-error installed usage declaration must reject a non-envelope
+acceptUsage({schemaVersion:1});
 const agents: AgentObservationsReading = readAgentObservations({});
 const issueTree = readIssueAgentTreeSnapshot({});
 function acceptIssueTree(tree: IssueAgentTreeSnapshot): boolean { return tree.issues.every(issue => issue.complete || issue.reason !== null); }

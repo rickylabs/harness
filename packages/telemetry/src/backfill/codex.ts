@@ -43,6 +43,7 @@ export const KNOWN_TYPES: ReadonlySet<string> = new Set([
   "response_item",
   "session_meta",
   "turn_context",
+  "token_usage_record",
 ]);
 
 /**
@@ -63,22 +64,11 @@ export const KNOWN_TYPES: ReadonlySet<string> = new Set([
  * carry a `timestamp`, so unlike the Claude reader's list this is not structural: a rollout ending
  * on one of these would understate if that gate were ever removed. None of the 428 ends on one.
  *
- * `token_usage_record` was left noting on a claim that turned out to be false: that the counts it
- * carries are unread. They are read, from a record this reader already recognises. `event_msg` with
- * `payload.type === "token_count"` carries `info.total_token_usage`, and the loop below maps four of
- * its fields into `RunUsage`. On the same 428 rollouts that path has 82862 records against this
- * envelope's 17304, so the envelope is a lower-volume second carrier of numbers already accounted
- * for. The observation decoder additionally reads it for identity.
- *
- * Two things it carries are genuinely unread, and both are narrower than a missing usage surface:
- * `cache_write_input_tokens` appears in no tracked source file, and the per-turn against
- * cumulative-per-thread distinction is unavailable because only the cumulative record is read.
- * Recorded on issue 328 rather than fixed here, because whether either matters is a question about
- * what the usage surface is for.
+ * `token_usage_record` is now read: thread totals replace cumulative totals, and per-turn totals
+ * are retained separately. Its response usage must never be added to those same thread totals.
  */
 export const OBSERVED_UNREAD_ENVELOPES: ReadonlyMap<string, string> = new Map([
   ["inter_agent_communication_metadata", "payload carries only a trigger_turn boolean; nothing this reader wants"],
-  ["token_usage_record", "its counts are already read from event_msg/token_count below, at 82862 records against this envelope's 17304; read by repository-run-observation.ts for identity"],
   ["world_state", "read by repository-run-observation.ts for scope assertion; a second reader mining the same record for another purpose is how two components come to disagree about one run"],
 ]);
 
@@ -129,6 +119,36 @@ export function quotaFromRateLimits(
   };
 }
 
+/** Each reported window is a separate observation, including a secondary-only reading. */
+export function quotasFromRateLimits(rateLimits: JsonObject, observedAt: string): readonly QuotaReading[] {
+  const readings = ["primary", "secondary"].flatMap(key => {
+    const value = obj(rateLimits[key]);
+    if (value === null) return [];
+    const reading = quotaFromRateLimits({ ...rateLimits, primary: value }, observedAt);
+    return reading === null ? [] : [reading];
+  });
+  // Preserve the earlier credits-only internal reading. It has no guessed subscription window.
+  if (readings.length === 0) {
+    const credit = quotaFromRateLimits(rateLimits, observedAt);
+    return credit === null ? [] : [credit];
+  }
+  return readings;
+}
+
+/** Native cumulative counters, not deltas. Invalid counters never enter a usage projection. */
+export function codexTokenUsage(total: JsonObject): RunUsage {
+  const usage: Record<string, number> = {};
+  const fields: Record<string, keyof RunUsage> = {
+    input_tokens: "inputTokens", output_tokens: "outputTokens", reasoning_output_tokens: "reasoningTokens",
+    cached_input_tokens: "cacheReadTokens", cache_write_input_tokens: "cacheWriteTokens",
+  };
+  for (const [wire, field] of Object.entries(fields)) {
+    const value = total[wire];
+    if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) usage[field] = value;
+  }
+  return usage;
+}
+
 /** Reduce one rollout file to a run record. `origin` is the path it came from. */
 export function parseCodexRollout(text: string, origin: string): ParsedTranscript<RunRecord> {
   const tally = new NoteTally();
@@ -153,7 +173,9 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
   let outcome: RunRecord["outcome"] = "unknown";
   let terminalCause: RunRecord["terminalCause"];
   let terminalAt: string | undefined;
-  const usage: Record<string, number> = {};
+  let usage: Record<string, number> = {};
+  let usageAt: string | null = null;
+  const turnUsage = new Map<string, { turnId: string; observedAt: string; usage: RunUsage }>();
   const tokenSamples = new TokenSampleCollector();
   const quota: QuotaReading[] = [];
   let activity: NonNullable<RunRecord["activitySteps"]> = [];
@@ -178,12 +200,32 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
 
     const at = str(line.timestamp);
     if (at !== null && known) {
-      firstAt ??= at;
-      lastAt = at;
+      if (firstAt === null || at < firstAt) firstAt = at;
+      if (lastAt === null || at > lastAt) lastAt = at;
     }
 
     const payload = obj(line.payload);
     if (payload === null) continue;
+
+    if (line.type === "token_usage_record") {
+      const carriesUsage = ["thread_token_usage", "turn_token_usage", "usage"].some(field => payload[field] !== undefined);
+      if (carriesUsage && payload["thread_id"] !== undefined && payload["thread_id"] !== id) {
+        tally.bump("token record thread identity mismatch");
+        continue;
+      }
+      const total = obj(payload["thread_token_usage"]);
+      if (total !== null && at !== null && (usageAt === null || at >= usageAt)) {
+        usage = { ...codexTokenUsage(total) };
+        usageAt = at;
+        tokenSamples.observe(at, total["input_tokens"], total["output_tokens"]);
+      }
+      const turnId = str(payload["turn_id"]);
+      const turn = obj(payload["turn_token_usage"]);
+      if (turnId !== null && turn !== null && at !== null &&
+          (turnUsage.get(turnId)?.observedAt ?? "") <= at) {
+        turnUsage.set(turnId, { turnId, observedAt: at, usage: codexTokenUsage(turn) });
+      }
+    }
 
     if (line.type === "session_meta") {
       // Newer Codex session_id is shared by the entire tree; id is this thread.
@@ -232,24 +274,15 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
     if (kind === "token_count") {
       const info = obj(payload["info"]);
       const total = info === null ? null : obj(info["total_token_usage"]);
-      if (total !== null) {
+      if (total !== null && at !== null && (usageAt === null || at >= usageAt)) {
         // Codex reports a running total rather than a delta, so this is an assignment. Summing it
         // would multiply the last turn's usage by the number of turns.
-        const fields: Record<string, keyof RunUsage> = {
-          input_tokens: "inputTokens",
-          output_tokens: "outputTokens",
-          reasoning_output_tokens: "reasoningTokens",
-          cached_input_tokens: "cacheReadTokens",
-        };
-        for (const [wire, field] of Object.entries(fields)) {
-          const value = num(total[wire]);
-          if (value !== null) usage[field] = value;
-        }
+        usage = { ...codexTokenUsage(total) };
+        usageAt = at;
         tokenSamples.observe(at, total["input_tokens"], total["output_tokens"]);
       }
       const limits = obj(payload["rate_limits"]);
-      const reading = limits === null ? null : quotaFromRateLimits(limits, lastAt ?? "");
-      if (reading !== null) quota.push(reading);
+      if (limits !== null && at !== null) quota.push(...quotasFromRateLimits(limits, at));
     }
 
     if (kind === "task_started") { outcome = "running"; terminalCause = undefined; terminalAt = undefined; }
@@ -282,6 +315,7 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
       identity: { model, effort, provider, profile: null },
       usage: usage as RunUsage,
       tokenSamples: tokenSamples.snapshot(),
+      ...(turnUsage.size === 0 ? {} : { turnUsage: [...turnUsage.values()] }),
       activitySteps: activity,
       outcome,
       terminalCause,
