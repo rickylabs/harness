@@ -778,7 +778,9 @@ CLI: `dsh-telemetry codex-threads --limit 500 --json`; append `--watch` for a sn
 
 The cockpit source feed is `dsh-telemetry issue-agents --watch`. It writes a full per-issue tree
 snapshot heartbeat every five seconds by default. Receipt changes, new native rollout files, and
-changes to selected rollouts trigger a disk scan at the next heartbeat. Set the reader-only
+changes to selected rollouts trigger a disk scan at the next heartbeat. Each scan reads every
+transcript and the hook event file as they stood at the frame's capture time: a line stamped after
+it, and everything written after that line, belongs to the next frame. Set the reader-only
 `DSH_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT` to the private owner-mode Claude hook event directory
 to admit a fresh child `SubagentStart` as running only after the verified root dispatch and
 native child ID match. A later `SubagentStop` clears running to unknown; that callback alone is

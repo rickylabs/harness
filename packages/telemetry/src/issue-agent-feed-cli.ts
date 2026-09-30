@@ -103,7 +103,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       const scan = await backfillFromDisk(codexSessions === undefined ? {} : { codexSessions },
         { limit: issueFileLimit, codexWindows: windows,
           codexRootMatches: id => codexDispatches.some(dispatch => matchesOrchidNativeRootIdentity(dispatch, id, "codex")),
-          maxTranscriptBytes: MAX_TRANSCRIPT_BYTES, maxTotalBytes: remainingBytes });
+          maxTranscriptBytes: MAX_TRANSCRIPT_BYTES, maxTotalBytes: remainingBytes, notAfterMs: nowMs });
       remainingBytes -= scan.bytesRead;
       if (scan.degraded) {
         entry.snapshot = unavailableSnapshot(options.now,
@@ -115,7 +115,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     if (group.dispatches.some(d => d.source === "claude")) {
       const scan = await scanClaudeIssue(defaultRoots(options.home).claudeProjects!,
         id => group.dispatches.some(dispatch => matchesOrchidNativeRootIdentity(dispatch, id, "claude")),
-        issueFileLimit - runs.length, MAX_TRANSCRIPT_BYTES, remainingBytes);
+        issueFileLimit - runs.length, MAX_TRANSCRIPT_BYTES, remainingBytes, nowMs);
       remainingBytes -= scan.bytesRead;
       if (scan.reason !== null) { entry.snapshot = unavailableSnapshot(options.now, scan.reason); continue; }
       runs.push(...scan.runs);

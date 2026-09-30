@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
+  transcriptAsOf,
   isoFromMillis,
   MAX_TIME_MS,
   NoteTally,
@@ -112,5 +113,24 @@ describe("typeLabel", () => {
     assert.equal(typeLabel(undefined), "(absent)");
     assert.equal(typeLabel(7), "(not a string)");
     assert.equal(typeLabel(""), "(empty)");
+  });
+});
+
+describe("transcriptAsOf", () => {
+  const at = (timestamp: string, extra: Record<string, unknown> = {}) => JSON.stringify({ timestamp, ...extra }) + "\n";
+  const cut = Date.parse("2026-09-30T11:21:09.952Z");
+  it("keeps the file as it stood at the capture: everything before the first later line", () => {
+    const before = at("2026-09-30T11:21:09.530Z") + "{\"type\":\"no-timestamp\"}\n" + at("2026-09-30T11:21:09.952Z");
+    assert.equal(transcriptAsOf(before + at("2026-09-30T11:21:11.218Z") + at("2026-09-30T11:21:11.608Z"), cut), before);
+    assert.equal(transcriptAsOf(before, cut), before);
+  });
+  it("drops a line written after a later one even when its own stamp is earlier (write order)", () => {
+    const before = at("2026-09-30T11:21:09.000Z");
+    assert.equal(transcriptAsOf(before + at("2026-09-30T11:21:10.707Z") + at("2026-09-30T11:21:09.692Z"), cut), before);
+  });
+  it("never cuts at a nested or unreadable timestamp, and keeps a half-written tail for the parser", () => {
+    const nested = JSON.stringify({ message: { timestamp: "2026-09-30T12:00:00.000Z" } }) + "\n";
+    const tail = "{\"timestamp\":\"2026-09-30T11:21:";
+    assert.equal(transcriptAsOf(nested + at("not a time") + tail, cut), nested + at("not a time") + tail);
   });
 });

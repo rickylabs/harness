@@ -19,7 +19,7 @@ import type { RunRecord } from "../model.js";
 import { compareStrings } from "../order.js";
 import { parseClaudeTranscript } from "./claude.js";
 import { parseCodexRollout } from "./codex.js";
-import type { ParsedTranscript } from "./jsonl.js";
+import { transcriptAsOf, type ParsedTranscript } from "./jsonl.js";
 import { openOpencodeDb, readSessions } from "./opencode.js";
 
 export interface BackfillRoots {
@@ -50,6 +50,8 @@ export interface BackfillOptions {
   /** Issue feed only: a transcript over either byte bound is withheld, with degraded=true. */
   readonly maxTranscriptBytes?: number;
   readonly maxTotalBytes?: number;
+  /** Issue feed only: read each transcript as it stood at the frame's capture (see `transcriptAsOf`). */
+  readonly notAfterMs?: number;
 }
 
 export interface BackfillResult {
@@ -383,6 +385,7 @@ export async function backfillFromDisk(
         continue;
       }
       bytesRead += Buffer.byteLength(text);
+      if (options.notAfterMs !== undefined) text = transcriptAsOf(text, options.notAfterMs);
       let parsed: ParsedTranscript<RunRecord>;
       try {
         parsed = parse(text, path);
