@@ -39,7 +39,7 @@ it("reads all local RAM and AMD card VRAM pairs without inventing a total", asyn
       ramTotalBytes: 4096 * 1024, vramUsedBytes: 512, vramTotalBytes: 6144,
       cards: [{ card: "card0", vramUsedBytes: 0, vramTotalBytes: 2048 },
         { card: "card1", vramUsedBytes: 512, vramTotalBytes: 4096 }] });
-    assert.equal(read.cost.validUntil, "2026-01-01T00:00:16.000Z");
+    assert.equal(read.cost.validUntil, "2026-01-01T00:00:31.000Z");
     assert.match(read.cost.revision!, /^[a-f0-9]{64}$/);
   } finally { await f.close(); }
 });

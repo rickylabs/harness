@@ -169,7 +169,7 @@ export interface IssueAgentFeedDependencies {
   readonly env?: Readonly<Record<string, string | undefined>>;
 }
 
-/** Below the 15-second contract freshness limit, including scan time. */
+/** Well below the 30-second contract freshness limit, including scan time. */
 const SAFETY_RESCAN_MS = 12_000;
 
 /** `--watch` writes full snapshots and heartbeats; every new process starts seq 0. */
