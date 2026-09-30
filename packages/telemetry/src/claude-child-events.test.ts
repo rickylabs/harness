@@ -35,8 +35,10 @@ it("accepts only a fresh exact-session, exact-child Start; Stop clears running b
 
 it("rejects stale, future, wrong-session and malformed evidence; ignores an unrelated internal child", async () => {
   const s = await fixture();
-  for (const bad of [row("SubagentStart", "2025-12-31T23:58:00.000Z"),
-    row("SubagentStart", "2026-01-01T00:02:00.000Z"),
+  // An old Start is still returned: its freshness is judged with the child's activity (agent-observations.ts).
+  await s.put(row("SubagentStart", "2025-12-31T23:58:00.000Z"));
+  assert.equal((await s.read()).size, 1);
+  for (const bad of [row("SubagentStart", "2026-01-01T00:02:00.000Z"),
     row("SubagentStart", "2026-01-01T00:00:30.000Z", { sessionId: "wrong-root" }),
     row("SubagentStart", "2026-01-01T00:00:30.000Z", { extraText: "PRIVATE" })]) {
     await s.put(bad);

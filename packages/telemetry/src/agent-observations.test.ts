@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 import { it } from "node:test";
 import { projectRouteIdentity, readAgentObservations } from "@rickylabs/harness-contracts";
 import { buildAgentObservations } from "./agent-observations.js";
-import { childEventKey } from "./claude-child-events.js";
+import { createHash } from "node:crypto";
+import { chmod, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { childEventKey, readClaudeChildStarts } from "./claude-child-events.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
 const at = "2026-01-01T00:00:00.000Z";
@@ -112,7 +116,8 @@ it("projects only a fresh Start for a child under the exact bound Claude root", 
     { ...run(childId, rootId), source: "claude" as const },
   ];
   const base = { ...defaults, dispatches: [claudeDispatch], runs: claudeRuns, observedAt };
-  const childOf = (starts: ReadonlyMap<string, string>) => buildAgentObservations({ ...base, claudeChildStarts: starts })
+  const childOf = (starts: ReadonlyMap<string, string>, childUpdatedAt?: string) => buildAgentObservations({ ...base,
+    runs: childUpdatedAt === undefined ? claudeRuns : [claudeRuns[0]!, { ...claudeRuns[1]!, updatedAt: childUpdatedAt }], claudeChildStarts: starts })
     .agents.find(agent => agent.parentAgentId.state === "known-parent")!;
   const start = "2026-01-01T00:00:30.000Z";
   const matched = childOf(new Map([[childEventKey(rootId, childId), start]]));
@@ -120,8 +125,50 @@ it("projects only a fresh Start for a child under the exact bound Claude root", 
   assert.equal(matched.running.observedAt, start);
   assert.equal(childOf(new Map([[childEventKey("wrong-root", childId), start]])).running.value, null);
   assert.equal(childOf(new Map([[childEventKey(rootId, "internal-child"), start]])).running.value, null);
-  assert.equal(childOf(new Map([[childEventKey(rootId, childId), "2025-12-31T23:59:00.000Z"]])).running.value, null);
+  // An old Start with no activity since: stale. (Activity after the Start extends it: see the RUN-5 test.)
+  assert.equal(childOf(new Map([[childEventKey(rootId, childId), "2025-12-31T23:59:00.000Z"]]), "2025-12-31T23:59:00.000Z").running.value, null);
   assert.equal(childOf(new Map()).running.value, null); // Stop or missing signal never creates terminal evidence.
   assert.ok(!JSON.stringify(matched).includes(rootId));
   assert.ok(!JSON.stringify(matched).includes(childId));
 });
+
+it("RUN-5: a child that works past its Start window stays running on its own activity, and a Stop still clears it", async () => {
+  // The exact RUN-5 hook sequence (2026-09-30, binding #515): the child's Start at 11:04:21.468, four
+  // Stops for other Claude agents with no Start in this file, then the child's own Stop at 11:06:15.
+  const session = "c98a04af-dab4-4a80-b8b4-b86637b83ee3", hookChild = "a8efdd84e51682d36", childId = `agent-${hookChild}`;
+  const line = (event: string, agentId: string, observedAt: string) => JSON.stringify({ event, sessionId: session, agentId, observedAt });
+  const live = [line("SubagentStart", hookChild, "2026-09-30T11:04:21.468Z"), line("SubagentStop", "a62edbb677724aef7", "2026-09-30T11:04:56.639Z"),
+    line("SubagentStop", "ad87a29f177c04118", "2026-09-30T11:05:27.637Z"), line("SubagentStop", "a1addfb89de676774", "2026-09-30T11:05:28.149Z"),
+    line("SubagentStop", "ac021dc803417c9c0", "2026-09-30T11:05:59.996Z")];
+  const root = await mkdtemp(join(tmpdir(), "claude-child-events-"));
+  await chmod(root, 0o700);
+  const file = join(root, `${createHash("sha256").update(session).digest("hex")}.jsonl`);
+  const put = async (lines: readonly string[]) => { await writeFile(file, lines.join("\n") + "\n", { mode: 0o600 }); await chmod(file, 0o600); };
+  const claudeDispatch = { ...dispatch, source: "claude" as const, external: session, observedAt: "2026-09-30T11:04:00.000Z" };
+  // The file as it stood at each capture: the reader refuses a file with a line from the future.
+  let written: readonly string[] = [];
+  const running = async (observedAt: string, childUpdatedAt: string) => {
+    await put(written.filter(entry => (JSON.parse(entry) as { observedAt: string }).observedAt <= observedAt));
+    const runs = [{ ...run(session, null), source: "claude" as const, startedAt: "2026-09-30T11:04:00.000Z", updatedAt: observedAt },
+      { ...run(childId, session), source: "claude" as const, startedAt: "2026-09-30T11:04:21.420Z", updatedAt: childUpdatedAt }];
+    const starts = await readClaudeChildStarts(root, session, [childId], observedAt);
+    const child = buildAgentObservations({ ...defaults, dispatches: [claudeDispatch], runs, observedAt, claudeChildStarts: starts })
+      .agents.find(agent => agent.parentAgentId.state === "known-parent")!;
+    assert.ok(readAgentObservations(JSON.parse(JSON.stringify(buildAgentObservations({ ...defaults, dispatches: [claudeDispatch], runs, observedAt, claudeChildStarts: starts })))).ok);
+    return child.running;
+  };
+  written = live;
+  // The child first appeared in the tree at 11:05:33, 72 s after its Start, while it was working (last record 11:05:33).
+  for (const [capture, activity] of [["2026-09-30T11:05:33.000Z", "2026-09-30T11:05:33.000Z"], ["2026-09-30T11:05:50.000Z", "2026-09-30T11:05:48.000Z"],
+    ["2026-09-30T11:06:10.000Z", "2026-09-30T11:06:04.000Z"]] as const) {
+    const observed = await running(capture, activity);
+    assert.equal(observed.value, true, capture);
+    assert.equal(observed.observedAt, activity);
+  }
+  // With no activity since its Start, the same Start alone is stale by then, as before.
+  assert.equal((await running("2026-09-30T11:05:50.000Z", "2026-09-30T11:04:21.420Z")).value, null);
+  // The child's own Stop clears running (unknown until its terminal evidence), whatever its activity.
+  written = [...live, line("SubagentStop", hookChild, "2026-09-30T11:06:15.001Z")];
+  assert.equal((await running("2026-09-30T11:06:16.000Z", "2026-09-30T11:06:14.953Z")).value, null);
+});
+

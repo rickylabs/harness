@@ -781,7 +781,9 @@ snapshot heartbeat every five seconds by default. Receipt changes, new native ro
 changes to selected rollouts trigger a disk scan at the next heartbeat. Set the reader-only
 `DSH_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT` to the private owner-mode Claude hook event directory
 to admit a fresh child `SubagentStart` as running only after the verified root dispatch and
-native child ID match. A later `SubagentStop` clears running to unknown; that callback alone is
+native child ID match. While that Start is the child's latest hook event, the child stays running as long as the
+Start or the child's own latest transcript record is fresh, so a child that works past the Start
+window is still shown running. A later `SubagentStop` clears running to unknown; that callback alone is
 never terminal evidence. A verified in-session Claude child ends natively when its direct
 parent session enqueues the task-notification for exactly that child with status `completed`
 (succeeded) or `failed` (failed), at or after the child's start and its last transcript record.
