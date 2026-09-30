@@ -21,32 +21,45 @@ function primary(lane: string): { model: string; effort: string } {
 }
 
 describe("packaged owner routing catalog", () => {
-  it("routes trivial work to Luna 5 at max effort", () => {
-    assert.deepEqual(primary("fast_implementation"), { model: "gpt-6-luna", effort: "max" });
+  it("routes simple work to Sol 6.1 at xhigh effort", () => {
+    assert.deepEqual(primary("fast_implementation"), { model: "gpt-6.1-sol", effort: "xhigh" });
   });
 
   it("routes every coordinator scope to the exact Sol effort", () => {
     for (const scope of ["small_project", "project", "milestone"]) {
-      assert.deepEqual(primary(`coordinator_${scope}`), { model: "gpt-6-sol", effort: "medium" });
+      assert.deepEqual(primary(`coordinator_${scope}`), { model: "gpt-6.1-sol", effort: "xhigh" });
     }
-    assert.deepEqual(primary("coordinator_framework"), { model: "gpt-6-sol", effort: "high" });
-    const sol = routingEditorCatalog(catalog).models.find(model => model.value === "gpt-6-sol");
+    assert.deepEqual(primary("coordinator_framework"), { model: "gpt-6.1-sol", effort: "xhigh" });
+    const sol = routingEditorCatalog(catalog).models.find(model => model.value === "gpt-6.1-sol");
     assert.ok(sol);
     assert.deepEqual(
       sol.routes.filter(route => route.lane.startsWith("coordinator_"))
         .map(route => [route.lane, route.effort]),
       [
-        ["coordinator_small_project", "medium"],
-        ["coordinator_project", "medium"],
-        ["coordinator_framework", "high"],
-        ["coordinator_milestone", "medium"],
+        ["coordinator_small_project", "xhigh"],
+        ["coordinator_project", "xhigh"],
+        ["coordinator_framework", "xhigh"],
+        ["coordinator_milestone", "xhigh"],
       ],
     );
   });
 
+  it("uses the new Codex default throughout the packaged chains", () => {
+    for (const lane of catalog.lanes) for (const step of lane.chain) {
+      if (step.route.harness !== "codex" || step.route.model === "gpt-6-astra") continue;
+      assert.deepEqual(
+        { model: step.route.model, effort: step.route.effort },
+        { model: "gpt-6.1-sol", effort: "xhigh" },
+        lane.lane,
+      );
+    }
+    const ids = routingEditorCatalog(catalog).models.map(model => model.value);
+    for (const id of ["gpt-6-sol", "gpt-6-luna"]) assert.ok(ids.includes(id));
+  });
+
   it("retains the distinct implementation and Claude orchestration primaries", () => {
-    assert.deepEqual(primary("light_implementation"), { model: "gpt-6-sol", effort: "high" });
-    assert.deepEqual(primary("normal_implementation"), { model: "gpt-6-sol", effort: "high" });
+    assert.deepEqual(primary("light_implementation"), { model: "gpt-6.1-sol", effort: "xhigh" });
+    assert.deepEqual(primary("normal_implementation"), { model: "gpt-6.1-sol", effort: "xhigh" });
     assert.deepEqual(primary("complex_implementation"), { model: "gpt-6-astra", effort: "high" });
     assert.deepEqual(primary("planning_decisions"), { model: "claude-opus-5-5", effort: "high" });
   });

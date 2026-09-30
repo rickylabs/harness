@@ -105,6 +105,7 @@ export const MODEL_CATALOG: Readonly<Record<LogicalModelId, LogicalModelDefiniti
     capabilities: [
       capability('codex', ROUTING_MODEL_IDS.solNative),
       capability('codex', ROUTING_MODEL_IDS.solPreviousNative),
+      capability('codex', ROUTING_MODEL_IDS.solLegacyNative),
     ],
   },
   astra: {
@@ -388,7 +389,7 @@ const policy = (
 
 export const DELEGATION_MATRIX: Readonly<Record<WorkloadTier, DelegationCell>> = {
   simple: {
-    implementation: [route('luna', 'max'), route('qwen_3_8_flash_next', 'provider_default')],
+    implementation: [route('sol', 'xhigh'), route('qwen_3_8_flash_next', 'provider_default')],
     ui_ux: [route('kimi_k3', 'low'), route('minimax_m3', 'provider_default')],
     plan: [],
     plan_evaluation: [],
@@ -401,15 +402,15 @@ export const DELEGATION_MATRIX: Readonly<Record<WorkloadTier, DelegationCell>> =
       route('deepseek_v4_flash_vision', 'provider_default'),
     ],
     documentation: [route('gemini_3_8_flash', 'medium'), route('opus_5', 'low')],
-    deep_research: [route('gemini_3_8_flash', 'low'), route('luna', 'max')],
+    deep_research: [route('gemini_3_8_flash', 'low'), route('sol', 'xhigh')],
     planPolicy: policy({ maxRounds: 'none' }),
     implementationPolicy: policy({ maxRounds: 'unspecified_by_owner' }),
     documentationPolicy: policy({ maxRounds: 2 }),
   },
   straightforward: {
-    implementation: [route('sol', 'high'), route('glm_5_3_flash', 'provider_default')],
+    implementation: [route('sol', 'xhigh'), route('glm_5_3_flash', 'provider_default')],
     ui_ux: [route('kimi_k3', 'high'), route('gemini_3_8_flash', 'high')],
-    plan: [route('sol', 'high'), route('glm_5_3_flash', 'provider_default')],
+    plan: [route('sol', 'xhigh'), route('glm_5_3_flash', 'provider_default')],
     plan_evaluation: [
       route('opus_5', 'medium'),
       route('qwen_3_8_flash_next', 'provider_default'),
@@ -426,13 +427,13 @@ export const DELEGATION_MATRIX: Readonly<Record<WorkloadTier, DelegationCell>> =
       route('gemini_3_8_flash', 'high'),
       route('qwen_3_8_flash_next', 'provider_default'),
     ],
-    deep_research: [route('gemini_3_8_flash', 'medium'), route('luna', 'max')],
+    deep_research: [route('gemini_3_8_flash', 'medium'), route('sol', 'xhigh')],
     planPolicy: policy({ maxRounds: 0, repairInFlightAt: 'immediate' }),
     implementationPolicy: policy({ maxRounds: 5, notifyOwnerAfter: 3 }),
     documentationPolicy: policy({ maxRounds: 2, notifyOwnerAfter: 2 }),
   },
   feature: {
-    implementation: [route('sol', 'high'), route('muse_spark_1_3', 'xhigh')],
+    implementation: [route('sol', 'xhigh'), route('muse_spark_1_3', 'xhigh')],
     ui_ux: [route('kimi_k3', 'high'), route('gemini_3_8_flash', 'high')],
     plan: [route('fable_5_1', 'low'), route('muse_spark_1_3', 'xhigh')],
     plan_evaluation: [route('glm_5_3', 'provider_default'), route('fable_5_1', 'low')],
@@ -448,7 +449,7 @@ export const DELEGATION_MATRIX: Readonly<Record<WorkloadTier, DelegationCell>> =
       route('qwen_3_8_max', 'provider_default'),
       route('glm_5_3_flash', 'provider_default'),
     ],
-    deep_research: [route('gemini_3_8_flash', 'high'), route('luna', 'max')],
+    deep_research: [route('gemini_3_8_flash', 'high'), route('sol', 'xhigh')],
     planPolicy: policy({ maxRounds: 2, repairInFlightAt: 2 }),
     implementationPolicy: policy({ maxRounds: 5, notifyOwnerAfter: 3 }),
     documentationPolicy: policy({ maxRounds: 2, notifyOwnerAfter: 2 }),
@@ -470,7 +471,7 @@ export const DELEGATION_MATRIX: Readonly<Record<WorkloadTier, DelegationCell>> =
       route('fable_5_1', 'medium'),
       route('qwen_3_8_max', 'provider_default'),
     ],
-    deep_research: [route('gemini_3_8_flash', 'high'), route('luna', 'max')],
+    deep_research: [route('gemini_3_8_flash', 'high'), route('sol', 'xhigh')],
     planPolicy: policy({ maxRounds: 3, repairInFlightAt: 3 }),
     implementationPolicy: policy({ maxRounds: 5, notifyOwnerAfter: 3 }),
     documentationPolicy: policy({ maxRounds: 2, notifyOwnerAfter: 2 }),
@@ -489,7 +490,7 @@ export const DELEGATION_MATRIX: Readonly<Record<WorkloadTier, DelegationCell>> =
       route('fable_5_1', 'high'),
       route('qwen_3_8_max', 'provider_default'),
     ],
-    deep_research: [route('gemini_3_8_flash', 'high'), route('luna', 'max')],
+    deep_research: [route('gemini_3_8_flash', 'high'), route('sol', 'xhigh')],
     planPolicy: policy({ maxRounds: 1, escalateToOwnerAt: 2 }),
     implementationPolicy: policy({ maxRounds: 3, notifyOwnerAfter: 2 }),
     documentationPolicy: policy({ maxRounds: 2, notifyOwnerAfter: 2 }),
@@ -561,11 +562,11 @@ export const COORDINATOR_TIERS = [
 export type CoordinatorTier = typeof COORDINATOR_TIERS[number];
 
 export const COORDINATOR_MATRIX: Readonly<Record<CoordinatorTier, readonly ModelRoute[]>> = {
-  small_project: [route('sol', 'medium'), route('opus_5', 'low')],
-  project: [route('sol', 'medium'), route('opus_5', 'medium')],
-  framework: [route('sol', 'high'), route('opus_5', 'xhigh')],
+  small_project: [route('sol', 'xhigh'), route('opus_5', 'low')],
+  project: [route('sol', 'xhigh'), route('opus_5', 'medium')],
+  framework: [route('sol', 'xhigh'), route('opus_5', 'xhigh')],
   milestone: [
-    route('sol', 'medium'),
+    route('sol', 'xhigh'),
     route('fable_5_1', 'medium'),
     route('opus_5', 'xhigh'),
   ],

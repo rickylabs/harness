@@ -15,7 +15,7 @@ import {
   selectEvaluator,
   validateDelegationMatrix,
 } from "./delegation-matrix.ts";
-import { assertEvaluatorIndependence, resolveWorkloadRoute } from "./routing-policy.ts";
+import { assertEvaluatorIndependence, resolveCoordinatorRoute, resolveWorkloadRoute } from "./routing-policy.ts";
 import { matrixTable } from "./cli/delegation-matrix-table.ts";
 
 const fixture = name => JSON.parse(readFileSync(new URL(`../test-fixtures/${name}`, import.meta.url), "utf8"));
@@ -23,21 +23,33 @@ const referenceTable = fixture("matrix-table.0985265.json");
 const referenceCatalog = fixture("matrix-catalog.0985265.json");
 const roles = [...DELEGATION_ROLES];
 
+// The frozen source is historical evidence. Apply only the owner's 2026-09-30
+// Codex policy to the expected table; other routes, order and loop policies stay exact.
+function currentOwnerTable() {
+  const expected = structuredClone(referenceTable.table);
+  const update = routes => routes.map(candidate =>
+    ["luna", "sol"].includes(candidate.model) ? { model: "sol", effort: "xhigh" } : candidate);
+  for (const tier of expected.tiers) for (const role of roles) tier[role] = update(tier[role]);
+  for (const scope of Object.keys(expected.coordinators)) expected.coordinators[scope] = update(expected.coordinators[scope]);
+  return expected;
+}
+const expectedTable = currentOwnerTable();
+
 // The reference files were generated once from a detached clean source at the recorded SHA.
 // CI consumes frozen data and never installs, imports or reads NetScript.
-test("every pinned source cell and ordered fallback matches the Harness authority", () => {
+test("every source cell retains its fallback order under the current owner decision", () => {
   assert.equal(referenceTable.sourceRevision, "0985265f491f508d55f3b56d2cfc5bda20f68426");
   assert.equal(createHash("sha256").update(JSON.stringify(referenceTable.table, null, 2) + "\n").digest("hex"), referenceTable.sourceSha256);
-  assert.deepEqual(matrixTable(), referenceTable.table);
+  assert.deepEqual(matrixTable(), expectedTable);
   assert.equal(WORKLOAD_TIERS.length, 5);
   assert.equal(roles.length, 8);
   for (const tier of WORKLOAD_TIERS) {
     for (const role of roles) {
-      const expected = referenceTable.table.tiers.find(row => row.tier === tier)[role];
+      const expected = expectedTable.tiers.find(row => row.tier === tier)[role];
       assert.deepEqual(DELEGATION_MATRIX[tier][role], expected, `${tier}/${role}`);
     }
   }
-  assert.deepEqual(COORDINATOR_MATRIX, referenceTable.table.coordinators);
+  assert.deepEqual(COORDINATOR_MATRIX, expectedTable.coordinators);
   assert.deepEqual(MODEL_TRANSPORT_PRIORITY, referenceTable.table.transportPriority);
 });
 
@@ -55,9 +67,32 @@ test("catalog retains each source capability and prefers newer Harness native ID
       `${id} lost ${capability.transport}/${capability.model}`);
     }
   }
-  assert.equal(MODEL_CATALOG.sol.capabilities[0].model, "gpt-6-sol");
+  assert.equal(MODEL_CATALOG.sol.capabilities[0].model, "gpt-6.1-sol");
   assert.equal(MODEL_CATALOG.luna.capabilities[0].model, "gpt-6-luna");
-  assert.equal(resolveWorkloadRoute({ tier: "feature", role: "implementation", worktree: "." }).model, "gpt-6-sol");
+  assert.equal(resolveWorkloadRoute({ tier: "feature", role: "implementation", worktree: "." }).model, "gpt-6.1-sol");
+});
+
+test("all Codex defaults use Sol 6.1 xhigh except the unchanged Astra cells", () => {
+  for (const tier of ["simple", "straightforward", "feature"]) {
+    const selected = resolveWorkloadRoute({ tier, role: "implementation", worktree: "." });
+    assert.deepEqual([selected.model, selected.effort], ["gpt-6.1-sol", "xhigh"], tier);
+  }
+  for (const tier of WORKLOAD_TIERS) for (const role of roles) {
+    for (const candidate of DELEGATION_MATRIX[tier][role]) {
+      assert.notEqual(candidate.model, "luna", `${tier}/${role}`);
+      if (candidate.model === "sol") assert.equal(candidate.effort, "xhigh", `${tier}/${role}`);
+    }
+  }
+  for (const tier of Object.keys(COORDINATOR_MATRIX)) {
+    const selected = resolveCoordinatorRoute({ tier, worktree: "." });
+    assert.deepEqual([selected.model, selected.effort], ["gpt-6.1-sol", "xhigh"], tier);
+  }
+  for (const [tier, effort] of [["complex", "medium"], ["architecture", "xhigh"]]) {
+    const selected = resolveWorkloadRoute({ tier, role: "implementation", worktree: ".",
+      privilegedTierAuthorization: { authorizer: "owner", rationale: "Approved complex work" } });
+    assert.deepEqual([selected.model, selected.effort], ["gpt-6-astra", effort], tier);
+  }
+  assert.ok(MODEL_CATALOG.sol.capabilities.some(candidate => candidate.model === "gpt-6-sol"));
 });
 
 test("privileged routes and owner overrides keep source-backed guards", () => {

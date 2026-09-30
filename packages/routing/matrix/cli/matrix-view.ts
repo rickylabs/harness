@@ -375,7 +375,7 @@ export function renderFullMatrix(tiers: readonly WorkloadTier[] = WORKLOAD_TIERS
     "- `ui_ux` is owner-selected pure UI/UX specialization; incidental UI work stays on `implementation`.",
     "- `complex` and `architecture` require explicit owner or milestone-coordinator authority.",
     "- Owner matrix overrides require an exact `.llm/runs/**/worklog.md` entry and never waive evaluator independence.",
-    "- Deep research uses Gemini 3.8 Flash by tier, with Luna max as its only model fallback; Claude, OpenCode Go, Ollama, and OpenRouter are forbidden for that role.",
+    "- Deep research uses Gemini 3.8 Flash by tier, with SOL xhigh as its only model fallback; Claude, OpenCode Go, Ollama, and OpenRouter are forbidden for that role.",
   ].join("\n");
 }
 

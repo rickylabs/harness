@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "harness-compiled-table-transcription",
   "provenance": {
-    "description": "Packaged Harness routing catalog, evolved from compiled routing and placement data at commit 4c813fe10218e471f5d78a2dc45bd805ec260749 (consulted 2026-09-07) and edited directly since 2026-09-14. Native Codex and Claude choices reflect Eric's 2026-09-27 routing set: Astra for architecture or highly complex work, Sol high otherwise, Luna max for extremely simple tasks; Opus 5.5 high by default and Fable 5.1 for complex architecture. Exact native model IDs were checked against installed Codex CLI 0.158.0 and Claude Code 2.1.283 on 2026-09-28. This packaged catalog is not proof of executable fleet parity. Coordinator primaries follow Eric's 2026-09-28 correction: Sol medium for small project, project and milestone; Sol high for framework."
+    "description": "Packaged Harness routing catalog, evolved from compiled routing and placement data at commit 4c813fe10218e471f5d78a2dc45bd805ec260749 (consulted 2026-09-07) and edited directly since 2026-09-14. Eric's 2026-09-30 decision makes gpt-6.1-sol at xhigh the Codex default for all work, including simple tasks and coordinator scopes, except architecture or highly complex work, which retains Astra. Claude routing remains Opus 5.5 high by default and Fable 5.1 for complex architecture. The gpt-6.1-sol xhigh route was verified with Codex CLI 0.159.2 on 2026-09-30. Earlier native model IDs remain in the catalog for compatibility. This packaged catalog is not proof of executable fleet parity."
   },
   "families": [
     "anthropic",
@@ -39,6 +39,10 @@
     "docs_polish"
   ],
   "models": {
+    "gpt-6.1-sol": {
+      "family": "openai",
+      "label": "GPT-6.1 Sol"
+    },
     "gpt-6-sol": {
       "family": "openai",
       "label": "GPT-6 Sol"
@@ -130,8 +134,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [],
           "note": "small_scoped_slices"
@@ -160,8 +164,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": []
         },
@@ -199,8 +203,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [
             "model-unavailable"
@@ -231,8 +235,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-luna",
-            "effort": "max"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [],
           "note": "extremely_simple_tasks_only"
@@ -272,8 +276,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [
             "token-limit"
@@ -289,8 +293,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "medium"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": []
         }
@@ -304,8 +308,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "medium"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": []
         }
@@ -319,8 +323,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": []
         }
@@ -334,8 +338,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "medium"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": []
         }
@@ -360,8 +364,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [
             "token-limit"
@@ -498,8 +502,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [
             "token-limit"
@@ -531,8 +535,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [],
           "note": "single_pass_opposite_family_audit_of_generated_docs_changeset"
@@ -558,8 +562,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [
             "token-limit"
@@ -599,8 +603,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [
             "token-limit"
@@ -657,8 +661,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [],
           "certifies": "anthropic"
@@ -712,8 +716,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [],
           "certifies": "anthropic"
@@ -756,8 +760,8 @@
           "route": {
             "harness": "codex",
             "transport": "native",
-            "model": "gpt-6-sol",
-            "effort": "high"
+            "model": "gpt-6.1-sol",
+            "effort": "xhigh"
           },
           "when": [],
           "certifies": "anthropic"
