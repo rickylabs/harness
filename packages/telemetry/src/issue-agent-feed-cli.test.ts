@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { collectIssueAgentTree, issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
 import { ORCHID_DISPATCH_ROOT } from "./orchid-dispatch.js";
+import { CLAUDE_CHILD_EVENT_ROOT } from "./claude-child-events.js";
+import { chmod } from "node:fs/promises";
 import type { IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 
@@ -209,7 +211,9 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     assert.ok(Buffer.byteLength(rollout(rootId, null).split("\n")[0]!) >= 24_000);
     // Native filenames use a local UTC+2 wall clock while receipts and JSONL timestamps use UTC.
     await writeFile(join(sessions, `rollout-2026-09-27T23-25-00-${rootId}.jsonl`), rollout(rootId, null));
-    await writeFile(join(sessions, `rollout-2026-09-27T23-26-00-${childId}.jsonl`), rollout(childId, rootId));
+    // The child appends after the capture (22:00:00): that record is not in this frame (RUN-6).
+    await writeFile(join(sessions, `rollout-2026-09-27T23-26-00-${childId}.jsonl`), rollout(childId, rootId) +
+      JSON.stringify({ timestamp: "2026-09-27T22:00:01.266Z", type: "event_msg", payload: { type: "agent_message", message: "later" } }) + "\n");
     for (const [minute, id] of [[27, "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4f"],
       [28, "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c50"]] as const) {
       const unrelated = await open(join(sessions, `rollout-2026-09-27T23-${minute}-00-${id}.jsonl`), "w");
@@ -300,6 +304,60 @@ it("binds one Claude root and native child into live steps, tokens and separate 
     await rm(receipts, { recursive: true, force: true });
   }
 });
+it("RUN-6: records appended after the capture stay out of the frame instead of failing the issue tree", async () => {
+  // RUN-6 (2026-09-30), synthetic ids and the real times: the frame was stamped 11:21:09.952, and by the
+  // time the files were read, the sub-agent had appended a record stamped 11:21:11.218. Its observation
+  // then claimed a time after the frame, the strict reader refused it, and the whole #516 tree came back
+  // ancestry_unavailable for one poll (root and sub gone). A hook line after the capture must not
+  // refuse the child-event file either.
+  const home = await mkdtemp(join(tmpdir(), "issue-claude-home-"));
+  const receipts = await mkdtemp(join(tmpdir(), "issue-claude-receipts-"));
+  const events = await mkdtemp(join(tmpdir(), "issue-claude-events-"));
+  const issueId = "fixture-claude", repo = "example/project", brief = "b".repeat(64);
+  const key = createHash("sha256").update(`${issueId}\0${repo}\0${brief}`).digest("hex");
+  const record = join(receipts, key, "record"), sessionId = "3f6c1e2a-7b9d-4c5e-8a1f-0d2b4e6c8a91";
+  const project = join(home, ".claude", "projects", "fixture-project");
+  const now = "2026-09-30T11:21:09.952Z";
+  const row = (sidechain: boolean, timestamp: string, uuid: string) => JSON.stringify({ type: "assistant", timestamp, sessionId, uuid,
+    isSidechain: sidechain, message: { role: "assistant", model: "fixture-model", usage: { input_tokens: 1, output_tokens: 1 },
+      content: [{ type: "text", text: "Working." }] } }) + "\n";
+  const hook = (event: string, observedAt: string) =>
+    JSON.stringify({ event, sessionId, agentId: "fixture-child", observedAt }) + "\n";
+  try {
+    await mkdir(record, { recursive: true, mode: 0o700 });
+    await mkdir(join(receipts, "actions"), { mode: 0o700 });
+    await mkdir(join(project, sessionId, "subagents"), { recursive: true });
+    await writeFile(join(record, "dispatch.json"), JSON.stringify({ schemaVersion: 1,
+      runId: `orchid-${key}`, issue: { repo, number: 516 }, parentRunId: null, source: "claude",
+      provider: "fixture-router", model: "fixture-model", effort: "high", profile: "leaf",
+      tokenBudget: 1000, budgetSource: "route", state: "dispatched", observedAt: "2026-09-30T11:20:41.000Z",
+      location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" } }), { mode: 0o600 });
+    await writeFile(join(record, "binding.json"), JSON.stringify({ IssueID: issueId, Repo: repo,
+      BriefDigest: brief, Route: { transport: "claude", provider: "fixture-router", model: "fixture-model", effort: "high" },
+      NativeSessionID: sessionId }), { mode: 0o600 });
+    await writeFile(join(project, sessionId + ".jsonl"), row(false, "2026-09-30T11:20:45.132Z", "r1") +
+      row(false, "2026-09-30T11:21:09.530Z", "r2") + row(false, "2026-09-30T11:21:12.074Z", "r3"));
+    await writeFile(join(project, sessionId, "subagents", "agent-fixture-child.jsonl"), row(true, "2026-09-30T11:21:00.696Z", "c1") +
+      row(true, "2026-09-30T11:21:08.100Z", "c2") + row(true, "2026-09-30T11:21:11.218Z", "c3") + row(true, "2026-09-30T11:21:11.608Z", "c4"));
+    await chmod(events, 0o700);
+    const eventFile = join(events, `${createHash("sha256").update(sessionId).digest("hex")}.jsonl`);
+    await writeFile(eventFile, hook("SubagentStart", "2026-09-30T11:21:00.681Z") + hook("SubagentStop", "2026-09-30T11:21:11.700Z"), { mode: 0o600 });
+    await chmod(eventFile, 0o600);
+    const frame = await collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts, [CLAUDE_CHILD_EVENT_ROOT]: events },
+      limit: 20, now, issueKey: "example/project#516" });
+    assert.equal(frame.complete, true, String(frame.reason));
+    const agents = frame.issues[0]?.dispatches[0]?.agents ?? [];
+    assert.equal(agents.length, 2);
+    const child = agents.find(agent => agent.parentAgentId !== null)!;
+    // Its last record as of the capture, and its Start (the Stop came after the capture).
+    assert.equal(child.observation.observedAt, "2026-09-30T11:21:08.100Z");
+    assert.equal(child.liveness.state, "running");
+    assert.ok(!JSON.stringify(frame).includes(sessionId));
+  } finally {
+    for (const dir of [home, receipts, events]) await rm(dir, { recursive: true, force: true });
+  }
+});
+
 it("rejects malformed scoped issue selectors before collecting", async () => {
   for (const issue of ["387", "example/project#0", "example/project#99999999999999999999", "example/../project#387"]) {
     assert.equal(await issueAgentFeedCommand(["--json", "--issue", issue], { collect: async () => { throw Error("must not collect"); } }), 2);

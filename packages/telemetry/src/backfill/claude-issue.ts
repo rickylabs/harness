@@ -3,6 +3,7 @@ import { constants } from "node:fs";
 import { lstat, open, opendir } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { parseClaudeTranscript } from "./claude.js";
+import { transcriptAsOf } from "./jsonl.js";
 import type { RunRecord } from "../model.js";
 
 export interface ClaudeIssueScan {
@@ -47,9 +48,12 @@ async function readBounded(path: string, maxBytes: number): Promise<string | nul
   } finally { await handle.close(); }
 }
 
-/** No repo slug is guessed from a cwd. Each private binding selects at most one root file. */
+/**
+ * No repo slug is guessed from a cwd. Each private binding selects at most one root file. With
+ * `notAfterMs`, each file is read as it stood at that capture (see `transcriptAsOf`).
+ */
 export async function scanClaudeIssue(root: string, matchesRoot: (id: string) => boolean,
-  limit: number, maxTranscriptBytes: number, maxTotalBytes: number): Promise<ClaudeIssueScan> {
+  limit: number, maxTranscriptBytes: number, maxTotalBytes: number, notAfterMs?: number): Promise<ClaudeIssueScan> {
   let bytesRead = 0;
   try {
     if (!(await lstat(root)).isDirectory()) return unavailable("source_unavailable");
@@ -115,7 +119,7 @@ export async function scanClaudeIssue(root: string, matchesRoot: (id: string) =>
       const content = await readBounded(file.path, budget);
       if (content === null) return unavailable("scan_limit", bytesRead);
       bytesRead += Buffer.byteLength(content);
-      const parsed = parseClaudeTranscript(content, file.path);
+      const parsed = parseClaudeTranscript(notAfterMs === undefined ? content : transcriptAsOf(content, notAfterMs), file.path);
       if (parsed.run === null || parsed.notes.length > 0 || parsed.run.source !== "claude" ||
           parsed.run.id !== basename(file.path, ".jsonl") ||
           (file.root ? parsed.run.parentId !== null : parsed.run.parentId === null))

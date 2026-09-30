@@ -44,6 +44,27 @@ export function parseLine(raw: string): JsonObject | null {
   return parseLineWithReason(raw).line;
 }
 
+/**
+ * The transcript as it stood at `notAfterMs`: everything before the first line stamped later.
+ *
+ * The issue feed stamps its frame before it reads. An agent that appends in between must not put a
+ * record from after the frame into it: RUN-6 (2026-09-30) lost a whole issue tree for one poll to a
+ * child record stamped 1.3 s after the capture. File order is write order, so every later line was
+ * written after that moment too, whatever its own stamp. A line without a readable top-level
+ * `timestamp` is never a cut point.
+ */
+export function transcriptAsOf(text: string, notAfterMs: number): string {
+  let start = 0;
+  while (start < text.length) {
+    const end = text.indexOf("\n", start);
+    const at = parseLine(text.slice(start, end === -1 ? text.length : end))?.timestamp;
+    if (typeof at === "string" && Date.parse(at) > notAfterMs) return text.slice(0, start);
+    if (end === -1) break;
+    start = end + 1;
+  }
+  return text;
+}
+
 /** The reasons a line yields no record, as they appear in notes. */
 export const NOT_JSON = "not valid JSON";
 export const NOT_AN_OBJECT = "not a JSON object";

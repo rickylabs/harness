@@ -272,6 +272,18 @@ describe("backfillFromDisk", () => {
     );
   });
 
+  it("with notAfterMs, reads each transcript as it stood at the capture (issue feed, RUN-6)", async () => {
+    const dir = join(root, ".claude", "projects", "slug");
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, "live.jsonl"), claudeLine("ses-live", "2026-09-30T11:21:08.100Z") +
+      claudeLine("ses-live", "2026-09-30T11:21:11.218Z"));
+    const claudeProjects = join(root, ".claude", "projects");
+    const asOf = await backfillFromDisk({ claudeProjects }, { notAfterMs: Date.parse("2026-09-30T11:21:09.952Z") });
+    assert.equal(asOf.runs[0]?.updatedAt, "2026-09-30T11:21:08.100Z");
+    const whole = await backfillFromDisk({ claudeProjects });
+    assert.equal(whole.runs[0]?.updatedAt, "2026-09-30T11:21:11.218Z"); // Unchanged without the option.
+  });
+
   it("orders runs newest activity first", async () => {
     const dir = join(root, ".claude", "projects", "slug");
     await mkdir(dir, { recursive: true });

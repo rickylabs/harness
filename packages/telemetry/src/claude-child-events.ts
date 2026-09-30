@@ -46,7 +46,10 @@ export async function readClaudeChildStarts(root: string | undefined, sessionId:
             record.sessionId !== sessionId || typeof record.agentId !== "string" || !ID.test(record.agentId) ||
             typeof record.observedAt !== "string" || !ISO.test(record.observedAt)) return unavailable;
         const atMs = Date.parse(record.observedAt);
-        if (!Number.isFinite(atMs) || new Date(atMs).toISOString() !== record.observedAt || atMs > nowMs) return unavailable;
+        if (!Number.isFinite(atMs) || new Date(atMs).toISOString() !== record.observedAt) return unavailable;
+        // The file as it stood at the capture: a hook line appended after it is not in this frame
+        // (see transcriptAsOf), and neither is anything written after that line.
+        if (atMs > nowMs) break;
         // Claude's hook agent_id omits the literal prefix used by its transcript filename.
         // The issue scanner has already verified that each known child is a transcript run.
         const transcriptId = `agent-${record.agentId}`;
