@@ -46,16 +46,24 @@ function claudeChildRunning(run: RunRecord, starts: ReadonlyMap<string, string> 
   capturedAt: string): AgentObservedValue<boolean> {
   if (run.source !== "claude" || run.parentId === null || run.outcome === "complete" || run.outcome === "failed")
     return missing("measurement_missing");
-  const at = starts?.get(childEventKey(run.parentId, run.id));
-  if (at === undefined) return missing("measurement_missing");
-  const eventMs = Date.parse(at), captureMs = Date.parse(capturedAt);
-  if (!Number.isFinite(eventMs) || !Number.isFinite(captureMs) ||
-      new Date(eventMs).toISOString() !== at || eventMs > captureMs ||
-      eventMs + CLAUDE_CHILD_START_FRESH_MS < captureMs + ISSUE_AGENT_TREE_FRESH_MS) return missing("source_stale");
+  const start = starts?.get(childEventKey(run.parentId, run.id));
+  if (start === undefined) return missing("measurement_missing");
+  const startMs = Date.parse(start), captureMs = Date.parse(capturedAt);
+  if (!Number.isFinite(startMs) || !Number.isFinite(captureMs) ||
+      new Date(startMs).toISOString() !== start || startMs > captureMs) return missing("source_stale");
+  // While its latest hook event is the matched Start, the child is running as long as the Start or
+  // its own transcript's latest record is fresh. RUN-5 (2026-09-30): a child worked for 113 s after
+  // its Start, but the Start alone expired first, so it was never shown running.
+  const activityMs = Date.parse(run.updatedAt);
+  const active = Number.isFinite(activityMs) && new Date(activityMs).toISOString() === run.updatedAt &&
+    activityMs >= startMs && activityMs <= captureMs;
+  const eventMs = active ? activityMs : startMs;
+  const at = active ? run.updatedAt : start;
+  if (eventMs + CLAUDE_CHILD_START_FRESH_MS < captureMs + ISSUE_AGENT_TREE_FRESH_MS) return missing("source_stale");
   return { value: true, reason: null, observedAt: at,
     validUntil: new Date(eventMs + CLAUDE_CHILD_START_FRESH_MS).toISOString(),
     revision: digest(JSON.stringify({ source: "claude-child-hook", root: digest(run.parentId),
-      child: digest(run.id), event: at })) };
+      child: digest(run.id), event: start, activity: at })) };
 }
 export function buildAgentObservations(input: {
   readonly dispatches: readonly DispatchEvidence[];

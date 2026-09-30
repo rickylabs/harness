@@ -11,7 +11,11 @@ const ISO = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/;
 export const CLAUDE_CHILD_START_FRESH_MS = 90_000;
 export const childEventKey = (sessionId: string, childId: string) => `${sessionId}\0${childId}`;
 
-/** A verified root's latest hook event, reduced to fresh Starts for known children only. */
+/**
+ * A verified root's latest hook event per known child, reduced to the children whose latest event is
+ * a Start. How fresh that Start must be is judged with the child's own transcript activity
+ * (agent-observations.ts), not here: a child can work well past the Start window.
+ */
 export async function readClaudeChildStarts(root: string | undefined, sessionId: string,
   childIds: readonly string[], now: string, watchFiles?: Set<string>): Promise<ReadonlyMap<string, string>> {
   const unavailable = new Map<string, string>();
@@ -59,8 +63,7 @@ export async function readClaudeChildStarts(root: string | undefined, sessionId:
         latest.set(transcriptId, { event: record.event, at: record.observedAt });
       }
       for (const [id, event] of latest) {
-        if (event.event === "SubagentStart" && Date.parse(event.at) + CLAUDE_CHILD_START_FRESH_MS >= nowMs)
-          unavailable.set(childEventKey(sessionId, id), event.at);
+        if (event.event === "SubagentStart") unavailable.set(childEventKey(sessionId, id), event.at);
       }
     } finally { await handle.close(); }
   } catch { /* Missing or unsafe hook evidence never creates a child state. */ }
