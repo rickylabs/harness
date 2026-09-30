@@ -712,6 +712,48 @@ it("requires verified seat AND native process absence to end a stopped root", ()
   }
 });
 
+it("#516: a Claude root that finished its turn before an operator-timeout teardown ends succeeded, not cancelled", () => {
+  // #516 (2026-09-30), synthetic ids: the root's last turn ended at 11:31:12.824 and it sat at its
+  // prompt; divybot's 15-minute timeout tore it down at 11:36:06. It read Failed/Timed out.
+  const rootId = "fixture-claude-root";
+  const claudeDispatch = { ...dispatch, source: "claude" as const, harness: "claude" as const, external: rootId,
+    teardown: { cause: "timeout" as const, seatObservedAt: "2026-09-30T11:36:06.000Z", processObservedAt: "2026-09-30T11:36:06.500Z" } };
+  const captured = "2026-09-30T11:36:10.000Z";
+  const tree = (turnEndedAt: string | undefined, d: DispatchEvidence = claudeDispatch) => {
+    const native = [{ ...run(rootId, null), source: "claude" as const, startedAt: "2026-09-30T11:20:43.000Z",
+      updatedAt: "2026-09-30T11:31:12.824Z", ...(turnEndedAt === undefined ? {} : { turnEndedAt }) }];
+    const observations = buildAgentObservations({ dispatches: [d], runs: native, observedAt: captured,
+      sourceBound: true, dispatchComplete: true, nativeComplete: true });
+    const snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: [d], runs: native });
+    assert.ok(readIssueAgentTreeSnapshot(JSON.parse(JSON.stringify(snapshot))).ok);
+    return { snapshot, root: snapshot.issues[0]!.dispatches[0]!.agents[0]! };
+  };
+  const { snapshot, root: done } = tree("2026-09-30T11:31:12.824Z");
+  assert.deepEqual(done.liveness, { state: "ended", evidence: "teardown-observation", observedAt: "2026-09-30T11:36:06.500Z", reason: null });
+  assert.equal(done.endedBy, "timeout"); // The teardown is recorded, as the way it ended...
+  assert.equal(done.endedAt, "2026-09-30T11:36:06.500Z");
+  assert.deepEqual(done.terminalOutcome, { value: "succeeded", source: "native-outcome", observedAt: "2026-09-30T11:31:12.824Z", reason: null });
+  const ended = done.timeline?.events.find(event => event.kind === "ended");
+  assert.deepEqual([ended?.outcome, ended?.reason], ["succeeded", "timeout"]); // ...not as the outcome.
+  // Mid-turn at the teardown (no completed turn), or a turn that "ended" after it: cancelled, as before.
+  for (const turnEndedAt of [undefined, "2026-09-30T11:36:07.000Z"]) {
+    assert.deepEqual(tree(turnEndedAt).root.terminalOutcome,
+      { value: "cancelled", source: "teardown-observation", observedAt: "2026-09-30T11:36:06.500Z", reason: null });
+  }
+  // Any teardown of a finished root is done, not only a timeout.
+  assert.equal(tree("2026-09-30T11:31:12.824Z", { ...claudeDispatch, teardown: { ...claudeDispatch.teardown, cause: "teardown" } })
+    .root.terminalOutcome.value, "succeeded");
+  // The strict reader refuses a success dated after the teardown, and a success sourced from the teardown.
+  const tamper = (edit: (agent: Record<string, any>) => void) => {
+    const copy = JSON.parse(JSON.stringify(snapshot));
+    edit(copy.issues[0].dispatches[0].agents[0]);
+    return readIssueAgentTreeSnapshot(copy).ok;
+  };
+  assert.equal(tamper(agent => { agent.terminalOutcome.observedAt = "2026-09-30T11:36:07.000Z"; }), false);
+  assert.equal(tamper(agent => { agent.terminalOutcome.source = "teardown-observation"; }), false);
+  assert.ok(!JSON.stringify(snapshot).includes(rootId));
+});
+
 it("masks stale running at teardown seat absence and ends only after process absence", () => {
   const active = [run("PRIVATE-NATIVE-ROOT", null, "running")];
   const captured = "2026-01-01T00:00:04.000Z";

@@ -868,3 +868,13 @@ observation then carries `running: { value: false, observedAt }` at the same tim
 `validUntil` at least the frame's. `readIssueAgentTreeSnapshot` rejects `idle` without that false
 bit, and a false bit beside any other liveness. A reader before 0.26.0 rejects a frame that
 contains `idle`, so upgrade readers before producers.
+
+## Finished before a teardown (0.27.0)
+
+A teardown (`endedBy` `timeout` or `teardown`) ends the agent's seat. Its `terminalOutcome` was
+always `cancelled` from `teardown-observation`. It may now instead be
+`{ value: "succeeded", source: "native-outcome", observedAt }` with `observedAt` at or before the
+teardown's `liveness.observedAt`: the agent had completed its work and sat at its prompt when it was
+torn down. For a Claude root, that is its last turn closing on the final answer with nothing after.
+`endedBy`, `endedAt` and the `ended` timeline reason still record the teardown. A reader before
+0.27.0 rejects this pairing, so upgrade readers before producers.
