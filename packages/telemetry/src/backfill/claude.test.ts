@@ -178,6 +178,36 @@ describe("parseClaudeTranscript", () => {
     assert.equal(parseRun(lines(user("go"), assistant({ input_tokens: 1, output_tokens: 1 })), "o")?.childCompletions, undefined);
   });
 
+  it("reads a completed last turn (turnEndedAt) only when the turn ended on the final answer and nothing began after", () => {
+    const sessionId = "5dc200b1-b629-4b56-b487-6990b69ef498";
+    const end = (timestamp: string) => ({ type: "system", subtype: "turn_duration", durationMs: 1000, timestamp, sessionId });
+    const answer = assistant({ input_tokens: 1, output_tokens: 1 }, { message: { role: "assistant", model: "claude-opus-5",
+      usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: "text", text: "Done." }] } });
+    const toolCall = assistant({ input_tokens: 1, output_tokens: 1 }, { message: { role: "assistant", model: "claude-opus-5",
+      usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: "tool_use", id: "t1", name: "Bash", input: {} }] } });
+    const at = "2026-09-04T22:05:01.000Z";
+    assert.equal(parseRun(lines(user("go"), answer, end(at)))?.turnEndedAt, at);
+    // Metadata after the turn end does not reopen it.
+    assert.equal(parseRun(lines(user("go"), answer, end(at), { type: "pr-link", timestamp: "2026-09-04T22:06:00.000Z", sessionId }))?.turnEndedAt, at);
+    // No turn end yet (mid-turn), an interrupted turn, and a turn that began after the end: none.
+    assert.equal(parseRun(lines(user("go"), toolCall))?.turnEndedAt, undefined);
+    assert.equal(parseRun(lines(user("go"), answer))?.turnEndedAt, undefined);
+    assert.equal(parseRun(lines(user("go"), toolCall, user("[Request interrupted by user]", { uuid: "u2" }), end(at)))?.turnEndedAt, undefined);
+    assert.equal(parseRun(lines(user("go"), answer, end(at), user("continue", { uuid: "u3", timestamp: "2026-09-04T22:31:04.000Z" })))?.turnEndedAt, undefined);
+    assert.equal(parseRun(lines(user("go"), answer, end(at), { type: "queue-operation", operation: "enqueue", content: "x",
+      timestamp: "2026-09-04T22:06:00.000Z", sessionId }))?.turnEndedAt, undefined);
+    // Claude Code's own synthetic lines close a turn without finishing it: an API error (usage limit,
+    // overload, 5xx) and "No response requested.". A root that hit its quota did not succeed.
+    const apiError = assistant({ input_tokens: 0, output_tokens: 0 }, { isApiErrorMessage: true, error: "rate_limit",
+      message: { role: "assistant", model: "<synthetic>", usage: { input_tokens: 0, output_tokens: 0 },
+        content: [{ type: "text", text: "API Error: usage limit reached" }] } });
+    const noResponse = assistant({ input_tokens: 0, output_tokens: 0 }, { message: { role: "assistant", model: "<synthetic>",
+      usage: { input_tokens: 0, output_tokens: 0 }, content: [{ type: "text", text: "No response requested." }] } });
+    assert.equal(parseRun(lines(user("go"), apiError, end(at)))?.turnEndedAt, undefined);
+    assert.equal(parseRun(lines(user("go"), answer, user("more", { uuid: "u4" }), apiError, end(at)))?.turnEndedAt, undefined);
+    assert.equal(parseRun(lines(user("go"), noResponse, end(at)))?.turnEndedAt, undefined);
+  });
+
   it("prefers the session's own name over the first prompt", () => {
     // Both are prose and neither survives onto the record, so the issue numbers are what makes the
     // precedence observable: #98 comes from the session name and #7 from the prompt it replaced.

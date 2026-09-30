@@ -147,6 +147,12 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     ? (teardownSeatAt > teardownProcessAt ? teardownSeatAt : teardownProcessAt) : null;
   const teardownAt = !childObservationAfter(teardownSeatAt, teardownProcessAt, teardownCandidate)
     ? null : teardownCandidate;
+  // A Claude root whose last turn had completed before the teardown was done, not cut off: the
+  // teardown (an operator timeout, say) ends its seat, and its outcome is the completed turn.
+  // #516 (2026-09-30) finished at its prompt, was torn down 14 minutes later and read Failed.
+  const turnEndedAt = root && run?.source === "claude" ? time(run.turnEndedAt, now) : null;
+  const finishedBeforeTeardown = teardownAt !== null && turnEndedAt !== null && turnEndedAt <= teardownAt &&
+    (start === null || turnEndedAt >= start) ? turnEndedAt : null;
   // A verified Claude child ends natively only on its parent's own task-notification for exactly this
   // child: completed or failed, at or after its start and its last transcript record, and not
   // superseded by a later matched Start. Any other status, or any doubt, leaves the rules below.
@@ -186,7 +192,9 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     ? liveness.evidence === "stop-observation"
       ? { value: "cancelled", source: "stop-observation", observedAt: stopAt!, reason: null }
     : liveness.evidence === "teardown-observation"
-      ? { value: "cancelled", source: "teardown-observation", observedAt: teardownAt!, reason: null }
+      ? finishedBeforeTeardown !== null
+        ? { value: "succeeded", source: "native-outcome", observedAt: finishedBeforeTeardown, reason: null }
+        : { value: "cancelled", source: "teardown-observation", observedAt: teardownAt!, reason: null }
     : childEndAt !== null
       ? { value: childCompletion!.status === "completed" ? "succeeded" : "failed", source: "native-outcome", observedAt: childEndAt, reason: null }
     : run!.outcome === "complete"

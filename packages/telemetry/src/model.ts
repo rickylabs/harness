@@ -180,6 +180,14 @@ export interface RunRecord {
    */
   readonly terminalAt?: string;
   /**
+   * Claude only: the time of the `system` `turn_duration` record that closed the session's last
+   * turn, when that turn ended on the assistant's final message (not an interrupt) and nothing began
+   * after it (no later user, assistant, attachment or queued record). The session was then idle at
+   * its prompt with its turn complete. Omitted otherwise. Not a session outcome: another prompt
+   * starts a new turn.
+   */
+  readonly turnEndedAt?: string;
+  /**
    * Claude only: the latest task-notification this session received for each background child,
    * reduced to the child's transcript run id, the notification status and its time. Never the
    * notification's summary, result or output path. `other` is any status this reader does not map.

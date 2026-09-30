@@ -250,6 +250,25 @@ it("accepts verified timeout teardown and rejects a missing terminal observation
   assert.equal(read(withNode({ ...core, history: node.history, terminalOutcome: node.terminalOutcome })).ok, false);
   assert.equal(read(withNode({ ...core, history: node.history, liveness: node.liveness })).ok, false);
 });
+it("0.27.0: a teardown may carry a native success from at or before it, never after it", () => {
+  // Captured 5 s after the teardown, so a success stamped in between is refused by the teardown rule
+  // itself, not by the capture-time bound.
+  const captured = "2026-01-01T00:00:05.000Z", after = "2026-01-01T00:00:03.000Z";
+  const base = { ...snapshot(), observedAt: captured, validUntil: "2026-01-01T00:00:35.000Z" };
+  const withNode = (agent: unknown) => ({ ...base, issues: [{ ...base.issues[0],
+    dispatches: [{ dispatchId, agents: [agent] }] }] });
+  const finished = { ...node,
+    liveness: { state: "ended", evidence: "teardown-observation", observedAt: at, reason: null },
+    endedBy: "timeout", terminalOutcome: { value: "succeeded", source: "native-outcome", observedAt: at, reason: null },
+    startedAt: at, startedAtReason: null, endedAt: at, endedAtReason: null };
+  assert.equal(read(withNode(finished)).ok, true);
+  assert.equal(read(withNode({ ...finished, endedBy: "teardown" })).ok, true);
+  assert.equal(read(withNode({ ...finished, terminalOutcome: { ...finished.terminalOutcome, observedAt: after } })).ok, false);
+  // Only a native success: not a native failure or cancellation, and not a success sourced from the teardown.
+  for (const value of ["failed", "cancelled"])
+    assert.equal(read(withNode({ ...finished, terminalOutcome: { ...finished.terminalOutcome, value } })).ok, false);
+  assert.equal(read(withNode({ ...finished, terminalOutcome: { ...finished.terminalOutcome, source: "teardown-observation" } })).ok, false);
+});
 it("requires a running measurement to cover its entire public frame", () => {
   const base = snapshot();
   const measured = { value: true, reason: null, observedAt: at, validUntil: base.validUntil, revision: rev } as const;

@@ -59,6 +59,7 @@ interface Line {
   readonly message?: unknown;
   readonly operation?: unknown;
   readonly content?: unknown;
+  readonly subtype?: unknown;
 }
 
 /**
@@ -240,6 +241,10 @@ export function parseClaudeTranscript(
   const notices: Notice[] = [];
   const launches = new Map<string, string>();
   let activity: NonNullable<RunRecord["activitySteps"]> = [];
+  // A turn closes with a `system` turn_duration record. It completed only when the last message
+  // before it is the assistant's final answer; an interrupted turn ends on the user's interrupt.
+  let finalAnswer = false;
+  let turnEndedAt: string | null = null;
 
   for (const [lineNumber, raw] of text.split("\n").entries()) {
     if (raw.trim().length === 0) continue;
@@ -283,6 +288,23 @@ export function parseClaudeTranscript(
       firstAt ??= at;
       lastAt = at;
     }
+
+    if (known && (line.type === "user" || line.type === "assistant" || line.type === "attachment" ||
+        line.type === "queue-operation")) turnEndedAt = null;
+    if (line.type === "user") finalAnswer = false;
+    if (line.type === "assistant") {
+      // Only the model's own answer finishes a turn. Claude Code also writes assistant lines itself
+      // (model "<synthetic>": an API error such as a usage limit or an overload, flagged
+      // isApiErrorMessage, or "No response requested.") and closes those turns too; they are not
+      // finished work.
+      const message = obj(line.message);
+      const content = message?.["content"];
+      const record = parsed.line as JsonObject;
+      finalAnswer = message !== null && message["model"] !== "<synthetic>" &&
+        record["isApiErrorMessage"] !== true && record["error"] === undefined &&
+        !(Array.isArray(content) && content.some(part => obj(part)?.["type"] === "tool_use"));
+    }
+    if (line.type === "system" && line.subtype === "turn_duration" && at !== null) turnEndedAt = finalAnswer ? at : null;
 
     if (line.type === "custom-title") {
       // The CLI's own name for the session — the closest thing to a task title on this seam, and
@@ -363,6 +385,7 @@ export function parseClaudeTranscript(
       tokenSamples: tokenSamples.snapshot(),
       activitySteps: activity,
       ...(childCompletions.length > 0 ? { childCompletions } : {}),
+      ...(turnEndedAt === null ? {} : { turnEndedAt }),
       // The Claude store writes no completion marker: a finished session and a session whose process
       // died mid-turn produce the same file. Reporting `unknown` is the honest reading; a caller
       // with a clock can compare `updatedAt` against now, but that is a judgement, not a fact.

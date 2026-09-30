@@ -558,8 +558,12 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
   if (liveness.state === "ended" && liveness.evidence === "stop-observation" &&
     (terminalOutcome.value !== "cancelled" || terminalOutcome.source !== "stop-observation")) return bad();
   if (terminalOutcome.source === "stop-observation" && (liveness.state !== "ended" || liveness.evidence !== "stop-observation")) return bad();
+  // A teardown ends the seat. The outcome is the teardown's cancellation, or (0.27.0) a native
+  // success the agent completed at or before the teardown: it had finished and sat at its prompt.
   if (liveness.state === "ended" && liveness.evidence === "teardown-observation" &&
-    (terminalOutcome.value !== "cancelled" || terminalOutcome.source !== "teardown-observation")) return bad();
+    !(terminalOutcome.value === "cancelled" && terminalOutcome.source === "teardown-observation") &&
+    !(terminalOutcome.value === "succeeded" && terminalOutcome.source === "native-outcome" &&
+      terminalOutcome.observedAt <= liveness.observedAt)) return bad();
   if (terminalOutcome.source === "teardown-observation" && (liveness.state !== "ended" || liveness.evidence !== "teardown-observation")) return bad();
   const startedAt = row.startedAt === null ? null : stamp(row.startedAt);
   const endedAt = row.endedAt === null ? null : stamp(row.endedAt);

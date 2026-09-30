@@ -145,7 +145,7 @@ it("RUN-5: a child that works past its Start window stays running on its own act
   const file = join(root, `${createHash("sha256").update(session).digest("hex")}.jsonl`);
   const put = async (lines: readonly string[]) => { await writeFile(file, lines.join("\n") + "\n", { mode: 0o600 }); await chmod(file, 0o600); };
   const claudeDispatch = { ...dispatch, source: "claude" as const, external: session, observedAt: "2026-09-30T11:04:00.000Z" };
-  // The file as it stood at each capture: the reader refuses a file with a line from the future.
+  // The file as it stood at each capture (the reader stops at a line from after the capture, #523).
   let written: readonly string[] = [];
   const running = async (observedAt: string, childUpdatedAt: string) => {
     await put(written.filter(entry => (JSON.parse(entry) as { observedAt: string }).observedAt <= observedAt));
