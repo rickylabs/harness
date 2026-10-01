@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **454/539 done · 25 running · 26 queued · 16 abandoned · 18 invisible**
+`[################----]` **454/540 done · 26 running · 26 queued · 16 abandoned · 18 invisible**
 
-_Latest board activity: 2026-10-01T18:47:00Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-01T19:18:43Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (25)
+## Moving now (26)
 
 Something could be acting on these right now.
 
@@ -15,6 +15,7 @@ Something could be acting on these right now.
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl-eval` | `e9` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees](https://github.com/rickylabs/harness/issues/373) | `impl-eval` | — |
+| [PR554 fix(telemetry): isolate unlocated failed registrations](https://github.com/rickylabs/harness/pull/554) | `impl-eval` | — |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -50,12 +51,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#541 Owner test: read-only walk to dispatch from the app](https://github.com/rickylabs/harness/issues/541) | — | — |
 | [PR551 Add provider billing meters and model price readers (0.33.0)](https://github.com/rickylabs/harness/pull/551) | — | — |
 
-## Anomalies (37)
+## Anomalies (38)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
+- **#554** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
@@ -126,7 +128,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 253/290 done · 9 running · 3 queued · 10 abandoned · 15 invisible
+`[##########--]` 253/291 done · 10 running · 3 queued · 10 abandoned · 15 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -134,7 +136,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 221/254 done · 8 running · 2 queued · 10 abandoned · 13 invisible | — |
+| _(no epic)_ | `[##########--]` 221/255 done · 9 running · 2 queued · 10 abandoned · 13 invisible | — |
 
 ## Waiting to start
 
@@ -178,7 +180,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  454/539 done · 25 running · 26 queued · 16 abandoned · 18 invisible
+# rickylabs/harness  [################----]  454/540 done · 26 running · 26 queued · 16 abandoned · 18 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -466,7 +468,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [#################---]  253/290 done · 9 running · 3 queued · 10 abandoned · 15 invisible
+## (no milestone)  [#################---]  253/291 done · 10 running · 3 queued · 10 abandoned · 15 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -771,6 +773,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            PR551 Add provider billing meters and model price readers (0.33.0)
     plan                 #552 [rickylabs/harness#549] AGY acceptance: scoped startup, live text and completion
     shipped              #553 [rickylabs/harness#549] AGY acceptance: scoped startup, live text and completion
+    impl-eval            PR554 fix(telemetry): isolate unlocated failed registrations (p0)
 ```
 
 </details>
