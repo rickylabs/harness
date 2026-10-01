@@ -13,7 +13,9 @@ The optional `defaultTier` suggests a workload tier to the app composer when a
 worker brief omits one; it must be a known matrix workload tier and does not
 override the route.
 The permissions and guardrails describe requested policy; they do not grant a seat
-new capabilities. Run `pnpm run check:profiles` for field-specific errors.
+new capabilities. `pnpm run check:profiles` validates configured role coverage,
+populated worker defaults and dedicated coordinator routes, with field-specific
+errors. The vocabulary comes from routing data rather than a second model table.
 
 The dispatcher injects this line into every brief that names one:
 
@@ -62,13 +64,33 @@ Then the phases, in order, each one saying what it produces and what proves it.
 
 ---
 
-## The three profiles
+## Matrix-role profiles
 
-| Profile | For | Shape |
+| Profile | Primary role | For |
 | --- | --- | --- |
-| [`leaf`](leaf.md) | one scoped change, one branch, one PR | slices, each gated and signed off |
-| [`milestone-coordinator`](milestone-coordinator.md) | a whole milestone | 4 fixed lanes, bounded WIP, a validator gate |
-| [`rfc`](rfc.md) | a question that needs an answer, not a change | research swarm, then one filed RFC |
+| [`planner`](planner.md) | `plan` | prepare a scoped, evaluated plan |
+| [`plan-evaluator`](plan-evaluator.md) | `plan_evaluation` | independently review a plan |
+| [`leaf`](leaf.md) | `implementation` | Single agent: one change, one PR |
+| [`implementation-evaluator`](implementation-evaluator.md) | `implementation_evaluation` | independently review the changed head |
+| [`researcher`](researcher.md) | `deep_research` | answer a research question and file a ratified RFC |
+| [`docs`](docs.md) | `documentation` | deliver a scoped documentation change |
+| [`ui-ux`](ui-ux.md) | `ui_ux` | deliver owner-selected interface work |
+| [`vision-evaluator`](vision-evaluator.md) | `vision_evaluation` | report independent visual findings |
+
+Every canonical worker profile defaults to `feature`, a populated nonprivileged
+workload tier. An explicit tier still follows its configured authorization policy.
+Evaluators never author the evaluated work and require a separate session and a
+different vendor family; a profile cannot supply missing independence evidence.
+Vision findings do not replace implementation certification.
+
+[`rfc`](rfc.md) is the compatibility alias for researcher. Keeping its file and
+routing row preserves existing briefs and persisted profile references while the
+researcher profile owns the process.
+
+[`milestone-coordinator`](milestone-coordinator.md) uses the dedicated
+`coordinators.milestone` configuration route. The routing row supplies its default
+scope; it has no worker `defaultTier`. `milestone` is not a workload tier and
+`coordinator` is not a worker role. Missing scope routes are blockers.
 
 ---
 

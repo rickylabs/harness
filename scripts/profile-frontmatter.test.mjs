@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { test } from "node:test";
-import { validateProfileMarkdown } from "./profile-frontmatter.mjs";
+import { validateProfileMarkdown, validateProfileCollection } from "./profile-frontmatter.mjs";
+import routing from "../packages/routing/config/routing.fleet.v2.json" with { type: "json" };
 
 const valid = `---
 name: fixture
@@ -22,17 +23,81 @@ guardrails:
 `;
 const codes = source => validateProfileMarkdown("fixture.md", source).problems.map(x => `${x.field}:${x.code}`);
 
-test("the three real profiles have a validated, model-free manifest", () => {
-  for (const name of ["leaf", "rfc", "milestone-coordinator"]) {
+const primaryRoles = {
+  planner: "plan", "plan-evaluator": "plan_evaluation", leaf: "implementation",
+  "implementation-evaluator": "implementation_evaluation", researcher: "deep_research",
+  docs: "documentation", "ui-ux": "ui_ux", "vision-evaluator": "vision_evaluation",
+};
+const profileDirectory = new URL("../profiles/", import.meta.url);
+const documents = () => readdirSync(profileDirectory).filter(name => name.endsWith(".md") && name !== "README.md")
+  .map(path => ({ path, markdown: readFileSync(new URL(path, profileDirectory), "utf8") }));
+
+test("every matrix role has its canonical model-free profile and a populated default", () => {
+  assert.deepEqual(Object.values(primaryRoles).sort(), Object.keys(routing.roles).sort());
+  assert.deepEqual(validateProfileCollection(documents()), []);
+  for (const name of [...Object.keys(primaryRoles), "rfc", "milestone-coordinator"]) {
     const source = readFileSync(new URL(`../profiles/${name}.md`, import.meta.url), "utf8");
     const result = validateProfileMarkdown(`${name}.md`, source);
     assert.deepEqual(result.problems, [], `${name}: ${JSON.stringify(result.problems)}`);
     assert.equal(result.value.name, name);
-    if (name === "leaf") assert.equal(result.value.defaultTier, "feature");
+    if (Object.hasOwn(primaryRoles, name) || name === "rfc") {
+      assert.equal(result.value.role, primaryRoles[name] ?? "deep_research");
+      assert.equal(result.value.defaultTier, "feature");
+    } else assert.equal(Object.hasOwn(result.value, "defaultTier"), false);
+    if (name === "leaf") assert.equal(result.value.title, "Single agent: one change, one PR");
     for (const forbidden of ["model", "effort", "transport", "fallback", "budget"]) {
       assert.equal(Object.hasOwn(result.value, forbidden), false);
     }
   }
+});
+
+test("the rfc alias preserves its route and points to the canonical research process", () => {
+  const alias = readFileSync(new URL("rfc.md", profileDirectory), "utf8");
+  assert.match(alias, /\[researcher\]\(researcher\.md\)/);
+  assert.equal(validateProfileMarkdown("rfc.md", alias).value.role, "deep_research");
+  const missing = validateProfileCollection(documents().filter(document => document.path !== "researcher.md"));
+  assert.ok(missing.some(problem => problem.path === "researcher.md" && problem.code === "required_missing"));
+});
+
+test("configured worker roles cannot silently lack a profile", () => {
+  const replacement = structuredClone(routing);
+  replacement.roles.fresh_worker = {};
+  const problems = validateProfileCollection(documents(), replacement);
+  assert.ok(problems.some(problem => problem.code === "coverage_missing"));
+  const withoutPlanner = validateProfileCollection(documents().filter(document => document.path !== "planner.md"));
+  assert.ok(withoutPlanner.some(problem => problem.path === "planner.md" && problem.code === "required_missing"));
+  assert.ok(withoutPlanner.some(problem => problem.code === "coverage_missing"));
+});
+
+test("worker defaults and coordinator scopes require populated configuration routes", () => {
+  const source = valid.replace("role: implementation", "role: implementation\ndefaultTier: feature");
+  const replacement = structuredClone(routing);
+  replacement.tiers.find(tier => tier.tier === "feature").cells.implementation = [];
+  assert.ok(validateProfileMarkdown("fixture.md", source, replacement).problems
+    .some(problem => problem.field === "defaultTier" && problem.code === "no_route"));
+  const coordinator = valid.replace("role: implementation", "role: coordinator")
+    .replace("matrix `implementation` row; evaluator `implementation_evaluation`", "coordinator matrix at `milestone` scope");
+  replacement.coordinators.milestone = [];
+  assert.ok(validateProfileMarkdown("fixture.md", coordinator, replacement).problems
+    .some(problem => problem.field === "routing" && problem.code === "no_route"));
+  delete replacement.coordinators.milestone;
+  assert.ok(validateProfileMarkdown("fixture.md", coordinator, replacement).problems
+    .some(problem => problem.code === "routing_mismatch"));
+  assert.deepEqual(validateProfileMarkdown("fixture.md", coordinator).problems, []);
+});
+
+test("whole-document replacement supplies disjoint roles, tiers and coordinator scopes", () => {
+  const replacement = { roles: { fresh_worker: {} },
+    tiers: [{ tier: "fresh_tier", cells: { fresh_worker: [{}] } }],
+    coordinators: { fresh_scope: [{}] } };
+  const worker = valid.replaceAll("implementation_evaluation", "other_review")
+    .replaceAll("implementation", "fresh_worker")
+    .replace("role: fresh_worker", "role: fresh_worker\ndefaultTier: fresh_tier");
+  assert.deepEqual(validateProfileMarkdown("fixture.md", worker, replacement).problems, []);
+  assert.ok(validateProfileMarkdown("fixture.md", worker).problems.some(problem => problem.code === "unknown_role"));
+  const coordinator = valid.replace("role: implementation", "role: coordinator")
+    .replace("matrix `implementation` row; evaluator `implementation_evaluation`", "coordinator matrix at `fresh_scope` scope");
+  assert.deepEqual(validateProfileMarkdown("fixture.md", coordinator, replacement).problems, []);
 });
 
 test("default tier is a known workload tier only on worker profiles", () => {
