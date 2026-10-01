@@ -184,8 +184,13 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   // the last activity. Before this, a Codex child that finished showed "ended" with no end time
   // (RUN-453, 2026-09-30); a run without an exact terminal time still has none.
   const terminalAt = time(run?.terminalAt, now);
+  const latestStepAt = (run?.activitySteps ?? []).reduce<string | null>((latest, step) => {
+    const at = time(step.at, now);
+    return at !== null && (latest === null || at > latest) ? at : latest;
+  }, null);
   const nativeEndAt = liveness.state === "ended" && liveness.evidence === "native-outcome" && childEndAt === null &&
-    terminalAt !== null && start !== null && terminalAt >= start ? terminalAt : null;
+    terminalAt !== null && start !== null && terminalAt >= start &&
+    (latestStepAt === null || terminalAt >= latestStepAt) ? terminalAt : null;
   const endedBy: IssueAgentTreeAgent["endedBy"] = liveness.state === "ended" && liveness.evidence === "stop-observation" ? "stop"
     : liveness.state === "ended" && liveness.evidence === "teardown-observation" ? dispatch.teardown!.cause : null;
   const terminalOutcome: IssueAgentTreeAgent["terminalOutcome"] = liveness.state === "ended"

@@ -57,6 +57,24 @@ const tokenCount = (total: Record<string, number>, at: string, rateLimits?: unkn
   },
 });
 
+it("keeps the latest bound native turn end and clears it when the session resumes", () => {
+  const event = (at: string, type: string) => ({ timestamp: at, type: "event_msg", payload: { type } });
+  const assistant = { timestamp: "2026-09-04T21:00:04.000Z", type: "response_item", payload: {
+    type: "message", role: "assistant", phase: "final_answer", content: [{ type: "output_text", text: "The assigned work is complete." }],
+  } };
+  const prefix = lines(meta, event("2026-09-04T21:00:01.000Z", "task_started"),
+    event("2026-09-04T21:00:02.000Z", "task_complete"), event("2026-09-04T21:00:03.000Z", "task_started"),
+    assistant, event("2026-09-04T21:00:05.000Z", "task_complete"));
+  const done = parseRun(prefix)!;
+  assert.equal(done.outcome, "complete");
+  assert.equal(done.terminalAt, "2026-09-04T21:00:05.000Z");
+  assert.equal(done.activitySteps?.[0]?.summary, "The assigned work is complete.");
+  assert.ok(done.activitySteps!.every(step => step.at <= done.terminalAt!));
+  const resumed = parseRun(prefix + "\n" + lines(event("2026-09-04T21:00:06.000Z", "task_started")))!;
+  assert.equal(resumed.outcome, "running");
+  assert.equal(resumed.terminalAt, undefined);
+});
+
 describe("isoFromUnixSeconds", () => {
   it("converts a Unix second", () => {
     assert.equal(isoFromUnixSeconds(1_772_000_000), new Date(1_772_000_000_000).toISOString());

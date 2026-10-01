@@ -41,10 +41,22 @@ function commandHead(value: unknown): string | null {
   return second && safeSubcommands[first]?.has(second) ? `${first} ${second}` : first;
 }
 function firstSentence(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const text = value.trimStart();
-  const sentence = text.match(/^[^\r\n]*?[.!?](?=\s|$)/)?.[0] ?? text;
-  return publicActivityText(sentence);
+  if (typeof value !== "string" || value.length > 16_384) return null;
+  // Never turn an interrupted credential-like token into safe-looking prose.
+  if (/\b(?:sk-|gh[pousr]_|github_pat_)[^\s]*[.!?]\s+\S/i.test(value)) return null;
+  // Normalize presentation only. Code spans and emphasis are unwrapped only
+  // when their complete contents pass the same public screen as the decoder.
+  const text = value.replace(/[’‘]/g, "'").replace(/[“”]/g, "'")
+    .replace(/`([^`\r\n]+)`/g, (whole, inner: string) => publicActivityText(inner) ?? whole)
+    .replace(/\*\*([^*\r\n]+)\*\*/g, (whole, inner: string) => publicActivityText(inner) ?? whole)
+    .replace(/^\s*[-*] /gm, "");
+  // Dots within a path, URL or identifier never form a boundary. Each whole
+  // sentence is screened before selection; no truncation can hide its suffix.
+  for (const sentence of text.split(/(?<=[.!?])\s+|[\r\n]+/).slice(0, 64)) {
+    const safe = publicActivityText(sentence);
+    if (safe !== null) return safe;
+  }
+  return null;
 }
 function args(value: unknown): Record<string, unknown> | null {
   if (typeof value === "string" && value.length <= 4096) {
@@ -119,7 +131,8 @@ export function codexActivity(raw: unknown, origin: string, line: number): reado
     const found = fromTool("codex-rollout", origin, line, 0, at, payload["name"], payload["arguments"] ?? payload["input"]);
     return found === null ? [] : [found];
   }
-  if (payload["type"] !== "message" || payload["role"] !== "assistant" || !Array.isArray(payload["content"])) return [];
+  if (payload["type"] !== "message" || payload["role"] !== "assistant" || !Array.isArray(payload["content"]) ||
+      (payload["phase"] !== undefined && payload["phase"] !== "commentary" && payload["phase"] !== "final_answer")) return [];
   return payload["content"].flatMap((part, i) => {
     const content = object(part);
     if (content?.["type"] !== "output_text") return [];
