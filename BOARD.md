@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **441/519 done · 21 running · 26 queued · 16 abandoned · 15 invisible**
+`[################----]` **442/521 done · 21 running · 26 queued · 16 abandoned · 16 invisible**
 
-_Latest board activity: 2026-10-01T05:10:18Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-01T05:39:01Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (21)
 
@@ -34,7 +34,7 @@ Something could be acting on these right now.
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 | [PR495 test(telemetry): app-video-retake--490 review evidence](https://github.com/rickylabs/harness/pull/495) | `impl-eval` | — |
 
-## Not on the board (2)
+## Not on the board (3)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -42,8 +42,9 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
+| [#535 Tour (retry): read-only walk of the issue feed's named tools](https://github.com/rickylabs/harness/issues/535) | — | — |
 
-## Anomalies (34)
+## Anomalies (35)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -92,12 +93,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#370** — open item has no status label, so it appears in no column
 - **#422** — open item has no status label, so it appears in no column
+- **#535** — open item has no status label, so it appears in no column
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 197/245 done · 16 running · 23 queued · 6 abandoned · 3 invisible
+`[#########---]` 198/247 done · 16 running · 23 queued · 6 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -112,7 +114,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
-| _(no epic)_ | `[########----]` 7/10 done · 1 queued · 2 invisible | — |
+| _(no epic)_ | `[########----]` 8/12 done · 1 queued · 3 invisible | — |
 
 ### (no milestone)
 
@@ -168,9 +170,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  441/519 done · 21 running · 26 queued · 16 abandoned · 15 invisible
+# rickylabs/harness  [################----]  442/521 done · 21 running · 26 queued · 16 abandoned · 16 invisible
 
-## M1 — dsh coordinator foundation  [################----]  197/245 done · 16 running · 23 queued · 6 abandoned · 3 invisible
+## M1 — dsh coordinator foundation  [################----]  198/247 done · 16 running · 23 queued · 6 abandoned · 4 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -451,6 +453,8 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #466 App video: live Sol leaf dispatch and actions
     no status            #490 App video retake: scoped agent review and live actions
     shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
+    shipped              #534 Tour: read-only walk of the issue feed's named tools
+    no status            #535 Tour (retry): read-only walk of the issue feed's named tools
 
 ## (no milestone)  [#################---]  244/274 done · 5 running · 3 queued · 10 abandoned · 12 invisible
 
