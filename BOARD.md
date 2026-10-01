@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **437/518 done · 23 running · 26 queued · 16 abandoned · 16 invisible**
+`[################----]` **439/518 done · 22 running · 26 queued · 16 abandoned · 15 invisible**
 
-_Latest board activity: 2026-10-01T03:42:43Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-01T03:43:08Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (23)
+## Moving now (22)
 
 Something could be acting on these right now.
 
@@ -15,7 +15,6 @@ Something could be acting on these right now.
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl-eval` | `e9` |
 | [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `impl-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
-| [#321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch](https://github.com/rickylabs/harness/issues/321) | `impl-eval` | `e11` |
 | [#373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees](https://github.com/rickylabs/harness/issues/373) | `impl-eval` | — |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
@@ -45,18 +44,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
 
-## Anomalies (36)
+## Anomalies (34)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
-- **#321** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
-
-**`closed-without-status`**
-
-- **#530** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-milestone-conflict`**
 
@@ -123,15 +117,15 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 241/273 done · 6 running · 3 queued · 10 abandoned · 13 invisible
+`[##########--]` 243/273 done · 5 running · 3 queued · 10 abandoned · 12 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[############]` 6/6 done | `no status` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 2 running · 1 invisible | `triage` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 210/237 done · 4 running · 2 queued · 10 abandoned · 11 invisible | — |
+| _(no epic)_ | `[##########--]` 211/237 done · 4 running · 2 queued · 10 abandoned · 10 invisible | — |
 
 ## Waiting to start
 
@@ -175,7 +169,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  437/518 done · 23 running · 26 queued · 16 abandoned · 16 invisible
+# rickylabs/harness  [################----]  439/518 done · 22 running · 26 queued · 16 abandoned · 15 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  196/245 done · 17 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -459,7 +453,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #490 App video retake: scoped agent review and live actions
     shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
 
-## (no milestone)  [#################---]  241/273 done · 6 running · 3 queued · 10 abandoned · 13 invisible
+## (no milestone)  [#################---]  243/273 done · 5 running · 3 queued · 10 abandoned · 12 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -471,8 +465,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]  (epic is in M1 — dsh coordinator foundation)
-    [###########-----] 7/10 done · 2 running · 1 invisible
-    impl-eval            #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0)
+    [############----] 8/10 done · 1 running · 1 invisible
+    shipped              #321 The matrix resolves an architecture-tier evaluator the launcher refuses by name, and nothing reports the mismatch (p0)
     shipped              PR339 docs(e11): charter enforcement plan and measured dual-agent pilot (p0)
     no status            #340 E11 I1: independent feature-tier plan evaluation for receipt checker (p0)
     shipped              #341 E11 I1: native fallback plan evaluation for receipt checker (p0)
@@ -746,7 +740,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR527 feat(contracts): the governance read carries the dispatcher's transport availability (p1)
     shipped              PR528 chore(routing): adopt Sol 6.1 low and xhigh defaults
     shipped              PR529 feat(telemetry): publish account quota and opaque session usage
-    no status            PR530 fix(routing): configure launchable Grok and Muse evaluators
+    shipped              PR530 fix(routing): configure launchable Grok and Muse evaluators
 ```
 
 </details>
