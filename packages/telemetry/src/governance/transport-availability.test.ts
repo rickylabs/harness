@@ -52,7 +52,7 @@ it("reads only an owner-only regular file under the size bound", async () => {
     assert.equal(await code(join(dir, "absent.json")), "file-unreadable");
     assert.equal(await code(dir), "file-unreadable");
     const big = join(dir, "big.json");
-    await writeFile(big, "x".repeat(4097), { mode: 0o600 });
+    await writeFile(big, "x".repeat(32769), { mode: 0o600 });
     assert.equal(await code(big), "oversize");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
@@ -77,4 +77,25 @@ it("maps the fourth OpenCode row as capacity, retains legacy, and refuses incomp
     ...["meter-unread", "meter-stale", "window-expired", "5h-ceiling", "weekly-ceiling", "ceiling-misconfigured", "PRIVATE_CANARY"].map(reason =>
       [...native, row("opencode", false, reason)]),
   ]) assert.deepEqual(mapTransportAvailability(snapshot({ transports })), { ok: false, code: "shape-mismatch" });
+});
+
+it("maps source provider pools with exact counts, strict bounds and aggregate agreement", () => {
+  const native = JSON.parse(snapshot()).transports;
+  const source = (pools: unknown, available = true) => snapshot({transports:[...native,row("opencode",available,available?null:"no-capacity")],openCodeProviderPools:pools});
+  for (const pools of [[], [{provider:"fixture-provider",maxActive:1,active:0}], [{provider:"fixture-provider",maxActive:1,active:2}]]) {
+    const available = pools.some(pool=>pool.maxActive>pool.active);
+    const leg = mapTransportAvailability(source(pools,available)); assert.equal(leg.ok,true);
+    if (leg.ok) assert.deepEqual(leg.value.openCodeProviderPools,pools);
+  }
+  const legacy=mapTransportAvailability(snapshot());
+  assert.equal(legacy.ok,true);
+  if(legacy.ok) assert.equal(Object.hasOwn(legacy.value,"openCodeProviderPools"),false);
+  for(const pools of [null, [{provider:"fixture-provider",maxActive:1,active:1}],
+    [{provider:"fixture-provider",maxActive:257,active:0}], [{provider:"fixture-provider",maxActive:1,active:-1}],
+    [{provider:"PRIVATE_CANARY/private-value",maxActive:1,active:0}],
+    [{provider:"fixture-provider",maxActive:1,active:0,PRIVATE_CANARY:"private-value"}],
+    [{provider:"fixture-provider",maxActive:1,active:0},{provider:"fixture-provider",maxActive:1,active:0}],
+    Array.from({length:129},(_,i)=>({provider:`fixture-${i}`,maxActive:1,active:0}))
+  ]) assert.deepEqual(mapTransportAvailability(source(pools)),{ok:false,code:"shape-mismatch"});
+  assert.deepEqual(mapTransportAvailability(snapshot({openCodeProviderPools:[]})),{ok:false,code:"shape-mismatch"});
 });

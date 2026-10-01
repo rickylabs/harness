@@ -915,3 +915,11 @@ prefix unchanged for reader-first rollout. OpenCode reports configured provider
 seat capacity (`true`/`null` or `false`/`no-capacity`), never subscription quota or
 model readiness. Native route discovery remains required. Pin the new reader and
 contracts before deploying the four-row dispatcher emitter.
+
+Provider-pool snapshots (contracts 0.32.0) add optional `openCodeProviderPools`
+records `{provider,maxActive,active}` directly from the dispatcher. The reader
+preserves absent lists as unknown and validates bounded unique IDs, whole counts
+and agreement with the aggregate OpenCode row. No local config mirror supplies
+these records. The private regular-file bound is 32 KiB to accommodate 128 pools;
+owner-only permissions and no-symlink checks still apply. Upgrade this reader and
+the public decoder before enabling the new emitter.

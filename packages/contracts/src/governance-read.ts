@@ -27,11 +27,37 @@ export type TransportAvailabilityRow =
   | { readonly transport: MatrixTransport; readonly available: true; readonly reason: null }
   | { readonly transport: (typeof SUBSCRIPTION_MATRIX_TRANSPORTS)[number]; readonly available: false; readonly reason: TransportUnavailableReason }
   | { readonly transport: "opencode"; readonly available: false; readonly reason: "no-capacity" };
+export interface OpenCodeProviderPool {
+  readonly provider: string;
+  readonly maxActive: number;
+  readonly active: number;
+}
 export interface TransportAvailability {
   readonly observedAt: string; readonly validUntil: string;
   /** Exact subscription prefix (legacy), or every MATRIX_TRANSPORTS member in order.
    * OpenCode reports aggregate configured provider capacity, never subscription quota. */
   readonly transports: readonly TransportAvailabilityRow[];
+  /** Optional source-owned seat counts. Absent means no per-provider observation. */
+  readonly openCodeProviderPools?: readonly OpenCodeProviderPool[];
+}
+
+/** Shared strict boundary for the private mapper and the published decoder. */
+export function readOpenCodeProviderPools(value: unknown): readonly OpenCodeProviderPool[] | null {
+  try {
+    const seen = new Set<string>();
+    return array(value, "openCodeProviderPools", 128).map((value, i) => {
+      const field = `openCodeProviderPools[${i}]`;
+      const row = record(value, field, ["provider", "maxActive", "active"]);
+      const provider = text(row.provider, `${field}.provider`, 64);
+      if (!/^[a-z0-9][a-z0-9._-]{0,63}$/.test(provider) || seen.has(provider)) invalid(field, "requires a unique provider identifier");
+      seen.add(provider);
+      if (!Number.isSafeInteger(row.maxActive) || (row.maxActive as number) < 0 || (row.maxActive as number) > 256 ||
+          !Number.isSafeInteger(row.active) || (row.active as number) < 0) invalid(field, "requires bounded whole seat counts");
+      return { provider, maxActive: row.maxActive as number, active: row.active as number };
+    });
+  } catch {
+    return null; // Hostile reflection failures never escape this public boundary.
+  }
 }
 
 export type MeterCoverage =
@@ -413,7 +439,8 @@ function transportAvailability(value: unknown, coverage: MeterCoverage, evaluate
     if (value !== null) invalid(field, "requires read coverage");
     return null;
   }
-  const input = record(value, field, ["observedAt", "validUntil", "transports"]);
+  const hasPools = typeof value === "object" && value !== null && Object.hasOwn(value, "openCodeProviderPools");
+  const input = record(value, field, ["observedAt", "validUntil", "transports", ...(hasPools ? ["openCodeProviderPools"] : [])]);
   const observed = timestamp(input.observedAt, `${field}.observedAt`), until = timestamp(input.validUntil, `${field}.validUntil`);
   if (observed.raw !== coverage.observedAt || until.raw !== coverage.validUntil || observed.ms > evaluated)
     invalid(field, "contradicts its coverage");
@@ -434,7 +461,11 @@ function transportAvailability(value: unknown, coverage: MeterCoverage, evaluate
     }
     return { transport, available: false, reason: choice(row.reason, TRANSPORT_UNAVAILABLE_REASONS, `${field}.transports[${i}].reason`) };
   });
-  return { observedAt: observed.raw, validUntil: until.raw, transports };
+  const pools = hasPools ? readOpenCodeProviderPools(input.openCodeProviderPools) : undefined;
+  if (pools === null) invalid(field, "has invalid provider pools");
+  if (pools !== undefined && (transports.length !== MATRIX_TRANSPORTS.length ||
+      transports.at(-1)!.available !== pools.some(pool => pool.maxActive > pool.active))) invalid(field, "provider pools contradict aggregate capacity");
+  return { observedAt: observed.raw, validUntil: until.raw, transports, ...(pools === undefined ? {} : { openCodeProviderPools: pools }) };
 }
 function admissionCoverage(value: unknown): AdmissionCoverage {
   const field = "sources.admissions";

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
 import { readFileSync, readdirSync } from "node:fs";
-import { readGovernanceSnapshot } from "./governance-read.js";
+import { readGovernanceSnapshot, readOpenCodeProviderPools } from "./governance-read.js";
 const root = new URL("../test-fixtures/governance-read/", import.meta.url);
 // Mutable JSON is deliberate: each negative changes independent transport input.
 const fixture = (name = "mixed-timeout"): any => JSON.parse(readFileSync(new URL(`${name}.json`, root), "utf8"));
@@ -188,4 +188,55 @@ it("TA OpenCode is capacity-only while legacy snapshots remain unchanged", () =>
     change(value);
     refuse(value);
   }
+});
+
+const withPools = (): any => {
+  const value = withAvailability();
+  value.transportAvailability.transports.push({ transport: "opencode", available: true, reason: null });
+  value.transportAvailability.openCodeProviderPools = [{ provider: "fixture-provider", maxActive: 1, active: 0 }];
+  return value;
+};
+it("TA provider pools preserve exact source counts and optional absence", () => {
+  for (const [maxActive, active] of ([[1, 0], [1, 1], [1, 2], [0, 0], [256, 255]] as const)) {
+    const value = withPools();
+    value.transportAvailability.openCodeProviderPools[0] = { provider: "fixture-provider", maxActive, active };
+    value.transportAvailability.transports[3] = { transport: "opencode", available: maxActive > active, reason: maxActive > active ? null : "no-capacity" };
+    const read = readGovernanceSnapshot(value);
+    assert.equal(read.ok, true, JSON.stringify(read));
+    if (read.ok) assert.deepEqual(read.snapshot, value);
+  }
+  const value = withPools(); value.transportAvailability.openCodeProviderPools = [];
+  value.transportAvailability.transports[3] = { transport: "opencode", available: false, reason: "no-capacity" };
+  const read = readGovernanceSnapshot(value); assert.equal(read.ok, true);
+  if (read.ok) assert.deepEqual(read.snapshot, value);
+  const legacy = withAvailability(); const old = readGovernanceSnapshot(legacy);
+  assert.equal(old.ok, true);
+  if (old.ok) assert.equal(Object.hasOwn(old.snapshot.transportAvailability!, "openCodeProviderPools"), false);
+});
+for (const [name, modify] of [
+  ["null", (v: any) => {v.transportAvailability.openCodeProviderPools = null;}],
+  ["duplicate", (v: any) => {v.transportAvailability.openCodeProviderPools.push({...v.transportAvailability.openCodeProviderPools[0]});}],
+  ["over cap", (v: any) => {v.transportAvailability.openCodeProviderPools = Array.from({length:129}, (_,i) => ({provider:`fixture-${i}`,maxActive:1,active:0}));}],
+  ["unsafe provider", (v: any) => {v.transportAvailability.openCodeProviderPools[0].provider = "PRIVATE_CANARY / private-value";}],
+  ["unknown field", (v: any) => {v.transportAvailability.openCodeProviderPools[0].PRIVATE_CANARY = "private-value";}],
+  ["negative max", (v: any) => {v.transportAvailability.openCodeProviderPools[0].maxActive = -1;}],
+  ["large max", (v: any) => {v.transportAvailability.openCodeProviderPools[0].maxActive = 257;}],
+  ["fraction max", (v: any) => {v.transportAvailability.openCodeProviderPools[0].maxActive = 1.5;}],
+  ["negative active", (v: any) => {v.transportAvailability.openCodeProviderPools[0].active = -1;}],
+  ["unsafe active", (v: any) => {v.transportAvailability.openCodeProviderPools[0].active = Number.MAX_SAFE_INTEGER + 1;}],
+  ["string active", (v: any) => {v.transportAvailability.openCodeProviderPools[0].active = "0";}],
+  ["contradictory aggregate", (v: any) => {v.transportAvailability.openCodeProviderPools[0].active = 1;}],
+  ["missing OpenCode row", (v: any) => {v.transportAvailability.transports.pop();}],
+  ["sparse", (v: any) => {delete v.transportAvailability.openCodeProviderPools[0];}],
+  ["accessor", (v: any) => {Object.defineProperty(v.transportAvailability.openCodeProviderPools[0], "active", {enumerable:true,get(){throw new Error("PRIVATE_CANARY");}});}],
+] as const) it(`TA provider pools refuse ${name}`, () => {const value=withPools(); modify(value); refuse(value);});
+
+it("TA provider pools contain hostile inspection and own their output", () => {
+ const revoked=Proxy.revocable({},{});revoked.revoke();
+ assert.equal(readOpenCodeProviderPools(revoked.proxy),null);
+ const hostile=new Proxy({}, {getPrototypeOf(){throw new Error("PRIVATE_CANARY");}});
+ assert.equal(readOpenCodeProviderPools([hostile]),null);
+ const input=[{provider:"fixture-provider",maxActive:1,active:0}];
+ const output=readOpenCodeProviderPools(input);assert.deepEqual(output,input);
+ input[0]!.active=1;assert.equal(output![0]!.active,0);
 });

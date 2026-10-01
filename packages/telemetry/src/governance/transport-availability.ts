@@ -5,11 +5,11 @@
  */
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
-import { MATRIX_TRANSPORTS, SUBSCRIPTION_MATRIX_TRANSPORTS, TRANSPORT_UNAVAILABLE_REASONS, type TransportAvailability,
+import { MATRIX_TRANSPORTS, SUBSCRIPTION_MATRIX_TRANSPORTS, TRANSPORT_UNAVAILABLE_REASONS, readOpenCodeProviderPools, type TransportAvailability,
   type TransportAvailabilityRow, type TransportUnavailableReason } from "@rickylabs/harness-contracts";
 import { instant, object, SourceError, type Leg } from "../source.js";
 
-const MAX_BYTES = 4096;
+const MAX_BYTES = 32768;
 
 export async function readTransportAvailabilityFile(path: string): Promise<string> {
   let handle;
@@ -37,7 +37,8 @@ export function mapTransportAvailability(text: string): Leg<TransportAvailabilit
   try { payload = JSON.parse(text); } catch { return { ok: false, code: "non-json" }; }
   try {
     const input = object(payload);
-    exactly(input, ["schemaVersion", "observedAt", "validUntil", "transports"]);
+    const hasPools = Object.hasOwn(input, "openCodeProviderPools");
+    exactly(input, ["schemaVersion", "observedAt", "validUntil", "transports", ...(hasPools ? ["openCodeProviderPools"] : [])]);
     if (input.schemaVersion !== 1 || !Array.isArray(input.transports) || (input.transports.length !== SUBSCRIPTION_MATRIX_TRANSPORTS.length && input.transports.length !== MATRIX_TRANSPORTS.length))
       throw new SourceError("shape-mismatch");
     const observedAt = iso(input.observedAt), validUntil = iso(input.validUntil);
@@ -57,6 +58,9 @@ export function mapTransportAvailability(text: string): Leg<TransportAvailabilit
       if (!TRANSPORT_UNAVAILABLE_REASONS.includes(row.reason as TransportUnavailableReason)) throw new SourceError("shape-mismatch");
       return { transport, available: false, reason: row.reason as TransportUnavailableReason };
     });
-    return { ok: true, value: { observedAt, validUntil, transports }, observedAt, validUntil };
+    const pools = hasPools ? readOpenCodeProviderPools(input.openCodeProviderPools) : undefined;
+    if (pools === null || (pools !== undefined && (transports.length !== MATRIX_TRANSPORTS.length ||
+        transports.at(-1)!.available !== pools.some(pool => pool.maxActive > pool.active)))) throw new SourceError("shape-mismatch");
+    return { ok: true, value: { observedAt, validUntil, transports, ...(pools === undefined ? {} : { openCodeProviderPools: pools }) }, observedAt, validUntil };
   } catch { return { ok: false, code: "shape-mismatch" }; }
 }

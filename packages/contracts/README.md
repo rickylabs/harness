@@ -971,3 +971,19 @@ coverage, expiry and privacy boundaries remain unchanged.
 Upgrade readers to 0.31.0 before a dispatcher publishes four rows. Older strict
 readers reject the extra row; a new reader can safely consume the three-row producer
 until deployment. Cockpit must keep a missing legacy OpenCode row unavailable.
+
+## OpenCode provider pools (0.32.0)
+
+`transportAvailability.openCodeProviderPools` is optional. When present it is the
+dispatcher's source list of `{provider,maxActive,active}` records, with at most
+128 unique provider identifiers, integer `maxActive` from 0 through 256 and
+nonnegative safe-integer `active`. Occupancy may exceed the cap. Identifiers use
+lowercase letters, digits, dots, underscores and hyphens, start with a letter or
+digit, and are at most 64 characters. The producer sorts the records.
+
+Missing means per-provider capacity is unknown; `[]` means no configured pools.
+The list requires the fourth `opencode` row, whose `available` must equal whether
+any pool has `maxActive > active`. These are concurrency counts, without quota,
+credit, entitlement or model-readiness claims. Readers preserve legacy snapshots
+without inventing pools. Upgrade both the telemetry reader and contracts decoder
+to 0.32.0 before the dispatcher emits the field: older strict readers reject it.
