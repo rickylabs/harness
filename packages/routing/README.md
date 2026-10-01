@@ -351,3 +351,37 @@ The one explicit normalisation between the CLI export and version 2 is the polic
 `loops.implementation` and `loops.documentation`. Everything else compares exactly. The CLI's own
 `schemaVersion` is a different number space from this document's, and version 2 carries no CLI
 query `mode`.
+
+## Read-only CLI discovery (#274)
+
+`discoverCliCapabilities({ cwd })` returns a strict `CliDiscoverySnapshot` with
+`schemaVersion: 1`, `observedAt`, and `launchers` keyed by `claude`, `codex`, `opencode`,
+and `agy`. Each observation separates `installed`, `version`, `authenticated`,
+`entitlement`, `quota`, `catalog`, `models`, `sources`, and fixed `problems` codes.
+Installation/login presence uses `yes | no | unknown`; version is a string or null.
+Catalog status is `observed | unknown | declared`. Models are exact `{ id, efforts }`
+records; efforts are CLI-declared strings or null. Entitlement and quota remain unknown.
+Unknown JSON keys are refused by `validateCliDiscoverySnapshot`.
+
+The observer uses only these documented read-only surfaces:
+
+| CLI | Commands / methods | Evidence |
+| --- | --- | --- |
+| Claude | `--version`, `auth status` | Version and login presence; no documented model-list surface, so catalog remains unknown. [CLI reference](https://code.claude.com/docs/en/cli-reference) |
+| Codex | `--version`, stdio `app-server`; `initialize`, `initialized`, `account/read` with `refreshToken: false`, paginated `model/list` with `includeHidden: true` | Exact model IDs, declared reasoning efforts, login presence. [App-server reference](https://developers.openai.com/codex/app-server) |
+| OpenCode | `--version`, `models` | Exact provider/model IDs; authentication and effort support remain unknown. [CLI reference](https://opencode.ai/docs/cli/) |
+| agy | No command | Optional caller-declared IDs; installation and live catalog stay unknown. |
+
+No turn, login, token refresh, credential-file read, account identifier, raw stderr or
+session identifier enters this contract. The default command deadline is 15 seconds,
+stdout is bounded to 1 MiB, and children and their pipes are closed on every outcome.
+Codex server requests are refused without executing or answering them. Empty, malformed,
+duplicate, oversized or failed catalogs remain unknown. Catalog membership can come from
+bundled/configured metadata and does not prove a successful model call, entitlement or
+quota. [Codex catalog/access distinction](https://developers.openai.com/siwc/token-sharing-open-source/codex-app-server)
+
+`discoveredModels(snapshot, launcher)` accepts only a strictly valid, observed catalog
+from an installed CLI, captured within the preceding ten minutes. Future timestamps and
+`declared` catalogs cannot establish admission. Native effort observations do not rewrite
+configured efforts or family assignments. This slice leaves account bindings, client-version
+requirements and other #274 acceptance work open.

@@ -31,7 +31,7 @@
     "skill:install": "pnpm --filter @rickylabs/forge run build && node packages/forge/dist/cli.js skill install --dispatch-label harness",
     "golden:bless": "pnpm --filter @rickylabs/dsh-app run build && node packages/dsh-app/dist/bless.js",
     "clean": "pnpm -r run clean",
-    "check:compiled-policy": "node scripts/check-compiled-policy.mjs",
+    "check:compiled-policy": "node --test scripts/check-compiled-policy.test.mjs && node scripts/check-compiled-policy.mjs",
     "check:installed": "node --test scripts/inconclusive.test.mjs && node scripts/check-installed-contracts.mjs",
     "check:stages": "node --test scripts/run-stages.test.mjs scripts/gates-regressions.test.mjs",
     "build:packages": "pnpm -r run build",
