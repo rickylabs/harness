@@ -421,3 +421,46 @@ it("reads a closed issue launch refusal without a dispatch and withholds malform
     assert.deepEqual((await readOrchidDispatches(s.root)).launchStates, []);
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
+
+it("reads only schema2 closed post-launch blocks and preserves schema1 states", async () => {
+  const s = await setup();
+  const path = join(s.root, "launch-" + "d".repeat(64) + ".json");
+  const block = { schemaVersion: 2, issue: { repo: "example/inbox", number: 42 },
+    dispatchId: "assignment_" + "e".repeat(64), state: "blocked", reasonCode: "goal-prompt-unconfirmed",
+    observedAt: "2026-01-01T00:00:00.000Z" };
+  try {
+    await writeFile(path, JSON.stringify(block), { mode: 0o600 });
+    const good = await readOrchidDispatches(s.root);
+    assert.equal(good.degraded, false);
+    assert.deepEqual(good.launchStates, [{ issue: block.issue, dispatchId: block.dispatchId,
+      state: block.state, reasonCode: block.reasonCode, observedAt: block.observedAt }]);
+    for (const value of [
+      { ...block, schemaVersion: 1 }, { ...block, schemaVersion: 3 },
+      { ...block, state: "refused", reasonCode: "routing-invalid" },
+      { ...block, state: "launching", reasonCode: null }, { ...block, state: "launched", reasonCode: null },
+      { ...block, reasonCode: null }, { ...block, reasonCode: "routing-invalid" },
+      { ...block, reasonCode: "PRIVATE-ERROR-CANARY" }, { ...block, dispatchId: "PRIVATE-NATIVE-ID" },
+      { ...block, observedAt: "2026-02-30T00:00:00.000Z" }, { ...block, prompt: "PRIVATE-PROMPT-CANARY" },
+      { ...block, issue: { ...block.issue, cwd: "/PRIVATE-PATH-CANARY" } },
+    ]) {
+      await writeFile(path, JSON.stringify(value));
+      const bad = await readOrchidDispatches(s.root);
+      assert.equal(bad.degraded, true, JSON.stringify(value));
+      assert.deepEqual(bad.launchStates, []);
+      assert.ok(!JSON.stringify(bad).includes("PRIVATE-"));
+    }
+    for (const state of ["launching", "launched"] as const) {
+      await writeFile(path, JSON.stringify({ ...block, schemaVersion: 1, state, reasonCode: null }));
+      assert.equal((await readOrchidDispatches(s.root)).launchStates[0]?.state, state);
+    }
+    await writeFile(path, JSON.stringify(block));
+    await chmod(path, 0o644);
+    assert.deepEqual((await readOrchidDispatches(s.root)).launchStates, []);
+    await chmod(path, 0o600);
+    const duplicate = join(s.root, "launch-" + "f".repeat(64) + ".json");
+    await writeFile(duplicate, JSON.stringify(block), { mode: 0o600 });
+    const ambiguous = await readOrchidDispatches(s.root);
+    assert.equal(ambiguous.degraded, true);
+    assert.deepEqual(ambiguous.launchStates, []);
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});

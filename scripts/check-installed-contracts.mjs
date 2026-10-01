@@ -97,7 +97,7 @@ try {
   assert.ok(existsSync(join(installedRoot, "dist/index.d.ts")) && existsSync(join(installedRoot, "dist/server.d.ts")));
   stage = "installed root/server runtime exports";
   writeFileSync(join(consumer, "runtime.mjs"), `import assert from 'node:assert/strict';
-import { readAccountUsageEnvelope, sessionProcessedTokens, readGovernanceSnapshot, readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_OBSERVATIONS, projectRouteIdentity, PROTOCOL_VERSION } from '@rickylabs/harness-contracts';
+import { readAccountUsageEnvelope, sessionProcessedTokens, readGovernanceSnapshot, readAgentObservations, readIssueAgentTreeSnapshot, ISSUE_LAUNCH_BLOCK_REASONS, MAX_AGENT_OBSERVATIONS, projectRouteIdentity, PROTOCOL_VERSION } from '@rickylabs/harness-contracts';
 import { projectRouteIdentity as routeExport } from '@rickylabs/harness-contracts/route';
 import { openHub } from '@rickylabs/harness-contracts/server';
 assert.equal(typeof readGovernanceSnapshot, 'function'); assert.equal(PROTOCOL_VERSION, 1);
@@ -112,6 +112,12 @@ assert.equal(readAgentObservations({schema:1,protocol:1,observedAt:'2026-01-01T0
 assert.equal(readIssueAgentTreeSnapshot({schema:1,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',validUntil:'2026-01-01T00:00:15.000Z',revision:'a'.repeat(64),complete:true,reason:null,issues:[]}).ok, true);
 const partialIssue = readIssueAgentTreeSnapshot({schema:1,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',validUntil:'2026-01-01T00:00:15.000Z',revision:'a'.repeat(64),complete:false,reason:'scan_limit',issues:[{repo:{owner:'example',name:'project'},issueNumber:42,complete:false,reason:'scan_limit',dispatches:[]}]});
 assert.equal(partialIssue.ok, true); if (partialIssue.ok) assert.equal(partialIssue.snapshot.issues[0].reason, 'scan_limit');
+assert.deepEqual(ISSUE_LAUNCH_BLOCK_REASONS, ['goal-prompt-unconfirmed']);
+const launchBlock = {state:'blocked',reason:'goal-prompt-unconfirmed',at:usageAt,dispatchId:'assignment_'+'b'.repeat(64),source:'orchid'};
+const blockedFrame = {...partialIssue.snapshot, issues:[{...partialIssue.snapshot.issues[0],launchBlock}]};
+const blocked = readIssueAgentTreeSnapshot(blockedFrame);
+assert.equal(blocked.ok, true); if (blocked.ok) assert.deepEqual(blocked.snapshot.issues[0].launchBlock, launchBlock);
+assert.equal(readIssueAgentTreeSnapshot({...blockedFrame,issues:[{...blockedFrame.issues[0],launchBlock:{...launchBlock,reason:'PRIVATE-ERROR-CANARY'}}]}).ok, false);
 assert.deepEqual(readAgentObservations({schema:2,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',revision:'a'.repeat(64),complete:true,reason:null,agents:[]}), {ok:false,reason:'unsupported-schema'});
 console.log(JSON.stringify({ root: true, server: true, protocol: PROTOCOL_VERSION }));\n`);
   const runtime = await run(process.execPath, [join(consumer, "runtime.mjs")], { cwd: consumer, env });
@@ -119,7 +125,7 @@ console.log(JSON.stringify({ root: true, server: true, protocol: PROTOCOL_VERSIO
   stage = "installed root/server declaration compilation";
   writeFileSync(join(consumer, "consumer.ts"), `import { readRepositoryRunObservation, type RepositoryRunObservation, type RepositoryRunObservationReading, readGovernanceSnapshot, PROTOCOL_VERSION, type GovernanceReadSnapshot, type GovernanceReading } from '@rickylabs/harness-contracts';
 import { openHub, type Hub, type Delivery } from '@rickylabs/harness-contracts/server';
-import { readAccountUsageEnvelope, sessionProcessedTokens, type AccountUsageEnvelope, type SessionUsage, readAgentObservations, readIssueAgentTreeSnapshot, type AgentObservation, type AgentObservationsReading, type IssueAgentTreeSnapshot, type RouteIdentityEvidence } from '@rickylabs/harness-contracts';
+import { readAccountUsageEnvelope, sessionProcessedTokens, type AccountUsageEnvelope, type SessionUsage, readAgentObservations, readIssueAgentTreeSnapshot, type AgentObservation, type AgentObservationsReading, type IssueAgentTreeSnapshot, type IssueLaunchBlock, type RouteIdentityEvidence } from '@rickylabs/harness-contracts';
 const accountUsage = readAccountUsageEnvelope({});
 function acceptUsage(value: AccountUsageEnvelope): string { return value.generatedAt; }
 function tokenTotal(value: SessionUsage): number | null { return sessionProcessedTokens(value); }
@@ -130,6 +136,11 @@ const agents: AgentObservationsReading = readAgentObservations({});
 const issueTree = readIssueAgentTreeSnapshot({});
 function acceptIssueTree(tree: IssueAgentTreeSnapshot): boolean { return tree.issues.every(issue => issue.complete || issue.reason !== null); }
 if (issueTree.ok) acceptIssueTree(issueTree.snapshot);
+function acceptLaunchBlock(block: IssueLaunchBlock): 'goal-prompt-unconfirmed' { return block.reason; }
+if (issueTree.ok) for (const issue of issueTree.snapshot.issues) if (issue.launchBlock) acceptLaunchBlock(issue.launchBlock);
+// @ts-expect-error installed block declaration must reject an arbitrary reason
+const unsafeBlock: IssueLaunchBlock = {state:'blocked',reason:'PRIVATE-ERROR-CANARY',at:'2026-01-01T00:00:00.000Z',dispatchId:'assignment_'+'b'.repeat(64),source:'orchid'};
+void unsafeBlock;
 function agentRoute(a: AgentObservation): RouteIdentityEvidence { return a.route; }
 if (agents.ok) agents.observation.agents.map(agentRoute);
 const observationReading: RepositoryRunObservationReading = readRepositoryRunObservation({});

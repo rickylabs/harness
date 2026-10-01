@@ -663,7 +663,8 @@ it("retains earlier bound issues when aggregate bytes exceed the contract cap", 
       agent.historyTruncated = true;
     }
     return { repo: { owner: "example", name: "project" }, issueNumber,
-      snapshot: copy as unknown as typeof good };
+      snapshot: copy as unknown as typeof good, launchBlock: {
+        state: "blocked", reason: "goal-prompt-unconfirmed", at, dispatchId: assignment, source: "orchid" } as const };
   });
   const first = readIssueAgentTreeSnapshot(entries[0]!.snapshot);
   assert.equal(first.ok, true);
@@ -675,6 +676,8 @@ it("retains earlier bound issues when aggregate bytes exceed the contract cap", 
     `issues=${combined.issues.length} bytes=${Buffer.byteLength(JSON.stringify(combined))}`);
   assert.equal(combined.issues[0]?.issueNumber, 1000);
   assert.equal(combined.issues[0]?.complete, true);
+  assert.ok(combined.issues.every(issue => issue.launchBlock?.reason === "goal-prompt-unconfirmed"));
+  assert.ok(combined.issues.some(issue => !issue.complete && issue.reason === "scan_limit"));
   assert.equal(readIssueAgentTreeSnapshot(combined).ok, true);
 });
 
@@ -785,4 +788,27 @@ it("masks stale running at teardown seat absence and ends only after process abs
     { cause: "timeout", seatObservedAt: seatAt, processObservedAt: processAt }] as const) {
     assert.ok(readIssueAgentTreeSnapshot(build({ ...dispatch, teardown: state }, active, captured)).ok);
   }
+});
+
+it("retains launch blocks independently of every native coverage failure", () => {
+  const good = build();
+  const block = { state: "blocked", reason: "goal-prompt-unconfirmed", at,
+    dispatchId: good.issues[0]!.dispatches[0]!.dispatchId, source: "orchid" } as const;
+  const combine = (snapshot: typeof good) => combineIssueAgentTreeSnapshots({ observedAt: later,
+    entries: [{ repo: { owner: "example", name: "project" }, issueNumber: 42, snapshot, launchBlock: block }] });
+  const full = combine(good);
+  assert.equal(full.complete, true);
+  assert.deepEqual(full.issues[0]?.launchBlock, block);
+  assert.equal(full.issues[0]?.dispatches[0]?.agents.length, 2);
+  for (const reason of ["binding_unavailable", "ancestry_unavailable", "source_unavailable", "scan_limit"] as const) {
+    const combined = combine({ ...good, complete: false, reason, issues: [] });
+    assert.equal(combined.complete, false);
+    assert.deepEqual(combined.issues[0], { repo: { owner: "example", name: "project" }, issueNumber: 42,
+      complete: false, reason, dispatches: [], launchBlock: block });
+    assert.equal(readIssueAgentTreeSnapshot(combined).ok, true);
+  }
+  const corrupt = combine({ ...good, unexpected: "PRIVATE-PROMPT-CANARY" } as typeof good);
+  assert.deepEqual(corrupt.issues[0]?.launchBlock, block);
+  assert.equal(corrupt.issues[0]?.reason, "binding_unavailable");
+  assert.ok(!JSON.stringify(corrupt).includes("PRIVATE-"));
 });

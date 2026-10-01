@@ -5,7 +5,7 @@ import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_ACCEPTE
   projectRouteIdentity,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
   type AgentResourceHistory, type AgentTimelineEvent, type AgentTimelineReason,
-  type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+  type IssueLaunchBlock, type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
@@ -421,7 +421,7 @@ export function buildIssueAgentTreeSnapshot(input: {
 export function combineIssueAgentTreeSnapshots(input: {
   readonly observedAt: string;
   readonly entries: readonly { readonly repo: IssueAgentTree["repo"]; readonly issueNumber: number;
-    readonly snapshot: IssueAgentTreeSnapshot }[];
+    readonly snapshot: IssueAgentTreeSnapshot; readonly launchBlock?: IssueLaunchBlock }[];
   readonly globalReason?: IssueAgentTreeSnapshot["reason"];
 }): IssueAgentTreeSnapshot {
   const issues: IssueAgentTree[] = [];
@@ -444,8 +444,11 @@ export function combineIssueAgentTreeSnapshots(input: {
       ? read.snapshot.issues[0] : null;
     const ids = issue?.dispatches.flatMap(dispatch => dispatch.agents.map(agent => agent.observation.agentId)) ?? [];
     const unavailable: IssueAgentTree = { repo: entry.repo, issueNumber: entry.issueNumber, complete: false,
-      reason: read.ok && !read.snapshot.complete ? read.snapshot.reason : "binding_unavailable", dispatches: [] };
-    const candidate = issue !== null && ids.every(id => !agentIds.has(id)) ? issue : unavailable;
+      reason: read.ok && !read.snapshot.complete ? read.snapshot.reason : "binding_unavailable", dispatches: [],
+      ...(entry.launchBlock === undefined ? {} : { launchBlock: entry.launchBlock }) };
+    const tree = issue !== null && ids.every(id => !agentIds.has(id)) ? issue : unavailable;
+    // The receipt proves the block independently of native coverage. Count it in the byte cap.
+    const candidate = entry.launchBlock === undefined ? tree : { ...tree, launchBlock: entry.launchBlock };
     if (fits(candidate)) {
       issues.push(candidate);
       if (candidate.complete) ids.forEach(id => agentIds.add(id));
