@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import ts from 'typescript';
 
 const identifiers = new Set(['model', 'effort', 'tier', 'lane', 'family', 'profile', 'preset', 'harness']);
@@ -24,6 +26,31 @@ const allow = [
   { file: 'packages/subagents/src/uhp-mock.ts', identifiers: ['model', 'effort'], reason: 'Test-only UHP wire fixtures for spike S10 (#288); mock server, not exported from index.ts and not imported by any production entry point; E3 (#33).' },
   { file: 'packages/telemetry/src/backfill/claude.ts', identifiers: ['harness'], reason: 'Observed provider inference, owned by E9 (#39), not routing policy.' },
 ];
+/** Model identities are configuration data, including compatibility aliases; comments are never parsed as literals. */
+function modelIdentities() {
+  const ids = new Set();
+  for (const name of readdirSync('packages/routing/config').filter(name => name.endsWith('.json'))) {
+    const value = JSON.parse(readFileSync(join('packages/routing/config', name), 'utf8'));
+    for (const [key, model] of Object.entries(value.models ?? {})) {
+      ids.add(key);
+      for (const launch of model.launches ?? []) if (typeof launch.id === 'string') ids.add(launch.id);
+    }
+    for (const alias of Object.values(value.aliases ?? {})) if (typeof alias === 'string') ids.add(alias);
+  }
+  return ids;
+}
+function modelShaped(value, ids) {
+  if (ids.has(value)) return true;
+  if (!/^[a-zA-Z][a-zA-Z0-9._/-]{0,255}$/.test(value) || /\.(?:ts|js|mjs|json|md)$/.test(value)) return false;
+  const leaf = value.split('/').at(-1);
+  const stem = leaf.split(/[-_]/)[0];
+  const stems = new Set([...ids].map(id => id.split('/').at(-1).split(/[-_]/)[0]));
+  return /[-_]v?\d/.test(leaf) && (stems.has(stem) || value.includes('/'));
+}
+function fixture(file) {
+  return /(?:^|\/)(?:test-fixtures|fixtures)\//.test(file) || file.endsWith('.test.ts') || file.endsWith('_test.ts') ||
+    allow.some(a => a.file === file && /fixture|mock/.test(a.reason));
+}
 function strings(node) {
   if (!node) return [];
   if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return [node.text];
@@ -38,14 +65,18 @@ function literal(node) {
   if (ts.isBinaryExpression(node) && [ts.SyntaxKind.QuestionQuestionToken, ts.SyntaxKind.BarBarToken].includes(node.operatorToken.kind)) return literal(node.left) || literal(node.right);
   return (ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isParenthesizedExpression(node)) && literal(node.expression);
 }
-function scan(file, source, exceptions = allow) {
-  if (file.endsWith('.test.ts')) return [];
+export function scan(file, source, exceptions = allow, identities = modelIdentities()) {
+  if (fixture(file) || /(?:^|\/)config\//.test(file)) return [];
   const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const problems = [];
   function visit(node) {
-    if (ts.isPropertyAssignment(node) || ts.isVariableDeclaration(node)) {
+    if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && modelShaped(node.text, identities)) {
+      const { line } = parsed.getLineAndCharacterOfPosition(node.getStart(parsed));
+      problems.push(`${file}:${line + 1}: compiled model-id literal; move it to replaceable configuration`);
+    }
+    if (ts.isPropertyAssignment(node) || ts.isVariableDeclaration(node) || ts.isParameter(node) || ts.isPropertyDeclaration(node)) {
       const name = node.name && (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) ? node.name.text : undefined;
-      if (identifiers.has(name) && literal(node.initializer) && !exceptions.some(a => a.file === file && a.identifiers.includes(name) && (a.values === undefined || strings(node.initializer).every(value => a.values.includes(value))))) {
+      if ((identifiers.has(name) || /^(?:modelId|modelID|model_id)$/.test(name ?? '')) && literal(node.initializer) && !exceptions.some(a => a.file === file && a.identifiers.includes(name) && (a.values === undefined || strings(node.initializer).every(value => a.values.includes(value))))) {
         const { line } = parsed.getLineAndCharacterOfPosition(node.getStart(parsed));
         problems.push(`${file}:${line + 1}: compiled ${name} assignment`);
       }
@@ -62,9 +93,7 @@ function scan(file, source, exceptions = allow) {
   visit(parsed);
   return problems;
 }
-function files(directory) {
-  return readdirSync(directory, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? files(join(directory, entry.name)) : [join(directory, entry.name)]);
-}
+function main() {
 // Mutation test on actual temporary files, every invocation. No old-id grep can satisfy it.
 const scratch = mkdtempSync(join(tmpdir(), 'compiled-policy-'));
 try {
@@ -77,7 +106,7 @@ try {
   assert.deepEqual(scan(file, readFileSync(file, 'utf8')), []);
 } finally { rmSync(scratch, { recursive: true, force: true }); }
 const root = process.cwd();
-const sources = [...files('packages/routing/matrix').filter(f => f.endsWith('.ts')), ...readdirSync('packages', { withFileTypes: true }).filter(e => e.isDirectory()).flatMap(e => files(join('packages', e.name, 'src'))).filter(f => f.endsWith('.ts'))];
+const sources = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '*.ts'], { encoding: 'utf8' }).trim().split('\n').filter(file => file && !file.startsWith('.llm/runs/') && !file.startsWith('docs/'));
 const problems = sources.flatMap(file => scan(relative(root, join(root, file)), readFileSync(file, 'utf8')));
 // The test fixture exception must never become an executable fallback through a runtime import.
 for (const file of sources.filter(f => !f.endsWith('.test.ts') && !/dry-run-(child|test-fixtures)\.ts$/.test(f))) {
@@ -88,3 +117,6 @@ for (const file of sources.filter(f => !f.endsWith('.test.ts') && !/dry-run-(chi
 }
 if (problems.length) { process.stderr.write(problems.join('\n') + '\n'); process.exitCode = 1; }
 else process.stdout.write(`compiled routing policy: ${sources.length} sources checked; mutation self-test passed\n`);
+
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

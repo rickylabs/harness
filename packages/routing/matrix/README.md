@@ -68,3 +68,27 @@ From the `packages/routing` directory, send a workload-route request as JSON on 
 `deno run --no-config --no-lock --allow-run=opencode --allow-read matrix/opencode-preflight.ts`.
 The output contains only status, launcher, model, logical model, family, requested effort and
 catalog timestamp, or fixed refusal fields. It omits worktree and session identifiers.
+
+`matrix/cli-discovery.ts` exposes the same portable observer as the Node package.
+Pass its snapshot as `launcherInventory: { discovery: snapshot }` to the workload or
+coordinator resolver. A fresh exact configured ID has catalog admission; an unseen ID
+is `unverified` with `catalog-model-unseen`, while an absent/stale/unknown observation
+is `unverified` with `catalog-not-observed`. `assertRouteLaunchable` converts either
+state into a named refusal. Neither resolver nor preflight changes the selected model
+or transport to hide a missing observation. Catalog admission remains separate from
+entitlement, quota, requested effort support and independent evaluator identity.
+
+The generic `preflightDiscoveredWorkloadRoute` in `matrix/cli-preflight.ts` resolves once
+and probes only the selected CLI. Claude and agy routes remain unverified because these
+read-only surfaces establish no native model catalog. From `packages/routing`, send the
+same workload request on stdin to:
+
+```sh
+deno run --no-config --no-lock --allow-run=claude,codex,opencode --allow-read --allow-env matrix/cli-preflight.ts
+```
+
+The environment permission lets the Node-compatible subprocess API inherit the CLI
+environment; the observer does not inspect or emit its values. This emits fixed admission/refusal fields and excludes caller/account metadata. The CLI
+returns exit 2 for unverified admission. The older OpenCode-only preflight remains
+available for existing pinned consumers. See the [discovery contract and official
+CLI sources](../README.md#read-only-cli-discovery-274).

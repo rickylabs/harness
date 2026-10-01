@@ -19,7 +19,8 @@
   "files": [
     "dist",
     "config",
-    "matrix"
+    "matrix",
+    "src/discovery.ts"
   ],
   "scripts": {
     "build": "tsc -b",

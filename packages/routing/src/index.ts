@@ -75,3 +75,5 @@ export type {
 } from "./probe.js";
 
 export * from "./catalog.js";
+
+export * from "./discovery.js";
