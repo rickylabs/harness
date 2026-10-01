@@ -56,3 +56,25 @@ it("reads only an owner-only regular file under the size bound", async () => {
     assert.equal(await code(big), "oversize");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+it("maps the fourth OpenCode row as capacity, retains legacy, and refuses incomplete or fabricated headroom", () => {
+  const native = JSON.parse(snapshot()).transports;
+  for (const available of [true, false]) {
+    const transports = [...native, row("opencode", available, available ? null : "no-capacity")];
+    const leg = mapTransportAvailability(snapshot({ transports }));
+    assert.equal(leg.ok, true);
+    if (leg.ok) assert.deepEqual(leg.value.transports, transports);
+  }
+  const legacy = mapTransportAvailability(snapshot());
+  assert.equal(legacy.ok, true);
+  if (legacy.ok) assert.deepEqual(legacy.value.transports, native);
+  for (const transports of [
+    native.slice(0, 2), [...native, row("opencode", true, null), row("opencode", true, null)],
+    [...native, row("agy", true, null)], [...native, row("PRIVATE_CANARY", true, null)],
+    [...native, row("opencode", true, "no-capacity")], [...native, row("opencode", false, null)],
+    [...native, { ...row("opencode", true, null), PRIVATE_CANARY: "private-value" }],
+    [...native, { ...row("opencode", true, null), available: "true" }],
+    ...["meter-unread", "meter-stale", "window-expired", "5h-ceiling", "weekly-ceiling", "ceiling-misconfigured", "PRIVATE_CANARY"].map(reason =>
+      [...native, row("opencode", false, reason)]),
+  ]) assert.deepEqual(mapTransportAvailability(snapshot({ transports })), { ok: false, code: "shape-mismatch" });
+});

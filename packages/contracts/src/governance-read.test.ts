@@ -129,7 +129,7 @@ for (const [name, modify] of [
   ["TA body from after the evaluation", (v: any) => {
     for (const t of [v.transportAvailability, v.sources.transportAvailability]) { t.observedAt = "2026-09-07T12:00:01.000Z"; t.validUntil = "2026-09-07T12:01:01.000Z"; } }],
   ["TA a transport missing", (v: any) => { v.transportAvailability.transports.pop(); }],
-  ["TA an extra transport", (v: any) => { v.transportAvailability.transports.push({ transport: "opencode", available: true, reason: null }); }],
+  ["TA an extra transport", (v: any) => { v.transportAvailability.transports.push({ transport: "unknown", available: true, reason: null }); }],
   ["TA transports out of order", (v: any) => { v.transportAvailability.transports.reverse(); }],
   ["TA available with a reason", (v: any) => { v.transportAvailability.transports[1].reason = "no-capacity"; }],
   ["TA unavailable without a reason", (v: any) => { v.transportAvailability.transports[0].reason = null; }],
@@ -156,4 +156,36 @@ it("TA decodes failed, discarded and unavailable-document forms, and a stale rea
   // A read coverage claiming fresh after its validUntil is refused, as for the meters.
   stale.sources.transportAvailability.freshness = "fresh";
   refuse(stale);
+});
+
+// 0.31.0: staged reader-first rollout accepts the strict legacy prefix unchanged.
+it("TA OpenCode is capacity-only while legacy snapshots remain unchanged", () => {
+  for (const available of [true, false]) {
+    const value = withAvailability();
+    value.transportAvailability.transports.push({ transport: "opencode", available, reason: available ? null : "no-capacity" });
+    const read = readGovernanceSnapshot(value);
+    assert.equal(read.ok, true, JSON.stringify(read));
+    if (read.ok) assert.deepEqual(read.snapshot, value);
+  }
+  const legacy = withAvailability();
+  const old = readGovernanceSnapshot(legacy);
+  assert.equal(old.ok, true);
+  if (old.ok) assert.deepEqual(old.snapshot, legacy); // No invented fourth row or inferred headroom.
+  for (const change of [
+    (v: any) => { v.transportAvailability.transports.splice(0, 2); },
+    (v: any) => { v.transportAvailability.transports.push({ transport: "opencode", available: true, reason: null }); },
+    (v: any) => { v.transportAvailability.transports[3].transport = "agy"; },
+    (v: any) => { v.transportAvailability.transports[3].transport = "PRIVATE_CANARY"; },
+    (v: any) => { v.transportAvailability.transports[3].available = "true"; },
+    (v: any) => { v.transportAvailability.transports[3].PRIVATE_CANARY = "private-value"; },
+    (v: any) => { v.transportAvailability.transports[3].available = true; },
+    (v: any) => { v.transportAvailability.transports[3].reason = null; },
+    ...["meter-unread", "meter-stale", "window-expired", "5h-ceiling", "weekly-ceiling", "ceiling-misconfigured", "PRIVATE_CANARY"].map(reason =>
+      (v: any) => { v.transportAvailability.transports[3].reason = reason; }),
+  ]) {
+    const value = withAvailability();
+    value.transportAvailability.transports.push({ transport: "opencode", available: false, reason: "no-capacity" });
+    change(value);
+    refuse(value);
+  }
 });
