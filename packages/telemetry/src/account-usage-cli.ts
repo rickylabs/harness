@@ -2,8 +2,10 @@ import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 import { setTimeout as pause } from "node:timers/promises";
-import { readAccountUsageEnvelope, type AccountUsageEnvelope } from "@rickylabs/harness-contracts";
-import { collectAccountUsage, readAccountUsageSource, usageFile, usageScopeHash } from "./account-usage.js";
+import { createHash } from "node:crypto";
+import { readAccountUsageDocument, type AccountUsageEnvelope } from "@rickylabs/harness-contracts";
+import { usageFile, usageScopeHash } from "./account-usage.js";
+import { collectAccountUsageDocument, readAccountUsageDocumentSource } from "./paid-account-usage.js";
 
 export const ACCOUNT_USAGE_HELP = `dsh-telemetry account-usage --source <descriptor> [--watch]
 
@@ -13,6 +15,10 @@ The private descriptor binds explicit seat/cwd aliases, store roots, a mode-600
 HMAC key file (at least 32 bytes), optional Codex binary/home and a private state file.
 Run one collector per state file. Changed source/key scope starts a new baseline.
 Claude direct quota is unavailable; missing measurements remain null.
+Descriptor schema 2 wraps accountUsage plus configured provider adapters. It emits
+the 0.33 reader document with independent billing, local-history and price rows.
+GitHub needs GITHUB_COPILOT_PLAN_READ_TOKEN in githubCopilot.credentialFile;
+without that owner-only Plan-read credential its billing state is unknown.
 `;
 /** CLI diagnostics are fixed strings: local paths, native ids, auth and stderr never leave. */
 export async function accountUsageCommand(argv: readonly string[]): Promise<number> {
@@ -22,29 +28,34 @@ export async function accountUsageCommand(argv: readonly string[]): Promise<numb
     process.stderr.write("account-usage: invalid command line\n"); return 2;
   }
   try {
-    const source = readAccountUsageSource(JSON.parse((await usageFile(argv[1], 65536)).toString("utf8")));
-    const key = await usageFile(source.keyFile, 4096, true);
+    const source = readAccountUsageDocumentSource(JSON.parse((await usageFile(argv[1], 65536)).toString("utf8")));
+    const native = source.schemaVersion === 1 ? source : source.accountUsage;
+    const key = await usageFile(native.keyFile, 4096, true);
     if (key.length < 32) throw new Error("usage key unavailable");
-    const sourceHash = usageScopeHash(source, key);
+    const sourceHash = source.schemaVersion === 1 ? usageScopeHash(source, key) : createHash("sha256").update(JSON.stringify(source)).update(key).digest("hex");
     let previous: AccountUsageEnvelope | undefined;
     try {
-      const state = JSON.parse((await usageFile(source.stateFile, 4 * 1024 * 1024, true)).toString("utf8")) as { sourceHash?: unknown; snapshot?: unknown };
-      const read = readAccountUsageEnvelope(state.snapshot);
-      if (state.sourceHash === sourceHash && read.ok) previous = read.envelope;
+      const state = JSON.parse((await usageFile(native.stateFile, 4 * 1024 * 1024, true)).toString("utf8")) as { sourceHash?: unknown; snapshot?: unknown };
+      const read = readAccountUsageDocument(state.snapshot);
+      if (state.sourceHash === sourceHash && read.ok) previous = read.document.schemaVersion === 1 ? read.document : read.document.account;
     } catch { /* Missing, corrupt or changed state means no inference baseline, never empty history. */ }
     do {
-      const snapshot = await collectAccountUsage(source, key, previous === undefined ? {} : { previous });
-      const state = await open(source.stateFile, constants.O_WRONLY | constants.O_CREAT | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600);
+      const snapshot = await collectAccountUsageDocument(source, key, previous === undefined ? {} : { previous });
+      const state = await open(native.stateFile, constants.O_WRONLY | constants.O_CREAT | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600);
       try {
         const info = await state.stat();
-        if (!info.isFile() || (info.mode & 0o777) !== 0o600) throw new Error("usage state unavailable");
+        if (!info.isFile() || (info.mode & 0o7777) !== 0o600 || info.uid !== process.getuid?.()) throw new Error("usage state unavailable");
         await state.truncate(0);
         await state.writeFile(JSON.stringify({ sourceHash, snapshot }));
         await state.sync();
       } finally { await state.close(); }
       process.stdout.write(`${JSON.stringify(snapshot)}\n`);
-      previous = snapshot;
-      if (argv[2] !== "--watch") return snapshot.coverage.every(c => c.state === "complete") ? 0 : 3;
+      previous = snapshot.schemaVersion === 1 ? snapshot : snapshot.account;
+      if (argv[2] !== "--watch") {
+        const complete = previous.coverage.every(c => c.state === "complete") && (snapshot.schemaVersion === 1 ||
+          Object.values(snapshot.providers.coverage).every(c => c === "not-configured" || c === "known" || c === "complete"));
+        return complete ? 0 : 3;
+      }
       await pause(180000);
     } while (true);
   } catch { process.stderr.write("account-usage: descriptor, key, state or collection unavailable\n"); return 1; }

@@ -10,6 +10,15 @@ const row = (transport: string, available: boolean, reason: string | null) => ({
 const snapshot = (over: Record<string, unknown> = {}) => JSON.stringify({ schemaVersion: 1,
   observedAt: "2026-09-30T12:00:00.123Z", validUntil: "2026-09-30T12:01:00.123Z",
   transports: [row("claude", false, "5h-ceiling"), row("codex", true, null), row("agy", false, "meter-stale")], ...over });
+it("maps optional provider budget decisions and refuses mismatched clocks/private fields", () => {
+  const base = JSON.parse(snapshot()), decision = { provider: "fixture-provider", model: "fixture-model", observedAt: base.observedAt, validUntil: base.validUntil,
+    available: false, reason: "budget-unavailable" };
+  const leg = mapTransportAvailability(snapshot({ providerBudgets: [decision] })); assert.equal(leg.ok, true);
+  if (leg.ok) assert.deepEqual(leg.value.providerBudgets, [decision]);
+  for (const providerBudgets of [null, [decision, decision], [{ ...decision, observedAt: "2026-01-01T00:00:00.000Z" }],
+    [{ ...decision, validUntil: "2027-01-01T00:00:00.000Z" }], [{ ...decision, PRIVATE_CANARY: "private-value" }]])
+    assert.deepEqual(mapTransportAvailability(snapshot({ providerBudgets })), { ok: false, code: "shape-mismatch" });
+});
 
 it("maps divybot's snapshot strictly: every transport in order, a reason exactly when unavailable", () => {
   const leg = mapTransportAvailability(snapshot());
@@ -51,8 +60,13 @@ it("reads only an owner-only regular file under the size bound", async () => {
     assert.equal(await code(link), "file-unreadable");
     assert.equal(await code(join(dir, "absent.json")), "file-unreadable");
     assert.equal(await code(dir), "file-unreadable");
+    const body = JSON.parse(snapshot());
+    const providerBudgets = Array.from({ length: 1024 }, (_, i) => ({ provider: "fixture-provider", model: `fixture-${i}-` + "x".repeat(220),
+      observedAt: body.observedAt, validUntil: body.validUntil, available: false, reason: "budget-unavailable" }));
+    const largeSnapshot = snapshot({ providerBudgets }); assert.ok(Buffer.byteLength(largeSnapshot) > 32768);
+    await writeFile(file, largeSnapshot); assert.equal(mapTransportAvailability(await readTransportAvailabilityFile(file)).ok, true);
     const big = join(dir, "big.json");
-    await writeFile(big, "x".repeat(32769), { mode: 0o600 });
+    await writeFile(big, "x".repeat(512 * 1024 + 1), { mode: 0o600 });
     assert.equal(await code(big), "oversize");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

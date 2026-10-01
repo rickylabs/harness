@@ -97,7 +97,7 @@ try {
   assert.ok(existsSync(join(installedRoot, "dist/index.d.ts")) && existsSync(join(installedRoot, "dist/server.d.ts")));
   stage = "installed root/server runtime exports";
   writeFileSync(join(consumer, "runtime.mjs"), `import assert from 'node:assert/strict';
-import { readAccountUsageEnvelope, sessionProcessedTokens, readGovernanceSnapshot, readAgentObservations, readIssueAgentTreeSnapshot, ISSUE_LAUNCH_BLOCK_REASONS, MAX_AGENT_OBSERVATIONS, projectRouteIdentity, PROTOCOL_VERSION } from '@rickylabs/harness-contracts';
+import { readAccountUsageDocument, readProviderUsageSnapshot, readProviderBudgetDecisions, ISSUE_LAUNCH_REFUSAL_REASONS, readAccountUsageEnvelope, sessionProcessedTokens, readGovernanceSnapshot, readAgentObservations, readIssueAgentTreeSnapshot, ISSUE_LAUNCH_BLOCK_REASONS, MAX_AGENT_OBSERVATIONS, projectRouteIdentity, PROTOCOL_VERSION } from '@rickylabs/harness-contracts';
 import { projectRouteIdentity as routeExport } from '@rickylabs/harness-contracts/route';
 import { openHub } from '@rickylabs/harness-contracts/server';
 assert.equal(typeof readGovernanceSnapshot, 'function'); assert.equal(PROTOCOL_VERSION, 1);
@@ -106,6 +106,19 @@ assert.equal(typeof sessionProcessedTokens, 'function');
 const usageAt = '2026-01-01T00:00:00.000Z';
 assert.equal(readAccountUsageEnvelope({schemaVersion:1,generatedAt:usageAt,quota:[],sessions:[],unattributed:[],coverage:['codex','claude'].map(vendor => ({vendor,from:usageAt,through:usageAt,state:'unavailable',reason:'not-configured'}))}).ok, true);
 assert.deepEqual(readAccountUsageEnvelope({schemaVersion:99}), {ok:false,reason:'invalid'});
+const nativeUsage = {schemaVersion:1,generatedAt:usageAt,quota:[],sessions:[],unattributed:[],coverage:['codex','claude'].map(vendor => ({vendor,from:usageAt,through:usageAt,state:'unavailable',reason:'not-configured'}))};
+const providers = {schemaVersion:1,generatedAt:usageAt,meters:[],history:[],prices:[{provider:'openrouter',model:'fixture/model',observedAt:usageAt,source:'models-endpoint',state:'known',reason:null,rates:{input:'1',output:'2',cacheRead:'0.1',cacheWrite:'0'},overrides:[],additionalCharges:[]}],coverage:{githubBilling:'not-configured',openRouter:'known',openCode:'not-configured'}};
+assert.equal(readProviderUsageSnapshot(providers).ok, true);
+const paidDocument = {schemaVersion:2,generatedAt:usageAt,account:nativeUsage,providers};
+assert.equal(readAccountUsageDocument(paidDocument).ok, true);
+assert.equal(readAccountUsageDocument(nativeUsage).ok, true);
+assert.equal(readAccountUsageDocument({...paidDocument,privatePath:'PRIVATE-CANARY'}).ok, false);
+assert.equal(readProviderUsageSnapshot({...providers,prices:[{...providers.prices[0],rates:{...providers.prices[0].rates,input:'-1'}}]}).ok, false);
+const decision = {provider:'fixture-provider',model:'fixture-model',observedAt:usageAt,validUntil:'2026-01-01T00:00:15.000Z',available:false,reason:'budget-reached'};
+assert.deepEqual(readProviderBudgetDecisions([decision]), [decision]);
+assert.equal(readProviderBudgetDecisions([{...decision,reason:'PRIVATE-CANARY'}]), null);
+assert.ok(ISSUE_LAUNCH_REFUSAL_REASONS.includes('budget-reached') && ISSUE_LAUNCH_REFUSAL_REASONS.includes('budget-unavailable'));
+
 assert.equal(projectRouteIdentity, routeExport);
 assert.equal(MAX_AGENT_OBSERVATIONS, 256);
 assert.equal(readAgentObservations({schema:1,protocol:1,observedAt:'2026-01-01T00:00:00.000Z',revision:'a'.repeat(64),complete:true,reason:null,agents:[]}).ok, true);
@@ -122,10 +135,45 @@ assert.deepEqual(readAgentObservations({schema:2,protocol:1,observedAt:'2026-01-
 console.log(JSON.stringify({ root: true, server: true, protocol: PROTOCOL_VERSION }));\n`);
   const runtime = await run(process.execPath, [join(consumer, "runtime.mjs")], { cwd: consumer, env });
   assert.equal(runtime.code, 0); assert.deepEqual(JSON.parse(runtime.stdout), { root: true, server: true, protocol: 1 });
+  stage = "actual paid account CLI -> installed decoder";
+  const paidKey = join(scratch, "paid-fixture-key"), paidState = join(scratch, "paid-fixture-state"), paidDescriptor = join(scratch, "paid-descriptor.json");
+  writeFileSync(paidKey, Buffer.alloc(32, 7), {mode: 0o600});
+  writeFileSync(paidDescriptor, JSON.stringify({schemaVersion:2,accountUsage:{schemaVersion:1,keyFile:paidKey,stateFile:paidState,codex:null,stores:[]},
+    providers:{githubCopilot:{username:'fixture-owner',credentialFile:null,models:[{model:'fixture-model',billingModel:'Fixture Model'}]},openRouter:null,openCode:null}}));
+  const paidCLI = await run(process.execPath, [cli, "account-usage", "--source", paidDescriptor], {env});
+  assert.equal(paidCLI.code, 3); assert.equal(paidCLI.stderr, "");
+  assert.ok(!paidCLI.stdout.includes(scratch) && !paidCLI.stdout.includes('fixture-owner'));
+  const paidOutput = join(consumer, "paid-cli-output.json"); writeFileSync(paidOutput, paidCLI.stdout, {mode:0o600});
+  writeFileSync(join(consumer, "paid-cli-roundtrip.mjs"), `import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {readAccountUsageDocument,readAccountUsageEnvelope} from '@rickylabs/harness-contracts';
+const read = readAccountUsageDocument(JSON.parse(readFileSync(process.argv[2],'utf8')));
+assert.equal(read.ok,true); assert.equal(read.document.schemaVersion,2);
+assert.equal(readAccountUsageEnvelope(read.document.account).ok,true);
+assert.equal(read.document.providers.coverage.githubBilling,'unknown');
+assert.equal(read.document.providers.meters.length,8);
+assert.ok(read.document.providers.meters.every(r => r.state==='unknown' && r.reason==='no-plan-read-credential' && r.grossQuantity===null && r.netUsd===null));
+assert.deepEqual([...new Set(read.document.providers.meters.map(r=>r.unit))],['premium_requests','ai_credits']);
+assert.deepEqual([...new Set(read.document.providers.meters.map(r=>r.period))],['month','day']);
+`);
+  const paidRoundtrip = await run(process.execPath,[join(consumer,"paid-cli-roundtrip.mjs"),paidOutput],{cwd:consumer,env});
+  assert.equal(paidRoundtrip.code,0); assert.equal(paidRoundtrip.stderr,"");
   stage = "installed root/server declaration compilation";
   writeFileSync(join(consumer, "consumer.ts"), `import { readRepositoryRunObservation, type RepositoryRunObservation, type RepositoryRunObservationReading, readGovernanceSnapshot, PROTOCOL_VERSION, type GovernanceReadSnapshot, type GovernanceReading } from '@rickylabs/harness-contracts';
 import { openHub, type Hub, type Delivery } from '@rickylabs/harness-contracts/server';
 import { readAccountUsageEnvelope, sessionProcessedTokens, type AccountUsageEnvelope, type SessionUsage, readAgentObservations, readIssueAgentTreeSnapshot, type AgentObservation, type AgentObservationsReading, type IssueAgentTreeSnapshot, type IssueLaunchBlock, type RouteIdentityEvidence } from '@rickylabs/harness-contracts';
+import { readAccountUsageDocument, readProviderUsageSnapshot, readProviderBudgetDecisions, type AccountUsageDocument, type ProviderUsageSnapshot, type ProviderBudgetDecision } from '@rickylabs/harness-contracts';
+const paidReading = readAccountUsageDocument({});
+function acceptPaid(value: AccountUsageDocument): string { return value.generatedAt; }
+if (paidReading.ok) acceptPaid(paidReading.document);
+const providerReading = readProviderUsageSnapshot({});
+function acceptProviders(value: ProviderUsageSnapshot): number { return value.prices.length; }
+if (providerReading.ok) acceptProviders(providerReading.snapshot);
+const decisions = readProviderBudgetDecisions([]);
+function acceptDecision(value: ProviderBudgetDecision): boolean { return value.available; }
+if (decisions) decisions.map(acceptDecision);
+// @ts-expect-error installed paid document declaration must reject private/future wrappers
+acceptPaid({schemaVersion:99});
 const accountUsage = readAccountUsageEnvelope({});
 function acceptUsage(value: AccountUsageEnvelope): string { return value.generatedAt; }
 function tokenTotal(value: SessionUsage): number | null { return sessionProcessedTokens(value); }

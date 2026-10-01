@@ -1,6 +1,7 @@
 /** Standalone governance read document. Pure JSON boundary; no board or transport semantics. */
 import type { GovernanceState, Regime, RegimeState, RegimeStatus, SubscriptionWindow,
   SubscriptionAccount, MeteredSpend, CapacityReading, PendingApproval } from "./governance.js";
+import { readProviderBudgetDecisions, type ProviderBudgetDecision } from "./paid-account-usage.js";
 
 export const GOVERNANCE_READ_SCHEMA = 1 as const;
 export const GOVERNANCE_SOURCE_NAMES = ["usage", "spend", "capacity", "admissions"] as const;
@@ -39,6 +40,8 @@ export interface TransportAvailability {
   readonly transports: readonly TransportAvailabilityRow[];
   /** Optional source-owned seat counts. Absent means no per-provider observation. */
   readonly openCodeProviderPools?: readonly OpenCodeProviderPool[];
+  /** Optional model budget decisions (0.33); independent of provider seat capacity. */
+  readonly providerBudgets?: readonly ProviderBudgetDecision[];
 }
 
 /** Shared strict boundary for the private mapper and the published decoder. */
@@ -440,7 +443,8 @@ function transportAvailability(value: unknown, coverage: MeterCoverage, evaluate
     return null;
   }
   const hasPools = typeof value === "object" && value !== null && Object.hasOwn(value, "openCodeProviderPools");
-  const input = record(value, field, ["observedAt", "validUntil", "transports", ...(hasPools ? ["openCodeProviderPools"] : [])]);
+  const hasBudgets = typeof value === "object" && value !== null && Object.hasOwn(value, "providerBudgets");
+  const input = record(value, field, ["observedAt", "validUntil", "transports", ...(hasPools ? ["openCodeProviderPools"] : []), ...(hasBudgets ? ["providerBudgets"] : [])]);
   const observed = timestamp(input.observedAt, `${field}.observedAt`), until = timestamp(input.validUntil, `${field}.validUntil`);
   if (observed.raw !== coverage.observedAt || until.raw !== coverage.validUntil || observed.ms > evaluated)
     invalid(field, "contradicts its coverage");
@@ -465,7 +469,10 @@ function transportAvailability(value: unknown, coverage: MeterCoverage, evaluate
   if (pools === null) invalid(field, "has invalid provider pools");
   if (pools !== undefined && (transports.length !== MATRIX_TRANSPORTS.length ||
       transports.at(-1)!.available !== pools.some(pool => pool.maxActive > pool.active))) invalid(field, "provider pools contradict aggregate capacity");
-  return { observedAt: observed.raw, validUntil: until.raw, transports, ...(pools === undefined ? {} : { openCodeProviderPools: pools }) };
+  const budgets = hasBudgets ? readProviderBudgetDecisions(input.providerBudgets) : undefined;
+  if (budgets === null || budgets?.some(r => r.observedAt !== observed.raw || r.validUntil !== until.raw)) invalid(field, "has invalid provider budget decisions");
+  return { observedAt: observed.raw, validUntil: until.raw, transports, ...(pools === undefined ? {} : { openCodeProviderPools: pools }),
+    ...(budgets === undefined ? {} : { providerBudgets: budgets }) };
 }
 function admissionCoverage(value: unknown): AdmissionCoverage {
   const field = "sources.admissions";

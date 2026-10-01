@@ -120,6 +120,18 @@ it("strict nested state shapes and numeric bounds", () => {
 
 // 0.28.0: the dispatcher's transport availability, a sibling source with its own validity.
 const withAvailability = (): any => fixture("transport-availability");
+it("provider budget decisions are independently copied, clock-bound and reader-first optional", () => {
+  const value = withAvailability(), body = value.transportAvailability;
+  const row = { provider: "fixture-provider", model: "fixture-model", observedAt: body.observedAt, validUntil: body.validUntil,
+    available: false, reason: "budget-reached" };
+  body.providerBudgets = [row];
+  const read = readGovernanceSnapshot(value); assert.equal(read.ok, true);
+  if (read.ok) { assert.deepEqual(read.snapshot.transportAvailability?.providerBudgets, [row]); assert.notEqual(read.snapshot.transportAvailability?.providerBudgets, body.providerBudgets); }
+  for (const providerBudgets of [null, [row, row], [{ ...row, observedAt: "2026-01-01T00:00:00.000Z" }],
+    [{ ...row, validUntil: "2027-01-01T00:00:00.000Z" }], [{ ...row, reason: "PRIVATE_CANARY" }], [{ ...row, available: true }]]) {
+    const next = withAvailability(); next.transportAvailability.providerBudgets = providerBudgets; refuse(next);
+  }
+});
 for (const [name, modify] of [
   ["TA one key without the other", (v: any) => { delete v.transportAvailability; }],
   ["TA coverage without the body key", (v: any) => { delete v.sources.transportAvailability; }],

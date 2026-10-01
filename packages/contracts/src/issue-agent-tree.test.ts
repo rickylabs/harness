@@ -91,6 +91,7 @@ it("accepts a source-bound launch refusal with no agent and rejects unsourced or
   assert.equal(result.ok, true);
   if (result.ok) assert.deepEqual(result.snapshot.issues[0]?.launchRefusal, refusal);
   assert.equal(read({ ...s, issues: [{ ...issue, launchRefusal: undefined }] }).ok, false);
+  for (const reason of ["budget-reached", "budget-unavailable"]) assert.equal(read(withRefusal({ ...refusal, reason })).ok, true);
   assert.equal(read(withRefusal({ ...refusal, reason: "PRIVATE-issue-content" })).ok, false);
   assert.equal(read(withRefusal({ ...refusal, reason: "goal-prompt-unconfirmed" })).ok, false);
   assert.equal(read(withRefusal({ ...refusal, at: "2026-01-01T00:00:01.000Z" })).ok, false);

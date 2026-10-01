@@ -404,6 +404,10 @@ it("reads a closed issue launch refusal without a dispatch and withholds malform
     assert.deepEqual(good.dispatches, []);
     assert.equal(good.launchStates[0]?.reasonCode, "routing-invalid");
     assert.ok(!JSON.stringify(good).includes("PRIVATE"));
+    for (const reasonCode of ["budget-reached", "budget-unavailable"]) {
+      await writeFile(path, JSON.stringify({ ...refusal, reasonCode }));
+      assert.equal((await readOrchidDispatches(s.root)).launchStates[0]?.reasonCode, reasonCode);
+    }
     for (const state of [
       { ...refusal, reasonCode: "PRIVATE-refusal" },
       { ...refusal, reasonCode: "goal-prompt-unconfirmed" },

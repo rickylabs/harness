@@ -227,3 +227,5 @@ export { collectAccountUsage, inferUnattributedUsage, readAccountUsageSource, se
   usageScopeHash, type AccountUsageSource, type UsageStore, type UsageCollectOptions } from "./account-usage.js";
 export { codexAccountQuota, opaqueUsageRef, pollCodexAccountQuota, unavailableQuota,
   type QuotaPollOptions, type QuotaPollResult } from "./account-quota.js";
+export { collectAccountUsageDocument, readAccountUsageDocumentSource, type AccountUsageDocumentSource, type PaidAccountUsageSource } from "./paid-account-usage.js";
+export { collectProviderUsage, readProviderUsageSource, type ProviderUsageSource, PLAN_READ_CREDENTIAL_KEY } from "./provider-usage.js";
