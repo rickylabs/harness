@@ -1,13 +1,14 @@
 /** All dispatch, pane and source values in these fixtures are synthetic. */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, writeFile, rm, symlink, chmod } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
 import { readOrchidDispatches, bindOrchidDispatchEvidence } from "./orchid-dispatch.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { readAgentObservations } from "@rickylabs/harness-contracts";
+import { collectIssueAgentTree } from "./issue-agent-feed-cli.js";
 const key = "a".repeat(64);
 const fixture = { schemaVersion: 1, runId: "orchid-" + key,
   issue: { repo: "example/inbox", number: 42 }, parentRunId: null, source: "codex",
@@ -261,6 +262,82 @@ it("hides reserved attempts and retains an ambiguous execution as uncertain", as
     assert.deepEqual((await readOrchidDispatches(s.root)).dispatches, []);
     await s.write({ ...fixture, state: "uncertain" });
     assert.equal((await readOrchidDispatches(s.root)).dispatches[0]?.dispatchState, "uncertain");
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
+it("retains verified failed registration without a location and leaves neighbouring receipts readable", async () => {
+  const s = await setup();
+  try {
+    const neighbour = join(s.root, "b".repeat(64), "record");
+    await mkdir(neighbour, { recursive: true, mode: 0o700 });
+    await writeFile(join(neighbour, "dispatch.json"), JSON.stringify({ ...fixture,
+      runId: "orchid-" + "b".repeat(64), issue: { ...fixture.issue, number: 43 } }), { mode: 0o600 });
+    for (const source of ["agy", "codex", "claude"]) {
+      await s.write({ ...fixture, source, state: "uncertain", location: null });
+      const before = await readFile(s.file);
+      const read = await readOrchidDispatches(s.root);
+      assert.equal(read.degraded, false);
+      assert.deepEqual(read.notes, []);
+      assert.equal(read.dispatches.length, 2);
+      const failed = read.dispatches.find(d => d.issue?.number === 42)!;
+      assert.equal(failed.dispatchState, "uncertain");
+      assert.equal(failed.location, null);
+      assert.equal(failed.external, null);
+      assert.equal(failed.harness, source);
+      assert.equal(failed.stop, undefined);
+      assert.equal(failed.teardown, undefined);
+      assert.equal(failed.claudeStatus, undefined);
+      const tree = buildAgentObservations({ dispatches: [failed], runs: [], observedAt: new Date().toISOString(),
+        sourceBound: true, dispatchComplete: true, nativeComplete: true });
+      assert.equal(readAgentObservations(tree).ok, true);
+      assert.equal(tree.agents.length, 1);
+      assert.equal(tree.agents[0]?.pane.value, null);
+      assert.equal(tree.agents[0]?.workspace.value, null);
+      assert.equal(tree.agents[0]?.running.value, null);
+      assert.equal(tree.agents[0]?.parentAgentId.state, "unavailable");
+      assert.deepEqual(read.dispatches.find(d => d.issue?.number === 43)?.location, fixture.location);
+      assert.deepEqual(await readFile(s.file), before, "reader must never rewrite the failed receipt or its fence");
+      const forged = { ...failed, source: "codex" as const, external: "PRIVATE-NATIVE-CANARY" };
+      assert.equal(bindOrchidDispatchEvidence([failed], [forged]).dispatches[0]?.external, null);
+    }
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
+it("serves the failed AGY issue as unknown without masking an unrelated known refusal", async () => {
+  const s = await setup();
+  const at = "2026-10-01T00:00:00.000Z";
+  try {
+    await s.write({ ...fixture, source: "agy", observedAt: at, state: "uncertain", location: null });
+    const refusal = { schemaVersion: 1, issue: { repo: "example/inbox", number: 43 },
+      dispatchId: "assignment_" + "c".repeat(64), state: "refused", reasonCode: "routing-invalid", observedAt: at };
+    await writeFile(join(s.root, "launch-" + "d".repeat(64) + ".json"), JSON.stringify(refusal), { mode: 0o600 });
+    const snapshot = await collectIssueAgentTree({ home: s.root, limit: 10,
+      env: { DSH_TELEMETRY_DISPATCH_ROOT: s.root }, now: at });
+    const failed = snapshot.issues.find(i => i.issueNumber === 42);
+    const neighbour = snapshot.issues.find(i => i.issueNumber === 43);
+    assert.equal(failed?.complete, false);
+    assert.equal(failed?.reason, "binding_unavailable");
+    assert.deepEqual(failed?.dispatches, []);
+    assert.equal(neighbour?.complete, true);
+    assert.equal(neighbour?.launchRefusal?.reason, "routing-invalid");
+  } finally { await rm(s.root, { recursive: true, force: true }); }
+});
+it("still rejects null locations for running receipts and malformed uncertain locations", async () => {
+  const s = await setup();
+  try {
+    for (const value of [
+      { ...fixture, state: "launching", location: null },
+      { ...fixture, state: "dispatched", location: null },
+      { ...fixture, state: "uncertain", location: undefined },
+      { ...fixture, state: "uncertain", location: {} },
+      { ...fixture, state: "uncertain", location: null, source: "PRIVATE-CANARY" },
+      { ...fixture, state: "uncertain", location: null, issue: { ...fixture.issue, number: 0 } },
+    ]) {
+      await s.write(value);
+      const read = await readOrchidDispatches(s.root);
+      assert.equal(read.degraded, true);
+      assert.deepEqual(read.dispatches, []);
+      assert.deepEqual(read.notes, ["orchid-dispatch: binding_unavailable"]);
+      assert.ok(!JSON.stringify(read).includes("PRIVATE-CANARY"));
+    }
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
 it("withholds corrupt or relocated records, paths and symlinks with fixed diagnostics", async () => {
