@@ -923,3 +923,53 @@ and agreement with the aggregate OpenCode row. No local config mirror supplies
 these records. The private regular-file bound is 32 KiB to accommodate 128 pools;
 owner-only permissions and no-symlink checks still apply. Upgrade this reader and
 the public decoder before enabling the new emitter.
+
+## Opt-in provider meters and catalog prices (contracts 0.33.0)
+
+The existing `account-usage` command/watch accepts a private schema 2 descriptor:
+`{schemaVersion:2,accountUsage:<existing schema 1 descriptor>,providers:<source>}`.
+There is one collector and state file. Native Codex/Claude collection and schema 1
+emission are unchanged. A configured provider with incomplete coverage makes a
+one-shot exit 3; the validated JSON still carries its unavailable rows.
+
+The provider source has exactly `githubCopilot`, `openRouter`, and `openCode`;
+each may be null. `githubCopilot` has `username`, `credentialFile` (absolute path
+or null), and `models:[{model,billingModel}]` with exact configured aliases. The
+owner-only, regular, non-symlink, mode 600 credential JSON has just the key
+`GITHUB_COPILOT_PLAN_READ_TOKEN`. Supply a fine-grained PAT or GitHub App user token
+with user Plan read permission. No CLI, environment or Copilot OAuth fallback is
+used. Until that credential exists, billing is UNKNOWN with reason
+`no-plan-read-credential`. Personal billing endpoints do not include usage billed
+to an organization or enterprise. [GitHub billing API](https://docs.github.com/en/rest/billing/usage?apiVersion=2026-03-10).
+
+The adapter issues separate bounded GETs for premium requests and AI credits,
+month and day, validates account/unit/period, and preserves the provider's
+gross/discount/net quantities and USD amounts. Missing access and malformed or
+partial responses never become zero usage. Fetch time is not settlement time.
+
+`openRouter` has `models`, an array of exact catalog IDs; empty selects the whole
+bounded catalog. Four price columns and applicable context/time overrides come
+from the [models endpoint](https://openrouter.ai/docs/api/api-reference/models/list-all-models-and-their-properties),
+without hardcoded rates. Prices are previews, separate from billed account spend.
+Catalog aliases with one leading `~` are retained within the 256-character ID
+bound, including when an ordinary model is selected from a catalog containing
+unrelated aliases. The upstream integer HHMM override clocks are normalized to
+the public `HH:MM` shape; zero and overnight windows keep their original order,
+and weekday conditions and inherited rates are preserved. Invalid clocks remain
+unavailable. [OpenRouter pricing overrides](https://openrouter.ai/docs/guides/overview/models#pricing-overrides).
+
+`openCode` has `databaseFile` (absolute), `from` (UTC instant), `versions` (explicit
+vetted native versions), and `providers:[{provider,accountIdentity}]`. The operator
+must verify each enrolled version's additive input/output/reasoning/cache schema
+and USD cost semantics; unknown versions withhold token/cache aggregates. The
+Linux reader pins an owner-held inode, opens SQLite read-only, bounds rows/bytes
+and rechecks identity/metadata. It exports neither native IDs, message text, file
+paths nor raw account identity. Numeric costs are labeled local-reported, and
+account allowance remains unknown. These historical rows cannot fund admission.
+
+The 0.33 transport snapshot reader bounds private files at 512 KiB to hold the
+bounded model decisions as well as provider pools.
+
+Schema 2 opt-in and optional provider budget decisions require both the 0.33
+public decoder and telemetry reader in the consumer first. Keep disabled paid
+provider pools disabled; this reader PR does not change routing or live config.

@@ -987,3 +987,33 @@ any pool has `maxActive > active`. These are concurrency counts, without quota,
 credit, entitlement or model-readiness claims. Readers preserve legacy snapshots
 without inventing pools. Upgrade both the telemetry reader and contracts decoder
 to 0.32.0 before the dispatcher emits the field: older strict readers reject it.
+
+## Provider billing and price readers (0.33.0)
+
+`readAccountUsageDocument` accepts the existing native schema 1 envelope unchanged,
+or an opt-in schema 2 wrapper containing `account` (that same native envelope) and
+`providers`. `readProviderUsageSnapshot` copies bounded, closed rows for premium
+requests, AI credits, USD and unknown units independently. Decimal quantities are
+canonical fixed-point strings; null means unavailable. Copilot rows retain gross,
+included discount and net overage quantities and amounts for each UTC day/month.
+Consumed discounts do not establish the plan's total included entitlement.
+`reportedThrough` stays null when the source supplies no settlement watermark.
+
+Current OpenRouter catalog prices use USD per million tokens in four nullable
+columns: input, output, cache read and cache write. Context and UTC time/day
+overrides stay attached to the exact model. Missing rates and unsupported extra
+charges make the preview partial; no cached/free price is invented. Historical
+OpenCode counts and locally reported costs have separate provenance and coverage.
+Model IDs may carry one leading `~` alias marker and remain bounded to 256
+characters across prices, history, meters and provider budget decisions. UTC
+override clocks use validated `HH:MM` strings, preserving midnight and wrap order.
+Cache efficiency divides summed cache reads by summed fresh input plus cache
+reads and writes, with null for incomplete or empty denominators. Local history
+never establishes account allowance or settled provider spend.
+
+Optional `transportAvailability.providerBudgets` contains exact provider/model
+availability decisions with the snapshot's observation and expiry clocks. It
+stays separate from 0.32 provider seat pools. Launch refusals `budget-reached` and
+`budget-unavailable` are supported by the issue tree reader. Install both the
+published decoder and telemetry reader before any producer emits these fields or
+refusals. No budget enforcement or provider hard stop is implied by a meter row.

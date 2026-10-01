@@ -30,7 +30,7 @@ export async function usageFile(path: string, cap: number, secret = false): Prom
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     const before = await file.stat();
-    if (!before.isFile() || before.size > cap || (secret && (before.mode & 0o777) !== 0o600)) throw new Error("usage file unavailable");
+    if (!before.isFile() || before.size > cap || (secret && ((before.mode & 0o7777) !== 0o600 || before.uid !== process.getuid?.()))) throw new Error("usage file unavailable");
     const bytes = Buffer.alloc(Math.min(cap + 1, before.size + 1));
     let length = 0;
     while (length < bytes.length) {

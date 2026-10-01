@@ -221,7 +221,7 @@ export const ISSUE_LAUNCH_REFUSAL_REASONS = [
   "issue-invalid", "issue-identity-missing", "brief-routing-invalid", "grant-conflict", "pin-invalid",
   "profile-invalid", "profile-unavailable", "override-worklog-unavailable", "authorization-required",
   "authorization-invalid", "override-required", "override-invalid", "route-unavailable", "routing-invalid",
-  "resolution-failed", "quota-unavailable", "harness-conflict", "router-unsupported", "host-unavailable",
+  "resolution-failed", "quota-unavailable", "budget-reached", "budget-unavailable", "harness-conflict", "router-unsupported", "host-unavailable",
   "receipt-persistence-failed", "dispatch-persistence-failed",
 ] as const;
 export type IssueLaunchRefusalReason = typeof ISSUE_LAUNCH_REFUSAL_REASONS[number];
