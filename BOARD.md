@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **442/521 done · 21 running · 26 queued · 16 abandoned · 16 invisible**
+`[################----]` **444/523 done · 21 running · 26 queued · 16 abandoned · 16 invisible**
 
-_Latest board activity: 2026-10-01T05:39:01Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-01T06:13:26Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (21)
 
@@ -42,7 +42,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
-| [#535 Tour (retry): read-only walk of the issue feed's named tools](https://github.com/rickylabs/harness/issues/535) | — | — |
+| [#537 Tour (final): read-only walk of tool step names, status and end times](https://github.com/rickylabs/harness/issues/537) | — | — |
 
 ## Anomalies (35)
 
@@ -93,13 +93,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#370** — open item has no status label, so it appears in no column
 - **#422** — open item has no status label, so it appears in no column
-- **#535** — open item has no status label, so it appears in no column
+- **#537** — open item has no status label, so it appears in no column
 
 ## Epics
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 198/247 done · 16 running · 23 queued · 6 abandoned · 4 invisible
+`[#########---]` 200/249 done · 16 running · 23 queued · 6 abandoned · 4 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -114,7 +114,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E7 — Forge: GitHub bridge, Orchid absorption](https://github.com/rickylabs/harness/issues/37) | `[##########--]` 23/26 done · 3 queued | `impl` |
 | [E8 — Contracts: published package for the netscript UIs](https://github.com/rickylabs/harness/issues/38) | `[############]` 11/11 done | `shipped` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 23/26 done · 3 running | `impl` |
-| _(no epic)_ | `[########----]` 8/12 done · 1 queued · 3 invisible | — |
+| _(no epic)_ | `[########----]` 10/14 done · 1 queued · 3 invisible | — |
 
 ### (no milestone)
 
@@ -170,9 +170,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  442/521 done · 21 running · 26 queued · 16 abandoned · 16 invisible
+# rickylabs/harness  [################----]  444/523 done · 21 running · 26 queued · 16 abandoned · 16 invisible
 
-## M1 — dsh coordinator foundation  [################----]  198/247 done · 16 running · 23 queued · 6 abandoned · 4 invisible
+## M1 — dsh coordinator foundation  [################----]  200/249 done · 16 running · 23 queued · 6 abandoned · 4 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -454,7 +454,9 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #490 App video retake: scoped agent review and live actions
     shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
     shipped              #534 Tour: read-only walk of the issue feed's named tools
-    no status            #535 Tour (retry): read-only walk of the issue feed's named tools
+    shipped              #535 Tour (retry): read-only walk of the issue feed's named tools
+    shipped              #536 Tour (long): read-only walk of tool step names and end times
+    no status            #537 Tour (final): read-only walk of tool step names, status and end times
 
 ## (no milestone)  [#################---]  244/274 done · 5 running · 3 queued · 10 abandoned · 12 invisible
 
