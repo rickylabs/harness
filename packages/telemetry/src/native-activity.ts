@@ -2,6 +2,8 @@
 import { createHash } from "node:crypto";
 import { publicActivityTarget, publicActivityText, type AgentActivityStep } from "@rickylabs/harness-contracts";
 
+import { codeModeToolCalls, codeModePatchPaths, type CodeModeToolCall } from "./code-mode-tools.js";
+
 type Source = AgentActivityStep["source"];
 const object = (value: unknown): Record<string, unknown> | null => value !== null && typeof value === "object" &&
   !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -86,11 +88,33 @@ function fromTool(source: Source, origin: string, line: number, part: number, at
   return step(source, origin, line, part, at, kind, toolName, command, filePath, summary, target);
 }
 
+function fromCodeModeTool(origin: string, line: number, at: unknown, call: CodeModeToolCall): AgentActivityStep[] {
+  if (call.name === "exec_command") {
+    const found = fromTool("codex-rollout", origin, line, 0, at, call.name, call.input);
+    return found === null ? [] : [found];
+  }
+  const paths = codeModePatchPaths(call.input);
+  return (paths.length === 0 ? [null] : paths).flatMap(path => {
+    const found = fromTool("codex-rollout", origin, line, 0, at, call.name, path === null ? null : { filePath: path });
+    return found === null ? [] : [found.kind === "file" ? { ...found, summary: "Patched a repository file" } : found];
+  });
+}
+
 /** Only assistant-originated Codex items become steps; never prompts, tool outputs or reasoning. */
 export function codexActivity(raw: unknown, origin: string, line: number): readonly AgentActivityStep[] {
   const envelope = object(raw), payload = object(envelope?.["payload"]);
   if (envelope?.["type"] !== "response_item" || payload === null) return [];
   const at = envelope["timestamp"];
+  if (payload["type"] === "custom_tool_call" && payload["name"] === "exec") {
+    const calls = codeModeToolCalls(payload["input"]);
+    const rows = calls.flatMap(call => fromCodeModeTool(origin, line, at, call));
+    if (rows.length > 0 && rows.length <= 20) {
+      return rows.map((row, part) => ({ ...row, id: id("codex-rollout", origin, line, part) }));
+    }
+    // Unknown syntax or an exceeded bound cannot borrow legacy JSON argument evidence.
+    const generic = fromTool("codex-rollout", origin, line, 0, at, payload["name"], null);
+    return generic === null ? [] : [generic];
+  }
   if (payload["type"] === "function_call" || payload["type"] === "custom_tool_call") {
     const found = fromTool("codex-rollout", origin, line, 0, at, payload["name"], payload["arguments"] ?? payload["input"]);
     return found === null ? [] : [found];
