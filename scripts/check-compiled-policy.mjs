@@ -40,6 +40,7 @@ function modelIdentities() {
   return ids;
 }
 function modelShaped(value, ids) {
+  value = value.replace(/^\/+/, ''); // Template tails can begin with the dynamic provider's slash.
   if (ids.has(value)) return true;
   if (!/^[a-zA-Z][a-zA-Z0-9._/-]{0,255}$/.test(value) || /\.(?:ts|js|mjs|json|md)$/.test(value)) return false;
   const leaf = value.split('/').at(-1);
@@ -70,7 +71,7 @@ export function scan(file, source, exceptions = allow, identities = modelIdentit
   const parsed = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const problems = [];
   function visit(node) {
-    if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && modelShaped(node.text, identities)) {
+    if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) && modelShaped(node.text, identities)) {
       const { line } = parsed.getLineAndCharacterOfPosition(node.getStart(parsed));
       problems.push(`${file}:${line + 1}: compiled model-id literal; move it to replaceable configuration`);
     }
