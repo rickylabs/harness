@@ -95,19 +95,42 @@ it("uses the first safe assistant sentence, and never truncates or echoes privat
     type: "message", role: "assistant", content: [{ type: "output_text", text: value }],
   } }, "fixture-origin", 3)[0]!.summary;
   assert.equal(text("Review the parser. Then run tests."), "Review the parser.");
-  assert.equal(text("Review the parser ".repeat(8) + ". Then run tests."), "Agent message");
-  assert.equal(text("Read /private/host/path. Then continue."), "Agent message");
-  assert.equal(text("Read /fixture/path. Then continue."), "Agent message");
-  assert.equal(text("Visit example.invalid. Then continue."), "Agent message");
-  assert.equal(text("Check credential material. Then continue."), "Agent message");
-  assert.equal(text("Use recovery code 482916. Then continue."), "Agent message");
-  assert.equal(text("Enter OTP 482916. Then continue."), "Agent message");
-  assert.equal(text("Enter 482916. Then continue."), "Agent message");
+  assert.equal(text("Review the parser ".repeat(8) + ". Then run tests."), "Then run tests.");
+  for (const unsafe of ["Read /private/host/path.", "Read /fixture/path.", "Visit example.invalid.",
+    "Check credential material.", "Use recovery code 482916.", "Enter OTP 482916.", "Enter 482916."]) {
+    assert.equal(text(unsafe + " Then continue."), "Then continue.");
+    assert.equal(text(unsafe), "Agent message");
+  }
   assert.equal(text("Review code coverage. Then continue."), "Review code coverage.");
   const claude = claudeActivity({ timestamp: at, type: "assistant", message: { content: [
     { type: "text", text: "Run focused tests. Then review." },
   ] } }, "fixture-origin", 4)[0]!;
   assert.equal(claude.summary, "Run focused tests.");
+});
+
+it("serves screened native commentary and final answers after presentation normalization", () => {
+  const text = (value: string, phase: unknown = "commentary") => codexActivity({ timestamp: at, type: "response_item", payload: {
+    type: "message", role: "assistant", phase, content: [{ type: "output_text", text: value }],
+  } }, "fixture-origin", 3);
+  assert.equal(text("I’m reviewing the parser.")[0]?.summary, "I'm reviewing the parser.");
+  assert.equal(text("The `launchBlock` field is present.")[0]?.summary, "The launchBlock field is present.");
+  assert.equal(text("- **Completed** the assigned read-only scope.", "final_answer")[0]?.summary,
+    "Completed the assigned read-only scope.");
+  assert.equal(text("Read `/fixture/a.ts.`. Tests pass.")[0]?.summary, "Tests pass.");
+  assert.equal(text("Visit https://private.invalid. Tests pass.")[0]?.summary, "Tests pass.");
+  assert.equal(text("Use sk-abc. def.")[0]?.summary, "Agent message");
+  assert.equal(text("Read `/fixture/path` and use credential material.")[0]?.summary, "Agent message");
+  assert.equal(text("Read `/fixture/path. Embedded code words`.")[0]?.summary, "Agent message");
+  assert.equal(text("Read **/fixture/path. Embedded code words**.")[0]?.summary, "Agent message");
+  assert.equal(text("Review the parser ".repeat(8) + " private-suffix")[0]?.summary, "Agent message");
+  assert.equal(text("Read the parser.", "analysis").length, 0);
+  assert.equal(text("Read the parser.", "unknown").length, 0);
+  assert.equal(text("Read the parser.", null).length, 0);
+  assert.equal(text("Read the parser. " + "x".repeat(16_384))[0]?.summary, "Agent message");
+  assert.equal(text("`/unsafe/path`.\n".repeat(64) + "Read the parser.")[0]?.summary, "Agent message");
+  assert.equal(claudeActivity({ timestamp: at, type: "assistant", message: { content: [
+    { type: "text", text: "I’m reviewing the parser." },
+  ] } }, "fixture-origin", 4)[0]?.summary, "I'm reviewing the parser.");
 });
 
 it("extracts only a safe command head from an exact bash -lc array", () => {

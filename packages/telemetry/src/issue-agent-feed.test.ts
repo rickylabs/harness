@@ -37,6 +37,27 @@ const build = (d: DispatchEvidence = dispatch, native: readonly RunRecord[] = ru
     ...(localCapacity === undefined ? {} : { localCapacity }) });
 };
 
+it("serves the same public opaque identities as the Orchid final-comment marker", () => {
+  const root = build({ ...dispatch, runId: "orchid-" + "d".repeat(64) }).issues[0]!.dispatches[0]!.agents[0]!;
+  assert.equal(root.dispatchId, "assignment_a1f5fcca4becf7d50bd0e31ad73fa92c02529e014327dc23b0aed46f3f5ef794");
+  assert.equal(root.observation.agentId, "agent_01b2bf7785f015813e783817d39ed708678d7641631859805a0d30ddea71ce86");
+});
+
+it("withholds a stale native end that precedes served assistant activity", () => {
+  const activityAt = "2026-01-01T00:00:00.700Z";
+  const native: RunRecord = { ...runs[0]!, terminalAt: "2026-01-01T00:00:00.500Z", activitySteps: [{
+    id: "step_" + "a".repeat(64), at: activityAt, source: "codex-rollout", kind: "message",
+    toolName: null, commandHead: null, filePath: null, target: null, summary: "The assigned work is complete.",
+  }] };
+  const rootOf = (r: RunRecord) => build(dispatch, [r]).issues[0]!.dispatches[0]!.agents[0]!;
+  const stale = rootOf(native);
+  assert.equal(stale.endedAt, null);
+  assert.equal(stale.endedAtReason, "measurement_missing");
+  assert.equal(stale.activity?.steps[0]?.at, activityAt);
+  const current = rootOf({ ...native, terminalAt: "2026-01-01T00:00:00.800Z" });
+  assert.equal(current.endedAt, "2026-01-01T00:00:00.800Z");
+});
+
 it("measures running for a bound native task through the full frame validity", () => {
   const capture = "2026-01-01T00:01:31.000Z";
   const active = [run("PRIVATE-NATIVE-ROOT", null, "running"),
