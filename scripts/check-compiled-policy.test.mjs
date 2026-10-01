@@ -6,6 +6,10 @@ test('model identities cannot hide in aliases, arrays, computed keys or defaults
   for (const source of [
     'export const REVIEWER = "vendor/native-engine-v9";',
     'export const seats = ["engine_v9"];',
+    'export const REVIEWER = `vendor/native-engine-v9${suffix}`;',
+    'export const REVIEWER = `${prefix}vendor/native-engine-v9${suffix}`;',
+    'export const REVIEWER = `${prefix}vendor/native-engine-v9`;',
+    'export const REVIEWER = `${provider}/engine_v9`;',
     'export const lookups = { ["vendor/native-engine-v9"]: true };',
     'export function pick(model = "vendor/native-engine-v9") { return model; }',
     'export const newSeat = "vendor/future-engine-v99";',
@@ -19,5 +23,10 @@ test('configuration, fixtures, comments and observed identities stay data', () =
     assert.deepEqual(scan(file, 'export const seat = "vendor/native-engine-v9";', [], ids), []);
   }
   assert.deepEqual(scan('packages/routing/src/new.ts', '// "vendor/native-engine-v9"\nexport const route = { model: observed.id };', [], ids), []);
-  assert.deepEqual(scan('packages/routing/src/new.ts', 'export const method = "model/list";', [], ids), []);
+  for (const source of [
+    'export const method = "model/list";',
+    'export const method = `${prefix}model/list`;',
+    'export const file = `${directory}/engine_v9.ts`;',
+    'export const route = `${observed.provider}/${observed.id}`;',
+  ]) assert.deepEqual(scan('packages/routing/src/new.ts', source, [], ids), []);
 });
