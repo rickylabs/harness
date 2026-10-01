@@ -34,7 +34,7 @@ export async function readOpenCodeHistory(source: HistorySource, key: Uint8Array
       if (d["role"] !== "assistant") continue;
       const binding = source.providers.find(p => p.provider === d["providerID"]);
       if (!binding) continue;
-      if (typeof d["modelID"] !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(d["modelID"])) throw new Error("invalid history identity");
+      if (typeof d["modelID"] !== "string" || d["modelID"].length > 256 || !/^~?[A-Za-z0-9][A-Za-z0-9._:/-]*$/.test(d["modelID"])) throw new Error("invalid history identity");
       const id = JSON.stringify([binding.provider, d["modelID"]]);
       const group = groups.get(id) ?? { provider: binding.provider, model: d["modelID"], identity: binding.accountIdentity, messages: 0, cost: 0n, tokens: [0, 0, 0, 0, 0], tokensPartial: false, costPartial: false };
       group.messages++;

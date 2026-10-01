@@ -951,6 +951,12 @@ partial responses never become zero usage. Fetch time is not settlement time.
 bounded catalog. Four price columns and applicable context/time overrides come
 from the [models endpoint](https://openrouter.ai/docs/api/api-reference/models/list-all-models-and-their-properties),
 without hardcoded rates. Prices are previews, separate from billed account spend.
+Catalog aliases with one leading `~` are retained within the 256-character ID
+bound, including when an ordinary model is selected from a catalog containing
+unrelated aliases. The upstream integer HHMM override clocks are normalized to
+the public `HH:MM` shape; zero and overnight windows keep their original order,
+and weekday conditions and inherited rates are preserved. Invalid clocks remain
+unavailable. [OpenRouter pricing overrides](https://openrouter.ai/docs/guides/overview/models#pricing-overrides).
 
 `openCode` has `databaseFile` (absolute), `from` (UTC instant), `versions` (explicit
 vetted native versions), and `providers:[{provider,accountIdentity}]`. The operator

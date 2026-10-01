@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mkdtemp, mkdir, rm, writeFile, readFile, chmod, symlink } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile, readFile, chmod, symlink, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
@@ -9,6 +9,48 @@ import { fileURLToPath } from "node:url";
 import { readAccountUsageEnvelope, readAccountUsageDocument } from "@rickylabs/harness-contracts";
 import { usageFile } from "./account-usage.js";
 const exec = promisify(execFile), cli = fileURLToPath(new URL("./cli.js", import.meta.url));
+test("CLI state write refuses foreign owner and special mode before truncation", async () => {
+  const root = await mkdtemp(join(tmpdir(), "usage-state-write-fixture-"));
+  try {
+    const keyFile = join(root, "fake-key"), stateFile = join(root, "state"), descriptor = join(root, "descriptor.json"), hook = join(root, "wrong-owner.mjs");
+    await writeFile(keyFile, Buffer.alloc(32, 7), { mode: 0o600 });
+    const store = join(root, "empty-store"); await mkdir(store);
+    await writeFile(descriptor, JSON.stringify({ schemaVersion: 1, keyFile, stateFile, codex: null,
+      stores: ["codex", "claude"].map(vendor => ({ vendor, seat: "seat-a", cwdLabel: "project-a", root: store, accountIdentity: null })) }));
+    // Alter only this synthetic state's write-handle stat, so key and descriptor
+    // read guards cannot substitute for the production state-write owner check.
+    await writeFile(hook, `import fs from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
+const original = fs.promises.open;
+fs.promises.open = async function(path, flags, ...args) {
+  const handle = await original(path, flags, ...args);
+  if (path === process.env.USAGE_STATE_FIXTURE && (flags & fs.constants.O_WRONLY)) {
+    const originalStat = handle.stat.bind(handle);
+    handle.stat = async () => { const info = await originalStat(); info.uid += 1; return info; };
+  }
+  return handle;
+};
+syncBuiltinESMExports();
+`);
+    const canary = "PRIVATE_STATE_CANARY";
+    for (const foreignOwner of [true, false]) {
+      await writeFile(stateFile, canary, { mode: 0o600 });
+      await chmod(stateFile, foreignOwner ? 0o600 : 0o2600);
+      assert.equal((await stat(stateFile)).mode & 0o7777, foreignOwner ? 0o600 : 0o2600);
+      const args = [...(foreignOwner ? ["--import", hook] : []), cli, "account-usage", "--source", descriptor];
+      await assert.rejects(exec(process.execPath, args, { timeout: 5000, env: { ...process.env, USAGE_STATE_FIXTURE: stateFile } }), error => {
+        const e = error as { code: number; stdout: string; stderr: string };
+        return e.code === 1 && e.stdout === "" && e.stderr === "account-usage: descriptor, key, state or collection unavailable\n";
+      });
+      assert.equal(await readFile(stateFile, "utf8"), canary, "rejection must precede truncation");
+    }
+    await chmod(stateFile, 0o600);
+    const allowed = await exec(process.execPath, [cli, "account-usage", "--source", descriptor], { timeout: 5000 });
+    assert.equal(allowed.stderr, "");
+    assert.equal(readAccountUsageDocument(JSON.parse(allowed.stdout)).ok, true);
+    assert.notEqual(await readFile(stateFile, "utf8"), canary);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
 test("schema2 uses the existing CLI/state, keeps legacy native fields and emits unknown Plan-read meters", async () => {
   const root = await mkdtemp(join(tmpdir(), "paid-usage-cli-"));
   try {

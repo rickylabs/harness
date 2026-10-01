@@ -1004,6 +1004,9 @@ columns: input, output, cache read and cache write. Context and UTC time/day
 overrides stay attached to the exact model. Missing rates and unsupported extra
 charges make the preview partial; no cached/free price is invented. Historical
 OpenCode counts and locally reported costs have separate provenance and coverage.
+Model IDs may carry one leading `~` alias marker and remain bounded to 256
+characters across prices, history, meters and provider budget decisions. UTC
+override clocks use validated `HH:MM` strings, preserving midnight and wrap order.
 Cache efficiency divides summed cache reads by summed fresh input plus cache
 reads and writes, with null for incomplete or empty denominators. Local history
 never establishes account allowance or settled provider spend.

@@ -14,6 +14,27 @@ const fixture = (): ProviderUsageSnapshot => ({ schemaVersion: 1, generatedAt: a
     costUsd: "1", costSource: "local-reported", tokens: { input: 20, output: 5, reasoning: 2, cacheRead: 40, cacheWrite: 20 },
     cacheHitRate: 0.5, coverage: "complete", reason: null }], coverage: { githubBilling: "known", openRouter: "known", openCode: "complete" } });
 const reject = (value: unknown): void => assert.deepEqual(readProviderUsageSnapshot(value), { ok: false, reason: "invalid" });
+test("bounded tilde aliases survive prices, history, meters and per-model budget decisions", () => {
+  const withModel = (model: string): ProviderUsageSnapshot => {
+    const f = fixture();
+    return { ...f, meters: f.meters.map(m => ({ ...m, model })), prices: f.prices.map(p => ({ ...p, model })),
+      history: f.history.map(h => ({ ...h, model })) };
+  };
+  const budget = (model: string) => ({ provider: "openrouter", model, observedAt: at, validUntil: end, available: true, reason: null });
+  for (const model of ["~fixture/model", "~f/" + "x".repeat(253), "f/" + "x".repeat(254)]) {
+    const value = withModel(model), read = readProviderUsageSnapshot(value);
+    assert.equal(read.ok, true);
+    if (read.ok) assert.deepEqual(read.snapshot, value);
+    assert.deepEqual(readProviderBudgetDecisions([budget(model)]), [budget(model)]);
+  }
+  for (const model of ["~", "~~fixture/model", "fixture/~model", "~fixture/model\n", "~f/" + "x".repeat(254)]) {
+    const f = fixture();
+    reject({ ...f, meters: [{ ...f.meters[0], model }] });
+    reject({ ...f, prices: [{ ...f.prices[0], model }] });
+    reject({ ...f, history: [{ ...f.history[0], model }] });
+    assert.equal(readProviderBudgetDecisions([budget(model)]), null);
+  }
+});
 test("paid decimals retain fractional precision, reject noncanonical/negative/overflow and never round", () => {
   for (const value of ["0", "1", "0.000000001", "999999999.999999999"]) assert.equal(paidQuantityFromNano(paidQuantityNano(value)!), value);
   for (const value of [null, 0, "01", "-1", "1.0", "1e3", "0.0000000001", "1000000000", "NaN", " 1"]) assert.equal(paidQuantityNano(value), null);

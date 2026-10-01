@@ -4,6 +4,7 @@ import { mkdtemp, rm, writeFile, chmod, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { collectProviderUsage, githubBilling, openRouterPrices, providerDecimal, providerJson, readProviderUsageSource, PLAN_READ_CREDENTIAL_KEY } from "./provider-usage.js";
+import { readProviderUsageSnapshot } from "@rickylabs/harness-contracts";
 const at = "2026-01-02T12:00:00.000Z", key = Buffer.alloc(32, 7);
 const source = () => ({ githubCopilot: { username: "fixture-owner", credentialFile: null as string | null, models: [{ model: "fixture-model", billingModel: "Fixture Model" }] }, openRouter: null, openCode: null });
 const credential = ["github", "pat", ""].join("_") + "x".repeat(20);
@@ -88,6 +89,60 @@ test("bounded provider GET covers body size, invalid encoding/JSON, thrown diagn
   assert.equal(cancelled, true);
 });
 const prices = () => ({ data: [{ id: "fixture/model", pricing: { prompt: "0.000001", completion: "0.000002", input_cache_read: "0.0000001", input_cache_write: "0" } }], total_count: 1, links: { next: null } });
+test("catalog aliases preserve selected ordinary prices, enrolled aliases and the full catalog", async () => {
+  const catalog = prices();
+  catalog.data.push({ ...catalog.data[0]!, id: "~fixture/alias" });
+  catalog.total_count = catalog.data.length;
+  const load = (models: readonly string[], value: unknown = catalog) => openRouterPrices({ models }, at,
+    async () => new Response(JSON.stringify(value)));
+  const selected = await load(["fixture/model"]);
+  assert.equal(selected.length, 1);
+  assert.equal(selected[0]?.state, "known");
+  assert.equal(selected[0]?.model, "fixture/model");
+  assert.deepEqual(selected[0]?.rates, { input: "1", output: "2", cacheRead: "0.1", cacheWrite: "0" });
+  const enrolled = readProviderUsageSource({ githubCopilot: null, openRouter: { models: ["~fixture/alias"] }, openCode: null });
+  assert.deepEqual(enrolled.openRouter?.models, ["~fixture/alias"]);
+  const alias = await load(enrolled.openRouter!.models);
+  assert.equal(alias[0]?.state, "known");
+  assert.equal(alias[0]?.model, "~fixture/alias");
+  const full = await collectProviderUsage({ githubCopilot: null, openRouter: { models: [] }, openCode: null }, key, at,
+    { fetcher: async () => new Response(JSON.stringify(catalog)) });
+  assert.equal(full.coverage.openRouter, "known");
+  assert.deepEqual(full.prices.map(p => p.model), ["fixture/model", "~fixture/alias"]);
+  assert.equal(readProviderUsageSnapshot(full).ok, true);
+  for (const id of ["~", "~~fixture/alias", "fixture/~alias", "~fixture/alias\n", "~fixture/" + "x".repeat(248)]) {
+    assert.throws(() => readProviderUsageSource({ githubCopilot: null, openRouter: { models: [id] }, openCode: null }));
+    const bad = { ...catalog, data: [catalog.data[0], { ...catalog.data[1], id }] };
+    assert.equal((await load(["fixture/model"], bad))[0]?.reason, "shape-mismatch");
+  }
+});
+test("numeric HHMM overrides preserve midnight, wrap order, weekdays and inherited prices", async () => {
+  const load = (override: Record<string, unknown>) => {
+    const catalog = prices();
+    Object.assign(catalog.data[0]!.pricing, { overrides: [override] });
+    return openRouterPrices({ models: ["fixture/model"] }, at, async () => new Response(JSON.stringify(catalog)));
+  };
+  for (const [start, end, expectedStart, expectedEnd] of [
+    [1630, 30, "16:30", "00:30"], [0, 2359, "00:00", "23:59"],
+    [1630, 0, "16:30", "00:00"], [0, 0, "00:00", "00:00"],
+  ] as const) {
+    const rows = await load({ utc_start: start, utc_end: end, utc_days: ["saturday", "sunday"], completion: "0.000004" });
+    assert.equal(rows[0]?.state, "known");
+    assert.deepEqual(rows[0]?.overrides[0], { minPromptTokens: null, utcStart: expectedStart, utcEnd: expectedEnd,
+      utcDays: [6, 0], rates: { input: "1", output: "4", cacheRead: "0.1", cacheWrite: "0" } });
+    const historical = await load({ utc_start: expectedStart, utc_end: expectedEnd, utc_days: ["saturday", "sunday"], completion: "0.000004" });
+    assert.deepEqual(rows, historical);
+  }
+  for (const bad of [-1, 2400, 1260, 1630.5, true, "30", "24:00"]) {
+    const rows = await load({ utc_start: bad, utc_end: 30, completion: "0.000004" });
+    assert.equal(rows[0]?.state, "unknown");
+    assert.equal(rows[0]?.reason, "shape-mismatch");
+    assert.equal(rows[0]?.rates.input, null);
+  }
+  for (const override of [{ utc_start: 1630 }, { utc_end: 30 }]) {
+    assert.equal((await load(override))[0]?.reason, "shape-mismatch");
+  }
+});
 test("price rows use catalog rates, retain context/time overrides and never invent absent cache prices", async () => {
   const load = async (value: unknown) => openRouterPrices({ models: ["fixture/model"] }, at, async (url, init) => {
     assert.equal(url, "https://openrouter.ai/api/v1/models"); assert.deepEqual(init.headers, {}); return new Response(JSON.stringify(value));

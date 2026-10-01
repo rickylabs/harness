@@ -28,6 +28,16 @@ test("read-only SQLite sums exact model costs/cache once, retains unknown quota 
     const row = reading.rows[0]!; assert.equal(row.costUsd, "0.3"); assert.equal(row.messages, 2);
     assert.deepEqual(row.tokens, { input: 40, output: 10, reasoning: 4, cacheRead: 80, cacheWrite: 40 }); assert.equal(row.cacheHitRate, 0.5);
     assert.deepEqual(database.prepare("SELECT count(*) AS n FROM message").get(), before);
+    insert.run("private-message-alias", "private-session", Date.parse(from) + 4, JSON.stringify(message({ modelID: "~fixture/model" })));
+    const aliased = await readOpenCodeHistory(source, key, at);
+    assert.equal(aliased.complete, true);
+    assert.equal(aliased.rows.find(r => r.model === "~fixture/model")?.costUsd, "0.1");
+    assert.equal(aliased.rows.find(r => r.model === "fixture-model")?.costUsd, "0.3");
+    for (const modelID of ["~", "~~fixture/model", "fixture/~model", "~fixture/model\n", "~f/" + "x".repeat(254)]) {
+      database.prepare("UPDATE message SET data=? WHERE id=?").run(JSON.stringify(message({ modelID })), "private-message-alias");
+      assert.deepEqual(await readOpenCodeHistory(source, key, at), { rows: [], complete: false });
+    }
+    database.prepare("UPDATE message SET data=? WHERE id=?").run(JSON.stringify(message({ modelID: "~fixture/model" })), "private-message-alias");
     const projection = await collectProviderUsage({ githubCopilot: null, openRouter: null, openCode: source }, key, at);
     assert.equal(projection.coverage.openCode, "complete");
     assert.equal(projection.meters.find(m => m.unit === "usd")?.grossUsd, "0.3");

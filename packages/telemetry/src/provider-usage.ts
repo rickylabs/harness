@@ -17,7 +17,7 @@ export interface ProviderUsageSource {
     readonly providers: readonly { readonly provider: string; readonly accountIdentity: string }[] } | null;
 }
 const providerId = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9][a-z0-9._-]{0,63}$/.test(v);
-const modelId = (v: unknown): v is string => typeof v === "string" && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(v);
+const modelId = (v: unknown): v is string => typeof v === "string" && v.length <= 256 && /^~?[A-Za-z0-9][A-Za-z0-9._:/-]*$/.test(v);
 const path = (v: unknown): v is string => typeof v === "string" && v.length < 4096 && isAbsolute(v) && !/[\x00-\x1f\x7f]/.test(v);
 const instant = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(v) &&
   Number.isFinite(Date.parse(v)) && new Date(v).toISOString() === v;
@@ -200,6 +200,15 @@ function priceRates(r: Record<string, unknown>): ModelPriceRates {
   return { input: providerDecimal(r["prompt"], true), output: providerDecimal(r["completion"], true),
     cacheRead: providerDecimal(r["input_cache_read"], true), cacheWrite: providerDecimal(r["input_cache_write"], true) };
 }
+/** OpenRouter emits integer HHMM clocks; preserve midnight and wrap order. */
+function overrideClock(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  // Keep historical descriptors/fixtures compatible with the public clock shape.
+  if (typeof value === "string" && /^(?:[01][0-9]|2[0-3]):[0-5][0-9](?::[0-5][0-9])?$/.test(value)) return value;
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0 ||
+      Math.floor(value / 100) > 23 || value % 100 > 59) throw new Error("invalid override clock");
+  return `${String(Math.floor(value / 100)).padStart(2, "0")}:${String(value % 100).padStart(2, "0")}`;
+}
 export async function openRouterPrices(source: NonNullable<ProviderUsageSource["openRouter"]>, now: string, fetcher: Fetcher = fetch): Promise<ModelPriceRow[]> {
   const unknown = (reason: ProviderUsageReason): ModelPriceRow[] => source.models.map(model => ({ provider: "openrouter", model, observedAt: null,
     source: "models-endpoint", state: "unknown", reason, rates: noRates, overrides: [], additionalCharges: [] }));
@@ -223,7 +232,7 @@ export async function openRouterPrices(source: NonNullable<ProviderUsageSource["
         const days = o["utc_days"] === undefined ? null : bounded(o["utc_days"], 7).map(v => {
           const day = typeof v === "string" ? dayNames.indexOf(v) : -1; if (day < 0) throw new Error("invalid override day"); return day;
         });
-        return { minPromptTokens: o["min_prompt_tokens"] ?? null, utcStart: o["utc_start"] ?? null, utcEnd: o["utc_end"] ?? null,
+        return { minPromptTokens: o["min_prompt_tokens"] ?? null, utcStart: overrideClock(o["utc_start"]), utcEnd: overrideClock(o["utc_end"]),
           utcDays: days, rates: priceRates({ ...pricing, ...o }) } as ModelPriceOverride;
       });
       const partial = Object.values(rates).some(v => v === null) || overrides.some(o => Object.values(o.rates).some(v => v === null)) || additionalCharges.length > 0;

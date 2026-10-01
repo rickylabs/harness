@@ -72,7 +72,7 @@ export function paidQuantityFromNano(value: bigint): PaidQuantity | null {
   return `${whole}${fraction ? `.${fraction}` : ""}`;
 }
 const providerId = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9][a-z0-9._-]{0,63}$/.test(v);
-const modelId = (v: unknown): v is string => typeof v === "string" && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(v);
+const modelId = (v: unknown): v is string => typeof v === "string" && v.length <= 256 && /^~?[A-Za-z0-9][A-Za-z0-9._:/-]*$/.test(v);
 const account = (v: unknown): v is string => typeof v === "string" && /^paccount_[a-f0-9]{64}$/.test(v);
 const instant = (v: unknown): v is string => typeof v === "string" &&
   /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString() === v;

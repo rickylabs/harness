@@ -59,7 +59,7 @@ export function readProviderBudgetDecisions(value: unknown): readonly ProviderBu
         r[key] = field.value;
       }
       if (typeof r["provider"] !== "string" || !/^[a-z0-9][a-z0-9._-]{0,63}$/.test(r["provider"]) ||
-          typeof r["model"] !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(r["model"])) throw new Error("invalid");
+          typeof r["model"] !== "string" || r["model"].length > 256 || !/^~?[A-Za-z0-9][A-Za-z0-9._:/-]*$/.test(r["model"])) throw new Error("invalid");
       const time = (x: unknown): x is string => typeof x === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(x) &&
         Number.isFinite(Date.parse(x)) && new Date(x).toISOString() === x;
       if (!time(r["observedAt"]) || !time(r["validUntil"]) || r["observedAt"] >= r["validUntil"] || typeof r["available"] !== "boolean" ||
