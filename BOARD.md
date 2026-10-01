@@ -4,7 +4,7 @@
 
 `[################----]` **455/540 done · 26 running · 26 queued · 16 abandoned · 17 invisible**
 
-_Latest board activity: 2026-10-01T19:34:19Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-01T19:40:52Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (26)
 
@@ -50,12 +50,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#540 Tour (video v2): launchBlock read-only walk](https://github.com/rickylabs/harness/issues/540) | — | — |
 | [#541 Owner test: read-only walk to dispatch from the app](https://github.com/rickylabs/harness/issues/541) | — | — |
 
-## Anomalies (36)
+## Anomalies (37)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
+- **#551** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
