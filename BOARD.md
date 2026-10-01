@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **440/518 done · 21 running · 26 queued · 16 abandoned · 15 invisible**
+`[################----]` **441/519 done · 21 running · 26 queued · 16 abandoned · 15 invisible**
 
-_Latest board activity: 2026-10-01T04:28:23Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-01T05:10:18Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (21)
 
@@ -116,7 +116,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 243/273 done · 5 running · 3 queued · 10 abandoned · 12 invisible
+`[##########--]` 244/274 done · 5 running · 3 queued · 10 abandoned · 12 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -124,7 +124,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 211/237 done · 4 running · 2 queued · 10 abandoned · 10 invisible | — |
+| _(no epic)_ | `[##########--]` 212/238 done · 4 running · 2 queued · 10 abandoned · 10 invisible | — |
 
 ## Waiting to start
 
@@ -168,7 +168,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  440/518 done · 21 running · 26 queued · 16 abandoned · 15 invisible
+# rickylabs/harness  [################----]  441/519 done · 21 running · 26 queued · 16 abandoned · 15 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  197/245 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -452,7 +452,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #490 App video retake: scoped agent review and live actions
     shipped              #497 Video proof: app-dispatched Claude root with one native sub-agent
 
-## (no milestone)  [#################---]  243/273 done · 5 running · 3 queued · 10 abandoned · 12 invisible
+## (no milestone)  [#################---]  244/274 done · 5 running · 3 queued · 10 abandoned · 12 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -740,6 +740,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR528 chore(routing): adopt Sol 6.1 low and xhigh defaults
     shipped              PR529 feat(telemetry): publish account quota and opaque session usage
     shipped              PR530 fix(routing): configure launchable Grok and Muse evaluators
+    shipped              PR531 feat(routing): discover native CLI catalogs for exact admission (p1)
 ```
 
 </details>
