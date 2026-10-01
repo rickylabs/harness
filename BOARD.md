@@ -2,18 +2,17 @@
 
 # rickylabs/harness
 
-`[################----]` **439/518 done · 22 running · 26 queued · 16 abandoned · 15 invisible**
+`[################----]` **440/518 done · 21 running · 26 queued · 16 abandoned · 15 invisible**
 
-_Latest board activity: 2026-10-01T03:43:08Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-01T04:28:23Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (22)
+## Moving now (21)
 
 Something could be acting on these right now.
 
 | item | column | epic |
 | --- | --- | --- |
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl-eval` | `e9` |
-| [#272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema](https://github.com/rickylabs/harness/issues/272) | `impl-eval` | `e11` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees](https://github.com/rickylabs/harness/issues/373) | `impl-eval` | — |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
@@ -98,13 +97,13 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### M1 — dsh coordinator foundation
 
-`[#########---]` 196/245 done · 17 running · 23 queued · 6 abandoned · 3 invisible
+`[#########---]` 197/245 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 16/16 done | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[##########--]` 29/33 done · 3 queued · 1 abandoned | `impl` |
-| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#######-----]` 6/10 done · 2 running · 2 queued | `triage` |
+| [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[########----]` 7/10 done · 1 running · 2 queued | `triage` |
 | [E2 — dsh app shell: profile, bundle, Docker fork, N5 compose](https://github.com/rickylabs/harness/issues/32) | `[##########--]` 12/14 done · 2 queued | `triage` |
 | [E3 — Subagent providers over structured protocols](https://github.com/rickylabs/harness/issues/33) | `[#######-----]` 24/39 done · 7 running · 5 queued · 3 abandoned | `triage` |
 | [E4 — Model gateway and routing matrix](https://github.com/rickylabs/harness/issues/34) | `[##########--]` 12/14 done · 1 queued · 1 invisible | `triage` |
@@ -169,9 +168,9 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  439/518 done · 22 running · 26 queued · 16 abandoned · 15 invisible
+# rickylabs/harness  [################----]  440/518 done · 21 running · 26 queued · 16 abandoned · 15 invisible
 
-## M1 — dsh coordinator foundation  [################----]  196/245 done · 17 running · 23 queued · 6 abandoned · 3 invisible
+## M1 — dsh coordinator foundation  [################----]  197/245 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]
     [################] 16/16 done
@@ -229,9 +228,9 @@ Open, and carrying no `status:` label — real work no column can see.
     triage               #315 Prune candidates: the front door still describes the superseded charter, and two entry points contradict themselves (p0)
 
   E11 — Configuration-driven routing: consume the fleet matrix as data #270  [triage]
-    [#########-------] 6/10 done · 2 running · 2 queued
+    [###########-----] 7/10 done · 1 running · 2 queued
     shipped              #271 Routing configuration 1/5 — Load a wholly replaceable routing configuration (p1)
-    impl-eval            #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p0)
+    shipped              #272 Routing configuration 2/5 — Validate the complete fleet-expressive configuration schema (p0)
     triage               #273 Routing configuration 3/5 — Resolve lanes and evaluators against the selected generator (p0)
     plan                 #274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration (p0)
     triage               #275 Routing configuration 5/5 — Prove loaded fleet parity against matrix CLI JSON (p0)
