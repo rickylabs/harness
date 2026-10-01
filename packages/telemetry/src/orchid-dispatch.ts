@@ -217,7 +217,11 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         if (input.state === "reserved" && input.location === null) continue;
         if (!["launching", "dispatched", "uncertain"].includes(input.state as string)) throw new Error();
         const location = object(input.location);
-        if (location === null || !label(location.paneId) || !label(location.workspaceId)) throw new Error();
+        // Failed registration can return before a workspace exists. Keep this
+        // validated uncertain receipt issue-local, without inventing a location
+        // or poisoning unrelated reads. Running receipts still require handles.
+        const unlocatedFailure = input.state === "uncertain" && input.location === null;
+        if (!unlocatedFailure && (location === null || !label(location.paneId) || !label(location.workspaceId))) throw new Error();
         if (!label(input.provider) || typeof input.model !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/.test(input.model) || input.model.includes("..") || !label(input.effort) || !["codex", "claude", "agy"].includes(input.source as string)) throw new Error();
         // Transport is not router. No native session or observed route can be established from a pane id.
         const route = projectRouteIdentity(compareRouteIdentity(
@@ -257,19 +261,19 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
             : { value: null, source: "unavailable", reason: "source_not_bound" },
           routePolicy: receipt.policy,
           route, routeObservedReasons: receipt.reasons, issue: { repo: issue.repo, number: issue.number as number }, parentRunId: null,
-          location: { paneId: location.paneId, workspaceId: location.workspaceId },
+          location: location === null ? null : { paneId: location.paneId as string, workspaceId: location.workspaceId as string },
           dispatchState: input.state as "launching" | "dispatched" | "uncertain" };
-        const stop = await readOrchidStopObservation(root, record, { runId: dispatch.runId,
+        const stop = location === null ? undefined : await readOrchidStopObservation(root, record, { runId: dispatch.runId,
           repository: issue.repo as string, issueNumber: issue.number as number,
           host: dispatch.host ?? null, paneId: location.paneId as string, workspaceId: location.workspaceId as string });
-        const teardown = await readOrchidTeardownObservation(record, { runId: dispatch.runId,
+        const teardown = location === null ? undefined : await readOrchidTeardownObservation(record, { runId: dispatch.runId,
           repository: issue.repo as string, issueNumber: issue.number as number,
           host: dispatch.host ?? null, paneId: location.paneId as string, workspaceId: location.workspaceId as string });
         // Bind the final object: native identity is held in a private WeakMap.
         const boundDispatch = { ...dispatch, ...(stop === undefined ? {} : { stop }),
           ...(teardown === undefined ? {} : { teardown }) };
         await readOrchidNativeBinding(record, key, boundDispatch);
-        const claudeStatus = await readOrchidClaudeStatus(record, boundDispatch);
+        const claudeStatus = location === null ? null : await readOrchidClaudeStatus(record, boundDispatch);
         if (claudeStatus !== null) Object.assign(boundDispatch, { claudeStatus });
         dispatches.push(boundDispatch);
       } catch { notes.add("orchid-dispatch: binding_unavailable"); }
