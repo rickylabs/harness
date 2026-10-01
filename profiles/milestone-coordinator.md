@@ -1,6 +1,6 @@
 ---
 name: milestone-coordinator
-title: Chief of Staff
+title: Milestone coordinator
 role: coordinator
 description: Routes one milestone across bounded specialist lanes.
 skills:
@@ -29,6 +29,15 @@ actually obeyed — not a design for how it might work.
 | `routing` | coordinator matrix at `milestone` scope. Lane supervisors are **fixed** models with declared fallbacks. |
 
 ---
+
+## Dedicated coordinator route
+
+Resolve the full pinned matrix's `coordinators.milestone` candidates through the
+coordinator selector. `milestone` is a coordinator scope, not a workload tier,
+and `coordinator` is separate from the worker roles. The existing routing row
+supplies that scope; this profile has no worker `defaultTier`. Model IDs, effort
+and fallback order remain in replaceable routing configuration. An unavailable
+coordinator route is a blocker, never permission to substitute a worker route.
 
 ## What the coordinator decides, and what it does not
 

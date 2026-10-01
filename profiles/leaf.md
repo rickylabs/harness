@@ -1,6 +1,6 @@
 ---
 name: leaf
-title: Implementation teammate
+title: "Single agent: one change, one PR"
 role: implementation
 defaultTier: feature
 description: Delivers one scoped change through a gated pull request.

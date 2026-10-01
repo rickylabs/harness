@@ -1,19 +1,21 @@
 /** Strict, data-only metadata for the repo Markdown that Orchid pins at launch. */
 import yaml from "js-yaml";
 import { basename } from "node:path";
+import routing from "../packages/routing/config/routing.fleet.v2.json" with { type: "json" };
 
 const FIELDS = new Set(["name", "title", "role", "defaultTier", "description", "skills", "permissions", "guardrails"]);
-// Mirrored from the pinned NetScript delegation matrix; Orchid still checks the live matrix cell.
-const ROLES = new Set(["implementation", "ui_ux", "plan", "plan_evaluation",
-  "implementation_evaluation", "vision_evaluation", "documentation", "deep_research", "coordinator"]);
-const SCOPES = new Set(["small_project", "project", "framework", "milestone"]);
-const WORKLOAD_TIERS = new Set(["simple", "straightforward", "feature", "complex", "architecture"]);
+// Process names stay stable; routing vocabulary and available cells come from replaceable data.
+const REQUIRED = ["planner", "plan-evaluator", "leaf", "implementation-evaluator", "researcher",
+  "docs", "ui-ux", "vision-evaluator", "rfc", "milestone-coordinator"];
 const text = (value, limit) => typeof value === "string" && value.length > 0 && value.length <= limit &&
   value === value.trim() && !/[\p{Cc}\u2028\u2029]/u.test(value);
 const record = value => value !== null && typeof value === "object" && !Array.isArray(value);
 
 /** Return field-specific codes without ever echoing potentially private metadata values. */
-export function validateProfileMarkdown(path, markdown) {
+export function validateProfileMarkdown(path, markdown, configuration = routing) {
+  const ROLES = new Set([...Object.keys(configuration.roles), "coordinator"]);
+  const SCOPES = new Set(Object.keys(configuration.coordinators));
+  const WORKLOAD_TIERS = new Set(configuration.tiers.map(tier => tier.tier));
   const problems = [];
   const fail = (field, code) => problems.push({ field, code });
   if (typeof markdown !== "string" || markdown.length > 256_000) {
@@ -45,6 +47,9 @@ export function validateProfileMarkdown(path, markdown) {
   if (Object.hasOwn(data, "defaultTier") &&
       (role === "coordinator" || typeof data.defaultTier !== "string" || !WORKLOAD_TIERS.has(data.defaultTier))) {
     fail("defaultTier", "unknown_tier");
+  } else if (Object.hasOwn(data, "defaultTier") && ROLES.has(role)) {
+    const cell = configuration.tiers.find(tier => tier.tier === data.defaultTier)?.cells?.[role];
+    if (!Array.isArray(cell) || cell.length === 0) fail("defaultTier", "no_route");
   }
   for (const field of ["skills", "permissions", "guardrails"]) {
     const values = data[field];
@@ -69,9 +74,32 @@ export function validateProfileMarkdown(path, markdown) {
     const scopes = tokens.filter(token => SCOPES.has(token));
     if (role === "coordinator") {
       if (roles.length !== 0 || scopes.length !== 1 || !/coordinator matrix/.test(rows[0])) fail("role", "routing_mismatch");
+      else if (!Array.isArray(configuration.coordinators[scopes[0]]) || configuration.coordinators[scopes[0]].length === 0) {
+        fail("routing", "no_route");
+      }
     } else if (ROLES.has(role) && (roles.length === 0 || roles[0] !== role || scopes.length !== 0)) {
       fail("role", "routing_mismatch");
     }
   }
   return { value: problems.length === 0 ? data : null, problems };
+}
+
+/** Validate the dispatch inventory separately so aliases cannot hide missing canonical profiles. */
+export function validateProfileCollection(documents, configuration = routing) {
+  const problems = [];
+  const files = new Set(documents.map(document => document.path));
+  for (const name of REQUIRED) {
+    const path = `${name}.md`;
+    if (!files.has(path)) problems.push({ path, field: "profile", code: "required_missing" });
+  }
+  const covered = new Set();
+  for (const { path, markdown } of documents) {
+    const result = validateProfileMarkdown(path, markdown, configuration);
+    for (const problem of result.problems) problems.push({ path, ...problem });
+    if (result.value) covered.add(result.value.role);
+  }
+  Object.keys(configuration.roles).forEach((role, index) => {
+    if (!covered.has(role)) problems.push({ path: "profiles", field: `roles[${index}]`, code: "coverage_missing" });
+  });
+  return problems;
 }
