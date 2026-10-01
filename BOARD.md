@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **448/531 done · 24 running · 26 queued · 16 abandoned · 17 invisible**
+`[################----]` **448/532 done · 25 running · 26 queued · 16 abandoned · 17 invisible**
 
-_Latest board activity: 2026-10-01T11:15:29Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-01T13:08:23Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (24)
+## Moving now (25)
 
 Something could be acting on these right now.
 
@@ -23,6 +23,7 @@ Something could be acting on these right now.
 | [#263 E6 — Clarify correlation-group identity versus execution ancestry](https://github.com/rickylabs/harness/issues/263) | `research` | `e6` |
 | [#286 E3.7 — provider-uhp: SubagentProvider over UHP /v1/responses](https://github.com/rickylabs/harness/issues/286) | `impl-eval` | `e3` |
 | [#300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision](https://github.com/rickylabs/harness/issues/300) | `impl-eval` | `e3` |
+| [PR546 fix(telemetry): serve screened assistant text and truthful native end times](https://github.com/rickylabs/harness/pull/546) | `impl-eval` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
 | [#196 E3.6 - Sender ownership: one live agent per worktree, and steering is a resume](https://github.com/rickylabs/harness/issues/196) | `plan` | `e3` |
 | [#197 E3.7 - Brief contract: refuse to dispatch an empty or malformed prompt](https://github.com/rickylabs/harness/issues/197) | `research` | `e3` |
@@ -123,7 +124,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 247/282 done · 8 running · 3 queued · 10 abandoned · 14 invisible
+`[##########--]` 247/283 done · 9 running · 3 queued · 10 abandoned · 14 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -131,7 +132,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 215/246 done · 7 running · 2 queued · 10 abandoned · 12 invisible | — |
+| _(no epic)_ | `[##########--]` 215/247 done · 8 running · 2 queued · 10 abandoned · 12 invisible | — |
 
 ## Waiting to start
 
@@ -175,7 +176,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  448/531 done · 24 running · 26 queued · 16 abandoned · 17 invisible
+# rickylabs/harness  [################----]  448/532 done · 25 running · 26 queued · 16 abandoned · 17 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -463,7 +464,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [#################---]  247/282 done · 8 running · 3 queued · 10 abandoned · 14 invisible
+## (no milestone)  [#################---]  247/283 done · 9 running · 3 queued · 10 abandoned · 14 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -760,6 +761,7 @@ Open, and carrying no `status:` label — real work no column can see.
     plan                 #543 [rickylabs/harness#540] Tour (video v2): launchBlock read-only walk
     plan                 #544 [rickylabs/harness#540] Tour (video v2): launchBlock read-only walk
     plan                 #545 [rickylabs/harness#540] Tour (video v2): launchBlock read-only walk
+    impl-eval            PR546 fix(telemetry): serve screened assistant text and truthful native end times (draft, p1)
 ```
 
 </details>
