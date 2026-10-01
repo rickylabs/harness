@@ -4,7 +4,7 @@ import { constants } from "node:fs";
 import { lstat, open, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents";
-import { ISSUE_LAUNCH_REFUSAL_REASONS, ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
+import { ISSUE_LAUNCH_BLOCK_REASONS, ISSUE_LAUNCH_REFUSAL_REASONS, ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
   type OrchidRouteObservedReasons, type AgentBudget, type AgentRoutePolicy, type AgentLaunchRevision } from "@rickylabs/harness-contracts";
 import { readOrchidNativeBinding, readOrchidLaunchBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import { readOrchidStopObservation } from "./orchid-stop-observation.js";
@@ -84,13 +84,15 @@ export interface OrchidDispatchRead {
   readonly notes: readonly string[];
   readonly degraded: boolean;
 }
-export interface OrchidLaunchState {
+export type OrchidLaunchState = {
   readonly issue: { readonly repo: string; readonly number: number };
   readonly dispatchId: string;
-  readonly state: "refused" | "launching" | "launched";
-  readonly reasonCode: typeof ISSUE_LAUNCH_REFUSAL_REASONS[number] | null;
   readonly observedAt: string;
-}
+} & (
+  | { readonly state: "refused"; readonly reasonCode: typeof ISSUE_LAUNCH_REFUSAL_REASONS[number] }
+  | { readonly state: "blocked"; readonly reasonCode: typeof ISSUE_LAUNCH_BLOCK_REASONS[number] }
+  | { readonly state: "launching" | "launched"; readonly reasonCode: null }
+);
 const launchFile = /^launch-[a-f0-9]{64}\.json$/;
 const assignment = /^assignment_[a-f0-9]{64}$/;
 const stamp = (value: unknown): value is string => typeof value === "string" &&
@@ -107,15 +109,25 @@ async function readLaunchState(root: string, name: string): Promise<OrchidLaunch
     const row = object(JSON.parse(bytes.subarray(0, bytesRead).toString("utf8")));
     const issue = object(row?.issue);
     if (row === null || Object.keys(row).sort().join(",") !== "dispatchId,issue,observedAt,reasonCode,schemaVersion,state" ||
-        row.schemaVersion !== 1 || issue === null || Object.keys(issue).sort().join(",") !== "number,repo" ||
+        issue === null || Object.keys(issue).sort().join(",") !== "number,repo" ||
         typeof issue.repo !== "string" || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(issue.repo) ||
         !Number.isSafeInteger(issue.number) || (issue.number as number) < 1 ||
-        typeof row.dispatchId !== "string" || !assignment.test(row.dispatchId) || !stamp(row.observedAt) ||
-        (row.state !== "refused" && row.state !== "launching" && row.state !== "launched") ||
-        (row.state === "refused" ? !ISSUE_LAUNCH_REFUSAL_REASONS.includes(row.reasonCode as typeof ISSUE_LAUNCH_REFUSAL_REASONS[number])
-          : row.reasonCode !== null)) throw new Error();
-    return { issue: { repo: issue.repo, number: issue.number as number }, dispatchId: row.dispatchId,
-      state: row.state, reasonCode: row.reasonCode as OrchidLaunchState["reasonCode"], observedAt: row.observedAt };
+        typeof row.dispatchId !== "string" || !assignment.test(row.dispatchId) || !stamp(row.observedAt)) throw new Error();
+    const common = { issue: { repo: issue.repo, number: issue.number as number },
+      dispatchId: row.dispatchId, observedAt: row.observedAt };
+    if (row.schemaVersion === 2 && row.state === "blocked" &&
+        ISSUE_LAUNCH_BLOCK_REASONS.includes(row.reasonCode as typeof ISSUE_LAUNCH_BLOCK_REASONS[number])) {
+      return { ...common, state: "blocked", reasonCode: row.reasonCode as typeof ISSUE_LAUNCH_BLOCK_REASONS[number] };
+    }
+    if (row.schemaVersion !== 1) throw new Error();
+    if (row.state === "refused" &&
+        ISSUE_LAUNCH_REFUSAL_REASONS.includes(row.reasonCode as typeof ISSUE_LAUNCH_REFUSAL_REASONS[number])) {
+      return { ...common, state: "refused", reasonCode: row.reasonCode as typeof ISSUE_LAUNCH_REFUSAL_REASONS[number] };
+    }
+    if ((row.state === "launching" || row.state === "launched") && row.reasonCode === null) {
+      return { ...common, state: row.state, reasonCode: null };
+    }
+    throw new Error();
   } finally { await file.close(); }
 }
 

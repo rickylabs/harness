@@ -5,7 +5,7 @@ import { homedir } from "node:os";
 import { performance } from "node:perf_hooks";
 import type { Writable } from "node:stream";
 import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, readIssueAgentTreeSnapshot,
-  type IssueAgentTree, type IssueAgentTreeFrame, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+  type IssueLaunchBlock, type IssueAgentTree, type IssueAgentTreeFrame, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { scanClaudeIssue } from "./backfill/claude-issue.js";
 import { buildAgentObservations } from "./agent-observations.js";
@@ -47,14 +47,18 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   const localCapacity = await readLocalHostCapacity(options.now, options.env[HOST_CAPACITY_PLACEMENT_HOST]);
   const actionScan = await readActionReceipts(options.env[ORCHID_DISPATCH_ROOT]);
   const groups = new Map<string, { repo: IssueAgentTree["repo"]; issueNumber: number;
-    dispatches: DispatchEvidence[]; refusal?: OrchidLaunchState }>();
-  for (const refusal of orchid.launchStates) {
-    if (refusal.state !== "refused" || refusal.reasonCode === null || Date.parse(refusal.observedAt) > nowMs) continue;
-    const [owner, name] = refusal.issue.repo.split("/");
+    dispatches: DispatchEvidence[]; refusal?: Extract<OrchidLaunchState, { state: "refused" }>;
+    block?: IssueLaunchBlock }>();
+  for (const launch of orchid.launchStates) {
+    if ((launch.state !== "refused" && launch.state !== "blocked") || Date.parse(launch.observedAt) > nowMs) continue;
+    const [owner, name] = launch.issue.repo.split("/");
     if (!owner || !name) continue;
-    const key = `${owner.toLowerCase()}/${name.toLowerCase()}#${refusal.issue.number}`;
+    const key = `${owner.toLowerCase()}/${name.toLowerCase()}#${launch.issue.number}`;
     if (options.issueKey !== undefined && key !== options.issueKey) continue;
-    groups.set(key, { repo: { owner, name }, issueNumber: refusal.issue.number, dispatches: [], refusal });
+    groups.set(key, { repo: { owner, name }, issueNumber: launch.issue.number, dispatches: [],
+      ...(launch.state === "refused" ? { refusal: launch } : { block: {
+        state: "blocked", reason: launch.reasonCode, at: launch.observedAt,
+        dispatchId: launch.dispatchId, source: "orchid" } as const }) });
   }
   for (const dispatch of orchid.dispatches) {
     if (!dispatch.issue) continue;
@@ -67,21 +71,23 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     group.dispatches.push(dispatch);
   }
   const ordered = [...groups.values()].sort((a, b) =>
-    Math.max(...b.dispatches.map(d => Date.parse(d.observedAt!)), b.refusal ? Date.parse(b.refusal.observedAt) : -Infinity) -
-    Math.max(...a.dispatches.map(d => Date.parse(d.observedAt!)), a.refusal ? Date.parse(a.refusal.observedAt) : -Infinity));
+    Math.max(...b.dispatches.map(d => Date.parse(d.observedAt!)), b.refusal ? Date.parse(b.refusal.observedAt) : b.block ? Date.parse(b.block.at) : -Infinity) -
+    Math.max(...a.dispatches.map(d => Date.parse(d.observedAt!)), a.refusal ? Date.parse(a.refusal.observedAt) : a.block ? Date.parse(a.block.at) : -Infinity));
   if (options.issueKey !== undefined && ordered.length === 0) {
     return unavailableSnapshot(options.now, orchid.degraded ? "source_unavailable" : "source_not_bound");
   }
-  const entries: { repo: IssueAgentTree["repo"]; issueNumber: number; snapshot: IssueAgentTreeSnapshot }[] = [];
+  const entries: { repo: IssueAgentTree["repo"]; issueNumber: number; snapshot: IssueAgentTreeSnapshot;
+    launchBlock?: IssueLaunchBlock }[] = [];
   let remainingBytes = MAX_FRAME_TRANSCRIPT_BYTES;
   for (const group of ordered.slice(0, MAX_AGENT_OBSERVATIONS)) {
     const entry = { repo: group.repo, issueNumber: group.issueNumber,
-      snapshot: unavailableSnapshot(options.now, "binding_unavailable") };
+      snapshot: unavailableSnapshot(options.now, "binding_unavailable"),
+      ...(group.block === undefined ? {} : { launchBlock: group.block }) };
     entries.push(entry);
     if (group.dispatches.length === 0 && group.refusal !== undefined) {
       const issue: IssueAgentTree = { repo: group.repo, issueNumber: group.issueNumber,
         complete: true, reason: null, dispatches: [], launchRefusal: {
-          state: "refused", reason: group.refusal.reasonCode!, at: group.refusal.observedAt,
+          state: "refused", reason: group.refusal.reasonCode, at: group.refusal.observedAt,
           dispatchId: group.refusal.dispatchId, source: "orchid" } };
       entry.snapshot = { schema: 1, protocol: 1, observedAt: options.now,
         validUntil: new Date(nowMs + ISSUE_AGENT_TREE_FRESH_MS).toISOString(),
@@ -89,6 +95,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
         complete: true, reason: null, issues: [issue] };
       continue;
     }
+    if (group.dispatches.length === 0) continue;
     if (group.dispatches.some(d => (d.source !== "codex" && d.source !== "claude") || d.observedAt === undefined)) continue;
     if (group.dispatches.length > MAX_ISSUE_DISPATCHES || remainingBytes <= 0 ||
         group.dispatches.some(d => nowMs > Date.parse(d.observedAt!) + MAX_DISPATCH_AGE_MS)) {
@@ -144,7 +151,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     const key = `${issue.repo.owner.toLowerCase()}/${issue.repo.name.toLowerCase()}#${issue.issueNumber}`;
     const refusal = groups.get(key)?.refusal;
     return refusal === undefined ? issue : { ...issue, launchRefusal: { state: "refused" as const,
-      reason: refusal.reasonCode!, at: refusal.observedAt, dispatchId: refusal.dispatchId, source: "orchid" as const } };
+      reason: refusal.reasonCode, at: refusal.observedAt, dispatchId: refusal.dispatchId, source: "orchid" as const } };
   });
   const snapshot = { ...combined, issues,
     revision: createHash("sha256").update(JSON.stringify({ issues, reason: combined.reason })).digest("hex") };

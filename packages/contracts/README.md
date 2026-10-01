@@ -724,6 +724,18 @@ dispatch ID, Orchid source, observation time, and one closed pre-launch reason. 
 attempt clears the refusal in Orchid's issue launch state. Inconclusive post-launch outcomes are
 never projected as refusals. Older frames without this optional issue field remain decodable.
 
+In 0.30.0, an issue can add `launchBlock` with state `blocked`, reason
+`goal-prompt-unconfirmed`, canonical `at`, opaque `dispatchId`, and source `orchid`.
+This verified post-launch receipt is independent of native ancestry: an issue without a proven
+tree stays `complete:false` with a typed coverage reason and `dispatches:[]`. A verified full
+tree can coexist with the block. Root activity never clears it; only replacement of the
+authoritative Orchid launch observation does. Absence of this optional field on an unavailable
+or older frame is not affirmative clearance. A block and a refusal cannot coexist on an issue.
+The reader accepts only schemaVersion 2 blocked receipts for this reason; schemaVersion 1
+refused/launching/launched receipts remain unchanged. No prompt, native identity, path or raw
+error enters the public block. Older frames without the field still decode; producers emitting
+it require a 0.30.0 consumer. Upgrade consumers before deploying the new producer.
+
 Older frames without these optional fields remain decodable. A producer emitting 0.12.0 timeline
 reasons requires a 0.12.0 consumer because earlier decoders reject unknown event keys. Upgrade
 consumers before deploying the new producer.

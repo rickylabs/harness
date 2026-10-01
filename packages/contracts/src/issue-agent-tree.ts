@@ -232,6 +232,16 @@ export interface IssueLaunchRefusal {
   readonly dispatchId: string;
   readonly source: "orchid";
 }
+/** Additive in 0.30: a post-launch block is independent of native ancestry coverage. */
+export const ISSUE_LAUNCH_BLOCK_REASONS = ["goal-prompt-unconfirmed"] as const;
+export type IssueLaunchBlockReason = typeof ISSUE_LAUNCH_BLOCK_REASONS[number];
+export interface IssueLaunchBlock {
+  readonly state: "blocked";
+  readonly reason: IssueLaunchBlockReason;
+  readonly at: string;
+  readonly dispatchId: string;
+  readonly source: "orchid";
+}
 export interface IssueAgentTree {
   readonly repo: RepoRef;
   readonly issueNumber: number;
@@ -241,6 +251,8 @@ export interface IssueAgentTree {
   readonly dispatches: readonly IssueAgentTreeDispatch[];
   /** Additive in 0.14: a verified issue-level refusal needs no agent row. */
   readonly launchRefusal?: IssueLaunchRefusal;
+  /** An independently verified block survives incomplete ancestry; activity does not clear it. */
+  readonly launchBlock?: IssueLaunchBlock;
 }
 export interface IssueAgentTreeSnapshot {
   readonly schema: 1;
@@ -649,9 +661,11 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
     for (const rawIssue of array(row.issues, MAX_AGENT_OBSERVATIONS)) {
       const legacy = !Object.hasOwn(rawIssue as object, "complete") && !Object.hasOwn(rawIssue as object, "reason");
       const hasRefusal = Object.hasOwn(rawIssue as object, "launchRefusal");
+      const hasBlock = Object.hasOwn(rawIssue as object, "launchBlock");
       const issue = record(rawIssue, legacy ? ["repo", "issueNumber", "dispatches"] :
-        ["repo", "issueNumber", "complete", "reason", "dispatches", ...(hasRefusal ? ["launchRefusal"] : [])]);
-      if (legacy && hasRefusal) return bad();
+        ["repo", "issueNumber", "complete", "reason", "dispatches", ...(hasRefusal ? ["launchRefusal"] : []),
+          ...(hasBlock ? ["launchBlock"] : [])]);
+      if ((legacy && (hasRefusal || hasBlock)) || (hasRefusal && hasBlock)) return bad();
       const legacyPartial = legacy && !row.complete && row.reason === "ancestry_unavailable";
       const issueComplete = legacy ? !legacyPartial : issue.complete;
       const issueReason = legacyPartial ? "ancestry_unavailable" : legacy ? null : issue.reason;
@@ -674,6 +688,17 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
         if (at > observedAt) return bad();
         launchRefusal = { state: "refused", reason: refusal.reason as IssueLaunchRefusalReason,
           at, dispatchId: refusal.dispatchId, source: "orchid" };
+      }
+      let launchBlock: IssueLaunchBlock | undefined;
+      if (hasBlock) {
+        const block = record(issue.launchBlock, ["state", "reason", "at", "dispatchId", "source"]);
+        if (block.state !== "blocked" || block.source !== "orchid" ||
+            !ISSUE_LAUNCH_BLOCK_REASONS.includes(block.reason as IssueLaunchBlockReason) ||
+            typeof block.dispatchId !== "string" || !/^assignment_[a-f0-9]{64}$/.test(block.dispatchId)) return bad();
+        const at = stamp(block.at);
+        if (at > observedAt) return bad();
+        launchBlock = { state: "blocked", reason: block.reason as IssueLaunchBlockReason,
+          at, dispatchId: block.dispatchId, source: "orchid" };
       }
       const dispatches: IssueAgentTreeDispatch[] = [];
       const dispatchIds = new Set<string>();
@@ -699,7 +724,8 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
       if (legacyPartial) legacyPartials.add(issues.length);
       issues.push({ repo: { owner: repo.owner, name: repo.name }, issueNumber: issue.issueNumber,
         complete: issueComplete, reason: issueReason as IssueAgentTree["reason"], dispatches,
-        ...(launchRefusal === undefined ? {} : { launchRefusal }) });
+        ...(launchRefusal === undefined ? {} : { launchRefusal }),
+        ...(launchBlock === undefined ? {} : { launchBlock }) });
     }
     if (agentCount > MAX_AGENT_OBSERVATIONS) return bad("oversized");
     if (row.complete && issues.some(issue => !issue.complete)) return bad();

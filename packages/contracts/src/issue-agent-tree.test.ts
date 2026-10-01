@@ -437,3 +437,39 @@ it("pins dispatch identity and freshness, and separates placement from runtime a
   assert.equal(read(mutate({ terminalOutcome: { value: "succeeded", source: "native-outcome", observedAt: at, reason: null } })).ok, false);
   assert.equal(read(mutate({ quotaRegime: { value: null, reason: null } })).ok, false);
 });
+
+it("retains an independent launch block on partial coverage and a verified tree", () => {
+  const s = snapshot();
+  const block = { state: "blocked", reason: "goal-prompt-unconfirmed", at, dispatchId, source: "orchid" } as const;
+  const full = read({ ...s, issues: [{ ...s.issues[0], launchBlock: block }] });
+  assert.equal(full.ok, true);
+  if (full.ok) assert.deepEqual(full.snapshot.issues[0]?.launchBlock, block);
+  const partial = { ...s, complete: false, reason: "binding_unavailable",
+    issues: [{ ...s.issues[0], complete: false, reason: "binding_unavailable", dispatches: [], launchBlock: block }] };
+  const decoded = read(partial);
+  assert.equal(decoded.ok, true);
+  if (decoded.ok) {
+    assert.equal(decoded.snapshot.issues[0]?.complete, false);
+    assert.deepEqual(decoded.snapshot.issues[0]?.dispatches, []);
+    assert.deepEqual(decoded.snapshot.issues[0]?.launchBlock, block);
+  }
+  assert.equal(read(s).ok, true);
+  // A block proves no native ancestry; it cannot turn an empty tree into complete coverage.
+  assert.equal(read({ ...s, issues: [{ ...s.issues[0], dispatches: [], launchBlock: block }] }).ok, false);
+});
+it("rejects unsafe, future, conflicting and legacy launch block facts", () => {
+  const s = snapshot();
+  const block = { state: "blocked", reason: "goal-prompt-unconfirmed", at, dispatchId, source: "orchid" };
+  const withBlock = (launchBlock: unknown) => ({ ...s, issues: [{ ...s.issues[0], launchBlock }] });
+  for (const value of [undefined, null, { ...block, state: "refused" }, { ...block, source: "codex" },
+    { ...block, reason: "routing-invalid" }, { ...block, reason: "PRIVATE-RAW-ERROR" },
+    { ...block, dispatchId: "PRIVATE-NATIVE-ID" }, { ...block, at: "2026-01-01T00:00:01.000Z" },
+    { ...block, at: "2026-02-30T00:00:00.000Z" }, { ...block, at: "2026-01-01T00:00:00Z" },
+    { ...block, prompt: "PRIVATE-PROMPT-CANARY" }]) {
+    assert.equal(read(withBlock(value)).ok, false, JSON.stringify(value));
+  }
+  assert.equal(read({ ...s, issues: [{ ...s.issues[0], launchBlock: block,
+    launchRefusal: { ...block, state: "refused", reason: "routing-invalid" } }] }).ok, false);
+  assert.equal(read({ ...s, issues: [{ repo: observation.repo, issueNumber: 42,
+    dispatches: s.issues[0]!.dispatches, launchBlock: block }] }).ok, false);
+});

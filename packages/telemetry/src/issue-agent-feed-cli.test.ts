@@ -394,3 +394,113 @@ it("keeps an issue-scoped Orchid refusal when no agent ever launched", async () 
     await rm(receipts, { recursive: true, force: true });
   }
 });
+
+it("keeps a scoped post-launch block before any native thread and clears only on receipt replacement", async () => {
+  const home = await mkdtemp(join(tmpdir(), "issue-block-home-"));
+  const receipts = await mkdtemp(join(tmpdir(), "issue-block-root-"));
+  const path = join(receipts, "launch-" + "d".repeat(64) + ".json");
+  const block = { schemaVersion: 2, issue: { repo: "example/inbox", number: 42 },
+    dispatchId: "assignment_" + "e".repeat(64), state: "blocked", reasonCode: "goal-prompt-unconfirmed", observedAt: at };
+  const now = "2026-01-01T00:00:01.000Z";
+  const options = { home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20, now, issueKey: "example/inbox#42" };
+  const expected = { state: "blocked", reason: "goal-prompt-unconfirmed", at,
+    dispatchId: block.dispatchId, source: "orchid" };
+  try {
+    await writeFile(path, JSON.stringify(block), { mode: 0o600 });
+    await writeFile(join(receipts, "launch-" + "f".repeat(64) + ".json"),
+      JSON.stringify({ ...block, issue: { repo: "example/inbox", number: 43 } }), { mode: 0o600 });
+    const frame = await collectIssueAgentTree(options);
+    assert.equal(frame.complete, false);
+    assert.equal(frame.issues.length, 1);
+    assert.deepEqual(frame.issues[0], { repo: { owner: "example", name: "inbox" }, issueNumber: 42,
+      complete: false, reason: "binding_unavailable", dispatches: [], launchBlock: expected });
+    const output = new Capture();
+    assert.equal(await issueAgentFeedCommand(["--json", "--issue", "example/inbox#42", "--home", home],
+      { output, now: () => now, env: options.env }), 3);
+    assert.deepEqual(JSON.parse(output.lines[0]!).issues[0].launchBlock, expected);
+    for (const state of ["launching", "launched"] as const) {
+      await writeFile(path, JSON.stringify({ ...block, schemaVersion: 1, state, reasonCode: null }));
+      assert.deepEqual((await collectIssueAgentTree(options)).issues, []);
+    }
+    await writeFile(path, JSON.stringify({ ...block, observedAt: "2026-01-01T00:00:02.000Z" }));
+    assert.deepEqual((await collectIssueAgentTree(options)).issues, []);
+    await writeFile(path, JSON.stringify({ ...block, reasonCode: "PRIVATE-ERROR-CANARY" }));
+    const invalid = await collectIssueAgentTree(options);
+    assert.equal(invalid.complete, false);
+    assert.deepEqual(invalid.issues, []);
+    assert.ok(!JSON.stringify(invalid).includes("PRIVATE-"));
+  } finally {
+    await rm(home, { recursive: true, force: true });
+    await rm(receipts, { recursive: true, force: true });
+  }
+});
+
+it("keeps a block through missing native identity, verified root activity, scan bounds and native failures", async () => {
+  const home = await mkdtemp(join(tmpdir(), "issue-block-native-home-"));
+  const receipts = await mkdtemp(join(tmpdir(), "issue-block-native-root-"));
+  const issueId = "fixture-block-42", repo = "example/project", brief = "b".repeat(64);
+  const key = createHash("sha256").update(`${issueId}\0${repo}\0${brief}`).digest("hex");
+  const record = join(receipts, key, "record");
+  const blockFile = join(receipts, "launch-" + "d".repeat(64) + ".json");
+  const dispatchedAt = "2026-09-27T21:24:00.000Z", blockedAt = "2026-09-27T21:25:00.000Z";
+  const now = "2026-09-27T22:00:00.000Z";
+  const rootId = "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d";
+  const options = { home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20, now, issueKey: "example/project#42" };
+  const block = { schemaVersion: 2, issue: { repo, number: 42 }, dispatchId: "assignment_" + key,
+    state: "blocked", reasonCode: "goal-prompt-unconfirmed", observedAt: blockedAt };
+  const expected = { state: "blocked", reason: "goal-prompt-unconfirmed", at: blockedAt,
+    dispatchId: block.dispatchId, source: "orchid" };
+  const dispatch = { schemaVersion: 1, runId: "orchid-" + key, issue: block.issue, parentRunId: null,
+    source: "codex", provider: "fixture-router", model: "fixture-model", effort: "high", profile: "leaf",
+    state: "dispatched", observedAt: dispatchedAt, location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" } };
+  try {
+    await mkdir(record, { recursive: true, mode: 0o700 });
+    await writeFile(join(record, "dispatch.json"), JSON.stringify(dispatch), { mode: 0o600 });
+    await writeFile(blockFile, JSON.stringify(block), { mode: 0o600 });
+    const assertPartial = (frame: IssueAgentTreeSnapshot, reason?: string) => {
+      assert.equal(frame.complete, false);
+      assert.equal(frame.issues.length, 1);
+      assert.equal(frame.issues[0]?.complete, false);
+      if (reason !== undefined) assert.equal(frame.issues[0]?.reason, reason);
+      assert.deepEqual(frame.issues[0]?.dispatches, []);
+      assert.deepEqual(frame.issues[0]?.launchBlock, expected);
+    };
+    assertPartial(await collectIssueAgentTree(options));
+    await writeFile(join(record, "binding.json"), JSON.stringify({ IssueID: issueId, Repo: repo, BriefDigest: brief,
+      Route: { transport: "codex", provider: "fixture-router", model: "fixture-model", effort: "high" },
+      NativeSessionID: rootId }), { mode: 0o600 });
+    const sessions = join(home, ".codex", "sessions", "2026", "09", "27");
+    await mkdir(sessions, { recursive: true });
+    const rollout = join(sessions, `rollout-2026-09-27T21-24-30-${rootId}.jsonl`);
+    const meta = JSON.stringify({ timestamp: "2026-09-27T21:24:30.000Z", type: "session_meta",
+      payload: { session_id: rootId, timestamp: "2026-09-27T21:24:30.000Z", cwd: "/PRIVATE-PATH-CANARY" } }) + "\n";
+    await writeFile(rollout, meta);
+    for (const text of [meta, meta + JSON.stringify({ timestamp: "2026-09-27T21:30:00.000Z", type: "event_msg",
+      payload: { type: "agent_message", message: "PRIVATE-PROMPT-CANARY" } }) + "\n"]) {
+      await writeFile(rollout, text);
+      const full = await collectIssueAgentTree(options);
+      assert.equal(full.complete, true, String(full.reason));
+      assert.equal(full.issues[0]?.dispatches[0]?.agents.length, 1);
+      assert.deepEqual(full.issues[0]?.launchBlock, expected);
+      assert.ok(!JSON.stringify(full).includes(rootId));
+      assert.ok(!JSON.stringify(full).includes("PRIVATE-"));
+    }
+    await writeFile(join(record, "dispatch.json"), JSON.stringify({ ...dispatch, observedAt: "2026-09-25T21:24:00.000Z" }));
+    assertPartial(await collectIssueAgentTree(options), "scan_limit");
+    await writeFile(join(record, "dispatch.json"), JSON.stringify(dispatch));
+    const big = await open(rollout, "w");
+    try { await big.writeFile(meta); await big.truncate(9 * 1_048_576); } finally { await big.close(); }
+    assertPartial(await collectIssueAgentTree(options), "scan_limit");
+    await writeFile(rollout, "{malformed\n");
+    assertPartial(await collectIssueAgentTree(options));
+    await writeFile(rollout, meta);
+    await writeFile(blockFile, JSON.stringify({ ...block, schemaVersion: 1, state: "launched", reasonCode: null }));
+    const cleared = await collectIssueAgentTree(options);
+    assert.equal(cleared.complete, true);
+    assert.equal(cleared.issues[0]?.launchBlock, undefined);
+    assert.equal(cleared.issues[0]?.dispatches[0]?.agents.length, 1);
+  } finally {
+    await rm(home, { recursive: true, force: true });
+    await rm(receipts, { recursive: true, force: true });
+  }
+});
