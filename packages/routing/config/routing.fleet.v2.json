@@ -1,0 +1,1610 @@
+{
+  "schemaVersion": 2,
+  "name": "interim-fleet-routing",
+  "provenance": {
+    "description": "INTERIM fleet data for #270, https://github.com/rickylabs/harness/issues/270#issuecomment-5919524771. #271 whole-document loader is the replacement boundary. #321 IDs measured and pinged 2026-09-30. Standard Muse Spark differs from contributor. Requesting an effort is not support attestation; all imported launch support remains unknown."
+  },
+  "families": [
+    "openai",
+    "anthropic",
+    "google",
+    "alibaba",
+    "zhipu",
+    "meta",
+    "minimax",
+    "deepseek",
+    "moonshot",
+    "xai"
+  ],
+  "efforts": {
+    "ordered": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "unordered": [
+      "provider_default"
+    ]
+  },
+  "capabilities": [
+    "vision",
+    "deep_research"
+  ],
+  "providers": {
+    "claude": {},
+    "codex": {},
+    "agy": {},
+    "github_copilot": {},
+    "opencode_go": {},
+    "ollama": {},
+    "openrouter": {}
+  },
+  "providerPrecedence": [
+    "claude",
+    "codex",
+    "agy",
+    "github_copilot",
+    "opencode_go",
+    "ollama",
+    "openrouter"
+  ],
+  "routers": [
+    "github-copilot",
+    "opencode-go",
+    "ollama-cloud",
+    "openrouter"
+  ],
+  "profiles": [
+    "opencode-copilot",
+    "opencode-go",
+    "opencode-ollama",
+    "opencode-openrouter"
+  ],
+  "presets": [],
+  "models": {
+    "luna": {
+      "family": "openai",
+      "label": "Luna",
+      "capabilities": [
+        "deep_research"
+      ],
+      "launches": [
+        {
+          "provider": "codex",
+          "seam": "subagents",
+          "id": "gpt-6-luna",
+          "transport": "native",
+          "harness": "codex",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        },
+        {
+          "provider": "codex",
+          "seam": "subagents",
+          "id": "gpt-5.6-luna",
+          "transport": "native",
+          "harness": "codex",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        },
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/gpt-5.6-luna",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        }
+      ]
+    },
+    "sol": {
+      "family": "openai",
+      "label": "SOL",
+      "capabilities": [
+        "deep_research"
+      ],
+      "launches": [
+        {
+          "provider": "codex",
+          "seam": "subagents",
+          "id": "gpt-6.1-sol",
+          "transport": "native",
+          "harness": "codex",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        },
+        {
+          "provider": "codex",
+          "seam": "subagents",
+          "id": "gpt-6-sol",
+          "transport": "native",
+          "harness": "codex",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        },
+        {
+          "provider": "codex",
+          "seam": "subagents",
+          "id": "gpt-5.6-sol",
+          "transport": "native",
+          "harness": "codex",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "astra": {
+      "family": "openai",
+      "label": "Astra",
+      "capabilities": [
+        "deep_research"
+      ],
+      "launches": [
+        {
+          "provider": "codex",
+          "seam": "subagents",
+          "id": "gpt-6-astra",
+          "transport": "native",
+          "harness": "codex",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "fable_5_1": {
+      "family": "anthropic",
+      "label": "Fable 5.1",
+      "capabilities": [
+        "vision"
+      ],
+      "launches": [
+        {
+          "provider": "claude",
+          "seam": "subagents",
+          "id": "claude-fable-5-1",
+          "transport": "native",
+          "harness": "claude",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        },
+        {
+          "provider": "github_copilot",
+          "seam": "subagents",
+          "id": "github-copilot/claude-fable-5.1",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "github-copilot",
+          "profile": "opencode-copilot"
+        }
+      ],
+      "approvedRelayEvaluator": true
+    },
+    "opus_5": {
+      "family": "anthropic",
+      "label": "Opus 5",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "claude",
+          "seam": "subagents",
+          "id": "claude-opus-5",
+          "transport": "native",
+          "harness": "claude",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ],
+      "approvedRelayEvaluator": true
+    },
+    "opus_5_5": {
+      "family": "anthropic",
+      "label": "Opus 5.5",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "claude",
+          "seam": "subagents",
+          "id": "claude-opus-5-5",
+          "transport": "native",
+          "harness": "claude",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    },
+    "gemini_3_8_flash": {
+      "family": "google",
+      "label": "Gemini 3.8 Flash",
+      "capabilities": [
+        "vision",
+        "deep_research"
+      ],
+      "launches": [
+        {
+          "provider": "agy",
+          "seam": "subagents",
+          "id": "gemini-3.8-flash",
+          "transport": "native",
+          "harness": "agy",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        },
+        {
+          "provider": "github_copilot",
+          "seam": "subagents",
+          "id": "github-copilot/gemini-3.8-flash",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "github-copilot",
+          "profile": "opencode-copilot"
+        }
+      ],
+      "approvedRelayEvaluator": true
+    },
+    "qwen_3_8_flash_next": {
+      "family": "alibaba",
+      "label": "Qwen 3.8 Flash Next",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/qwen3.8-flash",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/qwen/qwen3.8-flash",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ],
+      "approvedRelayEvaluator": true,
+      "launcherAlias": "planEvaluator"
+    },
+    "qwen_3_8_max": {
+      "family": "alibaba",
+      "label": "Qwen 3.8 Max",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/qwen3.8-max",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/qwen/qwen3.8-max",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ]
+    },
+    "glm_5_3_flash": {
+      "family": "zhipu",
+      "label": "GLM 5.3 Flash",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/glm-5.3-flash",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "ollama",
+          "seam": "subagents",
+          "id": "ollama-cloud/glm-5.3-flash",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "ollama-cloud",
+          "profile": "opencode-ollama"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/z-ai/glm-5.3-flash",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ],
+      "approvedRelayEvaluator": true,
+      "launcherAlias": "implEvaluator"
+    },
+    "glm_5_3": {
+      "family": "zhipu",
+      "label": "GLM 5.3",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/glm-5.3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "ollama",
+          "seam": "subagents",
+          "id": "ollama-cloud/glm-5.3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "ollama-cloud",
+          "profile": "opencode-ollama"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/z-ai/glm-5.3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ],
+      "approvedRelayEvaluator": true
+    },
+    "muse_spark_1_3": {
+      "family": "meta",
+      "label": "Muse Spark 1.3",
+      "capabilities": [
+        "vision"
+      ],
+      "launches": [
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/meta/muse-spark-1.3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ],
+      "approvedRelayEvaluator": true,
+      "launcherAlias": "museSpark"
+    },
+    "muse_spark_1_3_contributor": {
+      "family": "meta",
+      "label": "Muse Spark 1.3 contributor",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/muse-spark-1.3-contributor",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/meta/muse-spark-1.3-contributor",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ]
+    },
+    "minimax_m3": {
+      "family": "minimax",
+      "label": "MiniMax M3",
+      "capabilities": [
+        "vision"
+      ],
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/minimax-m3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "ollama",
+          "seam": "subagents",
+          "id": "ollama-cloud/minimax-m3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "ollama-cloud",
+          "profile": "opencode-ollama"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/minimax/minimax-m3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ],
+      "approvedRelayEvaluator": true
+    },
+    "deepseek_v4_flash": {
+      "family": "deepseek",
+      "label": "DeepSeek V4 Flash",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/deepseek-v4-flash",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "ollama",
+          "seam": "subagents",
+          "id": "ollama-cloud/deepseek-v4-flash:0731",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "ollama-cloud",
+          "profile": "opencode-ollama"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/deepseek/deepseek-v4-flash-0731",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ],
+      "approvedRelayEvaluator": true
+    },
+    "deepseek_v4_flash_vision": {
+      "family": "deepseek",
+      "label": "DeepSeek V4 Flash Vision",
+      "capabilities": [
+        "vision"
+      ],
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/deepseek-v4-flash-vision-exp",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/deepseek/deepseek-v4-flash-vision-exp",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ],
+      "approvedRelayEvaluator": true
+    },
+    "deepseek_v4_pro": {
+      "family": "deepseek",
+      "label": "DeepSeek V4 Pro",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/deepseek-v4-pro",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "ollama",
+          "seam": "subagents",
+          "id": "ollama-cloud/deepseek-v4-pro:0813",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "ollama-cloud",
+          "profile": "opencode-ollama"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/deepseek/deepseek-v4-pro-0813",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ],
+      "approvedRelayEvaluator": true
+    },
+    "kimi_k3": {
+      "family": "moonshot",
+      "label": "Kimi K3",
+      "capabilities": [
+        "vision"
+      ],
+      "launches": [
+        {
+          "provider": "github_copilot",
+          "seam": "subagents",
+          "id": "github-copilot/kimi-k3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "github-copilot",
+          "profile": "opencode-copilot"
+        },
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/kimi-k3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "ollama",
+          "seam": "subagents",
+          "id": "ollama-cloud/kimi-k3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "ollama-cloud",
+          "profile": "opencode-ollama"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/moonshotai/kimi-k3",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ],
+      "approvedRelayEvaluator": true
+    },
+    "grok_4_6": {
+      "family": "xai",
+      "label": "Grok 4.6",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "github_copilot",
+          "seam": "subagents",
+          "id": "github-copilot/grok-4.6",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "github-copilot",
+          "profile": "opencode-copilot"
+        },
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/grok-4.6",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/x-ai/grok-4.6",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ]
+    },
+    "grok_4_7": {
+      "family": "xai",
+      "label": "Grok 4.7",
+      "capabilities": [],
+      "launches": [
+        {
+          "provider": "opencode_go",
+          "seam": "subagents",
+          "id": "opencode-go/grok-4.7",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "opencode-go",
+          "profile": "opencode-go"
+        },
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/x-ai/grok-4.7",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "effortSupport": {
+            "status": "unknown"
+          },
+          "router": "openrouter",
+          "profile": "opencode-openrouter"
+        }
+      ],
+      "approvedRelayEvaluator": true,
+      "launcherAlias": "grok"
+    },
+    "glm_5_2": {
+      "family": "zhipu",
+      "label": "GLM 5.2 (legacy API launcher)",
+      "launcherAlias": "designGlm",
+      "launches": [
+        {
+          "provider": "openrouter",
+          "seam": "subagents",
+          "id": "openrouter/z-ai/glm-5.2",
+          "transport": "openrouter",
+          "harness": "opencode",
+          "router": "openrouter",
+          "profile": "opencode-openrouter",
+          "effortSupport": {
+            "status": "unknown"
+          }
+        }
+      ]
+    }
+  },
+  "roles": {
+    "implementation": {},
+    "ui_ux": {
+      "selection": {
+        "by": [
+          "owner"
+        ],
+        "otherwise": "implementation"
+      },
+      "requires": [
+        "vision"
+      ]
+    },
+    "plan": {},
+    "plan_evaluation": {
+      "certifies": "any",
+      "evaluates": [
+        "plan"
+      ]
+    },
+    "implementation_evaluation": {
+      "certifies": "any",
+      "evaluates": [
+        "implementation",
+        "documentation"
+      ]
+    },
+    "vision_evaluation": {
+      "certifies": "none",
+      "evaluates": [
+        "ui_ux"
+      ],
+      "requires": [
+        "vision"
+      ]
+    },
+    "documentation": {},
+    "deep_research": {
+      "requires": [
+        "deep_research"
+      ],
+      "restrictions": {
+        "seams": [
+          "subagents"
+        ],
+        "providers": [
+          "agy",
+          "github_copilot",
+          "codex"
+        ],
+        "families": [
+          "google",
+          "openai"
+        ]
+      }
+    }
+  },
+  "tiers": [
+    {
+      "tier": "simple",
+      "description": "Automation, simple fixes, and chores; low temperature and low complexity.",
+      "cells": {
+        "implementation": [
+          {
+            "model": "sol",
+            "effort": "low"
+          },
+          {
+            "model": "qwen_3_8_flash_next",
+            "effort": "provider_default"
+          }
+        ],
+        "ui_ux": [
+          {
+            "model": "kimi_k3",
+            "effort": "low"
+          },
+          {
+            "model": "minimax_m3",
+            "effort": "provider_default"
+          }
+        ],
+        "plan": [],
+        "plan_evaluation": [],
+        "implementation_evaluation": [
+          {
+            "model": "minimax_m3",
+            "effort": "provider_default"
+          },
+          {
+            "model": "deepseek_v4_flash",
+            "effort": "provider_default"
+          }
+        ],
+        "vision_evaluation": [
+          {
+            "model": "minimax_m3",
+            "effort": "provider_default"
+          },
+          {
+            "model": "deepseek_v4_flash_vision",
+            "effort": "provider_default"
+          }
+        ],
+        "documentation": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "medium"
+          },
+          {
+            "model": "opus_5",
+            "effort": "low"
+          }
+        ],
+        "deep_research": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "low"
+          },
+          {
+            "model": "sol",
+            "effort": "low"
+          }
+        ]
+      },
+      "loops": {
+        "plan": {
+          "maxRounds": "none",
+          "reSteerSameSession": true
+        },
+        "implementation": {
+          "maxRounds": "unspecified_by_owner",
+          "reSteerSameSession": true
+        },
+        "documentation": {
+          "maxRounds": 2,
+          "reSteerSameSession": true
+        }
+      }
+    },
+    {
+      "tier": "straightforward",
+      "description": "Straightforward implementations and features; medium temperature and medium complexity.",
+      "cells": {
+        "implementation": [
+          {
+            "model": "sol",
+            "effort": "xhigh"
+          },
+          {
+            "model": "glm_5_3_flash",
+            "effort": "provider_default"
+          }
+        ],
+        "ui_ux": [
+          {
+            "model": "kimi_k3",
+            "effort": "high"
+          },
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          }
+        ],
+        "plan": [
+          {
+            "model": "sol",
+            "effort": "xhigh"
+          },
+          {
+            "model": "glm_5_3_flash",
+            "effort": "provider_default"
+          }
+        ],
+        "plan_evaluation": [
+          {
+            "model": "opus_5",
+            "effort": "medium"
+          },
+          {
+            "model": "qwen_3_8_flash_next",
+            "effort": "provider_default"
+          }
+        ],
+        "implementation_evaluation": [
+          {
+            "model": "glm_5_3_flash",
+            "effort": "provider_default"
+          },
+          {
+            "model": "deepseek_v4_pro",
+            "effort": "provider_default"
+          }
+        ],
+        "vision_evaluation": [
+          {
+            "model": "deepseek_v4_flash_vision",
+            "effort": "provider_default"
+          },
+          {
+            "model": "kimi_k3",
+            "effort": "low"
+          }
+        ],
+        "documentation": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          },
+          {
+            "model": "qwen_3_8_flash_next",
+            "effort": "provider_default"
+          }
+        ],
+        "deep_research": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "medium"
+          },
+          {
+            "model": "sol",
+            "effort": "low"
+          }
+        ]
+      },
+      "loops": {
+        "plan": {
+          "maxRounds": 0,
+          "repairInFlightAt": "immediate",
+          "reSteerSameSession": true
+        },
+        "implementation": {
+          "maxRounds": 5,
+          "notifyOwnerAfter": 3,
+          "reSteerSameSession": true
+        },
+        "documentation": {
+          "maxRounds": 2,
+          "notifyOwnerAfter": 2,
+          "reSteerSameSession": true
+        }
+      }
+    },
+    {
+      "tier": "feature",
+      "description": "Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.",
+      "cells": {
+        "implementation": [
+          {
+            "model": "sol",
+            "effort": "xhigh"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "xhigh"
+          }
+        ],
+        "ui_ux": [
+          {
+            "model": "kimi_k3",
+            "effort": "high"
+          },
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          }
+        ],
+        "plan": [
+          {
+            "model": "fable_5_1",
+            "effort": "low"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "xhigh"
+          }
+        ],
+        "plan_evaluation": [
+          {
+            "model": "glm_5_3",
+            "effort": "provider_default"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "low"
+          }
+        ],
+        "implementation_evaluation": [
+          {
+            "model": "muse_spark_1_3",
+            "effort": "xhigh"
+          },
+          {
+            "model": "opus_5",
+            "effort": "xhigh"
+          }
+        ],
+        "vision_evaluation": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "xhigh"
+          }
+        ],
+        "documentation": [
+          {
+            "model": "qwen_3_8_max",
+            "effort": "provider_default"
+          },
+          {
+            "model": "glm_5_3_flash",
+            "effort": "provider_default"
+          }
+        ],
+        "deep_research": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          },
+          {
+            "model": "sol",
+            "effort": "low"
+          }
+        ]
+      },
+      "loops": {
+        "plan": {
+          "maxRounds": 2,
+          "repairInFlightAt": 2,
+          "reSteerSameSession": true
+        },
+        "implementation": {
+          "maxRounds": 5,
+          "notifyOwnerAfter": 3,
+          "reSteerSameSession": true
+        },
+        "documentation": {
+          "maxRounds": 2,
+          "notifyOwnerAfter": 2,
+          "reSteerSameSession": true
+        }
+      }
+    },
+    {
+      "tier": "complex",
+      "description": "Complex implementations, fixes, and features; medium temperature and high complexity.",
+      "cells": {
+        "implementation": [
+          {
+            "model": "astra",
+            "effort": "medium"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "medium"
+          }
+        ],
+        "ui_ux": [
+          {
+            "model": "kimi_k3",
+            "effort": "max"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "medium"
+          }
+        ],
+        "plan": [
+          {
+            "model": "fable_5_1",
+            "effort": "medium"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          }
+        ],
+        "plan_evaluation": [
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          },
+          {
+            "model": "grok_4_7",
+            "effort": "high"
+          }
+        ],
+        "implementation_evaluation": [
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          }
+        ],
+        "vision_evaluation": [
+          {
+            "model": "kimi_k3",
+            "effort": "max"
+          },
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          }
+        ],
+        "documentation": [
+          {
+            "model": "fable_5_1",
+            "effort": "medium"
+          },
+          {
+            "model": "qwen_3_8_max",
+            "effort": "provider_default"
+          }
+        ],
+        "deep_research": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          },
+          {
+            "model": "sol",
+            "effort": "low"
+          }
+        ]
+      },
+      "loops": {
+        "plan": {
+          "maxRounds": 3,
+          "repairInFlightAt": 3,
+          "reSteerSameSession": true
+        },
+        "implementation": {
+          "maxRounds": 5,
+          "notifyOwnerAfter": 3,
+          "reSteerSameSession": true
+        },
+        "documentation": {
+          "maxRounds": 2,
+          "notifyOwnerAfter": 2,
+          "reSteerSameSession": true
+        }
+      },
+      "authorization": {
+        "by": [
+          "owner",
+          "milestone"
+        ]
+      }
+    },
+    {
+      "tier": "architecture",
+      "description": "Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.",
+      "cells": {
+        "implementation": [
+          {
+            "model": "astra",
+            "effort": "xhigh"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "xhigh"
+          }
+        ],
+        "ui_ux": [
+          {
+            "model": "kimi_k3",
+            "effort": "max"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "medium"
+          }
+        ],
+        "plan": [
+          {
+            "model": "fable_5_1",
+            "effort": "xhigh"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          }
+        ],
+        "plan_evaluation": [
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          },
+          {
+            "model": "grok_4_7",
+            "effort": "xhigh"
+          }
+        ],
+        "implementation_evaluation": [
+          {
+            "model": "grok_4_7",
+            "effort": "xhigh"
+          },
+          {
+            "model": "muse_spark_1_3",
+            "effort": "max"
+          }
+        ],
+        "vision_evaluation": [
+          {
+            "model": "kimi_k3",
+            "effort": "max"
+          },
+          {
+            "model": "fable_5_1",
+            "effort": "high"
+          }
+        ],
+        "documentation": [
+          {
+            "model": "fable_5_1",
+            "effort": "high"
+          },
+          {
+            "model": "qwen_3_8_max",
+            "effort": "provider_default"
+          }
+        ],
+        "deep_research": [
+          {
+            "model": "gemini_3_8_flash",
+            "effort": "high"
+          },
+          {
+            "model": "sol",
+            "effort": "low"
+          }
+        ]
+      },
+      "loops": {
+        "plan": {
+          "maxRounds": 1,
+          "escalateToOwnerAt": 2,
+          "reSteerSameSession": true
+        },
+        "implementation": {
+          "maxRounds": 3,
+          "notifyOwnerAfter": 2,
+          "reSteerSameSession": true
+        },
+        "documentation": {
+          "maxRounds": 2,
+          "notifyOwnerAfter": 2,
+          "reSteerSameSession": true
+        }
+      },
+      "authorization": {
+        "by": [
+          "owner",
+          "milestone"
+        ]
+      }
+    }
+  ],
+  "coordinators": {
+    "small_project": [
+      {
+        "model": "sol",
+        "effort": "xhigh"
+      },
+      {
+        "model": "opus_5",
+        "effort": "low"
+      }
+    ],
+    "project": [
+      {
+        "model": "sol",
+        "effort": "xhigh"
+      },
+      {
+        "model": "opus_5",
+        "effort": "medium"
+      }
+    ],
+    "framework": [
+      {
+        "model": "sol",
+        "effort": "xhigh"
+      },
+      {
+        "model": "opus_5",
+        "effort": "xhigh"
+      }
+    ],
+    "milestone": [
+      {
+        "model": "sol",
+        "effort": "xhigh"
+      },
+      {
+        "model": "fable_5_1",
+        "effort": "medium"
+      },
+      {
+        "model": "opus_5",
+        "effort": "xhigh"
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "lane": "simple_implementation",
+      "tier": "simple",
+      "role": "implementation"
+    },
+    {
+      "lane": "simple_ui_ux",
+      "tier": "simple",
+      "role": "ui_ux"
+    },
+    {
+      "lane": "simple_implementation_evaluation",
+      "tier": "simple",
+      "role": "implementation_evaluation"
+    },
+    {
+      "lane": "simple_vision_evaluation",
+      "tier": "simple",
+      "role": "vision_evaluation"
+    },
+    {
+      "lane": "simple_documentation",
+      "tier": "simple",
+      "role": "documentation"
+    },
+    {
+      "lane": "simple_deep_research",
+      "tier": "simple",
+      "role": "deep_research"
+    },
+    {
+      "lane": "straightforward_implementation",
+      "tier": "straightforward",
+      "role": "implementation"
+    },
+    {
+      "lane": "straightforward_ui_ux",
+      "tier": "straightforward",
+      "role": "ui_ux"
+    },
+    {
+      "lane": "straightforward_plan",
+      "tier": "straightforward",
+      "role": "plan"
+    },
+    {
+      "lane": "straightforward_plan_evaluation",
+      "tier": "straightforward",
+      "role": "plan_evaluation"
+    },
+    {
+      "lane": "straightforward_implementation_evaluation",
+      "tier": "straightforward",
+      "role": "implementation_evaluation"
+    },
+    {
+      "lane": "straightforward_vision_evaluation",
+      "tier": "straightforward",
+      "role": "vision_evaluation"
+    },
+    {
+      "lane": "straightforward_documentation",
+      "tier": "straightforward",
+      "role": "documentation"
+    },
+    {
+      "lane": "straightforward_deep_research",
+      "tier": "straightforward",
+      "role": "deep_research"
+    },
+    {
+      "lane": "feature_implementation",
+      "tier": "feature",
+      "role": "implementation"
+    },
+    {
+      "lane": "feature_ui_ux",
+      "tier": "feature",
+      "role": "ui_ux"
+    },
+    {
+      "lane": "feature_plan",
+      "tier": "feature",
+      "role": "plan"
+    },
+    {
+      "lane": "feature_plan_evaluation",
+      "tier": "feature",
+      "role": "plan_evaluation"
+    },
+    {
+      "lane": "feature_implementation_evaluation",
+      "tier": "feature",
+      "role": "implementation_evaluation"
+    },
+    {
+      "lane": "feature_vision_evaluation",
+      "tier": "feature",
+      "role": "vision_evaluation"
+    },
+    {
+      "lane": "feature_documentation",
+      "tier": "feature",
+      "role": "documentation"
+    },
+    {
+      "lane": "feature_deep_research",
+      "tier": "feature",
+      "role": "deep_research"
+    },
+    {
+      "lane": "complex_implementation",
+      "tier": "complex",
+      "role": "implementation"
+    },
+    {
+      "lane": "complex_ui_ux",
+      "tier": "complex",
+      "role": "ui_ux"
+    },
+    {
+      "lane": "complex_plan",
+      "tier": "complex",
+      "role": "plan"
+    },
+    {
+      "lane": "complex_plan_evaluation",
+      "tier": "complex",
+      "role": "plan_evaluation"
+    },
+    {
+      "lane": "complex_implementation_evaluation",
+      "tier": "complex",
+      "role": "implementation_evaluation"
+    },
+    {
+      "lane": "complex_vision_evaluation",
+      "tier": "complex",
+      "role": "vision_evaluation"
+    },
+    {
+      "lane": "complex_documentation",
+      "tier": "complex",
+      "role": "documentation"
+    },
+    {
+      "lane": "complex_deep_research",
+      "tier": "complex",
+      "role": "deep_research"
+    },
+    {
+      "lane": "architecture_implementation",
+      "tier": "architecture",
+      "role": "implementation"
+    },
+    {
+      "lane": "architecture_ui_ux",
+      "tier": "architecture",
+      "role": "ui_ux"
+    },
+    {
+      "lane": "architecture_plan",
+      "tier": "architecture",
+      "role": "plan"
+    },
+    {
+      "lane": "architecture_plan_evaluation",
+      "tier": "architecture",
+      "role": "plan_evaluation"
+    },
+    {
+      "lane": "architecture_implementation_evaluation",
+      "tier": "architecture",
+      "role": "implementation_evaluation"
+    },
+    {
+      "lane": "architecture_vision_evaluation",
+      "tier": "architecture",
+      "role": "vision_evaluation"
+    },
+    {
+      "lane": "architecture_documentation",
+      "tier": "architecture",
+      "role": "documentation"
+    },
+    {
+      "lane": "architecture_deep_research",
+      "tier": "architecture",
+      "role": "deep_research"
+    }
+  ],
+  "policy": {
+    "maxFallbackDepth": 32,
+    "ownerOverride": {
+      "evidence": [
+        "worklog"
+      ]
+    }
+  },
+  "placements": {
+    "backends": [],
+    "entries": []
+  }
+}

@@ -22,7 +22,7 @@
  * - **No independence waiver.** There is no field in this schema that mentions independence, so
  *   no document can ask for it to be set aside.
  */
-import { HARNESSES, ROUTERS, type Harness, type Router } from "@rickylabs/subagents";
+import { HARNESSES, ROUTERS, type Harness } from "@rickylabs/subagents";
 import { SEAMS, type Seam } from "./family.js";
 import {
   CERTIFIES_KEYWORDS, SUBSCRIPTION_STATES, TRANSPORTS, deepFreeze, fieldPath, validator,
@@ -97,7 +97,7 @@ export interface Launch {
   readonly id: string;
   readonly transport: Transport;
   readonly harness?: Harness;
-  readonly router?: Router;
+  readonly router?: string;
   readonly profile?: string;
   readonly preset?: string;
   readonly subscription?: SubscriptionState;
@@ -106,6 +106,9 @@ export interface Launch {
 
 export interface FleetModel {
   readonly family: string;
+  readonly label?: string;
+  /** Interim API launcher approval alias (#270), separate from catalog membership. */
+  readonly launcherAlias?: string;
   readonly capabilities?: readonly string[];
   readonly approvedRelayEvaluator?: true;
   readonly launches: readonly Launch[];
@@ -159,6 +162,7 @@ export interface FleetRoutingConfiguration {
   readonly capabilities: readonly string[];
   readonly providers: Readonly<Record<string, ProviderIdentity>>;
   readonly providerPrecedence: readonly string[];
+  readonly routers?: readonly string[];
   readonly profiles: readonly string[];
   readonly presets: readonly string[];
   readonly models: Readonly<Record<string, FleetModel>>;
@@ -194,7 +198,7 @@ export function validateFleetConfiguration(value: unknown): ValidationOutcome<Fl
   obj(root, "$", [
     "schemaVersion", "name", "families", "efforts", "capabilities", "providers", "providerPrecedence",
     "profiles", "presets", "models", "roles", "tiers", "coordinators", "lanes", "policy", "placements",
-  ], ["provenance"]);
+  ], ["provenance", "routers"]);
   str(root.name, "name", DOCUMENT_NAME_PATTERN);
   if (root.provenance !== undefined) str(obj(root.provenance, "provenance", ["description"]).description, "provenance.description");
 
@@ -206,6 +210,8 @@ export function validateFleetConfiguration(value: unknown): ValidationOutcome<Fl
   unordered.forEach((e, i) => { if (ordered.includes(e)) add("duplicate", `efforts.unordered[${i}]`); });
   const efforts = [...ordered, ...unordered];
   const capabilities = strings(root.capabilities, "capabilities");
+  const routers = root.routers === undefined ? ROUTERS : strings(root.routers, "routers");
+  routers.forEach((router, i) => str(router, `routers[${i}]`, /^[a-z0-9][a-z0-9_.-]*$/));
   const profiles = strings(root.profiles, "profiles");
   const presets = strings(root.presets, "presets");
 
@@ -229,11 +235,17 @@ export function validateFleetConfiguration(value: unknown): ValidationOutcome<Fl
   const llmLaunchIds = new Set<string>();
   const models = records(root.models, "models", true);
   const modelKeys = Object.keys(models);
+  const launcherAliases = new Set<string>();
   Object.entries(models).forEach(([key, v], i) => {
     const at = `models[${i}]`;
     if (!MODEL_KEY_PATTERN.test(key)) add("out-of-range", at);
-    const m = obj(v, at, ["family", "launches"], ["capabilities", "approvedRelayEvaluator"]);
+    const m = obj(v, at, ["family", "launches"], ["label", "launcherAlias", "capabilities", "approvedRelayEvaluator"]);
     ref(m.family, `${at}.family`, families);
+    if (m.label !== undefined) str(m.label, `${at}.label`);
+    if (m.launcherAlias !== undefined && str(m.launcherAlias, `${at}.launcherAlias`, /^[a-z][a-zA-Z0-9_]*$/)) {
+      if (launcherAliases.has(m.launcherAlias)) add("duplicate", `${at}.launcherAlias`);
+      launcherAliases.add(m.launcherAlias);
+    }
     if (m.capabilities !== undefined) strings(m.capabilities, `${at}.capabilities`, false, capabilities);
     if (m.approvedRelayEvaluator !== undefined && m.approvedRelayEvaluator !== true) add("wrong-type", `${at}.approvedRelayEvaluator`);
     arr(m.launches, `${at}.launches`, true).forEach((l, j) => {
@@ -247,7 +259,7 @@ export function validateFleetConfiguration(value: unknown): ValidationOutcome<Fl
       if (launch.seam === SEAMS[0]) {
         if (!Object.hasOwn(launch, "harness")) add("missing-key", `${lp}.harness`);
         else ref(launch.harness, `${lp}.harness`, HARNESSES);
-        if (launch.router !== undefined) ref(launch.router, `${lp}.router`, ROUTERS);
+        if (launch.router !== undefined) ref(launch.router, `${lp}.router`, routers);
         if (launch.profile !== undefined) ref(launch.profile, `${lp}.profile`, profiles);
         if (launch.preset !== undefined) ref(launch.preset, `${lp}.preset`, presets);
       } else if (launch.seam === SEAMS[1]) {

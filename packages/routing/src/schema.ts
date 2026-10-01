@@ -146,7 +146,7 @@ const STRUCTURAL_FIELDS = new Set([
   "selection", "by", "otherwise", "cells", "loops", "maxRounds", "reSteerSameSession",
   "notifyOwnerAfter", "escalateToOwnerAt", "repairInFlightAt", "authorization", "coordinators",
   "ownerOverride", "evidence",
-  "triggers", "routers", "laneAliases", "label", "implementation", "implementation_evaluation", "plan", "plan_evaluation",
+  "triggers", "routers", "laneAliases", "label", "launcherAlias", "implementation", "implementation_evaluation", "plan", "plan_evaluation",
 ]);
 export function fieldPath(parent: string, key: string, index: number): string {
   return STRUCTURAL_FIELDS.has(key) ? (parent === "$" ? key : `${parent}.${key}`) : `${parent}[${index}]`;

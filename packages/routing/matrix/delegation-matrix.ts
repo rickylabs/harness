@@ -1,317 +1,98 @@
-/** Ported from the pinned fleet matrix at NetScript 0985265; Harness is the routing authority. */
-/** Owner-ratified role/complexity delegation matrix. */
-
-import { ROUTING_MODEL_IDS } from './models.ts';
+/** INTERIM pinned-source adapter for #270: https://github.com/rickylabs/harness/issues/270.
+ * Model IDs, labels, cells, loops and precedence come from #271 versioned document data.
+ * Node callers replace the whole document with a successful #271 loader result.
+ * The raw-source bridge imports the CI-validated shipped document until consumer loaders migrate.
+ */
+import shipped from '../config/routing.fleet.v2.json' with { type: 'json' };
+import type { MatrixDocument, MatrixLaunch, MatrixLoadedConfiguration } from './configuration-contract.ts';
 import type { Effort } from './contract.ts';
-
-export const LOGICAL_MODEL_IDS = [
-  'luna',
-  'sol',
-  'astra',
-  'fable_5_1',
-  'opus_5',
-  'opus_5_5',
-  'gemini_3_8_flash',
-  'qwen_3_8_flash_next',
-  'qwen_3_8_max',
-  'glm_5_3_flash',
-  'glm_5_3',
-  'muse_spark_1_3',
-  'minimax_m3',
-  'deepseek_v4_flash',
-  'deepseek_v4_flash_vision',
-  'deepseek_v4_pro',
-  'kimi_k3',
-  'grok_4_6',
-] as const;
-export type LogicalModelId = typeof LOGICAL_MODEL_IDS[number];
-
-/** Stable human labels used by operator-facing matrix renderers. */
-export const LOGICAL_MODEL_LABELS: Readonly<Record<LogicalModelId, string>> = {
-  luna: 'Luna',
-  sol: 'SOL',
-  astra: 'Astra',
-  fable_5_1: 'Fable 5.1',
-  opus_5: 'Opus 5',
-  opus_5_5: 'Opus 5.5',
-  gemini_3_8_flash: 'Gemini 3.8 Flash',
-  qwen_3_8_flash_next: 'Qwen 3.8 Flash Next',
-  qwen_3_8_max: 'Qwen 3.8 Max',
-  glm_5_3_flash: 'GLM 5.3 Flash',
-  glm_5_3: 'GLM 5.3',
-  muse_spark_1_3: 'Muse Spark 1.3',
-  minimax_m3: 'MiniMax M3',
-  deepseek_v4_flash: 'DeepSeek V4 Flash',
-  deepseek_v4_flash_vision: 'DeepSeek V4 Flash Vision',
-  deepseek_v4_pro: 'DeepSeek V4 Pro',
-  kimi_k3: 'Kimi K3',
-  grok_4_6: 'Grok 4.6',
-} as const;
-
-export const MODEL_VENDOR_FAMILIES = [
-  'openai',
-  'anthropic',
-  'google',
-  'alibaba',
-  'zhipu',
-  'meta',
-  'minimax',
-  'deepseek',
-  'moonshot',
-  'xai',
-] as const;
-export type ModelVendorFamily = typeof MODEL_VENDOR_FAMILIES[number];
-
-export const MODEL_TRANSPORTS = [
-  'claude',
-  'codex',
-  'agy',
-  'github_copilot',
-  'opencode_go',
-  'ollama',
-  'openrouter',
-] as const;
+export type LogicalModelId = string;
+export type ModelVendorFamily = string;
+/** Existing executor vocabulary, interim until provider discovery (#270). No model choices. */
+export const MODEL_TRANSPORTS = ['claude', 'codex', 'agy', 'github_copilot', 'opencode_go', 'ollama', 'openrouter'] as const;
 export type ModelTransport = typeof MODEL_TRANSPORTS[number];
-
-export interface ModelCapability {
-  readonly transport: ModelTransport;
-  readonly model: string;
+export interface ModelCapability { readonly transport: ModelTransport; readonly model: string; readonly launch: MatrixLaunch; readonly profileId?: string }
+export interface LogicalModelDefinition { readonly id: LogicalModelId; readonly family: ModelVendorFamily; readonly capabilities: readonly ModelCapability[] }
+export type WorkloadTier = string;
+export type PrivilegedWorkloadTier = string;
+export type DelegationRole = keyof typeof shipped.roles;
+export type CoordinatorTier = string;
+export interface PrivilegedTierAuthorization { readonly authorizer: 'owner' | 'milestone_coordinator'; readonly rationale: string }
+export interface MatrixAuthority {
+  readonly configuration: MatrixDocument;
+  readonly catalog: Readonly<Record<string, LogicalModelDefinition>>;
+  readonly matrix: Readonly<Record<string, DelegationCell>>;
+  readonly coordinators: Readonly<Record<string, readonly ModelRoute[]>>;
+  readonly source?: MatrixLoadedConfiguration['source'];
 }
-
-export interface LogicalModelDefinition {
-  readonly id: LogicalModelId;
-  readonly family: ModelVendorFamily;
-  readonly capabilities: readonly ModelCapability[];
+function freeze<T>(value: T): T {
+  if (value !== null && typeof value === 'object') { Object.values(value).forEach(freeze); Object.freeze(value); }
+  return value;
 }
-
-const capability = (transport: ModelTransport, model: string): ModelCapability => ({
-  transport,
-  model,
-});
-
-export const MODEL_CATALOG: Readonly<Record<LogicalModelId, LogicalModelDefinition>> = {
-  luna: {
-    id: 'luna',
-    family: 'openai',
-    capabilities: [
-      capability('codex', ROUTING_MODEL_IDS.lunaNative),
-      capability('codex', ROUTING_MODEL_IDS.lunaPreviousNative),
-      capability('opencode_go', ROUTING_MODEL_IDS.lunaGo),
-    ],
-  },
-  sol: {
-    id: 'sol',
-    family: 'openai',
-    capabilities: [
-      capability('codex', ROUTING_MODEL_IDS.solNative),
-      capability('codex', ROUTING_MODEL_IDS.solPreviousNative),
-      capability('codex', ROUTING_MODEL_IDS.solLegacyNative),
-    ],
-  },
-  astra: {
-    id: 'astra',
-    family: 'openai',
-    capabilities: [capability('codex', ROUTING_MODEL_IDS.astraNative)],
-  },
-  fable_5_1: {
-    id: 'fable_5_1',
-    family: 'anthropic',
-    capabilities: [
-      capability('claude', ROUTING_MODEL_IDS.fable51Native),
-      capability('github_copilot', ROUTING_MODEL_IDS.fable51Copilot),
-    ],
-  },
-  opus_5: {
-    id: 'opus_5',
-    family: 'anthropic',
-    capabilities: [capability('claude', ROUTING_MODEL_IDS.opus5Native)],
-  },
-  opus_5_5: {
-    id: 'opus_5_5',
-    family: 'anthropic',
-    capabilities: [capability('claude', ROUTING_MODEL_IDS.opus55Native)],
-  },
-  gemini_3_8_flash: {
-    id: 'gemini_3_8_flash',
-    family: 'google',
-    capabilities: [
-      capability('agy', ROUTING_MODEL_IDS.gemini38FlashNative),
-      capability('github_copilot', ROUTING_MODEL_IDS.gemini38FlashCopilot),
-    ],
-  },
-  qwen_3_8_flash_next: {
-    id: 'qwen_3_8_flash_next',
-    family: 'alibaba',
-    capabilities: [
-      capability('opencode_go', ROUTING_MODEL_IDS.qwen38FlashNextGo),
-      capability('openrouter', ROUTING_MODEL_IDS.qwen38FlashNextOpenRouter),
-    ],
-  },
-  qwen_3_8_max: {
-    id: 'qwen_3_8_max',
-    family: 'alibaba',
-    capabilities: [
-      capability('opencode_go', ROUTING_MODEL_IDS.qwen38MaxGo),
-      capability('openrouter', ROUTING_MODEL_IDS.qwen38MaxOpenRouter),
-    ],
-  },
-  glm_5_3_flash: {
-    id: 'glm_5_3_flash',
-    family: 'zhipu',
-    capabilities: [
-      capability('opencode_go', ROUTING_MODEL_IDS.glm53FlashGo),
-      capability('ollama', ROUTING_MODEL_IDS.glm53FlashOllama),
-      capability('openrouter', ROUTING_MODEL_IDS.glm53FlashOpenRouter),
-    ],
-  },
-  glm_5_3: {
-    id: 'glm_5_3',
-    family: 'zhipu',
-    capabilities: [
-      capability('opencode_go', ROUTING_MODEL_IDS.glm53Go),
-      capability('ollama', ROUTING_MODEL_IDS.glm53Ollama),
-      capability('openrouter', ROUTING_MODEL_IDS.glm53OpenRouter),
-    ],
-  },
-  muse_spark_1_3: {
-    id: 'muse_spark_1_3',
-    family: 'meta',
-    capabilities: [
-      capability('opencode_go', ROUTING_MODEL_IDS.museSpark13Go),
-      capability('openrouter', ROUTING_MODEL_IDS.museSpark13OpenRouter),
-    ],
-  },
-  minimax_m3: {
-    id: 'minimax_m3',
-    family: 'minimax',
-    capabilities: [
-      capability('opencode_go', ROUTING_MODEL_IDS.minimaxM3Go),
-      capability('ollama', ROUTING_MODEL_IDS.minimaxM3Ollama),
-      capability('openrouter', ROUTING_MODEL_IDS.minimaxM3OpenRouter),
-    ],
-  },
-  deepseek_v4_flash: {
-    id: 'deepseek_v4_flash',
-    family: 'deepseek',
-    capabilities: [
-      capability('opencode_go', ROUTING_MODEL_IDS.deepseekV4FlashGo),
-      capability('ollama', ROUTING_MODEL_IDS.deepseekV4FlashOllama),
-      capability('openrouter', ROUTING_MODEL_IDS.deepseekV4FlashOpenRouter),
-    ],
-  },
-  deepseek_v4_flash_vision: {
-    id: 'deepseek_v4_flash_vision',
-    family: 'deepseek',
-    capabilities: [
-      capability('opencode_go', ROUTING_MODEL_IDS.deepseekV4FlashVisionGo),
-      capability('openrouter', ROUTING_MODEL_IDS.deepseekV4FlashVisionOpenRouter),
-    ],
-  },
-  deepseek_v4_pro: {
-    id: 'deepseek_v4_pro',
-    family: 'deepseek',
-    capabilities: [
-      capability('opencode_go', ROUTING_MODEL_IDS.deepseekV4ProGo),
-      capability('ollama', ROUTING_MODEL_IDS.deepseekV4ProOllama),
-      capability('openrouter', ROUTING_MODEL_IDS.deepseekV4ProOpenRouter),
-    ],
-  },
-  kimi_k3: {
-    id: 'kimi_k3',
-    family: 'moonshot',
-    capabilities: [
-      capability('github_copilot', ROUTING_MODEL_IDS.kimiK3Copilot),
-      capability('opencode_go', ROUTING_MODEL_IDS.kimiK3Go),
-      capability('ollama', ROUTING_MODEL_IDS.kimiK3Ollama),
-      capability('openrouter', ROUTING_MODEL_IDS.kimiK3OpenRouter),
-    ],
-  },
-  grok_4_6: {
-    id: 'grok_4_6',
-    family: 'xai',
-    capabilities: [
-      capability('github_copilot', ROUTING_MODEL_IDS.grok46Copilot),
-      capability('opencode_go', ROUTING_MODEL_IDS.grok46Go),
-      capability('openrouter', ROUTING_MODEL_IDS.grok46OpenRouter),
-    ],
-  },
-} as const;
-
-export const MODEL_TRANSPORT_PRIORITY: readonly ModelTransport[] = [
-  'claude',
-  'codex',
-  'agy',
-  'github_copilot',
-  'opencode_go',
-  'ollama',
-  'openrouter',
-] as const;
-
-export const WORKLOAD_TIERS = [
-  'simple',
-  'straightforward',
-  'feature',
-  'complex',
-  'architecture',
-] as const;
-export type WorkloadTier = typeof WORKLOAD_TIERS[number];
-
-/** Owner-facing row descriptions; routing still comes exclusively from DELEGATION_MATRIX. */
-export const WORKLOAD_TIER_DESCRIPTIONS: Readonly<Record<WorkloadTier, string>> = {
-  simple: 'Automation, simple fixes, and chores; low temperature and low complexity.',
-  straightforward:
-    'Straightforward implementations and features; medium temperature and medium complexity.',
-  feature:
-    'Workhorse for real implementations, features, fixes, and long-running work; low temperature and medium-high complexity.',
-  complex: 'Complex implementations, fixes, and features; medium temperature and high complexity.',
-  architecture:
-    'Architecture-grade groundwork, RFCs, and explicitly escalated work; highest complexity.',
-} as const;
-
-export const PRIVILEGED_WORKLOAD_TIERS = ['complex', 'architecture'] as const;
-export type PrivilegedWorkloadTier = typeof PRIVILEGED_WORKLOAD_TIERS[number];
-export interface PrivilegedTierAuthorization {
-  readonly authorizer: 'owner' | 'milestone_coordinator';
-  readonly rationale: string;
+function adapt(configuration: MatrixDocument, source?: MatrixLoadedConfiguration['source']): MatrixAuthority {
+  const catalog = Object.fromEntries(Object.entries(configuration.models).map(([id,m]) => [id, {
+    id, family:m.family, capabilities:m.launches.filter(l => l.seam === 'subagents').map(l => {
+      if (!MODEL_TRANSPORTS.includes(l.provider as ModelTransport)) throw new Error('unsupported matrix provider');
+      return { transport:l.provider as ModelTransport, model:l.id, launch:l, ...(l.profile ? { profileId:l.profile } : {}) };
+    }),
+  }]));
+  const matrix = Object.fromEntries(configuration.tiers.map(t => [t.tier, {
+    ...t.cells, planPolicy:t.loops?.plan, implementationPolicy:t.loops?.implementation, documentationPolicy:t.loops?.documentation,
+  }])) as Readonly<Record<string, DelegationCell>>;
+  return freeze({ configuration, catalog, matrix, coordinators:configuration.coordinators as MatrixAuthority['coordinators'], ...(source ? {source} : {}) });
 }
-
+/** Requires a successful #271 loader result. No merging or fallback to the shipped document. */
+export function matrixAuthority(loaded: MatrixLoadedConfiguration): MatrixAuthority {
+  const configuration = loaded.configuration as MatrixDocument;
+  if (configuration?.schemaVersion !== 2 || loaded.source.schemaVersion !== 2) throw new Error('matrix requires fleet-cells schema');
+  return adapt(configuration, loaded.source);
+}
+export const MATRIX_AUTHORITY = adapt(shipped as unknown as MatrixDocument);
+export const LOGICAL_MODEL_IDS = Object.keys(MATRIX_AUTHORITY.catalog);
+export const LOGICAL_MODEL_LABELS = Object.fromEntries(Object.entries(MATRIX_AUTHORITY.configuration.models).map(([id,m]) => [id,m.label ?? id]));
+export const MODEL_VENDOR_FAMILIES = MATRIX_AUTHORITY.configuration.families;
+export const MODEL_CATALOG = MATRIX_AUTHORITY.catalog;
+export const MODEL_TRANSPORT_PRIORITY = MATRIX_AUTHORITY.configuration.providerPrecedence as readonly ModelTransport[];
+export const WORKLOAD_TIERS = MATRIX_AUTHORITY.configuration.tiers.map(t => t.tier);
+export const WORKLOAD_TIER_DESCRIPTIONS = Object.fromEntries(MATRIX_AUTHORITY.configuration.tiers.map(t => [t.tier,t.description ?? t.tier]));
+export const PRIVILEGED_WORKLOAD_TIERS = MATRIX_AUTHORITY.configuration.tiers.filter(t => t.authorization).map(t => t.tier);
 /** Complex/architecture rows consume scarce subscriptions and require explicit authority. */
 export function assertPrivilegedTierAuthorization(
   tier: WorkloadTier,
   authorization?: PrivilegedTierAuthorization,
+  authority: MatrixAuthority = MATRIX_AUTHORITY,
 ): void {
-  if (!PRIVILEGED_WORKLOAD_TIERS.includes(tier as PrivilegedWorkloadTier)) return;
-  if (!authorization?.rationale.trim()) {
+  const row = authority.configuration.tiers.find(t => t.tier === tier);
+  if (!row) throw new Error('unknown workload tier');
+  if (!row.authorization) return;
+  if (!authorization?.rationale.trim() || !row.authorization.by.includes(authorization.authorizer === 'milestone_coordinator' ? 'milestone' : authorization.authorizer)) {
     throw new Error(
       `${tier} workload tier requires explicit owner or milestone-coordinator authorization`,
     );
   }
 }
 
-export const DELEGATION_ROLES = [
-  'implementation',
-  'ui_ux',
-  'plan',
-  'plan_evaluation',
-  'implementation_evaluation',
-  'vision_evaluation',
-  'documentation',
-  'deep_research',
-] as const;
-export type DelegationRole = typeof DELEGATION_ROLES[number];
-
-/** Deep research permits native subscriptions and catalog-attested Copilot Google fallback only. */
-export const DEEP_RESEARCH_TRANSPORTS = ['agy', 'github_copilot', 'codex'] as const;
-export type DeepResearchTransport = typeof DEEP_RESEARCH_TRANSPORTS[number];
-
-export function isTransportAllowedForRole(
-  role: DelegationRole,
-  transport: ModelTransport,
-  family?: ModelVendorFamily,
-): boolean {
-  return role !== 'deep_research' ||
-    (DEEP_RESEARCH_TRANSPORTS.includes(transport as DeepResearchTransport) &&
-      (transport !== 'github_copilot' || family === 'google'));
+export const DELEGATION_ROLES = Object.keys(MATRIX_AUTHORITY.configuration.roles) as DelegationRole[];
+export const DEEP_RESEARCH_TRANSPORTS = MATRIX_AUTHORITY.configuration.roles.deep_research?.restrictions?.providers ?? [];
+export type DeepResearchTransport = ModelTransport;
+export function isTransportAllowedForRole(role: string, transport: ModelTransport, family?: ModelVendorFamily, authority: MatrixAuthority = MATRIX_AUTHORITY, logicalModel?: string, launch?: MatrixLaunch): boolean {
+  // Existing consumers use the three-argument coarse query. Check whether any declared
+  // capability can serve it; active resolution supplies the exact model and launch below.
+  if (logicalModel === undefined || launch === undefined) return Object.entries(authority.configuration.models).some(([id,m]) =>
+    (family === undefined || m.family === family) && m.launches.some(l => l.provider === transport &&
+      isTransportAllowedForRole(role, transport, m.family, authority, id, l)));
+  const declared = authority.configuration.roles[role];
+  if (!declared) throw new Error('unknown configured role');
+  const r = declared.restrictions;
+  const model = logicalModel ? authority.configuration.models[logicalModel] : undefined;
+  return (!r?.providers || r.providers.includes(transport)) &&
+    (!r?.families || (family !== undefined && r.families.includes(family))) &&
+    (!r?.models || (logicalModel !== undefined && r.models.includes(logicalModel))) &&
+    (!r?.seams || (launch !== undefined && r.seams.includes(launch.seam))) &&
+    (!r?.transports || (launch !== undefined && r.transports.includes(launch.transport))) &&
+    (!r?.harnesses || (launch?.harness !== undefined && r.harnesses.includes(launch.harness))) &&
+    (!declared.requires || declared.requires.every(c => model?.capabilities?.includes(c))) &&
+    !(declared.certifies !== undefined && launch?.transport === 'openrouter' && model?.approvedRelayEvaluator !== true);
 }
 
 export interface ModelRoute {
@@ -379,123 +160,7 @@ export interface DelegationCell {
   readonly documentationPolicy: EvaluationPolicy;
 }
 
-const route = (
-  model: LogicalModelId,
-  effort: Effort | 'provider_default',
-): ModelRoute => ({ model, effort });
-const policy = (
-  values: Omit<EvaluationPolicy, 'reSteerSameSession'>,
-): EvaluationPolicy => ({ ...values, reSteerSameSession: true });
-
-export const DELEGATION_MATRIX: Readonly<Record<WorkloadTier, DelegationCell>> = {
-  simple: {
-    implementation: [route('sol', 'low'), route('qwen_3_8_flash_next', 'provider_default')],
-    ui_ux: [route('kimi_k3', 'low'), route('minimax_m3', 'provider_default')],
-    plan: [],
-    plan_evaluation: [],
-    implementation_evaluation: [
-      route('minimax_m3', 'provider_default'),
-      route('deepseek_v4_flash', 'provider_default'),
-    ],
-    vision_evaluation: [
-      route('minimax_m3', 'provider_default'),
-      route('deepseek_v4_flash_vision', 'provider_default'),
-    ],
-    documentation: [route('gemini_3_8_flash', 'medium'), route('opus_5', 'low')],
-    deep_research: [route('gemini_3_8_flash', 'low'), route('sol', 'low')],
-    planPolicy: policy({ maxRounds: 'none' }),
-    implementationPolicy: policy({ maxRounds: 'unspecified_by_owner' }),
-    documentationPolicy: policy({ maxRounds: 2 }),
-  },
-  straightforward: {
-    implementation: [route('sol', 'xhigh'), route('glm_5_3_flash', 'provider_default')],
-    ui_ux: [route('kimi_k3', 'high'), route('gemini_3_8_flash', 'high')],
-    plan: [route('sol', 'xhigh'), route('glm_5_3_flash', 'provider_default')],
-    plan_evaluation: [
-      route('opus_5', 'medium'),
-      route('qwen_3_8_flash_next', 'provider_default'),
-    ],
-    implementation_evaluation: [
-      route('glm_5_3_flash', 'provider_default'),
-      route('deepseek_v4_pro', 'provider_default'),
-    ],
-    vision_evaluation: [
-      route('deepseek_v4_flash_vision', 'provider_default'),
-      route('kimi_k3', 'low'),
-    ],
-    documentation: [
-      route('gemini_3_8_flash', 'high'),
-      route('qwen_3_8_flash_next', 'provider_default'),
-    ],
-    deep_research: [route('gemini_3_8_flash', 'medium'), route('sol', 'low')],
-    planPolicy: policy({ maxRounds: 0, repairInFlightAt: 'immediate' }),
-    implementationPolicy: policy({ maxRounds: 5, notifyOwnerAfter: 3 }),
-    documentationPolicy: policy({ maxRounds: 2, notifyOwnerAfter: 2 }),
-  },
-  feature: {
-    implementation: [route('sol', 'xhigh'), route('muse_spark_1_3', 'xhigh')],
-    ui_ux: [route('kimi_k3', 'high'), route('gemini_3_8_flash', 'high')],
-    plan: [route('fable_5_1', 'low'), route('muse_spark_1_3', 'xhigh')],
-    plan_evaluation: [route('glm_5_3', 'provider_default'), route('fable_5_1', 'low')],
-    implementation_evaluation: [
-      route('muse_spark_1_3', 'xhigh'),
-      route('opus_5', 'xhigh'),
-    ],
-    vision_evaluation: [
-      route('gemini_3_8_flash', 'high'),
-      route('muse_spark_1_3', 'xhigh'),
-    ],
-    documentation: [
-      route('qwen_3_8_max', 'provider_default'),
-      route('glm_5_3_flash', 'provider_default'),
-    ],
-    deep_research: [route('gemini_3_8_flash', 'high'), route('sol', 'low')],
-    planPolicy: policy({ maxRounds: 2, repairInFlightAt: 2 }),
-    implementationPolicy: policy({ maxRounds: 5, notifyOwnerAfter: 3 }),
-    documentationPolicy: policy({ maxRounds: 2, notifyOwnerAfter: 2 }),
-  },
-  complex: {
-    implementation: [route('astra', 'medium'), route('fable_5_1', 'medium')],
-    ui_ux: [route('kimi_k3', 'max'), route('fable_5_1', 'medium')],
-    plan: [route('fable_5_1', 'medium'), route('muse_spark_1_3', 'max')],
-    plan_evaluation: [route('muse_spark_1_3', 'max'), route('grok_4_6', 'high')],
-    implementation_evaluation: [
-      route('muse_spark_1_3', 'max'),
-      route('muse_spark_1_3', 'max'),
-    ],
-    vision_evaluation: [
-      route('kimi_k3', 'max'),
-      route('gemini_3_8_flash', 'high'),
-    ],
-    documentation: [
-      route('fable_5_1', 'medium'),
-      route('qwen_3_8_max', 'provider_default'),
-    ],
-    deep_research: [route('gemini_3_8_flash', 'high'), route('sol', 'low')],
-    planPolicy: policy({ maxRounds: 3, repairInFlightAt: 3 }),
-    implementationPolicy: policy({ maxRounds: 5, notifyOwnerAfter: 3 }),
-    documentationPolicy: policy({ maxRounds: 2, notifyOwnerAfter: 2 }),
-  },
-  architecture: {
-    implementation: [route('astra', 'xhigh'), route('fable_5_1', 'xhigh')],
-    ui_ux: [route('kimi_k3', 'max'), route('fable_5_1', 'medium')],
-    plan: [route('fable_5_1', 'xhigh'), route('muse_spark_1_3', 'max')],
-    plan_evaluation: [route('muse_spark_1_3', 'max'), route('grok_4_6', 'xhigh')],
-    implementation_evaluation: [
-      route('grok_4_6', 'xhigh'),
-      route('muse_spark_1_3', 'max'),
-    ],
-    vision_evaluation: [route('kimi_k3', 'max'), route('fable_5_1', 'high')],
-    documentation: [
-      route('fable_5_1', 'high'),
-      route('qwen_3_8_max', 'provider_default'),
-    ],
-    deep_research: [route('gemini_3_8_flash', 'high'), route('sol', 'low')],
-    planPolicy: policy({ maxRounds: 1, escalateToOwnerAt: 2 }),
-    implementationPolicy: policy({ maxRounds: 3, notifyOwnerAfter: 2 }),
-    documentationPolicy: policy({ maxRounds: 2, notifyOwnerAfter: 2 }),
-  },
-} as const;
+export const DELEGATION_MATRIX = MATRIX_AUTHORITY.matrix;
 
 /** Refuses a concrete provider model that is not declared in the selected matrix cell. */
 export function assertWorkloadModelAllowed(
@@ -509,7 +174,7 @@ export function assertWorkloadModelAllowed(
   const allowed = routes.some((route) =>
     MODEL_CATALOG[route.model].capabilities.some((capability) =>
       capability.model === concreteModel && (override !== undefined ||
-        isTransportAllowedForRole(role, capability.transport, MODEL_CATALOG[route.model].family))
+        isTransportAllowedForRole(role, capability.transport, MODEL_CATALOG[route.model].family, MATRIX_AUTHORITY, route.model, capability.launch))
     )
   );
   if (!allowed) {
@@ -553,25 +218,9 @@ export function assertWorkloadEffortAllowed(
   }
 }
 
-export const COORDINATOR_TIERS = [
-  'small_project',
-  'project',
-  'framework',
-  'milestone',
-] as const;
-export type CoordinatorTier = typeof COORDINATOR_TIERS[number];
-
-export const COORDINATOR_MATRIX: Readonly<Record<CoordinatorTier, readonly ModelRoute[]>> = {
-  small_project: [route('sol', 'xhigh'), route('opus_5', 'low')],
-  project: [route('sol', 'xhigh'), route('opus_5', 'medium')],
-  framework: [route('sol', 'xhigh'), route('opus_5', 'xhigh')],
-  milestone: [
-    route('sol', 'xhigh'),
-    route('fable_5_1', 'medium'),
-    route('opus_5', 'xhigh'),
-  ],
-} as const;
-
+export const COORDINATOR_TIERS = Object.keys(MATRIX_AUTHORITY.coordinators);
+export const COORDINATOR_MATRIX = MATRIX_AUTHORITY.coordinators;
+/** INTERIM deserialize-only vocabulary, never a selection table (#270). */
 export const LEGACY_ROUTING_LANES = [
   'light_implementation',
   'normal_implementation',
@@ -599,8 +248,10 @@ export const LEGACY_ROUTING_LANES = [
 ] as const;
 export type LegacyRoutingLane = typeof LEGACY_ROUTING_LANES[number];
 
-export function modelFamily(model: LogicalModelId): ModelVendorFamily {
-  return MODEL_CATALOG[model].family;
+export function modelFamily(model: LogicalModelId, authority: MatrixAuthority = MATRIX_AUTHORITY): ModelVendorFamily {
+  const definition = authority.catalog[model];
+  if (!definition) throw new Error('unknown configured model');
+  return definition.family;
 }
 
 /** Selects the first evaluator that differs from the already-selected generator family. */

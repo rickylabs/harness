@@ -29,7 +29,8 @@ function currentOwnerTable() {
   const expected = structuredClone(referenceTable.table);
   const update = routes => routes.map(candidate =>
     candidate.model === "luna" ? { model: "sol", effort: "low" } :
-      candidate.model === "sol" ? { model: "sol", effort: "xhigh" } : candidate);
+      candidate.model === "sol" ? { model: "sol", effort: "xhigh" } :
+      candidate.model === "grok_4_6" ? { ...candidate, model: "grok_4_7" } : candidate);
   for (const tier of expected.tiers) for (const role of roles) tier[role] = update(tier[role]);
   for (const scope of Object.keys(expected.coordinators)) expected.coordinators[scope] = update(expected.coordinators[scope]);
   return expected;
@@ -56,11 +57,11 @@ test("every source cell retains its fallback order under the current owner decis
 
 test("catalog retains each source capability and prefers newer Harness native IDs", () => {
   assert.equal(createHash("sha256").update(JSON.stringify(referenceCatalog.catalog, null, 2) + "\n").digest("hex"), referenceCatalog.sourceSha256);
-  assert.deepEqual(LOGICAL_MODEL_IDS, referenceCatalog.catalog.modelIds);
+  assert.deepEqual(LOGICAL_MODEL_IDS.filter(id => referenceCatalog.catalog.modelIds.includes(id)), referenceCatalog.catalog.modelIds);
   assert.deepEqual(MODEL_TRANSPORT_PRIORITY, referenceCatalog.catalog.transportPriority);
   for (const id of referenceCatalog.catalog.modelIds) {
     const expected = referenceCatalog.catalog.models[id];
-    const actual = MODEL_CATALOG[id];
+    const actual = MODEL_CATALOG[id === "muse_spark_1_3" ? "muse_spark_1_3_contributor" : id];
     assert.equal(actual.family, expected.family, id);
     for (const capability of expected.capabilities) {
       assert.ok(actual.capabilities.some(candidate =>

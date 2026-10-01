@@ -984,7 +984,7 @@ it("keeps every fleet model, tier, role, scope, lane, family and effort out of r
       'if (binding === undefined && role === "implementation_evaluation") binding = row.review;',
     ],
     "schema.ts": [
-      '"triggers", "routers", "laneAliases", "label", "implementation", "implementation_evaluation", "plan", "plan_evaluation",',
+      '"triggers", "routers", "laneAliases", "label", "launcherAlias", "implementation", "implementation_evaluation", "plan", "plan_evaluation",',
     ],
     "resolve.ts": [
       'const implementation = tierRoleLane(configuration, tier.tier, "implementation");',

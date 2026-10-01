@@ -1,4 +1,4 @@
-/** #271: guard legacy src route selection; the new pinned matrix/ authority has full parity and mutation gates. */
+/** #271/#270: model and route choices live in data, including the pinned matrix adapter. */
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -77,7 +77,7 @@ try {
   assert.deepEqual(scan(file, readFileSync(file, 'utf8')), []);
 } finally { rmSync(scratch, { recursive: true, force: true }); }
 const root = process.cwd();
-const sources = readdirSync('packages', { withFileTypes: true }).filter(e => e.isDirectory()).flatMap(e => files(join('packages', e.name, 'src'))).filter(f => f.endsWith('.ts'));
+const sources = [...files('packages/routing/matrix').filter(f => f.endsWith('.ts')), ...readdirSync('packages', { withFileTypes: true }).filter(e => e.isDirectory()).flatMap(e => files(join('packages', e.name, 'src'))).filter(f => f.endsWith('.ts'))];
 const problems = sources.flatMap(file => scan(relative(root, join(root, file)), readFileSync(file, 'utf8')));
 // The test fixture exception must never become an executable fallback through a runtime import.
 for (const file of sources.filter(f => !f.endsWith('.test.ts') && !/dry-run-(child|test-fixtures)\.ts$/.test(f))) {

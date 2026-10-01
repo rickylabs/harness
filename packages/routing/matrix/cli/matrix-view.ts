@@ -240,7 +240,7 @@ export function parseMatrixViewArgs(args: readonly string[]): MatrixViewOptions 
 
 function displayRoute(route: ModelRoute | undefined): string {
   if (!route) return "—";
-  const effort = route.effort === "provider_default" ? "provider default" : route.effort;
+  const effort = route.effort.replaceAll("_", " ");
   return `${LOGICAL_MODEL_LABELS[route.model]} ${effort}`;
 }
 
