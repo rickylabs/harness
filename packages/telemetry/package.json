@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@rickylabs/harness-contracts": "workspace:*",
-    "@rickylabs/subagents": "workspace:*"
+    "@rickylabs/subagents": "workspace:*",
+    "acorn": "8.15.0"
   }
 }

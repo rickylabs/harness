@@ -40,6 +40,15 @@ populated from history the moment this lands rather than from the next run onwar
 Vendor formats are not a contract. Each reader is written to survive a half-written last line, an
 unknown record type, and a store that is not there at all — and to say so when it does.
 
+Codex code-mode `custom_tool_call` wrappers named `exec` are parsed statically for exact
+`tools.exec_command` and `tools.apply_patch` requests. Multiple calls receive distinct stable
+activity IDs. Only allowlisted command heads and screened repository-relative patch paths leave
+the reader; arguments, patch bodies and parser diagnostics remain private. These are requested-tool
+facts, not successful command results. JavaScript is never executed. Parsing is capped at 64 KiB,
+8192 tokens/nodes, nesting depth 64 and 20 activity rows. Malformed, ambiguous, dynamic, deferred,
+conditional or exceeded shapes retain generic activity. Existing legacy and Claude readers keep
+their current behavior; the activity wire contract is unchanged.
+
 **Joined** — neither half answers the question alone. Look at the table above: only one of the three
 seams records anything about how a run ended. The Claude and opencode stores write no completion
 marker at all, so a run recovered from either of them reads `unknown` forever — the transcript stops,

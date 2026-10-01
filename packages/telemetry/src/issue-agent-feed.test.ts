@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { it } from "node:test";
 import { ORCHID_OBSERVER_REASON, projectRouteIdentity, readIssueAgentTreeSnapshot, unavailableAgentCost } from "@rickylabs/harness-contracts";
 import { buildAgentObservations } from "./agent-observations.js";
+import { parseCodexRollout } from "./backfill/codex.js";
 import { childEventKey } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
@@ -811,4 +812,22 @@ it("retains launch blocks independently of every native coverage failure", () =>
   assert.deepEqual(corrupt.issues[0]?.launchBlock, block);
   assert.equal(corrupt.issues[0]?.reason, "binding_unavailable");
   assert.ok(!JSON.stringify(corrupt).includes("PRIVATE-"));
+});
+
+
+it("projects code-mode wrapper commands and patch files through the real rollout reader and strict issue decoder", () => {
+  const wrapper = { timestamp: later, type: "response_item", payload: { type: "custom_tool_call", name: "exec", input:
+    'await tools.exec_command({cmd:"git status --short PRIVATE-ARG-CANARY"}); await tools.apply_patch("*** Begin Patch\\n*** Update File: src/main.ts\\n@@\\n+PRIVATE-PATCH-CANARY\\n*** End Patch");' } };
+  const parsed = parseCodexRollout([JSON.stringify({ timestamp: at, type: "session_meta",
+    payload: { session_id: "PRIVATE-NATIVE-ROOT", timestamp: at, cwd: "/PRIVATE-PATH-CANARY" } }),
+    JSON.stringify(wrapper)].join("\n"), "PRIVATE-ORIGIN-CANARY");
+  assert.ok(parsed.run);
+  const snapshot = build(dispatch, [parsed.run]);
+  assert.equal(snapshot.complete, true);
+  assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
+  const steps = snapshot.issues[0]?.dispatches[0]?.agents[0]?.activity?.steps ?? [];
+  assert.equal(steps.length, 2);
+  assert.equal(steps.find(step => step.toolName === "exec_command")?.commandHead, "git status");
+  assert.equal(steps.find(step => step.toolName === "apply_patch")?.filePath, "src/main.ts");
+  assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
 });

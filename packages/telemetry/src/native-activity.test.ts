@@ -122,3 +122,111 @@ it("extracts only a safe command head from an exact bash -lc array", () => {
   assert.ok(!JSON.stringify(command(["bash", "-lc", "git status --short PRIVATE-ARG-CANARY"]))
     .includes("PRIVATE-"));
 });
+
+const codeMode = (input: unknown, line = 11) => codexActivity({ timestamp: at, type: "response_item",
+  payload: { type: "custom_tool_call", name: "exec", input } }, "PRIVATE-ORIGIN-CANARY", line);
+
+it("extracts named commands and patch files from multiple static code-mode calls", () => {
+  const patch = "*** Begin Patch\n*** Update File: src/main.ts\n@@\n-private\n+PRIVATE-PATCH-CANARY\n*** End Patch\n";
+  const input = `const results = await Promise.all([
+    tools.exec_command({cmd: "git status --short PRIVATE-ARG-CANARY", yield_time_ms: 1000}),
+    tools.exec_command({cmd: ['bash', '-lc', 'go test ./... PRIVATE-ARG-CANARY']}),
+    tools.apply_patch(${JSON.stringify(patch)})
+  ]); text(results);`;
+  const steps = codeMode(input);
+  assert.equal(steps.length, 3);
+  assert.deepEqual(steps.map(step => step.toolName), ["exec_command", "exec_command", "apply_patch"]);
+  assert.deepEqual(steps.map(step => step.commandHead), ["git status", "go test", null]);
+  assert.equal(steps[2]?.filePath, "src/main.ts");
+  assert.equal(steps[2]?.summary, "Patched a repository file");
+  assert.equal(steps[2]?.target, null); // Existing contract file-target allowlist does not include patches.
+  assert.equal(new Set(steps.map(step => step.id)).size, 3);
+  assert.deepEqual(codeMode(input), steps);
+  assert.ok(!JSON.stringify(steps).includes("PRIVATE-"));
+  assert.equal(recentActivity(Array.from({ length: 12 }, (_, i) => codeMode(input, i)).flat()).length, 20);
+  assert.equal(codeMode('await tools.exec_command({cmd:"g\\u0069t status --short"})')[0]?.commandHead, "git status");
+  assert.equal(codeMode('await tools.exec_command({cmd:`pnpm test PRIVATE-ARG-CANARY`})')[0]?.commandHead, "pnpm test");
+});
+
+it("parses code-mode syntax without executing JavaScript or treating quoted text as calls", () => {
+  const globals = globalThis as typeof globalThis & { parserExecutionCanary?: boolean };
+  assert.equal(globals.parserExecutionCanary, undefined);
+  const input = `globalThis.parserExecutionCanary = true;
+    const quoted = "tools.exec_command({cmd:'git status'})";
+    const template = \`tools.exec_command({cmd:'git diff'})\`;
+    const regex = /tools.exec_command\\(\\{cmd:'git log'\\}\\)/;
+    // tools.exec_command({cmd: 'git fetch'})
+    /* tools.apply_patch('PRIVATE-PATCH-CANARY') */
+    function unused() { tools.exec_command({cmd: 'git push'}); }
+    const deferred = () => tools.exec_command({cmd: 'git pull'});
+    if (false) tools.exec_command({cmd: 'git checkout'});
+    false && tools.exec_command({cmd: 'git merge'});
+    await tools.exec_command({cmd: 'go vet ./... PRIVATE-ARG-CANARY'});`;
+  const steps = codeMode(input);
+  assert.equal(globals.parserExecutionCanary, undefined);
+  assert.equal(steps.length, 1);
+  assert.equal(steps[0]?.commandHead, "go vet");
+  assert.ok(!JSON.stringify(steps).includes("PRIVATE-"));
+});
+
+it("keeps dynamic, spread, duplicate, optional, deferred and shadowed code-mode shapes generic", () => {
+  for (const input of [
+    'await tools.exec_command({cmd: getCommand()})',
+    'await tools.exec_command({cmd: `git ${subcommand}`})',
+    'await tools.exec_command({cmd: "git status", ...options})',
+    'await tools.exec_command({...options, cmd: "git status"})',
+    'await tools.exec_command({cmd: "git status", cmd: "go test"})',
+    'await tools.exec_command({["cmd"]: "git status"})',
+    'await tools.exec_command({get cmd() {return "git status"}})',
+    'await tools["exec_command"]({cmd: "git status"})',
+    'await tools?.exec_command({cmd: "git status"})',
+    'const tools = {exec_command: () => 1}; await tools.exec_command({cmd: "git status"})',
+    'tools.exec_command = () => 1; await tools.exec_command({cmd: "git status"})',
+    'function tools() {}; await tools.exec_command({cmd: "git status"})',
+    'const {tools} = replacement; await tools.exec_command({cmd: "git status"})',
+    'const alias = tools; alias.exec_command = () => 1; await tools.exec_command({cmd: "git status"})',
+    'Object.assign(tools, {exec_command: () => 1}); await tools.exec_command({cmd: "git status"})',
+    'const holder = {api: tools}; holder.api.exec_command = () => 1; await tools.exec_command({cmd: "git status"})',
+    'delete tools.exec_command; await tools.exec_command({cmd: "git status"})',
+    'const call = () => tools.exec_command({cmd: "git status"});',
+    'if (flag) tools.exec_command({cmd: "git status"});',
+    'flag ? tools.exec_command({cmd: "git status"}) : null',
+    'for (const item of items) tools.exec_command({cmd: "git status"});',
+  ]) {
+    const steps = codeMode(input);
+    assert.equal(steps.length, 1, input);
+    assert.equal(steps[0]?.commandHead, null, input);
+    assert.equal(steps[0]?.filePath, null, input);
+    assert.equal(steps[0]?.kind, "tool", input);
+  }
+});
+
+it("withholds unsafe patch paths and command arguments from code-mode activity", () => {
+  const patch = "*** Begin Patch\n*** Update File: /PRIVATE-PATH-CANARY\n*** Update File: src/secret-token.ts\n*** Update File: ../outside.ts\n*** End Patch";
+  const steps = codeMode(`await tools.exec_command({cmd: "git status PRIVATE-ARG-CANARY"});
+    await tools.apply_patch(${JSON.stringify(patch)});`);
+  assert.equal(steps[0]?.commandHead, "git status");
+  assert.ok(steps.slice(1).every(step => step.filePath === null && step.target === null));
+  assert.ok(!JSON.stringify(steps).includes("PRIVATE-"));
+  assert.ok(!JSON.stringify(steps).includes("secret-token"));
+  assert.ok(!JSON.stringify(steps).includes("outside"));
+});
+
+it("keeps malformed and exceeded code-mode bounds generic without a partial command prefix", () => {
+  const valid = 'await tools.exec_command({cmd: "git status"});';
+  for (const input of [null, { code: valid }, {cmd: 'git status'}, '{"cmd":"git status"}', '', 'await tools.exec_command({cmd: "git status});',
+    '/*' + 'x'.repeat(65_536) + '*/' + valid,
+    '/*' + '🙂'.repeat(20_000) + '*/' + valid,
+    valid + '0;'.repeat(5000),
+    '('.repeat(65) + '1' + ')'.repeat(65) + ';' + valid,
+    valid.repeat(21),
+    Array.from({ length: 20 }, () => 'await tools.apply_patch("*** Begin Patch\\n*** Update File: src/a.ts\\n*** Update File: src/b.ts\\n*** End Patch");').join(''),
+  ]) {
+    const steps = codeMode(input);
+    assert.equal(steps.length, 1);
+    assert.equal(steps[0]?.toolName, null);
+    assert.equal(steps[0]?.summary, "Used a tool");
+    assert.equal(steps[0]?.commandHead, null);
+    assert.equal(steps[0]?.filePath, null);
+  }
+});
