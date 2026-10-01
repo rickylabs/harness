@@ -4,7 +4,7 @@
 
 `[################----]` **437/518 done · 23 running · 26 queued · 16 abandoned · 16 invisible**
 
-_Latest board activity: 2026-09-30T21:46:15Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-01T03:42:43Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (23)
 
@@ -36,7 +36,7 @@ Something could be acting on these right now.
 | [PR388 feat(contracts): sourced budget and router evidence](https://github.com/rickylabs/harness/pull/388) | `ready-merge` | — |
 | [PR495 test(telemetry): app-video-retake--490 review evidence](https://github.com/rickylabs/harness/pull/495) | `impl-eval` | — |
 
-## Not on the board (3)
+## Not on the board (2)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -44,15 +44,19 @@ Open, and carrying no `status:` label — real work no column can see.
 | --- | --- | --- |
 | [#370 Sub-agent nesting already exists in telemetry: 348 of 1351 runs carry a resolvable parent](https://github.com/rickylabs/harness/issues/370) | — | — |
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
-| [PR530 fix(routing): configure launchable Grok and Muse evaluators](https://github.com/rickylabs/harness/pull/530) | — | — |
 
-## Anomalies (35)
+## Anomalies (36)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
+- **#321** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+
+**`closed-without-status`**
+
+- **#530** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-milestone-conflict`**
 
@@ -95,7 +99,6 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#370** — open item has no status label, so it appears in no column
 - **#422** — open item has no status label, so it appears in no column
-- **#530** — open item has no status label, so it appears in no column
 
 ## Epics
 
