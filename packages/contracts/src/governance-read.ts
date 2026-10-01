@@ -17,17 +17,20 @@ export const UNAVAILABLE_REASONS = ["not-configured", "no-successful-sources", "
  * now, and why each other one is out. It is a sibling of the governance state, not part of it: its
  * own validity, never the envelope's, and absent from "not-configured".
  */
-export const MATRIX_TRANSPORTS = ["claude", "codex", "agy"] as const;
+export const SUBSCRIPTION_MATRIX_TRANSPORTS = ["claude", "codex", "agy"] as const;
+export const MATRIX_TRANSPORTS = [...SUBSCRIPTION_MATRIX_TRANSPORTS, "opencode"] as const;
 export type MatrixTransport = (typeof MATRIX_TRANSPORTS)[number];
 export const TRANSPORT_UNAVAILABLE_REASONS = ["no-capacity", "meter-unread", "meter-stale", "window-expired",
   "5h-ceiling", "weekly-ceiling", "ceiling-misconfigured"] as const;
 export type TransportUnavailableReason = (typeof TRANSPORT_UNAVAILABLE_REASONS)[number];
 export type TransportAvailabilityRow =
   | { readonly transport: MatrixTransport; readonly available: true; readonly reason: null }
-  | { readonly transport: MatrixTransport; readonly available: false; readonly reason: TransportUnavailableReason };
+  | { readonly transport: (typeof SUBSCRIPTION_MATRIX_TRANSPORTS)[number]; readonly available: false; readonly reason: TransportUnavailableReason }
+  | { readonly transport: "opencode"; readonly available: false; readonly reason: "no-capacity" };
 export interface TransportAvailability {
   readonly observedAt: string; readonly validUntil: string;
-  /** Exactly one row per MATRIX_TRANSPORTS member, in that order. */
+  /** Exact subscription prefix (legacy), or every MATRIX_TRANSPORTS member in order.
+   * OpenCode reports aggregate configured provider capacity, never subscription quota. */
   readonly transports: readonly TransportAvailabilityRow[];
 }
 
@@ -415,7 +418,8 @@ function transportAvailability(value: unknown, coverage: MeterCoverage, evaluate
   if (observed.raw !== coverage.observedAt || until.raw !== coverage.validUntil || observed.ms > evaluated)
     invalid(field, "contradicts its coverage");
   const rows = array(input.transports, `${field}.transports`, MATRIX_TRANSPORTS.length);
-  if (rows.length !== MATRIX_TRANSPORTS.length) invalid(`${field}.transports`, "must list every matrix transport");
+  if (rows.length !== SUBSCRIPTION_MATRIX_TRANSPORTS.length && rows.length !== MATRIX_TRANSPORTS.length)
+    invalid(`${field}.transports`, "must list the subscription prefix or every matrix transport");
   const transports = rows.map((value, i): TransportAvailabilityRow => {
     const row = record(value, `${field}.transports[${i}]`, ["transport", "available", "reason"]);
     if (row.transport !== MATRIX_TRANSPORTS[i]) invalid(`${field}.transports[${i}].transport`, "must follow MATRIX_TRANSPORTS order");
@@ -423,6 +427,10 @@ function transportAvailability(value: unknown, coverage: MeterCoverage, evaluate
     if (boolean(row.available, `${field}.transports[${i}].available`)) {
       if (row.reason !== null) invalid(`${field}.transports[${i}].reason`, "must be null when available");
       return { transport, available: true, reason: null };
+    }
+    if (transport === "opencode") {
+      if (row.reason !== "no-capacity") invalid(`${field}.transports[${i}].reason`, "must describe provider capacity");
+      return { transport, available: false, reason: "no-capacity" };
     }
     return { transport, available: false, reason: choice(row.reason, TRANSPORT_UNAVAILABLE_REASONS, `${field}.transports[${i}].reason`) };
   });

@@ -5,7 +5,7 @@
  */
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
-import { MATRIX_TRANSPORTS, TRANSPORT_UNAVAILABLE_REASONS, type TransportAvailability,
+import { MATRIX_TRANSPORTS, SUBSCRIPTION_MATRIX_TRANSPORTS, TRANSPORT_UNAVAILABLE_REASONS, type TransportAvailability,
   type TransportAvailabilityRow, type TransportUnavailableReason } from "@rickylabs/harness-contracts";
 import { instant, object, SourceError, type Leg } from "../source.js";
 
@@ -31,14 +31,14 @@ const exactly = (value: Record<string, unknown>, keys: readonly string[]) => {
 };
 const iso = (value: unknown): string => new Date(Date.parse(instant(value))).toISOString();
 
-/** Strict: one row per matrix transport in order, a reason exactly when unavailable. */
+/** Strict legacy subscription prefix or all transports, a reason exactly when unavailable. */
 export function mapTransportAvailability(text: string): Leg<TransportAvailability> {
   let payload: unknown;
   try { payload = JSON.parse(text); } catch { return { ok: false, code: "non-json" }; }
   try {
     const input = object(payload);
     exactly(input, ["schemaVersion", "observedAt", "validUntil", "transports"]);
-    if (input.schemaVersion !== 1 || !Array.isArray(input.transports) || input.transports.length !== MATRIX_TRANSPORTS.length)
+    if (input.schemaVersion !== 1 || !Array.isArray(input.transports) || (input.transports.length !== SUBSCRIPTION_MATRIX_TRANSPORTS.length && input.transports.length !== MATRIX_TRANSPORTS.length))
       throw new SourceError("shape-mismatch");
     const observedAt = iso(input.observedAt), validUntil = iso(input.validUntil);
     const transports = input.transports.map((value, i): TransportAvailabilityRow => {
@@ -49,6 +49,10 @@ export function mapTransportAvailability(text: string): Leg<TransportAvailabilit
       if (row.available) {
         if (row.reason !== null) throw new SourceError("shape-mismatch");
         return { transport, available: true, reason: null };
+      }
+      if (transport === "opencode") {
+        if (row.reason !== "no-capacity") throw new SourceError("shape-mismatch");
+        return { transport, available: false, reason: "no-capacity" };
       }
       if (!TRANSPORT_UNAVAILABLE_REASONS.includes(row.reason as TransportUnavailableReason)) throw new SourceError("shape-mismatch");
       return { transport, available: false, reason: row.reason as TransportUnavailableReason };

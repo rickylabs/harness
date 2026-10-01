@@ -1025,6 +1025,23 @@ describe("published governance one-shot command", () => {
     assert.ok(!out.includes(snapshotPath));
     assert.equal(out, await readFile(new URL("../../contracts/test-fixtures/governance-read/transport-availability.json", import.meta.url), "utf8"));
   });
+  it("TA (0.31.0): four-row dispatcher capacity survives the complete served reader path", async () => {
+    const d = liveDescriptor();
+    d.capacity.scopeLabel = "synthetic-cgroup";
+    const e = admissionEvent(); e.detail.item.number = 7;
+    await admissions([e]);
+    const snapshot = JSON.parse(DIVYBOT_SNAPSHOT);
+    snapshot.transports.push({ transport: "opencode", available: true, reason: null });
+    const snapshotPath = join(home, "governance", "transport-availability.json");
+    const { code, out } = await invoke({ ...d, spend: null, transportAvailability: { path: snapshotPath } }, {
+      usage: async () => { throw new SourceError("timeout"); },
+      readPrivateText: async () => JSON.stringify(snapshot) });
+    assert.equal(code, EXIT.incomplete);
+    const expected = JSON.parse(await readFile(new URL("../../contracts/test-fixtures/governance-read/transport-availability.json", import.meta.url), "utf8"));
+    expected.transportAvailability.transports.push({ transport: "opencode", available: true, reason: null });
+    assert.deepEqual(JSON.parse(out), expected);
+    assert.ok(!out.includes(snapshotPath));
+  });
   it("TA (0.28.0): an unreadable or malformed snapshot is failed coverage and an incomplete document; unconfigured adds no keys", async () => {
     // Complete on its own (T4/BI2), so only the transport availability source can make it incomplete.
     const d = { ...liveDescriptor(), admissions: null };

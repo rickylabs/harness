@@ -908,3 +908,10 @@ including cache writes. Per-turn cumulative usage is retained separately inside 
 Response usage is not added to the same thread total. Claude retains its native response-id
 deduplication and separate cache read/write counts. For accounting and the attribution guard,
 see [the published contract](../contracts/README.md#account-usage-projection-0290).
+
+OpenCode availability (contracts 0.31.0) appends a fourth `opencode` row to the
+private transport snapshot. The reader also accepts the exact legacy three-row
+prefix unchanged for reader-first rollout. OpenCode reports configured provider
+seat capacity (`true`/`null` or `false`/`no-capacity`), never subscription quota or
+model readiness. Native route discovery remains required. Pin the new reader and
+contracts before deploying the four-row dispatcher emitter.

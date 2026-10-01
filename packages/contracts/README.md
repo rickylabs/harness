@@ -950,3 +950,24 @@ Coverage names each vendor's `from`/`through` interval, `state` (`complete`, `pa
 and `reason`. Complete means every explicitly configured owned store was read without gaps;
 unconfigured machines are outside that assertion. Both quota freshness and source coverage must
 remain visible to consumers.
+
+## OpenCode transport availability (0.31.0)
+
+`MATRIX_TRANSPORTS` now appends `opencode` after `claude`, `codex`, `agy`.
+`SUBSCRIPTION_MATRIX_TRANSPORTS` identifies the original three subscriptions.
+The governance reader and private snapshot mapper accept either that exact legacy
+three-row prefix or all four rows in order. A legacy document stays unchanged;
+an absent OpenCode row supplies no evidence of availability.
+
+OpenCode's row is `{ transport: "opencode", available: true, reason: null }` when
+at least one explicitly configured provider pool has a free seat, or
+`{ transport: "opencode", available: false, reason: "no-capacity" }` otherwise.
+This aggregate reports provider capacity, with no invented subscription meter,
+quota percentage or credit balance. It does not certify any particular provider,
+model or variant: native discovery and exact route admission still decide a launch.
+Subscription meter reasons on an OpenCode row are rejected. The envelope, schema,
+coverage, expiry and privacy boundaries remain unchanged.
+
+Upgrade readers to 0.31.0 before a dispatcher publishes four rows. Older strict
+readers reject the extra row; a new reader can safely consume the three-row producer
+until deployment. Cockpit must keep a missing legacy OpenCode row unavailable.
