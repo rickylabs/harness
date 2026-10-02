@@ -254,9 +254,9 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         }
         const dispatch: DispatchEvidence = { observedAt: at, revision, linkageBasis: "dispatcher-confirmed", runId: input.runId as string, external: null,
           host: launch.host, profileRevision, matrixRevision,
-          source: input.source === "codex" || input.source === "claude" ? input.source : null,
+          source: input.source === "codex" || input.source === "claude" || input.source === "agy" ? input.source : null,
           harness: input.source as "codex" | "claude" | "agy", budget,
-          router: input.source === "codex" || input.source === "claude"
+          router: input.source === "codex" || input.source === "claude" || input.source === "agy"
             ? { value: "direct", source: "dispatch", reason: null }
             : { value: null, source: "unavailable", reason: "source_not_bound" },
           routePolicy: receipt.policy,

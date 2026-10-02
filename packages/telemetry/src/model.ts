@@ -19,9 +19,9 @@ import type { TokenSamples } from "./token-samples.js";
  *
  * `claude` and `codex` are the two subscription seams; `opencode` is the relay seam that reaches
  * OpenRouter and the local models. The distinction matters for governance: only the first two have
- * a subscription window that can be exhausted.
+ * a subscription window that can be exhausted. AGY is an unmetered native seam.
  */
-export type RunSource = "claude" | "codex" | "opencode";
+export type RunSource = "claude" | "codex" | "opencode" | "agy";
 
 /** How a run ended, as far as its transcript can say. */
 export type RunOutcome = "running" | "complete" | "failed" | "unknown";

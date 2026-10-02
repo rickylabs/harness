@@ -2,12 +2,12 @@
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, dirname, isAbsolute, join, normalize } from "node:path";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
 const digest = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 const keyFor = (source: string, identity: string) => digest(source + "\0" + identity);
-const bindings = new WeakMap<DispatchEvidence, { key: string | null }>();
+const bindings = new WeakMap<DispatchEvidence, { key: string | null; agyDirectory?: string }>();
 // Same bound for the private binding (which includes the profile) and snapshot reread.
 const MAX_BYTES = 262_144;
 const placementName = (value: unknown): value is string => typeof value === "string" &&
@@ -48,7 +48,7 @@ export async function readOrchidLaunchBinding(record: string, reservation: strin
 export async function readOrchidNativeBinding(record: string, reservation: string, dispatch: DispatchEvidence): Promise<void> {
   bindings.set(dispatch, { key: null });
   try {
-    if (dispatch.dispatchState !== "dispatched" || (dispatch.source !== "codex" && dispatch.source !== "claude")) return;
+    if (dispatch.dispatchState !== "dispatched" || (dispatch.source !== "codex" && dispatch.source !== "claude" && dispatch.source !== "agy")) return;
     const raw = await readPrivate(join(record, "binding.json"));
     const binding = JSON.parse(raw.toString("utf8")) as Record<string, unknown>;
     const id = binding.NativeSessionID;
@@ -63,7 +63,17 @@ export async function readOrchidNativeBinding(record: string, reservation: strin
         route.model !== dispatch.route.requested.model.value || (route.effort || null) !== dispatch.route.requested.effort.value) return;
     // Invalidation clears the binding before publishing uncertain. Reject a changed dispatch snapshot.
     if (digest(await readPrivate(join(record, "dispatch.json"))) !== dispatch.revision) return;
-    bindings.set(dispatch, { key: keyFor(dispatch.source, id) });
+    let agyDirectory: string | undefined;
+    if (dispatch.source === "agy") {
+      if (!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(id)) return;
+      const store = binding.NativeStore as Record<string, unknown> | null;
+      if (!store || Array.isArray(store) || store.source !== "agy" || typeof store.directory !== "string" ||
+          !isAbsolute(store.directory) || normalize(store.directory) !== store.directory || store.directory.length > 4096 ||
+          /\p{Cc}/u.test(store.directory) || basename(store.directory) !== "agy" ||
+          basename(dirname(store.directory)) !== reservation || basename(dirname(dirname(store.directory))) !== ".divybot-native") return;
+      agyDirectory = store.directory;
+    }
+    bindings.set(dispatch, { key: keyFor(dispatch.source, id), ...(agyDirectory === undefined ? {} : { agyDirectory }) });
   } catch { /* Private failures are represented by unavailable ancestry, never exception text. */ }
 }
 /** Resolve only one same-source native root. Existing telemetry owns parent-chain traversal. */
@@ -74,9 +84,13 @@ export function resolveOrchidNativeRoot(dispatch: DispatchEvidence, runs: readon
 }
 /** Match a head identity to Orchid's private root without revealing either identity or key. */
 export function matchesOrchidNativeRootIdentity(dispatch: DispatchEvidence, id: string,
-  source: "codex" | "claude"): boolean {
+  source: "codex" | "claude" | "agy"): boolean {
   const key = bindings.get(dispatch)?.key;
   return key !== null && key !== undefined && dispatch.source === source && keyFor(source, id) === key;
+}
+/** Private store hint only after the full receipt and exact native ID guard. Never serialize it. */
+export function orchidAGYStoreDirectory(dispatch: DispatchEvidence): string | null {
+  return dispatch.source === "agy" ? bindings.get(dispatch)?.agyDirectory ?? null : null;
 }
 /** Private reader rows cannot acquire credentials from the legacy exported DispatchResult surface. */
 export function hasOrchidNativeBindingBoundary(dispatch: DispatchEvidence): boolean {

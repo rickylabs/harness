@@ -58,6 +58,11 @@ function firstSentence(value: unknown): string | null {
   }
   return null;
 }
+/** Shared screening for a vendor's typed assistant response; never use with user or reasoning text. */
+export function nativeMessageActivity(source: Source, nativeID: string, index: number, at: string,
+  text: unknown): AgentActivityStep | null {
+  return step(source, nativeID, index, 0, at, "message", null, null, null, firstSentence(text));
+}
 function args(value: unknown): Record<string, unknown> | null {
   if (typeof value === "string" && value.length <= 4096) {
     try { return object(JSON.parse(value)); } catch { return null; }

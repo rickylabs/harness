@@ -47,7 +47,7 @@ const identitySchema = z
 
 const quotaSchema = z
   .object({
-    source: z.enum(["claude", "codex", "opencode"]),
+    source: z.enum(["claude", "codex", "opencode", "agy"]),
     observedAt: z.string(),
     limitId: z.string().nullable(),
     usedPercent: z.number().nullable(),
@@ -273,7 +273,7 @@ const livenessSchema = z
 const runSchema = z
   .object({
     id: z.string(),
-    source: z.enum(["claude", "codex", "opencode"]),
+    source: z.enum(["claude", "codex", "opencode", "agy"]),
     parentId: z.string().nullable(),
     startedAt: z.string(),
     updatedAt: z.string(),

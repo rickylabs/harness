@@ -8,13 +8,14 @@ import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FR
   type IssueLaunchBlock, type IssueAgentTree, type IssueAgentTreeFrame, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { scanClaudeIssue } from "./backfill/claude-issue.js";
+import { scanAGYIssue } from "./backfill/agy.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { CLAUDE_CHILD_EVENT_ROOT, readClaudeChildStarts } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import { readActionReceipts } from "./action-receipt-cli.js";
 import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
 import type { OrchidLaunchState } from "./orchid-dispatch.js";
-import { matchesOrchidNativeRootIdentity, resolveOrchidNativeRoot } from "./orchid-native-binding.js";
+import { matchesOrchidNativeRootIdentity, orchidAGYStoreDirectory, resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import { HOST_CAPACITY_PLACEMENT_HOST, readLocalHostCapacity } from "./host-capacity.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
@@ -29,6 +30,8 @@ export interface IssueAgentFeedOptions {
   readonly issueKey?: string;
   /** Private paths for a watch loop; never enter the public snapshot. */
   readonly watchFiles?: Set<string>;
+  /** Exact private roots certified by native bindings; only watch hints, never evidence. */
+  readonly watchStoreRoots?: Set<string>;
 }
 
 const PRE_DISPATCH_MS = 600_000;
@@ -96,7 +99,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       continue;
     }
     if (group.dispatches.length === 0) continue;
-    if (group.dispatches.some(d => (d.source !== "codex" && d.source !== "claude") || d.observedAt === undefined)) continue;
+    if (group.dispatches.some(d => (d.source !== "codex" && d.source !== "claude" && d.source !== "agy") || d.observedAt === undefined)) continue;
     if (group.dispatches.length > MAX_ISSUE_DISPATCHES || remainingBytes <= 0 ||
         group.dispatches.some(d => nowMs > Date.parse(d.observedAt!) + MAX_DISPATCH_AGE_MS)) {
       entry.snapshot = unavailableSnapshot(options.now, "scan_limit"); continue;
@@ -127,6 +130,19 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       if (scan.reason !== null) { entry.snapshot = unavailableSnapshot(options.now, scan.reason); continue; }
       runs.push(...scan.runs);
     }
+    let agyUnavailable = false;
+    for (const dispatch of group.dispatches.filter(d => d.source === "agy")) {
+      const store = orchidAGYStoreDirectory(dispatch);
+      if (store === null) { agyUnavailable = true; break; }
+      const scan = await scanAGYIssue(store, id => matchesOrchidNativeRootIdentity(dispatch, id, "agy"),
+        issueFileLimit - runs.length, remainingBytes, nowMs);
+      remainingBytes -= scan.bytesRead;
+      for (const file of scan.files) options.watchFiles?.add(file);
+      options.watchStoreRoots?.add(store);
+      if (scan.reason !== null) { entry.snapshot = unavailableSnapshot(options.now, scan.reason); agyUnavailable = true; break; }
+      runs.push(...scan.runs);
+    }
+    if (agyUnavailable) continue;
     for (const run of runs) options.watchFiles?.add(run.origin);
     const claudeChildStarts = new Map<string, string>();
     for (const dispatch of group.dispatches) {
@@ -235,10 +251,11 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
       let snapshot = cached;
       if (scan) {
         const at = clock(), files = new Set<string>();
-        try { snapshot = await collect({ home, limit, env, now: at, watchFiles: files,
+        const storeRoots = new Set<string>();
+        try { snapshot = await collect({ home, limit, env, now: at, watchFiles: files, watchStoreRoots: storeRoots,
           ...(issueKey === undefined ? {} : { issueKey }) }); }
         catch { snapshot = unavailableSnapshot(at); }
-        changes?.setFiles(files);
+        changes?.setFiles(files, storeRoots);
         scannedAt = elapsed();
       }
       if (stopped) break;

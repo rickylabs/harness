@@ -29,6 +29,17 @@ const snapshot = (): IssueAgentTreeSnapshot => ({ schema: 1, protocol: 1, observ
     dispatches: [{ dispatchId, agents: [node] }] }] });
 const read = (value: unknown) => readIssueAgentTreeSnapshot(value);
 
+it("decodes screened AGY native message activity and rejects private text", () => {
+  const s = snapshot();
+  const step = { id: "step_" + "d".repeat(64), at, kind: "message", toolName: null,
+    commandHead: null, filePath: null, summary: "The work is complete.", source: "agy-transcript", target: null };
+  const tree = (entry: unknown) => ({ ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId, agents: [
+    { ...node, activity: { availability: "available", reason: null, observedAt: at, steps: [entry] } } ] }] }] });
+  assert.equal(read(tree(step)).ok, true);
+  assert.equal(read(tree({ ...step, source: "unknown-transcript" })).ok, false);
+  assert.equal(read(tree({ ...step, summary: "Read /home/private/file" })).ok, false);
+});
+
 it("decodes a grouped opaque dispatch tree with explicit unknowns", () => {
   const result = read(snapshot());
   assert.equal(result.ok, true);
@@ -304,6 +315,10 @@ it("retains sourced zero, rejects invalid budgets and unsupported router claims"
   assert.equal(read(mutate({ router: { value: "PRIVATE-PATH-CANARY", source: "native", reason: null } })).ok, false);
   assert.equal(read(mutate({ router: { value: "router", source: "dispatch", reason: null } })).ok, false);
   assert.equal(read(mutate({ router: { value: "direct", source: "dispatch", reason: null } })).ok, true);
+  assert.equal(read(mutate({ harness: { value: "agy", source: "dispatch", reason: null },
+    router: { value: "direct", source: "dispatch", reason: null } })).ok, true);
+  assert.equal(read(mutate({ harness: { value: "unknown-tool", source: "dispatch", reason: null },
+    router: { value: "direct", source: "dispatch", reason: null } })).ok, false);
   assert.equal(read(mutate({ harness: { value: "opencode", source: "dispatch", reason: null },
     router: { value: "openai", source: "dispatch", reason: null } })).ok, false);
   assert.equal(read(mutate({ routePolicy: { value: "netscript-matrix", digest: rev, source: "dispatch", reason: null } })).ok, true);

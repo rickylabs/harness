@@ -32,7 +32,7 @@
  * dropping out of a filtered list is a run that has vanished from the board. Growing this list is a
  * contract change, which is the correct amount of ceremony for adding a harness.
  */
-export const RUN_SOURCES = ["claude", "codex", "opencode"] as const;
+export const RUN_SOURCES = ["claude", "codex", "opencode", "agy"] as const;
 export type RunSource = (typeof RUN_SOURCES)[number];
 
 /**

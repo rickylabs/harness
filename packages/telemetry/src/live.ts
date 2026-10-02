@@ -163,7 +163,7 @@ export type LiveDispatchVerdict = "accepted" | "refused" | "unknown";
  */
 const DISPATCH_KIND = "subagent.dispatch";
 
-const SOURCES: ReadonlySet<string> = new Set<RunSource>(["claude", "codex", "opencode"]);
+const SOURCES: ReadonlySet<string> = new Set<RunSource>(["claude", "codex", "opencode", "agy"]);
 const VERDICTS: ReadonlySet<string> = new Set<LiveDispatchVerdict>([
   "accepted",
   "refused",
