@@ -4,7 +4,7 @@ import { isAbsolute, relative, sep } from "node:path";
 
 export interface IssueFeedChanges {
   consume(): boolean;
-  setFiles(files: ReadonlySet<string>): void;
+  setFiles(files: ReadonlySet<string>, nativeStores?: ReadonlySet<string>): void;
   close(): void;
 }
 
@@ -43,13 +43,14 @@ export function openIssueFeedChanges(receipts: string | undefined, sessions: str
   refreshRoots();
   return {
     consume() { const changed = dirty; dirty = false; return changed; },
-    setFiles(next) {
+    setFiles(next, nativeStores = new Set()) {
       if (closed) return;
       refreshRoots();
       for (const [path, watcher] of files) if (!next.has(path)) { watcher.close(); files.delete(path); }
       for (const path of next) {
         if (!(inside(sessions, path) || claudeProjects && inside(claudeProjects, path) ||
-            claudeChildEvents && inside(claudeChildEvents, path)) || files.has(path)) continue;
+            claudeChildEvents && inside(claudeChildEvents, path) ||
+            [...nativeStores].some(root => path === root || inside(root, path))) || files.has(path)) continue;
         const watcher = attach(path, false, () => { dirty = true; }, () => files.delete(path));
         if (watcher) files.set(path, watcher);
       }

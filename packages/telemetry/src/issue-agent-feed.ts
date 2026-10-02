@@ -119,7 +119,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     : requestedEffort !== null ? { value: null, source: "unavailable", reason: "binding_invalid" } : unavailable;
   const parentAgentId = observation.parentAgentId.state === "known-parent" ? observation.parentAgentId.value : null;
   const router = provenAncestry && dispatch.router?.value === "direct" && dispatch.router.source === "dispatch" &&
-    (dispatch.source === "codex" || dispatch.source === "claude") ? dispatch.router : unavailable;
+    (dispatch.source === "codex" || dispatch.source === "claude" || dispatch.source === "agy") ? dispatch.router : unavailable;
   const unboundRevision = { value: null, scope: "root-dispatch", source: "unavailable", reason: "source_not_bound" } as const;
   const profileRevision = provenAncestry ? dispatch.profileRevision ?? unboundRevision : unboundRevision;
   const matrixRevision = provenAncestry ? dispatch.matrixRevision ?? unboundRevision : unboundRevision;

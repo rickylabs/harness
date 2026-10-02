@@ -104,7 +104,7 @@ export interface AgentActivityStep {
   readonly summary: string | null;
   /** Additive in the next contracts minor; a screened, tool-specific display target. */
   readonly target?: { readonly kind: AgentActivityTargetKind; readonly value: string } | null;
-  readonly source: "codex-rollout" | "claude-transcript";
+  readonly source: "codex-rollout" | "claude-transcript" | "agy-transcript";
 }
 export type AgentActivity =
   | { readonly availability: "available"; readonly reason: null; readonly observedAt: string;
@@ -374,7 +374,7 @@ function activityRow(value: unknown, capturedAt: string): AgentActivity {
     ids.add(s.id);
     const at = stamp(s.at);
     if (at > observedAt || !["tool", "command", "file", "message"].includes(s.kind as string) ||
-        (s.source !== "codex-rollout" && s.source !== "claude-transcript")) return bad();
+        (s.source !== "codex-rollout" && s.source !== "claude-transcript" && s.source !== "agy-transcript")) return bad();
     if (s.toolName !== null && (typeof s.toolName !== "string" || !/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(s.toolName))) return bad();
     if (s.commandHead !== null && (typeof s.commandHead !== "string" ||
         !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}(?: [A-Za-z0-9][A-Za-z0-9_.-]{0,31})?$/.test(s.commandHead))) return bad();
@@ -776,7 +776,7 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
         } else if (a.router.value !== null) {
           if (parent?.state !== "confirmed-root") return bad();
           if (a.harness.source !== "dispatch" || a.router.value !== "direct" ||
-              (a.harness.value !== "codex" && a.harness.value !== "claude")) return bad();
+              (a.harness.value !== "codex" && a.harness.value !== "claude" && a.harness.value !== "agy")) return bad();
         }
         if (a.routePolicy.value !== null && parent?.state !== "confirmed-root") return bad();
       }

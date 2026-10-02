@@ -777,6 +777,22 @@ A native parent link does not invent child location, router or running observati
 contract or decoder change is required. See [cost attribution](../../docs/rfcs/0002-agent-cost-attribution.md)
 for shared-run refusal, repeated-dispatch handling, source timestamps and limits.
 
+AGY live issue collection uses the private `NativeSessionID` conversation ID and
+`NativeStore` from the same dispatched reservation. It reads only that retained
+store, never the global AGY history or a directory/title/time match. The installed
+1.2.14 adapter opens fixed SQLite tables read-only with WAL visibility and byte,
+session and step bounds. The conversation's `cascade_id` must match its bound ID;
+the separate trajectory ID must match the native protobuf summary. Only typed
+planner response text reaches the existing screening function. User prompts,
+thinking, tool output, titles, native IDs and store paths never enter the feed.
+A coherent latest user turn, native final status/stop reason and completion time
+are required for an end; idle, mtime and an empty response cannot prove Done.
+Resumes clear the prior end, and unreadable/unknown stores affect only their issue.
+AGY token/quota measurements remain unavailable. Contracts 0.34.0 adds `agy` and
+`agy-transcript` plus AGY direct-route decoding; upgrade the consumer decoder and
+reader before enabling the Orchid writer. Bound database/WAL watches are hints
+for a fresh read, with the periodic safety scan retained.
+
 `node scripts/check-orchid-native-live-pair.mjs --live` is an opt-in integration control. It reads
 a bounded native header sample using the normal home (or privately configured
 `DSH_TELEMETRY_NATIVE_HOME`), exercises one real parent/child pair under an explicitly synthetic

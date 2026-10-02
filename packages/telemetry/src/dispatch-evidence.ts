@@ -21,7 +21,7 @@ export interface DispatchEvidence {
   readonly host?: string | null;
   /** Dispatch acknowledgement is not evidence of current liveness. */
   readonly dispatchState?: "launching" | "dispatched" | "uncertain";
-  /** Sanitized dispatch-side identity; native RunSource cannot represent agy. */
+  /** Sanitized dispatch-side transport identity, independent of native binding. */
   readonly harness?: "codex" | "claude" | "agy";
   /** Validated from Orchid's bound private dispatch record when the writer supplies it. */
   readonly budget?: AgentBudget;

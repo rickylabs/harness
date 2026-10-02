@@ -140,8 +140,8 @@ export type EventKind = (typeof EVENT_KIND)[keyof typeof EVENT_KIND];
  *
  * Spelled as a total `Record<Harness, ...>` rather than a lookup with a fallback, so adding a
  * harness to `HARNESSES` fails this compile and forces the question to be answered here. `agy` is
- * `null` because it is not one of the three seams `RunSource` names, and rule 1 above says an
- * unmapped harness is written with no seam rather than with a plausible one.
+ * `null` because AGY has no native quota meter. An unmetered harness must not
+ * be assigned a plausible subscription seam.
  */
 const SEAM_OF_HARNESS: Readonly<Record<Harness, RunSource | null>> = {
   claude: "claude",

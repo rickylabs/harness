@@ -247,12 +247,14 @@ it("projects a bound nonnegative budget with the writer's exact source vocabular
     }
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
-it("does not claim direct for an agy dispatch", async () => {
+it("retains the AGY native source and direct dispatcher route without inventing a native binding", async () => {
   const s = await setup();
   try {
     await s.write({ ...fixture, source: "agy" });
-    assert.deepEqual((await readOrchidDispatches(s.root)).dispatches[0]?.router,
-      { value: null, source: "unavailable", reason: "source_not_bound" });
+    const dispatch = (await readOrchidDispatches(s.root)).dispatches[0]!;
+    assert.equal(dispatch.source, "agy");
+    assert.deepEqual(dispatch.router, { value: "direct", source: "dispatch", reason: null });
+    assert.equal(dispatch.external, null);
   } finally { await rm(s.root, { recursive: true, force: true }); }
 });
 it("hides reserved attempts and retains an ambiguous execution as uncertain", async () => {
