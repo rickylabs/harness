@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import { paidQuantityFromNano, paidQuantityNano, readProviderUsageSnapshot, type ProviderMeterRow, type ProviderUsageSnapshot } from "./provider-usage.js";
 import { readAccountUsageDocument, readProviderBudgetDecisions } from "./paid-account-usage.js";
 const at = "2026-01-02T12:00:00.000Z", end = "2026-02-01T00:00:00.000Z", from = "2026-01-01T00:00:00.000Z";
@@ -121,4 +122,21 @@ test("per-model budget decisions carry only the reader's fixed known/unavailable
   for (const change of [{ provider: "private/path" }, { model: " private-model" }, { reason: "PRIVATE_CANARY" }, { available: true }, { reason: null },
     { observedAt: end }, { validUntil: at }, { PRIVATE_CANARY: "private-value" }]) assert.equal(readProviderBudgetDecisions([{ ...row, ...change }]), null);
   assert.equal(readProviderBudgetDecisions([row, row]), null); assert.equal(readProviderBudgetDecisions(Array(2)), null);
+});
+
+const nativeModelFixture = (name: string): Record<string, unknown> => JSON.parse(readFileSync(
+  new URL(`../test-fixtures/provider-budget-native-model/${name}.json`, import.meta.url), "utf8"));
+test("provider budget model fixtures require native IDs and preserve exact provider/model pairs", () => {
+  for (const name of ["native-flat", "native-nested", "native-tilde", "native-provider-like", "native-provider-name"]) {
+    const row = nativeModelFixture(name), read = readProviderBudgetDecisions([row]);
+    assert.deepEqual(read, [row]); assert.notEqual(read?.[0], row);
+  }
+  for (const name of ["provider-prefixed", "provider-double-prefixed"]) assert.equal(readProviderBudgetDecisions([nativeModelFixture(name)]), null);
+  const native = nativeModelFixture("native-nested");
+  const other = { ...native, provider: "other-provider" };
+  assert.deepEqual(readProviderBudgetDecisions([native, other]), [native, other]);
+  const deeper = { ...native, model: "vendor/fixture-provider/native-model" };
+  assert.deepEqual(readProviderBudgetDecisions([deeper]), [deeper]);
+  const changedCase = { ...native, model: "Vendor/native-model" };
+  assert.deepEqual(readProviderBudgetDecisions([native, changedCase]), [native, changedCase]);
 });

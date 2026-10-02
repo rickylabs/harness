@@ -252,3 +252,17 @@ it("TA provider pools contain hostile inspection and own their output", () => {
  const output=readOpenCodeProviderPools(input);assert.deepEqual(output,input);
  input[0]!.active=1;assert.equal(output![0]!.active,0);
 });
+
+it("governance budgets preserve native nested models and refuse a provider-prefixed model fixture", () => {
+  const load = (name: string): Record<string, unknown> => JSON.parse(readFileSync(
+    new URL(`../test-fixtures/provider-budget-native-model/${name}.json`, import.meta.url), "utf8"));
+  for (const name of ["native-flat", "native-nested", "native-tilde", "native-provider-like", "native-provider-name", "provider-prefixed", "provider-double-prefixed"]) {
+    const value = withAvailability(), row = { ...load(name), observedAt: value.transportAvailability.observedAt, validUntil: value.transportAvailability.validUntil };
+    value.transportAvailability.providerBudgets = [row];
+    if (name.startsWith("provider-")) refuse(value);
+    else {
+      const read = readGovernanceSnapshot(value); assert.equal(read.ok, true);
+      if (read.ok) assert.deepEqual(read.snapshot.transportAvailability?.providerBudgets, [row]);
+    }
+  }
+});

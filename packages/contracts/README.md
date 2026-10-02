@@ -1017,3 +1017,16 @@ stays separate from 0.32 provider seat pools. Launch refusals `budget-reached` a
 `budget-unavailable` are supported by the issue tree reader. Install both the
 published decoder and telemetry reader before any producer emits these fields or
 refusals. No budget enforcement or provider hard stop is implied by a meter row.
+
+### Provider budget model identity (0.33.1)
+
+`ProviderBudgetDecision` is keyed by the exact pair `(provider, model)`. `provider`
+is the provider ID in its own field; `model` is the provider-native model ID.
+For example, `{provider:"fixture-provider",model:"vendor/native-model"}` is valid,
+while `{provider:"fixture-provider",model:"fixture-provider/native-model"}` is
+rejected. The reader preserves native nested vendor/model suffixes and leading
+tilde IDs without stripping, case folding, alias matching or family matching.
+When joining a provider-qualified catalog route, remove exactly its own provider
+prefix once before joining both fields. A duplicated prefix is invalid; do not
+retry the join with another spelling. Budget decisions still have no used, limit
+or unit quantities; consumers must not infer them from capacity or usage rows.
