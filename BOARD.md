@@ -4,7 +4,7 @@
 
 `[################----]` **457/548 done · 31 running · 26 queued · 16 abandoned · 18 invisible**
 
-_Latest board activity: 2026-10-02T22:35:08Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-02T22:43:24Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (31)
 
@@ -44,7 +44,7 @@ Something could be acting on these right now.
 | [#557 [rickylabs/harness#540] Tour (video v2): launchBlock read-only walk](https://github.com/rickylabs/harness/issues/557) | `plan` | — |
 | [#558 [rickylabs/harness#540] Tour (video v2): launchBlock read-only walk](https://github.com/rickylabs/harness/issues/558) | `plan` | — |
 
-## Not on the board (5)
+## Not on the board (4)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -54,7 +54,6 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#422 Alpha proof source: Cockpit tier and role rerun](https://github.com/rickylabs/harness/issues/422) | — | — |
 | [#540 Tour (video v2): launchBlock read-only walk](https://github.com/rickylabs/harness/issues/540) | — | — |
 | [#541 Owner test: read-only walk to dispatch from the app](https://github.com/rickylabs/harness/issues/541) | — | — |
-| [PR562 Read AGY live assistant text and native completion](https://github.com/rickylabs/harness/pull/562) | — | — |
 
 ## Anomalies (37)
 
@@ -63,6 +62,10 @@ Open, and carrying no `status:` label — real work no column can see.
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+
+**`closed-without-status`**
+
+- **#562** — merged, but carries no status label; delivered work the board cannot see
 
 **`epic-milestone-conflict`**
 
@@ -107,7 +110,6 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#422** — open item has no status label, so it appears in no column
 - **#540** — open item has no status label, so it appears in no column
 - **#541** — open item has no status label, so it appears in no column
-- **#562** — open item has no status label, so it appears in no column
 
 ## Epics
 
