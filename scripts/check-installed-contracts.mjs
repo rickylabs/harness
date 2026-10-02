@@ -116,6 +116,10 @@ assert.equal(readAccountUsageDocument({...paidDocument,privatePath:'PRIVATE-CANA
 assert.equal(readProviderUsageSnapshot({...providers,prices:[{...providers.prices[0],rates:{...providers.prices[0].rates,input:'-1'}}]}).ok, false);
 const decision = {provider:'fixture-provider',model:'fixture-model',observedAt:usageAt,validUntil:'2026-01-01T00:00:15.000Z',available:false,reason:'budget-reached'};
 assert.deepEqual(readProviderBudgetDecisions([decision]), [decision]);
+const nativeNested = {...decision,model:'vendor/native-model'};
+assert.deepEqual(readProviderBudgetDecisions([nativeNested]),[nativeNested]);
+assert.equal(readProviderBudgetDecisions([{...decision,model:decision.provider+'/'+decision.model}]),null);
+assert.equal(readProviderBudgetDecisions([{...decision,model:decision.provider+'/'+decision.provider+'/'+decision.model}]),null);
 assert.equal(readProviderBudgetDecisions([{...decision,reason:'PRIVATE-CANARY'}]), null);
 assert.ok(ISSUE_LAUNCH_REFUSAL_REASONS.includes('budget-reached') && ISSUE_LAUNCH_REFUSAL_REASONS.includes('budget-unavailable'));
 

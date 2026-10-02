@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { chmod, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -112,4 +113,15 @@ it("maps source provider pools with exact counts, strict bounds and aggregate ag
     Array.from({length:129},(_,i)=>({provider:`fixture-${i}`,maxActive:1,active:0}))
   ]) assert.deepEqual(mapTransportAvailability(source(pools)),{ok:false,code:"shape-mismatch"});
   assert.deepEqual(mapTransportAvailability(snapshot({openCodeProviderPools:[]})),{ok:false,code:"shape-mismatch"});
+});
+
+it("source budget reader preserves provider-native IDs and withholds provider-prefixed fixtures", () => {
+  const base = JSON.parse(snapshot());
+  for (const name of ["native-flat", "native-nested", "native-tilde", "native-provider-like", "native-provider-name", "provider-prefixed", "provider-double-prefixed"]) {
+    const fixture = JSON.parse(readFileSync(new URL(`../../../contracts/test-fixtures/provider-budget-native-model/${name}.json`, import.meta.url), "utf8"));
+    const row = { ...fixture, observedAt: base.observedAt, validUntil: base.validUntil, available: false, reason: "budget-unavailable" };
+    const read = mapTransportAvailability(snapshot({ providerBudgets: [row] }));
+    if (name.startsWith("provider-")) assert.deepEqual(read, { ok: false, code: "shape-mismatch" });
+    else { assert.equal(read.ok, true); if (read.ok) assert.deepEqual(read.value.providerBudgets, [row]); }
+  }
 });
