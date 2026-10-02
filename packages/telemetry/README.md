@@ -795,6 +795,31 @@ AGY token/quota measurements remain unavailable. Contracts 0.34.0 adds `agy` and
 reader before enabling the Orchid writer. Bound database/WAL watches are hints
 for a fresh read, with the periodic safety scan retained.
 
+OpenCode issue collection joins the dispatched reservation's private
+`NativeSessionID` to one root in the explicitly configured native database.
+The 1.18.34 legacy adapter reads fixed session/message/part columns read-only with
+WAL visibility and per-issue/session/row/byte limits. It excludes unbound history,
+titles, paths, user text, reasoning and tool output. Unknown or mixed next-schema
+rows affect only their bound issue. Native database/WAL watches trigger rereads;
+they never prove a message or terminal state.
+
+Only persisted assistant text parts reach the existing screening function.
+Native token deltas are live-only, so this SQLite reader does not promise
+per-token updates. Stable step IDs replace the same persisted part on a reread.
+Success requires the latest user turn's final nonempty assistant stop, an exact
+native completion clock and no continuation tool. Resumed turns and pending
+children clear the root's prior end. Known native error/cancellation retain
+their own clock; unknown/empty/tool finishes and contradictory clocks cannot
+become Done. Typed provider/model/variant observations stay separate from the
+requested route; usage, quota and spend are not fabricated.
+
+Contracts 0.35.0 adds `opencode-transcript`, direct OpenCode route decoding and
+bounded model-specific syntax for exact qualified identifiers. Model observation
+provenance `opencode.message.providerID+modelID` records the exact native field
+pair used to format the qualified ID; provider and variant carry their own native
+message provenance. Public path/secret screening stays in place. Publish after
+0.34.0, and upgrade the reader/decoder before enabling the writer binding.
+
 `node scripts/check-orchid-native-live-pair.mjs --live` is an opt-in integration control. It reads
 a bounded native header sample using the normal home (or privately configured
 `DSH_TELEMETRY_NATIVE_HOME`), exercises one real parent/child pair under an explicitly synthetic

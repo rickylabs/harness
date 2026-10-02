@@ -30,3 +30,14 @@ test('configuration, fixtures, comments and observed identities stay data', () =
     'export const route = `${observed.provider}/${observed.id}`;',
   ]) assert.deepEqual(scan('packages/routing/src/new.ts', source, [], ids), []);
 });
+
+test('OpenCode route metadata vocabulary cannot become a compiled routing default', () => {
+  const file = 'packages/contracts/src/route.ts';
+  assert.deepEqual(scan(file, 'const source = { model: "opencode.message.providerID+modelID", effort: "opencode.message.variant" };', undefined, ids), []);
+  for (const source of [
+    'const route = { model: "vendor/native-engine-v9" };',
+    'const route = { model: "unknown-provider/future-model" };',
+    'const route = { effort: "high" };',
+    'const source = { model: "opencode.message.futureField" };',
+  ]) assert.ok(scan(file, source, undefined, ids).length > 0, source);
+});

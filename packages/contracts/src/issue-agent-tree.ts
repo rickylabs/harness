@@ -2,6 +2,7 @@
 import { readAgentObservations, MAX_AGENT_OBSERVATIONS, AGENT_UNAVAILABLE_REASONS, type AgentObservation,
   type AgentObservations, type AgentUnavailableReason } from "./agent-observations.js";
 import type { RepoRef } from "./snapshot.js";
+import { publicOpenCodeModel } from "./opencode-identity.js";
 
 export const ISSUE_AGENT_TREE_SCHEMA = 1 as const;
 /**
@@ -104,7 +105,7 @@ export interface AgentActivityStep {
   readonly summary: string | null;
   /** Additive in the next contracts minor; a screened, tool-specific display target. */
   readonly target?: { readonly kind: AgentActivityTargetKind; readonly value: string } | null;
-  readonly source: "codex-rollout" | "claude-transcript" | "agy-transcript";
+  readonly source: "codex-rollout" | "claude-transcript" | "agy-transcript" | "opencode-transcript";
 }
 export type AgentActivity =
   | { readonly availability: "available"; readonly reason: null; readonly observedAt: string;
@@ -313,11 +314,12 @@ function reason(value: unknown): AgentUnavailableReason {
   if (typeof value !== "string" || !AGENT_UNAVAILABLE_REASONS.includes(value as AgentUnavailableReason)) return bad();
   return value as AgentUnavailableReason;
 }
-function valueRow(value: unknown): AgentTreeValue {
+function valueRow(value: unknown, model?: { provider: string | null }): AgentTreeValue {
   const row = record(value, ["value", "source", "reason"]);
   if (row.source === "unavailable" && row.value === null) return { value: null, source: "unavailable", reason: reason(row.reason) };
   if ((row.source !== "dispatch" && row.source !== "native") || row.reason !== null) return bad();
-  return { value: label(row.value), source: row.source, reason: null };
+  if (model !== undefined && !publicOpenCodeModel(row.value, model.provider)) return bad();
+  return { value: model === undefined ? label(row.value) : row.value as string, source: row.source, reason: null };
 }
 function launchRevisionRow(value: unknown): AgentLaunchRevision {
   const row = record(value, ["value", "scope", "source", "reason"]);
@@ -374,7 +376,7 @@ function activityRow(value: unknown, capturedAt: string): AgentActivity {
     ids.add(s.id);
     const at = stamp(s.at);
     if (at > observedAt || !["tool", "command", "file", "message"].includes(s.kind as string) ||
-        (s.source !== "codex-rollout" && s.source !== "claude-transcript" && s.source !== "agy-transcript")) return bad();
+        (s.source !== "codex-rollout" && s.source !== "claude-transcript" && s.source !== "agy-transcript" && s.source !== "opencode-transcript")) return bad();
     if (s.toolName !== null && (typeof s.toolName !== "string" || !/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(s.toolName))) return bad();
     if (s.commandHead !== null && (typeof s.commandHead !== "string" ||
         !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}(?: [A-Za-z0-9][A-Za-z0-9_.-]{0,31})?$/.test(s.commandHead))) return bad();
@@ -628,8 +630,9 @@ function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<Iss
     ? tokenUsageRow(row.tokenUsage, capturedAt, decodedBudget.tokenLimit) : undefined;
   const resourceHistory = Object.hasOwn(row, "resourceHistory")
     ? resourceHistoryRow(row.resourceHistory, capturedAt, parentAgentId === null, decodedBudget, tokenUsage) : undefined;
-  return { dispatchId, observation: row.observation, harness: valueRow(row.harness), provider: valueRow(row.provider),
-    router, routePolicy, model: valueRow(row.model),
+  const harness = valueRow(row.harness), provider = valueRow(row.provider);
+  return { dispatchId, observation: row.observation, harness, provider,
+    router, routePolicy, model: valueRow(row.model, harness.value === "opencode" ? { provider: provider.value } : undefined),
     ...(profileRevision === undefined ? {} : { profileRevision, matrixRevision: matrixRevision! }),
     ...(effort === undefined ? {} : { effort }),
     ...(parentAgentId === undefined ? {} : { parentAgentId: parentAgentId as string | null }),
@@ -776,7 +779,7 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
         } else if (a.router.value !== null) {
           if (parent?.state !== "confirmed-root") return bad();
           if (a.harness.source !== "dispatch" || a.router.value !== "direct" ||
-              (a.harness.value !== "codex" && a.harness.value !== "claude" && a.harness.value !== "agy")) return bad();
+              (a.harness.value !== "codex" && a.harness.value !== "claude" && a.harness.value !== "agy" && a.harness.value !== "opencode")) return bad();
         }
         if (a.routePolicy.value !== null && parent?.state !== "confirmed-root") return bad();
       }
