@@ -25,7 +25,8 @@ const bytes = (field: number, value: string | Buffer) => {
 };
 const time = (field: number, offset: number) => bytes(field, integer(1, seconds + offset));
 type Options = { id?: string; parent?: string; active?: boolean; stop?: number; message?: string; status?: number;
-  interrupted?: boolean; killed?: boolean; childActive?: boolean; staleSummary?: boolean; userIndex?: number };
+  interrupted?: boolean; killed?: boolean; childActive?: boolean; staleSummary?: boolean; userIndex?: number;
+  summaryState?: number; summaryRunning?: boolean; summaryNotIdle?: boolean };
 function fixture(o: Options = {}) {
   const id = o.id ?? rootID, status = o.status ?? (o.active ? 2 : 3);
   const metadata = Buffer.concat([time(1, 1), ...(o.active ? [] : [time(8, 2)])]);
@@ -36,11 +37,11 @@ function fixture(o: Options = {}) {
   { idx: 1, step_type: 15, status, step_format: 0, metadata, error_details: null,
     step_payload: Buffer.concat([integer(1, 15), integer(4, status), bytes(5, metadata), bytes(20, response)]) }];
   const summary = { conversation_id: id, parent_conversation_id: o.parent ?? "", step_count: rows.length,
-    last_user_input_step_index: 0, not_fully_idle: o.active ? 1 : 0, killed: o.killed ? 1 : 0,
+    last_user_input_step_index: 0, not_fully_idle: o.active || o.summaryNotIdle ? 1 : 0, killed: o.killed ? 1 : 0,
     trajectory_id: trajectoryID,
-    raw_summary: Buffer.concat([bytes(4, trajectoryID), integer(2, rows.length), integer(5, o.active ? 2 : 1), integer(16, o.userIndex ?? 0),
+    raw_summary: Buffer.concat([bytes(4, trajectoryID), integer(2, rows.length), integer(5, o.summaryState ?? (o.active ? 2 : 1)), integer(16, o.userIndex ?? 0),
       time(7, 0), time(3, o.staleSummary ? 0 : 3), integer(18, o.childActive ? 1 : 0),
-      integer(21, o.active ? 1 : 0), integer(23, o.killed ? 1 : 0), integer(25, o.interrupted ? 1 : 0)]) };
+      integer(21, o.active || o.summaryRunning ? 1 : 0), integer(23, o.killed ? 1 : 0), integer(25, o.interrupted ? 1 : 0)]) };
   return { rows, summary };
 }
 const captured = (seconds + 30) * 1000;
@@ -72,6 +73,17 @@ it("AGY cancellation and error keep their native timestamp and never become succ
   for (const stop of [13, 16, 17, 18, 19, 20]) {
     const f = fixture({ stop }), run = agyConversation(f.summary, f.rows, "private", captured)!;
     assert.equal(run.outcome, "failed"); assert.equal(run.terminalCause, stop === 16 ? "cancelled" : "error");
+  }
+});
+it("AGY summary-only resumed activity clears every prior terminal outcome before trajectory updates", () => {
+  for (const activity of [{ summaryState: 2 }, { summaryState: 4 }, { summaryRunning: true },
+    { summaryNotIdle: true }, { childActive: true }]) {
+    for (const terminal of [{ stop: 2 }, { stop: 16 }, { stop: 17 }, { status: 6 }, { status: 7 }, { interrupted: true }]) {
+      const f = fixture({ ...activity, ...terminal });
+      const run = agyConversation(f.summary, f.rows, "synthetic-origin", captured)!;
+      assert.ok(run); assert.equal(run.outcome, "running");
+      assert.equal(run.terminalAt, undefined); assert.equal(run.terminalCause, undefined);
+    }
   }
 });
 it("AGY private text stays generic and payload/header/summary disagreements fail closed", () => {
@@ -181,6 +193,19 @@ it("AGY feed serves screened live text and exact Done while another issue stays 
     const live = streaming.issues.find(i => i.issueNumber === 42)?.dispatches[0]?.agents[0]!;
     assert.equal(live.liveness.state, "running"); assert.equal(live.endedAt, null);
     assert.equal(live.activity?.steps[0]?.summary, "The work is complete.");
+    // Summary-before-trajectory window: native summary remains active while the
+    // trajectory still ends in an older cancellation/error. Both reads are stable.
+    for (const stop of [2, 16, 17]) {
+      const old = fixture({ stop }).rows[1]!;
+      f.native.db.prepare("UPDATE steps SET status=?,metadata=?,step_payload=? WHERE idx=1")
+        .run(old.status, old.metadata, old.step_payload);
+      const resumed = await collectIssueAgentTree(options);
+      assert.equal(readIssueAgentTreeSnapshot(resumed).ok, true);
+      const current = resumed.issues.find(i => i.issueNumber === 42)?.dispatches[0]?.agents[0]!;
+      assert.equal(current.liveness.state, "running"); assert.equal(current.endedAt, null);
+      assert.equal(current.terminalOutcome.value, null);
+      assert.equal(resumed.issues.find(i => i.issueNumber === 43)?.complete, false);
+    }
   } finally { await f.close(); }
 });
 it("AGY bound native WAL changes wake the feed without watching other paths", async () => {

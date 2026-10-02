@@ -148,9 +148,13 @@ export function agyConversation(summary: Row, rows: readonly Row[], origin: stri
       summary.not_fully_idle === 0 && summary.killed === 0;
     const interrupted = (numeric(native, 25) ?? 0) !== 0;
     const killed = (numeric(native, 23) ?? 0) !== 0 || summary.killed !== 0;
-    let outcome: RunRecord["outcome"] = [2, 4].includes(state) ? "running" : "unknown";
+    // The summary can publish a resumed turn before its trajectory is updated.
+    // Current native activity invalidates every prior end, including error/cancel.
+    const active = [2, 4].includes(state) || (numeric(native, 21) ?? 0) !== 0 ||
+      (numeric(native, 18) ?? 0) !== 0 || summary.not_fully_idle !== 0;
+    let outcome: RunRecord["outcome"] = active ? "running" : "unknown";
     let terminalAt: string | undefined, terminalCause: RunRecord["terminalCause"];
-    if (!pending && final !== null && final.at >= updatedAt) {
+    if (!active && !pending && final !== null && final.at >= updatedAt) {
       if ([6, 12].includes(final.status) || interrupted || final.stop === 16) { outcome = "failed"; terminalCause = "cancelled"; terminalAt = final.at; }
       else if (final.status === 7 || final.error || [13, 17, 18, 19, 20].includes(final.stop ?? 0)) { outcome = "failed"; terminalCause = "error"; terminalAt = final.at; }
       // STOP_PATTERN is the native explicit stop enum; unknown, function-call,

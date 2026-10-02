@@ -787,7 +787,9 @@ planner response text reaches the existing screening function. User prompts,
 thinking, tool output, titles, native IDs and store paths never enter the feed.
 A coherent latest user turn, native final status/stop reason and completion time
 are required for an end; idle, mtime and an empty response cannot prove Done.
-Resumes clear the prior end, and unreadable/unknown stores affect only their issue.
+Current summary activity clears prior success, error and cancellation ends even
+when the trajectory has not yet recorded the resumed turn. Unreadable/unknown
+stores affect only their issue.
 AGY token/quota measurements remain unavailable. Contracts 0.34.0 adds `agy` and
 `agy-transcript` plus AGY direct-route decoding; upgrade the consumer decoder and
 reader before enabling the Orchid writer. Bound database/WAL watches are hints
