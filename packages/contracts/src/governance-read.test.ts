@@ -257,7 +257,8 @@ it("governance budgets preserve native nested models and refuse a provider-prefi
   const load = (name: string): Record<string, unknown> => JSON.parse(readFileSync(
     new URL(`../test-fixtures/provider-budget-native-model/${name}.json`, import.meta.url), "utf8"));
   for (const name of ["native-flat", "native-nested", "native-tilde", "native-provider-like", "native-provider-name", "provider-prefixed", "provider-double-prefixed"]) {
-    const value = withAvailability(), row = { ...load(name), observedAt: value.transportAvailability.observedAt, validUntil: value.transportAvailability.validUntil };
+    const value = withAvailability(), row = { ...load(name), observedAt: value.transportAvailability.observedAt,
+      validUntil: value.transportAvailability.validUntil, available: false, reason: "budget-unavailable" };
     value.transportAvailability.providerBudgets = [row];
     if (name.startsWith("provider-")) refuse(value);
     else {

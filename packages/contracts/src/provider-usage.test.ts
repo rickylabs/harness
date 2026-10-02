@@ -124,8 +124,11 @@ test("per-model budget decisions carry only the reader's fixed known/unavailable
   assert.equal(readProviderBudgetDecisions([row, row]), null); assert.equal(readProviderBudgetDecisions(Array(2)), null);
 });
 
-const nativeModelFixture = (name: string): Record<string, unknown> => JSON.parse(readFileSync(
-  new URL(`../test-fixtures/provider-budget-native-model/${name}.json`, import.meta.url), "utf8"));
+// Committed fixtures contain stable identity only; synthetic decision clocks are test setup.
+const nativeModelFixture = (name: string): Record<string, unknown> => ({
+  ...JSON.parse(readFileSync(new URL(`../test-fixtures/provider-budget-native-model/${name}.json`, import.meta.url), "utf8")),
+  observedAt: at, validUntil: end, available: false, reason: "budget-unavailable",
+});
 test("provider budget model fixtures require native IDs and preserve exact provider/model pairs", () => {
   for (const name of ["native-flat", "native-nested", "native-tilde", "native-provider-like", "native-provider-name"]) {
     const row = nativeModelFixture(name), read = readProviderBudgetDecisions([row]);

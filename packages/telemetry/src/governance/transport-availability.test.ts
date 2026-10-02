@@ -119,7 +119,7 @@ it("source budget reader preserves provider-native IDs and withholds provider-pr
   const base = JSON.parse(snapshot());
   for (const name of ["native-flat", "native-nested", "native-tilde", "native-provider-like", "native-provider-name", "provider-prefixed", "provider-double-prefixed"]) {
     const fixture = JSON.parse(readFileSync(new URL(`../../../contracts/test-fixtures/provider-budget-native-model/${name}.json`, import.meta.url), "utf8"));
-    const row = { ...fixture, observedAt: base.observedAt, validUntil: base.validUntil };
+    const row = { ...fixture, observedAt: base.observedAt, validUntil: base.validUntil, available: false, reason: "budget-unavailable" };
     const read = mapTransportAvailability(snapshot({ providerBudgets: [row] }));
     if (name.startsWith("provider-")) assert.deepEqual(read, { ok: false, code: "shape-mismatch" });
     else { assert.equal(read.ok, true); if (read.ok) assert.deepEqual(read.value.providerBudgets, [row]); }

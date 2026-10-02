@@ -1,8 +1,4 @@
 {
   "provider": "fixture-provider",
-  "model": "fixture-provider",
-  "observedAt": "2026-09-30T12:00:00.123Z",
-  "validUntil": "2026-09-30T12:01:00.123Z",
-  "available": false,
-  "reason": "budget-unavailable"
+  "model": "fixture-provider"
 }
