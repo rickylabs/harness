@@ -133,8 +133,16 @@ export function buildAgentObservations(input: {
     const nativeRunning = measuredRunning(run, input.observedAt);
     const running = nativeRunning.value === true || sourceDispatch?.source !== "claude" ? nativeRunning
       : claudeStatusRunning(sourceDispatch, input.observedAt);
-    const bound = { ...root, cost, running,
-      revision: digest(JSON.stringify({ prior: root.revision, cost, running })) };
+    const nativeRoute = sourceDispatch?.source === "opencode" ? projectRouteIdentity({ ...root.route,
+      observed: {
+        provider: { value: run.identity.provider, source: "opencode.message.providerID" },
+        model: { value: run.identity.model, source: "opencode.message.providerID+modelID" },
+        effort: { value: run.identity.effort, source: "opencode.message.variant" },
+        cwd: { value: null, source: "opencode.message.path.cwd" },
+      } }) : root.route;
+    const bound = { ...root, cost, running, route: nativeRoute,
+      revision: digest(JSON.stringify({ prior: root.revision, cost, running,
+        ...(sourceDispatch?.source === "opencode" ? { route: nativeRoute } : {}) })) };
     agents[agents.indexOf(root)] = bound;
     roots.set(key, bound);
   }

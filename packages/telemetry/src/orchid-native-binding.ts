@@ -7,7 +7,8 @@ import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
 const digest = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 const keyFor = (source: string, identity: string) => digest(source + "\0" + identity);
-const bindings = new WeakMap<DispatchEvidence, { key: string | null; agyDirectory?: string }>();
+const bindings = new WeakMap<DispatchEvidence, { key: string | null; agyDirectory?: string;
+  opencodeID?: string; record?: string; bindingRevision?: string }>();
 // Same bound for the private binding (which includes the profile) and snapshot reread.
 const MAX_BYTES = 262_144;
 const placementName = (value: unknown): value is string => typeof value === "string" &&
@@ -48,7 +49,7 @@ export async function readOrchidLaunchBinding(record: string, reservation: strin
 export async function readOrchidNativeBinding(record: string, reservation: string, dispatch: DispatchEvidence): Promise<void> {
   bindings.set(dispatch, { key: null });
   try {
-    if (dispatch.dispatchState !== "dispatched" || (dispatch.source !== "codex" && dispatch.source !== "claude" && dispatch.source !== "agy")) return;
+    if (dispatch.dispatchState !== "dispatched" || (dispatch.source !== "codex" && dispatch.source !== "claude" && dispatch.source !== "agy" && dispatch.source !== "opencode")) return;
     const raw = await readPrivate(join(record, "binding.json"));
     const binding = JSON.parse(raw.toString("utf8")) as Record<string, unknown>;
     const id = binding.NativeSessionID;
@@ -73,7 +74,9 @@ export async function readOrchidNativeBinding(record: string, reservation: strin
           basename(dirname(store.directory)) !== reservation || basename(dirname(dirname(store.directory))) !== ".divybot-native") return;
       agyDirectory = store.directory;
     }
-    bindings.set(dispatch, { key: keyFor(dispatch.source, id), ...(agyDirectory === undefined ? {} : { agyDirectory }) });
+    if (dispatch.source === "opencode" && !/^ses_[A-Za-z0-9_-]{1,252}$/.test(id)) return;
+    bindings.set(dispatch, { key: keyFor(dispatch.source, id), ...(agyDirectory === undefined ? {} : { agyDirectory }),
+      ...(dispatch.source === "opencode" ? { opencodeID: id, record, bindingRevision: digest(raw) } : {}) });
   } catch { /* Private failures are represented by unavailable ancestry, never exception text. */ }
 }
 /** Resolve only one same-source native root. Existing telemetry owns parent-chain traversal. */
@@ -84,7 +87,7 @@ export function resolveOrchidNativeRoot(dispatch: DispatchEvidence, runs: readon
 }
 /** Match a head identity to Orchid's private root without revealing either identity or key. */
 export function matchesOrchidNativeRootIdentity(dispatch: DispatchEvidence, id: string,
-  source: "codex" | "claude" | "agy"): boolean {
+  source: "codex" | "claude" | "agy" | "opencode"): boolean {
   const key = bindings.get(dispatch)?.key;
   return key !== null && key !== undefined && dispatch.source === source && keyFor(source, id) === key;
 }
@@ -95,4 +98,17 @@ export function orchidAGYStoreDirectory(dispatch: DispatchEvidence): string | nu
 /** Private reader rows cannot acquire credentials from the legacy exported DispatchResult surface. */
 export function hasOrchidNativeBindingBoundary(dispatch: DispatchEvidence): boolean {
   return bindings.has(dispatch);
+}
+/** Exact query parameter remains private; never add it to a dispatch/public projection. */
+export function orchidOpenCodeSessionID(dispatch: DispatchEvidence): string | null {
+  return dispatch.source === "opencode" ? bindings.get(dispatch)?.opencodeID ?? null : null;
+}
+/** A changed binding/dispatch during a database read invalidates this issue's scan. */
+export async function verifyOrchidOpenCodeBinding(dispatch: DispatchEvidence): Promise<boolean> {
+  const b = bindings.get(dispatch);
+  if (dispatch.source !== "opencode" || !b?.record || !b.opencodeID || !b.bindingRevision) return false;
+  try {
+    return digest(await readPrivate(join(b.record, "binding.json"))) === b.bindingRevision &&
+      digest(await readPrivate(join(b.record, "dispatch.json"))) === dispatch.revision;
+  } catch { return false; }
 }

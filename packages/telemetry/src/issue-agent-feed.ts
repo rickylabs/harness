@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_ACCEPTED_REASONS, AGENT_ACTION_REJECTED_REASONS, MAX_AGENT_HISTORY, MAX_AGENT_OBSERVATIONS,
   MAX_ISSUE_AGENT_TREE_BYTES, MAX_AGENT_RESOURCE_POINTS, ISSUE_AGENT_TREE_FRESH_MS, AGENT_EFFORTS, unavailableAgentCost,
-  projectRouteIdentity,
+  projectRouteIdentity, publicOpenCodeModel,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
   type AgentResourceHistory, type AgentTimelineEvent, type AgentTimelineReason,
   type IssueLaunchBlock, type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
@@ -21,11 +21,11 @@ const publicLabel = (value: string | null | undefined): value is string =>
 const safe = (value: string | null | undefined, source: "dispatch" | "native"): AgentTreeValue =>
   publicLabel(value)
     ? { value, source, reason: null } : unavailable;
-function publicObservation(observation: AgentObservation): AgentObservation {
-  const clean = (leaf: { readonly value: string | null; readonly source: string }) =>
-    ({ ...leaf, value: publicLabel(leaf.value) ? leaf.value : null });
+function publicObservation(observation: AgentObservation, source: string | null): AgentObservation {
+  const clean = (leaf: { readonly value: string | null; readonly source: string }, model = false, provider?: string | null) =>
+    ({ ...leaf, value: (model && source === "opencode" ? publicOpenCodeModel(leaf.value, provider) : publicLabel(leaf.value)) ? leaf.value : null });
   const side = (name: "requested" | "observed") => ({
-    provider: clean(observation.route[name].provider), model: clean(observation.route[name].model),
+    provider: clean(observation.route[name].provider), model: clean(observation.route[name].model, true, observation.route[name].provider.value),
     effort: clean(observation.route[name].effort), cwd: clean(observation.route[name].cwd),
   });
   const route = projectRouteIdentity({ requested: side("requested"), observed: side("observed") });
@@ -110,7 +110,10 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const provenAncestry = observation.parentAgentId.state === "confirmed-root" || observation.parentAgentId.state === "known-parent";
   const harness = root ? safe(dispatch.harness ?? dispatch.source, "dispatch") : safe(run?.source, "native");
   const provider = root ? safe(observation.route.requested.provider.value, "dispatch") : safe(run?.identity.provider, "native");
-  const model = root ? safe(observation.route.requested.model.value, "dispatch") : safe(run?.identity.model, "native");
+  const modelValue = root ? observation.route.requested.model.value : run?.identity.model;
+  const model = dispatch.source === "opencode" && publicOpenCodeModel(modelValue, root ? observation.route.requested.provider.value : run?.identity.provider)
+    ? { value: modelValue, source: root ? "dispatch" as const : "native" as const, reason: null } :
+      dispatch.source === "opencode" ? unavailable : safe(modelValue, root ? "dispatch" : "native");
   const requestedEffort = observation.parentAgentId.state === "confirmed-root"
     ? observation.route.requested.effort.value : null;
   const effort: AgentTreeValue = typeof requestedEffort === "string" &&
@@ -119,7 +122,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     : requestedEffort !== null ? { value: null, source: "unavailable", reason: "binding_invalid" } : unavailable;
   const parentAgentId = observation.parentAgentId.state === "known-parent" ? observation.parentAgentId.value : null;
   const router = provenAncestry && dispatch.router?.value === "direct" && dispatch.router.source === "dispatch" &&
-    (dispatch.source === "codex" || dispatch.source === "claude" || dispatch.source === "agy") ? dispatch.router : unavailable;
+    (dispatch.source === "codex" || dispatch.source === "claude" || dispatch.source === "agy" || dispatch.source === "opencode") ? dispatch.router : unavailable;
   const unboundRevision = { value: null, scope: "root-dispatch", source: "unavailable", reason: "source_not_bound" } as const;
   const profileRevision = provenAncestry ? dispatch.profileRevision ?? unboundRevision : unboundRevision;
   const matrixRevision = provenAncestry ? dispatch.matrixRevision ?? unboundRevision : unboundRevision;
@@ -165,10 +168,11 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     ? { state: "stopped", observedAt: stopAt, reason: null }
     : seatAt !== null ? { state: "stopping", observedAt: seatAt, reason: null }
       : { state: "unknown", observedAt: null, reason: "source_not_bound" };
-  const nativeTerminal = !(run?.source === "claude" && !root) &&
+  const nativeClock = run?.source === "opencode" ? time(run.terminalAt, now) : null;
+  const nativeTerminal = !(run?.source === "claude" && !root) && (run?.source !== "opencode" || nativeClock !== null) &&
     (run?.outcome === "complete" || run?.outcome === "failed") && outcomeAt !== null;
   const liveness: IssueAgentTreeAgent["liveness"] = nativeTerminal
-    ? { state: "ended", evidence: "native-outcome", observedAt: now, reason: null }
+    ? { state: "ended", evidence: "native-outcome", observedAt: nativeClock ?? now, reason: null }
     : childEndAt !== null ? { state: "ended", evidence: "native-outcome", observedAt: childEndAt, reason: null }
     : stopAt !== null ? { state: "ended", evidence: "stop-observation", observedAt: stopAt, reason: null }
     : teardownAt !== null ? { state: "ended", evidence: "teardown-observation", observedAt: teardownAt, reason: null }
@@ -203,9 +207,9 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     : childEndAt !== null
       ? { value: childCompletion!.status === "completed" ? "succeeded" : "failed", source: "native-outcome", observedAt: childEndAt, reason: null }
     : run!.outcome === "complete"
-      ? { value: "succeeded", source: "native-outcome", observedAt: now, reason: null }
+      ? { value: "succeeded", source: "native-outcome", observedAt: nativeClock ?? now, reason: null }
       : run!.terminalCause === "error" || run!.terminalCause === "cancelled"
-        ? { value: run!.terminalCause === "error" ? "failed" : "cancelled", source: "native-outcome", observedAt: now, reason: null }
+        ? { value: run!.terminalCause === "error" ? "failed" : "cancelled", source: "native-outcome", observedAt: nativeClock ?? now, reason: null }
         : { value: null, source: "unavailable", observedAt: null, reason: "measurement_missing" }
     : { value: null, source: "unavailable", observedAt: null, reason: "measurement_missing" };
   const unplaced = { value: null, basis: "unavailable", observedAt: null, reason: "source_not_bound" } as const;
@@ -359,8 +363,8 @@ export function buildIssueAgentTreeSnapshot(input: {
   const dispatchById = new Map(dispatches.map(d => [opaque("assignment", d.runId), d]));
   const observations: AgentObservations = { ...input.observations,
     agents: input.observations.agents.map(raw => {
-      const publicRow = publicObservation(raw);
       const dispatch = dispatchById.get(raw.assignment.id);
+      const publicRow = publicObservation(raw, dispatch?.source ?? null);
       const seat = raw.parentAgentId.state === "confirmed-root"
         ? time(dispatch?.stop?.seatObservedAt ?? undefined, input.observations.observedAt) : null;
       return seat === null ? publicRow : { ...publicRow,

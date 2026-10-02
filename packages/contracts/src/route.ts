@@ -1,3 +1,4 @@
+import { publicOpenCodeModel } from "./opencode-identity.js";
 /** The complete route identity that must agree before a provider sends useful work. */
 export const ROUTE_FIELDS = ["provider", "model", "effort", "cwd"] as const;
 
@@ -19,7 +20,11 @@ export type RouteSource =
   | "thread/start.result.modelProvider"
   | "thread/start.result.model"
   | "thread/start.result.reasoningEffort"
-  | "thread/start.result.cwd";
+  | "thread/start.result.cwd"
+  | "opencode.message.providerID"
+  | "opencode.message.providerID+modelID"
+  | "opencode.message.variant"
+  | "opencode.message.path.cwd";
 
 export interface RouteIdentityInput {
   readonly provider: unknown;
@@ -67,6 +72,11 @@ const OBSERVED_SOURCES: Readonly<Record<RouteField, RouteSource>> = {
   model: "thread/start.result.model",
   effort: "thread/start.result.reasoningEffort",
   cwd: "thread/start.result.cwd",
+};
+/** Native OpenCode message fields have their own provenance; they are not thread/start results. */
+export const OPENCODE_OBSERVED_SOURCES: Readonly<Record<RouteField, RouteSource>> = {
+  provider: "opencode.message.providerID", model: "opencode.message.providerID+modelID",
+  effort: "opencode.message.variant", cwd: "opencode.message.path.cwd",
 };
 
 function isAbsoluteCwd(value: string): boolean {
@@ -142,9 +152,10 @@ export function describeRouteEvidence(evidence: Omit<RouteIdentityEvidence, "det
 export function compareRouteIdentity(
   requestedInput: RouteIdentityInput,
   observedInput: RouteIdentityInput,
+  nativeSource?: "opencode",
 ): RouteIdentityEvidence {
   const requested = values(requestedInput, REQUESTED_SOURCES, "requested");
-  const observed = values(observedInput, OBSERVED_SOURCES, "observed");
+  const observed = values(observedInput, nativeSource === "opencode" ? OPENCODE_OBSERVED_SOURCES : OBSERVED_SOURCES, "observed");
   const invalid: InvalidRouteField[] = [];
   const mismatches: RouteField[] = [];
 
@@ -174,11 +185,13 @@ export function compareRouteIdentity(
 export function isRouteEvidenceVerified(evidence: RouteIdentityEvidence | undefined): boolean {
   try {
     if (evidence == null || evidence.status !== "known") return false;
+    const observedSources = evidence.observed.provider.source === OPENCODE_OBSERVED_SOURCES.provider
+      ? OPENCODE_OBSERVED_SOURCES : OBSERVED_SOURCES;
     return ROUTE_FIELDS.every((field) => {
       const requestedItem = evidence.requested?.[field];
       const observedItem = evidence.observed?.[field];
       if (requestedItem?.source !== REQUESTED_SOURCES[field]) return false;
-      if (observedItem?.source !== OBSERVED_SOURCES[field]) return false;
+      if (observedItem?.source !== observedSources[field]) return false;
       const requested = requestedItem.value;
       const observed = observedItem.value;
       if (typeof requested !== "string" || requested.trim().length === 0) return false;
@@ -194,16 +207,20 @@ export function isRouteEvidenceVerified(evidence: RouteIdentityEvidence | undefi
 /** Public read projection. Withhold cwd and recompute diagnostics; never trust supplied status. */
 export function projectRouteIdentity(input: unknown): RouteIdentityEvidence {
   const raw = input as RouteIdentityEvidence | null | undefined;
+  const nativeSource = raw?.observed?.provider?.source === OPENCODE_OBSERVED_SOURCES.provider ? "opencode" : undefined;
   const side = (name: RouteSide, sources: Readonly<Record<RouteField, RouteSource>>): RouteIdentityInput => {
     const read = (field: RouteField): string | null => {
       if (field === "cwd") return null;
       const item = raw?.[name]?.[field];
       const value = item?.value;
+      const provider = raw?.[name]?.provider?.value;
       return item?.source === sources[field] && typeof value === "string" &&
-        /^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,127}$/.test(value) && !value.includes("..")
+        (field === "model" && nativeSource === "opencode" ? publicOpenCodeModel(value, provider) :
+          /^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,127}$/.test(value) && !value.includes(".."))
         ? value : null;
     };
     return { provider: read("provider"), model: read("model"), effort: read("effort"), cwd: null };
   };
-  return compareRouteIdentity(side("requested", REQUESTED_SOURCES), side("observed", OBSERVED_SOURCES));
+  return compareRouteIdentity(side("requested", REQUESTED_SOURCES),
+    side("observed", nativeSource === "opencode" ? OPENCODE_OBSERVED_SOURCES : OBSERVED_SOURCES), nativeSource);
 }

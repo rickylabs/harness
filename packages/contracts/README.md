@@ -1030,3 +1030,25 @@ When joining a provider-qualified catalog route, remove exactly its own provider
 prefix once before joining both fields. A duplicated prefix is invalid; do not
 retry the join with another spelling. Budget decisions still have no used, limit
 or unit quantities; consumers must not infer them from capacity or usage rows.
+### OpenCode persisted activity and native end (0.35.0)
+
+`AgentActivityStep.source` accepts `opencode-transcript`. Existing opaque agent
+and step IDs, activity, liveness, terminal outcome and end fields are reused.
+Direct OpenCode dispatches are decoded like the other native transports. The
+model field alone accepts bounded native qualified identifiers with colon,
+nested slash and leading tilde; provider prefixes must agree independently and
+private-path/secret screening still masks unsafe metadata. Other labels keep
+their existing grammar.
+
+OpenCode route observations use `opencode.message.providerID`,
+`opencode.message.providerID+modelID`, `opencode.message.variant` and
+`opencode.message.path.cwd` provenance. The model is formatted from the exact
+native provider/model pair; missing variant and private cwd stay null. These
+observations never borrow the requested route or Codex thread-start provenance.
+
+Activity represents persisted assistant text parts, with native clocks and the
+existing sentence screening. Token deltas are not durable and are not synthesized.
+Only a completed final nonempty stop without continuation tools can succeed;
+native error and cancellation remain distinct, and resumed turns clear old ends.
+Consumers must upgrade this decoder before a reader emits the new activity source
+or route provenance. Release 0.35.0 follows the AGY 0.34.0 release.

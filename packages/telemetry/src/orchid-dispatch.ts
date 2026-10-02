@@ -4,7 +4,7 @@ import { constants } from "node:fs";
 import { lstat, open, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents";
-import { ISSUE_LAUNCH_BLOCK_REASONS, ISSUE_LAUNCH_REFUSAL_REASONS, ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
+import { openCodeModelSyntax, openCodeProvider, ISSUE_LAUNCH_BLOCK_REASONS, ISSUE_LAUNCH_REFUSAL_REASONS, ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
   type OrchidRouteObservedReasons, type AgentBudget, type AgentRoutePolicy, type AgentLaunchRevision } from "@rickylabs/harness-contracts";
 import { readOrchidNativeBinding, readOrchidLaunchBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
 import { readOrchidStopObservation } from "./orchid-stop-observation.js";
@@ -222,11 +222,15 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         // or poisoning unrelated reads. Running receipts still require handles.
         const unlocatedFailure = input.state === "uncertain" && input.location === null;
         if (!unlocatedFailure && (location === null || !label(location.paneId) || !label(location.workspaceId))) throw new Error();
-        if (!label(input.provider) || typeof input.model !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/.test(input.model) || input.model.includes("..") || !label(input.effort) || !["codex", "claude", "agy"].includes(input.source as string)) throw new Error();
+        const validModel = input.source === "opencode"
+          ? openCodeProvider(input.provider) && openCodeModelSyntax(input.model, input.provider)
+          : typeof input.model === "string" && /^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/.test(input.model) && !input.model.includes("..");
+        if (!label(input.provider) || !validModel || !label(input.effort) || !["codex", "claude", "agy", "opencode"].includes(input.source as string)) throw new Error();
         // Transport is not router. No native session or observed route can be established from a pane id.
         const route = projectRouteIdentity(compareRouteIdentity(
           { provider: input.provider, model: input.model, effort: input.effort, cwd: null },
           { provider: null, model: null, effort: null, cwd: null },
+          input.source === "opencode" ? "opencode" : undefined,
         ));
         const timestamp = input.observedAt ?? sourceModifiedAt;
         const at = typeof timestamp === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(timestamp) &&
@@ -254,9 +258,9 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         }
         const dispatch: DispatchEvidence = { observedAt: at, revision, linkageBasis: "dispatcher-confirmed", runId: input.runId as string, external: null,
           host: launch.host, profileRevision, matrixRevision,
-          source: input.source === "codex" || input.source === "claude" || input.source === "agy" ? input.source : null,
-          harness: input.source as "codex" | "claude" | "agy", budget,
-          router: input.source === "codex" || input.source === "claude" || input.source === "agy"
+          source: input.source === "codex" || input.source === "claude" || input.source === "agy" || input.source === "opencode" ? input.source : null,
+          harness: input.source as "codex" | "claude" | "agy" | "opencode", budget,
+          router: input.source === "codex" || input.source === "claude" || input.source === "agy" || input.source === "opencode"
             ? { value: "direct", source: "dispatch", reason: null }
             : { value: null, source: "unavailable", reason: "source_not_bound" },
           routePolicy: receipt.policy,

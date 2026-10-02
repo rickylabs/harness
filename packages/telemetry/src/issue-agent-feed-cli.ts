@@ -9,13 +9,14 @@ import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FR
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { scanClaudeIssue } from "./backfill/claude-issue.js";
 import { scanAGYIssue } from "./backfill/agy.js";
+import { scanOpenCodeIssue } from "./backfill/opencode-issue.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { CLAUDE_CHILD_EVENT_ROOT, readClaudeChildStarts } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import { readActionReceipts } from "./action-receipt-cli.js";
 import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
 import type { OrchidLaunchState } from "./orchid-dispatch.js";
-import { matchesOrchidNativeRootIdentity, orchidAGYStoreDirectory, resolveOrchidNativeRoot } from "./orchid-native-binding.js";
+import { matchesOrchidNativeRootIdentity, orchidAGYStoreDirectory, orchidOpenCodeSessionID, verifyOrchidOpenCodeBinding, resolveOrchidNativeRoot } from "./orchid-native-binding.js";
 import { HOST_CAPACITY_PLACEMENT_HOST, readLocalHostCapacity } from "./host-capacity.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
@@ -99,7 +100,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       continue;
     }
     if (group.dispatches.length === 0) continue;
-    if (group.dispatches.some(d => (d.source !== "codex" && d.source !== "claude" && d.source !== "agy") || d.observedAt === undefined)) continue;
+    if (group.dispatches.some(d => (d.source !== "codex" && d.source !== "claude" && d.source !== "agy" && d.source !== "opencode") || d.observedAt === undefined)) continue;
     if (group.dispatches.length > MAX_ISSUE_DISPATCHES || remainingBytes <= 0 ||
         group.dispatches.some(d => nowMs > Date.parse(d.observedAt!) + MAX_DISPATCH_AGE_MS)) {
       entry.snapshot = unavailableSnapshot(options.now, "scan_limit"); continue;
@@ -143,6 +144,22 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       runs.push(...scan.runs);
     }
     if (agyUnavailable) continue;
+    let openCodeUnavailable = false;
+    for (const dispatch of group.dispatches.filter(d => d.source === "opencode")) {
+      const id = orchidOpenCodeSessionID(dispatch);
+      if (id === null) { openCodeUnavailable = true; break; }
+      const path = defaultRoots(options.home).opencodeDb!;
+      const scan = await scanOpenCodeIssue(path, id, issueFileLimit - runs.length, remainingBytes, nowMs);
+      remainingBytes -= scan.bytesRead;
+      for (const file of scan.files) options.watchFiles?.add(file);
+      options.watchStoreRoots?.add(path.slice(0, path.lastIndexOf("/")));
+      if (scan.reason !== null || !await verifyOrchidOpenCodeBinding(dispatch)) {
+        entry.snapshot = unavailableSnapshot(options.now, scan.reason ?? "binding_unavailable");
+        openCodeUnavailable = true; break;
+      }
+      runs.push(...scan.runs);
+    }
+    if (openCodeUnavailable) continue;
     for (const run of runs) options.watchFiles?.add(run.origin);
     const claudeChildStarts = new Map<string, string>();
     for (const dispatch of group.dispatches) {

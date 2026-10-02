@@ -22,7 +22,7 @@ export interface DispatchEvidence {
   /** Dispatch acknowledgement is not evidence of current liveness. */
   readonly dispatchState?: "launching" | "dispatched" | "uncertain";
   /** Sanitized dispatch-side transport identity, independent of native binding. */
-  readonly harness?: "codex" | "claude" | "agy";
+  readonly harness?: "codex" | "claude" | "agy" | "opencode";
   /** Validated from Orchid's bound private dispatch record when the writer supplies it. */
   readonly budget?: AgentBudget;
   /** Actual gateway, derived only from a validated native CLI dispatch source. */

@@ -1,7 +1,8 @@
 /** Public per-issue agents. Native session identities never belong to this contract. */
 import type { RepoRef } from "./snapshot.js";
 import type { RunUsage } from "./runs.js";
-import { projectRouteIdentity, ROUTE_FIELDS, type RouteIdentityEvidence } from "./route.js";
+import { projectRouteIdentity, ROUTE_FIELDS, OPENCODE_OBSERVED_SOURCES, type RouteIdentityEvidence } from "./route.js";
+import { publicOpenCodeModel } from "./opencode-identity.js";
 
 export const AGENT_OBSERVATIONS_SCHEMA = 1 as const;
 export const MAX_AGENT_OBSERVATIONS = 256;
@@ -167,16 +168,23 @@ function parent(value: unknown): AgentParent {
 function route(value: unknown): RouteIdentityEvidence {
   const r = record(value, ["status", "requested", "observed", "mismatches", "invalid", "detail"]);
   const empty = projectRouteIdentity(null);
+  const openCode = (record(r.observed, ROUTE_FIELDS).provider as { source?: unknown }).source === OPENCODE_OBSERVED_SOURCES.provider;
   const sides = {} as { requested: RouteIdentityEvidence["requested"]; observed: RouteIdentityEvidence["observed"] };
   for (const side of ["requested", "observed"] as const) {
     const fields = record(r[side], ROUTE_FIELDS);
+    const nativeSources = side === "observed" && (fields.provider as { source?: unknown }).source === OPENCODE_OBSERVED_SOURCES.provider
+      ? OPENCODE_OBSERVED_SOURCES : null;
     const target = {} as Record<typeof ROUTE_FIELDS[number], { value: string | null; source: typeof empty.requested.provider.source }>;
     for (const field of ROUTE_FIELDS) {
       const leaf = record(fields[field], ["value", "source"]);
-      if (leaf.source !== empty[side][field].source || (field === "cwd" && leaf.value !== null)) return bad();
-      const v = leaf.value === null ? null : text(leaf.value, /^[A-Za-z0-9][A-Za-z0-9._/-]*$/);
+      const source = nativeSources?.[field] ?? empty[side][field].source;
+      if (leaf.source !== source || (field === "cwd" && leaf.value !== null)) return bad();
+      const rawProvider = (fields.provider as { value?: unknown }).value;
+      const v = leaf.value === null ? null : field === "model" && openCode
+        ? publicOpenCodeModel(leaf.value, rawProvider) ? leaf.value as string : bad()
+        : text(leaf.value, /^[A-Za-z0-9][A-Za-z0-9._/-]*$/);
       if (v?.includes("..")) return bad();
-      target[field] = { value: v, source: empty[side][field].source };
+      target[field] = { value: v, source };
     }
     sides[side] = target;
   }
