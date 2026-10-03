@@ -10,11 +10,12 @@ const request = (tier = 'simple', role = 'implementation') => ({
   privilegedTierAuthorization: { authorizer: 'owner', rationale: 'Synthetic evaluator coverage' },
 });
 function snapshot(launcher, ids, observedAt = new Date().toISOString()) {
+  if (launcher === 'antigravity') launcher = 'agy';
   const absent = () => ({ installed: 'unknown', version: null, authenticated: 'unknown', entitlement: 'unknown',
     quota: 'unknown', catalog: 'unknown', models: [], sources: [], problems: ['not-requested'] });
   const launchers = Object.fromEntries(['claude', 'codex', 'opencode', 'agy'].map(name => [name, absent()]));
   if (launcher) launchers[launcher] = { ...absent(), installed: 'yes', version: '1.2.3', catalog: 'observed',
-    models: ids.map(id => ({ id, efforts: null })), sources: [launcher === 'codex' ? 'model/list' : 'models'], problems: [] };
+    models: ids.map(id => ({ id, efforts: null })), sources: [launcher === 'codex' ? 'model/list' : launcher === 'claude' ? 'claude.sdk.initialize' : launcher === 'agy' ? 'agy.models' : 'models'], problems: [] };
   return { schemaVersion: 1, observedAt, launchers };
 }
 const refuses = (code, selected) => error => error instanceof RouteLaunchError && error.code === code &&
@@ -50,19 +51,19 @@ test('unknown, stale, future, credential-bearing and declared catalogs cannot ad
 });
 
 test('generic preflight probes only the selected launcher and never falls through when its ID is unseen', async () => {
-  for (const req of [request(), request('architecture', 'implementation_evaluation')]) {
+  for (const req of [request(), request('architecture', 'implementation_evaluation'), request('simple', 'documentation')]) {
     const selected = resolveWorkloadRoute(req); const seen = [];
     const discover = async options => { seen.push(options); return snapshot(selected.agent, [selected.model]); };
     const result = await preflightDiscoveredWorkloadRoute(req, { discover });
     assert.equal(result.model, selected.model); assert.equal(result.launchability.status, 'launchable');
-    assert.deepEqual(seen.map(options => options.only), [[selected.agent]]);
+    assert.deepEqual(seen.map(options => options.only), [[selected.agent === 'antigravity' ? 'agy' : selected.agent]]);
     assert.deepEqual(seen.map(options => options.cwd), ['.']);
     await assert.rejects(preflightDiscoveredWorkloadRoute(req, { discover: async () => snapshot(selected.agent, ['fixture-unseen-v99']) }),
       refuses('launcher-model-absent', selected));
   }
 });
 
-test('Claude version and login presence leave its undocumented model catalog unverified', async () => {
+test('Claude version and login presence without model metadata leave its catalog unverified', async () => {
   const req = request('feature', 'plan'); const selected = resolveWorkloadRoute(req);
   assert.equal(selected.agent, 'claude');
   const discovery = snapshot(); discovery.launchers.claude.installed = 'yes';

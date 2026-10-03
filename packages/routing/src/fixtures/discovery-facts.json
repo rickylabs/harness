@@ -1,0 +1,107 @@
+{
+  "claudeAuth": {
+    "loggedIn": true,
+    "apiProvider": "firstParty",
+    "email": "PRIVATE-ACCOUNT-CANARY",
+    "token": "PRIVATE-CREDENTIAL-CANARY",
+    "configDirectory": "/PRIVATE/CONFIG"
+  },
+  "claudeModels": [
+    {
+      "value": "primary",
+      "resolvedModel": "fixture-claude",
+      "supportsEffort": true,
+      "supportedEffortLevels": [
+        "low",
+        "high"
+      ]
+    },
+    {
+      "value": "alternate",
+      "resolvedModel": "fixture-claude",
+      "supportsEffort": true,
+      "supportedEffortLevels": [
+        "low",
+        "high"
+      ]
+    },
+    {
+      "value": "opaque",
+      "resolvedModel": "fixture-opaque"
+    }
+  ],
+  "codexModels": [
+    {
+      "model": "fixture-codex",
+      "supportedReasoningEfforts": [
+        {
+          "reasoningEffort": "medium"
+        },
+        {
+          "reasoningEffort": "high"
+        }
+      ]
+    }
+  ],
+  "agyModels": [
+    {
+      "id": "fixture-agy-low",
+      "label": "PRIVATE-LABEL-CANARY"
+    },
+    {
+      "id": "fixture-agy-other",
+      "label": "Other"
+    }
+  ],
+  "opencodeModels": [
+    {
+      "id": "fixture-one",
+      "providerID": "fixture-provider",
+      "variants": {
+        "low": {
+          "reasoningEffort": "low"
+        },
+        "high": {
+          "effort": "high"
+        },
+        "opaque": {
+          "effort": "high"
+        }
+      },
+      "api": {
+        "npm": "PRIVATE-SDK-CANARY"
+      },
+      "description": "PRIVATE-DESCRIPTION-CANARY"
+    },
+    {
+      "id": "fixture-two",
+      "providerID": "fixture-offline",
+      "variants": {
+        "thinking": {
+          "thinking": {
+            "budgetTokens": 1024
+          }
+        },
+        "Native_Custom": {
+          "thinking": {
+            "budgetTokens": 2048
+          }
+        },
+        "0": {}
+      }
+    }
+  ],
+  "connections": [
+    "fixture-provider"
+  ],
+  "privateProviderPayload": {
+    "key": "PRIVATE-CREDENTIAL-CANARY",
+    "options": {
+      "apiKey": "PRIVATE-CREDENTIAL-CANARY"
+    },
+    "env": [
+      "PRIVATE-ENV-CANARY"
+    ],
+    "path": "/PRIVATE/CONFIG"
+  }
+}

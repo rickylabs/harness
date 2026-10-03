@@ -355,33 +355,66 @@ query `mode`.
 ## Read-only CLI discovery (#274)
 
 `discoverCliCapabilities({ cwd })` returns a strict `CliDiscoverySnapshot` with
-`schemaVersion: 1`, `observedAt`, and `launchers` keyed by `claude`, `codex`, `opencode`,
-and `agy`. Each observation separates `installed`, `version`, `authenticated`,
-`entitlement`, `quota`, `catalog`, `models`, `sources`, and fixed `problems` codes.
-Installation/login presence uses `yes | no | unknown`; version is a string or null.
-Catalog status is `observed | unknown | declared`. Models are exact `{ id, efforts }`
-records; efforts are CLI-declared strings or null. Entitlement and quota remain unknown.
-Unknown JSON keys are refused by `validateCliDiscoverySnapshot`.
+`schemaVersion: 1`, `observedAt`, and four launchers: `claude`, `codex`, `opencode`, and
+`agy`. Each observation separates installation, version, login presence, catalog,
+entitlement, quota, sources, and fixed problem codes. Entitlement and quota stay unknown.
+Catalog membership is metadata, never proof of a successful model call.
 
-The observer uses only these documented read-only surfaces:
+The additive optional fields are strictly decoded by `validateCliDiscoverySnapshot`:
 
-| CLI | Commands / methods | Evidence |
+- A model's `provider: { id, source, scope }` records an exact native provider binding.
+  `scope` is `cli`, `model`, or `unknown`; unknown requires both ID and source to be null.
+  CLI configuration bindings apply to the observed catalog, without asserting per-model access.
+- `aliases` contains native aliases resolved to the canonical model ID. `variants` contains
+  exact enabled native option names. `efforts` is populated only from explicit effort metadata;
+  a variant name, model suffix, or thinking budget alone establishes no effort semantics.
+  `effortSource` names that metadata source, or is null when effort is unknown.
+- OpenCode `providerConnections: [{ id, connected, source }]` records exact native configured
+  or credential connection presence from `opencode.provider/list.connected`. Consumers join
+  exact provider IDs. A failed read omits the list; an absent ID in a successful native set is
+  `no`. Neither `yes` nor `no` asserts payment, quota, credential validity, or model access.
+  CLI-level OpenCode authentication remains unknown.
+
+These are additive fields within schema 1. Older strict readers reject them; consumers must
+pin the reviewed immutable observer revision before producing or consuming new snapshots.
+This private routing package requires no contracts release. Reviewed native provider
+normalizations and source-verified Codex revisions live in `config/discovery.native.v1.json`;
+they add no matrix route, model allowlist, or family selection to TypeScript.
+
+| CLI | Metadata-only surfaces | Established facts |
 | --- | --- | --- |
-| Claude | `--version`, `auth status` | Version and login presence; no documented model-list surface, so catalog remains unknown. [CLI reference](https://code.claude.com/docs/en/cli-reference) |
-| Codex | `--version`, stdio `app-server`; `initialize`, `initialized`, `account/read` with `refreshToken: false`, paginated `model/list` with `includeHidden: true` | Exact model IDs, declared reasoning efforts, login presence. [App-server reference](https://developers.openai.com/codex/app-server) |
-| OpenCode | `--version`, `models` | Exact provider/model IDs; authentication and effort support remain unknown. [CLI reference](https://opencode.ai/docs/cli/) |
-| agy | No command | Optional caller-declared IDs; installation and live catalog stay unknown. |
+| Claude | `--version`, `auth status`, bare SDK stream-JSON `initialize` | Login presence; native first-party backend maps to Anthropic; resolved aliases and per-model effort levels. SDK initialization uses no prompt, hooks, MCP servers, settings, or session persistence. |
+| Codex | `--version`, stdio `app-server`: `initialize`, `initialized`, `account/read` (`refreshToken: false`), paginated `model/list`, `config/read` (`cwd`: absolute observation directory), `configRequirements/read` | Exact IDs, declared efforts, login presence, scoped configured provider. The source-verified 0.159.3/0.160.0 built-in OpenAI default requires successful empty requirements, null configured provider and no custom provider definitions. The child and configuration read share one normalized absolute cwd so project `.codex` layers are included. Null alone, an unverified version, failed scoped reads or unknown constraints keep provider unknown; failed scoped reads never retry without cwd. |
+| OpenCode | `--version`, `models --verbose --pure`, owned authenticated loopback `serve --pure` with only `GET /provider` | Exact provider/model IDs, enabled variant names, explicitly matching effort bodies, and native provider connection IDs. No label-to-provider or family inference. |
+| AGY | `--version`, tab-separated `models` | Installation, version, exact opaque IDs. Authentication, provider, and effort stay unknown. Optional declared IDs remain unobserved when AGY is not requested. |
 
-No turn, login, token refresh, credential-file read, account identifier, raw stderr or
-session identifier enters this contract. The default command deadline is 15 seconds,
-stdout is bounded to 1 MiB, and children and their pipes are closed on every outcome.
-Codex server requests are refused without executing or answering them. Empty, malformed,
-duplicate, oversized or failed catalogs remain unknown. Catalog membership can come from
-bundled/configured metadata and does not prove a successful model call, entitlement or
-quota. [Codex catalog/access distinction](https://developers.openai.com/siwc/token-sharing-open-source/codex-app-server)
+Primary source anchors: [Claude SDK model metadata](https://github.com/anthropics/claude-agent-sdk-typescript),
+[Codex app-server methods](https://developers.openai.com/codex/app-server),
+[Codex 0.159.3 provider resolution](https://github.com/openai/codex/blob/rust-v0.159.3/codex-rs/core/src/config/mod.rs),
+[Codex 0.160.0 provider resolution](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/core/src/config/mod.rs),
+[Codex scoped configuration reads](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/app-server/src/config_manager_service.rs#L119-L135),
+[OpenCode native model listing](https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/cli/cmd/models.ts),
+and [OpenCode provider handler](https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/server/routes/instance/httpapi/handlers/provider.ts).
+AGY 1.2.15/1.2.16 metadata was measured directly; no additional semantics are inferred.
 
-`discoveredModels(snapshot, launcher)` accepts only a strictly valid, observed catalog
-from an installed CLI, captured within the preceding ten minutes. Future timestamps and
-`declared` catalogs cannot establish admission. Native effort observations do not rewrite
-configured efforts or family assignments. This slice leaves account bindings, client-version
-requirements and other #274 acceptance work open.
+Raw native provider responses can include private key/options fields. The observer discards
+all such values and publishes only exact connection IDs and fixed facts. It never emits
+account identifiers, paths, raw stderr, session IDs, raw failures, or its ephemeral listener
+password. OpenCode's listener is bound to 127.0.0.1, authenticated with a fresh password held
+only in child environment/memory, refuses redirects, and is destroyed with its process group
+on every outcome. No credential file is read or copied by the observer; native CLIs resolve
+their own configuration.
+
+Default deadlines are 15 seconds (maximum 60); command stdout is bounded to 1 MiB, the private
+provider response to 16 MiB. `maximumBytes` can lower both bounds. Native JSON duplicates,
+excessive nesting, conflicting capabilities, malformed IDs, empty catalogs and failed reads
+cannot manufacture facts. Unsolicited server requests are refused without answering them. Claude
+`system/ui_invalidate` notifications are discarded; other unsolicited message shapes refuse
+the catalog.
+No user prompt, model turn, login, auth refresh, or session/write API is sent.
+
+`discoveredModels(snapshot, launcher)` accepts only a strictly valid observed catalog from an
+installed CLI, captured within ten minutes. Future timestamps and declared catalogs cannot
+establish admission. Observation does not rewrite configured routes, efforts, or family
+assignments. Catalog, provider connection, capacity, entitlement and owner authority remain
+separate facts.

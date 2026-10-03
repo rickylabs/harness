@@ -13,8 +13,8 @@ export async function preflightDiscoveredWorkloadRoute(request: WorkloadRouteReq
 } = {}) {
   const authority = options.authority ?? MATRIX_AUTHORITY;
   const route = resolveWorkloadRoute(request, authority);
-  const launcher = route.agent;
-  const only: CliDiscoveryOptions['only'] = launcher === 'claude' || launcher === 'codex' || launcher === 'opencode' ? [launcher] : [];
+  const launcher = route.agent === 'antigravity' ? 'agy' : route.agent;
+  const only: CliDiscoveryOptions['only'] = launcher === 'claude' || launcher === 'codex' || launcher === 'opencode' || launcher === 'agy' ? [launcher] : [];
   const discovery = await (options.discover ?? discoverCliCapabilities)({ cwd: request.worktree, only,
     ...(options.binaries === undefined ? {} : { binaries: options.binaries }),
     ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),

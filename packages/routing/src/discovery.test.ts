@@ -57,7 +57,7 @@ else if (args[0] === 'app-server') {
 
 test("fresh inventories paginate, preserve exact IDs/efforts and never infer entitlement", async () => fixture(async (cwd, binary) => {
   const binaries = { claude: await binary("claude"), codex: await binary("codex"), opencode: await binary("opencode") };
-  const snapshot = await discoverCliCapabilities({ cwd, binaries, declaredAgyModels: ["declared/only-v1"] });
+  const snapshot = await discoverCliCapabilities({ cwd, binaries, only: ["claude", "codex", "opencode"], declaredAgyModels: ["declared/only-v1"] });
   assert.ok(validateCliDiscoverySnapshot(snapshot));
   assert.deepEqual(snapshot.launchers.codex.models.map(m => m.id), ["fixture-alpha-v1", "fixture-beta-v2"]);
   assert.deepEqual(snapshot.launchers.codex.models[0]!.efforts, ["medium", "high"]);
@@ -71,9 +71,9 @@ test("fresh inventories paginate, preserve exact IDs/efforts and never infer ent
   const json = JSON.stringify(snapshot);
   for (const unsafe of ["fixture-account", "fixture-credential", "/fixture-private", cwd]) assert.ok(!json.includes(unsafe));
   const commands = (await readFile(join(cwd, "commands.jsonl"), "utf8")).trim().split("\n").map(line => JSON.parse(line));
-  assert.ok(commands.filter(c => c.method).every(c => ["initialize", "initialized", "account/read", "model/list"].includes(c.method)));
+  assert.ok(commands.filter(c => c.method).every(c => ["initialize", "initialized", "account/read", "config/read", "configRequirements/read", "model/list"].includes(c.method)));
   assert.equal(commands.find(c => c.method === "account/read").params.refreshToken, false);
-  assert.ok(commands.filter(c => c.args).every(c => ["--version", "auth", "models", "app-server"].includes(c.args[0])));
+  assert.ok(commands.filter(c => c.args).every(c => ["--version", "auth", "--print", "models", "serve", "app-server"].includes(c.args[0])));
 }));
 
 test("missing binaries stay absent without claiming authentication or availability", async () => fixture(async cwd => {
