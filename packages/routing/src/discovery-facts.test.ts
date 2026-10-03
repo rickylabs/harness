@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { isAbsolute, join, relative } from "node:path";
 import { tmpdir } from "node:os";
 import { discoverCliCapabilities, validateCliDiscoverySnapshot, type CliDiscoveryOptions, type DiscoveryLauncher } from "./discovery.js";
 
@@ -17,8 +17,8 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 const kind=${JSON.stringify(kind)}, behavior=${JSON.stringify(behavior)}, data=JSON.parse(readFileSync(${JSON.stringify(dataPath)},'utf8'));
 const log=${JSON.stringify(join(cwd, "commands.jsonl"))}, args=process.argv.slice(2);
-const note=value=>appendFileSync(log,JSON.stringify(value)+'\\n'); note({args,pid:process.pid});
-if(args[0]==='--version'){console.log(kind==='codex'&&behavior!=='other-version'?(behavior==='new-version'?'0.160.0':'0.159.3'):'1.2.3');process.exit(0);}
+const note=value=>appendFileSync(log,JSON.stringify(value)+'\\n'); note({args,pid:process.pid,cwd:process.cwd()});
+if(args[0]==='--version'){console.log(kind==='codex'&&behavior!=='other-version'?(['new-version','project-provider','scoped-read-failed'].includes(behavior)?'0.160.0':'0.159.3'):'1.2.3');process.exit(0);}
 if(args[0]==='auth'){if(behavior==='auth-failed'){console.log('PRIVATE-CREDENTIAL-CANARY');process.exit(2);}const auth={...data.claudeAuth};if(behavior==='auth-type')auth.loggedIn='yes';if(behavior==='auth-provider')auth.apiProvider='unknown';console.log(JSON.stringify(auth));process.exit(behavior==='auth-exit'?1:0);}
 if(args[0]==='models'){
  if(kind==='agy'){for(const m of data.agyModels)console.log(m.id+'\\t'+m.label);}
@@ -77,12 +77,14 @@ if(args[0]==='serve'){
  console.log(JSON.stringify({type:behavior==='user-with-response'?'user':'control_response',response:{subtype:behavior==='failed-response'?'error':'success',request_id:behavior==='wrong-request'?'other':item.request_id,response:{models,account:{email:'PRIVATE-ACCOUNT-CANARY'},output_style:'/PRIVATE/CONFIG'}}}));
  }else{
  if(!('id' in item))continue;
+ if(behavior==='scoped-read-failed'&&item.method==='config/read'&&item.params?.cwd===process.cwd()){console.log(JSON.stringify({id:item.id,error:{message:'PRIVATE-CONFIG-CANARY'}}));continue;}
  if(behavior==='config-failed'&&item.method==='config/read'){console.log(JSON.stringify({id:item.id,error:{message:'PRIVATE-CREDENTIAL-CANARY'}}));continue;}
  if(behavior==='config-server-request'&&item.method==='config/read')console.log(JSON.stringify({id:999,method:'turn/start',params:{}}));
  let result={};
  if(item.method==='account/read')result={account:{type:'chatgpt',email:'PRIVATE-ACCOUNT-CANARY'}};
  if(item.method==='model/list')result={data:data.codexModels,nextCursor:null};
  if(item.method==='config/read')result={config:{model_provider:behavior==='configured-provider'?'fixture-gateway':null,model_providers:{},private:'/PRIVATE/CONFIG'}};
+ if(item.method==='config/read'&&behavior==='project-provider'&&item.params?.cwd===process.cwd())result.config.model_provider='fixture-gateway';
  if(item.method==='config/read'&&behavior==='custom-provider')result.config.model_providers={'fixture-custom':{}};
  if(item.method==='config/read'&&behavior==='invalid-provider')result.config.model_provider='invalid:provider';
  if(item.method==='config/read'&&behavior==='credential-provider')result.config.model_provider='sk-canary123';
@@ -134,6 +136,54 @@ test("native facts: Codex configuration binding covers CLI-only models with exac
     assert.equal(o.models[0].provider.scope,expected===null?'unknown':'cli');assert.ok(validateCliDiscoverySnapshot(s));
     assert.ok(!JSON.stringify(s).includes("PRIVATE"));
   }
+}));
+async function scopedCodexRequest(cwd: string) {
+  const commands = (await readFile(join(cwd, "commands.jsonl"), "utf8")).trim().split("\n").map(line => JSON.parse(line));
+  const requests = commands.filter(command => command.method === "config/read");
+  assert.equal(requests.length, 1, "failed scoped reads must never retry unscoped");
+  assert.deepEqual(requests[0].params, { includeLayers: false, cwd });
+  assert.ok(isAbsolute(requests[0].params.cwd), "Codex config/read requires the absolute observation cwd");
+  assert.equal(commands.find(command => command.args?.[0] === "app-server").cwd, cwd);
+}
+test("native facts: Codex observation cwd includes the project provider override", async () => fixture(async (cwd, binary) => {
+  const snapshot = await discoverCliCapabilities(options(cwd, "codex", await binary("codex", "project-provider")));
+  const observation = wire(snapshot).launchers.codex;
+  assert.equal(observation.catalog, "observed");
+  assert.deepEqual(observation.provider, { id: "fixture-gateway", source: "codex.config/read", scope: "cli" });
+  for (const model of observation.models) assert.deepEqual(model.provider, observation.provider);
+  assert.ok(validateCliDiscoverySnapshot(snapshot));
+  assert.ok(!JSON.stringify(snapshot).includes("PRIVATE"));
+  await scopedCodexRequest(cwd);
+}));
+test("native facts: Codex observation cwd retains the verified global default", async () => fixture(async (cwd, binary) => {
+  const snapshot = await discoverCliCapabilities(options(cwd, "codex", await binary("codex", "new-version")));
+  const observation = wire(snapshot).launchers.codex;
+  assert.equal(observation.catalog, "observed");
+  assert.deepEqual(observation.provider, { id: "openai", source: "codex.builtin-provider", scope: "cli" });
+  for (const model of observation.models) assert.deepEqual(model.provider, observation.provider);
+  assert.ok(validateCliDiscoverySnapshot(snapshot));
+  await scopedCodexRequest(cwd);
+}));
+test("native facts: Codex observation cwd failed scoped read keeps all provider bindings unknown", async () => fixture(async (cwd, binary) => {
+  const snapshot = await discoverCliCapabilities(options(cwd, "codex", await binary("codex", "scoped-read-failed")));
+  const observation = wire(snapshot).launchers.codex;
+  assert.equal(observation.catalog, "observed");
+  assert.deepEqual(observation.provider, { id: null, source: null, scope: "unknown" });
+  for (const model of observation.models) assert.deepEqual(model.provider, observation.provider);
+  assert.ok(validateCliDiscoverySnapshot(snapshot));
+  assert.ok(!JSON.stringify(snapshot).includes("PRIVATE"));
+  await scopedCodexRequest(cwd);
+}));
+test("native facts: Codex observation cwd resolves a relative directory to the same native scope", async () => fixture(async (cwd, binary) => {
+  const relativeCwd = relative(process.cwd(), cwd);
+  assert.ok(!isAbsolute(relativeCwd));
+  const snapshot = await discoverCliCapabilities(options(relativeCwd, "codex", await binary("codex", "project-provider")));
+  const observation = wire(snapshot).launchers.codex;
+  assert.equal(observation.catalog, "observed");
+  assert.deepEqual(observation.provider, { id: "fixture-gateway", source: "codex.config/read", scope: "cli" });
+  for (const model of observation.models) assert.deepEqual(model.provider, observation.provider);
+  assert.ok(validateCliDiscoverySnapshot(snapshot));
+  await scopedCodexRequest(cwd);
 }));
 test("native facts: OpenCode exact connections and effort bodies never rely on labels or variant names", async()=>fixture(async(cwd,binary,data)=>{
   const s=await discoverCliCapabilities(options(cwd,"opencode",await binary("opencode"))),o=wire(s).launchers.opencode;

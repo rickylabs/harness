@@ -1,6 +1,7 @@
 /** Read-only CLI observations (#274/#270). Catalog membership is never entitlement or a model turn. */
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import { resolve } from "node:path";
 import { kill, platform } from "node:process";
 import nativeBindings from "../config/discovery.native.v1.json" with { type: "json" };
 
@@ -236,7 +237,8 @@ function problem(error: unknown): DiscoveryProblem {
 }
 interface CodexCatalog { models: DiscoveredModel[]; authenticated: DiscoveryFact; provider: DiscoveryProvider }
 async function codexCatalog(binary: string, options: CliDiscoveryOptions, version: string | null): Promise<CodexCatalog> {
-  const running = child(binary, ["app-server", "--listen", "stdio://"], options);
+  const observationCwd = resolve(options.cwd);
+  const running = child(binary, ["app-server", "--listen", "stdio://"], { ...options, cwd: observationCwd });
   let nextId = 0;
   function write(method: "initialize" | "initialized" | "account/read" | "model/list" | "config/read" | "configRequirements/read", params: unknown, notification = false) {
     const id = ++nextId;
@@ -268,7 +270,8 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, versio
     let binding = UNKNOWN_PROVIDER;
     let configuration: Record<string, unknown> | undefined, requirements: Record<string, unknown> | undefined;
     try {
-      const result = await response(write("config/read", { includeLayers: false }));
+      // Without cwd, Codex excludes in-repo .codex layers and cannot bind this observation.
+      const result = await response(write("config/read", { includeLayers: false, cwd: observationCwd }));
       requirements = await response(write("configRequirements/read", {}));
       try { configuration = object(result.config); } catch { /* Unproven configuration stays unknown. */ }
     } catch (error) {

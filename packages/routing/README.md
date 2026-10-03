@@ -384,7 +384,7 @@ they add no matrix route, model allowlist, or family selection to TypeScript.
 | CLI | Metadata-only surfaces | Established facts |
 | --- | --- | --- |
 | Claude | `--version`, `auth status`, bare SDK stream-JSON `initialize` | Login presence; native first-party backend maps to Anthropic; resolved aliases and per-model effort levels. SDK initialization uses no prompt, hooks, MCP servers, settings, or session persistence. |
-| Codex | `--version`, stdio `app-server`: `initialize`, `initialized`, `account/read` (`refreshToken: false`), paginated `model/list`, `config/read`, `configRequirements/read` | Exact IDs, declared efforts, login presence, scoped configured provider. The source-verified 0.159.3/0.160.0 built-in OpenAI default requires successful empty requirements, null configured provider and no custom provider definitions. Null alone, an unverified version, failed reads or unknown constraints keep provider unknown. |
+| Codex | `--version`, stdio `app-server`: `initialize`, `initialized`, `account/read` (`refreshToken: false`), paginated `model/list`, `config/read` (`cwd`: absolute observation directory), `configRequirements/read` | Exact IDs, declared efforts, login presence, scoped configured provider. The source-verified 0.159.3/0.160.0 built-in OpenAI default requires successful empty requirements, null configured provider and no custom provider definitions. The child and configuration read share one normalized absolute cwd so project `.codex` layers are included. Null alone, an unverified version, failed scoped reads or unknown constraints keep provider unknown; failed scoped reads never retry without cwd. |
 | OpenCode | `--version`, `models --verbose --pure`, owned authenticated loopback `serve --pure` with only `GET /provider` | Exact provider/model IDs, enabled variant names, explicitly matching effort bodies, and native provider connection IDs. No label-to-provider or family inference. |
 | AGY | `--version`, tab-separated `models` | Installation, version, exact opaque IDs. Authentication, provider, and effort stay unknown. Optional declared IDs remain unobserved when AGY is not requested. |
 
@@ -392,6 +392,7 @@ Primary source anchors: [Claude SDK model metadata](https://github.com/anthropic
 [Codex app-server methods](https://developers.openai.com/codex/app-server),
 [Codex 0.159.3 provider resolution](https://github.com/openai/codex/blob/rust-v0.159.3/codex-rs/core/src/config/mod.rs),
 [Codex 0.160.0 provider resolution](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/core/src/config/mod.rs),
+[Codex scoped configuration reads](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/app-server/src/config_manager_service.rs#L119-L135),
 [OpenCode native model listing](https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/cli/cmd/models.ts),
 and [OpenCode provider handler](https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/server/routes/instance/httpapi/handlers/provider.ts).
 AGY 1.2.15/1.2.16 metadata was measured directly; no additional semantics are inferred.
