@@ -1,0 +1,158 @@
+{
+  "version": "1.18.34",
+  "unverifiedVersion": "0.0.0",
+  "models": [
+    {
+      "id": "kimi-k2.5",
+      "providerID": "ollama-cloud",
+      "capabilities": {
+        "temperature": false,
+        "reasoning": true,
+        "attachment": true,
+        "toolcall": true,
+        "input": {
+          "text": true,
+          "audio": false,
+          "image": true,
+          "video": false,
+          "pdf": false
+        },
+        "output": {
+          "text": true,
+          "audio": false,
+          "image": false,
+          "video": false,
+          "pdf": false
+        },
+        "interleaved": false
+      },
+      "variants": {}
+    },
+    {
+      "id": "kimi-k2.6",
+      "providerID": "ollama-cloud",
+      "capabilities": {
+        "temperature": false,
+        "reasoning": true,
+        "attachment": true,
+        "toolcall": true,
+        "input": {
+          "text": true,
+          "audio": false,
+          "image": true,
+          "video": false,
+          "pdf": false
+        },
+        "output": {
+          "text": true,
+          "audio": false,
+          "image": false,
+          "video": false,
+          "pdf": false
+        },
+        "interleaved": false
+      },
+      "variants": {}
+    },
+    {
+      "id": "qwen3.8-flash-next",
+      "providerID": "n5air",
+      "capabilities": {
+        "temperature": false,
+        "reasoning": false,
+        "attachment": false,
+        "toolcall": true,
+        "input": {
+          "text": true,
+          "audio": false,
+          "image": false,
+          "video": false,
+          "pdf": false
+        },
+        "output": {
+          "text": true,
+          "audio": false,
+          "image": false,
+          "video": false,
+          "pdf": false
+        },
+        "interleaved": false
+      },
+      "variants": {}
+    },
+    {
+      "id": "qwen3.8-flash-next",
+      "providerID": "n5air-rocm",
+      "capabilities": {
+        "temperature": false,
+        "reasoning": true,
+        "attachment": false,
+        "toolcall": true,
+        "input": {
+          "text": true,
+          "audio": false,
+          "image": false,
+          "video": false,
+          "pdf": false
+        },
+        "output": {
+          "text": true,
+          "audio": false,
+          "image": false,
+          "video": false,
+          "pdf": false
+        },
+        "interleaved": false
+      },
+      "variants": {
+        "low": {
+          "reasoningEffort": "low"
+        },
+        "medium": {
+          "reasoningEffort": "medium"
+        },
+        "high": {
+          "reasoningEffort": "high"
+        }
+      }
+    }
+  ],
+  "connections": [
+    "n5air",
+    "n5air-rocm",
+    "ollama-cloud"
+  ],
+  "opaqueVariants": {
+    "thinking": {
+      "thinking": {
+        "budgetTokens": 1024
+      }
+    }
+  },
+  "disabledVariants": {
+    "low": {
+      "disabled": true,
+      "reasoningEffort": "low"
+    }
+  },
+  "otherLauncher": {
+    "installed": "yes",
+    "version": "2.1.288",
+    "authenticated": "yes",
+    "entitlement": "unknown",
+    "quota": "unknown",
+    "catalog": "observed",
+    "models": [
+      {
+        "id": "fixture-control",
+        "efforts": [],
+        "effortSource": "claude.sdk.initialize"
+      }
+    ],
+    "sources": [
+      "version",
+      "claude.sdk.initialize"
+    ],
+    "problems": []
+  }
+}

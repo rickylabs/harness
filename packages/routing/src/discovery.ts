@@ -75,6 +75,7 @@ const PROVIDER_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const EFFORT = /^[a-z][a-z0-9_-]{0,63}$/;
 const UNKNOWN_PROVIDER: DiscoveryProvider = { id: null, source: null, scope: "unknown" };
 const CODEX_BUILTIN_PROVIDER_VERSIONS = new Set<string>(nativeBindings.codex.verifiedVersions);
+const OPENCODE_NATIVE_VARIANT_VERSIONS = new Set<string>(nativeBindings.opencode.verifiedVersions);
 const AGY_METADATA_VERSIONS = new Set<string>(nativeBindings.agy.verifiedVersions);
 const CLAUDE_EFFORT_OMISSION_VERSIONS = new Set<string>(nativeBindings.claude.effortOmissionVersions);
 const MAX_PROVIDER_BYTES = 16 * 1024 * 1024;
@@ -368,9 +369,12 @@ async function claudeCatalog(binary: string, options: CliDiscoveryOptions, versi
     return [...models.values()];
   } finally { await running.close(); }
 }
-function nativeVariantEfforts(value: unknown): { variants: string[]; efforts: string[] | null } {
+function nativeVariantEfforts(value: unknown, version: string | null): { variants: string[]; efforts: string[] | null } {
   if (value === undefined) return { variants: [], efforts: null };
   const variants = object(value), names = checkedVariants(Object.keys(variants)), efforts: string[] = [];
+  // A verified complete native map with no choices establishes default-only support.
+  // It does not mean reasoning is disabled or that a named effort was applied.
+  if (names.length === 0 && OPENCODE_NATIVE_VARIANT_VERSIONS.has(version ?? "")) return { variants: [], efforts: [] };
   for (const name of names) {
     const body = object(variants[name]);
     if (body.disabled !== undefined && typeof body.disabled !== "boolean") throw new DiscoveryError("malformed");
@@ -388,7 +392,7 @@ function nativeVariantEfforts(value: unknown): { variants: string[]; efforts: st
   }
   return { variants: names.filter(name => object(variants[name]).disabled !== true), efforts: efforts.length ? efforts : null };
 }
-function openCodeModels(stdout: string): DiscoveredModel[] {
+function openCodeModels(stdout: string, version: string | null): DiscoveredModel[] {
   const models: DiscoveredModel[] = [];
   let at = 0;
   while (at < stdout.length) {
@@ -405,7 +409,7 @@ function openCodeModels(stdout: string): DiscoveredModel[] {
       at = objectEnd;
       if (at < stdout.length && !/\s/.test(stdout[at]!)) throw new DiscoveryError("malformed");
       if (record.id !== nativeID || record.providerID !== prefix) throw new DiscoveryError("malformed");
-      const capability = nativeVariantEfforts(record.variants);
+      const capability = nativeVariantEfforts(record.variants, version);
       models.push({ id, ...capability, provider: provider(record.providerID, "opencode.models.providerID", "model"),
         effortSource: capability.efforts === null ? null : "opencode.models.variants" });
     } else {
@@ -551,7 +555,7 @@ async function observe(launcher: DiscoveryLauncher, options: CliDiscoveryOptions
       if (!ids.length) throw new DiscoveryError("empty-catalog");
       return await agyFacts(binary, ids, options, observation);
     }
-    const models = openCodeModels(output.stdout);
+    const models = openCodeModels(output.stdout, observation.version);
     const catalog: CliObservation = { ...observation, catalog: "observed", models, sources: [...new Set<DiscoverySource>(["version", "models", ...models.flatMap(m =>
       [m.provider?.source, m.effortSource].filter((source): source is DiscoverySource => source != null))])] };
     try { return { ...catalog, providerConnections: await openCodeConnections(binary, models, options),
@@ -645,6 +649,9 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
           values.forEach(id => aliases.add(id));
         }
         if (Object.hasOwn(model, "variants")) { if (name !== "opencode") return false; checkedVariants(model.variants); }
+        if (name === "opencode" && model.efforts !== null && (model.efforts as unknown[]).length === 0 &&
+            (!OPENCODE_NATIVE_VARIANT_VERSIONS.has(record.version as string) || checkedVariants(model.variants).length !== 0 ||
+             model.effortSource !== "opencode.models.variants")) return false;
         if (Object.hasOwn(model, "effortSource")) {
           const expected = name === "claude" ? "claude.sdk.initialize" : name === "codex" ? "model/list" : name === "agy" ? "agy.command.model" : "opencode.models.variants";
           if (model.efforts === null) { if (model.effortSource !== null) return false; }
