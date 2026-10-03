@@ -32,12 +32,12 @@ test("native default: real empty variant maps establish default only; named ROCm
     assert.equal(m.provider?.id, data.models[i].providerID);
     assert.deepEqual(m.variants, []);
     assert.deepEqual(m.efforts, [], "native complete empty map must expose provider default, never unknown or invented high");
-    assert.equal(m.effortSource, "opencode.models.variants");
+    assert.equal(m.effortSource, "opencode.config/providers.variants");
   }
   assert.deepEqual(o.models[3]!.efforts, ["low", "medium", "high"]);
   const log = (await readFile(join(cwd, "commands.jsonl"), "utf8")).trim().split("\n").map(v => JSON.parse(v));
-  assert.deepEqual(log.filter(v => v.args).map(v => v.args[0]), ["--version", "models", "serve"]);
-  assert.deepEqual(log.filter(v => v.endpoint).map(v => v.endpoint), ["/provider"]);
+  assert.deepEqual(log.filter(v => v.args).map(v => v.args[0]), ["--version", "serve"]);
+  assert.deepEqual(log.filter(v => v.endpoint).map(v => v.endpoint), ["/config/providers", "/provider"]);
   const server = log.find(v => v.args?.[0] === "serve");
   assert.throws(() => process.kill(server.pid, 0), { code: "ESRCH" });
 }));
@@ -77,10 +77,10 @@ test("native default: paired validator rejects default claims without the exact 
   const s = await observe(cwd, binary);
   // Also certifies the reader independently of which producer implementation is imported.
   for (const m of s.launchers.opencode.models.slice(0, 3)) {
-    Object.assign(m, { efforts: [], variants: [], effortSource: "opencode.models.variants" });
+    Object.assign(m, { efforts: [], variants: [], effortSource: "opencode.config/providers.variants" });
   }
-  if (!s.launchers.opencode.sources.includes("opencode.models.variants")) {
-    Object.assign(s.launchers.opencode, { sources: [...s.launchers.opencode.sources, "opencode.models.variants"] });
+  if (!s.launchers.opencode.sources.includes("opencode.config/providers.variants")) {
+    Object.assign(s.launchers.opencode, { sources: [...s.launchers.opencode.sources, "opencode.config/providers.variants"] });
   }
   assert.ok(validateCliDiscoverySnapshot(s));
   const other = structuredClone(s);
@@ -93,7 +93,7 @@ test("native default: paired validator rejects default claims without the exact 
     ["missing variant proof", v => { delete v.launchers.opencode.models[0].variants; }],
     ["missing source", v => { v.launchers.opencode.models[0].effortSource = null; }],
     ["absent source property", v => { delete v.launchers.opencode.models[0].effortSource; }],
-    ["missing observation source", v => { v.launchers.opencode.sources = v.launchers.opencode.sources.filter((x: string) => x !== "opencode.models.variants"); }],
+    ["missing observation source", v => { v.launchers.opencode.sources = v.launchers.opencode.sources.filter((x: string) => x !== "opencode.config/providers.variants"); }],
   ];
   for (const [name, mutate] of mutations) {
     const v = structuredClone(s); mutate(v);
