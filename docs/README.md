@@ -30,6 +30,10 @@ explain them.
 - Want to change something here → [`CONTRIBUTING.md`](../CONTRIBUTING.md), and
   [`SECURITY.md`](../SECURITY.md) before you touch an issue.
 
+[ADR 0005](../doctrine/decisions/0005-harness-framework-identity.md) records the current framework
+on Orchid and Herdr. Existing `dsh-*` commands and the optional router retain their real names
+until the ordered compatibility/move PRs. Earlier decisions and run records remain historical evidence.
+
 ## The rule these docs are held to
 
 > **Every document either states facts it owns, or is generated from the code that owns them.**
@@ -53,8 +57,8 @@ that run. Output must not imply live execution where live forge, GitHub, or fail
 | Page | What it settles |
 | --- | --- |
 | [01 — What this is](concepts/01-what-this-is.md) | The coordination product and the responsibilities it owns |
-| [02 — Two seams, not one](concepts/02-the-two-seams.md) | `ctx.subagents` vs `ctx.llm`, and everything that follows |
-| [03 — The board](concepts/03-the-board.md) | Why GitHub holds board truth and `dsh` only projects it |
+| [02 — Two seams, not one](concepts/02-the-two-seams.md) | Native tasks vs API/local calls, with experimental service vocabulary |
+| [03 — The board](concepts/03-the-board.md) | Why GitHub holds board truth and Harness projects it |
 | [04 — What "run" means](concepts/04-the-run.md) | The word means two different things here. Both are correct. |
 | [05 — Determinism](concepts/05-determinism.md) | Generated files, golden snapshots, and why drift is a bug |
 | [06 — The three layers](concepts/06-the-three-layers.md) | The locked responsibility model across coordination, the product backend and the client |

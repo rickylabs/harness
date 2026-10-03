@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/forge",
   "version": "0.0.0",
-  "description": "GitHub bridge — absorbs the Orchid pipeline",
+  "description": "Harness GitHub process setup and bridge rules; Orchid remains the dispatcher",
   "license": "MIT",
   "private": true,
   "type": "module",

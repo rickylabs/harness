@@ -1,43 +1,47 @@
 # packages/
 
-One pnpm workspace package per Cordis plugin, plus the app that composes them. The layout is the
-target layout from #31, and it was created all at once so that the dependency shape was decided
-before any of the code was written.
+Fourteen flat core packages implement Harness mechanisms or define explicit partial/stub boundaries.
+The fifteenth workspace package, `dsh-app`, retains the optional DeepSeek Harness router experiment.
+[ADR 0005](../doctrine/decisions/0005-harness-framework-identity.md) records the current framework
+identity on Orchid and Herdr. Core modules do not depend on that experimental host.
 
-**Twelve carry real code; three are empty stubs waiting on their epic.** A stub is a `package.json`, a
-tsconfig and a placeholder export — enough to hold its place in the project graph, and not enough to
-pretend it works. Every stub README says so in its first lines, names what the package will own, and
-names what is blocking it. Do not add behaviour to a stub before its epic has defined the contract.
+The experiment currently remains under `packages/dsh-app` and participates in the existing root
+checks. Its approved move to `experiments/routers/dsh` and exclusion from default core checks are
+pending cleanup PR 3. This index describes source implementation, not provider configuration,
+activation, credentials or a successful native launch on a particular host.
 
-| Package | Ships | Owner | Attaches to |
-|---|---|---|---|
-| `dsh-app` | ✅ | E2 · #32 | our dsh profile + bundle (`cordis.patch.yml`); depends on every plugin below |
-| `subagents` | ✅ | E3 · #33 | the `ctx.subagents` contract itself: `DispatchRequest`, its `/swarm` wire format, `SubagentProvider` — and `provider-uhp`, the one provider that lives beside the contract (#286) |
-| `provider-claude`, `provider-opencode` | ✅ | E3 · #33 | `ctx.subagents` / `SubagentProvider` — autonomous vendor CLIs, metered by quota window |
-| `provider-codex` | partial | E3 · #33 | app-server route-identity and pre-turn protocol prerequisite; no composed provider (#195/#53) |
-| `provider-acp` | — | E3 · #33 | the same seam, over ACP |
-| `llm-local` | ✅ | E4 · #34 | `ctx.llm` / `LlmAdapter` — API-key and local models, metered per token |
-| `routing` | ✅ | E4 · #34, E11 · #271 | explicit routing document loader and immutable matrix queries |
-| `governance` | — | E5 · #35 | tri-regime admission control; stub — sidecar decision answered (#257), implementation pending |
-| `board`, `coordinator` | ✅ | E6 · #36 | task DAG, kanban projection, MASTER workflows |
-| `forge` | ✅ | E7 · #37 | GitHub bridge: taxonomy and process skill, installable into any repository |
-| `netscript-bridge` | — | E7 · #37 | polyglot dispatch — the adapter decision 2 rests on |
-| `contracts` | ✅ | E8 · #38 | **published** to npm as `@rickylabs/harness-contracts`; the only non-private package |
-| `telemetry` | ✅ | E9 · #39 | `SessionTelemetrySink` |
+| Package | Implemented boundary | Owner |
+| --- | --- | --- |
+| `subagents` | Native task requests, provider contract, selection and UHP adapter; UHP dispatch is parked by [ADR 0004](../doctrine/decisions/0004-uhp-park-evidence.md) | E3 · #33 |
+| `provider-claude` | Claude Agent SDK adapter, injected by a composition root | E3 · #33 |
+| `provider-opencode` | Adapter to a configured OpenCode server; it does not own that server | E3 · #33 |
+| `provider-codex` | Partial: app-server route identity and pre-turn protocol prerequisite, not a composed provider | E3 · #33 |
+| `provider-acp` | Stub: ACP provider boundary | E3 · #33 |
+| `llm-local` | API/local adapter configuration, capability and budget tables | E4 · #34 |
+| `routing` | Replaceable routing documents, immutable matrix queries and exact native discovery | E4 · #34, E11 · #271 |
+| `governance` | Stub package boundary; live launch admission and meters belong to Orchid's governor | E5 · #35 |
+| `board` | GitHub task graph and board projections | E6 · #36 |
+| `coordinator` | Workflow decisions, replay, independent selection and durable-effect storage boundary | E6 · #36 |
+| `forge` | Explicit GitHub taxonomy/process installation and bridge rules | E7 · #37 |
+| `netscript-bridge` | Stub: external NetScript service adapter | E7 · #37 |
+| `contracts` | Published mechanism vocabulary and strict decoders under `@rickylabs/harness-contracts` | E8 · #38 |
+| `telemetry` | Native session observations, screened activity, usage and dispatch evidence | E9 · #39 |
+| `dsh-app` | Optional experiment: dsh profile, bundle and adapters consuming core modules | E2 · #32 |
 
-The provider packages and `llm-local` are separate on purpose: vendor CLIs and API/local models
-attach to two *different* dsh seams (#30, "two seams, not one").
+A stub holds a buildable place in the project graph, not a working integration. Its README states
+what remains unimplemented. Native dispatch in [Orchid](https://github.com/rickylabs/orchid) and
+terminal control in [Herdr](https://github.com/herdrdev/herdr) are separate from these package adapters;
+a working CLI transport does not imply that a partial package provider is complete.
 
-`subagents` holds the contract the four provider packages implement, and it is deliberately not
-in `contracts`. That package is E8's, published to npm for the two UIs, and #79's acceptance draws
-the line: a type that only makes sense for one surface does not belong there.
+Native tasks and API/local calls have different loop and enforcement boundaries; their accounting
+must use actual vendor/provider sources. [Two seams](../docs/concepts/02-the-two-seams.md) describes
+that distinction and the experiment's service-key vocabulary.
 
-A cockpit does ask for a dispatch — but what it sends is `contracts`' own `DispatchCommand`, which
-names an issue and a **lane**. `subagents`' `DispatchRequest` names a model, a host and a provider,
-and it is what the coordinator builds *after* routing resolves the lane. Keeping them apart is what
-stops a client from routing around the rule that an evaluator may not be the author. `subagents`
-depends on nothing in this workspace, so both seams — E6's projection and E7's forge — can reach it
-without either depending on the other.
+`subagents` is an internal provider boundary. `contracts` is a public mechanism boundary consumed
+by separate product backends and, where required, type-only vocabulary consumers. The product
+backend owns authorization and the captured API/client used by its native companion. Legacy
+`DispatchCommand` names a lane; verified owner-native dispatch uses its separate authority record
+and retains physical checks and accounting. No client-supplied model string grants that authority.
 
 ## Conventions every package inherits
 
@@ -65,7 +69,8 @@ without either depending on the other.
   on the ones the runtime needs.
 
 Adding a package: copy any stub directory, rename, add it to the root `tsconfig.json`
-`references` list, and (if the app composes it) to `dsh-app`'s dependencies and references.
+`references` list, and declare only its actual consumers. Add it to the optional router only if that experiment
+really composes it.
 
 `coordinator` has a type-only dependency on published `contracts` for its durable state-store port.
 The filesystem reference driver and memory fake live in `coordinator`; neither adds a runtime import

@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/dsh-app",
   "version": "0.0.0",
-  "description": "Our dsh profile and bundle (cordis.patch.yml) composing every plugin package",
+  "description": "Optional dsh-router experiment: profile, bundle and adapters for Harness core modules",
   "license": "MIT",
   "private": true,
   "type": "module",

@@ -1,6 +1,6 @@
 # @rickylabs/provider-acp
 
-A `SubagentProvider` over ACP — the agent-client protocol — on the `ctx.subagents` seam.
+A `SubagentProvider` over ACP — the agent-client protocol — at the internal native-task boundary. The optional dsh composition calls that service `ctx.subagents`.
 
 **Status: stub.** Owned by **E3 · [#33](https://github.com/rickylabs/harness/issues/33)**. The only
 export is `PACKAGE_NAME`. Nothing here speaks ACP yet.
@@ -8,12 +8,13 @@ export is `PACKAGE_NAME`. Nothing here speaks ACP yet.
 ## What it will own
 
 One provider covering every ACP-speaking agent, instead of one package per vendor. The protocol is
-the abstraction; `agy`, and the editor-side agents alongside it, are implementations of it.
+the abstraction; each proposed native tool requires an exact protocol/round-trip proof before
+this package can claim support. AGY native CLI dispatch in Orchid is a separate boundary.
 
 ## The open question this package carries
 
-`subagents` pins the harness set, and today it contains exactly one ACP member: `agy`. The others
-this package is meant to cover are **not** harness ids yet.
+`subagents` pins its native harness vocabulary, including `agy`; that identifier alone does not
+prove ACP compatibility. Additional native tools require their own declared contract and evidence.
 
 That is deliberate rather than an oversight, and it is the decision E3 has to make here. A harness
 id is not a local detail — it is what the `/swarm` block carries, what telemetry records, and what a
@@ -33,7 +34,8 @@ producing a run that is not what the record says it is.
 
 ## Why it is empty
 
-E3 has not landed, and the harness-set question above is upstream of any code here.
+This ACP implementation has not landed. Implemented SDK/server adapters elsewhere and native
+Orchid transports do not complete it by implication.
 
 ---
 

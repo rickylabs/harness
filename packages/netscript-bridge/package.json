@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/netscript-bridge",
   "version": "0.0.0",
-  "description": "Polyglot task dispatch to netscript services",
+  "description": "External NetScript service adapter boundary (stub)",
   "license": "MIT",
   "private": true,
   "type": "module",

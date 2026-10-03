@@ -1,286 +1,131 @@
 # ARCHITECTURE
 
-**Version 1 — locked 2026-09-13.**
+**Version 2 — owner amendment 2026-10-03, [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md).**
 
-This document is the charter of this repository and the contract every run in it builds on.
-It supersedes the architecture recorded in [#30](https://github.com/rickylabs/harness/issues/30).
+This is the charter of the repository. It supersedes the dsh-only premise of [#30](https://github.com/rickylabs/harness/issues/30); the original roadmap and earlier decisions remain historical evidence. Eric ratified Decision Q and the coordinator approved the ordered cleanup through ADR 0005.
 
-Amendments require an owner decision with a recorded rationale, filed as a numbered decision
-in [`doctrine/decisions/`](doctrine/decisions/). The same bar the delegation matrix already
-applies to its privileged tiers applies here: an agent may not amend this document, and may
-not build against a shape this document does not describe.
-
----
+Further amendments require an owner decision with rationale recorded in [`doctrine/decisions/`](doctrine/decisions/). An agent must work within the charter or present a new decision; it cannot silently redefine the product.
 
 ## 1. What this repository is
 
-**The portable agent runtime.** The routing matrix, the launchers that enforce it, the slice
-loop, the profiles, and the doctrine — made to run against any repository, not one.
+**Our portable agent framework, built on Orchid and Herdr.** Harness supplies routing configuration and discovery, native-provider boundaries, execution observations, board and coordination mechanics, published contracts, profiles, and the method and run record.
 
-That charter replaces the previous one ("the `dsh` plugin layer"). The doctrine in
-[`doctrine/`](doctrine/) already states the intent: *"project-neutral terms because it is
-intended to ship as the portable core of the product."* This document extends that intent
-from the doctrine to the runtime.
-
----
+[Orchid](https://github.com/rickylabs/orchid) owns dispatch and physical launch admission. [Herdr](https://github.com/herdrdev/herdr) owns terminal control. The core packages are independent of DeepSeek Harness. The retained [dsh composition](packages/dsh-app/README.md) is an optional additional-router experiment, not the host required to run the framework.
 
 ## 2. The thesis
 
-Everything the product needs already exists in working form. It is split across two systems
-that do not talk to each other, with matrix enforcement on exactly one transport, and no
-durable record of a decision an agent needs from a human.
+Make agent work observable and governed without asking an agent to reconstruct its own status. Keep intent, route authority, execution, evidence freshness and independent certification separate, and retain the source of each conclusion.
 
-The work is not to build a runtime. It is to **join what runs today** and close four gaps.
-
----
+An implemented port is not proof of a deployed integration. A configured route is not proof of a usable provider. A completed native run is not proof that its artifact passed independent evaluation.
 
 ## 3. What works today
 
-Each of these is running, in production, and was verified by reading or executing it.
+The table describes repository capabilities and their source boundaries, not a claim that every host is configured or every integration has been activated.
 
-| Component | What it does | Where it lives |
+| Component | Implemented boundary | Source |
 | --- | --- | --- |
-| **Delegation matrix** | 5 workload tiers × 8 roles, each cell `primary → fallback`. Privileged tiers fail closed without a named authorizer and a rationale. Prints JSON. | netscript `.llm/tools/agentic/runtime/` |
-| **Enforcing launcher** | Asserts model, effort, privileged-tier authority and expense before spawning; writes a receipt. | netscript `opencode-run.ts` |
-| **Slice loop** | `running / done / blocked / budget_exhausted / failed`, turn and wall budgets, quota backoff, teardown and leak-check. | netscript `run-codex-slice.ts` |
-| **Wake primitive** | Watches a run directory; wakes on a worklog append, heartbeats on timeout. No polling. | netscript `watch-run.ts` |
-| **Milestone profile** | 4 fixed lanes, exclusive issue sets, bounded WIP, read-only watchers, a renderer and a **validator that is a red gate**. Two milestones have completed through it. | netscript run dirs; templates already vendored to `.llm/harness/templates/` here |
-| **Dispatcher** | Polls this repository every 30s. Spawns, steers, reads, tears down. Governs spend against live subscription headroom. Chains continuation runs. | the Orchid fork (`divybot`) |
-| **Terminal control plane** | `herdr` — typed unix-socket API at protocol 22. Live steering, prompt-and-wait-for-state, blocking state wait, a self-report channel agents push to, subscriptions on status and output, a fleet snapshot, an `attention` sort field, a per-agent token map. | the agent host |
-| **Durable primitives** | streams, workers, triggers, sagas, watchers — real packages, ~34k lines. | netscript `packages/` |
-| **Doctrine** | Run lifecycle A–H, principles, the slice contract, the escalation protocol. Already project-neutral. | [`doctrine/`](doctrine/) |
+| Routing | Whole-document loading, immutable lane/fleet queries, refusal-preserving resolution and native discovery. Concrete choices are data. | [routing](packages/routing/README.md) and its [fleet document](packages/routing/config/routing.fleet.v2.json) |
+| Profiles | Eight worker roles, dedicated milestone coordinator and researcher compatibility alias. | [profiles](profiles/README.md) |
+| Board and coordinator | GitHub projections, workflow decisions, independent evaluator selection, replay and durable-effect state boundaries. | [board](packages/board/README.md), [coordinator](packages/coordinator/README.md) |
+| Native observations | Claude, Codex, AGY and OpenCode source readers, public activity screening and truthful dispatch binding. Reader support does not prove a live source is present. | [telemetry](packages/telemetry/README.md) |
+| Process setup | Explicit taxonomy/process installation and GitHub bridge rules. | [forge](packages/forge/README.md) |
+| Published mechanism vocabulary | Dependency-free contracts, strict decoders and compatibility surfaces; the npm name stays stable. | [contracts](packages/contracts/README.md) |
+| Dispatcher | Issue polling, workspaces, native launch/goal delivery, owner authority, governor accounting and retirement fences. | [Orchid divybot](https://github.com/rickylabs/orchid/tree/main/cmd/divybot) |
+| Terminal control | Native agent status, panes and steering; availability and visible blocked states require observation. | [Herdr](https://github.com/herdrdev/herdr) |
+| Method | Staged planning, review, evidence, gates and milestone/run templates. | [doctrine](doctrine/WORKFLOW.md), [templates](.llm/harness/templates/) |
 
-**Live steering is not a gap.** It works today, over the terminal control plane, for every
-vendor CLI — not only the one whose pane output could be scraped.
-
----
+The [package guide](packages/README.md) identifies stubs and partial providers. NetScript remains an external runtime/service dependency behind a boundary; its proven slice and wake primitives are prior art, not a second copied routing authority.
 
 ## 4. The layer map
 
-```
-  client (mobile / cockpit UI)
-        │  reads projections · writes intents
+```text
+owner / product client
+        │ authorized intent and observation
         ▼
-  cockpit  ── durable event log + effect ledger ONLY
-        │      (streams · workers · triggers · sagas)
+cockpit backend — product authorization, persistence and projections
+        │ published contracts and explicitly pinned source readers
         ▼
-  dispatcher  ── resolves the matrix · spawns · steers · tears down
-        │
+Orchid dispatcher — route authority, physical admission and accounting
+        │ native launch and control
         ▼
-  terminal control plane  ── panes · agent status · subscriptions
-        │
+Herdr + native CLI — terminal state and autonomous work
+        │ native stores, receipts and run artifacts
         ▼
-  agent in a worktree, writing a run directory
-        └─ pushes its own lifecycle state back up
+Harness readers — screened execution evidence and board projections
 ```
 
-Data flows **up** by subscription, **down** by steer. Nothing in this chain polls.
-
----
+GitHub owns the work graph; native stores and dispatch receipts own observed execution. Orchid polls for dispatch work. Readers use their implemented bounded reads or subscriptions. The framework does not promise an entirely polling-free chain.
 
 ## 5. The dispatch contract
 
-**Every launch is an issue in this repository carrying the dispatch label.**
+For this fleet, an authorized issue brief is the dispatch record and the `harness` label is the live trigger. The label starts real work; it is never applied as incidental board metadata. Product commands must cross the verified owner-authority boundary before installation or dispatch.
 
-There is no second dispatch path. Not an RPC, not a queue, not a protocol endpoint. The
-dispatcher already polls this board; an issue body is already a brief; the override grammar
-is already parsed. A launch is therefore a write to GitHub and nothing else.
+The matrix is the **default** for agentic launches. A verified owner-native override records authorizer `eric`, rationale and an exact tool/provider/model/effort route, retains physical checks and budget accounting, and carries owner provenance instead of a fabricated matrix receipt. An ordinary free-text model override is not authority. See Orchid [#59](https://github.com/rickylabs/orchid/pull/59) and [#64](https://github.com/rickylabs/orchid/pull/64).
 
-This is what makes the three launch modes one mechanism:
+| Mode | Process/route source |
+| --- | --- |
+| Profile | `profiles/<name>.md` supplies the working process; configured routing selects the default route. |
+| Matrix task | The pinned routing document selects tier/role candidates and effort requests. |
+| Owner-native override | Verified owner authority supplies an exact native route; physical checks still apply. |
 
-| Mode | The issue body carries | Status |
-| --- | --- | --- |
-| **(a) Profile** | `profile: <name>` — the profile derives model, effort, lanes and gates | works once `profiles/` exists (§6) |
-| **(b) Issue → agent** | nothing; the matrix derives everything from tier and role | works today |
-| **(c) Free** | explicit `model:` / `router:` / `harness:` / `timeout:` overrides | works today |
+A dispatched body must contain no fenced code blocks: parser behavior can otherwise truncate the brief. Keep `#` out of parsed override values. Privileged tiers still require named authority and nonempty rationale, and evaluator independence is never waived.
 
-Two constraints on a dispatched body, both load-bearing:
-
-- **No fenced code blocks.** The parser stops at a fence and runs the truncated brief without
-  reporting that it did.
-- **Privileged tiers are refused** without a named authorizer and a non-empty rationale, at
-  the resolver, fail-closed. An override is not an authorization.
-
-**Known gap, recorded not hidden:** `effort` is a real argument for one vendor CLI only.
-Everywhere else it is injected as prose into the brief. Record requested-versus-observed in
-the run's supervisor artifact; do not claim effort was applied where it was not.
-
----
+Record requested and observed effort separately. Native transports have different capability and effort surfaces; an argument or brief request is not proof that the selected native model supports or applied it. Discovery publishes only established facts, with unknown retained on failed or unproved reads.
 
 ## 6. Profiles
 
-A profile is not new machinery. It names three things that already exist:
+The dispatcher reads `profiles/<name>.md` from the repository root. Eight canonical profiles cover the matrix worker roles; `rfc` remains an alias of `researcher`. `milestone-coordinator` uses `coordinators.milestone`, separate from worker tiers. The [profile guide](profiles/README.md) owns the exact files, frontmatter and routing rows.
 
-```
-profiles/<name>.md
-  run-mode   which doctrine file governs the run shape
-  skill      which agent skill activates
-  state      which control-plane artifact the run maintains (if any)
-  gate       the command whose exit code is the verdict
-  routing    which matrix row selects the model, and what may not be overridden
-```
-
-The dispatcher already reads `profiles/<name>.md` from the repository root. The knob has
-been inert only because the directory did not exist. It exists now.
-
-Three profiles ship in v1: `milestone-coordinator`, `rfc`, `leaf`. See
-[`profiles/README.md`](profiles/README.md).
-
----
+Permissions in a profile describe requested policy. They do not grant credentials, authority or an available seat. Root profile paths remain stable through cleanup.
 
 ## 7. Invariants
 
-These are not advice. Each one gets a check, and a check that cannot execute here is recorded
-as **unproven** — never assumed green.
+A check that could not execute is **unproven**. An empty CI check set, empty source or missing receipt cannot certify success. The independent evaluator must assess the changed exact head rather than rely solely on the author's gate account.
 
-**An empty result is not a pass.** A repository with no continuous integration returns an empty
-check array, and an empty array is indistinguishable from *every check ran and reported nothing*.
-That shape burned this project twice in one day: a `docker ps` aimed at the wrong daemon reports
-an empty list rather than an error — which is how a false sentence reached §10 and needed
-[decision 0004](doctrine/decisions/0004-uhp-park-evidence.md) to remove it — and a pull request
-with no workflows reports no failures.
+**I1 — Every spawn records its route authority and observations.** Default launches retain matrix source/resolution; verified owner-native launches retain owner provenance and exact route. Requested and observed model, effort, transport, role/tier where applicable and session identity remain distinct. Neither route authority invents execution.
 
-**Before reading a verdict, establish that the check could have run at all.** Where it could not,
-the invariant is `unproven` and the pull request says so. A gate recorded in a run directory by
-the agent that also wrote the code satisfies the letter of I2 and not its purpose: it is the
-generator's own account of its own work, which is the single thing I2 exists to refuse.
+**I2 — A generator never certifies itself.** Generator and evaluator use separate sessions from different vendor families. An absent evaluator is a blocker, not permission to weaken the rule.
 
-**I1 — Every spawn records a matrix resolution.**
-Requested and observed model, effort, transport, role and tier land in the run receipt. A run
-without that record is not a valid run. *Check: receipt schema validation in CI.*
+**I3 — Privileged tiers carry authority.** `complex` and `architecture` require a named authorized owner/coordinator and nonempty rationale. An override is not an independence or budget waiver.
 
-**I2 — A generator never certifies itself.**
-Generator and evaluator are separate sessions from different vendor families. No lane signs
-off its own slice; the sign-off commit is the supervisor's. *Check: extend the existing
-assertions from the one enforcing launcher to all of them.*
+**I4 — A blocked lane carries an open decision.** A method lane blocked on an owner decision records the question, options, recommendation and cost of being wrong. A native startup/access block remains a truthful technical observation; it must not be converted into a successful launch.
 
-**I3 — Privileged tiers carry authority.**
-`complex` and `architecture` require an explicit owner request or coordinator authorization
-with a named authorizer and a non-empty rationale. *Check: already enforced, fail-closed, at
-the resolver. Keep it.*
-
-**I4 — A blocked lane carries an open decision.**
-A lane in `blocked` state must reference an open decision record. An agent that stops without
-filing one has lost the thing the owner was needed for. *Check: new rule in the cluster-state
-validator.*
-
----
+Existing receipt and blocked-decision checks are documented in [profiles](profiles/README.md) and the [gate contract](.llm/tools/gates/contract.ts). Passing synthetic fixtures does not prove that every live record is authentic or complete.
 
 ## 8. Escalation is a record, not a conversation
 
-The doctrine says *stop and brief the owner*. That is correct and insufficient: a conversation
-dies with the process that held it.
+An escalation needs a durable identity, source session, question, options and an answer receipt. Writer fences and exact session binding prevent duplicate answers or delivery to the wrong agent. The [coordinator state boundary](packages/coordinator/README.md#durable-effect-state) provides mechanism and drivers; product persistence, authorization and the verified effect delivery are owned by the backend and dispatcher.
 
-An escalation is a **decision record** with an identity, and it is durable:
-
-```
-{ runId, laneId, paneRef, agentSessionRef, question, options, recommendation,
-  costOfBeingWrong, raisedAt, answeredAt, answer, receipt }
-```
-
-- It is **raised** by an agent reaching a blocked state, or writing a decision file in its run
-  directory.
-- It **lands** in the durable event log — so it survives the dispatcher restarting, the pane
-  closing, and the laptop shutting.
-- It is **answered** once. The answer is an effect with a receipt and a writer fence, so two
-  clients cannot answer the same decision twice.
-- The answer **routes back** to the exact session that raised it, by session reference.
-
-The transport for all of this already exists. What did not exist is somewhere durable for it
-to land. That is the single genuinely new component in this plan.
-
----
+Do not call an interface or reference driver a deployed decision inbox. Report the actual adapter, storage identity, integration evidence and unresolved gaps.
 
 ## 9. Cost
 
-Three rows. Never one blended number.
+Keep subscription headroom, metered spend and native run usage separate. No blended price is invented for subscription turns. Observed provider/account windows, paid-provider budgets and static capacity have different sources and units.
 
-1. **Subscription headroom** — percent remaining, live, per subscription provider.
-2. **Metered spend** — real currency, for the providers that bill per call.
-3. **Run tokens** — per agent, from the control plane's token map.
-
-A blended figure would require imputing a price to a subscription turn. That number would be
-invented, and an invented number in a cost dashboard is worse than three true ones.
-
----
+A transport with no quota source is explicitly unmetered and uses configured physical capacity. It must not consume another vendor's meter. Missing quota, access or budget observations remain unknown; provider connectivity is not proof of paid eligibility. [Telemetry](packages/telemetry/README.md) owns observations; Orchid owns live admission and accounting.
 
 ## 10. What is parked
 
-**UHP-hosted dispatch (epic E3) is parked.** Not deleted — parked, revisitable, and out of the
-way.
+UHP-hosted dispatch remains parked under [ADR 0004](doctrine/decisions/0004-uhp-park-evidence.md). That decision records the 2026-09-13 measurement and ruling, including the removed borrowed router. It is historical evidence, not a fresh claim about today's host. [#294](https://github.com/rickylabs/harness/issues/294) is the required round-trip proof before reconsideration.
 
-The reason is evidence, not preference. A router instance exists and answers, and it **cannot
-execute**: every backend reports every model unavailable for want of a provider credential, and
-the harness list is empty, so no identifier can be pinned. The spike that would prove a live
-round-trip ([#294](https://github.com/rickylabs/harness/issues/294)) has never been funded. The
-client is well built. It has nothing it can connect to. Every contract shaped against it is
-therefore work against an untested assumption, and the product does not need it: the dispatch
-contract in §5 is proven and needs no protocol.
+The dsh router is retained as an additional experiment under [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md). At this step it still lives in `packages/dsh-app`; its approved move to `experiments/routers/dsh` and exclusion from default checks are pending. Its real SDK/profile/lock identities and historical evidence stay intact. Testing it after the next APK requires its own authorization and proof.
 
-This paragraph once opened *"no router instance exists to talk to, on any host."* That was false
-when it was written. It rested on a `docker ps` that reported an **empty daemon** because
-`DOCKER_HOST` was unset — output indistinguishable from nothing running. Corrected by
-[decision 0004](doctrine/decisions/0004-uhp-park-evidence.md), which the owner ratified on
-2026-09-13: **the park holds**, because a router answering `401` with no executable backend does
-not test the assumption the park exists to protect against. The borrowed instance was removed the
-same day, so no future reader mistakes a running container for a stale park.
-
-Parked issues carry the `parked` label. Their branches remain. If #294 is ever funded and
-passes, UHP returns as **one more transport behind the same matrix** — a row in provider
-precedence — never as a replacement for the steering path, because a turn-boundary protocol
-cannot express mid-turn steering.
-
-**Epic E11 is not parked. It is promoted.** "Consume the fleet matrix as data" is precisely
-§7/I1 of this document, and it is now the critical path.
-
----
+E11 routing/discovery is core work. An optional router never replaces Orchid/Herdr or becomes a prerequisite for native dispatch by implication.
 
 ## 11. Build order
 
-Ordered by value per unit of risk. Each step is independently useful.
+The owner-approved cleanup is sequential: documentation, core CLI compatibility, experiment isolation, then canonical method/run-record homes. The vault refresh starts after these four PRs merge. Operator naming, additive reader-first wire vocabulary and producer switches are pending migrations 5–7 with paired consumer rollout gates.
 
-1. **`profiles/`** — the knob is already wired; the directory makes mode (a) live. *Done in v1.*
-2. **Matrix resolution before every spawn** — the matrix already prints JSON; the dispatcher
-   shells out to it and fills the override struct it already has. No extraction needed.
-3. **Control-plane subscription → durable event log.** The first genuinely new component, and
-   it is small.
-4. **Decision records and the inbox**, on the existing fenced-lease effect ledger.
-5. **The evaluation leg** — gates are not new machinery. A gate is another delegated run with
-   a different role column, a different vendor family, and a verdict in a file.
-6. **One client screen against a real endpoint.** Prove the data path before building the UI.
-7. **Slice budgets on the steering path**, generalized off the one vendor that has them.
-8. **Cost, three rows.**
-
-Extraction of the runtime out of netscript is **not on the critical path** and must not block
-steps 1–2. The matrix already exposes a JSON CLI; callers use it where it is. Extract after
-steps 1–2 are stable, and **move rather than fork** — one source of truth, or it drifts inside
-a month.
-
----
+This documentation PR does not move files, rename executables, change the default build graph, publish contracts or activate anything. Public core paths, root profiles and the npm name remain stable. Any later source/wire change must identify exact consumer pins and compatibility before a producer switch.
 
 ## 12. What the client is
 
-The client invents nothing. Every screen is a projection of something above:
+Cockpit and mobile are separate products. The backend owns product authorization, persistence, commands and projections; the mobile runtime uses the captured backend-generated API/client. A type-only contract vocabulary dependency is not a private backend runtime or an authorization path.
 
-| Screen | Source |
-| --- | --- |
-| Projects | GitHub + run directories |
-| Launch (a/b/c) | one issue write, per §5 |
-| Live session | control-plane read + output subscription |
-| Steer | control-plane prompt |
-| Lane map | milestone cluster state |
-| Slice detail | run-directory artifacts |
-| Decision inbox | the durable event log, per §8 |
-| Cost | three rows, per §9 |
+The backend consumes the published contracts and explicitly pinned source readers. Native assistant text is screened; private paths, credentials and native store identifiers are not public fields. Execution, evidence freshness, certification and connection synchronization remain separate. Unknown state never triggers automatic redispatch.
 
-**The cockpit owns no domain truth.** It owns a durable event log and an effect ledger. Runs,
-lanes, issues, agent status and cost are projections, authoritative elsewhere. A cockpit that
-stores a second copy of the truth becomes a second source of it, and then neither is right.
-
----
+Legacy protocol-1/mux interfaces remain documented compatibility surfaces, not a claim that today's app uses a dsh deployment. [The three layers](docs/concepts/06-the-three-layers.md) records the boundary and historical protocol context.
 
 ## 13. How to disagree with this document
 
-File a numbered decision in [`doctrine/decisions/`](doctrine/decisions/) with the evidence, the
-recommendation, and the cost of being wrong. Do not open a pull request that quietly assumes a
-different architecture: that is the failure mode this document exists to stop.
+Record a numbered decision with evidence, recommendation and cost of being wrong in [`doctrine/decisions/`](doctrine/decisions/). Preserve previous decisions as historical evidence and make any supersession explicit. Do not silently build against another architecture.

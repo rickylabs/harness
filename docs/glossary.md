@@ -11,7 +11,7 @@ for — an unfamiliar word gets looked up, a familiar one gets assumed.
 
 ### bundle
 
-A dsh artefact listing the rows that go onto a service entry list. This project ships one, rendered
+An optional dsh-router artefact listing the rows that go onto a service entry list. This project ships one, rendered
 from typed data in `src/bundle.ts` into
 [`packages/dsh-app/cordis.patch.yml`](../packages/dsh-app/cordis.patch.yml) and byte-compared in the
 test suite. A bundle here *adds* services and never reconfigures dsh's own — a patch that reaches
@@ -82,15 +82,18 @@ as work in progress. See [03 — The board](concepts/03-the-board.md).
 
 ### profile
 
-A dsh deployment: a named set of bundles and patches composed into one running system.
+A native process profile under [`profiles/`](../profiles/README.md) specifies a matrix role,
+working process and requested policy. A profile is not an authority grant or a provider availability proof.
+
+In the optional dsh experiment, a profile is a named set of bundles and patches.
 `dsh-profile` writes and checks this repository's. Layering is declarative — bundle, then profile,
 then home, then `--patch`.
 
 ### projection
 
 Rendering a view from a source of truth without owning any state. `dsh-board` projects GitHub into
-columns; it holds nothing, so the view cannot disagree with the board. A pure projection is the
-reason there is no sync job anywhere in this system. See [03 — The board](concepts/03-the-board.md).
+columns; it holds nothing, so the view cannot disagree with the board. This task projection introduces no second authoritative task store. Product observation caches and
+connection synchronization remain separate responsibilities. See [03 — The board](concepts/03-the-board.md).
 
 ### receipt
 
@@ -113,7 +116,8 @@ so the claim is checkable a month later.
 ### row
 
 One entry on a dsh service entry list — a plugin, plus the configuration it is constructed with.
-Bundles are lists of rows, and "adding a row" is how this project attaches to dsh without forking it.
+Bundles are lists of rows in the optional router experiment; adding one is that integration
+mechanism, not the core framework deployment.
 
 ### run
 
@@ -124,9 +128,9 @@ renamed — see [04 — What "run" means](concepts/04-the-run.md).
 
 ### seam
 
-Where a model attaches, and how it is paid for. Two, deliberately: `ctx.subagents` (autonomous
-vendor CLIs, metered by a quota window) and `ctx.llm` (API-key and local models, metered per token).
-The coordinator names the same pair `subscription` and `relay`. See
+A loop and integration boundary: native autonomous tasks versus API/local-model calls.
+Accounting follows the actual vendor/provider source, not a native/API label. The optional
+composition uses `ctx.subagents`/`ctx.llm`; its coordinator vocabulary is `subscription`/`relay`. See
 [02 — Two seams, not one](concepts/02-the-two-seams.md).
 
 ### surface

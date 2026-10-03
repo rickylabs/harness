@@ -1,6 +1,8 @@
 # @rickylabs/forge
 
-GitHub bridge — absorbs the Orchid pipeline. Owned by epic E7 · #37.
+GitHub taxonomy/process setup and bridge rules. Owned by epic E7 · #37. Orchid remains the
+physical dispatcher; [ADR 0005](../../doctrine/decisions/0005-harness-framework-identity.md)
+supersedes the absorption/Herdr-retirement premise.
 
 The board taxonomy lands ahead of that epic because it is the mechanism the epic will drive: labels
 are the surface a dispatcher reads, and until they exist the coordinator has nothing to write its
@@ -165,9 +167,10 @@ an empty list.
 
 ## Which backend dispatches a target
 
-divybot is the only path verified zero-touch across all four harnesses, so it is not retired on day
-one and it is not retired all at once. It is retired **per vendor, at parity, with the evidence
-recorded** — a strangler fig, and `dsh-forge targets backend` is where you read how far it has got.
+Orchid/divybot remains the physical launch boundary, with Herdr terminal control. This package
+retains a provider/divybot handover selector as a compatibility mechanism. The selector reports
+recorded decisions and evidence; it does not authorize dispatcher retirement or establish a
+working provider merely because that backend is named.
 
 ```bash
 dsh-forge targets backend --config ../divybot.json

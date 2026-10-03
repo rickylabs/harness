@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/routing",
   "version": "0.0.0",
-  "description": "Delegation matrix \u2014 tiers, family rule, fallback",
+  "description": "Configuration-driven routing, native discovery and evaluator independence",
   "license": "MIT",
   "private": true,
   "type": "module",

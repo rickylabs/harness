@@ -1,7 +1,8 @@
 # The three layers
 
-There is one chain from a label on an issue to a control on a phone, and it
-passes through three deployments. Each deployment owns a different question, and
+The framework, product backend and native client have separate responsibilities.
+[ADR 0005](../../doctrine/decisions/0005-harness-framework-identity.md) records the current
+framework on Orchid and Herdr and supersedes the dsh-only deployment premise. Each deployment owns a different question, and
 none of them may answer another's. This document describes all three at the same
 depth, because the failures that cost the most are the ones that live in the
 seams between them — and a seam is only visible when both sides are drawn.
@@ -18,24 +19,22 @@ The GitHub board and executable receipts establish delivery status.
 
 ## Layer 1 — coordination  ·  **this repository**
 
-A Node and pnpm workspace, deployed on its own host. It owns three questions:
-what may run, who may certify it, and what actually ran.
+Harness is a Node/pnpm mechanism workspace and portable method. Orchid owns physical dispatch
+and accounting; Herdr owns terminal control. Together they answer what may run, who may certify it
+and what actually ran. Core package capability and live host activation are separate facts.
 
 **board.** GitHub is the store, not a cache of one. Issues, labels and
 milestones are the record; columns, lanes and anomalies are projections computed
 from that record and never written back as a second source. The `harness` label
 is a dispatch trigger; the other taxonomy labels are inert board metadata.
 
-**delegation matrix.** The single routing authority is an explicit, wholly replaced document.
-Version 1 holds lane chains and tier implement/review pairs; configuration-first resolvers
-read those selections without a compiled fallback. The shipped document is a compatibility
-transcription, not fleet parity. Dispatch names a
-lane through the matrix, which owns model selection. Requested and observed
-model identities still belong in contracts and receipts. Two
-rules earn their keep: an author may not be its own evaluator, and a quota
-trigger never falls back to a sibling model on the same subscription — that
-would be a fallback in name only. The trigger union is closed at six members;
-adding a seventh is a deliberate edit, not an incidental one.
+**routing and authority.** Replaceable versioned JSON supplies default lane/fleet selections,
+immutable resolvers, provider precedence and effort evidence. Exact model identifiers are data,
+not a second compiled catalog. The matrix is the default for agentic launches. A verified
+Eric-authorized owner-native override carries its rationale, exact route and independent owner
+provenance; it retains physical admission and budget accounting and invents no matrix receipt.
+An author cannot certify itself, and missing capacity never waives family/session independence.
+Requested and observed native model/effort remain distinct.
 
 **coordinator.** Admission. It decides whether a request may become a run, and
 records the decision before anything is launched. `accepted: true` means
@@ -45,18 +44,15 @@ admitted, not started.
 attaches to both. A dispatch the provider refused is not a run, and the record
 has to be able to say so without inventing a state.
 
-**the two seams.** This is the layer's central distinction and the reason it
-exists at all. `ctx.subagents` buys a **seat**, metered by a refill window;
-`ctx.llm` serves API-key and local models. Paid API tokens consume a balance;
-local models consume local capacity without a per-token bill. A subscription
-window refills, while a depleted paid balance requires funding. Collapsing them into one
-"capacity" concept makes both meters wrong. The union is closed at two members.
+**native tasks and API/local calls.** Native CLIs own their autonomous loops; API/local adapters
+own only their implemented surrounding loop and tool boundaries. Billing is established per
+vendor/provider source, not by the transport label. Subscription headroom, paid usage, physical
+capacity and an unmetered static cap remain separate. See [two seams](02-the-two-seams.md).
 
-**sandbox boundary.** The seat seam cannot be gated inside a vendor CLI's child
-process — there is no interception point there, and pretending otherwise
-produces security theatre. So the gate moves outward to the sandbox boundary,
-where the process actually starts. This is an admission about where control is
-real, not a preference.
+**sandbox boundary.** Dispatch can enforce its actual launch boundaries. It cannot claim to
+intercept every tool call inside a native child process without a proved integration. Per-launch
+trust, credentials and permission configuration are scoped native prerequisites, not an authority
+waiver. Orchid polls for work; bounded native readers or subscriptions establish observations.
 
 **forge.** Bootstraps a target repository's label taxonomy and emits the process
 skill that reads it. Planning computes changes; applying or ejecting a taxonomy
@@ -90,11 +86,11 @@ the others with it.
 contributed by feature plugins. The rendering half of this is the only thin part
 of the whole system.
 
-**harness adapter.** Consumes the contracts package's mux, folds the deltas, and
-projects the result. **Exactly one reducer owns a run card.** If the phone also
-folded the mux, two projections would disagree under partition and the
-disagreement would surface as a user-visible flicker with no correct resolution.
-The fold happens here, once.
+**harness adapter.** Consumes released mechanism decoders and explicitly pinned source readers.
+It binds native sessions and dispatch evidence, preserves unknown/source/freshness distinctions
+and owns the product projection. These reader imports are reviewed immutable source dependencies,
+not workspace imports. A schema decoder does not prove a live source or grant authority. Legacy
+mux exports are compatibility mechanisms; this page does not claim today's product consumes that mux.
 
 **worker runner.** Dispatcher, payload validation, attempt policy with backoff,
 lease acquisition and renewal under compare-and-swap, cancellation, dead-letter
@@ -156,7 +152,8 @@ An Expo native application on bun and React Native, routed with expo-router.
 the client generated from that capture. OpenAPILink over `expo/fetch` is a
 candidate transport until the exact generated package and native execution
 receipt establish compatibility. The native client consumes backend resources
-only: no Harness mux, direct Harness dependency or duplicate fold.
+only at runtime: no private Harness/backend runtime or duplicate native-source fold.
+A type-only mechanism vocabulary dependency is compatible with that boundary.
 
 **native stream adapter.** Consumes the backend's published stream resource
 contracts on a transport verified for the native runtime. It does not consume
@@ -168,7 +165,8 @@ Harness stream frames or reconstruct the Harness fold.
 graph *and* scans the exported bundle. It refuses Node built-ins, Prisma, Deno
 globals, AppHost and worker or daemon runtimes, any `/server` leaf, and every
 private backend runtime package. The generated product client is the phone
-boundary; the phone does not import the Harness contracts package directly.
+boundary. Type-only public contract vocabulary may be used without importing its runtime;
+the native bundle must still prove that no private backend/runtime dependency crosses it.
 Before the first generated-package import, publication must establish the exact
 allowed package names and exports and enforce both source-import and exported-
 bundle rules against that artifact. A phone bundle that can reach
@@ -193,19 +191,20 @@ not observe.
 
 ## The two carriers
 
-Between the layers sit two published surfaces. They are the only sanctioned way
-across, and their rules are deliberate.
+Two products share a mechanism boundary and a captured product boundary. Published schema and
+pinned source identity are not interchangeable: each consumer records the exact dependency it reads.
 
-**Coordination → backend: the contracts package (protocol 1).**
-Protocol 1 specifies POST for `snapshot`, `dispatch` and `approve`. Mutating
-`dispatch` and `approve` requests require idempotency keys; the snapshot request
-does not. The method alone does not establish idempotency or authorization.
-The read half is a WebSocket mux carrying **whole-value deltas, never patches**,
-with a `generation` per connection and a `seq` that increments by one within a
-generation. Connecting is subscribing. An unknown kind is a third decode
-outcome, distinct from malformed input. The decoder validates the envelope,
-not the full payload schema; it is not an authorization or payload-validation
-boundary. A resync supplies a current snapshot, not a journal replay.
+**Framework → backend: published contracts and pinned readers.**
+`@rickylabs/harness-contracts` supplies strict standalone observation decoders and mechanism
+vocabulary. Source readers consume bounded native records, bind exact identities and screen public
+activity. A new producer vocabulary rolls out reader-first with matching consumer pins; no app
+activation follows from a source merge alone.
+
+**Retained protocol-1 compatibility.** The package also retains POST commands and a WebSocket mux
+with whole-value deltas, generation/sequence fences and connection recovery. Mutating commands
+require their documented idempotency keys. The mux envelope decoder does not validate every payload
+or authorize a command. Those exports and their historical fidelity decision below remain supported
+compatibility surfaces; they are not proof of the cockpit's current transport or integration.
 
 **Backend → client: the generated client package.**
 A captured, versioned OpenAPI artifact and the client generated from it. The
@@ -220,8 +219,9 @@ absence of an adapter call site is not a no-schema-impact receipt.
 
 ## What this repository builds
 
-Everything in orange: the whole of layer 1, and the contracts package that
-leaves it. Concretely:
+Orange identifies Harness mechanism responsibilities, including interfaces that need external
+composition. It does not claim that this repository implements Orchid, Herdr or every deployed
+admission adapter. Concretely:
 
 1. The board projections, and the discipline that keeps them projections.
 2. The delegation loader and immutable resolvers that load and resolve an explicit document
@@ -231,38 +231,33 @@ leaves it. Concretely:
 4. The two seams, kept apart, and the sandbox boundary that makes the seat seam
    enforceable where it is actually enforceable.
 5. Telemetry that can say a dispatch was refused without inventing a run.
-6. **The published contracts package** — protocol 1, versioned, tagged.
+6. **The published contracts package** — strict decoders and mechanism vocabulary, with retained
+   protocol-1 compatibility and explicit release/consumer evidence.
 
 ## What this repository must not build
 
 **A product feature.** Layer 1 answers what may run and what did run. It does
 not render, schedule product work, or hold product state.
 
-**A second outward surface.** One published package, one protocol version. A
-consumer that needs a private package is a consumer that has been handed the
-wrong boundary.
+**An untracked consumer boundary.** Keep the public npm name stable. A backend may use reviewed
+immutable source readers, with exact source/hash guards. It must not mistake private workspace
+resolution for a released product API or bring that runtime into the phone.
 
-**An independent model-selection policy outside the matrix.** Dispatch resolves
-a lane through the matrix. Recording the requested and observed model identities
-is necessary evidence, not a second routing authority.
+**An unauthorized model-selection policy.** Matrix defaults and verified owner-native authority
+are explicit route sources. A free-text model request does not grant authority, waive budgets or
+relax evaluator independence. Requested/observed identities remain evidence, not a fabricated default.
 
 ---
 
 ## Gaps, stated plainly
 
-**The contracts package is published.** `@rickylabs/harness-contracts` is
-on npm at 0.4.0, protocol 1, released by the owner with a public receipt
-([issue #283 comment](https://github.com/rickylabs/harness/issues/283#issuecomment-5651656367)).
-0.3.0 was the first release and carried the same receipt discipline
-([issue #39 comment](https://github.com/rickylabs/harness/issues/39#issuecomment-5582710963));
-0.4.0 adds the connection-recovery work from #265 and changes no wire shape, so the
-observation surface is byte-identical between the two published artifacts.
-The gap this section tracks has therefore moved one step down the chain: what
-is not yet established is the downstream integration evidence — the backend
-adapter consuming a released version, the captured OpenAPI artifact, the
-generated client package, and the native receipts the two carriers above
-require. Publication unblocks those artifacts; it is not a substitute for
-them.
+**Publication and adoption are separate.** The source manifest and release records establish an
+artifact; each downstream consumer proves its decoder/reader pin, captured API/client and native
+bundle/transport independently. Source capability does not establish current live activation,
+credentials, source coverage or owner authority. Historical 0.3.0 and 0.4.0 release receipts are in
+[issue #39](https://github.com/rickylabs/harness/issues/39#issuecomment-5582710963) and
+[issue #283](https://github.com/rickylabs/harness/issues/283#issuecomment-5651656367).
+They establish those releases, not the current package version or a deployed product boundary.
 
 **Fidelity decision — documented loss in v0.1.0, protocol 1.** Provider
 `RunLiveness` is execution state (`queued`, `running`, `finished`, `failed`,
@@ -289,9 +284,10 @@ freshness recovery is an additional, separately tracked limitation in #265.
 
 This decision is historical, made by the protocol owner under the
 architecture-lock directive of 2026-09-07 (see Consulted sources below).
-Protocol 1 is unchanged in both published releases, so the documented loss and
-the consumer obligations above continue in 0.4.0; the structured provider-state
-alternative remains deferred.
+That decision describes the original protocol-1 views and their 0.4.0 recovery release. New
+standalone native/dispatch observation schemas have their own explicit execution, source and end
+semantics; do not infer their capability or the live app vocabulary from this historical view.
+The documented loss remains relevant to consumers of those legacy exports.
 
 ---
 

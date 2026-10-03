@@ -1,8 +1,9 @@
 # The board
 
-**GitHub holds board truth. `dsh` projects it.** That is ratified decision 3 on the
-[roadmap](https://github.com/rickylabs/harness/issues/30), and almost everything else about the
-board follows from it.
+**GitHub holds board truth. Harness projects it.** The original roadmap established that
+boundary; [ADR 0005](../../doctrine/decisions/0005-harness-framework-identity.md) retains it while
+correcting the framework identity. Existing `dsh-board` commands are compatibility naming until
+the ordered CLI migration, not evidence that a dsh host owns the board.
 
 ## The problem it is answering
 

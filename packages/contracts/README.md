@@ -11,17 +11,14 @@ Owned by epic E8 · #38. See [`packages/README.md`](../README.md) for workspace 
 
 ## Why this is the one published package
 
-The consumers of this layer are separate products: the product backend that
-adapts the Harness feed, and the native client it serves. A native client
-cannot import a private workspace package any more than it can import this
-repository — and under the locked three-layer architecture it does not import
-this package at all: the backend is the one deployment that consumes the
-published contracts directly and runs the fold, and the native client
-consumes the backend-generated API/client package
-([06 — The three layers](../../docs/concepts/06-the-three-layers.md) owns that
-boundary). Publication is what makes the boundary a versioned artifact rather
-than a workspace import, which is why it is the only package here that is not
-`private: true`.
+Consumers are separate products. The backend consumes released strict decoders and mechanism
+vocabulary alongside reviewed, explicitly pinned native source readers. It owns product projections,
+authorization and the captured API/client used by its native companion. A native client may use
+public type-only contract vocabulary; it must not run a duplicate native-source fold or import
+private backend/Harness runtime. [The three layers](../../docs/concepts/06-the-three-layers.md)
+owns that boundary. Publication makes the mechanism contract a versioned artifact, which is why
+this is the only non-private workspace package. [ADR 0005](../../doctrine/decisions/0005-harness-framework-identity.md)
+records the current framework on Orchid and Herdr.
 
 That is also why this package has **no dependencies**, workspace or otherwise. A `workspace:*` edge
 to a private package makes it unpublishable, so where a shape here mirrors one in `board` or
@@ -33,27 +30,23 @@ it is deliberate — the same trade `telemetry` already makes by not importing `
 The test is not "could both use it" but **"do both mean the same thing by it"**. Column widths,
 navigation stacks and shortcut tables are one surface's business.
 
-The consequence worth stating out loud: **agent chat is deliberately absent.** It is real and it is
-wanted, and a conversation is the one thing on this system that carries operator prose — the payload
-this package is most careful about. It gets its own contract when someone has decided what its shape
-is, not a placeholder here.
+Native activity now includes explicitly bounded, screened assistant text and named tool summaries
+in the standalone observation schemas. That is an observation surface, not a public raw transcript
+or a prompt echo. Source identity, provenance, bounds and privacy screening remain required;
+unknown or unavailable native stores do not become fabricated execution.
 
-## Published, therefore no paths and no prompts leave
+## Public data boundary
 
-Everything here becomes a field a client logs, a crash reporter captures, and a cache keeps. So no
-field in this contract carries a filesystem path or an agent prompt outward.
+Private credentials, host/store paths, raw prompts and native session keys remain internal.
+Exact public fields and validators are owned by each schema. Repository-relative public activity
+references and screened assistant text do not relax that boundary. Projection tests verify exact
+field sets and reject private canaries rather than spreading internal records into public output.
 
-That is inherited, not re-decided: the telemetry record dropped its `title` and `cwd` for exactly
-this reason, and its `origin` path is present internally and absent from its published projection.
-`RUN_VIEW_FIELDS` is the same discipline — every published field listed by hand, so a server that
-assembles a run by spreading its internal record can be caught by a key-set assertion instead of by
-someone noticing a home directory on a phone.
+The retained protocol-1 `DispatchCommand.prompt` travels inward and is not echoed in its snapshots
+or events. Current owner-native authorization travels through its separate verified dispatcher
+boundary, keeps physical checks and accounting, and invents no matrix receipt.
 
-The contract is therefore **asymmetric on purpose**. A prompt travels inward on
-`DispatchCommand.prompt` and never travels back: no snapshot, no event and no outcome carries it. A
-cockpit that wants to show what it just sent remembers what it sent.
-
-## The four decisions
+## Retained protocol-1 design decisions
 
 ### The server classifies, the client counts
 
@@ -85,17 +78,17 @@ reported itself empty. `scripts/check-lifecycle.mjs` compares exactly those two.
 versioned and compiled into two clients on their own release cadence, would be the one copy nothing
 can check.
 
-### A dispatch names a lane, never a model
+### Legacy DispatchCommand names a lane
 
 A cockpit says "do docs polish on #79". `@rickylabs/routing` owns the table that turns that into a
 model — including the fallback chain, the permitted effort escalations, and the rule that an
 evaluator may not be the author. A client that could name a model could route around every one of
 those, by accident, from a phone, with no reviewer.
 
-Two consequences: a routing change reaches every cockpit with no client release, and
-`accepted: true` means **admitted, not launched** — the dispatcher polls on its own interval and the
-agent starts about half a minute later. The launch arrives as a `run.upserted` event, which is the
-only thing that means running.
+This legacy command grants no model override authority. The current verified owner-native port
+uses its own provenance and exact route while retaining admission and accounting. In both cases,
+`accepted: true` means **admitted, not launched**. Native binding and observed execution establish
+running; neither a polling interval nor an elapsed duration guarantees launch.
 
 ### Deltas carry whole values, and connecting is subscribing
 
@@ -114,9 +107,9 @@ subscription filter that can change mid-stream quietly breaks the property the p
 stale row no future event will ever correct. One repository's board is small enough that filtering
 is a client-side concern.
 
-## Connection recovery in the 0.4.0 candidate
+## Retained connection recovery introduced in 0.4.0
 
-The 0.4.0 candidate prepared connection recovery over published 0.3.0; protocol remains 1.
+The 0.4.0 release introduced connection recovery over 0.3.0; the compatibility protocol remains 1.
 Packing or merging it is not publication or consumer adoption. The 0.x minor discloses changed
 client behavior: `EventFold.bound` is optional for source compatibility, and old-shaped folds use
 `bound ?? (generation !== null)`. New empty folds explicitly start unbound.
@@ -181,12 +174,11 @@ Capacity is not a scalar, so `RegimeStatus` is a discriminated union:
 | `metered` | USD per token | runs out and stops |
 | `capacity` | bytes of VRAM and RAM per host | does not stop — it thrashes, serving everything slowly |
 
-The governor **fails open**: it only ever refuses new admissions, never touches a run in flight, and
-allows when it cannot read a meter. That is right, and it has one bad consequence on a screen —
-"allowed" and "we could not check" look identical. So every regime carries `observedAt`, an unread
-regime reports `allow` with `observedAt: null` and a note, and no regime is ever omitted. A green bar
-with no reading behind it is the most expensive wrong thing to show someone deciding whether to
-dispatch.
+The legacy `RegimeStatus` display permits an unread regime to carry `allow`, `observedAt: null`
+and an explanation. That is display vocabulary, not proof of Orchid launch admission or a paid
+provider budget. Strict current observation schemas preserve unavailable/unknown facts; Orchid
+applies its actual physical checks and source-based accounting. Do not turn an absent meter into
+a fabricated green reading or use another transport's quota source.
 
 ## Closed vocabularies and open ones
 
@@ -233,7 +225,7 @@ The root entry carries the pure connection-and-fold bindings. Under the
 three-layer architecture the deployment that imports them and runs the fold
 is the product backend's Harness adapter — exactly one reducer owns a run
 card there. A native client consumes the backend-generated API/client package
-and never imports this package directly; these names remain the shipped API
+and does not run that mux fold; these names remain the shipped API
 for the backend-side consumer, not native adoption instructions.
 
 `Hub` produces the frames `EventFold` consumes, so both halves live in one package — the property

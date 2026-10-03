@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/provider-opencode",
   "version": "0.0.0",
-  "description": "SubagentProvider over a long-lived opencode serve (ctx.subagents seam)",
+  "description": "Native task adapter over a configured OpenCode server",
   "license": "MIT",
   "private": true,
   "type": "module",

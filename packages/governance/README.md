@@ -3,7 +3,8 @@
 Tri-regime admission control: whether the system may spend, right now, on this.
 
 **Status: stub.** Owned by **E5 · [#35](https://github.com/rickylabs/harness/issues/35)**. The only
-export is `PACKAGE_NAME`. Nothing here reads a budget or refuses anything.
+export is `PACKAGE_NAME`. Nothing here reads a budget or refuses anything. Orchid owns live physical launch admission
+and accounting; this package is not its governor.
 
 ## What it will own
 
@@ -12,15 +13,15 @@ published — but the part that costs: getting a real reading, and deciding.
 
 There are two gates in this system and they are not the same gate.
 [`coordinator`](../coordinator/README.md) decides *who may evaluate* — a rule about independence,
-answerable offline from a roster. This package decides *whether the system may spend* — a rule about
+answerable offline from a roster. This package reserves an unimplemented boundary for *whether the system may spend* — a rule about
 capacity, answerable only by looking at the world. That is why they are separate packages: one is
 pure and the other is not.
 
 ## Why there are three of them
 
-Not a taxonomy — a consequence. The two seams plus the local models admit work on incomparable
-grounds, so there is no one number to compare them on, and any package that produced one would be
-inventing it. [`docs/concepts/02`](../../docs/concepts/02-the-two-seams.md) is where that split is
+Quota windows, paid spend and physical capacity have incomparable units. Native transport labels
+do not determine billing; an explicitly unmetered transport uses a configured static cap and
+never consumes another vendor's meter. Missing source observations remain unknown. [`docs/concepts/02`](../../docs/concepts/02-the-two-seams.md) is where that split is
 argued; this package is where it gets read.
 
 ## What already constrains it
@@ -42,11 +43,11 @@ it could not read, rather than passing.
 ## Why it is empty
 
 The decision E5 waited on is answered: the sandboxctl sidecar was ratified on
-**[#257](https://github.com/rickylabs/harness/issues/257)**, and the channel
-it names is what a live admission reading reaches through. The published
+**[#257](https://github.com/rickylabs/harness/issues/257)**, and defines the permitted channel authority. That decision does not prove deployed sidecar
+activation or a live admission read. The published
 governance *read* boundary already ships through `telemetry` and `contracts`
 (see the [telemetry README](../telemetry/README.md#published-governance-read-command));
-this package — the part that decides whether the system may spend — remains a
+this package — the unimplemented admission boundary — remains a
 stub until E5 implements it. Building it before the epic that owns it defines
 the contract would mean building the readings twice.
 

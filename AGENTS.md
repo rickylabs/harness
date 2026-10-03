@@ -3,10 +3,10 @@
 Entry point for agent mode in `rickylabs/harness`.
 
 > **Read [`ARCHITECTURE.md`](ARCHITECTURE.md) before anything else.** It is the locked charter
-> of this repository (v1, 2026-09-13) and it supersedes
+> of this repository (owner-amended through ADR 0005, 2026-10-03) and it supersedes
 > [#30](https://github.com/rickylabs/harness/issues/30). It states what is built, what is
-> parked, and the four invariants every run is held to. An agent may not amend it and may not
-> open a pull request that assumes a different architecture.
+> parked, and the four invariants every run is held to. Amendments require a recorded owner
+> decision; an agent may not silently build against another architecture.
 
 ## Invocation
 
@@ -26,22 +26,20 @@ before your first mutation. They are short by design.
 
 ## What this repository is
 
-The **portable agent runtime**: the routing matrix, the launchers that enforce it, the
-slice loop, the profiles and the doctrine, made to run against any repository, not one.
-See [`ARCHITECTURE.md`](ARCHITECTURE.md) §1.
+**Our portable agent framework on Orchid and Herdr.** The core packages own routing,
+native observations, provider boundaries, board/coordination mechanics and published contracts.
+The method and run record make the work resumable and reviewable. [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md)
+records Eric's Decision Q; [ARCHITECTURE.md](ARCHITECTURE.md) owns the charter.
 
-The `dsh` plugin packages under `packages/` were built against UHP-hosted dispatch, which
-is **parked** — [`ARCHITECTURE.md`](ARCHITECTURE.md) §10. They are not deleted, and they are
-no longer the charter. It is a product being designed by its own method — the founding
-architecture run at
-[`.llm/runs/architecture-foundation--seed/`](.llm/runs/architecture-foundation--seed/)
-records that design; the board says what is built. [`BOARD.md`](BOARD.md) is that board rendered as
-a page — read it before you ask anyone what is in flight, and treat it as a projection: where it and
-an issue disagree, the issue wins and the page is stale by at most half an hour.
+`packages/dsh-app` is the retained optional dsh-router experiment. It currently remains in the
+workspace; its approved relocation to `experiments/routers/dsh` and default-check exclusion are
+pending. It is not the framework host or the native launch path. Live testing waits until after
+the next APK and separate authorization.
 
-Treat that run directory as the working surface. Treat everything else as either doctrine
-(stable, change deliberately), the plugin layer in [`packages/`](packages/), or entry points
-(rarely change).
+[BOARD.md](BOARD.md) is a generated projection. Where it and an issue disagree, the issue wins.
+The founding [architecture run](.llm/runs/architecture-foundation--seed/) is historical evidence,
+not the active run for every new task. Work on the authorized brief and mutation surface;
+retain run evidence in its declared location, and never publish private operational material.
 
 ## Operational hazard: this repository is a live inbox
 
@@ -75,69 +73,47 @@ the development pin and dual-version CI. Use pnpm as declared in package.json.
 
 ## Workspace layout, and the two seams
 
-A pnpm workspace: one package per Cordis plugin under [`packages/`](packages/), each owned by a
-numbered epic, plus `dsh-app` which composes them. [`packages/README.md`](packages/README.md)
-holds the authoritative table of package → owning epic → what it attaches to, and the
-conventions every package inherits. Packages marked **stub** reserve dependency shape; do
-not add behaviour to one before the epic that owns it has defined its contract.
+A pnpm workspace with fourteen core packages and one retained dsh composition experiment.
+[packages/README.md](packages/README.md) owns the responsibility and implementation table.
+Stubs reserve a boundary; their existence does not prove implemented or deployed behavior.
 
+```text
+packages/                    flat core packages, plus dsh-app until its approved move
+profiles/                    stable root process/routing entrypoints
+doctrine/                    portable method; canonical home migration is pending
+.llm/runs/                   retained committed historical run evidence
+.llm/harness/                existing templates; compatibility preserved during migration
+.llm/tools/                  existing gates and method tools
+.claude/skills/              generated board-process rulebook
 ```
-doctrine/                    portable doctrine — how to work here (stable)
-packages/                    the dsh plugin layer — one package per subsystem
-.llm/runs/                   run artifacts — durable, reviewed via PR
-.claude/skills/              generated skills; board-process is the board's rulebook
-AGENTS.md / CLAUDE.md        entry points
-```
 
-**Doctrine lives in [`doctrine/`](doctrine/)** — plain markdown, zero runtime, portable to any
-repository in any language. It is the layer that already ported; treat it as stable and change
-it deliberately. Run artifacts under `.llm/runs/` are durable evidence, not scratch space.
+Native task and API/local-model boundaries remain separate. Native CLIs own their loops;
+call adapters own only the semantics they implement. `ctx.subagents` and `ctx.llm` are the
+optional dsh composition's service-key vocabulary, not a required host for the core.
+Read [Two seams](docs/concepts/02-the-two-seams.md) before changing either boundary.
 
-The plugin split is not arbitrary. Two subsystems that both look like "call a model" attach to
-two *different* dsh seams — `ctx.subagents` for autonomous vendor CLIs, `ctx.llm` for API-key and
-local models — and the packages are separated to match (#30, "two seams, not one"). Collapsing
-them into one abstraction is the design error the split exists to prevent.
-
-**Read [`docs/concepts/02-the-two-seams.md`](docs/concepts/02-the-two-seams.md) before touching
-either side.** It owns that distinction — what each seam is metered by, what running out of one
-means, and the three places the coordinator reads it — so this file does not restate it.
+Keep exposed core paths, root profiles and `@rickylabs/harness-contracts` stable. Later operator
+or wire naming migrations require exact paired consumer pins and rollout evidence.
 
 ## Ratified decisions you inherit
 
-These four were ratified in the *Decisions taken* table of
-[#30](https://github.com/rickylabs/harness/issues/30), which
-[`ARCHITECTURE.md`](ARCHITECTURE.md) supersedes. Where the two differ, the charter wins. Two of
-the four still hold unchanged, one is now scoped to parked work, and one is superseded on its first
-clause only — each is marked below, and the marking is the authority. This sentence is a summary of
-the list and cannot be checked against it by anything, so where the two disagree, believe the list.
+[ADR 0005](doctrine/decisions/0005-harness-framework-identity.md) supersedes the former dsh-only
+premise while retaining historical decisions. Do not reinterpret an old roadmap as the current charter.
 
-They remain **not** owner forks and not open questions: do not re-derive them and do not design
-against them. If evidence contradicts one, [`ARCHITECTURE.md`](ARCHITECTURE.md) §13 is the
-mechanism — file a numbered decision in [`doctrine/decisions/`](doctrine/decisions/) with the
-evidence, the recommendation, and the cost of being wrong. Do not raise it against #30, which is
-closed.
+1. Harness is our framework on Orchid and Herdr; dsh is an optional additional-router experiment.
+2. Node and pnpm remain the package runtime/toolchain. NetScript is an external service boundary,
+   never a cross-repository build-time workspace dependency.
+3. GitHub owns the board. Harness projects it; native stores and launch receipts establish execution.
+4. Cockpit and mobile are separate products. The public npm name and exports stay stable, and the
+   native product runtime uses cockpit's captured/generated API rather than private backend code.
+5. The matrix is the default routing authority. A verified Eric-authorized native override records
+   its own provenance and retains physical checks/accounting. Different vendor families and
+   separate evaluator sessions are still mandatory.
 
-1. **Plugin-only, no core fork.** *Scoped to the parked plugin layer —*
-   [`ARCHITECTURE.md`](ARCHITECTURE.md) §10. Depend on published `@deepseek-ai/dsh`. We ship our
-   Cordis plugin packages and one profile. Only `runzhliu/deepseek-harness-docker` is forked,
-   upstream remote kept for updates.
-2. **Node + pnpm.** netscript stays a service behind an adapter, not a build-time dependency.
-3. **GitHub is the source of truth for the board**; dsh projects the live view.
-4. **Superseded on its first clause.** This repository is **the portable agent runtime** —
-   [`ARCHITECTURE.md`](ARCHITECTURE.md) §1, which states that charter "replaces the previous one
-   ("the `dsh` plugin layer")". The rest of this decision still holds. No cockpit is built here. The two that consume this
-   layer are separate products in their own repositories — `rickylabs/atelier-cockpit`, the
-   engineering cockpit and backend, and `rickylabs/atelier-mobile`, the native companion.
-   The backend adapts Harness; the native client uses the backend-generated API/client. Consequence:
-   `contracts` must be a *published* package, not a workspace import. Decision 4 originally placed
-   external consumers in netscript and was
-   [amended](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579) once they
-   became products in their own right; the consequence is the half the amendment left standing.
-
-Decisions 2 and 4 are load-bearing for [E2](https://github.com/rickylabs/harness/issues/32) and
-[E8](https://github.com/rickylabs/harness/issues/38). A design that adds NetScript as a
-build-time dependency of this repository, or that puts a cockpit in it, is wrong before it is
-reviewed.
+The coordinator-approved cleanup uses one PR at a time. PRs 1–4 establish documentation, core CLI
+compatibility, experiment isolation and method/run-record homes; their merge unblocks the vault
+refresh. Naming migrations 5–7 remain pending until paired consumers/operators are ready. No live
+settings, host operations or deployments follow from a source merge without explicit GO.
 
 ## Standing constraints
 

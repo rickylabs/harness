@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/provider-acp",
   "version": "0.0.0",
-  "description": "SubagentProvider over ACP \u2014 agy, cursor, grok (ctx.subagents seam)",
+  "description": "ACP provider boundary (stub)",
   "license": "MIT",
   "private": true,
   "type": "module",

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 800" width="900" height="800" role="img" aria-label="Three-layer architecture. GitHub is board truth. Layer 1, coordination, publishes one contracts package. Layer 2, the product backend, consumes it and derives a generated client. Layer 3, the native client, consumes that generated client. Layer 1 and the contracts package are highlighted as this repository build scope.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 800" width="900" height="800" role="img" aria-label="Three-layer architecture. GitHub is board truth. Layer 1, coordination, publishes one contracts package. Layer 2, the product backend, consumes it and derives a generated client. Layer 3, the native client, consumes that generated client. Layer 1 and contracts show Harness mechanism responsibilities; dispatch and terminal control are external Orchid and Herdr boundaries.">
   <style>
     .bg    { fill: #FBFCFC; }
     .band  { fill: none; stroke: #C9D6D4; stroke-width: 1; }
@@ -41,7 +41,7 @@
 
   <!-- BAND 1 : coordination -->
   <rect class="band" id="band1" x="14" y="72" width="872" height="146" rx="4"/>
-  <text class="lbl" x="26" y="90">LAYER 1 — coordination · harness deployment (Node + pnpm, its own host)</text>
+  <text class="lbl" x="26" y="90">LAYER 1 — coordination · Harness mechanisms on Orchid + Herdr</text>
 
   <g class="node" id="n-board">
     <rect x="28" y="98" width="199" height="44" rx="3"/>
@@ -56,7 +56,7 @@
   <g class="node" id="n-coord">
     <rect x="458" y="98" width="199" height="44" rx="3"/>
     <text class="t" x="558" y="117" text-anchor="middle">coordinator</text>
-    <text class="s" x="558" y="132" text-anchor="middle">admission · the closed two-seam union</text>
+    <text class="s" x="558" y="132" text-anchor="middle">workflow decisions · durable effects</text>
   </g>
   <g class="node" id="n-telemetry">
     <rect x="673" y="98" width="199" height="44" rx="3"/>
@@ -66,18 +66,18 @@
 
   <g class="node" id="n-subagents">
     <rect x="28" y="152" width="199" height="44" rx="3"/>
-    <text class="t" x="128" y="171" text-anchor="middle">ctx.subagents</text>
-    <text class="s" x="128" y="186" text-anchor="middle">seat seam · metered by a refill window</text>
+    <text class="t" x="128" y="171" text-anchor="middle">native tasks</text>
+    <text class="s" x="128" y="186" text-anchor="middle">native loop · source-based accounting</text>
   </g>
   <g class="node" id="n-llm">
     <rect x="243" y="152" width="199" height="44" rx="3"/>
-    <text class="t" x="343" y="171" text-anchor="middle">ctx.llm</text>
+    <text class="t" x="343" y="171" text-anchor="middle">API / local calls</text>
     <text class="s" x="343" y="186" text-anchor="middle">API balance · local model capacity</text>
   </g>
   <g class="node" id="n-sandbox">
     <rect x="458" y="152" width="199" height="44" rx="3"/>
     <text class="t" x="558" y="171" text-anchor="middle">sandbox boundary</text>
-    <text class="s" x="558" y="186" text-anchor="middle">where the seat seam is actually gated</text>
+    <text class="s" x="558" y="186" text-anchor="middle">only proved launch / tool boundaries</text>
   </g>
   <g class="node" id="n-forge">
     <rect x="673" y="152" width="199" height="44" rx="3"/>
@@ -86,13 +86,13 @@
   </g>
 
   <line class="edge" x1="450" y1="218" x2="450" y2="240" marker-end="url(#a)"/>
-  <text class="cap" x="458" y="233">publishes exactly one outward surface</text>
+  <text class="cap" x="458" y="233">published contracts + pinned readers</text>
 
   <!-- CARRIER 1 -->
   <g class="carrier" id="n-carrier1">
     <rect x="180" y="240" width="540" height="50" rx="3"/>
     <text class="t" x="450" y="262" text-anchor="middle">@rickylabs/harness-contracts</text>
-    <text class="s" x="450" y="278" text-anchor="middle">protocol 1 · POST /api/{snapshot,dispatch,approve} · WS /api/remote.mux</text>
+    <text class="s" x="450" y="278" text-anchor="middle">mechanism vocabulary · strict decoders · legacy mux compatibility</text>
   </g>
 
   <line class="edge" x1="450" y1="290" x2="450" y2="312" marker-end="url(#a)"/>
@@ -115,7 +115,7 @@
   <g class="node" id="n-adapter">
     <rect x="458" y="338" width="199" height="44" rx="3"/>
     <text class="t" x="558" y="357" text-anchor="middle">harness adapter</text>
-    <text class="s" x="558" y="372" text-anchor="middle">folds the mux · exactly one projection</text>
+    <text class="s" x="558" y="372" text-anchor="middle">native / dispatch evidence · projection</text>
   </g>
   <g class="node" id="n-plugins">
     <rect x="673" y="338" width="199" height="44" rx="3"/>
@@ -176,7 +176,7 @@
   </g>
 
   <line class="edge" x1="450" y1="584" x2="450" y2="606" marker-end="url(#a)"/>
-  <text class="cap" x="458" y="599">the phone consumes this, never the mux</text>
+  <text class="cap" x="458" y="599">native runtime consumes captured product API</text>
 
   <!-- BAND 3 : client -->
   <rect class="band" id="band3" x="14" y="606" width="872" height="146" rx="4"/>
@@ -229,5 +229,5 @@
   <rect x="28" y="770" width="22" height="11" rx="2" fill="#FFFFFF" stroke="#9FB2AF"/>
   <text class="lg" x="58" y="779">elsewhere in the chain</text>
   <rect x="196" y="770" width="22" height="11" rx="2" fill="#FDF2E7" stroke="#A8500B" stroke-width="1.5"/>
-  <text class="lg" x="226" y="779" fill="#A8500B">This repository builds this</text>
+  <text class="lg" x="226" y="779" fill="#A8500B">Harness mechanism responsibility</text>
 </svg>
