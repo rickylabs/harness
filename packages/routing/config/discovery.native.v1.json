@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "claude": {
+    "firstPartyProvider": "anthropic",
+    "source": "https://github.com/anthropics/claude-agent-sdk-typescript"
+  },
+  "codex": {
+    "builtinProvider": "openai",
+    "verifiedVersions": [
+      "0.159.3",
+      "0.160.0"
+    ],
+    "sources": [
+      "https://github.com/openai/codex/blob/rust-v0.159.3/codex-rs/core/src/config/mod.rs",
+      "https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/core/src/config/mod.rs"
+    ]
+  }
+}

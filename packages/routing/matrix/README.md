@@ -79,16 +79,17 @@ or transport to hide a missing observation. Catalog admission remains separate f
 entitlement, quota, requested effort support and independent evaluator identity.
 
 The generic `preflightDiscoveredWorkloadRoute` in `matrix/cli-preflight.ts` resolves once
-and probes only the selected CLI. Claude and agy routes remain unverified because these
-read-only surfaces establish no native model catalog. From `packages/routing`, send the
+and probes only the selected CLI, including AGY/antigravity. Exact observed IDs can
+establish catalog admission; unproven auth/provider/effort facts stay unknown. From `packages/routing`, send the
 same workload request on stdin to:
 
 ```sh
-deno run --no-config --no-lock --allow-run=claude,codex,opencode --allow-read --allow-env matrix/cli-preflight.ts
+deno run --no-config --no-lock --allow-run=claude,codex,opencode,agy --allow-read --allow-env --allow-net=127.0.0.1 matrix/cli-preflight.ts
 ```
 
 The environment permission lets the Node-compatible subprocess API inherit the CLI
-environment; the observer does not inspect or emit its values. This emits fixed admission/refusal fields and excludes caller/account metadata. The CLI
+environment and set a process-local password for its owned loopback metadata listener;
+the observer does not emit environment values. This emits fixed admission/refusal fields and excludes caller/account metadata. The CLI
 returns exit 2 for unverified admission. The older OpenCode-only preflight remains
 available for existing pinned consumers. See the [discovery contract and official
 CLI sources](../README.md#read-only-cli-discovery-274).
