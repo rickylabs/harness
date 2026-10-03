@@ -12,7 +12,7 @@ export type DiscoveryProblem = "not-installed" | "command-failed" | "timeout" | 
   "malformed" | "unsupported" | "empty-catalog" | "not-requested";
 export const DISCOVERY_SOURCES = ["version", "auth-status", "model/list", "models", "declared",
   "claude.sdk.initialize", "claude.auth.apiProvider", "codex.config/read", "codex.builtin-provider",
-  "opencode.models.providerID", "opencode.models.providerPrefix", "opencode.models.variants", "opencode.provider/list.connected", "agy.models"] as const;
+  "opencode.models.providerID", "opencode.models.providerPrefix", "opencode.models.variants", "opencode.provider/list.connected", "agy.models", "agy.auth-gate", "agy.command.config", "agy.command.model"] as const;
 export type DiscoverySource = typeof DISCOVERY_SOURCES[number];
 export interface DiscoveryProvider {
   readonly id: string | null;
@@ -28,7 +28,7 @@ export interface ProviderConnection {
 }
 export interface DiscoveredModel {
   readonly id: string;
-  /** Exact CLI-declared values only; null means the listing did not establish effort support. */
+  /** Exact CLI-declared values only; [] proves unsupported effort, null means unestablished support. */
   readonly efforts: readonly string[] | null;
   readonly provider?: DiscoveryProvider;
   readonly aliases?: readonly string[];
@@ -38,8 +38,10 @@ export interface DiscoveredModel {
 export interface CliObservation {
   readonly installed: DiscoveryFact;
   readonly version: string | null;
-  /** CLI-reported login presence; never a credential, account identifier or live access proof. */
+  /** CLI-reported login or configured credential presence; never a credential, account identifier or live access proof. */
   readonly authenticated: DiscoveryFact;
+  /** Proven native metadata authentication gate; absent in legacy observations. */
+  readonly authenticationSource?: DiscoverySource | null;
   readonly entitlement: "unknown";
   readonly quota: "unknown";
   readonly catalog: "observed" | "unknown" | "declared";
@@ -73,6 +75,8 @@ const PROVIDER_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const EFFORT = /^[a-z][a-z0-9_-]{0,63}$/;
 const UNKNOWN_PROVIDER: DiscoveryProvider = { id: null, source: null, scope: "unknown" };
 const CODEX_BUILTIN_PROVIDER_VERSIONS = new Set<string>(nativeBindings.codex.verifiedVersions);
+const AGY_METADATA_VERSIONS = new Set<string>(nativeBindings.agy.verifiedVersions);
+const CLAUDE_EFFORT_OMISSION_VERSIONS = new Set<string>(nativeBindings.claude.effortOmissionVersions);
 const MAX_PROVIDER_BYTES = 16 * 1024 * 1024;
 function checkedEfforts(value: unknown): string[] {
   const values = checkedIds(value);
@@ -228,8 +232,8 @@ function child(binary: string, args: readonly string[], options: CliDiscoveryOpt
     async close() { clearTimeout(timer); process.stdin.destroy(); terminate(); await done; },
   };
 }
-async function command(binary: string, args: readonly string[], options: CliDiscoveryOptions) {
-  const running = child(binary, args, options);
+async function command(binary: string, args: readonly string[], options: CliDiscoveryOptions, environment?: NodeJS.ProcessEnv) {
+  const running = child(binary, args, options, environment);
   try { return await running.output(); } finally { await running.close(); }
 }
 function problem(error: unknown): DiscoveryProblem {
@@ -321,7 +325,7 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, versio
   } finally { await running.close(); }
 }
 /** SDK initialize is metadata only: no prompt, hooks, tools, persistence or MCP servers. */
-async function claudeCatalog(binary: string, options: CliDiscoveryOptions): Promise<DiscoveredModel[]> {
+async function claudeCatalog(binary: string, options: CliDiscoveryOptions, version: string | null): Promise<DiscoveredModel[]> {
   const running = child(binary, ["--print", "--bare", "--verbose", "--input-format", "stream-json",
     "--output-format", "stream-json", "--no-session-persistence", "--setting-sources=",
     "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}'], options);
@@ -348,6 +352,9 @@ async function claudeCatalog(binary: string, options: CliDiscoveryOptions): Prom
       aliases.add(alias);
       if (entry.supportsEffort !== undefined && typeof entry.supportsEffort !== "boolean") throw new DiscoveryError("malformed");
       let efforts: string[] | null = null;
+      // Native 2.1.288 N7 spreads both effort fields only when nw(resolvedModel) is true.
+      // That verified serializer proves omission is unsupported; unverified serializers stay unknown.
+      if (entry.supportsEffort === false || (entry.supportsEffort === undefined && CLAUDE_EFFORT_OMISSION_VERSIONS.has(version ?? ""))) efforts = [];
       if (entry.supportedEffortLevels !== undefined) {
         efforts = checkedEfforts(entry.supportedEffortLevels);
         if (entry.supportsEffort !== true || !efforts.length) throw new DiscoveryError("malformed");
@@ -448,6 +455,61 @@ async function openCodeConnections(binary: string, models: readonly DiscoveredMo
     throw error;
   } finally { clearTimeout(timer); controller.abort(); await running.close(); }
 }
+/** Native built-in reports are metadata: verified auth gate, no conversation, no turns or tokens.
+ * Raw response/configuration is discarded; unknown versions never receive a print request. */
+async function agyReport(binary: string, name: "config" | "model", options: CliDiscoveryOptions, id?: string) {
+  const result = await command(binary, [...(id === undefined ? [] : ["--model", id]), "--print", "/" + name, "--output-format", "json"],
+    options, { ...process.env, AGY_CLI_NONINTERACTIVE_HEADLESS: "1" });
+  const envelope = object(nativeJson(result.stdout));
+  if (result.code !== 0 || envelope.status !== "SUCCESS" || envelope.conversation_id !== "" || envelope.num_turns !== 0) throw new DiscoveryError("malformed");
+  const usage = object(envelope.usage);
+  const counters = ["input_tokens", "output_tokens", "thinking_tokens", "cache_read_tokens", "total_tokens"];
+  if (counters.some(key => usage[key] !== 0) || Object.keys(usage).some(key => !counters.includes(key))) throw new DiscoveryError("malformed");
+  const report = object(envelope.command);
+  if (report.name !== name) throw new DiscoveryError("malformed");
+  return object(report.data);
+}
+async function agyFacts(binary: string, ids: string[], options: CliDiscoveryOptions, observation: CliObservation): Promise<CliObservation> {
+  const models: DiscoveredModel[] = ids.map(id => ({ id, efforts: null, provider: UNKNOWN_PROVIDER, effortSource: null }));
+  const base: CliObservation = { ...observation, catalog: "observed", models, sources: ["version", "agy.models"] };
+  if (!AGY_METADATA_VERSIONS.has(observation.version ?? "")) return base;
+  const deadline = Date.now() + (options.timeoutMs ?? 15_000);
+  const scoped = { ...options, cwd: resolve(options.cwd) };
+  const bounded = () => {
+    const remaining = deadline - Date.now();
+    if (remaining < 1) throw new DiscoveryError("timeout");
+    return { ...scoped, timeoutMs: remaining };
+  };
+  const sources = new Set<DiscoverySource>(base.sources), problems = new Set<DiscoveryProblem>();
+  let binding = UNKNOWN_PROVIDER;
+  const authenticate = () => { sources.add("agy.auth-gate"); };
+  try {
+    const data = await agyReport(binary, "config", bounded());
+    const config = object(data.config); sources.add("agy.command.config"); authenticate();
+    if (typeof config.modelProvider === "string" && Object.hasOwn(nativeBindings.agy.providerBindings, config.modelProvider) &&
+        config.customModelsConfig === null && config.gcp === null && !process.env.GOOGLE_GEMINI_BASE_URL) {
+      const bindings: Readonly<Record<string, string>> = nativeBindings.agy.providerBindings;
+      binding = provider(bindings[config.modelProvider], "agy.command.config", "cli");
+    }
+  } catch (error) { problems.add(problem(error)); }
+  // A catalog cannot drive an unbounded number of subprocesses. Each batch shares one deadline.
+  if (ids.length > 64) problems.add("oversized");
+  for (let start = 0; start < Math.min(ids.length, 64); start += 4) {
+    const batch = await Promise.allSettled(ids.slice(start, Math.min(start + 4, 64)).map(async id => {
+      const data = await agyReport(binary, "model", bounded(), id);
+      if (data.id !== id || typeof data.effort !== "string") throw new DiscoveryError("malformed");
+      const efforts = data.effort === "" ? [] : checkedEfforts([data.effort]);
+      return { id, efforts, provider: binding, effortSource: "agy.command.model" as const };
+    }));
+    for (const [offset, result] of batch.entries()) {
+      if (result.status === "fulfilled") { models[start + offset] = result.value; authenticate(); sources.add("agy.command.model"); }
+      else problems.add(problem(result.reason));
+    }
+    if (Date.now() >= deadline) { problems.add("timeout"); break; }
+  }
+  return { ...base, authenticated: sources.has("agy.auth-gate") ? "yes" : "unknown", authenticationSource: sources.has("agy.auth-gate") ? "agy.auth-gate" : null,
+    provider: binding, models: models.map(model => ({ ...model, provider: binding })), sources: [...sources], problems: [...problems] };
+}
 async function observe(launcher: DiscoveryLauncher, options: CliDiscoveryOptions): Promise<CliObservation> {
   const binary = options.binaries?.[launcher] ?? launcher, base = unknown("not-requested");
   let version;
@@ -471,7 +533,7 @@ async function observe(launcher: DiscoveryLauncher, options: CliDiscoveryOptions
       }
     } catch (error) { problems.push(problem(error)); }
     try {
-      const models = (await claudeCatalog(binary, options)).map(model => ({ ...model, provider: binding }));
+      const models = (await claudeCatalog(binary, options, observation.version)).map(model => ({ ...model, provider: binding }));
       return { ...observation, authenticated, provider: binding, catalog: "observed", models,
         sources: [...sources, "claude.sdk.initialize"], problems };
     } catch (error) { return { ...observation, authenticated, provider: binding, sources, problems: [...problems, problem(error)] }; }
@@ -487,8 +549,7 @@ async function observe(launcher: DiscoveryLauncher, options: CliDiscoveryOptions
     if (launcher === "agy") {
       const ids = checkedIds(output.stdout.split(/\r?\n/).filter(line => line.trim()).map(line => line.split("\t")[0]));
       if (!ids.length) throw new DiscoveryError("empty-catalog");
-      return { ...observation, catalog: "observed", models: ids.map(id => ({ id, efforts: null, provider: UNKNOWN_PROVIDER, effortSource: null })),
-        sources: ["version", "agy.models"] };
+      return await agyFacts(binary, ids, options, observation);
     }
     const models = openCodeModels(output.stdout);
     const catalog: CliObservation = { ...observation, catalog: "observed", models, sources: [...new Set<DiscoverySource>(["version", "models", ...models.flatMap(m =>
@@ -525,11 +586,11 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
       claude: ["version", "auth-status", "claude.sdk.initialize", "claude.auth.apiProvider"],
       codex: ["version", "auth-status", "model/list", "codex.config/read", "codex.builtin-provider"],
       opencode: ["version", "models", "opencode.models.providerID", "opencode.models.providerPrefix", "opencode.models.variants", "opencode.provider/list.connected"],
-      agy: ["version", "declared", "agy.models"],
+      agy: ["version", "declared", "agy.models", "agy.auth-gate", "agy.command.config", "agy.command.model"],
     };
     for (const name of DISCOVERY_LAUNCHERS) {
       const record = object(launchers[name]);
-      if (!shape(record, ["installed", "version", "authenticated", "entitlement", "quota", "catalog", "models", "sources", "problems"], ["provider", "providerConnections"]) ||
+      if (!shape(record, ["installed", "version", "authenticated", "entitlement", "quota", "catalog", "models", "sources", "problems"], ["provider", "providerConnections", "authenticationSource"]) ||
           !fact(record.installed) || !fact(record.authenticated) || record.entitlement !== "unknown" || record.quota !== "unknown" ||
           (typeof record.catalog !== "string" || !["observed", "unknown", "declared"].includes(record.catalog)) ||
           (record.version !== null && (typeof record.version !== "string" || VERSION.exec(record.version)?.[0] !== record.version)) ||
@@ -538,7 +599,15 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
           record.sources.some(v => !nativeSources[name].includes(v)) ||
           !Array.isArray(record.problems) || record.problems.length > 8 || record.problems.some(v =>
             !["not-installed", "command-failed", "timeout", "oversized", "malformed", "unsupported", "empty-catalog", "not-requested"].includes(v))) return false;
-      if ((name === "agy" || name === "opencode") && record.authenticated !== "unknown") return false;
+      if (name === "opencode" && record.authenticated !== "unknown") return false;
+      if (Object.hasOwn(record, "authenticationSource")) {
+        if (name !== "agy" || (record.authenticated === "unknown" ? record.authenticationSource !== null : record.authenticationSource !== "agy.auth-gate")) return false;
+      }
+      if (name === "agy" && (record.authenticated !== "unknown" || record.sources.some(source => source !== "version" && source !== "agy.models" && source !== "declared"))) {
+        if (record.installed !== "yes" || record.catalog !== "observed" || !AGY_METADATA_VERSIONS.has(typeof record.version === "string" ? record.version : "") ||
+            record.authenticated !== "yes" || record.authenticationSource !== "agy.auth-gate" || !record.sources.includes("agy.auth-gate") ||
+            !(record.sources.includes("agy.command.config") || record.sources.includes("agy.command.model"))) return false;
+      }
       const sources = record.sources;
       const binding = (value: unknown, scope: "cli" | "model", modelID?: string) => {
         const p = object(value);
@@ -549,6 +618,7 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
         if (name === "claude") return scope === "cli" && p.source === "claude.auth.apiProvider" && p.id === nativeBindings.claude.firstPartyProvider;
         if (name === "codex") return scope === "cli" && (p.source === "codex.config/read" ||
           (p.source === "codex.builtin-provider" && p.id === nativeBindings.codex.builtinProvider && typeof record.version === "string" && CODEX_BUILTIN_PROVIDER_VERSIONS.has(record.version)));
+        if (name === "agy") return scope === "cli" && p.source === "agy.command.config" && record.authenticated === "yes" && Object.values(nativeBindings.agy.providerBindings).includes(p.id);
         return name === "opencode" && scope === "model" && modelID?.startsWith(p.id + "/") === true &&
           (p.source === "opencode.models.providerID" || p.source === "opencode.models.providerPrefix");
       };
@@ -559,7 +629,7 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
         if (!shape(model, ["id", "efforts"], ["provider", "aliases", "variants", "effortSource"])) return false;
         ids.push(model.id);
         if (model.efforts !== null) checkedEfforts(model.efforts);
-        if (name === "agy" && model.efforts !== null) return false;
+        if (name === "agy" && model.efforts !== null && (record.authenticated !== "yes" || model.effortSource !== "agy.command.model" || !record.sources.includes("agy.command.model") || (model.efforts as unknown[]).length > 1)) return false;
         if (Object.hasOwn(model, "provider")) {
           const scope = name === "opencode" ? "model" : "cli";
           if (!binding(model.provider, scope, typeof model.id === "string" ? model.id : undefined)) return false;
@@ -576,9 +646,9 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
         }
         if (Object.hasOwn(model, "variants")) { if (name !== "opencode") return false; checkedVariants(model.variants); }
         if (Object.hasOwn(model, "effortSource")) {
-          const expected = name === "claude" ? "claude.sdk.initialize" : name === "codex" ? "model/list" : "opencode.models.variants";
+          const expected = name === "claude" ? "claude.sdk.initialize" : name === "codex" ? "model/list" : name === "agy" ? "agy.command.model" : "opencode.models.variants";
           if (model.efforts === null) { if (model.effortSource !== null) return false; }
-          else if (name === "agy" || model.effortSource !== expected || !record.sources.includes(expected)) return false;
+          else if (model.effortSource !== expected || !record.sources.includes(expected)) return false;
           if (name === "opencode" && model.efforts !== null && (!Array.isArray(model.variants) || (model.efforts as unknown[]).some((e: unknown) => !(model.variants as unknown[]).includes(e)))) return false;
         }
       }

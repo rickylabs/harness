@@ -1003,3 +1003,43 @@ it("keeps every fleet model, tier, role, scope, lane, family and effort out of r
     for (const value of forbidden) assert.ok(!code.includes(JSON.stringify(value)), `${file} compiles ${value}`);
   }
 });
+
+
+describe("explicit logical aliases retain one exact native launch binding", () => {
+  function aliased(): any {
+    const v = documentT();
+    v.models["legacy-maker"] = { ...structuredClone(v.models["maker-a"]), aliasOf: "maker-a", label: "Legacy maker" };
+    return v;
+  }
+  it("accepts a direct identical alias in either declaration order", () => {
+    for (const reverse of [false, true]) {
+      const v = aliased();
+      if (reverse) v.models = Object.fromEntries(Object.entries(v.models).reverse());
+      v.models["legacy-maker"].launches[0] = Object.fromEntries(Object.entries(v.models["legacy-maker"].launches[0]).reverse());
+      const config = fleet(loaded(validate(v)).configuration);
+      assert.equal((config.models["legacy-maker"] as any)?.aliasOf, "maker-a");
+      assert.deepEqual(launchesOf(config, "legacy-maker"), launchesOf(config, "maker-a"));
+    }
+  });
+  for (const [name, edit] of [
+    ["undeclared duplicate", (v: any) => { delete v.models["legacy-maker"].aliasOf; }],
+    ["self alias", (v: any) => { v.models["legacy-maker"].aliasOf = "legacy-maker"; }],
+    ["missing target", (v: any) => { v.models["legacy-maker"].aliasOf = "absent"; }],
+    ["wrong type", (v: any) => { v.models["legacy-maker"].aliasOf = 1; }],
+    ["alias chain", (v: any) => { v.models["third-maker"] = { ...structuredClone(v.models["legacy-maker"]), aliasOf: "legacy-maker" }; }],
+    ["family mismatch", (v: any) => { v.models["legacy-maker"].family = "beta"; }],
+    ["capability mismatch", (v: any) => { v.capabilities = ["synthetic-vision"]; v.models["legacy-maker"].capabilities = ["synthetic-vision"]; }],
+    ["launch metadata mismatch", (v: any) => { v.models["legacy-maker"].launches[0].subscription = "included"; }],
+    ["target additional launch", (v: any) => { v.models["maker-a"].launches.push({...structuredClone(v.models["maker-a"].launches[0]),id:"maker-second-wire"}); }],
+    ["target additional optional launch field", (v: any) => { v.models["maker-a"].launches[0].subscription = "included"; }],
+    ["effort support mismatch", (v: any) => { v.models["legacy-maker"].launches[0].effortSupport = {status:"known",supported:["one"],why:"synthetic evidence"}; }],
+    ["duplicate within alias", (v: any) => { v.models["legacy-maker"].launches.push(structuredClone(v.models["legacy-maker"].launches[0])); }],
+  ] as const) it(`rejects ${name}`, () => { const v = aliased(); edit(v); assert.equal(validate(v).ok, false); });
+  for (const target of ["absent", 1]) it(`rejects a standalone invalid alias target ${target}`, () => { const v = documentT(); v.models["maker-a"].aliasOf = target; assert.equal(validate(v).ok, false); });
+  it("rejects a standalone self alias", () => { const v = documentT(); v.models["maker-a"].aliasOf = "maker-a"; assert.equal(validate(v).ok, false); });
+  it("does not waive same-family evaluator independence", () => {
+    const v = aliased(); v.models["checker-b"].family = "alpha";
+    v.tiers[0].cells.check[0].model = "legacy-maker";
+    assert.equal(validate(v).ok, false);
+  });
+});

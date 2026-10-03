@@ -18,10 +18,42 @@ import { createServer } from 'node:http';
 const kind=${JSON.stringify(kind)}, behavior=${JSON.stringify(behavior)}, data=JSON.parse(readFileSync(${JSON.stringify(dataPath)},'utf8'));
 const log=${JSON.stringify(join(cwd, "commands.jsonl"))}, args=process.argv.slice(2);
 const note=value=>appendFileSync(log,JSON.stringify(value)+'\\n'); note({args,pid:process.pid,cwd:process.cwd()});
+if(args[0]==='--version'&&kind==='agy'&&behavior.startsWith('agy-')){console.log('1.2.16');process.exit(0);}
+if(args[0]==='--version'&&kind==='claude'&&behavior==='known-serializer'){console.log('2.1.288');process.exit(0);}
+if(kind==='agy'&&args.includes('--print')){
+ const name=args[args.indexOf('--print')+1].slice(1), id=args[args.indexOf('--model')+1];
+ const entry=data.agyModels.find(m=>m.id===id);
+ let payload=name==='config'?{config:{modelProvider:'',customModelsConfig:null,gcp:null,private:data.privateProviderPayload}}:{id,effort:entry?.nativeEffort,is_default:false};
+ if(behavior==='agy-custom'&&name==='config')payload.config.customModelsConfig={private:data.privateProviderPayload};
+ if(behavior==='agy-provider-type'&&name==='config')payload.config.modelProvider=1;
+ if(behavior==='agy-gcp'&&name==='config')payload.config.gcp={private:data.privateProviderPayload};
+ if(behavior==='agy-explicit'&&name==='config')payload.config.modelProvider='gemini';
+ if(behavior==='agy-unknown-provider'&&name==='config')payload.config.modelProvider='fixture-provider';
+ if(behavior==='agy-wrong-model'&&name==='model')payload.id=data.codexModels[0].model;
+ if(behavior==='agy-private-effort'&&name==='model')payload.effort='/PRIVATE/CONFIG';
+ if(behavior==='agy-config-failed'&&name==='config')process.exit(2);
+ if(behavior==='agy-model-failed'&&name==='model')process.exit(2);
+ if(behavior==='agy-delay')await new Promise(resolve=>setTimeout(resolve,name==='config'?450:250));
+ const result={conversation_id:'',status:'SUCCESS',num_turns:0,usage:{input_tokens:0,output_tokens:0,thinking_tokens:0,cache_read_tokens:0,total_tokens:0},command:{name,data:payload},private:data.privateProviderPayload};
+ if(behavior==='agy-turn')result.num_turns=1;
+ if(behavior==='agy-session')result.conversation_id='PRIVATE-SESSION-CANARY';
+ if(behavior==='agy-token')result.usage.input_tokens=1;
+ if(behavior==='agy-output-token')result.usage.output_tokens=1;
+ if(behavior==='agy-thinking-token')result.usage.thinking_tokens=1;
+ if(behavior==='agy-cache-token')result.usage.cache_read_tokens=1;
+ if(behavior==='agy-total-token')result.usage.total_tokens=1;
+ if(behavior==='agy-extra-usage')result.usage.opaque=0;
+ if(behavior==='agy-missing-usage')delete result.usage.thinking_tokens;
+ if(behavior==='agy-shape'&&name==='config')result.command.data.config=null;
+ if(behavior==='agy-shape'&&name==='model')result.command.data=null;
+ if(behavior==='agy-status')result.status='ERROR';
+ if(behavior==='agy-command')result.command.name='other';
+ console.log(JSON.stringify(result));process.exit(behavior==='agy-exit'?1:0);
+}
 if(args[0]==='--version'){console.log(kind==='codex'&&behavior!=='other-version'?(['new-version','project-provider','scoped-read-failed'].includes(behavior)?'0.160.0':'0.159.3'):'1.2.3');process.exit(0);}
 if(args[0]==='auth'){if(behavior==='auth-failed'){console.log('PRIVATE-CREDENTIAL-CANARY');process.exit(2);}const auth={...data.claudeAuth};if(behavior==='auth-type')auth.loggedIn='yes';if(behavior==='auth-provider')auth.apiProvider='unknown';console.log(JSON.stringify(auth));process.exit(behavior==='auth-exit'?1:0);}
 if(args[0]==='models'){
- if(kind==='agy'){for(const m of data.agyModels)console.log(m.id+'\\t'+m.label);}
+ if(kind==='agy'){const entries=behavior==='agy-bound'?Array.from({length:65},(_,i)=>({id:'fixture-bound-'+i,label:'Bound'})):data.agyModels;for(const m of entries)console.log(m.id+'\\t'+m.label);}
  else for(const original of data.opencodeModels){
  let model=structuredClone(original);
  if(behavior==='model-conflict')model.providerID='conflicting-provider';
@@ -127,6 +159,7 @@ test("native facts: AGY installation/catalog are observed while auth/provider/ef
   assert.deepEqual(o.models.map((m:any)=>m.id),data.agyModels.map((m:any)=>m.id));assert.equal(o.authenticated,"unknown");
   for(const m of o.models){assert.equal(m.efforts,null);assert.equal(m.provider.id,null);assert.equal(m.provider.scope,"unknown");}
   assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
+  assert.ok(!(await readFile(join(cwd,"commands.jsonl"),"utf8")).includes('--print'));
 }));
 test("native facts: Codex configuration binding covers CLI-only models with exact source scope", async()=>fixture(async(cwd,binary)=>{
   for(const behavior of ["normal","configured-provider","config-failed","provider-constraint","custom-provider","invalid-provider","credential-provider","missing-requirements","other-version","new-version"]){
@@ -290,4 +323,98 @@ test("native facts: strict additive snapshot decoder rejects forged provenance a
   for(const [label,change] of cases){const s:any=structuredClone(good);change(s);assert.equal(validateCliDiscoverySnapshot(s),false,label);}
   const reordered:any=structuredClone(good), p=reordered.launchers.codex.models[0].provider;
   reordered.launchers.codex.models[0].provider={scope:p.scope,source:p.source,id:p.id};assert.ok(validateCliDiscoverySnapshot(reordered));
+}));
+
+
+test("native facts: AGY native authentication gate, effective config and exact model effort are projected",async()=>fixture(async(cwd,binary,data)=>{
+ const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-normal"))),o=wire(s).launchers.agy;
+ assert.equal(o.authenticated,"yes");assert.equal(o.authenticationSource,"agy.auth-gate");
+ assert.deepEqual(o.provider,{id:"google",source:"agy.command.config",scope:"cli"});
+ assert.deepEqual(o.models.map((m:any)=>m.efforts),data.agyModels.map((m:any)=>m.nativeEffort?[m.nativeEffort]:[]));
+ for(const m of o.models){assert.deepEqual(m.provider,o.provider);assert.equal(m.effortSource,"agy.command.model");}
+ assert.equal(o.entitlement,"unknown");assert.equal(o.quota,"unknown");
+ assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
+ const commands=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(line=>JSON.parse(line));
+ const reads=commands.filter(c=>c.args?.includes('--print'));
+ assert.equal(reads.length,data.agyModels.length+1);
+ for(const c of reads){assert.ok(['/config','/model'].includes(c.args[c.args.indexOf('--print')+1]));assert.equal(c.args[c.args.indexOf('--output-format')+1],'json');assert.equal(c.cwd,cwd);}
+}));
+test("native facts: AGY custom, GCP and unproven provider configurations stay unknown",async()=>fixture(async(cwd,binary)=>{
+ for(const behavior of ['agy-custom','agy-gcp','agy-unknown-provider','agy-provider-type','agy-config-failed']){
+  const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy",behavior))),o=wire(s).launchers.agy;
+  assert.equal(o.authenticated,"yes");assert.equal(o.provider.id,null);assert.equal(o.models[0].provider.id,null);
+  assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
+ }
+}));
+test("native facts: AGY exact explicit native provider is read from effective config",async()=>fixture(async(cwd,binary)=>{
+ const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-explicit")));
+ assert.equal(s.launchers.agy.provider?.id,"google");assert.ok(validateCliDiscoverySnapshot(s));
+}));
+test("native facts: AGY report envelope must prove no turn, no session, no usage and the requested command",async()=>fixture(async(cwd,binary)=>{
+ for(const behavior of ['agy-turn','agy-session','agy-token','agy-output-token','agy-thinking-token','agy-cache-token','agy-total-token','agy-status','agy-command','agy-exit','agy-extra-usage','agy-missing-usage','agy-shape']){
+  const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy",behavior))),o=wire(s).launchers.agy;
+  assert.equal(o.catalog,"observed");assert.equal(o.authenticated,"unknown");assert.equal(o.provider.id,null);
+  for(const m of o.models){assert.equal(m.efforts,null);assert.equal(m.effortSource,null);}
+  assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
+ }
+}));
+test("native facts: AGY selected model mismatch and invalid effort never bind capabilities",async()=>fixture(async(cwd,binary)=>{
+ for(const behavior of ['agy-wrong-model','agy-private-effort','agy-model-failed']){
+  const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy",behavior))),o=wire(s).launchers.agy;
+  assert.equal(o.authenticated,"yes");
+  for(const m of o.models){assert.equal(m.efforts,null);assert.equal(m.effortSource,null);}
+  assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
+ }
+}));
+test("native facts: verified Claude serializer omission proves unsupported effort, newer unknown serializers do not",async()=>fixture(async(cwd,binary)=>{
+ const s=await discoverCliCapabilities(options(cwd,"claude",await binary("claude","known-serializer"))),m=wire(s).launchers.claude.models[1];
+ assert.deepEqual(m.efforts,[]);assert.equal(m.effortSource,"claude.sdk.initialize");assert.ok(validateCliDiscoverySnapshot(s));
+ const other=await discoverCliCapabilities(options(cwd,"claude",await binary("claude")));
+ assert.equal(other.launchers.claude.models[1]?.efforts,null);
+}));
+test("native facts: fleet legacy Opus alias uses the served native wire id in JSON",async()=>fixture(async(_cwd,_binary,data)=>{
+ const fleet=JSON.parse(await readFile(new URL('../config/routing.fleet.v2.json',import.meta.url),'utf8'));
+ assert.equal(fleet.models.opus_5.launches[0].id,data.servedOpus);
+ assert.equal(fleet.models.opus_5_5.launches[0].id,data.servedOpus);
+}));
+
+
+test("native facts: AGY report scope resolves a relative observation directory",async()=>fixture(async(cwd,binary)=>{
+ const s=await discoverCliCapabilities(options(relative(process.cwd(),cwd),"agy",await binary("agy","agy-normal")));
+ assert.equal(s.launchers.agy.authenticated,"yes");assert.ok(validateCliDiscoverySnapshot(s));
+ const log=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(line=>JSON.parse(line));
+ for(const command of log.filter(c=>c.args.includes('--print')))assert.equal(command.cwd,cwd);
+}));
+test("native facts: AGY custom endpoint is not published as the verified Google binding",async()=>fixture(async(cwd,binary)=>{
+ const previous=process.env.GOOGLE_GEMINI_BASE_URL;
+ try{process.env.GOOGLE_GEMINI_BASE_URL='http://127.0.0.1:1';
+  const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-normal")));
+  assert.equal(s.launchers.agy.provider?.id,null);assert.equal(s.launchers.agy.authenticated,"yes");assert.ok(validateCliDiscoverySnapshot(s));
+ }finally{if(previous===undefined)delete process.env.GOOGLE_GEMINI_BASE_URL;else process.env.GOOGLE_GEMINI_BASE_URL=previous;}
+}));
+test("native facts: AGY catalog bounds metadata reads independently of model count",async()=>fixture(async(cwd,binary)=>{
+ const s=await discoverCliCapabilities({...options(cwd,"agy",await binary("agy","agy-bound")),timeoutMs:20000});
+ const o=s.launchers.agy;assert.equal(o.models.length,65);assert.ok(o.problems.includes('oversized'));assert.equal(o.models[64]?.efforts,null);
+ const log=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(line=>JSON.parse(line));
+ assert.equal(log.filter(c=>c.args.includes('--model')).length,64);assert.ok(validateCliDiscoverySnapshot(s));
+}));
+test("native facts: AGY metadata calls share one deadline",async()=>fixture(async(cwd,binary)=>{
+ const s=await discoverCliCapabilities({...options(cwd,"agy",await binary("agy","agy-delay")),timeoutMs:650}),o=s.launchers.agy;
+ assert.equal(o.catalog,'observed');for(const m of o.models)assert.equal(m.efforts,null);
+ assert.ok(o.problems.includes('timeout'));assert.ok(validateCliDiscoverySnapshot(s));
+}));
+test("native facts: strict AGY snapshot rejects unbound auth/provider/effort provenance",async()=>fixture(async(cwd,binary)=>{
+ const original=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-normal")));
+ const edits=[
+  (o:any)=>{o.version='9.9.9';},(o:any)=>{o.installed='unknown';},(o:any)=>{o.catalog='declared';},
+  (o:any)=>{o.authenticated='no';},(o:any)=>{o.authenticationSource=null;},(o:any)=>{delete o.authenticationSource;},
+  (o:any)=>{o.sources=o.sources.filter((s:string)=>s!=='agy.auth-gate');},
+  (o:any)=>{o.sources=['version','agy.models','agy.auth-gate'];o.models.forEach((m:any)=>{m.efforts=null;m.effortSource=null;m.provider={id:null,source:null,scope:'unknown'};});o.provider={id:null,source:null,scope:'unknown'};},
+  (o:any)=>{o.provider.source='agy.command.model';o.models.forEach((m:any)=>{m.provider.source='agy.command.model';});},(o:any)=>{o.provider.id='fixture-provider';o.models.forEach((m:any)=>{m.provider.id='fixture-provider';});},
+  (o:any)=>{o.models[0].provider.scope='model';},(o:any)=>{o.models[0].effortSource=null;},
+  (o:any)=>{delete o.models[0].effortSource;},(o:any)=>{o.models[0].effortSource='agy.command.config';},
+  (o:any)=>{o.models[0].efforts=['low','high'];},(o:any)=>{o.models[0].efforts=null;},(o:any)=>{o.entitlement='yes';},(o:any)=>{o.quota='yes';},
+ ];
+ for(const edit of edits){const s=structuredClone(original),o=wire(s).launchers.agy;edit(o);assert.equal(validateCliDiscoverySnapshot(s),false,'exact AGY provenance required');}
+ const foreign=structuredClone(original);wire(foreign).launchers.claude.authenticationSource='agy.auth-gate';assert.equal(validateCliDiscoverySnapshot(foreign),false);
 }));

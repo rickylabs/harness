@@ -106,6 +106,8 @@ export interface Launch {
 
 export interface FleetModel {
   readonly family: string;
+  /** Direct logical alias: same family, capabilities and exact launches as its canonical target. */
+  readonly aliasOf?: string;
   readonly label?: string;
   /** Interim API launcher approval alias (#270), separate from catalog membership. */
   readonly launcherAlias?: string;
@@ -187,6 +189,16 @@ const LAUNCH_OPTIONAL = ["harness", "router", "profile", "preset", "subscription
 /** Keys an llm-seam launch may not carry: it is addressed by backend, never by a CLI. */
 const SUBAGENTS_ONLY_KEYS = ["harness", "router", "profile", "preset"] as const;
 
+/** Exact plain-data equality, independent of object key order; arrays retain declaration order. */
+function sameData(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (Array.isArray(a) || Array.isArray(b)) return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => sameData(v, b[i]));
+  if (typeof a !== "object" || a === null || typeof b !== "object" || b === null) return false;
+  const left = a as Record<string, unknown>, right = b as Record<string, unknown>;
+  const keys = Object.keys(left);
+  return keys.length === Object.keys(right).length && keys.every(key => Object.hasOwn(right, key) && sameData(left[key], right[key]));
+}
+
 /** Version 2: strict whole-document validation. Nothing is filled, coerced or discarded. */
 export function validateFleetConfiguration(value: unknown): ValidationOutcome<FleetRoutingConfiguration> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -229,9 +241,9 @@ export function validateFleetConfiguration(value: unknown): ValidationOutcome<Fl
     for (const name of providerNames) if (!precedence.includes(name)) add("dangling-reference", "providerPrecedence");
   }
 
-  // Launch identity is (provider, seam, id): one provider and one wire id may appear once per
-  // seam, which is how a dual-seam provider is expressed without inventing a second name.
-  const launchKeys = new Set<string>();
+  // Launch identity is (provider, seam, id). Repetition requires an explicit direct alias
+  // with an identical family, capability set and launch body; ordinary duplicates stay refused.
+  const launchKeys = new Map<string, string>();
   const llmLaunchIds = new Set<string>();
   const models = records(root.models, "models", true);
   const modelKeys = Object.keys(models);
@@ -239,8 +251,11 @@ export function validateFleetConfiguration(value: unknown): ValidationOutcome<Fl
   Object.entries(models).forEach(([key, v], i) => {
     const at = `models[${i}]`;
     if (!MODEL_KEY_PATTERN.test(key)) add("out-of-range", at);
-    const m = obj(v, at, ["family", "launches"], ["label", "launcherAlias", "capabilities", "approvedRelayEvaluator"]);
+    const m = obj(v, at, ["family", "launches"], ["label", "aliasOf", "launcherAlias", "capabilities", "approvedRelayEvaluator"]);
     ref(m.family, `${at}.family`, families);
+    if (m.aliasOf !== undefined) ref(m.aliasOf, `${at}.aliasOf`, modelKeys);
+    const canonicalKey = typeof m.aliasOf === "string" ? m.aliasOf : key;
+    const modelLaunchKeys = new Set<string>();
     if (m.label !== undefined) str(m.label, `${at}.label`);
     if (m.launcherAlias !== undefined && str(m.launcherAlias, `${at}.launcherAlias`, /^[a-z][a-zA-Z0-9_]*$/)) {
       if (launcherAliases.has(m.launcherAlias)) add("duplicate", `${at}.launcherAlias`);
@@ -271,11 +286,23 @@ export function validateFleetConfiguration(value: unknown): ValidationOutcome<Fl
       effortSupport(launch.effortSupport, `${lp}.effortSupport`);
       if (typeof launch.provider === "string" && typeof launch.seam === "string" && typeof launch.id === "string") {
         const identity = JSON.stringify([launch.provider, launch.seam, launch.id]);
-        if (launchKeys.has(identity)) add("duplicate", lp);
-        launchKeys.add(identity);
+        if (modelLaunchKeys.has(identity) || (launchKeys.has(identity) && launchKeys.get(identity) !== canonicalKey)) add("duplicate", lp);
+        modelLaunchKeys.add(identity);
+        launchKeys.set(identity, canonicalKey);
         if (launch.seam === SEAMS[1]) llmLaunchIds.add(launch.id);
       }
     });
+  });
+  // Validate alias targets after all declarations; order cannot make a missing target lawful.
+  Object.entries(models).forEach(([key, value], i) => {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) return;
+    const m = value as Record<string, unknown>;
+    if (m.aliasOf === undefined) return;
+    const target = typeof m.aliasOf === "string" ? models[m.aliasOf] : undefined;
+    if (typeof target !== "object" || target === null || Array.isArray(target)) return; // ref already refused it
+    const canonical = target as Record<string, unknown>;
+    if (m.aliasOf === key || canonical.aliasOf !== undefined || m.family !== canonical.family ||
+        !sameData(m.capabilities, canonical.capabilities) || !sameData(m.launches, canonical.launches)) add("out-of-range", `models[${i}].aliasOf`);
   });
   function effortSupport(v: unknown, path: string): void {
     const support = obj(v, path, ["status"], ["supported", "unsupported", "why"]);

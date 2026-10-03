@@ -2,7 +2,10 @@
   "schemaVersion": 1,
   "claude": {
     "firstPartyProvider": "anthropic",
-    "source": "https://github.com/anthropics/claude-agent-sdk-typescript"
+    "source": "https://github.com/anthropics/claude-agent-sdk-typescript",
+    "effortOmissionVersions": [
+      "2.1.288"
+    ]
   },
   "codex": {
     "builtinProvider": "openai",
@@ -14,5 +17,19 @@
       "https://github.com/openai/codex/blob/rust-v0.159.3/codex-rs/core/src/config/mod.rs",
       "https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/core/src/config/mod.rs"
     ]
+  },
+  "agy": {
+    "verifiedVersions": [
+      "1.2.16"
+    ],
+    "providerBindings": {
+      "": "google",
+      "gemini": "google"
+    },
+    "sources": [
+      "https://www.agy.dev/docs/cli/install/",
+      "https://www.agy.dev/docs/cli/headless/"
+    ],
+    "verification": "Native 1.2.16 printmode.run authenticates before built-in metadata reports; effective empty provider is the default Google account transport, gemini is the explicit Google API-key transport. Custom models, GCP and custom endpoints are not established by this binding."
   }
 }
