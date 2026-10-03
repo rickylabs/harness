@@ -1,8 +1,8 @@
 # The one pipeline in this repository that publishes anything.
 #
-# It exists because `@rickylabs/harness-contracts` is the only package meant to leave here: both
-# cockpits live in netscript and this is what they share. Everything else is private and never
-# leaves.
+# `@rickylabs/harness-contracts` is the public mechanism package. Cockpit and mobile are separate
+# products; the backend consumes released decoders and pinned readers, while the native runtime
+# uses its captured product API/client. Private workspace packages are not npm releases.
 #
 # Three properties are worth stating, because each one is a decision rather than a default:
 #

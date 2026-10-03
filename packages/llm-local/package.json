@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/llm-local",
   "version": "0.0.0",
-  "description": "LlmAdapter provider config \u2014 lm-studio, llama-rocm, openrouter (ctx.llm seam)",
+  "description": "API and local-model adapter configuration and capability boundaries",
   "license": "MIT",
   "private": true,
   "type": "module",

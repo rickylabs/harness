@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/provider-codex",
   "version": "0.0.0",
-  "description": "SubagentProvider over the codex app-server JSON-RPC protocol (ctx.subagents seam)",
+  "description": "Codex app-server route identity and pre-turn prerequisite (partial provider)",
   "license": "MIT",
   "private": true,
   "type": "module",

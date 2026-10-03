@@ -1,6 +1,7 @@
 # What this is
 
-Harness is the **deterministic coordination layer for an agent fleet**. It turns
+Harness is **our portable agent framework on Orchid and Herdr**, including the deterministic
+coordination layer for an agent fleet. It turns
 human intent into governed work: what may run next, which route may perform it,
 who may evaluate it, and what evidence makes the result trustworthy. The owner
 can observe progress and intervene without interrupting an agent to ask for status.
@@ -19,8 +20,9 @@ cannot certify itself, and a missing independent evaluator does not relax the ru
 Claude Code, Codex, OpenCode and other agent clients perform autonomous work
 through the subagent seam. API and local-model calls use a separate seam, with
 different resource accounting. [Two seams](02-the-two-seams.md) explains why these
-remain distinct. Routing configuration chooses the legal model, effort and provider;
-resource observations inform admission before work starts.
+remain distinct. Routing configuration supplies default model, effort and provider choices. A verified owner-native
+override supplies its own exact route and authority; resource observations and physical checks
+still inform admission before work starts.
 
 Decisions are reproducible from their recorded inputs. The coordinator can replay
 a journal and report nondeterminism when the same inputs produce different decisions.
@@ -32,8 +34,9 @@ GitHub holds the work graph: issues, milestones, dependencies, labels and pull
 requests. [The board](03-the-board.md) projects that graph into useful views.
 It does not create a competing authoritative task database.
 
-Harness also owns operational state: durable effect intents, receipts, checkpoints
-and telemetry. These records answer different questions from the GitHub board:
+Harness defines operational state boundaries for durable effect intents, receipts and telemetry.
+The coordinator supplies storage ports and reference drivers; deployed adapters and checkpoint
+recovery need their own proof. These records answer different questions from the GitHub board:
 what was attempted, what was observed, and what remains uncertain after an interruption.
 An admitted task is not proof of running execution, and an uncertain effect stays
 unknown until supported reconciliation evidence exists.
@@ -52,23 +55,24 @@ records their repository relationship. The
 [three-layer architecture](06-the-three-layers.md) owns the division of responsibilities.
 
 Harness publishes [`@rickylabs/harness-contracts`](../../packages/contracts) as the
-mechanism boundary. The backend consumes that package, owns persistence, enrollment,
+mechanism boundary. The backend consumes that package and explicitly pinned source readers, owns persistence, enrollment,
 authorization, commands and application projections, and captures its OpenAPI artifact
 and generated client. The native client consumes that generated product boundary for
 observation, decisions and steering. No consumer uses cross-repository workspace imports.
 
-## Compose the mechanism as plugins
+## Framework and optional router
 
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) provides a Cordis
-plugin host: a `Context` holds services, plugins expose them, and profiles compose
-the application. Harness supplies the coordination plugins and profile over the
-published host package. Ratified decision 1 is **plugin-only, no core fork**.
+[Orchid](https://github.com/rickylabs/orchid) owns dispatch and physical launch admission;
+[Herdr](https://github.com/herdrdev/herdr) owns terminal control. Harness owns the portable mechanisms
+and method around them. [ADR 0005](../../doctrine/decisions/0005-harness-framework-identity.md)
+supersedes the former dsh-only premise while retaining the earlier decisions as historical evidence.
 
-The [package guide](../../packages/README.md) maps responsibilities to owning epics:
-board projection, coordination, governance, telemetry, routing, provider adapters,
-service integration and the published contract. [`forge`](../../packages/forge)
-installs the board process into another repository; [`dsh-app`](../../packages/dsh-app)
-composes the runtime profile.
+The [package guide](../../packages/README.md) maps implemented, partial and stub boundaries.
+[`forge`](../../packages/forge) installs the board process into another repository.
+[`dsh-app`](../../packages/dsh-app) retains DeepSeek Harness as an optional additional-router
+experiment with genuine upstream dependencies. Its approved relocation and exclusion from default
+checks are pending; it is not required to host the core framework. Integration testing waits until
+after the next APK.
 
 ## Carry the method between projects
 

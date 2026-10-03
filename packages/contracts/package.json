@@ -1,10 +1,10 @@
 {
   "name": "@rickylabs/harness-contracts",
   "version": "0.35.0",
-  "description": "Types, wire protocol and client bindings shared by the dsh coordinator and its cockpits",
+  "description": "Published Harness mechanism contracts, strict decoders and compatibility vocabulary",
   "keywords": [
-    "dsh",
-    "deepseek-harness",
+    "harness",
+    "agent-framework",
     "coordinator",
     "contracts"
   ],

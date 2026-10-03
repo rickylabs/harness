@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/provider-claude",
   "version": "0.0.0",
-  "description": "SubagentProvider over claude-agent-sdk (ctx.subagents seam)",
+  "description": "Native task adapter over the Claude Agent SDK",
   "license": "MIT",
   "private": true,
   "type": "module",

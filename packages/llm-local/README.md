@@ -162,15 +162,16 @@ for on purpose.
 
 ## Why this is a seam of its own
 
-`ctx.llm` and `ctx.subagents` are separate because they fail differently, not because dsh happens to
-name two extension points. A subscription run is metered by a quota window that refills; a relay run
-is metered per token against a balance that does not. This package is the second kind, which is why
-it is where a credential profile is bound — see
+Native tasks and API/local calls have different loop and lifecycle boundaries. Billing follows
+the actual vendor/provider source: not every native transport has a quota window and a local
+call need not have a per-token bill. This package owns API/local adapter configuration and
+credential-profile binding. The optional dsh composition names the services `ctx.llm` and
+`ctx.subagents`; those names do not infer accounting — see
 [`docs/concepts/02`](../../docs/concepts/02-the-two-seams.md).
 
 The local endpoints sit here too, and they are the case that makes the split obvious: a model running
-on the N5's own GPU costs nothing per token and is still not a subagent. It has no session, nothing
-to steer, and nothing to observe.
+on the N5's own GPU costs nothing per token and is still not a subagent. An endpoint call is not itself a native agent session; its response, usage and actual caller
+effects still need observation.
 
 In the shipped compatibility document, `moonshotai/kimi-k3` is deliberately absent from placements: it is reached through opencode's own router, on the subagent seam. Listing it
 would imply this package could send it somewhere, and no adapter here ever will.

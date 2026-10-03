@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/governance",
   "version": "0.0.0",
-  "description": "Tri-regime admission control",
+  "description": "Admission-control package boundary (stub; live governor owned by Orchid)",
   "license": "MIT",
   "private": true,
   "type": "module",

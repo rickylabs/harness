@@ -1,10 +1,10 @@
 # CLAUDE.md
 
 > **Read [`ARCHITECTURE.md`](ARCHITECTURE.md) before anything else.** It is the locked charter
-> of this repository (v1, 2026-09-13) and it supersedes
+> of this repository (owner-amended through ADR 0005, 2026-10-03) and it supersedes
 > [#30](https://github.com/rickylabs/harness/issues/30). It states what is built, what is
-> parked, and the four invariants every run is held to. An agent may not amend it and may not
-> open a pull request that assumes a different architecture.
+> parked, and the four invariants every run is held to. Amendments require a recorded owner
+> decision; an agent may not silently build against another architecture.
 
 See [`AGENTS.md`](AGENTS.md). The protocol is identical in standard mode; the only difference
 is that you are expected to ask before mutating anything outside the active run directory.
@@ -22,16 +22,17 @@ the hazard is stated in full in [`AGENTS.md`](AGENTS.md#operational-hazard-this-
 
 Quick orientation:
 
-- Ratified decisions: [`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) — the four taken in
-  [#30](https://github.com/rickylabs/harness/issues/30), superseded by
-  [`ARCHITECTURE.md`](ARCHITECTURE.md) §1 — this repository is **the portable agent runtime**;
+- Ratified decisions: [`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) — owner-amended through
+  [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md), superseding the former
+  dsh-only premise — this repository is **our framework on Orchid and Herdr**;
   netscript is a service behind an adapter, not a build-time dependency.
-- Workspace layout and **the two seams** — `ctx.subagents` for vendor CLIs, `ctx.llm` for API and
-  local models: [`AGENTS.md`](AGENTS.md#workspace-layout-and-the-two-seams), with the
+- Workspace layout and **the two seams** — native tasks and API/local-model calls: [`AGENTS.md`](AGENTS.md#workspace-layout-and-the-two-seams), with the
   package-by-package table in [`packages/README.md`](packages/README.md).
 - Doctrine lives in [`doctrine/`](doctrine/) — portable, plain markdown, zero runtime:
   [`WORKFLOW.md`](doctrine/WORKFLOW.md), [`PRINCIPLES.md`](doctrine/PRINCIPLES.md),
   [`GATES.md`](doctrine/GATES.md), [`TOOLCHAIN.md`](doctrine/TOOLCHAIN.md)
 - The board, without asking an agent: `dsh-board status`, `dsh-board check`.
-- Active run: [`.llm/runs/architecture-foundation--seed/`](.llm/runs/architecture-foundation--seed/)
-- Start with that run's `context-pack.md` — it is written to be the single file that resumes the work.
+- The founding [architecture run](.llm/runs/architecture-foundation--seed/) is historical.
+  Resume the active brief and its declared context/evidence surface.
+- Existing `dsh-*` core CLI names remain compatibility naming until cleanup PR 2;
+  the optional dsh composition is not the framework host.

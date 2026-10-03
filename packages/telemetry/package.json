@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/telemetry",
   "version": "0.0.0",
-  "description": "SessionTelemetrySink \u2014 the \"status ?\" killer",
+  "description": "Native session observations, activity, usage and dispatch evidence",
   "license": "MIT",
   "private": true,
   "type": "module",

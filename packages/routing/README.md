@@ -14,8 +14,9 @@ The legacy v1/v2 document loader remains configuration-first, with no missing-do
 The interim pinned fleet adapter for Orchid and Cockpit lives in [`matrix/`](matrix/), reading
 [versioned fleet data](config/routing.fleet.v2.json): a complete
 role × tier matrix, logical model catalog, route resolver, owner override and evaluator rules.
-Those consumers will pin a Harness commit and import its source directly after cutover. The profile still selects
-the packaged [v1 compatibility transcription](config/routing.v1.json) until each consumer moves.
+Orchid and cockpit consumers use reviewed immutable source pins; their exact selected revisions
+and live activation are consumer facts. The optional dsh profile still selects the packaged
+[v1 compatibility transcription](config/routing.v1.json), which does not establish current fleet parity.
 
 ## Loading and provenance
 

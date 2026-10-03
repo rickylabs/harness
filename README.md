@@ -5,10 +5,11 @@
 [![node](https://img.shields.io/badge/node-%E2%89%A524-informational)](https://nodejs.org)
 [![portable agent runtime](https://img.shields.io/badge/portable-agent%20runtime-6f42c1)](ARCHITECTURE.md)
 
-**The deterministic coordinator layer for an agent fleet.** A monorepo of
-[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (`dsh`)
-plugins that turn a GitHub repository into a board, decide what may run next,
-and tell you what the fleet did — without waking an agent to ask.
+**Our portable agent framework, built on Orchid and Herdr.** Routing, native
+activity, board and coordination tools, published contracts, profiles and the
+method make agent work governed and observable. The retained DeepSeek Harness
+integration is an optional additional-router experiment, not the framework's host.
+[ADR 0005](doctrine/decisions/0005-harness-framework-identity.md) records the owner decision.
 
 [Understand the loop](#how-the-layer-works) | [Try a local proof](#local-proof-first) |
 [The board](BOARD.md) | [Documentation](docs/)
@@ -43,9 +44,10 @@ in [`AGENTS.md`](AGENTS.md) names all three.
 
 ## How the layer works
 
-Three actors, one loop. The diagram is the whole system; the prose under it
-walks every arrow, and the paragraph after that states exactly which parts of
-the picture this repository supplies at this baseline.
+The diagram shows responsibility boundaries. Orchid owns native dispatch and
+Herdr owns terminal control; configured providers and observed sources determine
+which paths are usable. Existing core executables still use `dsh-*` names at this
+cleanup step; that prefix is compatibility naming, not a required dsh host.
 
 ```mermaid
 flowchart TD
@@ -54,9 +56,9 @@ flowchart TD
   F --> G
   G --> B[dsh-board: read and project]
   B --> C[dsh-coordinator: plan, gate, select, replay]
-  C --> D[Dispatcher or operator on a live host]
-  D --> S[ctx.subagents: autonomous agent tasks]
-  D --> L[ctx.llm: prompt and token calls]
+  C --> D[Orchid dispatcher and Herdr terminal control]
+  D --> S[Native CLIs: autonomous agent tasks]
+  C --> L[Caller with API and local-model adapters: explicit calls]
   S --> E[Artifacts, changes, run evidence]
   L --> E
   E --> T[dsh-telemetry: sink and backfill]
@@ -83,8 +85,8 @@ The loop, arrow by arrow:
    jobs — the workflow is inert data, and performing an effect belongs to a
    caller.
 4. That caller is a **dispatcher or operator on a live host**. Work reaches
-   models through one of two seams and never both at once: autonomous vendor
-   CLIs at **`ctx.subagents`**, and prompt-completion calls at **`ctx.llm`**.
+   models through separate native-task and API/local-model boundaries. Native
+   CLIs own their loops; adapters own the call semantics they actually implement.
 5. Both seams leave **artifacts, changes and run evidence** behind.
    **`dsh-telemetry`** sinks and backfills that record, and a human can read
    it from disk with no agent awake — which closes the loop where it started:
@@ -94,7 +96,7 @@ The loop, arrow by arrow:
    choice is what lands on the board.
 
 Harness owns the deterministic mechanism in this loop: board projections,
-routing and admission, execution gates, provider adapters, telemetry, and durable
+routing and admission evidence, execution gates, provider adapters, telemetry, and durable
 intents and receipts. GitHub holds the work graph; Harness coordinates the work
 and records evidence that can be replayed and inspected without interrupting an
 agent. Autonomous agent tasks and token-metered calls keep their separate seams.
@@ -139,7 +141,7 @@ These operational references distinguish implemented behavior from planned work.
 | evaluating or reviewing | the diagram above → [doctrine/WORKFLOW.md](doctrine/WORKFLOW.md) → [concepts](docs/concepts/) | how work is staged, gated and independently reviewed, and what counts as evidence |
 | contributing | the [status](#status) section → [packages/README.md](packages/README.md) → [CONTRIBUTING.md](CONTRIBUTING.md) | the current implementation truth and a safe change surface |
 | adopting locally | [local proof](#local-proof-first) → the [tutorial](docs/tutorials/01-from-clone-to-board.md) | deterministic behavior proven on your machine, without a daemon |
-| operating a live host | the [status](#status) section → [deploy/README.md](deploy/README.md) → [dsh-app](packages/dsh-app/README.md) and provider docs | profile wiring and every external prerequisite, named |
+| operating a live host | the [charter](ARCHITECTURE.md) → [Orchid](https://github.com/rickylabs/orchid) and [Herdr](https://github.com/herdrdev/herdr) → native provider and telemetry docs | dispatch/control ownership and each observed prerequisite |
 
 ## Local proof first
 
@@ -174,7 +176,8 @@ node packages/coordinator/dist/cli.js policies
 It prints the two evaluator-independence policies and which one is the
 default, plus the guarantee that holds under both: a session never evaluates
 itself, and a roster with no legal evaluator is a blocker rather than
-permission for same-family review.
+permission to waive the selected policy. That compatibility CLI exposes package policies;
+the current fleet still requires separate-session, different-family evaluation.
 
 Five command-line tools exist, deliberately separate binaries rather than
 subcommands of one. Each reads a different source of truth — the GitHub API,
@@ -188,7 +191,7 @@ agent:
 | `dsh-coordinator` | [`coordinator`](packages/coordinator) | May this step run? Who is allowed to review it? What changed since last time? |
 | `dsh-telemetry` | [`telemetry`](packages/telemetry) | What did the fleet actually do — read from disk, with nothing awake? |
 | `dsh-forge` | [`forge`](packages/forge) | Install this board process into any repository. |
-| `dsh-profile` | [`dsh-app`](packages/dsh-app) | Compose every plugin into one `dsh` profile. |
+| `dsh-profile` | [`dsh-app`](packages/dsh-app) | Compose the optional dsh-router experiment. |
 
 <details>
 <summary>Why <code>node packages/…/dist/cli.js</code> and not the bare command name</summary>
@@ -197,8 +200,8 @@ Every package here except `contracts` is `private: true`, so pnpm links their
 bins where a *dependent* resolves them — not at the repository root. Running
 the built entry point directly is the honest invocation from a fresh clone,
 and it is what the repository's own scripts do (see `skill:install` in the
-root `package.json`). Installing the profile with `dsh-profile install` is
-what puts them somewhere a `dsh` process can find them.
+root `package.json`). The optional experiment's `dsh-profile install` puts its composition where a dsh process can find it;
+core CLI use does not require that installation.
 
 </details>
 
@@ -222,8 +225,8 @@ Further proofs, by what they need:
   files even when the GitHub half was skipped — which is why the tutorial
   ends that step with a readback that can fail loudly.
 - **A live host.** Provider sessions (an injected Claude Agent SDK; a
-  long-lived `opencode serve`), local model servers behind the `ctx.llm`
-  routes, and the [deployed web surface](deploy/README.md) all need machines
+  long-lived `opencode serve`), local model servers, and the optional
+  [dsh web experiment](deploy/README.md) all need machines
   and credentials this repository does not supply. The docs state those
   prerequisites; nothing here claims they passed.
 
@@ -231,93 +234,53 @@ To be walked through the whole thing once — building, installing the board
 process into a repository of your own, moving an item, composing the profile,
 recording a run and reading it back —
 [From a clone to a moving board](docs/tutorials/01-from-clone-to-board.md) is
-fifteen minutes and needs no server.
+fifteen minutes and needs no server. Its retained profile exercise belongs to the optional
+router; core CLI use above requires no profile installation. The experiment's documentation
+move is pending cleanup PR 3.
 
 ## Architecture commitments
 
-Scope first, so the rest is readable: this repository is **the portable agent
-runtime** — the routing matrix, the launchers that enforce it, the slice loop,
-the profiles, and the doctrine, made to run against any repository rather than
-one ([`ARCHITECTURE.md`](ARCHITECTURE.md) §1). The `dsh` plugin packages and the
-run artifacts are still here; §1 states that the charter "replaces the previous
-one" and §10 records that the plugins are parked rather than deleted. The two products that consume it are separate repositories —
-`rickylabs/atelier-cockpit`, the engineering cockpit, and
-`rickylabs/atelier-mobile`, the Expo companion — reaching this layer over a
-published contract package (ratified decision 4, below).
+[ADR 0005](doctrine/decisions/0005-harness-framework-identity.md) establishes Harness
+as our framework on [Orchid](https://github.com/rickylabs/orchid) and
+[Herdr](https://github.com/herdrdev/herdr). The core packages do not require the
+optional dsh composition. [ARCHITECTURE.md](ARCHITECTURE.md) owns the charter and
+[the package guide](packages/README.md) states shipped, partial and stub boundaries.
 
-Four commitments shape every package. Each is summarized once here and owned
-in full by exactly one page, because a fact in two places is a future
-contradiction.
-
-- **Two seams, not one.** Subscription agent CLIs and API-key or local models
-  attach to different `dsh` services, are metered differently, and running
-  out of one does not resemble running out of the other. Collapsing them is
-  the design error the package split exists to prevent.
-  [02 — Two seams](docs/concepts/02-the-two-seams.md) owns the argument.
-- **GitHub holds board truth.** There is no second database of task state.
-  `dsh-board` projects issues, labels and pull requests, refuses to report a
-  board it only half saw, and flags a board that contradicts itself in every
-  terminal view — `check` names the contradictions and exits non-zero;
-  `digest` prints them with the repair. The session projection carries the
-  same anomalies with their detail, the kinds naming each item, and the fetch
-  coverage, so a pane can say a column is disputed without shelling out
-  ([#220](https://github.com/rickylabs/harness/issues/220)). `dsh-forge` is
-  the one explicit write boundary, and it writes labels, never evidence.
-  [03 — The board](docs/concepts/03-the-board.md) owns the reasoning.
-- **Everything generated is generated.** Six artifacts in this repository are
-  produced by code and five are byte-compared against it on every build; the
-  sixth, BOARD.md, is rewritten wholesale every half hour, so an edit to it
-  is reverted rather than rejected. [CONTRIBUTING.md](CONTRIBUTING.md) owns
-  the table and the regeneration commands;
-  [05 — Determinism](docs/concepts/05-determinism.md) owns why drift is a
-  correctness bug.
-- **Artifacts over chat, with citations.** A conclusion that exists only in a
-  conversation does not exist; run directories under `.llm/runs/` are
-  committed, reviewed and kept. Every load-bearing claim carries a path, a
-  page or a URL. [doctrine/PRINCIPLES.md](doctrine/PRINCIPLES.md) owns the
-  rules; [04 — What "run" means](docs/concepts/04-the-run.md) owns the word's
-  two meanings.
+- **Two execution boundaries.** Native CLIs own their autonomous loops. API and
+  local-model adapters have different call and accounting semantics. A gate is
+  claimed only where its implementation can enforce it. [Two seams](docs/concepts/02-the-two-seams.md)
+  explains the split and the optional experiment's service-key vocabulary.
+- **GitHub holds board truth.** Harness projects issues, labels and PRs. Native
+  stores and dispatch receipts establish observed execution; the backend turns
+  those sources into product views. A partial read or unknown state is not success.
+- **Route authority is explicit.** The matrix is the default for agentic launches.
+  Verified Eric-authorized native overrides retain their own provenance and share
+  physical checks and accounting. Neither path waives evaluator independence.
+- **Generated files stay generated.** CLI references, skill, taxonomy and board
+  projections retain their owning generators and checks. [CONTRIBUTING.md](CONTRIBUTING.md)
+  owns the regeneration commands; frozen evidence is not rewritten to erase history.
+- **Artifacts carry evidence.** Conclusions need sources and separate evaluation.
+  Method records and private operational evidence follow their authorized storage
+  surface; published data must not leak operator paths, credentials or private native IDs.
 
 ### Ratified decisions
 
-Four decisions were **ratified** in the *Decisions taken* table of the
-[E0 roadmap](https://github.com/rickylabs/harness/issues/30), which
-[`ARCHITECTURE.md`](ARCHITECTURE.md) supersedes. Where the two differ, the
-charter wins: two of the four hold unchanged, one is scoped to parked work, and
-one is superseded on its first clause — each is marked below, and the marking is
-the authority, because nothing checks this sentence against that list. They are
-restated here because root documents are what an agent reads first, and a
-root document that contradicts a ratified decision propagates the
-contradiction silently. They are not re-opened in a run, a PR, or a prompt;
-reversing one goes through [`ARCHITECTURE.md`](ARCHITECTURE.md) §13 — a numbered decision in
-[`doctrine/decisions/`](doctrine/decisions/) — not through #30, which is closed and superseded.
+The [original roadmap](https://github.com/rickylabs/harness/issues/30) is historical.
+Decision Q, recorded in ADR 0005, supersedes its dsh-only product premise and the
+proposal to retire Herdr as the framework's foundation. The optional dsh router is
+retained for testing after the next APK; UHP remains parked under ADR 0004.
 
-1. **Plugin-only, no core fork.** *Scoped to the parked plugin layer —*
-   [`ARCHITECTURE.md`](ARCHITECTURE.md) §10. Depend on published
-   [`@deepseek-ai/dsh`](https://github.com/deepseek-ai/deepseek-harness). We
-   ship Cordis plugin packages and one profile. Only
-   [`runzhliu/deepseek-harness-docker`](https://github.com/runzhliu/deepseek-harness-docker)
-   is forked, with the upstream remote kept for updates.
-2. **Node + pnpm.** netscript stays a service behind an adapter, not a
-   build-time dependency.
-3. **GitHub is the source of truth for the board**; `dsh` projects the live
-   view.
-4. **Superseded on its first clause.** This repository is **the portable agent
-   runtime** — [`ARCHITECTURE.md`](ARCHITECTURE.md) §1, which states that charter
-   "replaces the previous one ("the `dsh` plugin layer")". The rest of this
-   decision still holds. No cockpit is built here. The two
-   that consume this layer are separate products in their own repositories —
-   `rickylabs/atelier-cockpit`, the engineering cockpit, and
-   `rickylabs/atelier-mobile`, the Expo companion. Consequence: `contracts`
-   must be a *published* package, not a workspace import.
+Node and pnpm, GitHub as board authority, MIT licensing, independent evaluation and
+the stable published `@rickylabs/harness-contracts` boundary remain. Cockpit and
+mobile are separate products. Their runtime product API is cockpit's captured,
+generated client; an old protocol-1/mux contract is a compatibility surface, not a
+claim that the app runs on dsh.
 
-Decision 4 originally placed external consumers inside `rickylabs/netscript` and
-was amended on
-[#30](https://github.com/rickylabs/harness/issues/30#issuecomment-5561573579)
-once they became products in their own right; the published contract package
-is still the only thing this repository owes them. Two further decisions —
-the MIT licence with a public npm scope, and the divybot/herdr strangler-fig
-— are recorded on #30 as **taken, reversible**; read them on the board.
+Cleanup proceeds one reviewed PR at a time: documentation, CLI compatibility,
+experiment isolation, then method/run-record homes. The vault refresh starts after
+these four PRs merge. Operator and wire/producer naming migrations 5–7 remain
+pending until their paired rollouts are proved. No source merge authorizes a live
+configuration change, activation or deployment.
 
 ## Packages
 
@@ -332,9 +295,11 @@ owns the complete package-to-epic table and implementation status.
   provider packages handle autonomous agent tasks; [`llm-local`](packages/llm-local)
   handles API and local-model calls. [`routing`](packages/routing) resolves
   configured choices and evaluator independence.
-- **Compose and connect:** [`dsh-app`](packages/dsh-app) assembles the profile,
-  [`forge`](packages/forge) installs the board process, and
+- **Connect:** [`forge`](packages/forge) installs the board process, and
   [`netscript-bridge`](packages/netscript-bridge) owns the outbound service adapter.
+- **Experiment:** [`dsh-app`](packages/dsh-app) retains the optional dsh profile
+  and composition. Its approved move to `experiments/routers/dsh` and exclusion
+  from default checks are pending; it is not the native dispatcher.
 - **Publish the boundary:** [`contracts`](packages/contracts) defines portable
   mechanism data and readers for the product backend. The native client consumes
   the backend's generated API/client.
@@ -342,10 +307,10 @@ owns the complete package-to-epic table and implementation status.
 ### Repository map
 
 ```
-packages/             the dsh plugin layer — one package per subsystem
+packages/             flat core packages; dsh-app experiment pending relocation
 docs/                 concepts, tutorials, how-to, reference, glossary
 doctrine/             how to work here: portable, stable, no runtime
-deploy/               the N5 compose stack and the patch overlays it applies
+deploy/               retained dsh experiment recipe, pending relocation
 scripts/              the repository-wide checks the root scripts run
 .llm/runs/            run artifacts — durable, reviewed via PR
 .llm/harness/         the artifact templates a run fills in
@@ -388,6 +353,4 @@ files you must not hand-edit.
 
 ## Licence
 
-**MIT**, matching `dsh`, so the plugin packages can carry the `dsh-plugin`
-topic. Taken on [#30](https://github.com/rickylabs/harness/issues/30) as
-reversible. See [`LICENSE`](LICENSE).
+**MIT**. The licence remains unchanged by Decision Q. See [`LICENSE`](LICENSE).

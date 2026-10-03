@@ -1,15 +1,19 @@
 # deploy
 
-How the harness runs on the N5. Two files:
+Retained deployment recipe for the **optional dsh-router experiment**. It does not deploy the
+Harness framework on Orchid and Herdr. [ADR 0005](../doctrine/decisions/0005-harness-framework-identity.md)
+records the approved relocation to `experiments/routers/dsh`, pending cleanup PR 3. No boot or
+live experiment acceptance is implied; testing waits until after the next APK. Two files:
 
 | file | what it is |
 |---|---|
 | [`compose/dsh.yaml`](compose/dsh.yaml) | the stack: one container serving the dsh web surface on `:3080` |
 | [`dsh/web-bind.cordis.patch.yml`](dsh/web-bind.cordis.patch.yml) | the `--patch` overlay that binds it to the container's interfaces |
 
-This directory is the deployment, not the product. Everything under `packages/` runs anywhere;
-what is here encodes one box — its paths, its pool, its network, and the two or three things
-about it that are surprising enough to be worth writing down rather than rediscovering.
+This directory is the experimental deployment, not the framework dispatcher. Core packages are portable;
+the retained recipe describes the experiment's former container assumptions. Operator paths
+and live bindings require private deployment evidence. The commands below are illustrative
+setup instructions, not executed receipts or permission to change a host.
 
 ## Before the first boot
 
@@ -18,16 +22,17 @@ is missing should fail at start with the path in the message, not silently mater
 root-owned directory that looks like data loss the next morning:
 
 ```bash
-mkdir -p /home/rickylabs/main/syspool/AI/dsh/data /home/rickylabs/main/syspool/AI/dsh/tmp
+mkdir -p "$EXPERIMENT_ROOT/data" "$EXPERIMENT_ROOT/tmp"
 ```
 
 and the checkout, in the shared projects tree the agents already use:
 
 ```bash
-git clone https://github.com/rickylabs/harness /home/rickylabs/main/syspool/AI/agents/home/projects/harness/repo
+git clone https://github.com/rickylabs/harness "$PROJECT_ROOT/repo"
 ```
 
-`projects/<name>/repo` is the layout the dev stack settled on; `/workspace/harness/repo` is the
+`EXPERIMENT_ROOT` and `PROJECT_ROOT` are operator-selected private locations; they are not
+provided defaults for the retained compose file. `projects/<name>/repo` is the project layout; `/workspace/harness/repo` is the
 same directory seen from inside the container. If it is not there the container says so and
 exits 1 rather than booting something half-configured.
 
@@ -77,9 +82,8 @@ which leaves exactly one way in — an SSH port-forward — and that is the defa
 
 To reach it from the Tailscale address instead, set `DSH_TRUSTED_HOST` to the authority the
 browser will send (`<address>` for any port, or `<address>:3080` to pin the port) and restart.
-That is a deliberate edit by someone who has read this paragraph. The neighbouring stacks
-already publish an unauthenticated root shell on the same boundary, so this is not a new
-exposure — but it is one worth making on purpose rather than by default.
+That is a deliberate edit by someone who has read this paragraph. A bind or published port does not establish authentication; verify the selected upstream
+revision and authorized operator configuration before any later activation.
 
 The bind itself cannot come from the command line: `--host 0.0.0.0` is a usage error dsh raises
 deliberately. [`dsh/web-bind.cordis.patch.yml`](dsh/web-bind.cordis.patch.yml) overrides the
@@ -102,9 +106,9 @@ be reclaimed, remove the directory's contents on the host, not the mount.
 ## Why its own config tree
 
 `HOME`, `DSH_HOME` and all three `XDG_*` variables point inside `/data`, which is dsh's alone.
-The ai-agents stack bind-shares `/home/agent/.claude` with the claude-desktop webtop so they have
-one session store; a dsh container writing into that tree would be writing into a live store
-belonging to ten running agent sessions. Nothing here is shared with any `*-desktop` container.
+The experiment must use its own native configuration/store scope. Writing into a shared native
+store can affect other running agents and first-launch configuration; the retained recipe shares
+none of those stores with desktop containers.
 
 ## Compose keys that do not survive the MinisCloud UI
 
