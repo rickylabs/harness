@@ -1,0 +1,28 @@
+{
+  "observed": {
+    "diffs": []
+  },
+  "populated": {
+    "title": "PRIVATE-SUMMARY-TITLE",
+    "body": "PRIVATE-SUMMARY-BODY",
+    "diffs": [
+      {
+        "file": "PRIVATE-SUMMARY-FILE",
+        "patch": "PRIVATE-SUMMARY-PATCH",
+        "additions": 1,
+        "deletions": 0,
+        "status": "modified"
+      },
+      {
+        "additions": 0,
+        "deletions": 1,
+        "status": "deleted"
+      },
+      {
+        "additions": 1,
+        "deletions": 0,
+        "status": "added"
+      }
+    ]
+  }
+}

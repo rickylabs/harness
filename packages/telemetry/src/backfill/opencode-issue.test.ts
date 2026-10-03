@@ -1,7 +1,7 @@
 /** Synthetic stores only. No native launch, provider request, prompts or operator files. */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -15,7 +15,8 @@ import { scanOpenCodeIssue } from "./opencode-issue.js";
 const rootID = "ses_fixture_root", epoch = Date.parse("2026-01-01T00:00:00.000Z");
 const provider = "fixture-provider", model = "nested/model:1", qualified = provider + "/" + model;
 const now = new Date(epoch + 30_000).toISOString();
-type FixtureOptions = { finish?: string; completed?: boolean; text?: string; error?: string; tool?: boolean };
+type FixtureOptions = { finish?: string; completed?: boolean; text?: string; error?: string; tool?: boolean;
+  userSummary?: unknown; assistantSummary?: unknown };
 async function fixture(o: FixtureOptions = {}) {
   const base = await mkdtemp(join(tmpdir(), "opencode-reader-"));
   const store = join(base, ".local/share/opencode"); await mkdir(store, { recursive: true, mode: 0o700 });
@@ -29,9 +30,11 @@ async function fixture(o: FixtureOptions = {}) {
     db.prepare("INSERT INTO message VALUES(?,?,?,?,?)").run(id, session, at, epoch + 25_000, JSON.stringify(data));
   const part = (id: string, msg: string, data: object, session = rootID) =>
     db.prepare("INSERT INTO part VALUES(?,?,?,?,?,?)").run(id, msg, session, epoch, epoch + 25_000, JSON.stringify(data));
-  message("msg_fixture_user", { role: "user", time: { created: epoch }, model: { providerID: provider, modelID: model } });
+  message("msg_fixture_user", { role: "user", time: { created: epoch }, model: { providerID: provider, modelID: model },
+    ...(o.userSummary === undefined ? {} : { summary: o.userSummary }) });
   part("prt_fixture_user", "msg_fixture_user", { type: "text", text: "PRIVATE-USER-CANARY" });
-  const assistant = () => ({ role: "assistant", parentID: "msg_fixture_user", providerID: provider, modelID: model,
+  const assistant = () => ({ role: "assistant",
+    ...(o.assistantSummary === undefined ? {} : { summary: o.assistantSummary }), parentID: "msg_fixture_user", providerID: provider, modelID: model,
     time: { created: epoch + 1000, ...(o.completed === false ? {} : { completed: epoch + 3000 }) },
     ...(o.finish === "absent" ? {} : { finish: o.finish ?? "stop" }),
     ...(o.error === undefined ? {} : { error: { name: o.error, data: { message: "PRIVATE-ERROR-CANARY" } } }),
@@ -255,5 +258,77 @@ it("OpenCode WAL updates keep stable activity IDs; missing/symlink/writable stor
     const link = join(f.store, "link.db"); await symlink(f.path, link);
     assert.equal((await scanOpenCodeIssue(link, rootID, 20, 8_388_608, epoch + 30_000)).reason, "source_unavailable");
     await chmod(f.path, 0o666); assert.equal((await scan()).reason, "source_unavailable");
+  } finally { await f.close(); }
+});
+
+it("OpenCode real user-summary shape remains readable without becoming assistant activity or Done evidence", async () => {
+  const cases = JSON.parse(await readFile(new URL("../../src/backfill/fixtures/opencode-user-summary.json", import.meta.url), "utf8")) as {
+    observed: object; populated: object;
+  };
+  for (const userSummary of [cases.observed, cases.populated]) {
+    const f = await fixture({ userSummary });
+    try {
+      const scan = await scanOpenCodeIssue(f.path, rootID, 20, 8_388_608, epoch + 30_000);
+      assert.equal(scan.reason, null, "native user summary object must remain readable");
+      assert.equal(scan.runs[0]?.outcome, "complete");
+      const snapshot = await f.collect(); assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
+      assert.equal(snapshot.issues[0]?.complete, true);
+      const a = snapshot.issues[0]?.dispatches[0]?.agents[0]!;
+      assert.equal(a.terminalOutcome.value, "succeeded"); assert.equal(a.endedAt, new Date(epoch + 3000).toISOString());
+      assert.equal(a.activity?.steps.length, 1); assert.equal(a.activity?.steps[0]?.summary, "The work is complete.");
+      assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-SUMMARY"));
+      f.db.prepare("DELETE FROM message WHERE id=?").run("msg_fixture_assistant");
+      f.db.prepare("DELETE FROM part WHERE message_id=?").run("msg_fixture_assistant");
+      const userOnly = (await f.collect()).issues[0]?.dispatches[0]?.agents[0]!;
+      assert.equal(userOnly.liveness.state, "running"); assert.equal(userOnly.endedAt, null);
+      assert.equal(userOnly.activity?.steps.length ?? 0, 0);
+    } finally { await f.close(); }
+  }
+});
+it("OpenCode rejects malformed user summary metadata and non-boolean assistant summaries", async () => {
+  const diff = { additions: 1, deletions: 0 };
+  const badUsers: unknown[] = [null, false, true, "summary", [], {}, { diffs: null }, { diffs: "diffs" },
+    { diffs: [], extra: true }, { diffs: [], title: 1 }, { diffs: [], body: false },
+    { diffs: [null] }, { diffs: [[]] }, { diffs: [{}] }, { diffs: [{ additions: "1", deletions: 0 }] },
+    { diffs: [{ additions: null, deletions: 0 }] }, { diffs: [{ additions: 1, deletions: null }] },
+    { diffs: [{ ...diff, file: 1 }] }, { diffs: [{ ...diff, patch: [] }] },
+    { diffs: [{ ...diff, status: "future" }] }, { diffs: [{ ...diff, extra: true }] }];
+  for (const [role, values] of [["user", badUsers], ["assistant", [null, {}, { diffs: [] }, [], "false", 0]]] as const) {
+    for (const summary of values) {
+      const f = await fixture(role === "user" ? { userSummary: summary } : { assistantSummary: summary });
+      try {
+        assert.equal((await scanOpenCodeIssue(f.path, rootID, 20, 8_388_608, epoch + 30_000)).reason,
+          "source_unavailable", role + " must refuse " + JSON.stringify(summary));
+      } finally { await f.close(); }
+    }
+  }
+});
+it("OpenCode assistant compaction remains boolean and clears earlier native success", async () => {
+  for (const assistantSummary of [false, true]) {
+    const f = await fixture({ userSummary: { diffs: [] }, assistantSummary });
+    try {
+      const run = (await scanOpenCodeIssue(f.path, rootID, 20, 8_388_608, epoch + 30_000)).runs[0]!;
+      assert.equal(run.outcome, assistantSummary ? "unknown" : "complete");
+      assert.equal(run.activitySteps?.length ?? 0, assistantSummary ? 0 : 1);
+      assert.equal(run.terminalAt, assistantSummary ? undefined : new Date(epoch + 3000).toISOString());
+      f.message("msg_fixture_compaction", { role: "assistant", parentID: "msg_fixture_user", providerID: provider,
+        modelID: model, summary: true, finish: "stop", time: { created: epoch + 4000, completed: epoch + 6000 } }, rootID, epoch + 4000);
+      f.part("prt_fixture_compaction", "msg_fixture_compaction", { type: "text", text: "PRIVATE-SUMMARY-COMPACTION",
+        time: { start: epoch + 4000, end: epoch + 5000 } });
+      const later = (await f.collect()).issues[0]?.dispatches[0]?.agents[0]!;
+      assert.equal(later.terminalOutcome.value, null); assert.equal(later.endedAt, null);
+      assert.ok(!JSON.stringify(later).includes("PRIVATE-SUMMARY"));
+    } finally { await f.close(); }
+  }
+});
+it("OpenCode duplicate nested summary keys and trailing summary JSON remain refused", async () => {
+  const f = await fixture({ userSummary: { diffs: [] } });
+  try {
+    const original = f.db.prepare("SELECT data FROM message WHERE id=?").get("msg_fixture_user")!.data as string;
+    for (const data of [original.replace('"diffs":[]', '"diffs":[],"diffs":[]'),
+      original.replace('"diffs":[]', '"diffs":[{"additions":0,"additions":0,"deletions":0}]'), original + "{}"] ) {
+      f.db.prepare("UPDATE message SET data=? WHERE id=?").run(data, "msg_fixture_user");
+      assert.equal((await scanOpenCodeIssue(f.path, rootID, 20, 8_388_608, epoch + 30_000)).reason, "source_unavailable");
+    }
   } finally { await f.close(); }
 });

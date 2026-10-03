@@ -53,6 +53,27 @@ const knownParts = new Set(["text", "reasoning", "tool", "step-start", "step-fin
   "agent", "retry", "compaction", "subtask"]);
 const boolean = (v: unknown): boolean => { if (v !== undefined && typeof v !== "boolean") throw Error(); return v === true; };
 
+/** Native v1/session.User has descriptive FileDiff metadata; only Assistant's boolean
+ * marks compaction. Validate metadata, then discard it rather than publishing its private text.
+ */
+function messageSummary(value: unknown, assistant: boolean): boolean {
+  if (assistant) return boolean(value);
+  if (value === undefined) return false;
+  const summary = object(value);
+  if (Object.keys(summary).some(key => !["title", "body", "diffs"].includes(key)) ||
+      (summary.title !== undefined && typeof summary.title !== "string") ||
+      (summary.body !== undefined && typeof summary.body !== "string") || !Array.isArray(summary.diffs)) throw Error();
+  for (const entry of summary.diffs) {
+    const diff = object(entry);
+    if (Object.keys(diff).some(key => !["file", "patch", "additions", "deletions", "status"].includes(key)) ||
+        !Number.isFinite(diff.additions) || !Number.isFinite(diff.deletions) ||
+        (diff.file !== undefined && typeof diff.file !== "string") ||
+        (diff.patch !== undefined && typeof diff.patch !== "string") ||
+        (diff.status !== undefined && !["added", "deleted", "modified"].includes(diff.status as string))) throw Error();
+  }
+  return false;
+}
+
 /** Pure typed projection. Native header/part clocks are authoritative; SQL update time is not. */
 export function openCodeConversation(session: Row, messages: readonly Row[], parts: readonly Row[],
   origin: string, nowMs: number): RunRecord | null {
@@ -84,7 +105,7 @@ export function openCodeConversation(session: Row, messages: readonly Row[], par
       const assistant = data.role === "assistant";
       if (data.role !== "user" && !assistant) return null;
       let nonempty = false, continuation = false, lastPart = created;
-      const summary = boolean(data.summary);
+      const summary = messageSummary(data.summary, assistant);
       for (const part of byMessage.get(message) ?? []) {
         const value = nativeJSON(part.data);
         if (!knownParts.has(value.type as string) || (value.id !== undefined && value.id !== part.id) ||
