@@ -43,7 +43,8 @@ function markdownContent(output) {
 }
 function currentMarkdown(output) {
   return output.replaceAll("Luna max", "SOL low")
-    .replace(/SOL (high|medium)/g, "SOL xhigh").replaceAll("Grok 4.6", "Grok 4.7");
+    .replace(/SOL (high|medium)/g, "SOL xhigh").replaceAll("Grok 4.6", "Grok 4.7")
+    .replace(/Opus 5(?!\.)/g, "Opus 5.5 (legacy logical alias)");
 }
 const recordedFallbacks = model => JSON.parse(reference.cases.find(recorded =>
   recorded.args.join(" ") === `--fallback ${model} --json`).stdout).matches;

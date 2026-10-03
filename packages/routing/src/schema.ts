@@ -145,7 +145,7 @@ const STRUCTURAL_FIELDS = new Set([
   "effortSupport", "status", "supported", "unsupported", "roles", "evaluates", "restrictions",
   "selection", "by", "otherwise", "cells", "loops", "maxRounds", "reSteerSameSession",
   "notifyOwnerAfter", "escalateToOwnerAt", "repairInFlightAt", "authorization", "coordinators",
-  "ownerOverride", "evidence",
+  "ownerOverride", "evidence", "aliasOf",
   "triggers", "routers", "laneAliases", "label", "launcherAlias", "implementation", "implementation_evaluation", "plan", "plan_evaluation",
 ]);
 export function fieldPath(parent: string, key: string, index: number): string {

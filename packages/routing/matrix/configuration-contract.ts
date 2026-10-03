@@ -14,6 +14,7 @@ export interface MatrixLaunch {
 }
 export interface MatrixModel {
   readonly family: string;
+  readonly aliasOf?: string;
   readonly label?: string;
   readonly launcherAlias?: string;
   readonly capabilities?: readonly string[];

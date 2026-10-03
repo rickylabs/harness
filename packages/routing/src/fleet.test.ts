@@ -1003,3 +1003,45 @@ it("keeps every fleet model, tier, role, scope, lane, family and effort out of r
     for (const value of forbidden) assert.ok(!code.includes(JSON.stringify(value)), `${file} compiles ${value}`);
   }
 });
+
+
+const aliasData = JSON.parse(await readFile(new URL("../test-fixtures/logical-aliases.v1.json", import.meta.url), "utf8"));
+
+describe("explicit logical aliases retain one exact native launch binding", () => {
+  function aliased(): any {
+    const v = documentT();
+    v.models[aliasData.legacyModel] = { ...structuredClone(v.models[aliasData.baseModel]), aliasOf: aliasData.baseModel, label: aliasData.legacyLabel };
+    return v;
+  }
+  it("accepts a direct identical alias in either declaration order", () => {
+    for (const reverse of [false, true]) {
+      const v = aliased();
+      if (reverse) v.models = Object.fromEntries(Object.entries(v.models).reverse());
+      v.models[aliasData.legacyModel].launches[0] = Object.fromEntries(Object.entries(v.models[aliasData.legacyModel].launches[0]).reverse());
+      const config = fleet(loaded(validate(v)).configuration);
+      assert.equal((config.models[aliasData.legacyModel] as any)?.aliasOf, aliasData.baseModel);
+      assert.deepEqual(launchesOf(config, aliasData.legacyModel), launchesOf(config, aliasData.baseModel));
+    }
+  });
+  for (const [name, edit] of [
+    ["undeclared duplicate", (v: any) => { delete v.models[aliasData.legacyModel].aliasOf; }],
+    ["self alias", (v: any) => { v.models[aliasData.legacyModel].aliasOf = aliasData.legacyModel; }],
+    ["missing target", (v: any) => { v.models[aliasData.legacyModel].aliasOf = aliasData.absentModel; }],
+    ["wrong type", (v: any) => { v.models[aliasData.legacyModel].aliasOf = 1; }],
+    ["alias chain", (v: any) => { v.models[aliasData.chainedModel] = { ...structuredClone(v.models[aliasData.legacyModel]), aliasOf: aliasData.legacyModel }; }],
+    ["family mismatch", (v: any) => { v.models[aliasData.legacyModel].family = aliasData.otherFamily; }],
+    ["capability mismatch", (v: any) => { v.capabilities = [aliasData.capability]; v.models[aliasData.legacyModel].capabilities = [aliasData.capability]; }],
+    ["launch metadata mismatch", (v: any) => { v.models[aliasData.legacyModel].launches[0].subscription = "included"; }],
+    ["target additional launch", (v: any) => { v.models[aliasData.baseModel].launches.push({...structuredClone(v.models[aliasData.baseModel].launches[0]),id:aliasData.additionalWire}); }],
+    ["target additional optional launch field", (v: any) => { v.models[aliasData.baseModel].launches[0].subscription = "included"; }],
+    ["effort support mismatch", (v: any) => { v.models[aliasData.legacyModel].launches[0].effortSupport = {status:"known",supported:[aliasData.knownEffort],why:"synthetic evidence"}; }],
+    ["duplicate within alias", (v: any) => { v.models[aliasData.legacyModel].launches.push(structuredClone(v.models[aliasData.legacyModel].launches[0])); }],
+  ] as const) it(`rejects ${name}`, () => { const v = aliased(); edit(v); assert.equal(validate(v).ok, false); });
+  for (const target of [aliasData.absentModel, aliasData.invalidTarget]) it(`rejects a standalone invalid alias target ${target}`, () => { const v = documentT(); v.models[aliasData.baseModel].aliasOf = target; assert.equal(validate(v).ok, false); });
+  it("rejects a standalone self alias", () => { const v = documentT(); v.models[aliasData.baseModel].aliasOf = aliasData.baseModel; assert.equal(validate(v).ok, false); });
+  it("does not waive same-family evaluator independence", () => {
+    const v = aliased(); v.models[aliasData.evaluatorModel].family = aliasData.sameFamily;
+    v.tiers[0].cells.check[0].model = aliasData.legacyModel;
+    assert.equal(validate(v).ok, false);
+  });
+});

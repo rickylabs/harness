@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   COORDINATOR_MATRIX,
+  MATRIX_AUTHORITY,
   DELEGATION_MATRIX,
   DELEGATION_ROLES,
   LOGICAL_MODEL_IDS,
@@ -64,8 +65,11 @@ test("catalog retains each source capability and prefers newer Harness native ID
     const actual = MODEL_CATALOG[id === "muse_spark_1_3" ? "muse_spark_1_3_contributor" : id];
     assert.equal(actual.family, expected.family, id);
     for (const capability of expected.capabilities) {
+      // The retained source stays intact; owner-approved legacy aliases use the canonical wire binding.
+      const canonical = MODEL_CATALOG[MODEL_CATALOG[id] && MATRIX_AUTHORITY.configuration.models[id]?.aliasOf];
+      const expectedWire = canonical?.capabilities.find(c => c.transport === capability.transport)?.model ?? capability.model;
       assert.ok(actual.capabilities.some(candidate =>
-        candidate.transport === capability.transport && candidate.model === capability.model),
+        candidate.transport === capability.transport && candidate.model === expectedWire),
       `${id} lost ${capability.transport}/${capability.model}`);
     }
   }

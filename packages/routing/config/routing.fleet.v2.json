@@ -197,13 +197,13 @@
     },
     "opus_5": {
       "family": "anthropic",
-      "label": "Opus 5",
+      "label": "Opus 5.5 (legacy logical alias)",
       "capabilities": [],
       "launches": [
         {
           "provider": "claude",
           "seam": "subagents",
-          "id": "claude-opus-5",
+          "id": "claude-opus-5-5",
           "transport": "native",
           "harness": "claude",
           "effortSupport": {
@@ -211,7 +211,8 @@
           }
         }
       ],
-      "approvedRelayEvaluator": true
+      "approvedRelayEvaluator": true,
+      "aliasOf": "opus_5_5"
     },
     "opus_5_5": {
       "family": "anthropic",
