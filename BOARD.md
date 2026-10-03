@@ -4,7 +4,7 @@
 
 `[################----]` **462/556 done · 33 running · 26 queued · 16 abandoned · 19 invisible**
 
-_Latest board activity: 2026-10-03T05:43:22Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-03T06:00:18Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (33)
 
@@ -59,12 +59,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#566 [cli-smoke] OpenCode Gemini exact first-prompt acceptance after #65 (one attempt)](https://github.com/rickylabs/harness/issues/566) | — | — |
 | [#569 [cli-smoke] OpenCode GLM 5.3 Flash marked final and Done after #68 (one attempt)](https://github.com/rickylabs/harness/issues/569) | — | — |
 
-## Anomalies (38)
+## Anomalies (39)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
+- **#570** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
