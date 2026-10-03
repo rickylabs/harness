@@ -53,7 +53,7 @@ if(kind==='agy'&&args.includes('--print')){
 if(args[0]==='--version'){console.log(kind==='codex'&&behavior!=='other-version'?(['new-version','project-provider','scoped-read-failed'].includes(behavior)?'0.160.0':'0.159.3'):'1.2.3');process.exit(0);}
 if(args[0]==='auth'){if(behavior==='auth-failed'){console.log('PRIVATE-CREDENTIAL-CANARY');process.exit(2);}const auth={...data.claudeAuth};if(behavior==='auth-type')auth.loggedIn='yes';if(behavior==='auth-provider')auth.apiProvider='unknown';console.log(JSON.stringify(auth));process.exit(behavior==='auth-exit'?1:0);}
 if(args[0]==='models'){
- if(kind==='agy'){const entries=behavior==='agy-bound'?Array.from({length:65},(_,i)=>({id:'fixture-bound-'+i,label:'Bound'})):data.agyModels;for(const m of entries)console.log(m.id+'\\t'+m.label);}
+ if(kind==='agy'){const entries=behavior==='agy-bound'?Array.from({length:65},(_,i)=>({id:data.agyBoundModelPrefix+i,label:'Bound'})):data.agyModels;for(const m of entries)console.log(m.id+'\\t'+m.label);}
  else for(const original of data.opencodeModels){
  let model=structuredClone(original);
  if(behavior==='model-conflict')model.providerID='conflicting-provider';
@@ -374,8 +374,8 @@ test("native facts: verified Claude serializer omission proves unsupported effor
 }));
 test("native facts: fleet legacy Opus alias uses the served native wire id in JSON",async()=>fixture(async(_cwd,_binary,data)=>{
  const fleet=JSON.parse(await readFile(new URL('../config/routing.fleet.v2.json',import.meta.url),'utf8'));
- assert.equal(fleet.models.opus_5.launches[0].id,data.servedOpus);
- assert.equal(fleet.models.opus_5_5.launches[0].id,data.servedOpus);
+ assert.equal(fleet.models[data.fleetLegacyAlias].launches[0].id,data.servedOpus);
+ assert.equal(fleet.models[data.fleetCanonicalAlias].launches[0].id,data.servedOpus);
 }));
 
 

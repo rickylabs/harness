@@ -1,0 +1,14 @@
+{
+  "baseModel": "maker-a",
+  "evaluatorModel": "checker-b",
+  "legacyModel": "legacy-maker",
+  "chainedModel": "third-maker",
+  "additionalWire": "maker-second-wire",
+  "absentModel": "absent",
+  "invalidTarget": 1,
+  "legacyLabel": "Legacy maker",
+  "sameFamily": "alpha",
+  "otherFamily": "beta",
+  "capability": "synthetic-vision",
+  "knownEffort": "one"
+}

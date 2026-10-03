@@ -106,5 +106,8 @@
     ],
     "path": "/PRIVATE/CONFIG"
   },
-  "servedOpus": "claude-opus-5-5"
+  "servedOpus": "claude-opus-5-5",
+  "agyBoundModelPrefix": "fixture-bound-",
+  "fleetLegacyAlias": "opus_5",
+  "fleetCanonicalAlias": "opus_5_5"
 }
