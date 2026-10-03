@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **467/562 done · 33 running · 26 queued · 16 abandoned · 20 invisible**
+`[################----]` **467/563 done · 34 running · 26 queued · 16 abandoned · 20 invisible**
 
-_Latest board activity: 2026-10-03T11:49:23Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-03T16:15:11Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (33)
+## Moving now (34)
 
 Something could be acting on these right now.
 
@@ -15,6 +15,7 @@ Something could be acting on these right now.
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl-eval` | `e9` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees](https://github.com/rickylabs/harness/issues/373) | `impl-eval` | — |
+| [#577 fix(routing): establish OpenCode native default from explicit empty variants](https://github.com/rickylabs/harness/issues/577) | `impl` | — |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -139,7 +140,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 266/313 done · 17 running · 3 queued · 10 abandoned · 17 invisible
+`[##########--]` 266/314 done · 18 running · 3 queued · 10 abandoned · 17 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -148,7 +149,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 233/276 done · 16 running · 2 queued · 10 abandoned · 15 invisible | — |
+| _(no epic)_ | `[##########--]` 233/277 done · 17 running · 2 queued · 10 abandoned · 15 invisible | — |
 
 ## Waiting to start
 
@@ -192,7 +193,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  467/562 done · 33 running · 26 queued · 16 abandoned · 20 invisible
+# rickylabs/harness  [################----]  467/563 done · 34 running · 26 queued · 16 abandoned · 20 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -480,7 +481,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  266/313 done · 17 running · 3 queued · 10 abandoned · 17 invisible
+## (no milestone)  [################----]  266/314 done · 18 running · 3 queued · 10 abandoned · 17 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -811,6 +812,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR573 feat(routing): observe exact AGY native facts and retain the served Opus alias (p0)
     no status            #575 App picker launch test (one per CLI)
     plan                 #576 [rickylabs/harness#575] App picker launch test (one per CLI)
+    impl                 #577 fix(routing): establish OpenCode native default from explicit empty variants (p0)
 ```
 
 </details>
