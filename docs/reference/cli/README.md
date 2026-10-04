@@ -8,15 +8,23 @@ them.
 
 | command | what it does | exit codes |
 | --- | --- | --- |
-| [`dsh-profile`](dsh-profile.md) | install the rickylabs dsh profile | `0` `1` `2` `3` |
+| [`harness-forge`](harness-forge.md) | board taxonomy and process skill, installable into any repository | `0` `1` `2` `3` |
+| [`harness-board`](harness-board.md) | project a GitHub repository as a board | `0` `1` `2` `3` `4` |
+| [`harness-coordinator`](harness-coordinator.md) | the deterministic gate between authoring and review | `0` `1` `2` `3` `4` |
+| [`harness-telemetry`](harness-telemetry.md) | board activity, read from disk, with no agent awake | `0` `1` `2` `3` `4` |
 | [`dsh-forge`](dsh-forge.md) | board taxonomy and process skill, installable into any repository | `0` `1` `2` `3` |
 | [`dsh-board`](dsh-board.md) | project a GitHub repository as a board | `0` `1` `2` `3` `4` |
 | [`dsh-coordinator`](dsh-coordinator.md) | the deterministic gate between authoring and review | `0` `1` `2` `3` `4` |
 | [`dsh-telemetry`](dsh-telemetry.md) | board activity, read from disk, with no agent awake | `0` `1` `2` `3` `4` |
+| [`dsh-profile`](dsh-profile.md) | install the rickylabs dsh profile | `0` `1` `2` `3` |
 
-`2` is a usage error in all five. Nothing else is uniform: `3` is a missing GitHub transport for
-`dsh-board` and `dsh-forge`, an unreadable input for `dsh-coordinator`, an unwritable destination
-for `dsh-profile`, and an incomplete picture for `dsh-telemetry`. Read the table on the page.
+The four core `harness-*` commands keep temporary `dsh-*` compatibility aliases. Each pair
+shares one entrypoint; the aliases are retained for existing callers and reference links.
+The optional router experiment still ships `dsh-profile` until its separate relocation.
+
+`2` is a usage error in every command. `3` is a missing GitHub transport for
+`harness-board` and `harness-forge`, an unreadable input for `harness-coordinator`, an unwritable destination
+for `dsh-profile`, and an incomplete picture for `harness-telemetry`. Read the table on the page.
 
 ---
 

@@ -104,7 +104,7 @@ export function renderAnomalyBanner(anomalies: readonly Anomaly[]): string | nul
   const marked = anomalousItems(anomalies).size > 0 ? " ! marks an affected item." : "";
   return (
     `!! ANOMALIES (${anomalies.length}) — this board contradicts itself.${marked}` +
-    ` Run "dsh-board check" for the detail.`
+    ` Run "harness-board check" for the detail.`
   );
 }
 

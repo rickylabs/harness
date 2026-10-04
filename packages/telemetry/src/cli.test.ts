@@ -185,11 +185,11 @@ describe("parseFlags", () => {
   });
 });
 
-describe("dsh-telemetry", () => {
+describe("harness-telemetry", () => {
   it("prints usage and fails when given no command", async () => {
     const { code, out } = await run([]);
     assert.equal(code, 2);
-    assert.match(out, /dsh-telemetry status/);
+    assert.match(out, /harness-telemetry status/);
   });
 
   it("succeeds on --help, because asking for help is not an error", async () => {
@@ -300,7 +300,7 @@ describe("dsh-telemetry", () => {
   });
 });
 
-describe("dsh-telemetry, on evidence it could not fully read", () => {
+describe("harness-telemetry, on evidence it could not fully read", () => {
   it("exits 0 on a box that simply has no stores", async () => {
     // Absent stores are a complete answer about a machine that does not run those vendors. If this
     // were exit 3, every laptop in the fleet would report a permanent fault.
@@ -336,7 +336,7 @@ describe("dsh-telemetry, on evidence it could not fully read", () => {
   });
 });
 
-describe("dsh-telemetry --json", () => {
+describe("harness-telemetry --json", () => {
   it("wraps runs in an envelope that says whether the answer is complete", async () => {
     // `runs --json` used to emit a bare array and drop every note, so a machine consumer received a
     // truncated scan in the shape of complete evidence (finding F-10 on #105).
@@ -408,7 +408,7 @@ describe("dsh-telemetry --json", () => {
   });
 });
 
-describe("dsh-telemetry governance observations", () => {
+describe("harness-telemetry governance observations", () => {
   it("shows account quota, spend, capacity, and the actual admission reason before progress", async () => {
     const observations = await seedGovernance("fresh-governance.json");
     const { code, out } = await runIsolated([
@@ -493,7 +493,7 @@ describe("dsh-telemetry governance observations", () => {
  * tests exist to keep out, so the fixture below is written in the projection's shape and not in
  * telemetry's own.
  */
-describe("dsh-telemetry tree", () => {
+describe("harness-telemetry tree", () => {
   /** What `dsh-board snapshot` actually writes — envelope, nested source, phase as an object. */
   async function seedBoard(): Promise<string> {
     const path = join(home, "board.json");
@@ -647,7 +647,7 @@ describe("dsh-telemetry tree", () => {
  * read what it wrote. Seeding through `resolveObservability` rather than a hardcoded path keeps the
  * test honest on a box where `DSH_TELEMETRY_DIR` is set.
  */
-describe("dsh-telemetry, with the live log", () => {
+describe("harness-telemetry, with the live log", () => {
   async function seedLog(events: readonly Record<string, unknown>[]): Promise<void> {
     const path = livePath(resolveObservability(home, process.env));
     await mkdir(dirname(path), { recursive: true });

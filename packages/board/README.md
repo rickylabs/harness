@@ -3,12 +3,12 @@
 The board, projected from GitHub. Owned by **E6 · #36**.
 
 ```
-dsh-board status     # milestone -> epic -> task, with progress rolled up
-dsh-board columns    # the kanban view
-dsh-board check      # exit 1 when the board contradicts itself
-dsh-board snapshot   # the projection as JSON
-dsh-board doctor     # transport and repository detection
-dsh-board checks --pr <n>   # latest run per check on the PR head; exit 1 if one currently fails
+harness-board status     # milestone -> epic -> task, with progress rolled up
+harness-board columns    # the kanban view
+harness-board check      # exit 1 when the board contradicts itself
+harness-board snapshot   # the projection as JSON
+harness-board doctor     # transport and repository detection
+harness-board checks --pr <n>   # latest run per check on the PR head; exit 1 if one currently fails
 ```
 
 `checks` is the read-only pull-request check rollup ported from NetScript's `agentic:pr-checks`, with
@@ -68,7 +68,7 @@ and for two hours the board reported six unstarted children as delivered work.
 
 ## The lifecycle is configuration
 
-`DEFAULT_LIFECYCLE` matches what `dsh-forge` stamps, so the common case needs no configuration.
+`DEFAULT_LIFECYCLE` matches what `harness-forge` stamps, so the common case needs no configuration.
 It is a default, not a coupling: this package has no dependency on `forge`, and a repository with
 different columns passes its own `Lifecycle`.
 

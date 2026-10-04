@@ -2,7 +2,7 @@
 
 **GitHub holds board truth. Harness projects it.** The original roadmap established that
 boundary; [ADR 0005](../../doctrine/decisions/0005-harness-framework-identity.md) retains it while
-correcting the framework identity. Existing `dsh-board` commands are compatibility naming until
+correcting the framework identity. Existing `harness-board` commands are compatibility naming until
 the ordered CLI migration, not evidence that a dsh host owns the board.
 
 ## The problem it is answering
@@ -99,7 +99,7 @@ A shared, mutable surface that both humans and agents write to concurrently *wil
 Treating that as an exceptional condition — something to log and move past — is what lets a board
 quietly stop being true.
 
-So `dsh-board` names each contradiction, gives it a stable kind, and exits non-zero when any are
+So `harness-board` names each contradiction, gives it a stable kind, and exits non-zero when any are
 present. An epic closed while its children are open; an item that is closed but never marked
 shipped; a closing keyword pointed at an epic; a fetch that came back incomplete. Each is a sentence
 about a specific item number, which is the difference between a check you act on and a check you
@@ -125,7 +125,7 @@ board still cannot tell a busy `impl` from an abandoned one.
 ## Installing it elsewhere
 
 None of the above is specific to this repository. The taxonomy, the skill and the workflow files are
-what [`forge`](../../packages/forge) writes into any repository — `dsh-forge init` — which is the
+what [`forge`](../../packages/forge) writes into any repository — `harness-forge init` — which is the
 board process becoming portable rather than a thing this project has and describes.
 
 ---

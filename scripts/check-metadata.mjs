@@ -29,7 +29,7 @@
  * *generated* artifact in the same sense as everything else in this repository: something that must
  * be re-derived from what owns it rather than edited where it is displayed.
  *
- * Exit codes, matching `dsh-forge`: 0 they agree, 1 they do not, 2 the check itself broke, 3 no
+ * Exit codes, matching `harness-forge`: 0 they agree, 1 they do not, 2 the check itself broke, 3 no
  * usable GitHub transport — unavailable, which is not the same as passing.
  */
 
@@ -50,7 +50,7 @@ if (typeof want !== "string" || want.trim().length === 0) {
   process.exit(2);
 }
 
-/** `owner/name` from the origin remote, the same way `dsh-forge` resolves it. */
+/** `owner/name` from the origin remote, the same way `harness-forge` resolves it. */
 const slug = await (async () => {
   try {
     const { stdout } = await run("git", ["remote", "get-url", "origin"], { cwd: ROOT, timeout: 15_000 });
@@ -67,7 +67,7 @@ if (slug === null) {
 }
 
 /**
- * `gh` first, then a REST call with a token. Same order and same reasoning as `dsh-forge`: `gh`
+ * `gh` first, then a REST call with a token. Same order and same reasoning as `harness-forge`: `gh`
  * carries the credential itself, so the token never has to appear in this process at all.
  */
 const fetchDescription = async () => {

@@ -1,12 +1,12 @@
 # Install the board process into an existing repository
 
-The board process is a label taxonomy plus a skill that teaches an agent to use it. `dsh-forge`
+The board process is a label taxonomy plus a skill that teaches an agent to use it. `harness-forge`
 installs both into a repository that is not this one, without taking over the repository it lands
 in.
 
 This is the shortest correct path. *Why* the board works this way is
 [concepts/03 — The board](../concepts/03-the-board.md); every flag is
-[the generated reference](../reference/cli/dsh-forge.md).
+[the generated reference](../reference/cli/harness-forge.md).
 
 ## Before you start
 
@@ -15,9 +15,9 @@ This is the shortest correct path. *Why* the board works this way is
   guessing.
 - **A checkout of the target repository**, because the skill is written to disk even though the
   labels are not.
-- **A built `dsh-forge`.** From a clone of this repository, `pnpm install && pnpm --filter
+- **A built `harness-forge`.** From a clone of this repository, `pnpm install && pnpm --filter
   @rickylabs/forge run build`, then invoke `node packages/forge/dist/cli.js`. The examples below
-  write `dsh-forge` for that.
+  write `harness-forge` for that.
 
 You do not need this repository's taxonomy to match the target's. Deriving the difference is the
 first step's entire job.
@@ -25,7 +25,7 @@ first step's entire job.
 ## 1. Ask what the repository already supports
 
 ```bash
-dsh-forge doctor --repo you/your-repo --cwd ../your-repo
+harness-forge doctor --repo you/your-repo --cwd ../your-repo
 ```
 
 ```text
@@ -59,7 +59,7 @@ it organises work, and you are about to add to it.
 ## 2. See exactly what would change
 
 ```bash
-dsh-forge labels plan --repo you/your-repo --cwd ../your-repo
+harness-forge labels plan --repo you/your-repo --cwd ../your-repo
 ```
 
 ```text
@@ -73,7 +73,7 @@ unmanaged (10) — present on the repo, not in this taxonomy, left alone
   accessibility, bug, documentation, duplicate, enhancement, good first issue, help wanted, invalid, question, wontfix
 ```
 
-`plan` is read-only and it is the default: `dsh-forge labels` with no verb does this. Three buckets,
+`plan` is read-only and it is the default: `harness-forge labels` with no verb does this. Three buckets,
 and the third is the one that matters for trust — **labels outside the taxonomy are left alone, and
 `apply` never deletes.** GitHub's own defaults, and whatever the repository invented for itself,
 survive the install.
@@ -85,7 +85,7 @@ Running `plan` twice in a row on an installed repository is how you confirm noth
 ## 3. Eject the taxonomy and review it as a diff
 
 ```bash
-dsh-forge labels eject --repo you/your-repo --cwd ../your-repo
+harness-forge labels eject --repo you/your-repo --cwd ../your-repo
 ```
 
 ```text
@@ -102,8 +102,8 @@ Review it now. Editing it before you apply is the supported way to disagree with
 ## 4. Apply, and install the skill
 
 ```bash
-dsh-forge labels apply --repo you/your-repo --cwd ../your-repo
-dsh-forge skill install --repo you/your-repo --cwd ../your-repo
+harness-forge labels apply --repo you/your-repo --cwd ../your-repo
+harness-forge skill install --repo you/your-repo --cwd ../your-repo
 ```
 
 `apply` creates and updates; it does not delete. `skill install` writes
@@ -111,7 +111,7 @@ dsh-forge skill install --repo you/your-repo --cwd ../your-repo
 taxonomy in the form an agent reads, so that the rules a human sees on the board and the rules an
 agent follows come from one source.
 
-`dsh-forge init` runs eject, apply and skill install in that order, which is the same thing once you
+`harness-forge init` runs eject, apply and skill install in that order, which is the same thing once you
 have decided to trust the plan.
 
 **These two commands change a repository other than the one you are standing in.** Add `--dry-run` to
@@ -124,7 +124,7 @@ those conflicts; reach for it only once you have read what they are.
 ## 5. Keep it honest in CI
 
 ```bash
-dsh-forge labels check --repo you/your-repo --cwd ../your-repo
+harness-forge labels check --repo you/your-repo --cwd ../your-repo
 ```
 
 Exits non-zero when the repository has drifted from `.github/labels.yml`. A taxonomy nobody checks
@@ -135,7 +135,7 @@ is a taxonomy that quietly stops describing the board.
 | Exit | What it means | What to do |
 | --- | --- | --- |
 | `1` | drift, or a label already means something else | read the report; edit `.github/labels.yml`, or `--force` once you know what you are settling |
-| `2` | the command line was wrong | check the flag against [the reference](../reference/cli/dsh-forge.md) |
+| `2` | the command line was wrong | check the flag against [the reference](../reference/cli/harness-forge.md) |
 | `3` | no usable GitHub transport | `gh auth status` — this is `gh` missing, unauthenticated, or unable to reach GitHub |
 
 Exit `3` is deliberately not a silent skip. A label command that cannot reach GitHub has not
@@ -150,7 +150,7 @@ careful with a label that has consequences. Most repositories have no dispatcher
 nothing.
 
 It does not import issues, touch milestones, or open anything. It also does not make the board move
-on its own — that is `dsh-board`, and it reads the board rather than installing it.
+on its own — that is `harness-board`, and it reads the board rather than installing it.
 
 ---
 

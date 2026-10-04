@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Assert that `dsh-board`'s default lifecycle is the taxonomy `dsh-forge` actually stamps.
+ * Assert that `harness-board`'s default lifecycle is the taxonomy `harness-forge` actually stamps.
  *
  * This exists because the two drifted, and the drift was invisible from inside either package.
  * `packages/board/src/lifecycle.ts` listed `backlog`, `ready`, `in-progress`, `blocked`,
- * `in-review`, `changes-requested` — a plausible lifecycle that `dsh-forge` has never emitted —
+ * `in-review`, `changes-requested` — a plausible lifecycle that `harness-forge` has never emitted —
  * while its own doc comment claimed the two matched. Nothing failed. `phaseOf` returned `null` for
  * every correctly labelled item, `progressOf` counted them *invisible*, and a board that had just
  * been filled in reported itself empty. The board-package suite stayed green throughout, because
@@ -19,10 +19,10 @@
  * opinion about who reads them. The repository is the only place that can see both, so the check
  * lives here.
  *
- * Sources of truth, in the order `dsh-forge` itself defers to them:
+ * Sources of truth, in the order `harness-forge` itself defers to them:
  *
  *   1. `.github/labels.yml` — once ejected, this is the file a human edits and reviews, and
- *      `dsh-forge` treats it as winning where it overlaps the built-in taxonomy. Compared as a
+ *      `harness-forge` treats it as winning where it overlaps the built-in taxonomy. Compared as a
  *      *set*: it is a label registry, not a lifecycle, and it carries no claim about column order.
  *   2. `packages/forge/src/labels/taxonomy.ts` — the built-in taxonomy. Compared as an ordered
  *      list, plus which phase is terminal, because that file does make both claims.
@@ -135,7 +135,7 @@ function scalar(raw) {
  * a `superseded_by:` marks the label retired — still on the repository, still on the items that
  * carried it, never stamped again. A retired `status:` row is therefore not a column, and counting
  * it as one would report the board as missing a column it deliberately removed. The rest is parsed
- * the same loose way `dsh-forge` parses it, because reimplementing YAML to answer one question is
+ * the same loose way `harness-forge` parses it, because reimplementing YAML to answer one question is
  * how the second parser starts disagreeing with the first.
  */
 function readLabelsFile() {
@@ -236,7 +236,7 @@ const main = () => {
     console.log("");
     console.log("  Looked for .github/labels.yml and packages/forge/src/labels/taxonomy.ts.");
     console.log("  Neither is in this tree, so nothing here can say whether the board's default");
-    console.log("  lifecycle matches what dsh-forge stamps. This is a skip, not a pass: the two");
+    console.log("  lifecycle matches what harness-forge stamps. This is a skip, not a pass: the two");
     console.log("  have drifted before and the drift was silent.");
     console.log("");
     console.log(`  Board default (${board.phases.length} phases): ${board.phases.map((p) => p.name).join(" → ")}`);

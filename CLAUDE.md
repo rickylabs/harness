@@ -31,7 +31,7 @@ Quick orientation:
 - Doctrine lives in [`doctrine/`](doctrine/) — portable, plain markdown, zero runtime:
   [`WORKFLOW.md`](doctrine/WORKFLOW.md), [`PRINCIPLES.md`](doctrine/PRINCIPLES.md),
   [`GATES.md`](doctrine/GATES.md), [`TOOLCHAIN.md`](doctrine/TOOLCHAIN.md)
-- The board, without asking an agent: `dsh-board status`, `dsh-board check`.
+- The board, without asking an agent: `harness-board status`, `harness-board check`.
 - The founding [architecture run](.llm/runs/architecture-foundation--seed/) is historical.
   Resume the active brief and its declared context/evidence surface.
 - Existing `dsh-*` core CLI names remain compatibility naming until cleanup PR 2;

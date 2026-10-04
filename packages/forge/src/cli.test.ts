@@ -173,7 +173,7 @@ describe("checkout target guard", () => {
       assert.equal(rec.probes, 0, `${command.join(" ")} probed a transport`);
       assert.deepEqual(rec.mutations, []);
       assert.match(result.stdout, /--repo owner\/repo does not match checkout origin other\/project/);
-      assert.doesNotMatch(result.stdout, /dsh-forge —/);
+      assert.doesNotMatch(result.stdout, /harness-forge —/);
     }
 
     assert.equal(await readFile(labels, "utf8"), "sentinel labels\n");
@@ -255,7 +255,7 @@ describe("checkout target guard", () => {
     const result = await captureWith([...args(["init"]), "--dry-run"], rec);
     assert.equal(result.code, 2);
     assert.match(result.stdout, /--force --dry-run/);
-    assert.match(result.stdout, /dsh-forge doctor/);
+    assert.match(result.stdout, /harness-forge doctor/);
     assert.equal(rec.probes, 0);
   });
 

@@ -8,6 +8,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
+    "harness-forge": "./dist/cli.js",
     "dsh-forge": "./dist/cli.js"
   },
   "exports": {

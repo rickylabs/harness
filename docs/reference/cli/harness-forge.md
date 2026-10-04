@@ -1,11 +1,8 @@
 <!-- Generated from packages/forge/src/cli.ts by scripts/cli-reference.mjs. Do not edit; run "pnpm run docs:cli". -->
 
-# `dsh-forge`
+# `harness-forge`
 
 > board taxonomy and process skill, installable into any repository
-
-Temporary compatibility alias for [`harness-forge`](harness-forge.md). Both names run the
-same entrypoint, help text and exit statuses. Prefer the canonical command in new callers.
 
 Shipped by [`packages/forge`](../../../packages/forge). This page is *what it does*;
 *why it does it that way* is [`packages/forge/README.md`](../../../packages/forge/README.md).
@@ -23,7 +20,7 @@ Read from `EXIT` and `EXIT_MEANINGS` in [`packages/forge/src/cli.ts`](../../../p
 block in the help text below renders from those same two constants, so this table, that block
 and the number the process actually returns cannot disagree.
 
-## `dsh-forge --help`
+## `harness-forge --help`
 
 ```text
 harness-forge — board taxonomy and process skill, installable into any repository

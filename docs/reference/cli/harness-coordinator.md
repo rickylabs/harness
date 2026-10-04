@@ -1,11 +1,8 @@
 <!-- Generated from packages/coordinator/src/cli.ts by scripts/cli-reference.mjs. Do not edit; run "pnpm run docs:cli". -->
 
-# `dsh-coordinator`
+# `harness-coordinator`
 
 > the deterministic gate between authoring and review
-
-Temporary compatibility alias for [`harness-coordinator`](harness-coordinator.md). Both names run the
-same entrypoint, help text and exit statuses. Prefer the canonical command in new callers.
 
 Shipped by [`packages/coordinator`](../../../packages/coordinator). This page is *what it does*;
 *why it does it that way* is [`packages/coordinator/README.md`](../../../packages/coordinator/README.md).
@@ -24,7 +21,7 @@ Read from `EXIT` and `EXIT_MEANINGS` in [`packages/coordinator/src/cli.ts`](../.
 block in the help text below renders from those same two constants, so this table, that block
 and the number the process actually returns cannot disagree.
 
-## `dsh-coordinator --help`
+## `harness-coordinator --help`
 
 ```text
 harness-coordinator — the deterministic gate between authoring and review

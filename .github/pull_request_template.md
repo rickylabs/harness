@@ -2,7 +2,7 @@
 Conventions, in full: CONTRIBUTING.md. The three that get forgotten:
 
 - Exactly ONE `status:` label, plus the `type:`, `area:`, `epic:` and `priority:` that apply.
-  `dsh-board check` exits non-zero when an item carries two or none.
+  `harness-board check` exits non-zero when an item carries two or none.
 - Keep Verification honest. Paste real output and real exit codes — a checked box with nothing
   behind it is how a false green merges.
 - Nothing auto-merges here. A human merges this after CI is green, so make it reviewable.

@@ -1,13 +1,14 @@
 {
   "name": "@rickylabs/coordinator",
   "version": "0.0.0",
-  "description": "MASTER agent — milestone → epic → task workflows",
+  "description": "MASTER agent \u2014 milestone \u2192 epic \u2192 task workflows",
   "license": "MIT",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
+    "harness-coordinator": "./dist/cli.js",
     "dsh-coordinator": "./dist/cli.js"
   },
   "exports": {

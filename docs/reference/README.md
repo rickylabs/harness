@@ -19,18 +19,18 @@ Two more generated surfaces live next to the things they configure rather than h
 where the tools that read them look:
 
 - [`.github/labels.yml`](../../.github/labels.yml) — the label taxonomy, ejected by
-  `dsh-forge labels eject`, and the reviewable source of truth for what `dsh-forge labels apply`
+  `harness-forge labels eject`, and the reviewable source of truth for what `harness-forge labels apply`
   will do.
 - [`.claude/skills/board-process/SKILL.md`](../../.claude/skills/board-process/SKILL.md) — the same
-  taxonomy in the form an agent reads, written by `dsh-forge skill install`.
+  taxonomy in the form an agent reads, written by `harness-forge skill install`.
 
 ## Reading an exit code
 
 The exit maps are a contract callers branch on, and they are the part of a CLI most likely to be
 guessed at. `2` means a usage error in all five binaries. Beyond that each binary's codes are its
-own: `3` is a missing GitHub transport for `dsh-board` and `dsh-forge`, an unreadable input for
-`dsh-coordinator`, an unwritable destination for `dsh-profile`, and an incomplete picture for
-`dsh-telemetry` — four related meanings that are not one meaning, which is exactly why these pages
+own: `3` is a missing GitHub transport for `harness-board` and `harness-forge`, an unreadable input for
+`harness-coordinator`, an unwritable destination for `dsh-profile`, and an incomplete picture for
+`harness-telemetry` — four related meanings that are not one meaning, which is exactly why these pages
 are generated rather than remembered.
 
 ## What does not belong here

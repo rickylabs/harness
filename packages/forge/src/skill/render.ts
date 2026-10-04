@@ -176,7 +176,7 @@ export function renderSkill(ctx: SkillContext): string {
     "moving the label in the *same action* as the work it describes.",
     "",
     "This file is generated from the taxonomy installed on this repository. If a label you want is not",
-    "listed below, it does not exist yet: add it to `.github/labels.yml` and run `dsh-forge labels",
+    "listed below, it does not exist yet: add it to `.github/labels.yml` and run `harness-forge labels",
     "apply`. Do not invent one at the point of use — a typo'd label is invisible to every filter.",
     "",
     "## The one rule that carries the rest",

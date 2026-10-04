@@ -1,6 +1,6 @@
 # @rickylabs/telemetry
 
-`SessionTelemetrySink` and `dsh-telemetry` — the "status ?" killer.
+`SessionTelemetrySink` and `harness-telemetry` — the "status ?" killer.
 
 Owned by epic E9 · #39. See [`packages/README.md`](../README.md) for workspace conventions.
 
@@ -108,15 +108,15 @@ node packages/telemetry/dist/cli.js status --items board-items.json
 ```
 
 ```
-dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
-dsh-telemetry status [options]     runs grouped by epic
-dsh-telemetry runs [options]       one line per run, newest first
-dsh-telemetry why <run-id>         which log to open first for that run
-dsh-telemetry record [options]     append events to the observability log
-dsh-telemetry where [options]      where that log is, and the layers below a run
+harness-telemetry tree [options]       milestone → epic → task → subagent, the whole board
+harness-telemetry status [options]     runs grouped by epic
+harness-telemetry runs [options]       one line per run, newest first
+harness-telemetry why <run-id>         which log to open first for that run
+harness-telemetry record [options]     append events to the observability log
+harness-telemetry where [options]      where that log is, and the layers below a run
 
 --home <path>          home directory the stores live under (default: this user's)
---items <path>         board items to join runs to: "dsh-board snapshot" output, or a
+--items <path>         board items to join runs to: "harness-board snapshot" output, or a
                        JSON array of {number, title, epic, milestone, phase} refs
 --observations <path>  governance observation JSON for tree/status
 --limit <n>            runs to read per seam, most recent first (default: 500)
@@ -246,7 +246,7 @@ one is a different thing to do about it:
 | status | meaning |
 | --- | --- |
 | 0 | the picture is complete |
-| 1 | `dsh-telemetry` itself failed |
+| 1 | `harness-telemetry` itself failed |
 | 2 | the command line was wrong |
 | 3 | the picture is incomplete: a store could not be read, or a scan hit `--limit` |
 | 4 | nothing matched, on a scan that could see everything |
@@ -436,7 +436,7 @@ deep-comparing the runs, which is the property the whole no-cursor design rests 
 
 ## Live governance sources
 
-`dsh-telemetry status --observations-from <absolute-descriptor-path>` (also `tree`) composes
+`harness-telemetry status --observations-from <absolute-descriptor-path>` (also `tree`) composes
 explicitly configured readers through the shipped governance parser and projection. The flag excludes
 `--observations`. `--observations-from file:<absolute-envelope-path>` is an alias for the existing
 file reader: unchanged freshness and exit behavior, reread on each invocation.
@@ -575,7 +575,7 @@ need no credentials, network or Deno. Live acceptance remains a separate coordin
 
 ## Published governance read command
 
-`dsh-telemetry governance --observations-from <absolute-descriptor-path> [--now <iso>] [--home <path>]`
+`harness-telemetry governance --observations-from <absolute-descriptor-path> [--now <iso>] [--home <path>]`
 collects the explicitly configured sources once and emits one schema-1/protocol-1 governance JSON
 object. `--json` is accepted but unnecessary. The installed
 `@rickylabs/harness-contracts` root export `readGovernanceSnapshot` decodes it losslessly into typed
@@ -623,7 +623,7 @@ provider access, host-capacity measurement, downstream compatibility or publicat
 
 ## Selected repository run observation
 
-`dsh-telemetry run-observation --source <absolute descriptor path>` emits the standalone
+`harness-telemetry run-observation --source <absolute descriptor path>` emits the standalone
 contracts `RepositoryRunObservation` document. This command accepts only those arguments;
 unrelated flags fail before file access (exit 2, fixed diagnostic). A missing, oversized or
 invalid descriptor exits 1 with no document and a fixed diagnostic. A valid binding with unread
@@ -712,7 +712,7 @@ refusal and retries the unchanged source only under its separate private-read au
 
 ### Orchid dispatch context
 
-`dsh-telemetry runs --json` retains its existing `runs` and additive `dispatches` arrays.
+`harness-telemetry runs --json` retains its existing `runs` and additive `dispatches` arrays.
 With the private `DSH_TELEMETRY_DISPATCH_ROOT` environment setting, it also reads Orchid's
 existing matrix reservation directory. The same root is configured as Orchid's private
 `matrix.receipt_root`; it must be readable by the telemetry process, private and outside Git.
@@ -741,7 +741,7 @@ that missing association visible, including unavailable per-run cost rows, until
 
 ### Bounded agent collection
 
-The same `dsh-telemetry runs --json` read now adds `agentObservations` (schema 1 / protocol 1).
+The same `harness-telemetry runs --json` read now adds `agentObservations` (schema 1 / protocol 1).
 Use `readAgentObservations` from the published contracts package before filtering by repo and
 issueNumber. It refuses an incomplete runtime tree or ambiguous ancestry as a whole, and enforces
 record and byte bounds. A validated dispatch-only collection is readable with `complete:false` /
@@ -831,9 +831,9 @@ verdict preserves incomplete ancestry. Output contains only counts and closed re
 
 `openCodexThreadReader()` opens the plain `codex app-server` JSONL stdio surface. `await reader.read()` returns a versioned native thread snapshot; `for await (const event of reader.events())` receives goal updated/cleared notifications without polling. Always close the reader in `finally`. It never dispatches, resumes, starts a turn, sets or clears a goal.
 
-CLI: `dsh-telemetry codex-threads --limit 500 --json`; append `--watch` for a snapshot followed by goal event JSONL. Exit 3 means incomplete source coverage; valid thread rows remain present when a goal RPC fails. Native parent absence remains `ancestry_unavailable`; goal absence remains `goal_absent`; an unset budget remains `budget_unset`. Reported zero is available zero. Model/effort are configured or persisted metadata, not per-turn route confirmation. Runtime state is scoped to the connected app-server; unloaded threads cannot prove running agents elsewhere.
+CLI: `harness-telemetry codex-threads --limit 500 --json`; append `--watch` for a snapshot followed by goal event JSONL. Exit 3 means incomplete source coverage; valid thread rows remain present when a goal RPC fails. Native parent absence remains `ancestry_unavailable`; goal absence remains `goal_absent`; an unset budget remains `budget_unset`. Reported zero is available zero. Model/effort are configured or persisted metadata, not per-turn route confirmation. Runtime state is scoped to the connected app-server; unloaded threads cannot prove running agents elsewhere.
 
-The cockpit source feed is `dsh-telemetry issue-agents --watch`. It writes a full per-issue tree
+The cockpit source feed is `harness-telemetry issue-agents --watch`. It writes a full per-issue tree
 snapshot heartbeat every five seconds by default. Receipt changes, new native rollout files, and
 changes to selected rollouts trigger a disk scan at the next heartbeat. Each scan reads every
 transcript and the hook event file as they stood at the frame's capture time: a line stamped after
@@ -899,7 +899,7 @@ For `openCodexThreadReader`, `timeoutMs` bounds each request and the entire page
 A goal read rejected by the daemon with its exact request-bound `thread not found` response reports `thread_not_found`, preserves the thread row, and marks coverage incomplete. Other daemon error replies use `rpc_error`; transport failures remain `source_unavailable`, `source_closed` or `request_timeout`. Native error text and identities are never exported.
 ## Account quota and session token usage
 
-`dsh-telemetry account-usage --source <descriptor>` emits an `AccountUsageEnvelope`.
+`harness-telemetry account-usage --source <descriptor>` emits an `AccountUsageEnvelope`.
 `--watch` emits JSONL and polls every 180 seconds. Neither command starts a model session.
 The new projection includes safe display aliases and opaque refs, token splits and separate
 weekly/5h account readings. Missing values stay null. A one-shot exits 3 when configured-store

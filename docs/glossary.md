@@ -39,7 +39,7 @@ document that quietly becomes a lie. See [05 — Determinism](concepts/05-determ
 ### epic
 
 A numbered issue owning a slice of the architecture, and the unit the roadmap is organised in. The
-`epic:*` labels are **derived** from the epic issues by `dsh-forge labels eject` — the issue comes
+`epic:*` labels are **derived** from the epic issues by `harness-forge labels eject` — the issue comes
 first, the label follows.
 
 ### gate
@@ -56,7 +56,7 @@ A parallel track of work, so several agents can run without colliding. Four exis
 lane has its own orchestrator and its own concurrency limits.
 
 > **Naming note.** `lane:*` labels also exist in this repository and are unmanaged leftovers; the
-> live prefix is `topic:`. `dsh-forge doctor` reports which prefix is in use, and the divergence is
+> live prefix is `topic:`. `harness-forge doctor` reports which prefix is in use, and the divergence is
 > a recorded owner fork rather than a bug to fix quietly.
 
 ### milestone cluster
@@ -91,7 +91,7 @@ then home, then `--patch`.
 
 ### projection
 
-Rendering a view from a source of truth without owning any state. `dsh-board` projects GitHub into
+Rendering a view from a source of truth without owning any state. `harness-board` projects GitHub into
 columns; it holds nothing, so the view cannot disagree with the board. This task projection introduces no second authoritative task store. Product observation caches and
 connection synchronization remain separate responsibilities. See [03 — The board](concepts/03-the-board.md).
 
