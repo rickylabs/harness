@@ -638,6 +638,22 @@ GPU never becomes a zero reading. Version 0.7.0 adds optional per-card VRAM read
 sum must equal the aggregate. The decoder accepts 0.5.x observations without the fourth row
 and normalizes it to unavailable. Version 0.6.0 was published from its tagged merge.
 
+## Cost source compatibility in 0.36.0
+
+The strict observation and issue-tree readers accept canonical `harness-telemetry.*` cost
+sources alongside their legacy `dsh-telemetry.*` names. Each row accepts only the source for
+its evidence class. Available and unavailable rows preserve the exact received source,
+measurements, timestamps and revision; mixed names in a frame are valid during rollout.
+`AGENT_COST_SOURCE_NAMES` exports a deeply frozen per-row vocabulary, and
+`AgentCostSource<K>` provides the corresponding source union in installed declarations.
+
+This release prepares readers. `unavailableAgentCost()` and telemetry producers still emit
+legacy names, including the absent-capacity default for older three-row frames. The
+schema/protocol remain 1 and the npm package name and exports remain unchanged. A producer
+switch requires compatible cockpit schemas, generated client validators and mobile captures
+first. See the [wire migration guide](../../docs/how-to/telemetry-wire-migration.md) for
+accepted names, strict controls and the rollout order.
+
 ## Native child depth in 0.8.0
 
 `IssueAgentTreeAgent.nativeDepth` reports a positive integer only when the native Codex child
