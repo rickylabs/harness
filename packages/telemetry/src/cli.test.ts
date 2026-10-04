@@ -28,14 +28,14 @@ beforeEach(async () => {
   home = await mkdtemp(join(tmpdir(), "dsh-cli-"));
   heldEnvironment = { HOME: process.env.HOME };
   for (const key of Object.keys(process.env)) {
-    if (key.startsWith("DSH_TELEMETRY_")) { heldEnvironment[key] = process.env[key]; delete process.env[key]; }
+    if (/^(?:HARNESS|DSH)_TELEMETRY_/.test(key)) { heldEnvironment[key] = process.env[key]; delete process.env[key]; }
   }
   process.env.HOME = home;
 });
 
 afterEach(async () => {
   await rm(home, { recursive: true, force: true });
-  for (const key of Object.keys(process.env)) if (key.startsWith("DSH_TELEMETRY_")) delete process.env[key];
+  for (const key of Object.keys(process.env)) if (/^(?:HARNESS|DSH)_TELEMETRY_/.test(key)) delete process.env[key];
   for (const [key, value] of Object.entries(heldEnvironment)) {
     if (value === undefined) delete process.env[key]; else process.env[key] = value;
   }
@@ -61,7 +61,7 @@ async function run(argv: readonly string[], services?: SourceServices): Promise<
 async function runIsolated(argv: readonly string[]): Promise<{ code: number; out: string }> {
   const held = new Map<string, string>();
   for (const [key, value] of Object.entries(process.env)) {
-    if (!key.startsWith("DSH_TELEMETRY_") || value === undefined) continue;
+    if (!/^(?:HARNESS|DSH)_TELEMETRY_/.test(key) || value === undefined) continue;
     held.set(key, value);
     delete process.env[key];
   }
@@ -69,7 +69,7 @@ async function runIsolated(argv: readonly string[]): Promise<{ code: number; out
     return await run(argv);
   } finally {
     for (const key of Object.keys(process.env)) {
-      if (key.startsWith("DSH_TELEMETRY_")) delete process.env[key];
+      if (/^(?:HARNESS|DSH)_TELEMETRY_/.test(key)) delete process.env[key];
     }
     for (const [key, value] of held) process.env[key] = value;
   }

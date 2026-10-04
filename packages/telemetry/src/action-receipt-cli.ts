@@ -2,7 +2,7 @@
 import { constants } from "node:fs";
 import { lstat, open, opendir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import { ORCHID_DISPATCH_ROOT } from "./orchid-dispatch.js";
+import { resolveOperatorSetting } from "./operator-environment.js";
 import { AGENT_ACTION_ACCEPTED_REASONS, AGENT_ACTION_REJECTED_REASONS, type AgentActionKind } from "@rickylabs/harness-contracts";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -177,7 +177,9 @@ export async function actionReceiptCommand(args: readonly string[], env: Readonl
     }
     if (!json || operationId === undefined || !uuid.test(operationId) || (requestDigest !== undefined && !digest.test(requestDigest))) throw Error();
   } catch { process.stderr.write("action-receipt: invalid command line\n"); return 2; }
-  const result = await readActionReceipt(env[ORCHID_DISPATCH_ROOT], operationId, requestDigest);
+  let result: PublicActionReceipt;
+  try { result = await readActionReceipt(resolveOperatorSetting(env, "dispatchRoot"), operationId, requestDigest); }
+  catch { result = unavailable(operationId, requestDigest ?? null, "source_unavailable"); }
   process.stdout.write(`${JSON.stringify(result)}\n`);
   return result.outcome === "unknown" ? 3 : 0;
 }

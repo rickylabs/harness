@@ -10,7 +10,7 @@
  *
  * The location is settled *before* anything is written, and every way it could have been misread is
  * reported rather than absorbed. A telemetry log that quietly went somewhere else, or quietly ran
- * under a different bound because `DSH_TELEMETRY_MAX_BYTES=32MB` did not parse, is worse than no log:
+ * under a different bound because `HARNESS_TELEMETRY_MAX_BYTES=32MB` did not parse, is worse than no log:
  * it is a log the operator trusts. So `resolveObservability` is pure, returns its notes, and never
  * touches a disk.
  *
@@ -30,17 +30,21 @@ import {
   type SessionTelemetrySink,
   type TelemetryEvent,
 } from "./sink.js";
+import { assertObservabilityWriteTarget, CANONICAL_LOG_NAME, LEGACY_LOG_NAME, LOG_NAME_ENV } from "./log-family.js";
+export { CANONICAL_LOG_NAME, LEGACY_LOG_NAME, LOG_NAME_ENV } from "./log-family.js";
 import { generationName, type RotationPolicy } from "./rotation.js";
+import { OPERATOR_ENV, OperatorConfigurationError, resolveOperatorSetting } from "./operator-environment.js";
+
 
 /** The environment variables that move the log, named once so the CLI and the notes agree. */
 export const ENV = {
-  directory: "DSH_TELEMETRY_DIR",
-  archive: "DSH_TELEMETRY_ARCHIVE",
-  maxBytes: "DSH_TELEMETRY_MAX_BYTES",
-  generations: "DSH_TELEMETRY_GENERATIONS",
+  directory: OPERATOR_ENV.directory,
+  archive: OPERATOR_ENV.archive,
+  maxBytes: OPERATOR_ENV.maxBytes,
+  generations: OPERATOR_ENV.generations,
 } as const;
 
-/** The value of `DSH_TELEMETRY_ARCHIVE` that means "keep no cold tier", rather than a path. */
+/** The value of `HARNESS_TELEMETRY_ARCHIVE` that means "keep no cold tier", rather than a path. */
 export const NO_ARCHIVE = "none";
 
 export interface Observability {
@@ -97,7 +101,7 @@ function set(value: string | undefined): string | null {
 /**
  * Decide where this box's telemetry log lives, from the home directory and the environment.
  *
- * Pure, and absolute: a relative `DSH_TELEMETRY_DIR` is resolved against the working directory here
+ * Pure, and absolute: a relative `HARNESS_TELEMETRY_DIR` is resolved against the working directory here
  * rather than at append time, so the path printed by `where` is the path written to even when the
  * caller later changes directory — which a long-lived daemon does.
  */
@@ -106,8 +110,12 @@ export function resolveObservability(
   env: Readonly<Record<string, string | undefined>> = {},
 ): Observability {
   const notes: string[] = [];
+  const name = env[LOG_NAME_ENV] ?? DEFAULT_POLICY.name;
+  if (name !== CANONICAL_LOG_NAME && name !== LEGACY_LOG_NAME) {
+    throw new OperatorConfigurationError(`invalid ${LOG_NAME_ENV}: select a documented telemetry basename`);
+  }
 
-  const dirOverride = set(env[ENV.directory]);
+  const dirOverride = set(resolveOperatorSetting(env, "directory"));
   const directory =
     dirOverride === null
       ? defaultObservabilityDir(home)
@@ -115,7 +123,7 @@ export function resolveObservability(
         ? dirOverride
         : resolve(dirOverride);
 
-  const archiveOverride = set(env[ENV.archive]);
+  const archiveOverride = set(resolveOperatorSetting(env, "archive"));
   let archiveDirectory: string | null;
   if (archiveOverride === null) {
     archiveDirectory = defaultArchiveDir(home);
@@ -136,7 +144,7 @@ export function resolveObservability(
   }
 
   let maxBytes = DEFAULT_POLICY.maxBytes;
-  const rawBytes = set(env[ENV.maxBytes]);
+  const rawBytes = set(resolveOperatorSetting(env, "maxBytes"));
   if (rawBytes !== null) {
     const parsed = parseBytes(rawBytes);
     if ("problem" in parsed) {
@@ -147,7 +155,7 @@ export function resolveObservability(
   }
 
   let maxGenerations = DEFAULT_POLICY.maxGenerations;
-  const rawCount = set(env[ENV.generations]);
+  const rawCount = set(resolveOperatorSetting(env, "generations"));
   if (rawCount !== null) {
     const parsed = parseCount(rawCount);
     if ("problem" in parsed) {
@@ -160,7 +168,7 @@ export function resolveObservability(
   return {
     directory,
     archiveDirectory,
-    policy: { name: DEFAULT_POLICY.name, maxBytes, maxGenerations },
+    policy: { name, maxBytes, maxGenerations },
     notes,
   };
 }
@@ -192,13 +200,25 @@ export function logPaths(o: Observability): readonly string[] {
  * asking where telemetry would go must never itself create a directory.
  */
 export function openObservabilitySink(o: Observability): SessionTelemetrySink {
-  return o.archiveDirectory === null
+  const sink = o.archiveDirectory === null
     ? createFileSink({ directory: o.directory, policy: o.policy })
     : createFileSink({
         directory: o.directory,
         archiveDirectory: o.archiveDirectory,
         policy: o.policy,
       });
+  const refusals = new Set<string>();
+  return {
+    async write(event) {
+      try { await assertObservabilityWriteTarget(o); }
+      catch (error) {
+        refusals.add(error instanceof Error ? error.message : "live log: inventory-unavailable");
+        return;
+      }
+      await sink.write(event);
+    },
+    get notes() { return [...refusals, ...sink.notes]; },
+  };
 }
 
 /** A bound a human can check at a glance, which is the only reason the suffix form is accepted. */

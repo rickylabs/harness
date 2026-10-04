@@ -19,6 +19,8 @@
 import { codexThreadsCommand } from "./codex-threads-cli.js";
 import { issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
 import { actionReceiptCommand } from "./action-receipt-cli.js";
+import { OperatorConfigurationError, resolveOperatorSetting, type OperatorEnvironment } from "./operator-environment.js";
+import { OperatorLogError, readObservabilityLog, assertObservabilityWriteTarget } from "./log-source.js";
 import { open, readFile } from "node:fs/promises";
 import { realpathSync } from "node:fs";
 import { spawn } from "node:child_process";
@@ -31,8 +33,8 @@ import { diagnosticsFor, ALL_POINTERS } from "./diagnostics.js";
 import { parseItems, type LoadedItems } from "./items.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { readDispatchEvidence } from "./dispatch-evidence.js";
-import { ORCHID_DISPATCH_ROOT, readOrchidDispatches, bindOrchidDispatchEvidence } from "./orchid-dispatch.js";
-import { foldLiveEvents, mergeLiveRuns, readLiveLog } from "./live.js";
+import { readOrchidDispatches, bindOrchidDispatchEvidence } from "./orchid-dispatch.js";
+import { foldLiveEvents, mergeLiveRuns } from "./live.js";
 import {
   humanBytes,
   livePath,
@@ -152,7 +154,7 @@ It reads one selected Codex native file, with source-root and enrolled worktree 
 Exit 0 means the selected source was read; exit 3 withholds the run with typed coverage.
 Invalid descriptors exit 1 with a fixed diagnostic and no JSON. No home scan or network.
 
-"action-receipt" reads one owner-only Orchid delivery result from DSH_TELEMETRY_DISPATCH_ROOT.
+"action-receipt" reads one owner-only Orchid delivery result from HARNESS_TELEMETRY_DISPATCH_ROOT.
 It requires --json and --operation with a lowercase UUID; --digest selects that request's
 primary result or immutable digest-conflict rejection. Output contains only bounded issue,
 opaque agent/dispatch identifiers, digest, action, delivery outcome, fixed reason and time.
@@ -174,11 +176,22 @@ fills in a transcript that could not say and never overrules one that could, and
 log knows about with no "source" is counted rather than guessed at.
 
 environment:
-  DSH_TELEMETRY_DIR          live log directory (default: ~/observability)
-  DSH_TELEMETRY_ARCHIVE      cold tier for rotated generations, or "none" to delete them
-                             (default: ~/archives)
-  DSH_TELEMETRY_MAX_BYTES    bound per generation, e.g. 33554432 or 32M
-  DSH_TELEMETRY_GENERATIONS  generations kept behind the live file
+  HARNESS_TELEMETRY_DIR          live log directory (default: ~/observability)
+  HARNESS_TELEMETRY_ARCHIVE      cold tier for rotated generations, or "none" to delete them
+                                 (default: ~/archives)
+  HARNESS_TELEMETRY_MAX_BYTES    bound per generation, e.g. 33554432 or 32M
+  HARNESS_TELEMETRY_GENERATIONS  generations kept behind the live file
+  HARNESS_TELEMETRY_LOG_NAME     explicit harness-telemetry.jsonl or dsh-telemetry.jsonl
+                                 (default remains dsh-telemetry.jsonl until producer rollout)
+  HARNESS_TELEMETRY_DISPATCH_ROOT           private Orchid receipt root
+  HARNESS_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT private Claude child-start root
+  HARNESS_TELEMETRY_PLACEMENT_HOST          exact verified host label
+
+The corresponding DSH_TELEMETRY_* settings remain legacy aliases. Equal dual values are accepted;
+conflicting values refuse the source. Native bindings keep exact values and existing private-source
+checks. LOG_NAME is new and has no legacy alias. Readers and writers refuse mixed log families,
+including rotations outside the configured count. A selected canonical source must contain valid
+events; migration requires stopping writers and moving the whole family before changing settings.
 
 exit codes:
 ${EXIT_BLOCK}
@@ -373,8 +386,9 @@ async function readStdin(): Promise<string> {
  * writes into, which is the only way `~/observability/dsh-telemetry.jsonl` ends up holding the whole
  * story rather than the part that happened to be in Node.
  */
-async function recordEvents(flags: Flags): Promise<number> {
-  const target = resolveObservability(flags.home, process.env);
+async function recordEvents(flags: Flags, env: OperatorEnvironment): Promise<number> {
+  const target = resolveObservability(flags.home, env);
+  await assertObservabilityWriteTarget(target);
   const notes = [...target.notes];
   const live = livePath(target);
 
@@ -443,8 +457,8 @@ async function recordEvents(flags: Flags): Promise<number> {
  * second half of this output is the same table `why` uses — printed without a run id, for the case
  * where there is not one yet.
  */
-function whereItWrites(flags: Flags): number {
-  const target = resolveObservability(flags.home, process.env);
+function whereItWrites(flags: Flags, env: OperatorEnvironment): number {
+  const target = resolveObservability(flags.home, env);
   const paths = logPaths(target);
   const complete = target.notes.length === 0;
 
@@ -484,10 +498,19 @@ function whereItWrites(flags: Flags): number {
 }
 
 export async function main(argv: readonly string[], services: SourceServices = defaultSourceServices(), observationOptions: RepositoryRunReadOptions = {}): Promise<number> {
+  try { return await mainConfigured(argv, services, observationOptions); }
+  catch (error) {
+    if (!(error instanceof OperatorConfigurationError) && !(error instanceof OperatorLogError)) throw error;
+    process.stderr.write(`harness-telemetry: ${error.message}\n`);
+    return EXIT.incomplete;
+  }
+}
+
+async function mainConfigured(argv: readonly string[], services: SourceServices, observationOptions: RepositoryRunReadOptions): Promise<number> {
   if (argv[0] === "account-usage") return accountUsageCommand(argv.slice(1));
   if (argv[0] === "codex-threads") return codexThreadsCommand(argv.slice(1));
-  if (argv[0] === "issue-agents") return issueAgentFeedCommand(argv.slice(1));
-  if (argv[0] === "action-receipt") return actionReceiptCommand(argv.slice(1));
+  if (argv[0] === "issue-agents") return issueAgentFeedCommand(argv.slice(1), { env: services.env });
+  if (argv[0] === "action-receipt") return actionReceiptCommand(argv.slice(1), services.env);
   if (argv.includes("run-observation")) {
     if (argv.length !== 3 || argv[0] !== "run-observation" || argv[1] !== "--source" || !argv[2] || !isAbsolute(argv[2]) || /[\x00-\x1f\x7f]/.test(argv[2])) {
       process.stderr.write("run-observation: invalid command line\n");
@@ -532,15 +555,15 @@ export async function main(argv: readonly string[], services: SourceServices = d
     catch { process.stderr.write("governance: invalid descriptor\n"); return EXIT.usage; }
     try {
       const log = configured.admissions === null ? { files: [], notes: [], degraded: false }
-        : await readLiveLog(logPaths(resolveObservability(flags.home, services.env)), flags.now);
+        : await readObservabilityLog(resolveObservability(flags.home, services.env), flags.now);
       const { observed, completion } = await collectGovernance(configured, log, services, flags.nowExplicit ? flags.now : undefined);
       const document = governanceRead(observed, flags.nowExplicit ? flags.now : completion);
       process.stdout.write(`${JSON.stringify(document, null, 2)}\n`);
       return document.complete ? EXIT.ok : EXIT.incomplete;
     } catch { process.stderr.write("governance: document unavailable\n"); return EXIT.failed; }
   }
-  if (command === "record") return await recordEvents(flags);
-  if (command === "where") return whereItWrites(flags);
+  if (command === "record") return await recordEvents(flags, services.env);
+  if (command === "where") return whereItWrites(flags, services.env);
 
   let source: GovernanceSource | null = null;
   let observationPath = flags.observations;
@@ -561,14 +584,14 @@ export async function main(argv: readonly string[], services: SourceServices = d
   // which is `where`'s question, and repeating them under every `status` would train an operator to
   // skip the line that matters.
   const target = resolveObservability(flags.home, services.env);
-  const log = await readLiveLog(logPaths(target), flags.now);
+  const log = await readObservabilityLog(target, flags.now);
   // An admission receipt is evidence about a gate, not a run lifecycle event.
   const runFiles = source === null ? log.files : log.files.map(file => ({ ...file,
     events: file.events.filter(event => event.kind !== "governance.admission"),
   }));
   const merged = mergeLiveRuns(scan.runs, foldLiveEvents(runFiles));
   const orchid = command === "runs" && flags.json
-    ? await readOrchidDispatches(services.env[ORCHID_DISPATCH_ROOT])
+    ? await readOrchidDispatches(resolveOperatorSetting(services.env, "dispatchRoot"))
     : { root: undefined, reason: null, dispatches: [], notes: [], degraded: false };
   const view = {
     notes: [...scan.notes, ...log.notes, ...merged.notes, ...orchid.notes],
@@ -624,7 +647,7 @@ export async function main(argv: readonly string[], services: SourceServices = d
       const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded && !bound.degraded,
         [...evidence.filter(d => !orchidIds.has(d.runId)), ...bound.dispatches]);
       const agentObservations = buildAgentObservations({ dispatches: bound.dispatches, runs: merged.runs,
-        observedAt: flags.now, sourceBound: services.env[ORCHID_DISPATCH_ROOT] !== undefined,
+        observedAt: flags.now, sourceBound: resolveOperatorSetting(services.env, "dispatchRoot") !== undefined,
         dispatchComplete: !orchid.degraded && !bound.degraded, nativeComplete: !scan.degraded && !merged.degraded });
       process.stdout.write(`${JSON.stringify({ ...envelope, agentObservations }, null, 2)}\n`);
       return view.degraded ? EXIT.incomplete : EXIT.ok;

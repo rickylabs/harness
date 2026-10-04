@@ -227,7 +227,7 @@ void protocol; void server; void acceptHub;\n`);
   writeFileSync(join(cgroup, "memory.current"), "1024\n"); writeFileSync(join(cgroup, "memory.max"), "4096\n");
   const secret = `synthetic-${randomUUID()}`, privateDetail = `synthetic-private-${randomUUID()}`;
   const cliEnv = { HOME: env.HOME, PATH: env.PATH, SYNTHETIC_USAGE_KEY: secret,
-    DSH_TELEMETRY_DIR: join(scratch, "log"), DSH_TELEMETRY_ARCHIVE: "none" };
+    HARNESS_TELEMETRY_DIR: join(scratch, "log"), HARNESS_TELEMETRY_ARCHIVE: "none" };
   const descriptor = { accountLabel: "synthetic", usage: { denoBin: probe, probe: join(scratch, "probe.ts"), checkout: join(scratch, "checkout"),
     model: "synthetic/sleeping-model", credentialEnv: "SYNTHETIC_USAGE_KEY", timeoutMs: 500, maxBytes: 4096,
     windows: { rolling_five_hours: { label: "short", windowMinutes: 300 }, weekly: { label: "week", windowMinutes: 10080 }, monthly: { label: "month", windowMinutes: 43200 } } },

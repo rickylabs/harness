@@ -631,7 +631,7 @@ measurement must name the exact placed host and remain valid for the full issue-
 The cgroup reader cannot certify the dispatch host. The issue feed instead reads
 `MemTotal` and `MemAvailable` from local `/proc/meminfo` and every local AMD DRM card's
 `mem_info_vram_used` and `mem_info_vram_total` from sysfs. It publishes a measured row
-only when the operator sets `DSH_TELEMETRY_PLACEMENT_HOST` to the exact verified placement
+only when the operator sets `HARNESS_TELEMETRY_PLACEMENT_HOST` (legacy alias `DSH_TELEMETRY_PLACEMENT_HOST`) to the exact verified placement
 name. With no configured name it reports `host_identity_unset` without reading local files.
 Missing or malformed files and a host mismatch retain named unavailable reasons. A missing
 GPU never becomes a zero reading. Version 0.7.0 adds optional per-card VRAM readings whose

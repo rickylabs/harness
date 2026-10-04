@@ -229,3 +229,8 @@ export { codexAccountQuota, opaqueUsageRef, pollCodexAccountQuota, unavailableQu
   type QuotaPollOptions, type QuotaPollResult } from "./account-quota.js";
 export { collectAccountUsageDocument, readAccountUsageDocumentSource, type AccountUsageDocumentSource, type PaidAccountUsageSource } from "./paid-account-usage.js";
 export { collectProviderUsage, readProviderUsageSource, type ProviderUsageSource, PLAN_READ_CREDENTIAL_KEY } from "./provider-usage.js";
+
+export { OPERATOR_ENV, LEGACY_OPERATOR_ENV, OperatorConfigurationError, resolveOperatorSetting, resolveNativeOperatorBindings,
+  type OperatorEnvironment, type OperatorSetting } from "./operator-environment.js";
+export { readObservabilityLog, assertObservabilityWriteTarget, OperatorLogError } from "./log-source.js";
+export { CANONICAL_LOG_NAME, LEGACY_LOG_NAME, LOG_NAME_ENV } from "./observability.js";

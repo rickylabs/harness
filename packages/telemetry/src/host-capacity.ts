@@ -1,3 +1,4 @@
+import { OPERATOR_ENV } from "./operator-environment.js";
 /** A bounded, local-only RAM and AMD VRAM reading. No remote host is queried. */
 import { createHash } from "node:crypto";
 import { readFile, readdir, realpath } from "node:fs/promises";
@@ -16,7 +17,7 @@ export interface HostCapacitySource {
   readonly drmRoot?: string;
 }
 
-export const HOST_CAPACITY_PLACEMENT_HOST = "DSH_TELEMETRY_PLACEMENT_HOST";
+export const HOST_CAPACITY_PLACEMENT_HOST = OPERATOR_ENV.placementHost;
 const shortName = /^[A-Za-z][A-Za-z0-9_-]{0,62}$/;
 const unavailable = (host: string | null, reason: AgentUnavailableReason): HostCapacityReading =>
   ({ host, cost: unavailableAgentCost(reason).localCapacity });
