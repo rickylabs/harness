@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **474/571 done · 33 running · 26 queued · 16 abandoned · 22 invisible**
+`[################----]` **474/572 done · 34 running · 26 queued · 16 abandoned · 22 invisible**
 
-_Latest board activity: 2026-10-04T08:20:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-04T10:46:02Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (33)
+## Moving now (34)
 
 Something could be acting on these right now.
 
@@ -25,6 +25,7 @@ Something could be acting on these right now.
 | [#300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision](https://github.com/rickylabs/harness/issues/300) | `impl-eval` | `e3` |
 | [#561 [cli-smoke] OpenCode OpenRouter Nova full-goal acceptance (one attempt)](https://github.com/rickylabs/harness/issues/561) | `plan` | — |
 | [#563 [cli-smoke] OpenCode OpenRouter Gemini first-prompt acceptance (one attempt)](https://github.com/rickylabs/harness/issues/563) | `plan` | — |
+| [PR586 refactor: add canonical telemetry operator settings (cleanup 5/7)](https://github.com/rickylabs/harness/pull/586) | `impl-eval` | `e1` |
 | [#559 OpenCode managed acceptance: one OpenRouter Nova smoke](https://github.com/rickylabs/harness/issues/559) | `impl` | — |
 | [#560 Claude managed acceptance: one Sonnet 5.5 smoke](https://github.com/rickylabs/harness/issues/560) | `impl` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
@@ -62,12 +63,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#581 [rc-proof] Claude Haiku phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/581) | — | — |
 | [#582 [rc-proof] Codex Luna phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/582) | — | — |
 
-## Anomalies (43)
+## Anomalies (45)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
+- **#586** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
@@ -103,6 +105,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#411** — is in milestone (none) but its epic #36 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#574** — is in milestone (none) but its epic #140 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#585** — is in milestone (none) but its epic #31 is in M1 — dsh coordinator foundation; the epic appears under both
+- **#586** — is in milestone (none) but its epic #31 is in M1 — dsh coordinator foundation; the epic appears under both
 - **#349** — is in milestone (none) but its epic #270 is in M1 — dsh coordinator foundation; the epic appears under both
 
 **`multiple-status`**
@@ -144,12 +147,12 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 273/322 done · 17 running · 3 queued · 10 abandoned · 19 invisible
+`[##########--]` 273/323 done · 18 running · 3 queued · 10 abandoned · 19 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
 | [E0 — Roadmap: harness as the deterministic coordinator layer](https://github.com/rickylabs/harness/issues/30) | `[############]` 6/6 done | `no status` |
-| [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[############]` 1/1 done | `shipped` |
+| [E1 — Monorepo foundation and doctrine port](https://github.com/rickylabs/harness/issues/31) | `[######------]` 1/2 done · 1 running | `shipped` |
 | [E10 — Docs: the front door, the reference, and the check that keeps them honest](https://github.com/rickylabs/harness/issues/140) | `[############]` 1/1 done | `impl` |
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
@@ -198,7 +201,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  474/571 done · 33 running · 26 queued · 16 abandoned · 22 invisible
+# rickylabs/harness  [################----]  474/572 done · 34 running · 26 queued · 16 abandoned · 22 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -486,7 +489,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  273/322 done · 17 running · 3 queued · 10 abandoned · 19 invisible
+## (no milestone)  [################----]  273/323 done · 18 running · 3 queued · 10 abandoned · 19 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -498,8 +501,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR296 docs(seat3): running the control is the mechanism, writing it is not (p2)
 
   E1 — Monorepo foundation and doctrine port #31  [shipped]  (epic is in M1 — dsh coordinator foundation)
-    [################] 1/1 done
+    [########--------] 1/2 done · 1 running
     shipped              PR585 refactor: establish canonical method and run-record homes (cleanup 4/7) (p1)
+    impl-eval            PR586 refactor: add canonical telemetry operator settings (cleanup 5/7) (p1)
 
   E10 — Docs: the front door, the reference, and the check that keeps them honest #140  [impl]  (epic is in M1 — dsh coordinator foundation)
     [################] 1/1 done
