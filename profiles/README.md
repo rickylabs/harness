@@ -87,6 +87,12 @@ Vision findings do not replace implementation certification.
 routing row preserves existing briefs and persisted profile references while the
 researcher profile owns the process.
 
+[`fix`](fix.md) is a second process on the `implementation` route: one reported
+defect, a regression test that fails before the change, one pull request with a
+conventional `fix(...)` commit. Bug fixes are the most common single-agent task, so the
+owner asked for a named profile (2026-10-04). It defaults to the `straightforward` tier;
+[`leaf`](leaf.md) stays the default when a brief names no profile.
+
 [`milestone-coordinator`](milestone-coordinator.md) uses the dedicated
 `coordinators.milestone` configuration route. The routing row supplies its default
 scope; it has no worker `defaultTier`. `milestone` is not a workload tier and
