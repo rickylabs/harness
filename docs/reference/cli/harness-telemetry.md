@@ -79,7 +79,7 @@ It reads one selected Codex native file, with source-root and enrolled worktree 
 Exit 0 means the selected source was read; exit 3 withholds the run with typed coverage.
 Invalid descriptors exit 1 with a fixed diagnostic and no JSON. No home scan or network.
 
-"action-receipt" reads one owner-only Orchid delivery result from DSH_TELEMETRY_DISPATCH_ROOT.
+"action-receipt" reads one owner-only Orchid delivery result from HARNESS_TELEMETRY_DISPATCH_ROOT.
 It requires --json and --operation with a lowercase UUID; --digest selects that request's
 primary result or immutable digest-conflict rejection. Output contains only bounded issue,
 opaque agent/dispatch identifiers, digest, action, delivery outcome, fixed reason and time.
@@ -101,11 +101,22 @@ fills in a transcript that could not say and never overrules one that could, and
 log knows about with no "source" is counted rather than guessed at.
 
 environment:
-  DSH_TELEMETRY_DIR          live log directory (default: ~/observability)
-  DSH_TELEMETRY_ARCHIVE      cold tier for rotated generations, or "none" to delete them
-                             (default: ~/archives)
-  DSH_TELEMETRY_MAX_BYTES    bound per generation, e.g. 33554432 or 32M
-  DSH_TELEMETRY_GENERATIONS  generations kept behind the live file
+  HARNESS_TELEMETRY_DIR          live log directory (default: ~/observability)
+  HARNESS_TELEMETRY_ARCHIVE      cold tier for rotated generations, or "none" to delete them
+                                 (default: ~/archives)
+  HARNESS_TELEMETRY_MAX_BYTES    bound per generation, e.g. 33554432 or 32M
+  HARNESS_TELEMETRY_GENERATIONS  generations kept behind the live file
+  HARNESS_TELEMETRY_LOG_NAME     explicit harness-telemetry.jsonl or dsh-telemetry.jsonl
+                                 (default remains dsh-telemetry.jsonl until producer rollout)
+  HARNESS_TELEMETRY_DISPATCH_ROOT           private Orchid receipt root
+  HARNESS_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT private Claude child-start root
+  HARNESS_TELEMETRY_PLACEMENT_HOST          exact verified host label
+
+The corresponding DSH_TELEMETRY_* settings remain legacy aliases. Equal dual values are accepted;
+conflicting values refuse the source. Native bindings keep exact values and existing private-source
+checks. LOG_NAME is new and has no legacy alias. Readers and writers refuse mixed log families,
+including rotations outside the configured count. A selected canonical source must contain valid
+events; migration requires stopping writers and moving the whole family before changing settings.
 
 exit codes:
   0  the picture is complete

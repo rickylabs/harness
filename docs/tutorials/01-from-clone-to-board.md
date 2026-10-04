@@ -275,16 +275,17 @@ Telemetry answers one question: *what has been running, and where do I look when
 wrong.* It reads from disk. No agent needs to be awake, and nothing here reaches the network.
 
 Create a separate unique temporary telemetry home with `mktemp -d`. Each telemetry invocation passes
-`--home "$TELEMETRY_HOME"` and explicitly removes the four telemetry environment overrides
-(`DSH_TELEMETRY_DIR`, `DSH_TELEMETRY_ARCHIVE`, `DSH_TELEMETRY_MAX_BYTES`, and
-`DSH_TELEMETRY_GENERATIONS`) via `env -u` so no outer environment variables can redirect telemetry
+`--home "$TELEMETRY_HOME"` and explicitly removes canonical log settings and their legacy `DSH_TELEMETRY_*` aliases
+via `env -u` so no outer environment variables can redirect telemetry
 paths away from `--home`.
 
 Start by asking where it writes:
 
 ```bash
 TELEMETRY_HOME=$(mktemp -d)
-env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
+  -u HARNESS_TELEMETRY_MAX_BYTES -u HARNESS_TELEMETRY_GENERATIONS -u HARNESS_TELEMETRY_LOG_NAME \
+  -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
   node packages/telemetry/dist/cli.js where --home "$TELEMETRY_HOME"
 ```
 
@@ -299,7 +300,9 @@ Nothing has run yet, so write one event. `record` reads JSONL on stdin, one even
 printf '%s\n' \
   '{"runId":"demo-1","kind":"run.started","at":"2026-09-05T10:00:00Z","detail":{"source":"claude","model":"claude-opus-5"}}' \
   '{"runId":"demo-1","kind":"run.finished","at":"2026-09-05T10:04:00Z","detail":{"source":"claude","outcome":"complete"}}' \
-  | env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+  | env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
+  -u HARNESS_TELEMETRY_MAX_BYTES -u HARNESS_TELEMETRY_GENERATIONS -u HARNESS_TELEMETRY_LOG_NAME \
+  -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
   node packages/telemetry/dist/cli.js record --home "$TELEMETRY_HOME"
 ```
 
@@ -312,7 +315,9 @@ recorded 2 event(s) to /tmp/tel-home/observability/dsh-telemetry.jsonl
 Read it back:
 
 ```bash
-env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
+  -u HARNESS_TELEMETRY_MAX_BYTES -u HARNESS_TELEMETRY_GENERATIONS -u HARNESS_TELEMETRY_LOG_NAME \
+  -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
   node packages/telemetry/dist/cli.js runs --home "$TELEMETRY_HOME"
 ```
 
@@ -322,7 +327,9 @@ padded into columns (e.g. `2026-09-05T10:04:00Z  claude    complete claude-opus-
 And ask what you would open first if that run had gone wrong:
 
 ```bash
-env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
+env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
+  -u HARNESS_TELEMETRY_MAX_BYTES -u HARNESS_TELEMETRY_GENERATIONS -u HARNESS_TELEMETRY_LOG_NAME \
+  -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
   node packages/telemetry/dist/cli.js why demo-1 --home "$TELEMETRY_HOME"
 ```
 

@@ -175,14 +175,18 @@ const observation = {
 fs.writeFileSync(path, `${JSON.stringify(observation, null, 2)}\n`);
 NODE
 
-env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
+env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
+  -u HARNESS_TELEMETRY_MAX_BYTES -u HARNESS_TELEMETRY_GENERATIONS -u HARNESS_TELEMETRY_LOG_NAME \
+  -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
   -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
   node packages/telemetry/dist/cli.js status \
   --home "$fixture_home" \
   --observations "$fixture_home/governance.json" \
   --now 2026-09-07T12:00:00.000Z
 
-env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
+env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
+  -u HARNESS_TELEMETRY_MAX_BYTES -u HARNESS_TELEMETRY_GENERATIONS -u HARNESS_TELEMETRY_LOG_NAME \
+  -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
   -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
   node packages/telemetry/dist/cli.js tree --json \
   --home "$fixture_home" \
@@ -211,7 +215,9 @@ capacity.hosts[0].vramUsedBytes = 20 * 1024 ** 3;
 fs.writeFileSync(path, `${JSON.stringify(observation, null, 2)}\n`);
 NODE
 
-env -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
+env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
+  -u HARNESS_TELEMETRY_MAX_BYTES -u HARNESS_TELEMETRY_GENERATIONS -u HARNESS_TELEMETRY_LOG_NAME \
+  -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
   -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
   node packages/telemetry/dist/cli.js status \
   --home "$fixture_home" \
@@ -382,7 +388,7 @@ than a line of JSON does.
 The sink tests write to real temp directories, the opencode tests build a real SQLite database,
 and the CLI tests exercise `main()` and real subprocesses against seeded homes. Live-source tests
 inject observation services so they require neither Deno nor network access. The live-log tests seed a real log through `resolveObservability`, so they stay
-honest on a box where `DSH_TELEMETRY_DIR` is set to somewhere else.
+honest on a box where `HARNESS_TELEMETRY_DIR` is set to somewhere else.
 
 The suite was checked by mutation rather than by coverage. Thirty-five defects — each one a
 behaviour a test claims to guard — were reintroduced into pristine source one at a time, rebuilt,
@@ -570,7 +576,7 @@ is not a claim of independently observed leaf validity.
 physical-host capacity, pending-approval completeness, or proof that any item was dispatched.
 Observation reads write no telemetry, cache, quota reservation or source state. The synthetic producer
 CLI tests write fixtures **before** measuring read-side immutability. Node tests use isolated temporary
-homes with ambient `DSH_TELEMETRY_*` neutralized, real CLI subprocesses and injected services; they
+homes with ambient `HARNESS_TELEMETRY_*` neutralized, real CLI subprocesses and injected services; they
 need no credentials, network or Deno. Live acceptance remains a separate coordinator integration gate.
 
 ## Published governance read command
@@ -713,7 +719,7 @@ refusal and retries the unchanged source only under its separate private-read au
 ### Orchid dispatch context
 
 `harness-telemetry runs --json` retains its existing `runs` and additive `dispatches` arrays.
-With the private `DSH_TELEMETRY_DISPATCH_ROOT` environment setting, it also reads Orchid's
+With the private `HARNESS_TELEMETRY_DISPATCH_ROOT` environment setting, it also reads Orchid's
 existing matrix reservation directory. The same root is configured as Orchid's private
 `matrix.receipt_root`; it must be readable by the telemetry process, private and outside Git.
 No new collector runs. Missing configuration leaves this source unbound. A configured unreadable
@@ -746,7 +752,7 @@ Use `readAgentObservations` from the published contracts package before filterin
 issueNumber. It refuses an incomplete runtime tree or ambiguous ancestry as a whole, and enforces
 record and byte bounds. A validated dispatch-only collection is readable with `complete:false` /
 `ancestry_unavailable`; a successful decode does not make it complete. Preserve this status in the
-per-issue view. See the [contracts exception](../contracts/README.md#per-issue-agent-observations). Existing DSH_TELEMETRY_DISPATCH_ROOT configuration supplies the private Orchid receipts.
+per-issue view. See the [contracts exception](../contracts/README.md#per-issue-agent-observations). Existing HARNESS_TELEMETRY_DISPATCH_ROOT configuration supplies the private Orchid receipts.
 No additional process or collection command is introduced.
 
 Issue linkage must be dispatcher-confirmed; transcript path/prose mentions never assign work.
@@ -822,7 +828,7 @@ message provenance. Public path/secret screening stays in place. Publish after
 
 `node scripts/check-orchid-native-live-pair.mjs --live` is an opt-in integration control. It reads
 a bounded native header sample using the normal home (or privately configured
-`DSH_TELEMETRY_NATIVE_HOME`), exercises one real parent/child pair under an explicitly synthetic
+`HARNESS_TELEMETRY_NATIVE_HOME`), exercises one real parent/child pair under an explicitly synthetic
 assignment in a temporary private store, and deletes that store. It never modifies the live
 receipt store or claims that the selected pair belongs to a live issue. Its separate live-issue
 verdict preserves incomplete ancestry. Output contains only counts and closed reasons.
@@ -838,7 +844,7 @@ snapshot heartbeat every five seconds by default. Receipt changes, new native ro
 changes to selected rollouts trigger a disk scan at the next heartbeat. Each scan reads every
 transcript and the hook event file as they stood at the frame's capture time: a line stamped after
 it, and everything written after that line, belongs to the next frame. Set the reader-only
-`DSH_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT` to the private owner-mode Claude hook event directory
+`HARNESS_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT` to the private owner-mode Claude hook event directory
 to admit a fresh child `SubagentStart` as running only after the verified root dispatch and
 native child ID match. While that Start is the child's latest hook event, the child stays running as long as the
 Start or the child's own latest transcript record is fresh, so a child that works past the Start
@@ -867,7 +873,7 @@ For one issue, add `--issue owner/repo#number` to `--json` or `--watch`. The com
 that issue's dispatches and returns exit 0 when its tree is complete, even if unrelated old
 issues are incomplete; an absent or incomplete requested issue returns exit 3. The unscoped
 cockpit feed still reports every issue and its aggregate completeness.
-For the host-scoped capacity row, set `DSH_TELEMETRY_PLACEMENT_HOST` to this machine's
+For the host-scoped capacity row, set `HARNESS_TELEMETRY_PLACEMENT_HOST` to this machine's
 operator-configured short dispatch placement name. If it is unset, the row reports
 `host_identity_unset`; a different placement host reports `binding_invalid`. The reader
 uses `/proc/meminfo` and all AMD DRM card VRAM pairs in sysfs, with per-card values and
@@ -1016,3 +1022,12 @@ bounded model decisions as well as provider pools.
 Schema 2 opt-in and optional provider budget decisions require both the 0.33
 public decoder and telemetry reader in the consumer first. Keep disabled paid
 provider pools disabled; this reader PR does not change routing or live config.
+
+### Operator naming migration
+
+Canonical `HARNESS_TELEMETRY_*` settings retain the corresponding legacy
+`DSH_TELEMETRY_*` aliases with conflict refusal. The log basename remains legacy
+by default; `HARNESS_TELEMETRY_LOG_NAME` explicitly selects the canonical or legacy
+family. [The migration guide](../../docs/how-to/telemetry-operator-migration.md)
+owns exact resolution, source refusal and paired rollout requirements. No host
+settings or files change merely because this reader is upgraded.

@@ -1,5 +1,6 @@
 /** Restartable JSONL source feed. The consuming cockpit owns durable replay. */
 import { randomUUID, createHash } from "node:crypto";
+import { resolveNativeOperatorBindings } from "./operator-environment.js";
 import { setTimeout as sleep } from "node:timers/promises";
 import { homedir } from "node:os";
 import { performance } from "node:perf_hooks";
@@ -11,13 +12,13 @@ import { scanClaudeIssue } from "./backfill/claude-issue.js";
 import { scanAGYIssue } from "./backfill/agy.js";
 import { scanOpenCodeIssue } from "./backfill/opencode-issue.js";
 import { buildAgentObservations } from "./agent-observations.js";
-import { CLAUDE_CHILD_EVENT_ROOT, readClaudeChildStarts } from "./claude-child-events.js";
+import { readClaudeChildStarts } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import { readActionReceipts } from "./action-receipt-cli.js";
-import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "./orchid-dispatch.js";
+import { readOrchidDispatches } from "./orchid-dispatch.js";
 import type { OrchidLaunchState } from "./orchid-dispatch.js";
 import { matchesOrchidNativeRootIdentity, orchidAGYStoreDirectory, orchidOpenCodeSessionID, verifyOrchidOpenCodeBinding, resolveOrchidNativeRoot } from "./orchid-native-binding.js";
-import { HOST_CAPACITY_PLACEMENT_HOST, readLocalHostCapacity } from "./host-capacity.js";
+import { readLocalHostCapacity } from "./host-capacity.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 import type { RunRecord } from "./model.js";
@@ -44,12 +45,15 @@ const MAX_FRAME_TRANSCRIPT_BYTES = 32 * 1_048_576;
 
 /** Read each bound issue independently; one stale receipt never blanks its neighbours. */
 export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Promise<IssueAgentTreeSnapshot> {
-  if (options.env[ORCHID_DISPATCH_ROOT] === undefined) return unavailableSnapshot(options.now, "source_not_bound");
-  const orchid = await readOrchidDispatches(options.env[ORCHID_DISPATCH_ROOT]);
+  let bindings: ReturnType<typeof resolveNativeOperatorBindings>;
+  try { bindings = resolveNativeOperatorBindings(options.env); }
+  catch { return unavailableSnapshot(options.now, "source_unavailable"); }
+  if (bindings.dispatchRoot === undefined) return unavailableSnapshot(options.now, "source_not_bound");
+  const orchid = await readOrchidDispatches(bindings.dispatchRoot);
   const nowMs = Date.parse(options.now);
   if (!Number.isFinite(nowMs) || orchid.reason !== null) return unavailableSnapshot(options.now, "source_unavailable");
-  const localCapacity = await readLocalHostCapacity(options.now, options.env[HOST_CAPACITY_PLACEMENT_HOST]);
-  const actionScan = await readActionReceipts(options.env[ORCHID_DISPATCH_ROOT]);
+  const localCapacity = await readLocalHostCapacity(options.now, bindings.placementHost);
+  const actionScan = await readActionReceipts(bindings.dispatchRoot);
   const groups = new Map<string, { repo: IssueAgentTree["repo"]; issueNumber: number;
     dispatches: DispatchEvidence[]; refusal?: Extract<OrchidLaunchState, { state: "refused" }>;
     block?: IssueLaunchBlock }>();
@@ -167,7 +171,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       const root = resolveOrchidNativeRoot(dispatch, runs);
       if (root === null) continue;
       const children = runs.filter(run => run.source === "claude" && run.parentId === root.id).map(run => run.id);
-      const starts = await readClaudeChildStarts(options.env[CLAUDE_CHILD_EVENT_ROOT], root.id,
+      const starts = await readClaudeChildStarts(bindings.claudeChildEventRoot, root.id,
         children, options.now, options.watchFiles);
       for (const [key, at] of starts) claudeChildStarts.set(key, at);
     }
@@ -241,9 +245,16 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
   const wait = deps.wait ?? ((ms: number, signal: AbortSignal) => sleep(ms, undefined, { signal }));
   const elapsed = deps.elapsed ?? (() => performance.now());
   const env = deps.env ?? process.env;
-  const changes = watch ? deps.changes ?? (deps.collect === undefined
-    ? openIssueFeedChanges(env[ORCHID_DISPATCH_ROOT], defaultRoots(home).codexSessions!,
-      defaultRoots(home).claudeProjects, env[CLAUDE_CHILD_EVENT_ROOT]) : undefined) : undefined;
+  let configurationUnavailable = false;
+  let bindings: ReturnType<typeof resolveNativeOperatorBindings>;
+  try { bindings = resolveNativeOperatorBindings(env); }
+  catch {
+    configurationUnavailable = true;
+    bindings = { dispatchRoot: undefined, claudeChildEventRoot: undefined, placementHost: undefined };
+  }
+  const changes = watch && !configurationUnavailable ? deps.changes ?? (deps.collect === undefined
+    ? openIssueFeedChanges(bindings.dispatchRoot, defaultRoots(home).codexSessions!,
+      defaultRoots(home).claudeProjects, bindings.claudeChildEventRoot) : undefined) : undefined;
   const generation = deps.generation?.() ?? randomUUID();
   const abort = new AbortController();
   let stopped = false, seq = 0;
@@ -269,7 +280,9 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
       if (scan) {
         const at = clock(), files = new Set<string>();
         const storeRoots = new Set<string>();
-        try { snapshot = await collect({ home, limit, env, now: at, watchFiles: files, watchStoreRoots: storeRoots,
+        try {
+          if (configurationUnavailable) throw Error();
+          snapshot = await collect({ home, limit, env, now: at, watchFiles: files, watchStoreRoots: storeRoots,
           ...(issueKey === undefined ? {} : { issueKey }) }); }
         catch { snapshot = unavailableSnapshot(at); }
         changes?.setFiles(files, storeRoots);

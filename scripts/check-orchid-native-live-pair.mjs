@@ -7,6 +7,7 @@ import { constants } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
+import { resolveOperatorSetting } from "../packages/telemetry/dist/operator-environment.js";
 import { defaultRoots } from "../packages/telemetry/dist/backfill/index.js";
 import { parseCodexRollout } from "../packages/telemetry/dist/backfill/codex.js";
 import { readOrchidDispatches } from "../packages/telemetry/dist/orchid-dispatch.js";
@@ -17,7 +18,7 @@ const sha = value => createHash("sha256").update(value).digest("hex");
 let scratch;
 try {
   if (!process.argv.includes("--live")) throw new Error("live_opt_in_required");
-  const root = defaultRoots(process.env.DSH_TELEMETRY_NATIVE_HOME ?? homedir()).codexSessions;
+  const root = defaultRoots(resolveOperatorSetting(process.env, "nativeHome") ?? homedir()).codexSessions;
   const candidates = [];
   async function walk(dir) {
     for (const entry of (await readdir(dir, { withFileTypes: true })).sort((a,b) => a.name.localeCompare(b.name))) {
@@ -87,7 +88,7 @@ try {
     }
     emit({ verdict: "PASS", scope: "real-native-pair-with-isolated-synthetic-assignment", headers, limit: 512,
       liveIssueAssignmentProven: false, dataset: "selected-pair-only", decoded: true, complete: true, rows: 2, depth: 1, controls });
-    const live = await readOrchidDispatches(process.env.DSH_TELEMETRY_DISPATCH_ROOT);
+    const live = await readOrchidDispatches(resolveOperatorSetting(process.env, "dispatchRoot"));
     const observations = buildAgentObservations({ dispatches: live.dispatches, runs: pair, observedAt: new Date().toISOString(),
       sourceBound: live.root !== undefined, dispatchComplete: !live.degraded, nativeComplete: false });
     emit({ verdict: "INCONCLUSIVE", scope: "live-issue-ancestry", reason: observations.reason,

@@ -96,7 +96,7 @@ describe("resolveObservability", () => {
     // the operator believes a bound that is not in force.
     const target = resolveObservability(HOME, { [ENV.maxBytes]: "32MB" });
     assert.equal(target.policy.maxBytes, DEFAULT_POLICY.maxBytes);
-    assert.match(target.notes.join("\n"), /DSH_TELEMETRY_MAX_BYTES ignored/);
+    assert.match(target.notes.join("\n"), /HARNESS_TELEMETRY_MAX_BYTES ignored/);
   });
 
   it("keeps no generations when asked to keep none", () => {

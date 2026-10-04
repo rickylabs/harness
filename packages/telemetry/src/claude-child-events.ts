@@ -1,10 +1,11 @@
+import { OPERATOR_ENV } from "./operator-environment.js";
 /** Private Claude hook observations. A Stop callback is not terminal evidence. */
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { lstat, open } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 
-export const CLAUDE_CHILD_EVENT_ROOT = "DSH_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT";
+export const CLAUDE_CHILD_EVENT_ROOT = OPERATOR_ENV.claudeChildEventRoot;
 const MAX_BYTES = 1_048_576;
 const ID = /^[A-Za-z0-9_-]{1,128}$/;
 const ISO = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/;

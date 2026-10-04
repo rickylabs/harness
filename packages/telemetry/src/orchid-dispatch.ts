@@ -1,3 +1,4 @@
+import { OPERATOR_ENV } from "./operator-environment.js";
 /** Read the dispatcher's existing private matrix reservations; no collection or native-session guesses. */
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
@@ -12,7 +13,7 @@ import { readOrchidTeardownObservation } from "./orchid-teardown-observation.js"
 import { readOrchidClaudeStatus } from "./orchid-claude-status.js";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
-export const ORCHID_DISPATCH_ROOT = "DSH_TELEMETRY_DISPATCH_ROOT";
+export const ORCHID_DISPATCH_ROOT = OPERATOR_ENV.dispatchRoot;
 export type OrchidDispatchUnavailableReason =
   | "missing"
   | "not_directory"
