@@ -7,12 +7,13 @@
  * survive a coordinator crash.
  *
  * `live.ts` is the join between the two, and it is what makes either of them answer a question. The
- * Claude and opencode stores write no completion marker, so a backfill alone can never say whether
- * a run finished; the sink's log can, because whatever launched the run watched it stop. The merge
- * is keyed by run id, so replaying the whole log over an already-merged view is a no-op and there
- * is no ingestion cursor to lose.
+ * Native issue readers report terminal state only from their implemented source and bounds;
+ * generic transcript presence or last activity does not prove a run ended. The sink can also carry
+ * independently observed lifecycle events. The merge is keyed by run id, so replaying the whole
+ * log over an already-merged view is a no-op and there is no ingestion cursor to lose.
  *
- * The package deliberately depends on nothing in this workspace. GitHub is board truth and
+ * The package consumes the workspace's strict contracts and native/provider boundary types.
+ * GitHub is board truth and
  * `@rickylabs/board` projects the live view of it; telemetry says what *ran*, and joins to the
  * board on an issue number through the structural `BoardItemRef` shape. The join is structural but
  * it is not free: `items.ts` adapts what the projection actually emits into that shape, at the file

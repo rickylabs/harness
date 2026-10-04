@@ -184,7 +184,7 @@ describe("settleEvent, on an issue", () => {
   });
 
   it("stays out of the way when GitHub named no reason at all", () => {
-    // `dsh-board` maps an unrecognised stateReason to null rather than to not-planned, for the same
+    // `harness-board` maps an unrecognised stateReason to null rather than to not-planned, for the same
     // reason: a close nobody classified is a question for a person, not a label for a robot.
     for (const reason of [null, "", "something_new"]) {
       const s = settleEvent(issueEvent({ reason }));

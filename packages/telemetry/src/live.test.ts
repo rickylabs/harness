@@ -62,7 +62,7 @@ describe("readLiveLog", () => {
   let root: string;
 
   before(async () => {
-    root = await mkdtemp(join(tmpdir(), "dsh-live-"));
+    root = await mkdtemp(join(tmpdir(), "harness-live-"));
   });
 
   after(async () => {

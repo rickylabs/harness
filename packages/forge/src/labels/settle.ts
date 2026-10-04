@@ -2,7 +2,7 @@
  * What the `status:` label should become when an item ends.
  *
  * The taxonomy has always stated this rule — the generated skill narrates it at close time, and
- * `dsh-board check` reports every item that breaks it. Neither of those *applies* it. On this
+ * `harness-board check` reports every item that breaks it. Neither of those *applies* it. On this
  * repository that gap ran to fourteen merged pull requests sitting in no column, each one closed
  * correctly by a human who then had no reason to think about a label again.
  *
@@ -62,7 +62,7 @@ const isTerminal = (name: string): boolean => name.toLowerCase() === STATUS_TERM
  *   an item that never shipped must not sit under a heading that says it did.
  * - **reopened** — only {@link STATUS_TERMINAL} comes off. Which phase the work resumes in is a
  *   judgement about the work, and this function cannot see the work. Stripping the terminal label
- *   turns a claim that is now false into a gap `dsh-board check` already reports as `no-status`,
+ *   turns a claim that is now false into a gap `harness-board check` already reports as `no-status`,
  *   so a person is asked the question rather than answered for.
  *
  * Case is GitHub's: label names are unique case-insensitively there, so a `Status:Shipped` already
@@ -122,7 +122,7 @@ function labelNamesOf(item: Record<string, unknown>): readonly string[] {
  * payload shapes instead of reviewed by eye.
  *
  * Anything it cannot classify comes back with `ending: null` and no mutation. That is the same
- * refusal `dsh-board` makes when it maps an unrecognised `stateReason` to null rather than to
+ * refusal `harness-board` makes when it maps an unrecognised `stateReason` to null rather than to
  * `not-planned`: a close nobody has classified is a question for a person, and answering it with
  * `status:shipped` would put a claim on the board that no one made.
  *

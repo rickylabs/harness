@@ -4,7 +4,7 @@
  *
  * The lifecycle is *configuration*, not a constant baked into the projector. A projector that
  * hardcodes one repository's columns cannot project any other repository, and this one is meant
- * to be pointed at several. `DEFAULT_LIFECYCLE` matches the taxonomy that `dsh-forge` stamps,
+ * to be pointed at several. `DEFAULT_LIFECYCLE` matches the taxonomy that `harness-forge` stamps,
  * so the common case needs no configuration — but it is a default, not a coupling.
  *
  * When `@rickylabs/harness-contracts` is published it should own this shape and both packages should
@@ -12,7 +12,7 @@
  * has no dependency on `forge`.
  *
  * Deliberate duplication is still duplication, and it drifted: this list once read `backlog`,
- * `in-progress`, `in-review`, `changes-requested` — a plausible lifecycle that `dsh-forge` has
+ * `in-progress`, `in-review`, `changes-requested` — a plausible lifecycle that `harness-forge` has
  * never stamped. The failure was silent in exactly the way that matters. Every item labelled with
  * a real phase came back `no status` and was counted *invisible*, so a board that had just been
  * filled in reported itself empty, and no test caught it because every test that exercised a phase
@@ -63,7 +63,7 @@ const phase = (name: string, flags: PhaseFlags = {}): Phase => ({
 });
 
 /**
- * The ten phases stamped by `dsh-forge`. `shipped` is the only terminal one: `ci-fail` is a state
+ * The ten phases stamped by `harness-forge`. `shipped` is the only terminal one: `ci-fail` is a state
  * work can leave, and collapsing it into "done" is how a board starts lying.
  */
 export const DEFAULT_LIFECYCLE: Lifecycle = {

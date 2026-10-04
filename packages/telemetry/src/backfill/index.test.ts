@@ -17,7 +17,7 @@ import { backfillFromDisk, defaultRoots } from "./index.js";
 let root: string;
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), "dsh-backfill-"));
+  root = await mkdtemp(join(tmpdir(), "harness-backfill-"));
 });
 
 afterEach(async () => {

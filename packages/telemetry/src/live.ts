@@ -158,7 +158,7 @@ export type LiveDispatchVerdict = "accepted" | "refused" | "unknown";
  *
  * A literal rather than an import, for the reason `LiveDispatchVerdict` is a local mirror. A kind is
  * a free string on the sink, so this name is a convention both sides have to keep; the fallback if
- * `dsh-app` ever renames it is that no verdict is read at all, and every dispatch becomes a row —
+ * the optional router ever renames it is that no verdict is read at all, and every dispatch becomes a row —
  * the behaviour before this rule, which is over- rather than under-reporting.
  */
 const DISPATCH_KIND = "subagent.dispatch";

@@ -106,6 +106,7 @@ environment:
                                  (default: ~/archives)
   HARNESS_TELEMETRY_MAX_BYTES    bound per generation, e.g. 33554432 or 32M
   HARNESS_TELEMETRY_GENERATIONS  generations kept behind the live file
+  HARNESS_TELEMETRY_WIRE_FAMILY  harness or legacy; default legacy until reader rollout
   HARNESS_TELEMETRY_LOG_NAME     explicit harness-telemetry.jsonl or dsh-telemetry.jsonl
                                  (default remains dsh-telemetry.jsonl until producer rollout)
   HARNESS_TELEMETRY_DISPATCH_ROOT           private Orchid receipt root

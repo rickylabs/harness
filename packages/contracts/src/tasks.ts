@@ -24,7 +24,7 @@
  * cockpit draws the columns the server actually has rather than the columns it was compiled with.
  *
  * That is deliberate to the point of being the whole point. The board's default lifecycle and the
- * labels `dsh-forge` stamps are two lists that must agree, they drifted once, and the drift was
+ * labels `harness-forge` stamps are two lists that must agree, they drifted once, and the drift was
  * silent: every correctly labelled item read as "no status" and a freshly filled board reported
  * itself empty. `scripts/check-lifecycle.mjs` exists to compare exactly those two. A third copy
  * here — published, versioned, and compiled into two clients on their own release cadence — would

@@ -33,7 +33,7 @@ const hostile = (): TelemetryEvent =>
 let root: string;
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), "dsh-telemetry-"));
+  root = await mkdtemp(join(tmpdir(), "harness-telemetry-"));
 });
 
 afterEach(async () => {

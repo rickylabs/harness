@@ -198,7 +198,7 @@ author.
 
 ## Legal
 
-MIT ([`LICENSE`](LICENSE)), matching `dsh`. This repository is public. There is currently no CLA
+MIT ([`LICENSE`](LICENSE)). This repository is public. There is currently no CLA
 and no DCO sign-off requirement; the owner maintains the contribution policy described here.
 
 Never open a public issue for a security problem — [`SECURITY.md`](SECURITY.md) says why the usual

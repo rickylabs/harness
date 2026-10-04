@@ -37,7 +37,7 @@
  * `@opencode-ai/sdk` is a generated HTTP client over the endpoints below; taking it as a dependency
  * would add a package and a version to CI in exchange for types we can write here in forty lines and
  * a wire format we would still have to verify. So the slice of `fetch` this package uses is declared
- * rather than imported, `dsh-app` binds the real one, and the suite binds a fake.
+ * rather than imported. A composition root supplies the real one; the suite supplies a fake.
  *
  * The honesty that costs is the same, and is stated once: **nothing here has been run against a real
  * `opencode serve`.** The endpoint set and the request bodies come from the vendor's own HTTP
@@ -69,7 +69,7 @@ export type HttpOutcome =
   | { readonly kind: "malformed"; readonly detail: string }
   | { readonly kind: "unreachable"; readonly detail: string };
 
-/** One request, one outcome. `dsh-app` binds the real transport; the suite binds a fake. */
+/** One request, one outcome. A composition root supplies the real transport; the suite supplies a fake. */
 export type HttpFn = (request: HttpRequest) => Promise<HttpOutcome>;
 
 /**

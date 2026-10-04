@@ -228,7 +228,7 @@ describe("dispatch", () => {
     await fake.provider.dispatch(request({ prompt: "the plan, which is not for the title" }), "r1");
 
     const body = at(fake.calls, 0).body as { readonly title?: unknown };
-    assert.equal(body.title, "dsh r1");
+    assert.equal(body.title, "harness r1");
     const sent = JSON.stringify(at(fake.calls, 0));
     assert.equal(sent.includes("not for the title"), false);
   });

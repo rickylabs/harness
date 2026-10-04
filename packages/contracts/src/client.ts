@@ -530,7 +530,7 @@ function rebind(fold: EventFold): EventFold {
 /**
  * The subprotocols to open with.
  *
- * `MUX_SUBPROTOCOL` is documented as always sent, so a server can tell a dsh client from anything
+ * `MUX_SUBPROTOCOL` is documented as always sent, so a server can recognize a legacy protocol-1 client from anything
  * else that finds the path. `muxAuth` returns it only in the bearer case, because that is the case
  * where it has to be interleaved with the token; supplying it in the other case is this binding's
  * job, and doing it here is why both cockpits will do it.

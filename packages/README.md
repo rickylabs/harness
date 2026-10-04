@@ -27,7 +27,7 @@ activation, credentials or a successful native launch on a particular host.
 | `netscript-bridge` | Stub: external NetScript service adapter | E7 · #37 |
 | `contracts` | Published mechanism vocabulary and strict decoders under `@rickylabs/harness-contracts` | E8 · #38 |
 | `telemetry` | Native session observations, screened activity, usage and dispatch evidence | E9 · #39 |
-| `dsh-app` | Optional experiment: dsh profile, bundle and adapters consuming core modules | E2 · #32 |
+| `harness-router-dsh` | Optional experiment: dsh profile, bundle and adapters consuming core modules | E2 · #32 |
 
 A stub holds a buildable place in the project graph, not a working integration. Its README states
 what remains unimplemented. Native dispatch in [Orchid](https://github.com/rickylabs/orchid) and
@@ -65,7 +65,7 @@ and retains physical checks and accounting. No client-supplied model string gran
 - **Scripts.** `build` = `tsc -b` (JS + declarations), `typecheck` = `tsc -b --emitDeclarationOnly`
   (full type check; emits only the `.d.ts` files that downstream references need, because
   `--noEmit` is not allowed on a referenced project), `clean` = remove `dist/` and build info.
-- `@deepseek-ai/dsh` is a **dependency** (currently only of `dsh-app`), never vendored or forked.
+- `@deepseek-ai/dsh` is a **dependency** (currently only of `harness-router-dsh` in `experiments/routers/dsh`), never vendored or forked.
   Its native transitive deps have their build scripts denied in `pnpm-workspace.yaml`; E2 flips
   on the ones the runtime needs.
 

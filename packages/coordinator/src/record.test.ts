@@ -132,7 +132,7 @@ describe("telemetryLine", () => {
 
 /**
  * `plan --event` and `admit --event` used to accept the flag and change nothing, so a dispatcher
- * piping either into `dsh-telemetry record` recorded no events and exited 0. The decision worth
+ * piping either into `harness-telemetry record` recorded no events and exited 0. The decision worth
  * having on disk is the refusal, which is exactly the one that was lost.
  */
 describe("plan and admit events", () => {

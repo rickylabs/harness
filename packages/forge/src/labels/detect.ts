@@ -223,7 +223,7 @@ const bestPrefix = (names: readonly { readonly name: string }[]): string | null 
  * The mechanical one: the live labels are reachable only over the network, and the file is not. Read
  * from GitHub alone, this function answered `topic` on a workstation with an authenticated `gh` and
  * `lane` in CI, which made every artifact generated from the taxonomy — the board-process skill
- * above all — depend on who ran the generator. `dsh-forge labels apply` was worse than inconsistent
+ * above all — depend on who ran the generator. `harness-forge labels apply` was worse than inconsistent
  * offline: with no live labels to see, it proposed creating four `lane:*` labels duplicating the
  * `topic:*` rows the file itself declares. Reading the committed file first makes the answer the
  * same everywhere, which is what lets CI check the generated skill for drift at all.

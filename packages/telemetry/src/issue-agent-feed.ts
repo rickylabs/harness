@@ -1,7 +1,8 @@
+import { producerAgentCost, validateWireFamily, type TelemetryWireFamily } from "./producer-names.js";
 /** Pure per-issue projection of the existing dispatcher/native ancestry join. */
 import { createHash } from "node:crypto";
 import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_ACCEPTED_REASONS, AGENT_ACTION_REJECTED_REASONS, MAX_AGENT_HISTORY, MAX_AGENT_OBSERVATIONS,
-  MAX_ISSUE_AGENT_TREE_BYTES, MAX_AGENT_RESOURCE_POINTS, ISSUE_AGENT_TREE_FRESH_MS, AGENT_EFFORTS, unavailableAgentCost,
+  MAX_ISSUE_AGENT_TREE_BYTES, MAX_AGENT_RESOURCE_POINTS, ISSUE_AGENT_TREE_FRESH_MS, AGENT_EFFORTS,
   projectRouteIdentity, publicOpenCodeModel,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
   type AgentResourceHistory, type AgentTimelineEvent, type AgentTimelineReason,
@@ -105,7 +106,7 @@ function history(observation: AgentObservation, dispatch: DispatchEvidence, run:
 
 function node(observation: AgentObservation, dispatch: DispatchEvidence, run: RunRecord | undefined, now: string,
   localCapacity: HostCapacityReading | undefined, actions: readonly PublicActionReceipt[], actionsComplete: boolean,
-  verifiedClaudeChild: boolean, childCompletion: ClaudeChildCompletion | null): IssueAgentTreeAgent {
+  verifiedClaudeChild: boolean, childCompletion: ClaudeChildCompletion | null, wireFamily: TelemetryWireFamily): IssueAgentTreeAgent {
   const root = observation.parentAgentId.state !== "known-parent";
   const provenAncestry = observation.parentAgentId.state === "confirmed-root" || observation.parentAgentId.state === "known-parent";
   const harness = root ? safe(dispatch.harness ?? dispatch.source, "dispatch") : safe(run?.source, "native");
@@ -217,7 +218,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     time(dispatch.observedAt, now) !== null
     ? { value: dispatch.host, basis: "placement", observedAt: dispatch.observedAt!, reason: null } as const : unplaced;
   const missingCapacity = (reason: "source_not_bound" | "observer-unavailable" | "binding_invalid" | "source_stale") =>
-    unavailableAgentCost(reason).localCapacity;
+    producerAgentCost(reason, wireFamily).localCapacity;
   const capacity = host.value === null ? missingCapacity("source_not_bound")
     : localCapacity === undefined ? missingCapacity("observer-unavailable")
     : localCapacity.host === null && localCapacity.cost.reason === "host_identity_unset" ? localCapacity.cost
@@ -352,6 +353,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
 
 /** Invalid or partial ancestry is never repackaged as a complete tree. */
 export function buildIssueAgentTreeSnapshot(input: {
+  readonly wireFamily?: TelemetryWireFamily;
   readonly observations: AgentObservations;
   readonly dispatches: readonly DispatchEvidence[];
   readonly runs: readonly RunRecord[];
@@ -359,6 +361,7 @@ export function buildIssueAgentTreeSnapshot(input: {
   readonly actions?: readonly PublicActionReceipt[];
   readonly actionsComplete?: boolean;
 }): IssueAgentTreeSnapshot {
+  const wireFamily = validateWireFamily(input.wireFamily);
   const { dispatches, runs } = input;
   const dispatchById = new Map(dispatches.map(d => [opaque("assignment", d.runId), d]));
   const observations: AgentObservations = { ...input.observations,
@@ -402,7 +405,7 @@ export function buildIssueAgentTreeSnapshot(input: {
     const parentRun = verifiedClaudeChild ? runs.find(candidate => candidate.source === "claude" && candidate.id === run!.parentId) : undefined;
     const childCompletion = parentRun?.childCompletions?.find(entry => entry.childId === run!.id) ?? null;
     agents.push(node(observation, dispatch, run, observations.observedAt, input.localCapacity,
-      input.actions ?? [], input.actionsComplete ?? false, verifiedClaudeChild, childCompletion));
+      input.actions ?? [], input.actionsComplete ?? false, verifiedClaudeChild, childCompletion, wireFamily));
   }
   const rows: IssueAgentTree[] = [...issues.values()].map(issue => ({ repo: issue.repo, issueNumber: issue.issueNumber,
     complete: true, reason: null,

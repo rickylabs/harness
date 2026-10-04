@@ -1,7 +1,7 @@
 /**
  * The exit-code contract.
  *
- * `dsh-board check` is meant to be run by something that is not a person — a hook, a CI step, a
+ * `harness-board check` is meant to be run by something that is not a person — a hook, a CI step, a
  * cron. That reader acts on the number, so the number has to mean one thing. `1` says the board
  * contradicts itself; it must never be what comes out when the network was down, when `gh` was
  * missing, or when this program crashed, because each of those means nobody looked at the board at

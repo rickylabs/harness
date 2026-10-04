@@ -113,7 +113,7 @@ function cycleThrough(workflow: Workflow, id: string): boolean {
 /**
  * Check a workflow definition against the rules it is supposed to encode.
  *
- * This runs on the built-in definition as a test and from `dsh-coordinator workflow`, so a workflow
+ * This runs on the built-in definition as a test and from `harness-coordinator workflow`, so a workflow
  * that has quietly lost its gates fails somewhere a person looks rather than at the moment an
  * ungated effect runs.
  */

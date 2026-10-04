@@ -222,7 +222,7 @@ export type RefKind = "issue" | "pull-request";
  * This comment used to end "and a `BoardItem` from the projection satisfies this shape without an
  * adapter." That was not true and had never been true: the projection's item nests the GitHub
  * fields under `source` and carries `phase` as an object, so it has no `number` and no `title` at
- * this level, and `dsh-board snapshot` emits an envelope rather than an array. The adapter exists;
+ * this level, and `harness-board snapshot` emits an envelope rather than an array. The adapter exists;
  * it lives in `items.ts`, at the file boundary where the data actually arrives as `unknown`. The
  * join is still structural — it is by issue number, and nothing here imports the other package —
  * but a reader given a false structural claim writes the pipeline that does not compose.

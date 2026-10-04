@@ -133,7 +133,7 @@ function restTransport(token: string, authNote: string): GitHubTransport {
     accept: "application/vnd.github+json",
     authorization: `Bearer ${token}`,
     "x-github-api-version": "2022-11-28",
-    "user-agent": "dsh-forge-labels",
+    "user-agent": "harness-forge-labels",
   };
 
   async function req<T>(path: string, init?: RequestInit): Promise<T> {

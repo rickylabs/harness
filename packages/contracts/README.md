@@ -72,7 +72,7 @@ So every task appears once, every run appears once, and grouping is a plain grou
 `epic`, `milestone` or `parentId`.
 
 The lifecycle travels **on the snapshot, as data**. A published constant here would be a third copy
-of a list that already exists twice — in `board` and in the labels `dsh-forge` stamps — and those two
+of a list that already exists twice — in `board` and in the labels `harness-forge` stamps — and those two
 drifted once, silently: every correctly labelled item read as "no status" and a freshly filled board
 reported itself empty. `scripts/check-lifecycle.mjs` compares exactly those two. A third copy,
 versioned and compiled into two clients on their own release cadence, would be the one copy nothing
@@ -352,7 +352,7 @@ an effect and durable receipt success before acknowledging it. No result grants 
 ## Governance read document (0.2.0)
 
 `GovernanceReadSnapshot` is a standalone schema-1, protocol-1 document produced by
-`dsh-telemetry governance --observations-from <absolute-descriptor-path>`. Import
+`harness-telemetry governance --observations-from <absolute-descriptor-path>`. Import
 `readGovernanceSnapshot` and the document/coverage/admission types from the package root:
 
 ```ts
@@ -486,7 +486,7 @@ API/client compatibility — real-source acceptance remains a separately authori
 ## Per-issue agent observations
 
 `readAgentObservations(value)` is the exported decoder for the `agentObservations` member of
-`dsh-telemetry runs --json`. It accepts schema 1 / protocol 1. The collection is bounded by
+`harness-telemetry runs --json`. It accepts schema 1 / protocol 1. The collection is bounded by
 `MAX_AGENT_OBSERVATIONS` (256 records) and `MAX_AGENT_OBSERVATION_BYTES` (1 MiB normalized
 encoded data). Consumers must also bound command/HTTP bytes before parsing JSON. Decode the
 whole collection **before** selecting a repository and issue; filtering first can hide a missing
@@ -571,7 +571,7 @@ exists. Missing budget, route, model, quota, time and sanitized transcript
 evidence each carry typed reasons. This shape incorporates the cockpit seat's 2026-09-27 written
 contract agreement; that agreement is coordination evidence, not a runtime source.
 
-`dsh-telemetry issue-agents --watch` emits full JSONL snapshots every five seconds, including
+`harness-telemetry issue-agents --watch` emits full JSONL snapshots every five seconds, including
 heartbeats, with a process generation and increasing `sequence`. On restart the source emits a new
 generation beginning at sequence zero. The cockpit backend owns persistence and replay. An
 unreadable source produces an incomplete snapshot with a reason. `--json` gives one diagnostic

@@ -48,7 +48,7 @@ import { HARNESSES } from "@rickylabs/subagents";
 
 import { accountOf, type Target, type TargetTable } from "./model.js";
 
-/** The conventional name, and what `dsh-forge targets backend` looks for when `--handover` is absent. */
+/** The conventional name, and what `harness-forge targets backend` looks for when `--handover` is absent. */
 export const HANDOVER_FILE = "handover.json";
 
 /** The two execution backends a target can be dispatched through. */

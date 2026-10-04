@@ -47,9 +47,9 @@ import { validateDispatch, type DispatchRequest, type Harness } from "./dispatch
 import { isRouteEvidenceVerified, type RouteIdentityEvidence } from "./route.js";
 
 /**
- * Where a `SubagentRegistry` attaches on the dsh context.
+ * The optional router context key for a `SubagentRegistry`.
  *
- * Named here so the four provider packages and `dsh-app` agree on it without a shared string
+ * Named here so the four provider packages and the optional router agree on it without a shared string
  * literal drifting between them. The other seam is `ctx.llm` (E4 · #34) and the two are kept
  * apart on purpose: vendor CLIs are metered by quota window, API and local models per token.
  */
@@ -120,7 +120,7 @@ export interface DispatchResult {
  * question about the same run: not what the executor said, but what the *evidence* supports — a
  * growing artifact, a new commit, a live turn. The two disagree exactly where a status screen earns
  * its keep, on the run that claims `running` and has produced nothing for six hours. Both types were
- * once called `Liveness`, in one npm scope, and `dsh-app` already imports from both packages in one
+ * once called `Liveness`, in one npm scope, and the optional router already imports from both packages in one
  * file. See #206.
  */
 export type RunLiveness = "queued" | "running" | "finished" | "failed" | "unknown";
@@ -536,7 +536,7 @@ const USABLE_ID = /^[a-z][a-z0-9-]*$/;
 /**
  * Check what a provider claims about itself, before it is asked to do anything.
  *
- * This is composition-time validation: `dsh-app` builds a registry from config and can run this
+ * This is composition-time validation: the optional router builds a registry from config and can run this
  * over it with no executor present. It catches the declarations that are wrong on their face —
  * a provider that launches nothing, an id that cannot appear in a `RunRef` — and reports the two
  * that are merely bad news (blind, unstoppable) without failing them, because both are real

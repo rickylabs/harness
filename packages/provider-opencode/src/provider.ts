@@ -187,7 +187,7 @@ export class OpencodeProvider implements SubagentProvider {
     this.#stream = options.stream;
     this.#logDir = options.logDir ?? null;
     this.#agent = options.agent ?? null;
-    this.#titlePrefix = options.titlePrefix ?? "dsh";
+    this.#titlePrefix = options.titlePrefix ?? "harness";
     this.#now = options.now ?? ((): Date => new Date());
   }
 

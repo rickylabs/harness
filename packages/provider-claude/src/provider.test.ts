@@ -430,7 +430,7 @@ describe("observing", () => {
   });
 
   it("points at the directory a run's transcripts land in", async () => {
-    // The isolated config dir is not the one `dsh-telemetry` scans by default, so a run launched
+    // The isolated config dir is not the one `harness-telemetry` scans by default, so a run launched
     // here would otherwise leave evidence nothing goes looking for. The directory, not the file:
     // the CLI owns its project-slug scheme, and the backfill walks for `*.jsonl` anyway.
     const { provider, run } = await running();

@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { normaliseItems, parseItems, toRef } from "./items.js";
 
 /**
- * One item exactly as `dsh-board snapshot` emits it.
+ * One item exactly as `harness-board snapshot` emits it.
  *
  * Written out longhand rather than imported, because importing it would mean depending on
  * `@rickylabs/board` — which is the dependency this package does not take, and the reason the
@@ -38,7 +38,7 @@ const projected = (over: Record<string, unknown> = {}): Record<string, unknown> 
 describe("toRef", () => {
   it("reads a projection item, whose fields are nested under source", () => {
     // The exact failure this module exists to prevent: before it, `number` came back undefined for
-    // every item in a `dsh-board snapshot`, every run went unattributed, and the board looked idle.
+    // every item in a `harness-board snapshot`, every run went unattributed, and the board looked idle.
     const ref = toRef(projected());
     assert.equal(ref?.number, 85);
     assert.equal(ref?.title, "E9.3 — the hierarchy view");
@@ -111,7 +111,7 @@ describe("toRef", () => {
 
 describe("normaliseItems", () => {
   it("accepts the board snapshot envelope, not only a bare array", () => {
-    // `dsh-board snapshot` writes `{ items: [...] }`. The old loader required an array, so piping
+    // `harness-board snapshot` writes `{ items: [...] }`. The old loader required an array, so piping
     // one command into the other produced "is not a JSON array" — or worse, silence.
     const loaded = normaliseItems({ items: [projected()], anomalies: [] }, "board.json");
     assert.equal(loaded.ok, true);

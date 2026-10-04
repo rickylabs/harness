@@ -1,10 +1,11 @@
+import { wireProducer, type TelemetryWireFamily } from "../producer-names.js";
 import { readGovernanceSnapshot, type GovernanceReadSnapshot, type UnavailableReason } from "@rickylabs/harness-contracts";
 import type { ComposedGovernance } from "./compose.js";
 
 /** Fixed failure diagnostic; no source input, path or unvalidated producer detail is reflected. */
-export function governanceRead(observed: ComposedGovernance, evaluatedAt: string): GovernanceReadSnapshot {
+export function governanceRead(observed: ComposedGovernance, evaluatedAt: string, wireFamily: TelemetryWireFamily = "legacy"): GovernanceReadSnapshot {
   const view = observed.governance;
-  const common = { schema: 1, protocol: 1, producer: "dsh-telemetry", evaluatedAt,
+  const common = { schema: 1, protocol: 1, producer: wireProducer(wireFamily), evaluatedAt,
     complete: observed.ok, sources: observed.coverage, notes: [...observed.notes] };
   const unavailableReason = (view.availability === "unavailable"
     ? view.unavailableReason === "envelope-invalid" ? "envelope-invalid"

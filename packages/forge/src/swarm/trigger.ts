@@ -30,7 +30,7 @@
  * `t.Repo == c.cfg.Inbox → continue`, so for a fleet whose inbox is also its only target — which is
  * this repository's own shape — the comment trigger never fires at all. That is not a bug to route
  * around here; it is the configuration saying something the operator probably did not intend, and
- * `dsh-forge swarm` is where it becomes visible.
+ * `harness-forge swarm` is where it becomes visible.
  */
 
 import type { SourceIssue } from "@rickylabs/board";

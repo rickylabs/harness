@@ -6,7 +6,7 @@
  * - **On the LAN**, the coordinator is reached directly and the browser holds a session cookie. This
  *   package never sees that cookie's value, and does not want to: the browser attaches it, and the
  *   only thing worth naming here is which cookie it is.
- * - **Off-LAN**, through `dsh-relay`, there is no cookie — a cookie is bound to the coordinator's
+ * - **Off-LAN**, through the legacy `dsh-relay`, there is no cookie — a cookie is bound to the coordinator's
  *   origin and the relay is a different one — so the client presents a bearer token, over TLS
  *   pinned to the coordinator's key.
  *
@@ -52,7 +52,7 @@ export interface SessionCredential {
   readonly cookieName: string;
 }
 
-/** Off-LAN, through `dsh-relay`. */
+/** Off-LAN, through the legacy `dsh-relay`. */
 export interface BearerCredential {
   readonly mode: "bearer";
   /** A supplier, so the value is never a field on anything that can be serialised. */
@@ -79,7 +79,7 @@ export interface CertificatePin {
  */
 export interface Endpoint {
   readonly origin: string;
-  /** True when the coordinator is being reached through `dsh-relay` rather than directly. */
+  /** True when the coordinator is being reached through the legacy `dsh-relay` rather than directly. */
   readonly relayed: boolean;
   readonly credential: Credential;
 }
@@ -102,7 +102,7 @@ export type MuxAuth =
 
 /** The subprotocol prefix the relay strips before comparing the rest to the expected token. */
 export const BEARER_SUBPROTOCOL_PREFIX = "dsh.bearer." as const;
-/** Always sent, so a server can tell a dsh client from anything else that finds the path. */
+/** Always sent, so a server can recognize a legacy protocol-1 client from anything else that finds the path. */
 export const MUX_SUBPROTOCOL = "dsh.v1" as const;
 
 export function muxAuth(credential: Credential): MuxAuth {

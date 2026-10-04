@@ -25,7 +25,7 @@ let home: string;
 let heldEnvironment: Record<string, string | undefined>;
 
 beforeEach(async () => {
-  home = await mkdtemp(join(tmpdir(), "dsh-cli-"));
+  home = await mkdtemp(join(tmpdir(), "harness-cli-"));
   heldEnvironment = { HOME: process.env.HOME };
   for (const key of Object.keys(process.env)) {
     if (/^(?:HARNESS|DSH)_TELEMETRY_/.test(key)) { heldEnvironment[key] = process.env[key]; delete process.env[key]; }
@@ -486,7 +486,7 @@ describe("harness-telemetry governance observations", () => {
 /**
  * The two commands, joined by a file.
  *
- * `dsh-board snapshot > items.json && dsh-telemetry tree --items items.json` is the whole product
+ * `harness-board snapshot > items.json && harness-telemetry tree --items items.json` is the whole product
  * as an operator runs it, and until #85 it did not work: the projection writes an envelope whose
  * items nest their GitHub fields under `source`, the loader cast an array to refs without checking
  * one, and every run came back unattributed. The board looked idle. That is the exact failure these
@@ -494,7 +494,7 @@ describe("harness-telemetry governance observations", () => {
  * telemetry's own.
  */
 describe("harness-telemetry tree", () => {
-  /** What `dsh-board snapshot` actually writes — envelope, nested source, phase as an object. */
+  /** What `harness-board snapshot` actually writes — envelope, nested source, phase as an object. */
   async function seedBoard(): Promise<string> {
     const path = join(home, "board.json");
     await writeFile(

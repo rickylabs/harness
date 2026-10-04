@@ -83,7 +83,7 @@ function safeRunId(event: TelemetryEvent): string {
  *
  * Filesystem messages carry the full path, and a note is printed, piped and published — the same
  * reasoning as the paths removed from the backfill notes in F-5. `EACCES` is what an operator acts
- * on; `/home/agent/observability/dsh-telemetry.jsonl` is not this package's to hand out.
+ * on; a private observability path is not this package's to hand out.
  */
 function reason(error: unknown): string {
   try {
@@ -318,7 +318,7 @@ export function createFileSink(options: FileSinkOptions): SessionTelemetrySink {
  * A sink that keeps everything in memory.
  *
  * Not a test double. A backfill run needs somewhere to put records it is only about to summarize,
- * and writing them to disk first would make `dsh-telemetry status` mutate the log it reads.
+ * and writing them to disk first would make `harness-telemetry status` mutate the log it reads.
  */
 export function createMemorySink(): SessionTelemetrySink & { readonly events: TelemetryEvent[] } {
   const events: TelemetryEvent[] = [];
