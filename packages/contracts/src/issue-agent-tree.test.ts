@@ -45,6 +45,21 @@ it("decodes a grouped opaque dispatch tree with explicit unknowns", () => {
   assert.equal(result.ok, true);
   if (result.ok) assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.budget.tokenLimit, null);
 });
+it("preserves mixed Harness and legacy cost sources through the grouped issue decoder", () => {
+  const names = { subscriptionHeadroom: "governance.usage", meteredSpend: "runs", runTokens: "runs", localCapacity: "host-capacity" };
+  for (let mask = 0; mask < 16; mask++) {
+    const cost = Object.fromEntries(Object.entries(unavailableAgentCost()).map(([key, row], i) => [key, {
+      ...row, source: `${(mask >> i) & 1 ? "harness" : "dsh"}-telemetry.${names[key as keyof typeof names]}`,
+    }]));
+    const tree = { ...snapshot(), issues: [{ ...snapshot().issues[0], dispatches: [{ dispatchId,
+      agents: [{ ...node, observation: { ...observation, cost } }] }] }] };
+    const result = read(tree);
+    assert.ok(result.ok, `grouped cost mask ${mask}`);
+    assert.deepEqual(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.observation.cost, cost);
+    cost.runTokens!.source = "harness-telemetry.host-capacity";
+    assert.equal(read(tree).ok, false, "the grouped decoder must not bypass a cross-class source refusal");
+  }
+});
 it("accepts a sourced current budget only as a positive receipt value on the root", () => {
   const s = snapshot();
   const withBudget = (budget: unknown) => ({ ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId,

@@ -139,6 +139,39 @@ assert.deepEqual(readAgentObservations({schema:2,protocol:1,observedAt:'2026-01-
 console.log(JSON.stringify({ root: true, server: true, protocol: PROTOCOL_VERSION }));\n`);
   const runtime = await run(process.execPath, [join(consumer, "runtime.mjs")], { cwd: consumer, env });
   assert.equal(runtime.code, 0); assert.deepEqual(JSON.parse(runtime.stdout), { root: true, server: true, protocol: 1 });
+  stage = "installed cost-source aliases and preserved provenance";
+  writeFileSync(join(consumer, "cost-sources.mjs"), `import assert from 'node:assert/strict';
+import {AGENT_COST_SOURCE_NAMES,unavailableAgentCost,readAgentObservations,projectRouteIdentity} from '@rickylabs/harness-contracts';
+const at='2026-01-01T00:00:00.000Z',revision='a'.repeat(64);
+const absent={value:null,reason:'source_not_bound',observedAt:null,validUntil:null,revision:null};
+const base={agentId:'agent_'+revision,repo:{owner:'example',name:'project'},issueNumber:42,
+ assignment:{id:'assignment_'+revision,dispatcher:'divybot',basis:'dispatcher-confirmed'},
+ parentAgentId:{state:'confirmed-root',value:null,reason:null},workspace:absent,tab:absent,pane:absent,terminal:absent,running:absent,
+ route:projectRouteIdentity(null),observedAt:at,revision};
+const names={subscriptionHeadroom:['dsh-telemetry.governance.usage','harness-telemetry.governance.usage'],
+ meteredSpend:['dsh-telemetry.runs','harness-telemetry.runs'],runTokens:['dsh-telemetry.runs','harness-telemetry.runs'],
+ localCapacity:['dsh-telemetry.host-capacity','harness-telemetry.host-capacity']};
+const measurements={subscriptionHeadroom:{remainingPercent:75,windowMinutes:60,resetsAt:null},
+ meteredSpend:{amount:0.25,currency:'USD',accounting:'reported'},runTokens:{inputTokens:100,outputTokens:25,cacheReadTokens:80},
+ localCapacity:{host:'fixture-node',ramUsedBytes:100,ramTotalBytes:200,vramUsedBytes:null,vramTotalBytes:null}};
+const keys=Object.keys(names),decode=cost=>readAgentObservations({schema:1,protocol:1,observedAt:at,revision,complete:true,reason:null,agents:[{...base,cost}]});
+assert.ok(Object.isFrozen(AGENT_COST_SOURCE_NAMES));
+for(const key of keys){assert.ok(Object.isFrozen(AGENT_COST_SOURCE_NAMES[key]));assert.deepEqual(new Set(AGENT_COST_SOURCE_NAMES[key]),new Set(names[key]));}
+const legacy=unavailableAgentCost();for(const key of keys)assert.equal(legacy[key].source,names[key][0]);
+let cases=0;
+for(const available of [false,true])for(let mask=0;mask<16;mask++){
+ const cost=Object.fromEntries(keys.map((key,i)=>[key,{...legacy[key],source:names[key][(mask>>i)&1],
+ ...(available?{availability:'available',measurement:measurements[key],reason:null,observedAt:at,validUntil:'2026-01-01T01:00:00.000Z',revision}:{})}]));
+ const read=decode(cost);assert.equal(read.ok,true);assert.deepEqual(read.observation.agents[0].cost,cost);cases++;
+ for(const key of keys)for(const source of [...new Set(Object.values(names).flat()),'arbitrary-source']){
+  if(names[key].includes(source))continue;
+  assert.deepEqual(decode({...cost,[key]:{...cost[key],source}}),{ok:false,reason:'invalid'});
+ }
+}
+console.log(JSON.stringify({cases,provenancePreserved:true,crossClassRefused:true,legacyProducerDefault:true}));`);
+  const costRuntime = await run(process.execPath, [join(consumer, "cost-sources.mjs")], { cwd: consumer, env });
+  assert.equal(costRuntime.code, 0);
+  assert.deepEqual(JSON.parse(costRuntime.stdout), { cases: 32, provenancePreserved: true, crossClassRefused: true, legacyProducerDefault: true });
   stage = "actual paid account CLI -> installed decoder";
   const paidKey = join(scratch, "paid-fixture-key"), paidState = join(scratch, "paid-fixture-state"), paidDescriptor = join(scratch, "paid-descriptor.json");
   writeFileSync(paidKey, Buffer.alloc(32, 7), {mode: 0o600});
@@ -184,6 +217,29 @@ function tokenTotal(value: SessionUsage): number | null { return sessionProcesse
 if (accountUsage.ok) { acceptUsage(accountUsage.envelope); accountUsage.envelope.sessions.map(tokenTotal); }
 // @ts-expect-error installed usage declaration must reject a non-envelope
 acceptUsage({schemaVersion:1});
+import {AGENT_COST_SOURCE_NAMES, type AgentCost, type AgentCostSource} from '@rickylabs/harness-contracts';
+const quotaSource: AgentCostSource<'subscriptionHeadroom'> = 'harness-telemetry.governance.usage';
+const spendSource: AgentCostSource<'meteredSpend'> = 'harness-telemetry.runs';
+const tokensSource: AgentCostSource<'runTokens'> = 'harness-telemetry.runs';
+const capacitySource: AgentCostSource<'localCapacity'> = 'harness-telemetry.host-capacity';
+function quota(value: AgentCost['subscriptionHeadroom']['source']) { return value; }
+function spend(value: AgentCost['meteredSpend']['source']) { return value; }
+function tokens(value: AgentCost['runTokens']['source']) { return value; }
+function capacity(value: AgentCost['localCapacity']['source']) { return value; }
+quota(quotaSource);quota('dsh-telemetry.governance.usage');spend(spendSource);spend('dsh-telemetry.runs');
+tokens(tokensSource);tokens('dsh-telemetry.runs');capacity(capacitySource);capacity('dsh-telemetry.host-capacity');
+// @ts-expect-error quota source cannot be run accounting
+quota('harness-telemetry.runs');
+// @ts-expect-error metered source cannot be subscription quota
+spend('harness-telemetry.governance.usage');
+// @ts-expect-error tokens source cannot be host capacity
+tokens('harness-telemetry.host-capacity');
+// @ts-expect-error host capacity source cannot be run accounting
+capacity('dsh-telemetry.runs');
+// @ts-expect-error arbitrary source must not become a public row type
+quota('arbitrary-source');
+// @ts-expect-error public vocabulary tuples are readonly
+AGENT_COST_SOURCE_NAMES.runTokens[0] = 'harness-telemetry.runs';
 const agents: AgentObservationsReading = readAgentObservations({});
 const issueTree = readIssueAgentTreeSnapshot({});
 function acceptIssueTree(tree: IssueAgentTreeSnapshot): boolean { return tree.issues.every(issue => issue.complete || issue.reason !== null); }
@@ -309,6 +365,10 @@ if(invoked !== 1) throw new Error('checkpoint not reached');`);
     exports: { rootRuntime: true, rootTypesCompiled: true, serverTypesCompiled: true },
     assertions: "actual CLI -> offline installed strict decoder; deterministic CLI-main races; identity, scope, clocks, coverage, carrier fence, privacy; no Node imports or dependencies",
     limitations: ["synthetic only; no real-source acceptance", "carrier fence model only; no backend authorization claim", "trusted local storage; no adversarial ABA proof", "candidate only; no publication"] }));
+  console.log(JSON.stringify({ check: "installed-cost-source-compatibility", status: "PASS", version: pkg.version, protocol: 1,
+    tarball: metadata.filename, sha256: digest, combinations: 32, provenance: "preserved", crossClass: "refused",
+    declarations: "actual installed row-specific unions; six negative compiler controls", producer: "legacy retained",
+    limitations: ["synthetic candidate only; no publication or downstream LIVE readiness"] }));
   console.log(JSON.stringify({ check: "installed-governance", status: "PASS", version: pkg.version, protocol: 1,
     tarball: metadata.filename, sha256: digest, exports: { rootRuntime: true, serverRuntime: true, rootTypesCompiled: true, serverTypesCompiled: true },
     install: "npm install --offline --ignore-scripts --no-audit --no-fund <tarball>",

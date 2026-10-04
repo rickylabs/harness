@@ -11,6 +11,14 @@ const refuse = (value: unknown, reason = "invalid") => {
   if (!read.ok) assert.equal(read.reason, reason);
   assert.doesNotMatch(JSON.stringify(read), /PRIVATE_CANARY|private-value/);
 };
+it("retains generic governance producer compatibility for Harness and legacy identifiers", () => {
+  for (const producer of ["harness-telemetry", "dsh-telemetry"]) {
+    const input = { ...fixture(), producer };
+    const read = readGovernanceSnapshot(input);
+    assert.ok(read.ok);
+    assert.deepEqual(read.snapshot, input);
+  }
+});
 for (const name of readdirSync(root)) it(`P: installed-format synthetic fixture ${name}`, () => {
   const input = fixture(name.slice(0, -5));
   const reading = readGovernanceSnapshot(input);

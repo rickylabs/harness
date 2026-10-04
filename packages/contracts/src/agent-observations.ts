@@ -39,17 +39,25 @@ type CostRow<K, U, S, Scope, M> = {
   | { readonly availability: "unavailable"; readonly measurement: null; readonly reason: AgentUnavailableReason }
   | { readonly availability: "available"; readonly measurement: M; readonly reason: null }
 );
+/** Reader-first aliases are specific to each evidence class; decode preserves the received name. */
+export const AGENT_COST_SOURCE_NAMES = Object.freeze({
+  subscriptionHeadroom: Object.freeze(["harness-telemetry.governance.usage", "dsh-telemetry.governance.usage"] as const),
+  meteredSpend: Object.freeze(["harness-telemetry.runs", "dsh-telemetry.runs"] as const),
+  runTokens: Object.freeze(["harness-telemetry.runs", "dsh-telemetry.runs"] as const),
+  localCapacity: Object.freeze(["harness-telemetry.host-capacity", "dsh-telemetry.host-capacity"] as const),
+});
+export type AgentCostSource<K extends keyof typeof AGENT_COST_SOURCE_NAMES> = (typeof AGENT_COST_SOURCE_NAMES)[K][number];
 export interface AgentCost {
-  readonly subscriptionHeadroom: CostRow<"subscription_headroom", "percent_remaining", "dsh-telemetry.governance.usage", "subscription_account", {
+  readonly subscriptionHeadroom: CostRow<"subscription_headroom", "percent_remaining", AgentCostSource<"subscriptionHeadroom">, "subscription_account", {
     readonly remainingPercent: number; readonly windowMinutes: number; readonly resetsAt: string | null;
   }>;
-  readonly meteredSpend: CostRow<"metered_spend", "currency", "dsh-telemetry.runs", "run", {
+  readonly meteredSpend: CostRow<"metered_spend", "currency", AgentCostSource<"meteredSpend">, "run", {
     readonly amount: number; readonly currency: "USD"; readonly accounting: "reported";
   }>;
   /** These components overlap. There is deliberately no invented total. */
-  readonly runTokens: CostRow<"run_tokens", "tokens", "dsh-telemetry.runs", "run", Omit<RunUsage, "costUsd">>;
+  readonly runTokens: CostRow<"run_tokens", "tokens", AgentCostSource<"runTokens">, "run", Omit<RunUsage, "costUsd">>;
   /** Available only from a verified observer of the exact dispatch host. */
-  readonly localCapacity: CostRow<"local_capacity", "bytes", "dsh-telemetry.host-capacity", "host", {
+  readonly localCapacity: CostRow<"local_capacity", "bytes", AgentCostSource<"localCapacity">, "host", {
     readonly host: string; readonly ramUsedBytes: number; readonly ramTotalBytes: number | null;
     readonly vramUsedBytes: number | null; readonly vramTotalBytes: number | null;
     readonly cards?: readonly { readonly card: string; readonly vramUsedBytes: number; readonly vramTotalBytes: number }[];
@@ -221,13 +229,14 @@ function cost(value: unknown, at: string): AgentCost {
       continue;
     }
     const row = record(r[key], ["kind", "unit", "source", "scope", "availability", "measurement", "reason", "observedAt", "validUntil", "revision"]);
-    for (const f of ["kind", "unit", "source", "scope"] as const) if (row[f] !== expected[key][f]) return bad();
+    for (const f of ["kind", "unit", "scope"] as const) if (row[f] !== expected[key][f]) return bad();
+    const source = choice(row.source, AGENT_COST_SOURCE_NAMES[key]);
     const available = row.availability === "available";
     const m = metadata(row, at, available);
     let decoded: unknown;
     if (!available) {
       if (row.availability !== "unavailable" || row.measurement !== null) return bad();
-      decoded = { ...expected[key], ...m, reason: choice(row.reason, AGENT_UNAVAILABLE_REASONS) };
+      decoded = { ...expected[key], source, ...m, reason: choice(row.reason, AGENT_UNAVAILABLE_REASONS) };
     } else {
       if (row.reason !== null || ((key === "subscriptionHeadroom" || key === "localCapacity") && m.validUntil === null)) return bad();
       let measurement: unknown;
@@ -274,7 +283,7 @@ function cost(value: unknown, at: string): AgentCost {
         if (Object.keys(x).length === 0) return bad();
         measurement = Object.fromEntries(Object.entries(x).map(([k, v]) => [k, number(v)]));
       }
-      decoded = { ...expected[key], ...m, availability: "available", measurement, reason: null };
+      decoded = { ...expected[key], source, ...m, availability: "available", measurement, reason: null };
     }
     Object.assign(result, { [key]: decoded });
   }

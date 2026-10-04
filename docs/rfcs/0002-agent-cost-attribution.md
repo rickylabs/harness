@@ -67,9 +67,11 @@ produce currency. Invalid currency data does not discard a valid token or headro
 **CURRENT.** `subscriptionHeadroom` is the subscription window observed by this run, scoped
 `subscription_account`, not that agent's consumption. The latest timestamp batch in `run.quota` is
 selected; older windows are never carried forward into a newer batch, and different runs are never
-pooled. The existing source field `dsh-telemetry.governance.usage` identifies this quota evidence class;
-this implementation binds the account readings already carried by native telemetry rather than a
-new governance collector.
+pooled. The source field identifies this quota evidence class. Contract 0.36.0 readers accept
+`harness-telemetry.governance.usage` and the retained `dsh-telemetry.governance.usage`, preserving
+the received name. Producers still emit the legacy name until paired consumers are ready; the
+[wire migration guide](../how-to/telemetry-wire-migration.md) records the sequence. This implementation
+binds the account readings already carried by native telemetry rather than a new governance collector.
 
 **CURRENT.** The latest batch must have same-source readings, known percentages within 0–100,
 positive integer window lengths, and valid reset times after the observation. Conflicting readings
