@@ -1,10 +1,10 @@
 # ARCHITECTURE
 
-**Version 2 — owner amendment 2026-10-03, [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md).**
+**Version 2 — owner amendment 2026-10-03, [ADR 0005](method/doctrine/decisions/0005-harness-framework-identity.md).**
 
 This is the charter of the repository. It supersedes the dsh-only premise of [#30](https://github.com/rickylabs/harness/issues/30); the original roadmap and earlier decisions remain historical evidence. Eric ratified Decision Q and the coordinator approved the ordered cleanup through ADR 0005.
 
-Further amendments require an owner decision with rationale recorded in [`doctrine/decisions/`](doctrine/decisions/). An agent must work within the charter or present a new decision; it cannot silently redefine the product.
+Further amendments require an owner decision with rationale recorded in [`method/doctrine/decisions/`](method/doctrine/decisions/). An agent must work within the charter or present a new decision; it cannot silently redefine the product.
 
 ## 1. What this repository is
 
@@ -32,7 +32,7 @@ The table describes repository capabilities and their source boundaries, not a c
 | Published mechanism vocabulary | Dependency-free contracts, strict decoders and compatibility surfaces; the npm name stays stable. | [contracts](packages/contracts/README.md) |
 | Dispatcher | Issue polling, workspaces, native launch/goal delivery, owner authority, governor accounting and retirement fences. | [Orchid divybot](https://github.com/rickylabs/orchid/tree/main/cmd/divybot) |
 | Terminal control | Native agent status, panes and steering; availability and visible blocked states require observation. | [Herdr](https://github.com/herdrdev/herdr) |
-| Method | Staged planning, review, evidence, gates and milestone/run templates. | [doctrine](doctrine/WORKFLOW.md), [templates](.llm/harness/templates/) |
+| Method | Staged planning, review, evidence, gates and milestone/run templates. | [doctrine](method/doctrine/WORKFLOW.md), [templates](run-record/templates/) |
 
 The [package guide](packages/README.md) identifies stubs and partial providers. NetScript remains an external runtime/service dependency behind a boundary; its proven slice and wake primitives are prior art, not a second copied routing authority.
 
@@ -90,7 +90,7 @@ A check that could not execute is **unproven**. An empty CI check set, empty sou
 
 **I4 — A blocked lane carries an open decision.** A method lane blocked on an owner decision records the question, options, recommendation and cost of being wrong. A native startup/access block remains a truthful technical observation; it must not be converted into a successful launch.
 
-Existing receipt and blocked-decision checks are documented in [profiles](profiles/README.md) and the [gate contract](.llm/tools/gates/contract.ts). Passing synthetic fixtures does not prove that every live record is authentic or complete.
+Existing receipt and blocked-decision checks are documented in [profiles](profiles/README.md) and the [gate contract](method/tools/gates/contract.ts). Passing synthetic fixtures does not prove that every live record is authentic or complete.
 
 ## 8. Escalation is a record, not a conversation
 
@@ -106,9 +106,9 @@ A transport with no quota source is explicitly unmetered and uses configured phy
 
 ## 10. What is parked
 
-UHP-hosted dispatch remains parked under [ADR 0004](doctrine/decisions/0004-uhp-park-evidence.md). That decision records the 2026-09-13 measurement and ruling, including the removed borrowed router. It is historical evidence, not a fresh claim about today's host. [#294](https://github.com/rickylabs/harness/issues/294) is the required round-trip proof before reconsideration.
+UHP-hosted dispatch remains parked under [ADR 0004](method/doctrine/decisions/0004-uhp-park-evidence.md). That decision records the 2026-09-13 measurement and ruling, including the removed borrowed router. It is historical evidence, not a fresh claim about today's host. [#294](https://github.com/rickylabs/harness/issues/294) is the required round-trip proof before reconsideration.
 
-The dsh router is retained as an additional experiment under [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md). It lives in `experiments/routers/dsh`; default lifecycle and root TypeScript graphs select fourteen core packages. Explicit experiment checks verify the retained composition. Its real SDK/profile/lock identities and historical evidence stay intact. Testing it after the next APK requires its own authorization and proof.
+The dsh router is retained as an additional experiment under [ADR 0005](method/doctrine/decisions/0005-harness-framework-identity.md). It lives in `experiments/routers/dsh`; default lifecycle and root TypeScript graphs select fourteen core packages. Explicit experiment checks verify the retained composition. Its real SDK/profile/lock identities and historical evidence stay intact. Testing it after the next APK requires its own authorization and proof.
 
 E11 routing/discovery is core work. An optional router never replaces Orchid/Herdr or becomes a prerequisite for native dispatch by implication.
 
@@ -116,7 +116,7 @@ E11 routing/discovery is core work. An optional router never replaces Orchid/Her
 
 The owner-approved cleanup is sequential: documentation, core CLI compatibility, experiment isolation, then canonical method/run-record homes. The vault refresh starts after these four PRs merge. Operator naming, additive reader-first wire vocabulary and producer switches are pending migrations 5–7 with paired consumer rollout gates.
 
-Cleanup PRs 1–3 establish the framework identity, canonical core CLIs with compatibility aliases, and opt-in experiment isolation. No contracts publication or activation is required for these steps. Public core paths, root profiles and the npm name remain stable. Any later source/wire change must identify exact consumer pins and compatibility before a producer switch.
+Cleanup PRs 1–4 establish the framework identity, canonical core CLIs with compatibility aliases, opt-in experiment isolation, and canonical method/run-record homes with legacy compatibility. Completed `.llm/runs/` records remain at their original paths. No contracts publication or activation is required for these steps. Public core paths, root profiles and the npm name remain stable. Any later source/wire change must identify exact consumer pins and compatibility before a producer switch.
 
 ## 12. What the client is
 
@@ -128,4 +128,4 @@ Legacy protocol-1/mux interfaces remain documented compatibility surfaces, not a
 
 ## 13. How to disagree with this document
 
-Record a numbered decision with evidence, recommendation and cost of being wrong in [`doctrine/decisions/`](doctrine/decisions/). Preserve previous decisions as historical evidence and make any supersession explicit. Do not silently build against another architecture.
+Record a numbered decision with evidence, recommendation and cost of being wrong in [`method/doctrine/decisions/`](method/doctrine/decisions/). Preserve previous decisions as historical evidence and make any supersession explicit. Do not silently build against another architecture.

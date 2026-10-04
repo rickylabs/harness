@@ -10,7 +10,7 @@ neither is going to be renamed. This page exists so that nobody has to work that
 | Named by | a slug you choose: `<topic>--<qualifier>` | an id the vendor assigned |
 | Created by | a person or an agent starting work | Claude Code, Codex or opencode starting up |
 | Ends when | the work is ratified and merged | the session exits, or stops being written to |
-| Defined by | [`doctrine/WORKFLOW.md`](../../doctrine/WORKFLOW.md) | [`packages/telemetry`](../../packages/telemetry) |
+| Defined by | [`method/doctrine/WORKFLOW.md`](../../method/doctrine/WORKFLOW.md) | [`packages/telemetry`](../../packages/telemetry) |
 
 The relationship is one-to-many and unsurprising once stated: **one doctrine run spans many telemetry
 runs.** A single piece of work takes days, several agents and a dozen sessions. The doctrine run is
@@ -40,7 +40,7 @@ the work proceeds, reviewed as a pull request, and kept. One run means one slug,
 request, and the slug appears in all three.
 
 That is a deliberate divergence from the ephemeral scratch-directory convention this doctrine came
-from, and [`doctrine/WORKFLOW.md`](../../doctrine/WORKFLOW.md) records it as an open architectural
+from, and [`method/doctrine/WORKFLOW.md`](../../method/doctrine/WORKFLOW.md) records it as an open architectural
 question rather than a settled one. It buys reviewable reasoning: the argument for a change arrives
 in the same pull request as the change, and it is still there a year later.
 

@@ -9,7 +9,7 @@
 activity, board and coordination tools, published contracts, profiles and the
 method make agent work governed and observable. The retained DeepSeek Harness
 integration is an optional additional-router experiment, not the framework's host.
-[ADR 0005](doctrine/decisions/0005-harness-framework-identity.md) records the owner decision.
+[ADR 0005](method/doctrine/decisions/0005-harness-framework-identity.md) records the owner decision.
 
 [Understand the loop](#how-the-layer-works) | [Try a local proof](#local-proof-first) |
 [The board](BOARD.md) | [Documentation](docs/)
@@ -138,7 +138,7 @@ These operational references distinguish implemented behavior from planned work.
 
 | You are… | Go | First outcome |
 | --- | --- | --- |
-| evaluating or reviewing | the diagram above → [doctrine/WORKFLOW.md](doctrine/WORKFLOW.md) → [concepts](docs/concepts/) | how work is staged, gated and independently reviewed, and what counts as evidence |
+| evaluating or reviewing | the diagram above → [method/doctrine/WORKFLOW.md](method/doctrine/WORKFLOW.md) → [concepts](docs/concepts/) | how work is staged, gated and independently reviewed, and what counts as evidence |
 | contributing | the [status](#status) section → [packages/README.md](packages/README.md) → [CONTRIBUTING.md](CONTRIBUTING.md) | the current implementation truth and a safe change surface |
 | adopting locally | [local proof](#local-proof-first) → the [tutorial](docs/tutorials/01-from-clone-to-board.md) | deterministic behavior proven on your machine, without a daemon |
 | operating a live host | the [charter](ARCHITECTURE.md) → [Orchid](https://github.com/rickylabs/orchid) and [Herdr](https://github.com/herdrdev/herdr) → native provider and telemetry docs | dispatch/control ownership and each observed prerequisite |
@@ -241,7 +241,7 @@ belongs to the optional router; core CLI use above requires no profile installat
 
 ## Architecture commitments
 
-[ADR 0005](doctrine/decisions/0005-harness-framework-identity.md) establishes Harness
+[ADR 0005](method/doctrine/decisions/0005-harness-framework-identity.md) establishes Harness
 as our framework on [Orchid](https://github.com/rickylabs/orchid) and
 [Herdr](https://github.com/herdrdev/herdr). The core packages do not require the
 optional dsh composition. [ARCHITECTURE.md](ARCHITECTURE.md) owns the charter and
@@ -310,7 +310,9 @@ owns the complete package-to-epic table and implementation status.
 ```
 packages/             fourteen flat core packages
 docs/                 concepts, tutorials, how-to, reference, glossary
-doctrine/             how to work here: portable, stable, no runtime
+method/doctrine/      how to work here: portable, stable, no runtime
+method/tools/         method validators and gates
+run-record/templates/ canonical run artifacts; legacy entrypoints remain available
 experiments/routers/  optional router source, docs and deployment recipes
 scripts/              the repository-wide checks the root scripts run
 .llm/runs/            run artifacts — durable, reviewed via PR

@@ -26,7 +26,7 @@ tag, and it is applied deliberately.
 ### doctrine
 
 The portable half of this project: how work is staged, reviewed and gated, written as markdown with
-no runtime, in [`doctrine/`](../doctrine/). It works in any repository in any language, which is why
+no runtime, in [`method/doctrine/`](../method/doctrine/). It works in any repository in any language, which is why
 it is not in `docs/` and not in a package. Compare **mechanics** — the parts a machine can enforce,
 which are the packages.
 
@@ -65,8 +65,8 @@ A milestone being worked by several agents at once, with the shape written down 
 improvised: a baseline commit, one coordinator, one orchestrator per lane, and explicit limits —
 how many implementation slices may be active per lane, how many evaluators, how many expensive gates
 globally, how many writers a release may have. The templates are in
-[`.llm/harness/templates/`](../.llm/harness/templates) and the validator in
-[`.llm/tools/harness/`](../.llm/tools/harness).
+[`run-record/templates/`](../run-record/templates) and the validator in
+[`method/tools/harness/`](../method/tools/harness).
 
 ### owner fork
 
@@ -98,7 +98,7 @@ connection synchronization remain separate responsibilities. See [03 — The boa
 ### receipt
 
 Durable evidence that a **gate** ran, and what happened. A `GateReceipt`
-([`.llm/tools/gates/contract.ts`](../.llm/tools/gates/contract.ts)) carries the request it answers,
+([`method/tools/gates/contract.ts`](../method/tools/gates/contract.ts)) carries the request it answers,
 the commit it ran against, the runner's identity, the attempt number, timings, the exit code, and
 hashed stdout and stderr — under a versioned schema, so a receipt written last month is still
 readable.
@@ -137,7 +137,7 @@ composition uses `ctx.subagents`/`ctx.llm`; its coordinator vocabulary is `subsc
 
 The **mutation surface**: the exact set of paths a run declares, up front, that it may write.
 Anything found outside it afterwards is **drift**, not scope. Declared in a run's `supervisor.md`
-([`doctrine/WORKFLOW.md`](../doctrine/WORKFLOW.md)). An **evidence set** carries a `surface` field in
+([`method/doctrine/WORKFLOW.md`](../method/doctrine/WORKFLOW.md)). An **evidence set** carries a `surface` field in
 the same sense — the scope the gates it collects are claimed to cover.
 
 ---

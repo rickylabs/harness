@@ -1,6 +1,6 @@
 # Line endings, pinned — because two committed files in this repository are compared to a freshly
-# generated one byte for byte: `packages/dsh-app/cordis.patch.yml`, which `bundle.test.ts`
-# re-renders, and `packages/dsh-app/dump-config.golden.yml`, which `golden.test.ts` re-captures.
+# generated one byte for byte: `experiments/routers/dsh/cordis.patch.yml`, which `bundle.test.ts`
+# re-renders, and `experiments/routers/dsh/dump-config.golden.yml`, which `golden.test.ts` re-captures.
 #
 # Git's Windows default is `core.autocrlf=true`, which stores LF and checks out CRLF. Both files are
 # LF in the index, so without this line a fresh clone on Windows would hand those tests CRLF and

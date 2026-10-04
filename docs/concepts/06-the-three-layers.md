@@ -1,7 +1,7 @@
 # The three layers
 
 The framework, product backend and native client have separate responsibilities.
-[ADR 0005](../../doctrine/decisions/0005-harness-framework-identity.md) records the current
+[ADR 0005](../../method/doctrine/decisions/0005-harness-framework-identity.md) records the current
 framework on Orchid and Herdr and supersedes the dsh-only deployment premise. Each deployment owns a different question, and
 none of them may answer another's. This document describes all three at the same
 depth, because the failures that cost the most are the ones that live in the

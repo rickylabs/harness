@@ -179,7 +179,7 @@ export function checkWorkflow(workflow: Workflow): readonly Problem[] {
  * per agent. Each gate here corresponds to something that exists or is being built: the decomposition
  * gate to coverage of a milestone's acceptance items, the admission gate to E5's regimes, the
  * evaluator gate to `independence.ts`, the review and land gates to the verdicts in
- * `doctrine/WORKFLOW.md`.
+ * `method/doctrine/WORKFLOW.md`.
  */
 export const MILESTONE_WORKFLOW: Workflow = {
   name: "milestone",

@@ -88,19 +88,20 @@ tests the previous build. When in doubt, run the full four.
 
 ## Generated files are generated
 
-Six artifacts here are produced by code. Editing one by hand is the most common way a contribution
-fails, and for five of them it fails loudly — which is the point.
+Generated artifacts are produced by code. Edit their owning inputs and regenerate; the checks
+refuse drift rather than accepting a separately maintained copy.
 
 | File | Changed by |
 | --- | --- |
 | `docs/reference/cli/*.md` | `pnpm run docs:cli` |
 | `.claude/skills/board-process/SKILL.md` | `pnpm run skill:install` |
-| `packages/dsh-app/dump-config.golden.yml` | `pnpm run golden:bless -- "the reason it changed"` |
-| `packages/dsh-app/cordis.patch.yml` | editing `packages/dsh-app/src/bundle.ts` — never the file |
+| `experiments/routers/dsh/dump-config.golden.yml` | `pnpm run experiment:dsh:golden:bless -- "the reason it changed"` |
+| `experiments/routers/dsh/cordis.patch.yml` | editing `experiments/routers/dsh/src/bundle.ts` — never the file |
 | `.github/labels.yml` | `node packages/forge/dist/cli.js labels eject` |
+| `doctrine/*.md`, `doctrine/decisions/*.md`, `.llm/tools/{harness,gates}/*`, `.llm/harness/templates/*` | edit their canonical homes in `method/` or `run-record/templates/`, then `node scripts/method-compatibility.mjs --write` |
 | `BOARD.md` | nothing you can run — move the issue, and the next scheduled render follows |
 
-`BOARD.md` is the sixth and the exception, so it gets its own warning. No check guards it; the
+`BOARD.md` is the exception, so it gets its own warning. No check guards it; the
 [`board`](.github/workflows/board.yml) workflow simply overwrites it every half hour. An edit there
 is not rejected, it is *reverted*, silently, by a run nobody was watching — and in the meantime the
 page says something GitHub does not. The board is repaired on the issue. Always.
@@ -163,9 +164,9 @@ node packages/board/dist/cli.js check
 
 ## Substantial changes
 
-For anything beyond a scoped fix, the method is [`doctrine/`](doctrine/) — eight stages, and nothing
-mutates the world before the gate at stage G. [`WORKFLOW.md`](doctrine/WORKFLOW.md) has the
-lifecycle; [`PRINCIPLES.md`](doctrine/PRINCIPLES.md) has the rules a run is judged against. Both are
+For anything beyond a scoped fix, the method is [`method/doctrine/`](method/doctrine/) — eight stages, and nothing
+mutates the world before the gate at stage G. [`WORKFLOW.md`](method/doctrine/WORKFLOW.md) has the
+lifecycle; [`PRINCIPLES.md`](method/doctrine/PRINCIPLES.md) has the rules a run is judged against. Both are
 short on purpose.
 
 Two constraints apply to every change here, large or small, and are not restated per task:
@@ -180,7 +181,7 @@ Two constraints apply to every change here, large or small, and are not restated
 
 The four **ratified decisions** taken in [#30](https://github.com/rickylabs/harness/issues/30) are
 not open questions. A design that contradicts one is wrong before it is reviewed; reversing one is a
-numbered decision in [`doctrine/decisions/`](doctrine/decisions/) first, per
+numbered decision in [`method/doctrine/decisions/`](method/doctrine/decisions/) first, per
 [`ARCHITECTURE.md`](ARCHITECTURE.md) §13, not a change to #30, which is closed.
 [`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) lists all four with the status of each.
 

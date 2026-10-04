@@ -19,7 +19,7 @@ wins. They are restated in [`README.md`](README.md#ratified-decisions) and
 meets first and a root document that contradicts a ratified decision propagates the contradiction
 silently.
 
-Reversing one is a numbered decision in [`doctrine/decisions/`](doctrine/decisions/) before it is a
+Reversing one is a numbered decision in [`method/doctrine/decisions/`](method/doctrine/decisions/) before it is a
 change to code — [`ARCHITECTURE.md`](ARCHITECTURE.md) §13, carrying the evidence, the
 recommendation, and the cost of being wrong. Not a change to #30, which is closed.
 
@@ -31,7 +31,7 @@ A decision is one of three things, and the difference is load-bearing:
 | **Taken, reversible** | Decided, and expected to be revisited — the MIT licence, the divybot strangler-fig | The owner, on the board |
 | **Owner fork** | Open. Depends on what the owner wants, not on what is true. | Only the owner |
 
-Architecture decision records live in [`doctrine/decisions/`](doctrine/decisions/) for the reasoning
+Architecture decision records live in [`method/doctrine/decisions/`](method/doctrine/decisions/) for the reasoning
 that outlives the issue thread.
 
 ## Owner forks: the escalation primitive

@@ -490,7 +490,7 @@ async function plan(flags: Flags): Promise<number> {
  * One step, one question, one exit status.
  *
  * This is the shape a dispatcher can actually use: `admit --step dispatch-run || exit`. Principle 5
- * stops being a paragraph in `doctrine/PRINCIPLES.md` at the moment a shell script cannot get past
+ * stops being a paragraph in `method/doctrine/PRINCIPLES.md` at the moment a shell script cannot get past
  * this line, and that is the only form of it that survives contact with an agent in a hurry.
  */
 async function admitCommand(flags: Flags): Promise<number> {

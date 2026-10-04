@@ -48,6 +48,11 @@ jobs:
           node-version: "24"
           cache: pnpm
 
+      # Cold canonical and compatibility milestone commands are Deno programs.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+
       # `--frozen-lockfile` is most of the reason to run this at all: an install that quietly
       # resolves a different tree than the lockfile records has reproduced nothing.
       - run: pnpm install --frozen-lockfile

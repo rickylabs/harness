@@ -2,7 +2,7 @@
  * @rickylabs/coordinator — MASTER agent — milestone → epic → task workflows.
  *
  * Owned by E6 · #36. The first thing in it is not a workflow but a **gate**: evaluator
- * independence, from `doctrine/WORKFLOW.md`, turned from a sentence addressed to the author into a
+ * independence, from `method/doctrine/WORKFLOW.md`, turned from a sentence addressed to the author into a
  * function that returns a blocker. Everything else this package will grow — decompose, dispatch,
  * review, land — passes through gates, and a workflow engine whose gates are advisory is an
  * automation engine wearing a governance hat.

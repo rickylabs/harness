@@ -1,7 +1,7 @@
 /**
  * Evaluator independence, as a decision rather than a convention.
  *
- * `doctrine/WORKFLOW.md` says independent evaluation stages "use a model that did not author the
+ * `method/doctrine/WORKFLOW.md` says independent evaluation stages "use a model that did not author the
  * artifact under review". That sentence is advisory: it is addressed to whoever is reading, and
  * whoever is reading is usually the author. An author checking whether they are allowed to review
  * their own work, under time pressure, with the only other candidate rate-limited, is not a gate —

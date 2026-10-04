@@ -2,7 +2,7 @@
 
 Fourteen flat core packages implement Harness mechanisms or define explicit partial/stub boundaries.
 The fifteenth workspace package, `@rickylabs/harness-router-dsh`, retains the optional DeepSeek Harness router experiment.
-[ADR 0005](../doctrine/decisions/0005-harness-framework-identity.md) records the current framework
+[ADR 0005](../method/doctrine/decisions/0005-harness-framework-identity.md) records the current framework
 identity on Orchid and Herdr. Core modules do not depend on that experimental host.
 
 The [experiment](../experiments/routers/dsh/README.md) lives outside `packages/` and is excluded
@@ -13,7 +13,7 @@ activation, credentials or a successful native launch on a particular host.
 
 | Package | Implemented boundary | Owner |
 | --- | --- | --- |
-| `subagents` | Native task requests, provider contract, selection and UHP adapter; UHP dispatch is parked by [ADR 0004](../doctrine/decisions/0004-uhp-park-evidence.md) | E3 · #33 |
+| `subagents` | Native task requests, provider contract, selection and UHP adapter; UHP dispatch is parked by [ADR 0004](../method/doctrine/decisions/0004-uhp-park-evidence.md) | E3 · #33 |
 | `provider-claude` | Claude Agent SDK adapter, injected by a composition root | E3 · #33 |
 | `provider-opencode` | Adapter to a configured OpenCode server; it does not own that server | E3 · #33 |
 | `provider-codex` | Partial: app-server route identity and pre-turn protocol prerequisite, not a composed provider | E3 · #33 |

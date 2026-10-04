@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "legacy": "doctrine/GATES.md",
+      "canonical": "method/doctrine/GATES.md",
+      "kind": "document"
+    },
+    {
+      "legacy": "doctrine/PRINCIPLES.md",
+      "canonical": "method/doctrine/PRINCIPLES.md",
+      "kind": "document"
+    },
+    {
+      "legacy": "doctrine/TOOLCHAIN.md",
+      "canonical": "method/doctrine/TOOLCHAIN.md",
+      "kind": "document"
+    },
+    {
+      "legacy": "doctrine/WORKFLOW.md",
+      "canonical": "method/doctrine/WORKFLOW.md",
+      "kind": "document"
+    },
+    {
+      "legacy": "doctrine/decisions/0001-doctrine-and-memory.md",
+      "canonical": "method/doctrine/decisions/0001-doctrine-and-memory.md",
+      "kind": "document"
+    },
+    {
+      "legacy": "doctrine/decisions/0002-sandboxctl-execution-channel.md",
+      "canonical": "method/doctrine/decisions/0002-sandboxctl-execution-channel.md",
+      "kind": "document"
+    },
+    {
+      "legacy": "doctrine/decisions/0003-architecture-v1.md",
+      "canonical": "method/doctrine/decisions/0003-architecture-v1.md",
+      "kind": "document"
+    },
+    {
+      "legacy": "doctrine/decisions/0004-uhp-park-evidence.md",
+      "canonical": "method/doctrine/decisions/0004-uhp-park-evidence.md",
+      "kind": "document"
+    },
+    {
+      "legacy": "doctrine/decisions/0005-harness-framework-identity.md",
+      "canonical": "method/doctrine/decisions/0005-harness-framework-identity.md",
+      "kind": "document"
+    },
+    {
+      "legacy": ".llm/tools/gates/contract.ts",
+      "canonical": "method/tools/gates/contract.ts",
+      "kind": "module"
+    },
+    {
+      "legacy": ".llm/tools/gates/evidence-set.ts",
+      "canonical": "method/tools/gates/evidence-set.ts",
+      "kind": "module"
+    },
+    {
+      "legacy": ".llm/tools/harness/blocked-decisions.test.mjs",
+      "canonical": "method/tools/harness/blocked-decisions.test.mjs",
+      "kind": "test"
+    },
+    {
+      "legacy": ".llm/tools/harness/matrix-receipts.mjs",
+      "canonical": "method/tools/harness/matrix-receipts.mjs",
+      "kind": "cli"
+    },
+    {
+      "legacy": ".llm/tools/harness/matrix-receipts.test.mjs",
+      "canonical": "method/tools/harness/matrix-receipts.test.mjs",
+      "kind": "test"
+    },
+    {
+      "legacy": ".llm/tools/harness/render-milestone-status.ts",
+      "canonical": "method/tools/harness/render-milestone-status.ts",
+      "kind": "cli"
+    },
+    {
+      "legacy": ".llm/tools/harness/validate-milestone-cluster.ts",
+      "canonical": "method/tools/harness/validate-milestone-cluster.ts",
+      "kind": "cli"
+    },
+    {
+      "legacy": ".llm/harness/templates/context-pack.md",
+      "canonical": "run-record/templates/context-pack.md",
+      "kind": "template"
+    },
+    {
+      "legacy": ".llm/harness/templates/drift.md",
+      "canonical": "run-record/templates/drift.md",
+      "kind": "template"
+    },
+    {
+      "legacy": ".llm/harness/templates/milestone-cluster-state.json",
+      "canonical": "run-record/templates/milestone-cluster-state.json",
+      "kind": "template"
+    },
+    {
+      "legacy": ".llm/harness/templates/milestone-dependency-dag.json",
+      "canonical": "run-record/templates/milestone-dependency-dag.json",
+      "kind": "template"
+    },
+    {
+      "legacy": ".llm/harness/templates/milestone-intake.json",
+      "canonical": "run-record/templates/milestone-intake.json",
+      "kind": "template"
+    },
+    {
+      "legacy": ".llm/harness/templates/milestone-inventory.json",
+      "canonical": "run-record/templates/milestone-inventory.json",
+      "kind": "template"
+    },
+    {
+      "legacy": ".llm/harness/templates/milestone-status.md",
+      "canonical": "run-record/templates/milestone-status.md",
+      "kind": "template"
+    },
+    {
+      "legacy": ".llm/harness/templates/plan.md",
+      "canonical": "run-record/templates/plan.md",
+      "kind": "template"
+    },
+    {
+      "legacy": ".llm/harness/templates/supervisor.md",
+      "canonical": "run-record/templates/supervisor.md",
+      "kind": "template"
+    },
+    {
+      "legacy": ".llm/harness/templates/worklog.md",
+      "canonical": "run-record/templates/worklog.md",
+      "kind": "template"
+    }
+  ]
+}
