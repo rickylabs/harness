@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **471/566 done · 33 running · 26 queued · 16 abandoned · 20 invisible**
+`[################----]` **471/568 done · 33 running · 26 queued · 16 abandoned · 22 invisible**
 
-_Latest board activity: 2026-10-03T22:03:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-04T03:26:11Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (33)
 
@@ -46,7 +46,7 @@ Something could be acting on these right now.
 | [#558 [rickylabs/harness#540] Tour (video v2): launchBlock read-only walk](https://github.com/rickylabs/harness/issues/558) | `plan` | — |
 | [#576 [rickylabs/harness#575] App picker launch test (one per CLI)](https://github.com/rickylabs/harness/issues/576) | `plan` | — |
 
-## Not on the board (7)
+## Not on the board (9)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -59,8 +59,10 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#566 [cli-smoke] OpenCode Gemini exact first-prompt acceptance after #65 (one attempt)](https://github.com/rickylabs/harness/issues/566) | — | — |
 | [#569 [cli-smoke] OpenCode GLM 5.3 Flash marked final and Done after #68 (one attempt)](https://github.com/rickylabs/harness/issues/569) | — | — |
 | [#575 App picker launch test (one per CLI)](https://github.com/rickylabs/harness/issues/575) | — | — |
+| [#581 [rc-proof] Claude Haiku phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/581) | — | — |
+| [#582 [rc-proof] Codex Luna phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/582) | — | — |
 
-## Anomalies (40)
+## Anomalies (42)
 
 `dsh-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -115,6 +117,8 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#566** — open item has no status label, so it appears in no column
 - **#569** — open item has no status label, so it appears in no column
 - **#575** — open item has no status label, so it appears in no column
+- **#581** — open item has no status label, so it appears in no column
+- **#582** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -139,7 +143,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 270/317 done · 17 running · 3 queued · 10 abandoned · 17 invisible
+`[##########--]` 270/319 done · 17 running · 3 queued · 10 abandoned · 19 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -148,7 +152,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 237/280 done · 16 running · 2 queued · 10 abandoned · 15 invisible | — |
+| _(no epic)_ | `[##########--]` 237/282 done · 16 running · 2 queued · 10 abandoned · 17 invisible | — |
 
 ## Waiting to start
 
@@ -192,7 +196,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  471/566 done · 33 running · 26 queued · 16 abandoned · 20 invisible
+# rickylabs/harness  [################----]  471/568 done · 33 running · 26 queued · 16 abandoned · 22 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -480,7 +484,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [#################---]  270/317 done · 17 running · 3 queued · 10 abandoned · 17 invisible
+## (no milestone)  [################----]  270/319 done · 17 running · 3 queued · 10 abandoned · 19 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -815,6 +819,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR578 fix(routing): establish OpenCode native default effort (p0)
     shipped              #579 Fix incomplete OpenCode native catalog capture (p0)
     shipped              PR580 fix(routing): read complete OpenCode catalog over bounded HTTP (p0)
+    no status            #581 [rc-proof] Claude Haiku phone follow and steer (one attempt)
+    no status            #582 [rc-proof] Codex Luna phone follow and steer (one attempt)
 ```
 
 </details>
