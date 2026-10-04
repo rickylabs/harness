@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **477/574 done · 33 running · 26 queued · 16 abandoned · 22 invisible**
+`[################----]` **477/576 done · 35 running · 26 queued · 16 abandoned · 22 invisible**
 
-_Latest board activity: 2026-10-04T17:47:56Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-04T20:22:41Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (33)
+## Moving now (35)
 
 Something could be acting on these right now.
 
@@ -45,6 +45,8 @@ Something could be acting on these right now.
 | [#557 [rickylabs/harness#540] Tour (video v2): launchBlock read-only walk](https://github.com/rickylabs/harness/issues/557) | `plan` | — |
 | [#558 [rickylabs/harness#540] Tour (video v2): launchBlock read-only walk](https://github.com/rickylabs/harness/issues/558) | `plan` | — |
 | [#576 [rickylabs/harness#575] App picker launch test (one per CLI)](https://github.com/rickylabs/harness/issues/576) | `plan` | — |
+| [#589 [rickylabs/netscript#2063] fix(ai/anthropic): Claude 5.5 IDs rejected locally on 0.0.7; qualify forward-compatible model support](https://github.com/rickylabs/harness/issues/589) | `plan` | — |
+| [PR590 feat(profiles): add a fix profile for single-defect pull requests](https://github.com/rickylabs/harness/pull/590) | `impl-eval` | — |
 
 ## Not on the board (9)
 
@@ -62,13 +64,14 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#581 [rc-proof] Claude Haiku phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/581) | — | — |
 | [#582 [rc-proof] Codex Luna phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/582) | — | — |
 
-## Anomalies (46)
+## Anomalies (47)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#590** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
@@ -147,7 +150,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 276/325 done · 17 running · 3 queued · 10 abandoned · 19 invisible
+`[##########--]` 276/327 done · 19 running · 3 queued · 10 abandoned · 19 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -157,7 +160,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 239/284 done · 16 running · 2 queued · 10 abandoned · 17 invisible | — |
+| _(no epic)_ | `[##########--]` 239/286 done · 18 running · 2 queued · 10 abandoned · 17 invisible | — |
 
 ## Waiting to start
 
@@ -201,7 +204,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  477/574 done · 33 running · 26 queued · 16 abandoned · 22 invisible
+# rickylabs/harness  [################----]  477/576 done · 35 running · 26 queued · 16 abandoned · 22 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -489,7 +492,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  276/325 done · 17 running · 3 queued · 10 abandoned · 19 invisible
+## (no milestone)  [################----]  276/327 done · 19 running · 3 queued · 10 abandoned · 19 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -835,6 +838,8 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #582 [rc-proof] Codex Luna phone follow and steer (one attempt)
     shipped              PR583 refactor(cli): add Harness command names with compatible aliases (p1)
     shipped              PR584 refactor: isolate dsh as an optional router experiment (p1)
+    plan                 #589 [rickylabs/netscript#2063] fix(ai/anthropic): Claude 5.5 IDs rejected locally on 0.0.7; qualify forward-compatible model support
+    impl-eval            PR590 feat(profiles): add a fix profile for single-defect pull requests
 ```
 
 </details>
