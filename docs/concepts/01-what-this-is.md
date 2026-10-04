@@ -69,9 +69,9 @@ supersedes the former dsh-only premise while retaining the earlier decisions as 
 
 The [package guide](../../packages/README.md) maps implemented, partial and stub boundaries.
 [`forge`](../../packages/forge) installs the board process into another repository.
-[`dsh-app`](../../packages/dsh-app) retains DeepSeek Harness as an optional additional-router
-experiment with genuine upstream dependencies. Its approved relocation and exclusion from default
-checks are pending; it is not required to host the core framework. Integration testing waits until
+[`harness-router-dsh`](../../experiments/routers/dsh) retains DeepSeek Harness as an optional additional-router
+experiment with genuine upstream dependencies. It lives outside the fourteen core packages and has explicit
+checks; default lifecycle stages do not execute it. Integration testing waits until
 after the next APK.
 
 ## Carry the method between projects

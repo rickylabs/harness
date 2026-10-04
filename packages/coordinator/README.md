@@ -238,7 +238,7 @@ order through `settle` and admits the reconstructed state again. Pending downstr
 permitted; non-pending future states are refused. This uses the existing citation rules, including
 read-step evidence, without fetching or attesting any cited reference.
 
-The helper is pure. The [offline driver in dsh-app](../dsh-app/README.md#offline-durable-dispatch)
+The helper is pure. The [offline driver in the optional router](../../experiments/routers/dsh/README.md#offline-durable-dispatch)
 owns composition with routing and the store; coordinator gains no routing/provider dependency and
 no execution channel. Forked and blocked prerequisites stop at the first admission pass, so they
 are never replayed as new outcomes.

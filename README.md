@@ -191,12 +191,12 @@ agent:
 | `harness-coordinator` | [`coordinator`](packages/coordinator) | May this step run? Who is allowed to review it? What changed since last time? |
 | `harness-telemetry` | [`telemetry`](packages/telemetry) | What did the fleet actually do — read from disk, with nothing awake? |
 | `harness-forge` | [`forge`](packages/forge) | Install this board process into any repository. |
-| `dsh-profile` | [`dsh-app`](packages/dsh-app) | Compose the optional dsh-router experiment. |
 
 The four core commands also accept the temporary `dsh-board`, `dsh-coordinator`,
 `dsh-telemetry`, and `dsh-forge` compatibility names. Each alias points to the same
-entrypoint and returns the same output and exit status. The optional `dsh-profile`
-experiment keeps its current name until its separate relocation.
+entrypoint and returns the same output and exit status. The optional [router experiment](experiments/routers/dsh/README.md) has separate
+`harness-dsh-profile` / `dsh-profile` names and explicit build/check commands; default core gates
+do not execute it.
 
 <details>
 <summary>Why <code>node packages/…/dist/cli.js</code> and not the bare command name</summary>
@@ -205,16 +205,14 @@ Every package here except `contracts` is `private: true`, so pnpm links their
 bins where a *dependent* resolves them — not at the repository root. Running
 the built entry point directly is the honest invocation from a fresh clone,
 and it is what the repository's own scripts do (see `skill:install` in the
-root `package.json`). The optional experiment's `dsh-profile install` puts its composition where a dsh process can find it;
+root `package.json`). The optional experiment's `harness-dsh-profile install` puts its composition where a dsh process can find it;
 core CLI use does not require that installation.
 
 </details>
 
 Further proofs, by what they need:
 
-- **Offline, isolated fixtures.** See what the profile installer would write,
-  without writing it: `node packages/dsh-app/dist/cli.js install --dry-run
-  --home /tmp/dsh-home`. Ask telemetry where it would keep its log: `node
+- **Offline, isolated fixtures.** Ask telemetry where it would keep its log: `node
   packages/telemetry/dist/cli.js where --home /tmp/tel-home`. Render the
   governance display from a synthetic observation file — the fixture and its
   commands live in the
@@ -231,17 +229,15 @@ Further proofs, by what they need:
   ends that step with a readback that can fail loudly.
 - **A live host.** Provider sessions (an injected Claude Agent SDK; a
   long-lived `opencode serve`), local model servers, and the optional
-  [dsh web experiment](deploy/README.md) all need machines
+  [dsh web experiment](experiments/routers/dsh/deploy/README.md) all need machines
   and credentials this repository does not supply. The docs state those
   prerequisites; nothing here claims they passed.
 
 To be walked through the whole thing once — building, installing the board
-process into a repository of your own, moving an item, composing the profile,
-recording a run and reading it back —
+process into a repository of your own, moving an item, recording a run and reading it back —
 [From a clone to a moving board](docs/tutorials/01-from-clone-to-board.md) is
-fifteen minutes and needs no server. Its retained profile exercise belongs to the optional
-router; core CLI use above requires no profile installation. The experiment's documentation
-move is pending cleanup PR 3.
+fifteen minutes and needs no server. The [profile tutorial](experiments/routers/dsh/docs/tutorials/install-profile.md)
+belongs to the optional router; core CLI use above requires no profile installation.
 
 ## Architecture commitments
 
@@ -302,9 +298,9 @@ owns the complete package-to-epic table and implementation status.
   configured choices and evaluator independence.
 - **Connect:** [`forge`](packages/forge) installs the board process, and
   [`netscript-bridge`](packages/netscript-bridge) owns the outbound service adapter.
-- **Experiment:** [`dsh-app`](packages/dsh-app) retains the optional dsh profile
-  and composition. Its approved move to `experiments/routers/dsh` and exclusion
-  from default checks are pending; it is not the native dispatcher.
+- **Experiment:** [`harness-router-dsh`](experiments/routers/dsh) retains the optional dsh profile
+  and composition outside the fourteen-package core. Run `pnpm run experiment:dsh:check`
+  explicitly; default lifecycle stages do not execute the experiment.
 - **Publish the boundary:** [`contracts`](packages/contracts) defines portable
   mechanism data and readers for the product backend. The native client consumes
   the backend's generated API/client.
@@ -312,10 +308,10 @@ owns the complete package-to-epic table and implementation status.
 ### Repository map
 
 ```
-packages/             flat core packages; dsh-app experiment pending relocation
+packages/             fourteen flat core packages
 docs/                 concepts, tutorials, how-to, reference, glossary
 doctrine/             how to work here: portable, stable, no runtime
-deploy/               retained dsh experiment recipe, pending relocation
+experiments/routers/  optional router source, docs and deployment recipes
 scripts/              the repository-wide checks the root scripts run
 .llm/runs/            run artifacts — durable, reviewed via PR
 .llm/harness/         the artifact templates a run fills in

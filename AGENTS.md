@@ -31,9 +31,10 @@ native observations, provider boundaries, board/coordination mechanics and publi
 The method and run record make the work resumable and reviewable. [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md)
 records Eric's Decision Q; [ARCHITECTURE.md](ARCHITECTURE.md) owns the charter.
 
-`packages/dsh-app` is the retained optional dsh-router experiment. It currently remains in the
-workspace; its approved relocation to `experiments/routers/dsh` and default-check exclusion are
-pending. It is not the framework host or the native launch path. Live testing waits until after
+`experiments/routers/dsh` is the retained optional dsh-router experiment. It remains in the
+single declared workspace for dependency resolution; default build/typecheck/test and the
+root TypeScript solution select only the fourteen core packages. Explicit experiment commands
+check its own source, composition and references. It is not the framework host or the native launch path. Live testing waits until after
 the next APK and separate authorization.
 
 [BOARD.md](BOARD.md) is a generated projection. Where it and an issue disagree, the issue wins.
@@ -78,7 +79,8 @@ A pnpm workspace with fourteen core packages and one retained dsh composition ex
 Stubs reserve a boundary; their existence does not prove implemented or deployed behavior.
 
 ```text
-packages/                    flat core packages, plus dsh-app until its approved move
+packages/                    fourteen flat core packages
+experiments/routers/dsh/      opt-in router source, docs and deployment recipe
 profiles/                    stable root process/routing entrypoints
 doctrine/                    portable method; canonical home migration is pending
 .llm/runs/                   retained committed historical run evidence

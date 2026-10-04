@@ -18,21 +18,7 @@ importers:
         specifier: ~5.9.3
         version: 5.9.3
 
-  packages/board:
-    dependencies:
-      '@rickylabs/subagents':
-        specifier: workspace:*
-        version: link:../subagents
-
-  packages/contracts: {}
-
-  packages/coordinator:
-    dependencies:
-      '@rickylabs/harness-contracts':
-        specifier: workspace:*
-        version: link:../contracts
-
-  packages/dsh-app:
+  experiments/routers/dsh:
     dependencies:
       '@deepseek-ai/dsh':
         specifier: ^0.1.2-rc.1
@@ -60,46 +46,46 @@ importers:
         version: 3.18.2
       '@rickylabs/board':
         specifier: workspace:*
-        version: link:../board
+        version: link:../../../packages/board
       '@rickylabs/coordinator':
         specifier: workspace:*
-        version: link:../coordinator
+        version: link:../../../packages/coordinator
       '@rickylabs/forge':
         specifier: workspace:*
-        version: link:../forge
+        version: link:../../../packages/forge
       '@rickylabs/governance':
         specifier: workspace:*
-        version: link:../governance
+        version: link:../../../packages/governance
       '@rickylabs/harness-contracts':
         specifier: workspace:*
-        version: link:../contracts
+        version: link:../../../packages/contracts
       '@rickylabs/llm-local':
         specifier: workspace:*
-        version: link:../llm-local
+        version: link:../../../packages/llm-local
       '@rickylabs/netscript-bridge':
         specifier: workspace:*
-        version: link:../netscript-bridge
+        version: link:../../../packages/netscript-bridge
       '@rickylabs/provider-acp':
         specifier: workspace:*
-        version: link:../provider-acp
+        version: link:../../../packages/provider-acp
       '@rickylabs/provider-claude':
         specifier: workspace:*
-        version: link:../provider-claude
+        version: link:../../../packages/provider-claude
       '@rickylabs/provider-codex':
         specifier: workspace:*
-        version: link:../provider-codex
+        version: link:../../../packages/provider-codex
       '@rickylabs/provider-opencode':
         specifier: workspace:*
-        version: link:../provider-opencode
+        version: link:../../../packages/provider-opencode
       '@rickylabs/routing':
         specifier: workspace:*
-        version: link:../routing
+        version: link:../../../packages/routing
       '@rickylabs/subagents':
         specifier: workspace:*
-        version: link:../subagents
+        version: link:../../../packages/subagents
       '@rickylabs/telemetry':
         specifier: workspace:*
-        version: link:../telemetry
+        version: link:../../../packages/telemetry
       zod:
         specifier: ^4.5.4
         version: 4.5.4
@@ -107,6 +93,20 @@ importers:
       '@deepseek-ai/cordis':
         specifier: ^4.0.2
         version: 4.0.2(@deepseek-ai/cordis-plugin-include@1.0.7)(@deepseek-ai/cordis-plugin-loader@1.0.3)
+
+  packages/board:
+    dependencies:
+      '@rickylabs/subagents':
+        specifier: workspace:*
+        version: link:../subagents
+
+  packages/contracts: {}
+
+  packages/coordinator:
+    dependencies:
+      '@rickylabs/harness-contracts':
+        specifier: workspace:*
+        version: link:../contracts
 
   packages/forge:
     dependencies:

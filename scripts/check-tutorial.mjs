@@ -68,7 +68,8 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const TUTORIALS = join(ROOT, "docs", "tutorials");
+const EXPERIMENT = process.argv.includes("--experiment-dsh");
+const TUTORIALS = EXPERIMENT ? join(ROOT, "experiments", "routers", "dsh", "docs", "tutorials") : join(ROOT, "docs", "tutorials");
 
 /**
  * What each shell variable's temp directory is printed as in the prose.

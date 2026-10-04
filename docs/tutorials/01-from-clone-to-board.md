@@ -50,7 +50,7 @@ pnpm run build
 ```
 
 `build` is not just compilation. It checks the project graph, checks the package lifecycle scripts,
-compiles every package, checks what is publishable, and regenerates the CLI reference pages to
+compiles the fourteen core packages, checks what is publishable, and regenerates the CLI reference pages to
 confirm they still match the CLIs. If any of those disagree with the code, the build fails here
 rather than shipping a document that lies.
 
@@ -61,7 +61,7 @@ pnpm test
 ```
 
 Each package prints its own totals — a `pass` line and a `fail` line per
-package, prefixed with its path, like `packages/dsh-app test: … pass …`
+package, prefixed with its path, like `packages/board test: … pass …`
 (illustrative expectation — source-derived; counts vary as packages change).
 The counts grow as the project does. The number that matters is `fail 0`,
 on every package, and `pnpm test` exiting `0`.
@@ -110,7 +110,7 @@ node packages/forge/dist/cli.js doctor --repo owner/scratch --cwd ../scratch
 <details>
 <summary>Why <code>node packages/…/dist/cli.js</code> rather than a bare command</summary>
 
-Every package here except `contracts` is `private: true`, so pnpm links their executables where a
+Every core package here except `contracts` is `private: true`, so pnpm links their executables where a
 *dependent* resolves them, not at the repository root. Running the built entry point is the honest
 invocation from a fresh clone, and it is what this repository's own scripts do. The root README
 [explains it once](../../README.md#local-proof-first) and nothing else needs to.
@@ -265,100 +265,11 @@ Both are fixable with `gh issue edit`. The rule the taxonomy owns: on a complete
 phase label with `status:shipped`; on a not-planned close, remove the `status:` label entirely,
 because it did not ship.
 
-## Step 4 — Install the profile and see the projection
+## Optional router experiment
 
-Steps 2 and 3 used the CLIs directly. The same code also loads into `dsh` as plugins, and the
-profile is what registers them.
+Core board and telemetry commands run directly. The [optional dsh router profile tutorial](../../experiments/routers/dsh/docs/tutorials/install-profile.md) has separate build, composition and reference checks; it is excluded from the default core tutorial checker. Actual router acceptance remains after the next APK.
 
-> [!NOTE]
-> **Which output blocks are checked.** Every output block on this page carries a machine-readable
-> `verify:` directive in an HTML comment above it, and `pnpm run check:tutorial` — part of
-> `pnpm run build` — reads all of them. So each block is one of two things, and which one is never a
-> matter of trust:
-> 1. **Executed transcripts (normalized).** Re-run on every build and compared against what the
->    command above actually prints. Machine-specific paths are normalized to display placeholders
->    first: `/tmp/dsh-home` stands for `$PROFILE_HOME`, `/tmp/tel-home` for `$TELEMETRY_HOME`, and
->    `/path/to/harness` for your checkout path — none of which are the real temporary paths. Where a
->    block shows only part of a long output it is marked as an excerpt, and the check requires those
->    lines to appear together and in order rather than to be the whole of it. Trailing whitespace and
->    terminal blank lines are trimmed on both sides of the comparison.
-> 2. **Illustrative output (unexecuted).** Derived from source contracts rather than run here: live
->    GitHub responses, and the synthetic failures a healthy run never produces. The check prints this
->    list with its reasons on every run, so the boundary between what is proved and what is trusted
->    is something you can read rather than assume.
-
-Create a unique temporary profile home directory with `mktemp -d` so nothing touches your real one:
-
-```bash
-PROFILE_HOME=$(mktemp -d)
-node packages/dsh-app/dist/cli.js install --home "$PROFILE_HOME"
-```
-
-*(Executed transcript — normalized; see note above)*
-<!-- verify: exact -->
-```text
-profile   rickylabs
-surface   tui
-directory /tmp/dsh-home/profiles/rickylabs
-bundles   @deepseek-ai/dsh-base, @rickylabs/dsh-app
-rows      harness-subagents, harness-board, harness-coordinator, harness-telemetry, harness-routing, harness-llm
-link      node_modules/@rickylabs/dsh-app -> /path/to/harness/packages/dsh-app
-
-wrote  package.json
-wrote  pnpm-workspace.yaml
-wrote  cordis.patch.yml
-wrote  node_modules/@rickylabs/dsh-app
-
-6 rows will be inserted. Verify with:
-  dsh --profile rickylabs --dump-config
-```
-
-Take it up on that. `dsh` is resolvable from the package that depends on it:
-
-```bash
-DSH_HOME="$PROFILE_HOME" \
-  packages/dsh-app/node_modules/.bin/dsh --profile rickylabs --dump-config
-```
-
-The output is long — it is the entire plugin graph. The part you are looking for is at the very
-bottom, after the whole base bundle (excerpted below to show only the appended bundle rows):
-
-*(Executed excerpt — normalized, base bundle omitted; see note above)*
-<!-- verify: contains -->
-```text
-# == @rickylabs/dsh-app
-- id: harness-subagents
-  name: '@rickylabs/dsh-app/plugins/subagents'
-- id: harness-board
-  name: '@rickylabs/dsh-app/plugins/board'
-- id: harness-coordinator
-  name: '@rickylabs/dsh-app/plugins/coordinator'
-- id: harness-telemetry
-  name: '@rickylabs/dsh-app/plugins/telemetry'
-- id: harness-routing
-  name: '@rickylabs/dsh-app/plugins/routing'
-  config:
-    document: '@rickylabs/routing/config/routing.v1.json'
-- id: harness-llm
-  name: '@rickylabs/dsh-app/plugins/llm'
-```
-
-Six rows, appended after the base bundle rather than replacing anything in it. That is the profile
-doing its one job. To confirm later that it is still installed and unmodified:
-
-```bash
-node packages/dsh-app/dist/cli.js check --home "$PROFILE_HOME"
-```
-
-which prints `installed and matching.` (preceded by the profile configuration summary) and exits `0`
-(executed expectation, normalized; see note above).
-
-**If it fails.** `check` exits non-zero when the installed profile has drifted from what this
-repository would generate — usually because the working tree moved after `install` wrote the link.
-Re-running `install` fixes it. This step does not boot a surface; booting one is a separate job with
-its own prerequisites, and it belongs in a how-to rather than here.
-
-## Step 5 — Record a run and read it back
+## Step 4 — Record a run and read it back
 
 Telemetry answers one question: *what has been running, and where do I look when one of them went
 wrong.* It reads from disk. No agent needs to be awake, and nothing here reaches the network.
@@ -432,7 +343,7 @@ demo-1 (claude, complete) — look here, in this order:
 Clean up the two temporary directories when you are done:
 
 ```bash
-rm -rf "$PROFILE_HOME" "$TELEMETRY_HOME"
+rm -rf "$TELEMETRY_HOME"
 ```
 
 **If it fails.** Exit `3` means the picture is incomplete rather than wrong, and the output says
@@ -454,19 +365,18 @@ read as unknown, which is why the run in your first attempt may have come back a
 
 ## What you just did
 
-Five things, none of which needed a server:
+Four things, none of which needed a server:
 
-1. Built the workspace, with its own consistency checks running as part of the build.
+1. Built the fourteen core packages, with its own consistency checks running as part of the build.
 2. Installed a board taxonomy and an agent-readable process into a repository, additively.
 3. Moved an item through a column and saw the projection change, with nothing running in between.
-4. Registered six plugins into a `dsh` profile and confirmed they land where they should.
-5. Recorded a run and read back both its state and the ordered list of places to look when one fails.
+4. Recorded a run and read back both its state and the ordered list of places to look when one fails.
 
 ## Where to go next
 
 - **Why any of this is shaped this way** → [`concepts/`](../concepts/), starting with
-  [03 — The board](../concepts/03-the-board.md), which explains why GitHub holds the truth and `dsh`
-  only projects it.
+  [03 — The board](../concepts/03-the-board.md), which explains why GitHub holds the truth and `harness-board`
+  projects it on demand.
 - **Every flag and exit code** → the [CLI reference](../reference/cli/README.md), generated from the
   CLIs themselves.
 - **A specific task rather than a lesson** → [`how-to/`](../how-to/).

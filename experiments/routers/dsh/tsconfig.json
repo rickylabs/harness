@@ -1,0 +1,54 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../../packages/board"
+    },
+    {
+      "path": "../../../packages/contracts"
+    },
+    {
+      "path": "../../../packages/coordinator"
+    },
+    {
+      "path": "../../../packages/forge"
+    },
+    {
+      "path": "../../../packages/governance"
+    },
+    {
+      "path": "../../../packages/llm-local"
+    },
+    {
+      "path": "../../../packages/netscript-bridge"
+    },
+    {
+      "path": "../../../packages/provider-acp"
+    },
+    {
+      "path": "../../../packages/provider-claude"
+    },
+    {
+      "path": "../../../packages/provider-codex"
+    },
+    {
+      "path": "../../../packages/provider-opencode"
+    },
+    {
+      "path": "../../../packages/routing"
+    },
+    {
+      "path": "../../../packages/subagents"
+    },
+    {
+      "path": "../../../packages/telemetry"
+    }
+  ]
+}

@@ -10,7 +10,7 @@ Further amendments require an owner decision with rationale recorded in [`doctri
 
 **Our portable agent framework, built on Orchid and Herdr.** Harness supplies routing configuration and discovery, native-provider boundaries, execution observations, board and coordination mechanics, published contracts, profiles, and the method and run record.
 
-[Orchid](https://github.com/rickylabs/orchid) owns dispatch and physical launch admission. [Herdr](https://github.com/herdrdev/herdr) owns terminal control. The core packages are independent of DeepSeek Harness. The retained [dsh composition](packages/dsh-app/README.md) is an optional additional-router experiment, not the host required to run the framework.
+[Orchid](https://github.com/rickylabs/orchid) owns dispatch and physical launch admission. [Herdr](https://github.com/herdrdev/herdr) owns terminal control. The core packages are independent of DeepSeek Harness. The retained [dsh composition](experiments/routers/dsh/README.md) is an optional additional-router experiment, not the host required to run the framework.
 
 ## 2. The thesis
 
@@ -108,7 +108,7 @@ A transport with no quota source is explicitly unmetered and uses configured phy
 
 UHP-hosted dispatch remains parked under [ADR 0004](doctrine/decisions/0004-uhp-park-evidence.md). That decision records the 2026-09-13 measurement and ruling, including the removed borrowed router. It is historical evidence, not a fresh claim about today's host. [#294](https://github.com/rickylabs/harness/issues/294) is the required round-trip proof before reconsideration.
 
-The dsh router is retained as an additional experiment under [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md). At this step it still lives in `packages/dsh-app`; its approved move to `experiments/routers/dsh` and exclusion from default checks are pending. Its real SDK/profile/lock identities and historical evidence stay intact. Testing it after the next APK requires its own authorization and proof.
+The dsh router is retained as an additional experiment under [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md). It lives in `experiments/routers/dsh`; default lifecycle and root TypeScript graphs select fourteen core packages. Explicit experiment checks verify the retained composition. Its real SDK/profile/lock identities and historical evidence stay intact. Testing it after the next APK requires its own authorization and proof.
 
 E11 routing/discovery is core work. An optional router never replaces Orchid/Herdr or becomes a prerequisite for native dispatch by implication.
 
@@ -116,7 +116,7 @@ E11 routing/discovery is core work. An optional router never replaces Orchid/Her
 
 The owner-approved cleanup is sequential: documentation, core CLI compatibility, experiment isolation, then canonical method/run-record homes. The vault refresh starts after these four PRs merge. Operator naming, additive reader-first wire vocabulary and producer switches are pending migrations 5–7 with paired consumer rollout gates.
 
-This documentation PR does not move files, rename executables, change the default build graph, publish contracts or activate anything. Public core paths, root profiles and the npm name remain stable. Any later source/wire change must identify exact consumer pins and compatibility before a producer switch.
+Cleanup PRs 1–3 establish the framework identity, canonical core CLIs with compatibility aliases, and opt-in experiment isolation. No contracts publication or activation is required for these steps. Public core paths, root profiles and the npm name remain stable. Any later source/wire change must identify exact consumer pins and compatibility before a producer switch.
 
 ## 12. What the client is
 

@@ -23,6 +23,7 @@
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { corePackages } from "./core-packages.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -75,6 +76,15 @@ const main = () => {
   // name -> directory, so a reference path can be named in errors the way humans refer to it.
   const dirOf = new Map(packages.map((p) => [p.manifest.name, p.dir]));
   const problems = [];
+  // The root solution is deliberately core-only; all optional workspace dependency/reference
+  // edges are still checked below, including the relocated router's fourteen prerequisites.
+  const core = corePackages();
+  const rootReferences = readJson(join(repoRoot, "tsconfig.json")).references ?? [];
+  const expectedRoot = new Set(core.map(row => resolve(repoRoot, row.dir)));
+  const actualRoot = rootReferences.map(row => typeof row?.path === "string" ? resolve(repoRoot, row.path) : null);
+  if (actualRoot.length !== expectedRoot.size || actualRoot.some(path => !expectedRoot.has(path)) || new Set(actualRoot).size !== expectedRoot.size) {
+    problems.push("tsconfig.json: root references must contain every core project exactly once and no experiment");
+  }
 
   for (const { dir, manifest } of packages) {
     const rel = relative(repoRoot, dir).replaceAll("\\", "/");
