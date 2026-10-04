@@ -58,7 +58,7 @@ remains parked under [ADR 0004](../../doctrine/decisions/0004-uhp-park-evidence.
 
 ## Retained experiment vocabulary
 
-The optional [`dsh-app`](../../packages/dsh-app/README.md) attaches native provider services to
+The optional [`harness-router-dsh`](../../experiments/routers/dsh/README.md) attaches native provider services to
 `ctx.subagents` and API/local adapters to `ctx.llm`. Its native registry is composed empty;
 a missing provider yields `no-providers` rather than proof of a working launch. The API adapter
 has configured destinations, whose reachability and credentials are host facts.
@@ -67,7 +67,7 @@ The coordinator's existing `Seam` union uses `subscription` and `relay`, and its
 `opposite-family` and `seam-or-family`. These are source contracts used by the retained composition,
 not permission to infer a native transport's billing or relax the fleet's evaluator rule. The
 experiment's relay open-weights constraint and preference order are documented in its own
-[README](../../packages/dsh-app/README.md); they do not assert that every paid native route is a relay.
+[README](../../experiments/routers/dsh/README.md); they do not assert that every paid native route is a relay.
 Actual service keys, upstream package names and historical fixtures remain unchanged.
 
 ---

@@ -13,7 +13,7 @@ for — an unfamiliar word gets looked up, a familiar one gets assumed.
 
 An optional dsh-router artefact listing the rows that go onto a service entry list. This project ships one, rendered
 from typed data in `src/bundle.ts` into
-[`packages/dsh-app/cordis.patch.yml`](../packages/dsh-app/cordis.patch.yml) and byte-compared in the
+[`experiments/routers/dsh/cordis.patch.yml`](../experiments/routers/dsh/cordis.patch.yml) and byte-compared in the
 test suite. A bundle here *adds* services and never reconfigures dsh's own — a patch that reaches
 into the base rows is a fork wearing a config file.
 

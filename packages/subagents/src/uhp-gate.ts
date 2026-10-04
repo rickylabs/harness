@@ -34,7 +34,7 @@
  * different incidents with different responses: one is a retry, the other is a routing failure a human
  * has to look at.
  *
- * This module follows `packages/dsh-app/src/dry-run-internal.ts` instead, which decides on the
+ * This module follows `experiments/routers/dsh/src/dry-run-internal.ts` instead, which decides on the
  * strongest available negative — `if (!isRouteEvidenceVerified(route)) refuse({ status, fields })` —
  * and carries `status` along only to explain. Same shape here:
  *

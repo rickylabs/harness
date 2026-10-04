@@ -43,9 +43,9 @@ This document adopts that shape without treating a proposed RFC as a ratified de
 **CURRENT.** Harness already uses explicit contracts and thin Cordis composition. Its
 [package map](../../packages/README.md) separates board, routing, coordinator, telemetry,
 providers and the published contracts package. The
-[routing plugin](../../packages/dsh-app/src/plugins/routing.ts) loads an explicit document;
+[routing plugin](../../experiments/routers/dsh/src/plugins/routing.ts) loads an explicit document;
 missing configuration is a refusal. The
-[subagent plugin](../../packages/dsh-app/src/plugins/subagents.ts) deliberately registers an
+[subagent plugin](../../experiments/routers/dsh/src/plugins/subagents.ts) deliberately registers an
 empty instrumented registry. An implemented provider is not a composed provider.
 
 **CURRENT.** The [NetScript bridge](../../packages/netscript-bridge/README.md) and

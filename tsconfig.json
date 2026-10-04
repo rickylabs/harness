@@ -4,7 +4,6 @@
     { "path": "packages/board" },
     { "path": "packages/contracts" },
     { "path": "packages/coordinator" },
-    { "path": "packages/dsh-app" },
     { "path": "packages/forge" },
     { "path": "packages/governance" },
     { "path": "packages/llm-local" },

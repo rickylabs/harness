@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - experiments/routers/*
 
 # Native build scripts pulled in transitively by @deepseek-ai/dsh (node-pty, koffi, ...).
 # The workspace skeleton never executes dsh, so they stay unbuilt here (pnpm 11 refuses to

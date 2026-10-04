@@ -1,13 +1,14 @@
 # packages/
 
 Fourteen flat core packages implement Harness mechanisms or define explicit partial/stub boundaries.
-The fifteenth workspace package, `dsh-app`, retains the optional DeepSeek Harness router experiment.
+The fifteenth workspace package, `@rickylabs/harness-router-dsh`, retains the optional DeepSeek Harness router experiment.
 [ADR 0005](../doctrine/decisions/0005-harness-framework-identity.md) records the current framework
 identity on Orchid and Herdr. Core modules do not depend on that experimental host.
 
-The experiment currently remains under `packages/dsh-app` and participates in the existing root
-checks. Its approved move to `experiments/routers/dsh` and exclusion from default core checks are
-pending cleanup PR 3. This index describes source implementation, not provider configuration,
+The [experiment](../experiments/routers/dsh/README.md) lives outside `packages/` and is excluded
+from default core build, typecheck and tests. Its explicit checks still verify all fourteen
+workspace dependency/reference edges. Workspace install may resolve its locked upstream
+dependencies. This index describes source implementation, not provider configuration,
 activation, credentials or a successful native launch on a particular host.
 
 | Package | Implemented boundary | Owner |

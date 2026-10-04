@@ -124,7 +124,7 @@
   description: "packages/coordinator"
 - name: "area:dsh-app"
   color: "bfdadc"
-  description: "packages/dsh-app"
+  description: "Optional router experiment: experiments/routers/dsh"
 - name: "area:forge"
   color: "bfdadc"
   description: "packages/forge"
