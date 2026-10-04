@@ -9,25 +9,25 @@ are the surface a dispatcher reads, and until they exist the coordinator has not
 decisions onto. Everything here is a library first and a CLI second, so the coordinator can call the
 same functions in-process.
 
-## `dsh-forge`
+## `harness-forge`
 
 Installs the namespaced label taxonomy — and the skill that explains it — into any repository.
 
 ```bash
-dsh-forge doctor          # what this repo and this environment support
-dsh-forge labels plan     # read-only diff (the default)
-dsh-forge labels apply    # create and update; never deletes
-dsh-forge labels check    # non-zero exit on drift, for CI
-dsh-forge labels eject    # write .github/labels.yml
-dsh-forge skill install   # write the board-process skill into this repo's skill dirs
-dsh-forge init            # eject + apply + skill install
-dsh-forge targets show    # the dispatch table, in resolution order
-dsh-forge targets check   # non-zero exit when the table is wrong, for CI
-dsh-forge targets reconcile   # which inbox issues get dispatched, and what came back
-dsh-forge targets backend # which backend dispatches each target, and why
-dsh-forge swarm admit     # decide every /swarm comment the way the dispatcher would
-dsh-forge swarm mirror    # the inbox issue each honoured trigger would open
-dsh-forge supervise       # what is new on each agent's PR, and what it has already been told
+harness-forge doctor          # what this repo and this environment support
+harness-forge labels plan     # read-only diff (the default)
+harness-forge labels apply    # create and update; never deletes
+harness-forge labels check    # non-zero exit on drift, for CI
+harness-forge labels eject    # write .github/labels.yml
+harness-forge skill install   # write the board-process skill into this repo's skill dirs
+harness-forge init            # eject + apply + skill install
+harness-forge targets show    # the dispatch table, in resolution order
+harness-forge targets check   # non-zero exit when the table is wrong, for CI
+harness-forge targets reconcile   # which inbox issues get dispatched, and what came back
+harness-forge targets backend # which backend dispatches each target, and why
+harness-forge swarm admit     # decide every /swarm comment the way the dispatcher would
+harness-forge swarm mirror    # the inbox issue each honoured trigger would open
+harness-forge supervise       # what is new on each agent's PR, and what it has already been told
 ```
 
 Options: `--repo owner/name`, `--cwd <path>`, `--no-detect`, `--force`, `--dry-run`, `--json`,
@@ -53,7 +53,7 @@ records an audited exception to the close gate and sits *alongside* whichever ph
 actually in.
 
 **Retired**, never installed and never deleted — a label that recorded a decision keeps recording it,
-so `dsh-forge` only rewrites its description to name the successor:
+so `harness-forge` only rewrites its description to name the successor:
 
 | label | use instead |
 | --- | --- |
@@ -105,15 +105,15 @@ column, so two of them means the column is a lie and none means the item is invi
 
 ## The dispatch table
 
-`dsh-forge targets` reads divybot's own `divybot.json` and answers the question labels raise but do
+`harness-forge targets` reads divybot's own `divybot.json` and answers the question labels raise but do
 not settle: *this issue is labelled — where does the work actually go, and did any come back?*
 
 ```bash
-dsh-forge targets show --config ../divybot.json
-dsh-forge targets reconcile --config ../divybot.json --snapshot board.json --snapshot deno.json
+harness-forge targets show --config ../divybot.json
+harness-forge targets reconcile --config ../divybot.json --snapshot board.json --snapshot deno.json
 ```
 
-The whole group is arithmetic on a config file and one or more `dsh-board snapshot` files. No
+The whole group is arithmetic on a config file and one or more `harness-board snapshot` files. No
 network, no `gh`, no clock — which is what makes it runnable in CI and quotable in an issue.
 
 It reads the dispatcher's file rather than a second copy of it, and reads only the half that decides
@@ -173,7 +173,7 @@ recorded decisions and evidence; it does not authorize dispatcher retirement or 
 working provider merely because that backend is named.
 
 ```bash
-dsh-forge targets backend --config ../divybot.json
+harness-forge targets backend --config ../divybot.json
 ```
 
 The decision lives in a sibling `handover.json`, not in `divybot.json`. That file is the
@@ -226,13 +226,13 @@ and three minutes from the actual mistake.
 
 `/swarm` is the one path by which work enters the fleet from outside the inbox: a comment on an issue
 in a *target* repository, which the dispatcher mirrors into the inbox as a labelled issue and then
-dispatches like any other. That makes it the fleet's authority boundary, and `dsh-forge swarm` is the
+dispatches like any other. That makes it the fleet's authority boundary, and `harness-forge swarm` is the
 transliteration of the gate chain that guards it — same gates, same order, offline.
 
 ```bash
 gh api "repos/denoland/deno/issues/comments?since=2026-09-01T00:00:00Z&per_page=100" > deno-comments.json
-dsh-forge swarm admit --config ../divybot.json --comments deno-comments.json --snapshot deno.json
-dsh-forge swarm mirror --config ../divybot.json --comments deno-comments.json --snapshot deno.json
+harness-forge swarm admit --config ../divybot.json --comments deno-comments.json --snapshot deno.json
+harness-forge swarm mirror --config ../divybot.json --comments deno-comments.json --snapshot deno.json
 ```
 
 `admit` prints one verdict per comment, unauthorised attempts first, and **exits `1` when any comment
@@ -278,12 +278,12 @@ A `/swarm` opens an inbox issue and starts a run. Something has to close both, a
 is the wrong one: **three agents have reported that they stopped while their process trees were still
 writing.** An exit code is the run's own account of itself, and the run is the thing under suspicion.
 
-So `dsh-forge swarm teardown` is the inverse of the liveness rule in `@rickylabs/telemetry` — that a
+So `harness-forge swarm teardown` is the inverse of the liveness rule in `@rickylabs/telemetry` — that a
 node is green on a growing artefact, never on an open socket. Here a run is *down* when its artefacts
 have stopped growing, and on nothing else.
 
 ```bash
-dsh-forge swarm teardown --config ../divybot.json --runs runs.json --snapshot inbox.json
+harness-forge swarm teardown --config ../divybot.json --runs runs.json --snapshot inbox.json
 ```
 
 `--runs` is a JSON array, one row per run the fleet believes is live. The shape is ours, because
@@ -303,7 +303,7 @@ already produces — `at`/`mtime` and `bytes`/`size` are both accepted:
 ]
 ```
 
-`--snapshot` is the inbox's own `dsh-board snapshot`. It is what joins a run to the issue teardown
+`--snapshot` is the inbox's own `harness-board snapshot`. It is what joins a run to the issue teardown
 would close, through the `[owner/name#42]` title the mirror carries. Without it every run reads as
 `(no inbox issue)` and no orphan can be found, and the command says so rather than printing a clean
 table.
@@ -347,12 +347,12 @@ on every tick until the PR closes. A turn spent re-reading a review the agent al
 turn it does not spend on the next one, and an agent told the same thing four times starts arguing
 with it.
 
-So `dsh-forge supervise` computes one thing: **the difference, not the state.**
+So `harness-forge supervise` computes one thing: **the difference, not the state.**
 
 ```bash
 gh pr list --repo rickylabs/harness --state open \
   --json number,url,headRefOid,mergeable,isDraft,reviews,statusCheckRollup > pulls.json
-dsh-forge supervise --config ../divybot.json --pulls pulls.json --panes panes.json
+harness-forge supervise --config ../divybot.json --pulls pulls.json --panes panes.json
 ```
 
 `--panes` is optional and carries what `herdr pane read` returned, one row per pull:

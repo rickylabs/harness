@@ -70,7 +70,7 @@ Two design facts have consequences you will notice:
 happened and left no trace on the board is precisely the visibility gap this project exists to
 close, so it is a result, not a gap in the data.
 
-**The path to the transcript is recorded, and it does not leave the machine.** `dsh-telemetry why
+**The path to the transcript is recorded, and it does not leave the machine.** `harness-telemetry why
 <run-id>` exists to hand an operator the file to open. Every projection meant to travel excludes it,
 because a transcript path is a local fact and, on a shared host, a private one.
 
@@ -82,7 +82,7 @@ and how they join, the properties the output holds, and the exit statuses.
 | Where | Which one |
 | --- | --- |
 | `.llm/runs/…`, a run slug, `supervisor.md`, "stage F" | doctrine run |
-| `dsh-telemetry`, a run id, `quota`, `usage`, "the run failed" | telemetry run |
+| `harness-telemetry`, a run id, `quota`, `usage`, "the run failed" | telemetry run |
 | A branch name or a PR title | both — that is where they meet |
 
 ---

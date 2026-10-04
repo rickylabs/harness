@@ -1,11 +1,11 @@
 # The board, published where the question actually gets asked.
 #
-# `dsh-board status` has been able to answer "status ?" for a while, and answering it still cost a
+# `harness-board status` has been able to answer "status ?" for a while, and answering it still cost a
 # checkout, an authenticated `gh`, and remembering the command exists. That cost is why the question
 # kept being asked of an agent instead. This run pays it every half hour and commits the answer, so
 # the price of the answer drops to opening BOARD.md.
 #
-# Nothing here decides anything about the board. `dsh-board digest` renders it, from the same
+# Nothing here decides anything about the board. `harness-board digest` renders it, from the same
 # projection `status` and `check` read, and the shell below only moves bytes into a file and a
 # commit. The one rule this file does enforce is the last line of it: commit only when the content
 # changed, because a page that commits on every run buries the runs where the board moved.
@@ -33,7 +33,7 @@ concurrency:
 # A `permissions:` block is a whitelist, not a set of additions: naming one scope drops every scope
 # not named to `none`. So the two the projection reads have to be named even though the same token
 # carries them by default elsewhere — the first run of this workflow failed on exactly that, with
-# `Resource not accessible by integration (repository.issues)` and a `dsh-board` exit 3.
+# `Resource not accessible by integration (repository.issues)` and a `harness-board` exit 3.
 #
 # `contents: write` is for the one commit this makes, to one path, on the default branch. The other
 # two are read-only, and there is no third: a projector that could write an issue would stop being a

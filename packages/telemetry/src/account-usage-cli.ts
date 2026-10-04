@@ -7,7 +7,7 @@ import { readAccountUsageDocument, type AccountUsageEnvelope } from "@rickylabs/
 import { usageFile, usageScopeHash } from "./account-usage.js";
 import { collectAccountUsageDocument, readAccountUsageDocumentSource } from "./paid-account-usage.js";
 
-export const ACCOUNT_USAGE_HELP = `dsh-telemetry account-usage --source <descriptor> [--watch]
+export const ACCOUNT_USAGE_HELP = `harness-telemetry account-usage --source <descriptor> [--watch]
 
 Read configured native stores and sessionless Codex account quota. No model calls.
 --watch emits JSONL every 180 seconds; otherwise emits one JSON document.

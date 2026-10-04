@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `dsh-telemetry` — status without an agent in the loop.
+ * `harness-telemetry` — status without an agent in the loop.
  *
  * The command exists to make one sentence false: "I'm constantly spamming `status ?` to my current
  * orchestrator because I have zero visibility across the board." So it must work when every agent
@@ -20,9 +20,10 @@ import { codexThreadsCommand } from "./codex-threads-cli.js";
 import { issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
 import { actionReceiptCommand } from "./action-receipt-cli.js";
 import { open, readFile } from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { isAbsolute, join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { homedir } from "node:os";
 
 import { backfillFromDisk, defaultRoots, type BackfillRoots } from "./backfill/index.js";
@@ -82,11 +83,11 @@ export const EXIT = {
  * rather than an undocumented number a script discovers at 2am.
  *
  * This is the only statement of these meanings. The `exit codes` block in `USAGE` renders from it,
- * and so does `docs/reference/cli/dsh-telemetry.md`, which `pnpm run check:docs` byte-compares.
+ * and so does `docs/reference/cli/harness-telemetry.md`, which `pnpm run check:docs` byte-compares.
  */
 export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
   ok: "the picture is complete",
-  failed: "dsh-telemetry itself failed",
+  failed: "harness-telemetry itself failed",
   usage: "the command line was wrong",
   incomplete: "the picture is incomplete: a store could not be read, or a scan hit --limit",
   notFound: "nothing matched, on a scan that could see everything",
@@ -96,25 +97,25 @@ const EXIT_BLOCK = Object.entries(EXIT)
   .map(([name, code]) => `  ${code}  ${EXIT_MEANINGS[name as keyof typeof EXIT]}`)
   .join("\n");
 
-const USAGE = `dsh-telemetry — board activity, read from disk, with no agent awake
+const USAGE = `harness-telemetry — board activity, read from disk, with no agent awake
 
 usage:
-  dsh-telemetry codex-threads [--limit <n>] [--private] [--watch]  native thread JSON / goal JSONL
-  dsh-telemetry action-receipt --json --operation <uuid> [--digest <sha256>]  sanitized Orchid delivery
-  dsh-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--issue <owner/repo#number>] [--interval-ms <n>]  per-issue agent trees
-  dsh-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
-  dsh-telemetry governance --observations-from <descriptor>  typed governance JSON
-  dsh-telemetry account-usage --source <descriptor> [--watch]  subscription quota and session token JSON
-  dsh-telemetry tree [options]       milestone → epic → task → subagent, the whole board
-  dsh-telemetry status [options]     runs grouped by epic
-  dsh-telemetry runs [options]       one line per run, newest first
-  dsh-telemetry why <run-id>         which log to open first for that run
-  dsh-telemetry record [options]     append events to the observability log
-  dsh-telemetry where [options]      where that log is, and the layers below a run
+  harness-telemetry codex-threads [--limit <n>] [--private] [--watch]  native thread JSON / goal JSONL
+  harness-telemetry action-receipt --json --operation <uuid> [--digest <sha256>]  sanitized Orchid delivery
+  harness-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--issue <owner/repo#number>] [--interval-ms <n>]  per-issue agent trees
+  harness-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
+  harness-telemetry governance --observations-from <descriptor>  typed governance JSON
+  harness-telemetry account-usage --source <descriptor> [--watch]  subscription quota and session token JSON
+  harness-telemetry tree [options]       milestone → epic → task → subagent, the whole board
+  harness-telemetry status [options]     runs grouped by epic
+  harness-telemetry runs [options]       one line per run, newest first
+  harness-telemetry why <run-id>         which log to open first for that run
+  harness-telemetry record [options]     append events to the observability log
+  harness-telemetry where [options]      where that log is, and the layers below a run
 
 options:
   --home <path>          home directory the stores live under (default: this user's)
-  --items <path>         board items to join runs to: "dsh-board snapshot" output, or a
+  --items <path>         board items to join runs to: "harness-board snapshot" output, or a
                          JSON array of {number, title, epic, milestone, phase} refs
   --observations <path>  governance observation JSON for tree/status
   --observations-from <spec>  live source descriptor JSON path, or file:<absolute-path>
@@ -380,7 +381,7 @@ async function recordEvents(flags: Flags): Promise<number> {
   let events: readonly TelemetryEvent[];
   if (flags.kind !== null) {
     if (flags.run === null) {
-      process.stdout.write("dsh-telemetry record --kind <name> also needs --run <id>\n");
+      process.stdout.write("harness-telemetry record --kind <name> also needs --run <id>\n");
       return EXIT.usage;
     }
     events = [{ at: flags.now, runId: flags.run, kind: flags.kind }];
@@ -389,7 +390,7 @@ async function recordEvents(flags: Flags): Promise<number> {
     // terminal waiting for an EOF the operator has no reason to expect it wants.
     if (process.stdin.isTTY === true) {
       process.stdout.write(
-        'dsh-telemetry record reads JSONL on stdin, or takes --run <id> --kind <name>\n\n  echo \'{"runId":"r1","kind":"turn"}\' | dsh-telemetry record\n',
+        'harness-telemetry record reads JSONL on stdin, or takes --run <id> --kind <name>\n\n  echo \'{"runId":"r1","kind":"turn"}\' | harness-telemetry record\n',
       );
       return EXIT.usage;
     }
@@ -584,7 +585,7 @@ export async function main(argv: readonly string[], services: SourceServices = d
   if (command === "why") {
     const id = flags.rest[1];
     if (id === undefined) {
-      process.stdout.write("dsh-telemetry why <run-id>\n");
+      process.stdout.write("harness-telemetry why <run-id>\n");
       return EXIT.usage;
     }
     const run = runs.find((r) => r.id === id || r.id.startsWith(id));
@@ -685,14 +686,23 @@ export async function main(argv: readonly string[], services: SourceServices = d
   return EXIT.usage;
 }
 
-const invoked = process.argv[1] ?? "";
-if (invoked.endsWith("cli.js") || invoked.endsWith("dsh-telemetry")) {
+function invokedDirectly(): boolean {
+  const entry = process.argv[1];
+  if (entry === undefined) return false;
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (invokedDirectly()) {
   main(process.argv.slice(2))
     .then((code) => {
       process.exitCode = code;
     })
     .catch((error: unknown) => {
-      process.stdout.write(`dsh-telemetry failed: ${String(error)}\n`);
+      process.stdout.write(`harness-telemetry failed: ${String(error)}\n`);
       process.exitCode = EXIT.failed;
     });
 }

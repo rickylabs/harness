@@ -7,18 +7,18 @@ on. What is missing is not the deciding but the wiring — [nothing writes the s
 nothing runs the census on a schedule](#what-is-not-built-yet).
 
 ```
-dsh-coordinator evaluator    # choose an evaluator, or refuse to
-dsh-coordinator plan         # what may run next, given the state
-dsh-coordinator admit        # may this one step run? exit 1 says no, and why
-dsh-coordinator workflow     # print a workflow definition, and check it
-dsh-coordinator policies     # the independence rules, and what each requires
-dsh-coordinator worktrees    # which worktrees are live, and what the archiver will take
-dsh-coordinator replay       # re-run a journal's decisions from their own inputs
-dsh-coordinator diff         # compare two journals, and name what changed
+harness-coordinator evaluator    # choose an evaluator, or refuse to
+harness-coordinator plan         # what may run next, given the state
+harness-coordinator admit        # may this one step run? exit 1 says no, and why
+harness-coordinator workflow     # print a workflow definition, and check it
+harness-coordinator policies     # the independence rules, and what each requires
+harness-coordinator worktrees    # which worktrees are live, and what the archiver will take
+harness-coordinator replay       # re-run a journal's decisions from their own inputs
+harness-coordinator diff         # compare two journals, and name what changed
 ```
 
 Every flag and exit code is in the generated
-[`dsh-coordinator` reference](../../docs/reference/cli/dsh-coordinator.md). This page is the argument
+[`harness-coordinator` reference](../../docs/reference/cli/harness-coordinator.md). This page is the argument
 behind them.
 
 ## What it is for

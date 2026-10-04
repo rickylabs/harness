@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `dsh-coordinator` — the gate, as a command.
+ * `harness-coordinator` — the gate, as a command.
  *
  * Principle 5 says nothing mutates before the gate. A gate that only exists inside an agent's
  * reasoning cannot stop anything: the agent decides it has passed, and the world is mutated by the
@@ -16,6 +16,8 @@
  */
 
 import { appendFile, readFile, writeFile } from "node:fs/promises";
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 import {
   OPPOSITE_FAMILY,
@@ -54,7 +56,7 @@ import {
 /**
  * Disjoint, and 1 is load-bearing.
  *
- * Following `dsh-board`'s shape rather than `dsh-telemetry`'s: 1 is "the thing you asked about is
+ * Following `harness-board`'s shape rather than `harness-telemetry`'s: 1 is "the thing you asked about is
  * not clean" and 4 is "I broke". A gate needs those to be different numbers, because a caller that
  * cannot tell "no legal evaluator exists" from "the tool crashed" will eventually treat both as
  * noise and dispatch anyway.
@@ -72,7 +74,7 @@ export const EXIT = {
  * rather than an undocumented number a dispatcher has to guess at.
  *
  * This is the only statement of these meanings. The `exit codes` block in `USAGE` renders from it,
- * and so does `docs/reference/cli/dsh-coordinator.md`, which `pnpm run check:docs` byte-compares.
+ * and so does `docs/reference/cli/harness-coordinator.md`, which `pnpm run check:docs` byte-compares.
  * Which command produced the code is a question the command list above answers; this table says
  * what the number means, and stays short enough to be read at the point of failure.
  */
@@ -81,24 +83,24 @@ export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
   blocked: "blocked, refused, forked, stalled, divergent, or a live worktree is at risk",
   usage: "the command line was wrong",
   unreadable: "the input could not be read, or nothing could be checked",
-  failed: "dsh-coordinator itself failed",
+  failed: "harness-coordinator itself failed",
 };
 
 const EXIT_BLOCK = Object.entries(EXIT)
   .map(([name, code]) => `  ${code}  ${EXIT_MEANINGS[name as keyof typeof EXIT]}`)
   .join("\n");
 
-const USAGE = `dsh-coordinator — the deterministic gate between authoring and review
+const USAGE = `harness-coordinator — the deterministic gate between authoring and review
 
 usage:
-  dsh-coordinator evaluator [options]   choose an evaluator, or refuse to
-  dsh-coordinator policies              the independence rules, and what each requires
-  dsh-coordinator workflow [options]    print a workflow definition, and check it
-  dsh-coordinator plan [options]        what may run next, given the state — the "status ?" answer
-  dsh-coordinator admit [options]       may this one step run? exit 1 says no, and why
-  dsh-coordinator worktrees [options]   which worktrees are live, and what the archiver will take
-  dsh-coordinator replay [options]      re-run a journal's decisions from their own inputs
-  dsh-coordinator diff [options]        compare two journals, and name what changed
+  harness-coordinator evaluator [options]   choose an evaluator, or refuse to
+  harness-coordinator policies              the independence rules, and what each requires
+  harness-coordinator workflow [options]    print a workflow definition, and check it
+  harness-coordinator plan [options]        what may run next, given the state — the "status ?" answer
+  harness-coordinator admit [options]       may this one step run? exit 1 says no, and why
+  harness-coordinator worktrees [options]   which worktrees are live, and what the archiver will take
+  harness-coordinator replay [options]      re-run a journal's decisions from their own inputs
+  harness-coordinator diff [options]        compare two journals, and name what changed
 
 options:
   --roster <path>    roster JSON (default: stdin)
@@ -111,7 +113,7 @@ options:
   --run <id>         the run this decision belongs to, for the record
   --at <iso>         timestamp on the record, so a replay is byte-identical
   --json             the record as JSON instead of prose
-  --event            evaluator/plan/admit: one JSONL line for "dsh-telemetry
+  --event            evaluator/plan/admit: one JSONL line for "harness-telemetry
                      record". Needs --run. A usage error on any other command.
   --journal <path>   evaluator/plan: append the decision and its inputs here
                      replay: the journal to re-run
@@ -683,14 +685,23 @@ export async function main(argv: readonly string[]): Promise<number> {
   return EXIT.usage;
 }
 
-const invoked = process.argv[1] ?? "";
-if (invoked.endsWith("cli.js") || invoked.endsWith("dsh-coordinator")) {
+function invokedDirectly(): boolean {
+  const entry = process.argv[1];
+  if (entry === undefined) return false;
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (invokedDirectly()) {
   main(process.argv.slice(2))
     .then((code) => {
       process.exitCode = code;
     })
     .catch((error: unknown) => {
-      process.stdout.write(`dsh-coordinator failed: ${String(error)}\n`);
+      process.stdout.write(`harness-coordinator failed: ${String(error)}\n`);
       process.exitCode = EXIT.failed;
     });
 }

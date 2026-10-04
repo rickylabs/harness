@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `dsh-board` — the board, printed.
+ * `harness-board` — the board, printed.
  *
  * This is the command that is supposed to make "status ?" unnecessary. It reads GitHub, projects
  * it, and prints the answer. No agent is consulted, so it works when every agent is asleep,
@@ -41,30 +41,30 @@ export const EXIT = {
  * rather than an undocumented number that CI discovers by treating it as a board defect.
  *
  * This is the only statement of these meanings. The `exit codes` block in `USAGE` renders from it,
- * and so does `docs/reference/cli/dsh-board.md`, which `pnpm run check:docs` byte-compares.
+ * and so does `docs/reference/cli/harness-board.md`, which `pnpm run check:docs` byte-compares.
  */
 export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
   ok: "clean: the board was read and it agrees with itself, or no current check on the pull request fails (checks)",
   anomalies: "the board contradicts itself (check), or a current check on the pull request fails (checks)",
   usage: "the command line was wrong",
   unavailable: "no usable transport: gh missing, unauthenticated, unable to reach GitHub, or an answer of the wrong shape",
-  failed: "dsh-board itself failed",
+  failed: "harness-board itself failed",
 };
 
 const EXIT_BLOCK = Object.entries(EXIT)
   .map(([name, code]) => `  ${code}  ${EXIT_MEANINGS[name as keyof typeof EXIT]}`)
   .join("\n");
 
-const USAGE = `dsh-board — project a GitHub repository as a board
+const USAGE = `harness-board — project a GitHub repository as a board
 
 usage:
-  dsh-board status [--repo <owner/name>]     the hierarchy: milestone -> epic -> task
-  dsh-board columns [--repo <owner/name>]    the kanban view, one section per column
-  dsh-board check [--repo <owner/name>]      exit 1 if the board contradicts itself
-  dsh-board digest [--repo <owner/name>]     the board as a markdown page, for committing
-  dsh-board snapshot [--repo <owner/name>]   the projection as JSON
-  dsh-board doctor                           report transport and detected repository
-  dsh-board checks --pr <n> [--repo <owner/name>] [--pretty]
+  harness-board status [--repo <owner/name>]     the hierarchy: milestone -> epic -> task
+  harness-board columns [--repo <owner/name>]    the kanban view, one section per column
+  harness-board check [--repo <owner/name>]      exit 1 if the board contradicts itself
+  harness-board digest [--repo <owner/name>]     the board as a markdown page, for committing
+  harness-board snapshot [--repo <owner/name>]   the projection as JSON
+  harness-board doctor                           report transport and detected repository
+  harness-board checks --pr <n> [--repo <owner/name>] [--pretty]
                                              latest run per check on the PR head; exit 1 if one fails
                                              (\`checks\` must come first; board options do not apply)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Assert that every label `dsh-board` branches on is one `dsh-forge init` would create.
+ * Assert that every label `harness-board` branches on is one `harness-forge init` would create.
  *
  * `type:epic` sat in `packages/board/src/project.ts` for the life of the file, as one of two
  * alternatives in the predicate deciding whether an issue is an epic. It never once evaluated
@@ -92,7 +92,7 @@ function prefixOf(name) {
 }
 
 /**
- * What `dsh-forge init` would create: every live core label by name, and every prefix that any
+ * What `harness-forge init` would create: every live core label by name, and every prefix that any
  * core row or derived-family constructor produces.
  *
  * The derived families are probed rather than listed, because listing them here would be a third
@@ -165,13 +165,13 @@ function missingNameTail(literal, creatable) {
   const replacement = creatable.retired.get(literal);
   if (replacement !== undefined) {
     return [
-      `but that label is retired — \`dsh-forge init\` no longer creates it, and existing items keep`,
+      `but that label is retired — \`harness-forge init\` no longer creates it, and existing items keep`,
       `it only so their record stays readable. Read \`${replacement}\` instead. Do not un-retire it`,
       "to make this pass; the branch is reading a vocabulary the taxonomy has already moved past.",
     ];
   }
   return [
-    "but `dsh-forge init` creates no label with that name. The branch can never be true.",
+    "but `harness-forge init` creates no label with that name. The branch can never be true.",
     "Add a row to CORE_TAXONOMY, or delete the branch.",
   ];
 }
@@ -275,13 +275,13 @@ const main = async () => {
   // Reported separately from the comparisons above because it is a different claim: not "the board
   // reads a label nothing creates" but "the two packages disagree about what the default is". A
   // repository that has settled on `topic:` is unaffected either way; a repository with no lane
-  // labels at all gets one answer from `dsh-forge` and a different one from `dsh-board`.
+  // labels at all gets one answer from `harness-forge` and a different one from `harness-board`.
   const forgeDefault = forge.detectLanePrefix([], []);
   if (forgeDefault !== lanePrefix) {
     problems.push(
       problem(
-        `the two packages disagree about the default lane prefix: \`dsh-board\` uses`,
-        `\`${lanePrefix}:\` and \`dsh-forge\` falls back to \`${forgeDefault}:\`. On a repository`,
+        `the two packages disagree about the default lane prefix: \`harness-board\` uses`,
+        `\`${lanePrefix}:\` and \`harness-forge\` falls back to \`${forgeDefault}:\`. On a repository`,
         "with no lane labels yet, forge stamps one prefix and the board reads the other.",
       ),
     );

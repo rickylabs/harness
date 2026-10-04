@@ -1,11 +1,8 @@
 <!-- Generated from packages/telemetry/src/cli.ts by scripts/cli-reference.mjs. Do not edit; run "pnpm run docs:cli". -->
 
-# `dsh-telemetry`
+# `harness-telemetry`
 
 > board activity, read from disk, with no agent awake
-
-Temporary compatibility alias for [`harness-telemetry`](harness-telemetry.md). Both names run the
-same entrypoint, help text and exit statuses. Prefer the canonical command in new callers.
 
 Shipped by [`packages/telemetry`](../../../packages/telemetry). This page is *what it does*;
 *why it does it that way* is [`packages/telemetry/README.md`](../../../packages/telemetry/README.md).
@@ -24,7 +21,7 @@ Read from `EXIT` and `EXIT_MEANINGS` in [`packages/telemetry/src/cli.ts`](../../
 block in the help text below renders from those same two constants, so this table, that block
 and the number the process actually returns cannot disagree.
 
-## `dsh-telemetry --help`
+## `harness-telemetry --help`
 
 ```text
 harness-telemetry — board activity, read from disk, with no agent awake

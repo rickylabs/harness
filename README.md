@@ -46,22 +46,22 @@ in [`AGENTS.md`](AGENTS.md) names all three.
 
 The diagram shows responsibility boundaries. Orchid owns native dispatch and
 Herdr owns terminal control; configured providers and observed sources determine
-which paths are usable. Existing core executables still use `dsh-*` names at this
-cleanup step; that prefix is compatibility naming, not a required dsh host.
+which paths are usable. Core executables use `harness-*` names; temporary `dsh-*`
+aliases keep existing callers working without requiring a dsh host.
 
 ```mermaid
 flowchart TD
   H[Human: intent, forks, acceptance] --> G[GitHub issues, labels, pull requests]
-  H --> F[dsh-forge: explicit labels and process setup]
+  H --> F[harness-forge: explicit labels and process setup]
   F --> G
-  G --> B[dsh-board: read and project]
-  B --> C[dsh-coordinator: plan, gate, select, replay]
+  G --> B[harness-board: read and project]
+  B --> C[harness-coordinator: plan, gate, select, replay]
   C --> D[Orchid dispatcher and Herdr terminal control]
   D --> S[Native CLIs: autonomous agent tasks]
   C --> L[Caller with API and local-model adapters: explicit calls]
   S --> E[Artifacts, changes, run evidence]
   L --> E
-  E --> T[dsh-telemetry: sink and backfill]
+  E --> T[harness-telemetry: sink and backfill]
   T --> H
   E --> A[Human or dispatcher chooses a GitHub update]
   A --> G
@@ -71,15 +71,15 @@ The loop, arrow by arrow:
 
 1. A **human** holds intent where the work already lives: GitHub issues,
    labels and pull requests. When a repository needs this board process at
-   all, a human runs **`dsh-forge`** explicitly, and forge writes the label
+   all, a human runs **`harness-forge`** explicitly, and forge writes the label
    taxonomy to that repository's GitHub — setup, on purpose, not in passing.
-2. **`dsh-board`** reads GitHub and projects it: columns, a hierarchy view, a
+2. **`harness-board`** reads GitHub and projects it: columns, a hierarchy view, a
    digest page, and a check that names every way the board contradicts
    itself. When it does, every terminal view says so — a banner above the
    work, with the affected rows marked — and the check carries the detail.
    It writes nothing back; its GitHub transport is read-only by
    construction.
-3. **`dsh-coordinator`** answers the deterministic questions over state
+3. **`harness-coordinator`** answers the deterministic questions over state
    derived from that projection: what may run next, whether a step's gates
    passed, and who may review whose work. Deciding and doing are separate
    jobs — the workflow is inert data, and performing an effect belongs to a
@@ -88,7 +88,7 @@ The loop, arrow by arrow:
    models through separate native-task and API/local-model boundaries. Native
    CLIs own their loops; adapters own the call semantics they actually implement.
 5. Both seams leave **artifacts, changes and run evidence** behind.
-   **`dsh-telemetry`** sinks and backfills that record, and a human can read
+   **`harness-telemetry`** sinks and backfills that record, and a human can read
    it from disk with no agent awake — which closes the loop where it started:
    intent in, legible status out.
 6. Evidence does not write itself back to GitHub. A **human or dispatcher
@@ -115,7 +115,7 @@ responsibilities and the relationships between them.
 | Intent: issues, labels, milestones, pull requests | The stochastic work: research, implementation, review | Projection: GitHub → board views; every terminal view flags a self-contradiction; `check` names it; a half-seen board is refused |
 | Owner forks: whatever depends on what the owner wants | Lifecycle moves on its own item — one `status:` label at a time, per the generated skill | Eligibility: what may run next; every effect step must have a gate upstream, checked not promised |
 | Acceptance: merges, closes, consequential writes | Recording evidence as it works | Independence: an author never evaluates its own artifact; no legal evaluator is a blocker, never a softer rule |
-| Running `dsh-forge` to install labels and process | — | Replay: decisions re-run from their own inputs; a different answer is reported as nondeterminism |
+| Running `harness-forge` to install labels and process | — | Replay: decisions re-run from their own inputs; a different answer is reported as nondeterminism |
 
 The middle column is where all the intelligence in this system lives, and the
 outer two are why it can be trusted: humans keep the decisions that are
@@ -187,11 +187,16 @@ agent:
 
 | Command | Package | The question it answers |
 | --- | --- | --- |
-| `dsh-board` | [`board`](packages/board) | What is on the board right now — and does it contradict itself? |
-| `dsh-coordinator` | [`coordinator`](packages/coordinator) | May this step run? Who is allowed to review it? What changed since last time? |
-| `dsh-telemetry` | [`telemetry`](packages/telemetry) | What did the fleet actually do — read from disk, with nothing awake? |
-| `dsh-forge` | [`forge`](packages/forge) | Install this board process into any repository. |
+| `harness-board` | [`board`](packages/board) | What is on the board right now — and does it contradict itself? |
+| `harness-coordinator` | [`coordinator`](packages/coordinator) | May this step run? Who is allowed to review it? What changed since last time? |
+| `harness-telemetry` | [`telemetry`](packages/telemetry) | What did the fleet actually do — read from disk, with nothing awake? |
+| `harness-forge` | [`forge`](packages/forge) | Install this board process into any repository. |
 | `dsh-profile` | [`dsh-app`](packages/dsh-app) | Compose the optional dsh-router experiment. |
+
+The four core commands also accept the temporary `dsh-board`, `dsh-coordinator`,
+`dsh-telemetry`, and `dsh-forge` compatibility names. Each alias points to the same
+entrypoint and returns the same output and exit status. The optional `dsh-profile`
+experiment keeps its current name until its separate relocation.
 
 <details>
 <summary>Why <code>node packages/…/dist/cli.js</code> and not the bare command name</summary>
@@ -215,9 +220,9 @@ Further proofs, by what they need:
   commands live in the
   [telemetry README](packages/telemetry/README.md#synthetic-governance-fixture),
   and every value in it is synthetic by construction.
-- **Network: `gh` or `GITHUB_TOKEN`.** `dsh-board columns` projects a
-  repository; `dsh-board digest` prints the markdown page
-  [BOARD.md](BOARD.md) is made of; `dsh-forge doctor` reports what a target
+- **Network: `gh` or `GITHUB_TOKEN`.** `harness-board columns` projects a
+  repository; `harness-board digest` prints the markdown page
+  [BOARD.md](BOARD.md) is made of; `harness-forge doctor` reports what a target
   repository and your environment support. The tools whose whole job is
   reading GitHub exit **3** and say so when no transport is available. Two
   forge commands are deliberately not in that set: `doctor` exits **0** and

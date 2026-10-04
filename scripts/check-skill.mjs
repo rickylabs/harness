@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Assert that the committed board-process skill is what `dsh-forge` would write today.
+ * Assert that the committed board-process skill is what `harness-forge` would write today.
  *
  * `.claude/skills/board-process/SKILL.md` is generated from the taxonomy, and it is the file that
  * tells every agent working in this repository which label to move an item to and when. Nothing
@@ -15,7 +15,7 @@
  * comparison written here. `installSkill` already computes exactly the verdict we want and reports
  * it per file: `unchanged` means the bytes on disk match what a fresh render produces.
  *
- * Note that `dsh-forge skill install --dry-run` exits 0 on `stale` — deliberately, because a person
+ * Note that `harness-forge skill install --dry-run` exits 0 on `stale` — deliberately, because a person
  * asking what would happen has been answered. That is the wrong default for a gate, so this script
  * reads the verdict rather than the exit code.
  *

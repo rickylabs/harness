@@ -24,9 +24,9 @@ Tasks a person actually performs, each with a real starting condition:
 | Guide | Where the material is today |
 | --- | --- |
 | Regenerate the board skill after changing the taxonomy | [`packages/forge`](../../packages/forge) — `pnpm run skill:install` |
-| Eject labels and review the diff | [`packages/forge`](../../packages/forge) — `dsh-forge labels eject` |
+| Eject labels and review the diff | [`packages/forge`](../../packages/forge) — `harness-forge labels eject` |
 | Re-bless the optional router's composed-profile snapshot | [`packages/dsh-app`](../../packages/dsh-app) — `pnpm run golden:bless` |
-| Find out what an agent did after it exited | [`packages/telemetry`](../../packages/telemetry) — `dsh-telemetry why` |
+| Find out what an agent did after it exited | [`packages/telemetry`](../../packages/telemetry) — `harness-telemetry why` |
 | Deploy the optional dsh-router experiment (after separate acceptance) | [`deploy/`](../../deploy) |
 | Add a package to the workspace | [`packages/README.md`](../../packages/README.md) |
 

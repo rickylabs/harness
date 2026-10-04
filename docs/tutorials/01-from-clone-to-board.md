@@ -22,7 +22,7 @@ You need six things, and you will not be asked for a seventh later:
 - **A scratch repository you own**, empty, that you do not mind changing. Call it `owner/scratch`
   below and substitute your own throughout. Step 2 writes labels into it.
 - **A local clone of that scratch repository**, sitting beside this one (below, it is assumed to
-  be at `../scratch`). `dsh-forge` writes files into a checkout, not into GitHub, so it needs a
+  be at `../scratch`). `harness-forge` writes files into a checkout, not into GitHub, so it needs a
   working tree to write into — and writing into this checkout would be a mistake explained at
   step 2.
 - About 500 MB of disk for `node_modules`.
@@ -231,7 +231,7 @@ node packages/board/dist/cli.js columns --repo owner/scratch
 ```
 
 The issue is now under `## impl`, and the triage count went down by one (illustrative expectation — source-derived). That is the whole
-mechanism. There is no database, no sync job and no daemon: GitHub holds the truth, and `dsh-board`
+mechanism. There is no database, no sync job and no daemon: GitHub holds the truth, and `harness-board`
 projects it on demand. Nothing had to be running for the column to be correct.
 
 Finally, ask the board whether it agrees with itself:

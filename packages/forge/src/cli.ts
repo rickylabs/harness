@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `dsh-forge` — install the board taxonomy, and the skill that explains it, into any repository.
+ * `harness-forge` — install the board taxonomy, and the skill that explains it, into any repository.
  *
  * The tool is progressive by design. It probes for a GitHub transport instead of assuming `gh`;
  * it derives `area:`, `gate:`, `ci:`, lane and `epic:` labels only from evidence it can point at;
@@ -9,10 +9,10 @@
  * taxonomy installer that refuses to run outside one blessed environment does not get run.
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 import { applyPlan } from "./labels/apply.js";
@@ -119,7 +119,7 @@ export const EXIT = {
  * rather than an undocumented number a CI step has to reverse-engineer.
  *
  * This is the only statement of these meanings. The `exit codes` block in `USAGE` renders from it,
- * and so does `docs/reference/cli/dsh-forge.md`, which `pnpm run check:docs` byte-compares.
+ * and so does `docs/reference/cli/harness-forge.md`, which `pnpm run check:docs` byte-compares.
  */
 export const EXIT_MEANINGS: Readonly<Record<keyof typeof EXIT, string>> = {
   ok: "everything asked for is in place",
@@ -132,25 +132,25 @@ const EXIT_BLOCK = Object.entries(EXIT)
   .map(([name, code]) => `  ${code}  ${EXIT_MEANINGS[name as keyof typeof EXIT]}`)
   .join("\n");
 
-const USAGE = `dsh-forge — board taxonomy and process skill, installable into any repository
+const USAGE = `harness-forge — board taxonomy and process skill, installable into any repository
 
 usage
-  dsh-forge doctor                 report what this repository and environment support
-  dsh-forge labels plan            show what would change (read-only; the default)
-  dsh-forge labels apply           create and update labels; never deletes
-  dsh-forge labels check           exit non-zero when the repo has drifted (for CI)
-  dsh-forge labels eject           write ${LABELS_FILE} — the reviewable source of truth
-  dsh-forge skill install          write the board-process skill into this repo's skill dirs
-  dsh-forge status settle          print the status: label change an ended item calls for
-  dsh-forge targets show           print the dispatch table in resolution order
-  dsh-forge targets check          exit non-zero when the table is wrong (for CI)
-  dsh-forge targets reconcile      which inbox issues the dispatcher claims, and what came back
-  dsh-forge targets backend        which backend dispatches each target, and why
-  dsh-forge swarm admit            decide every /swarm comment the way the dispatcher would
-  dsh-forge swarm mirror           the inbox issue each honoured trigger would open
-  dsh-forge swarm teardown         which runs are past their deadline, and which actually stopped
-  dsh-forge supervise              what is new on each agent's PR, and what it has already been told
-  dsh-forge init                   eject + apply + skill install, in that order
+  harness-forge doctor                 report what this repository and environment support
+  harness-forge labels plan            show what would change (read-only; the default)
+  harness-forge labels apply           create and update labels; never deletes
+  harness-forge labels check           exit non-zero when the repo has drifted (for CI)
+  harness-forge labels eject           write ${LABELS_FILE} — the reviewable source of truth
+  harness-forge skill install          write the board-process skill into this repo's skill dirs
+  harness-forge status settle          print the status: label change an ended item calls for
+  harness-forge targets show           print the dispatch table in resolution order
+  harness-forge targets check          exit non-zero when the table is wrong (for CI)
+  harness-forge targets reconcile      which inbox issues the dispatcher claims, and what came back
+  harness-forge targets backend        which backend dispatches each target, and why
+  harness-forge swarm admit            decide every /swarm comment the way the dispatcher would
+  harness-forge swarm mirror           the inbox issue each honoured trigger would open
+  harness-forge swarm teardown         which runs are past their deadline, and which actually stopped
+  harness-forge supervise              what is new on each agent's PR, and what it has already been told
+  harness-forge init                   eject + apply + skill install, in that order
 
 options
   --repo <owner/name>   target repository (default: the origin remote)
@@ -166,7 +166,7 @@ options
   --config <path>       targets and swarm: the dispatcher's config (default: ./${CONFIG_FILE})
   --handover <path>     targets backend only: the parity ledger (default: ./${HANDOVER_FILE};
                         absent means every target still dispatches through divybot)
-  --snapshot <path>     targets reconcile and swarm: a 'dsh-board snapshot' JSON file (repeatable —
+  --snapshot <path>     targets reconcile and swarm: a 'harness-board snapshot' JSON file (repeatable —
                         one per repository, including the inbox's own)
   --comments <path>     swarm only: a 'gh api repos/<owner>/<name>/issues/comments' JSON dump
                         (repeatable — one per target repository)
@@ -240,7 +240,7 @@ class FileError extends Error {
   }
 }
 
-const LABELS_HINT = `fix the row(s) above, or delete ${LABELS_FILE} and re-run 'dsh-forge labels eject'.`;
+const LABELS_HINT = `fix the row(s) above, or delete ${LABELS_FILE} and re-run 'harness-forge labels eject'.`;
 
 const out = (line = ""): void => {
   process.stdout.write(`${line}\n`);
@@ -277,7 +277,7 @@ async function guardCheckoutTarget(options: {
     const override = options.dryRun ? "--force --dry-run" : "--force";
     throw new CheckoutMismatchError(
       `refusing local repository writes: ${mismatch}.\n` +
-        "  run 'dsh-forge doctor' with the same --repo and --cwd to inspect the target.\n" +
+        "  run 'harness-forge doctor' with the same --repo and --cwd to inspect the target.\n" +
         `  if this mismatch is intentional, rerun with ${override}.`,
     );
   }
@@ -385,7 +385,7 @@ const requireTransport = (ctx: Context): GitHubTransport => {
     throw new TransportError(
       `no usable GitHub transport: ${ctx.transportNote}\n` +
         "  install and authenticate gh, or export GITHUB_TOKEN.\n" +
-        `  'dsh-forge labels eject' and 'dsh-forge skill install' work without one.`,
+        `  'harness-forge labels eject' and 'harness-forge skill install' work without one.`,
     );
   }
   return ctx.transport;
@@ -768,7 +768,7 @@ async function cmdTargetsShow(root: string, config: string | undefined, json: bo
   }
   out(renderTable(table));
   const problems = checkTargets(table);
-  if (problems.length > 0) out(`\n${String(problems.length)} problem(s) — run 'dsh-forge targets check'`);
+  if (problems.length > 0) out(`\n${String(problems.length)} problem(s) — run 'harness-forge targets check'`);
   return EXIT.ok;
 }
 
@@ -789,7 +789,7 @@ async function cmdTargetsCheck(root: string, config: string | undefined, json: b
 /**
  * `targets reconcile` — the bridge, from a config and one or more board projections.
  *
- * Offline on purpose. `dsh-board snapshot` already owns talking to GitHub, and composing the two
+ * Offline on purpose. `harness-board snapshot` already owns talking to GitHub, and composing the two
  * commands keeps the write path and the read path in the packages that own them: forge never grows
  * a fetch, and board never grows a table.
  */
@@ -801,7 +801,7 @@ async function cmdTargetsReconcile(
   const table = await loadTable(root, options.config);
   if (options.snapshots.length === 0) {
     throw new UsageError(
-      "targets reconcile needs at least one --snapshot: run 'dsh-board snapshot --repo <owner/name> > board.json'",
+      "targets reconcile needs at least one --snapshot: run 'harness-board snapshot --repo <owner/name> > board.json'",
     );
   }
   const sources: BridgeSource[] = [];
@@ -819,7 +819,7 @@ async function cmdTargetsReconcile(
 }
 
 /**
- * Read one `dsh-board snapshot`, which carries the repository it came from.
+ * Read one `harness-board snapshot`, which carries the repository it came from.
  *
  * Taking the repo from the file rather than from a flag is what keeps a snapshot from being filed
  * under the wrong repository — which would silently attribute one repo's pull requests to another's
@@ -839,7 +839,7 @@ async function readSnapshot(path: string): Promise<BridgeSource> {
   }
   const { repo, items } = payload as { repo?: unknown; items?: unknown };
   if (typeof repo !== "string" || repo === "" || !Array.isArray(items)) {
-    throw new UsageError(`${path} is not a board snapshot — expected 'repo' and 'items' from 'dsh-board snapshot'`);
+    throw new UsageError(`${path} is not a board snapshot — expected 'repo' and 'items' from 'harness-board snapshot'`);
   }
   return {
     repo,
@@ -897,7 +897,7 @@ async function cmdTargetsBackend(
 /**
  * Everything both swarm commands need: the table, the feeds, the projections and the seen set.
  *
- * Same offline property as `targets`. `gh api .../issues/comments` and `dsh-board snapshot` do the
+ * Same offline property as `targets`. `gh api .../issues/comments` and `harness-board snapshot` do the
  * fetching; this composes what they produced, which is what makes the answer reproducible and
  * quotable rather than a thing that was true when somebody ran it.
  */
@@ -969,7 +969,7 @@ async function cmdSwarmAdmit(
     out(renderTriggers(admission));
     if (dropped > 0) out(`\n${String(dropped)} comment(s) had no readable issue_url and were dropped`);
     if (problems.length > 0) {
-      out(`\n${String(problems.length)} problem(s) with the table — run 'dsh-forge targets check'`);
+      out(`\n${String(problems.length)} problem(s) with the table — run 'harness-forge targets check'`);
     }
   }
   return tally.unauthorised > 0 || problems.length > 0 ? EXIT.drift : EXIT.ok;
@@ -1005,7 +1005,7 @@ async function cmdSwarmMirror(
     return EXIT.ok;
   }
   if (mirrors.length === 0) {
-    out("no honoured trigger — run 'dsh-forge swarm admit' to see why");
+    out("no honoured trigger — run 'harness-forge swarm admit' to see why");
     return EXIT.ok;
   }
   out(`${table.inbox} ← ${String(mirrors.length)} issue(s) would be opened\n`);
@@ -1232,7 +1232,7 @@ function readArtefacts(value: unknown): readonly Artefact[] {
 // ── supervise ────────────────────────────────────────────────────────────────
 
 /**
- * `dsh-forge supervise` — the difference between what an agent's PR says now and what it was told.
+ * `harness-forge supervise` — the difference between what an agent's PR says now and what it was told.
  *
  * Offline like the two groups above, and for a third reason on top of theirs: this command decides
  * what goes into an agent's context, and a decision about that should be reviewable by someone who
@@ -1681,6 +1681,16 @@ export async function main(argv: readonly string[], overrides: CliOverrides = {}
 }
 
 // Run only when invoked as a program, so the module stays importable by tests.
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+function invokedDirectly(): boolean {
+  const entry = process.argv[1];
+  if (entry === undefined) return false;
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (invokedDirectly()) {
   process.exitCode = await main(process.argv.slice(2));
 }

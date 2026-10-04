@@ -1,11 +1,8 @@
 <!-- Generated from packages/board/src/cli.ts by scripts/cli-reference.mjs. Do not edit; run "pnpm run docs:cli". -->
 
-# `dsh-board`
+# `harness-board`
 
 > project a GitHub repository as a board
-
-Temporary compatibility alias for [`harness-board`](harness-board.md). Both names run the
-same entrypoint, help text and exit statuses. Prefer the canonical command in new callers.
 
 Shipped by [`packages/board`](../../../packages/board). This page is *what it does*;
 *why it does it that way* is [`packages/board/README.md`](../../../packages/board/README.md).
@@ -24,7 +21,7 @@ Read from `EXIT` and `EXIT_MEANINGS` in [`packages/board/src/cli.ts`](../../../p
 block in the help text below renders from those same two constants, so this table, that block
 and the number the process actually returns cannot disagree.
 
-## `dsh-board --help`
+## `harness-board --help`
 
 ```text
 harness-board — project a GitHub repository as a board

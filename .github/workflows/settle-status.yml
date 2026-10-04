@@ -2,12 +2,12 @@
 #
 # `status:` is the board column, and the taxonomy has always said what it becomes when an item ends:
 # `status:shipped` on completed work, no status label at all on work that was dropped. The generated
-# skill narrates that rule to agents and `dsh-board check` reports every item that breaks it —
+# skill narrates that rule to agents and `harness-board check` reports every item that breaks it —
 # neither of them applies it. On this repository that gap ran to fourteen merged pull requests
 # sitting in no column, each closed correctly by a human who then had no reason to think about a
 # label again. A rule that depends on remembering is a rule that decays; this is the remembering.
 #
-# The rule itself is not written here. `dsh-forge status settle` computes the change from the same
+# The rule itself is not written here. `harness-forge status settle` computes the change from the same
 # constants the skill and the board read, and this file only reads the event and applies the answer.
 # Spelling `status:shipped` into this YAML would be a second copy of a fact the code already owns,
 # and the second copy is the one that goes stale.

@@ -25,7 +25,7 @@ body:
     id: summary
     attributes:
       label: The work, in one line
-      placeholder: dsh-board should emit the closes-relationship for pull request items
+      placeholder: harness-board should emit the closes-relationship for pull request items
     validations:
       required: true
 

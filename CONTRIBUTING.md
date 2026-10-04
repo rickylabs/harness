@@ -43,7 +43,7 @@ in this order:
 | `check:forms` | an issue form that does not parse, or that applies a label the taxonomy does not declare |
 | `check:snapshots` | a committed allowance snapshot — a quota, a spend balance, a serialised probe |
 | `check:publish` | the publishable package not publishing what it claims to |
-| `check:label-registry` | a label the board branches on that `dsh-forge init` would never create |
+| `check:label-registry` | a label the board branches on that `harness-forge init` would never create |
 | `check:docs` | a generated CLI reference page that no longer matches its binary |
 | `check:skill` | a committed `SKILL.md` that is not what the generator would write today |
 | `check:tutorial` | a pasted output block in a tutorial that the command no longer prints |
@@ -148,7 +148,7 @@ lifecycle**, because a second copy of it is a copy that will eventually be wrong
 
 What you need to know to file or move something:
 
-- Exactly **one** `status:` label at a time. It is the board column, and `dsh-board check` exits
+- Exactly **one** `status:` label at a time. It is the board column, and `harness-board check` exits
   non-zero when an item carries two or none.
 - `type:`, `area:`, `priority:`, `epic:` and `topic:` are additive.
 - Labels are never deleted, only retired — deleting one strips it from every item that carried it,

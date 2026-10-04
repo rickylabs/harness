@@ -31,7 +31,7 @@ body:
     id: summary
     attributes:
       label: What is wrong, in one line
-      placeholder: dsh-board check exits 0 on a board with two status labels on one issue
+      placeholder: harness-board check exits 0 on a board with two status labels on one issue
     validations:
       required: true
 

@@ -28,16 +28,17 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT_DIR = join(ROOT, "docs", "reference", "cli");
 
-/**
- * The five binaries, in the order a newcomer meets them: install the profile, install the board,
- * read the board, ask what may run, then see what ran.
- */
+/** Canonical core commands, their temporary aliases, and the optional router experiment. */
 const CLIS = [
+  { bin: "harness-forge", pkg: "forge" },
+  { bin: "harness-board", pkg: "board" },
+  { bin: "harness-coordinator", pkg: "coordinator" },
+  { bin: "harness-telemetry", pkg: "telemetry" },
+  { bin: "dsh-forge", pkg: "forge", aliasOf: "harness-forge" },
+  { bin: "dsh-board", pkg: "board", aliasOf: "harness-board" },
+  { bin: "dsh-coordinator", pkg: "coordinator", aliasOf: "harness-coordinator" },
+  { bin: "dsh-telemetry", pkg: "telemetry", aliasOf: "harness-telemetry" },
   { bin: "dsh-profile", pkg: "dsh-app" },
-  { bin: "dsh-forge", pkg: "forge" },
-  { bin: "dsh-board", pkg: "board" },
-  { bin: "dsh-coordinator", pkg: "coordinator" },
-  { bin: "dsh-telemetry", pkg: "telemetry" },
 ];
 
 /** Paths from a page in `docs/reference/cli/` back to the repository root. */
@@ -46,7 +47,7 @@ const up = (path) => `../../../${path}`;
 /**
  * Every `bin` the workspace declares must appear in `CLIS`.
  *
- * Without this, the failure mode is a sixth binary shipping with no page and nothing going red —
+ * Without this, the failure mode is a new binary shipping with no page and nothing going red —
  * the exact drift this whole script exists to prevent, just one level up. The list above is
  * hand-ordered on purpose (a newcomer's order, not alphabetical), so it cannot be derived; it can
  * only be checked.
@@ -60,12 +61,18 @@ function assertEveryBinIsCovered() {
     } catch {
       continue;
     }
-    for (const bin of Object.keys(manifest.bin ?? {})) declared.set(bin, dir);
+    for (const [bin, entry] of Object.entries(manifest.bin ?? {})) declared.set(bin, { pkg: dir, entry });
   }
 
   const covered = new Set(CLIS.map((cli) => cli.bin));
   const missing = [...declared.keys()].filter((bin) => !covered.has(bin)).sort();
-  const phantom = CLIS.filter((cli) => declared.get(cli.bin) !== cli.pkg);
+  const phantom = CLIS.filter((cli) => declared.get(cli.bin)?.pkg !== cli.pkg);
+  const splitAliases = CLIS.filter((cli) => cli.aliasOf !== undefined &&
+    (declared.get(cli.bin)?.pkg !== declared.get(cli.aliasOf)?.pkg ||
+      declared.get(cli.bin)?.entry !== declared.get(cli.aliasOf)?.entry));
+  if (splitAliases.length > 0) {
+    throw new Error(`compatibility aliases must share the canonical entrypoint: ${splitAliases.map(cli => cli.bin).join(", ")}`);
+  }
 
   if (missing.length > 0) {
     throw new Error(
@@ -137,6 +144,11 @@ function renderPage(cli, help, exits) {
     "",
     `> ${summary}`,
     "",
+    ...(cli.aliasOf === undefined ? [] : [
+      `Temporary compatibility alias for [\`${cli.aliasOf}\`](${cli.aliasOf}.md). Both names run the`,
+      "same entrypoint, help text and exit statuses. Prefer the canonical command in new callers.",
+      "",
+    ]),
     `Shipped by [\`packages/${cli.pkg}\`](${up(`packages/${cli.pkg}`)}). This page is *what it does*;`,
     `*why it does it that way* is [\`packages/${cli.pkg}/README.md\`](${up(`packages/${cli.pkg}/README.md`)}).`,
     "",
@@ -182,9 +194,13 @@ function renderIndex(pages) {
       (p) => `| [\`${p.bin}\`](${p.bin}.md) | ${p.summary} | ${p.exits.map((e) => `\`${e.code}\``).join(" ")} |`,
     ),
     "",
-    "`2` is a usage error in all five. Nothing else is uniform: `3` is a missing GitHub transport for",
-    "`dsh-board` and `dsh-forge`, an unreadable input for `dsh-coordinator`, an unwritable destination",
-    "for `dsh-profile`, and an incomplete picture for `dsh-telemetry`. Read the table on the page.",
+    "The four core `harness-*` commands keep temporary `dsh-*` compatibility aliases. Each pair",
+    "shares one entrypoint; the aliases are retained for existing callers and reference links.",
+    "The optional router experiment still ships `dsh-profile` until its separate relocation.",
+    "",
+    "`2` is a usage error in every command. `3` is a missing GitHub transport for",
+    "`harness-board` and `harness-forge`, an unreadable input for `harness-coordinator`, an unwritable destination",
+    "for `dsh-profile`, and an incomplete picture for `harness-telemetry`. Read the table on the page.",
     "",
     "---",
     "",
