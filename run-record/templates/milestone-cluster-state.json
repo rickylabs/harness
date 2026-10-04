@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 2,
+  "milestone": "0.0.x",
+  "baselineMainSha": "0000000000000000000000000000000000000000",
+  "currentMainSha": "0000000000000000000000000000000000000000",
+  "coordinator": {
+    "agentId": "replace-me"
+  },
+  "limits": {
+    "activeImplementationSlicesPerLane": 2,
+    "activeEvaluatorsPerLane": 1,
+    "globalExpensiveGates": 1,
+    "releaseWriters": 1
+  },
+  "lanes": [
+    { "id": "docs", "orchestratorAgentId": "replace-me", "issueNumbers": [] },
+    { "id": "internals", "orchestratorAgentId": "replace-me", "issueNumbers": [] },
+    { "id": "fixes", "orchestratorAgentId": "replace-me", "issueNumbers": [] },
+    { "id": "features", "orchestratorAgentId": "replace-me", "issueNumbers": [] }
+  ],
+  "watchers": [],
+  "committedIssues": [],
+  "leaves": [],
+  "expensiveGates": [],
+  "canaryCheckpoints": [],
+  "reporting": {
+    "cadenceMinutes": 60,
+    "lastReportAt": "1970-01-01T00:00:00.000Z",
+    "nextReportDueAt": "1970-01-01T01:00:00.000Z",
+    "lastReportRef": "worklog.md#replace-me",
+    "headline": "Replace with the current milestone outcome and release readiness.",
+    "currentMainSha": "0000000000000000000000000000000000000000",
+    "canary": {
+      "target": "0.0.x-next",
+      "state": "not-planned",
+      "eta": {
+        "window": "not scheduled",
+        "confidence": "high",
+        "basis": "No canary checkpoint is selected yet."
+      },
+      "criticalPath": []
+    },
+    "progress": {
+      "mergedPullRequests": [],
+      "closedIssues": [],
+      "newIssues": [],
+      "queueDeltaExplanation": "Initial cluster bootstrap."
+    },
+    "scope": {
+      "openIssueCount": 0,
+      "ownedIssueCount": 0,
+      "scheduledIssueCount": 0,
+      "unscheduledIssueNumbers": [],
+      "openPullRequestCount": 0
+    },
+    "mergeQueue": [],
+    "orchestratorMatrix": [
+      {
+        "lane": "docs",
+        "state": "queued",
+        "activeItems": [],
+        "lastConcreteProgressAt": "1970-01-01T00:00:00.000Z",
+        "blocker": null,
+        "nextAction": "Replace with the next concrete docs action."
+      },
+      {
+        "lane": "internals",
+        "state": "queued",
+        "activeItems": [],
+        "lastConcreteProgressAt": "1970-01-01T00:00:00.000Z",
+        "blocker": null,
+        "nextAction": "Replace with the next concrete internals action."
+      },
+      {
+        "lane": "fixes",
+        "state": "queued",
+        "activeItems": [],
+        "lastConcreteProgressAt": "1970-01-01T00:00:00.000Z",
+        "blocker": null,
+        "nextAction": "Replace with the next concrete fixes action."
+      },
+      {
+        "lane": "features",
+        "state": "queued",
+        "activeItems": [],
+        "lastConcreteProgressAt": "1970-01-01T00:00:00.000Z",
+        "blocker": null,
+        "nextAction": "Replace with the next concrete features action."
+      }
+    ],
+    "blockers": [],
+    "environment": {
+      "checkedAt": "1970-01-01T00:00:00.000Z",
+      "aspireApplications": 0,
+      "dockerContainers": 0,
+      "dockerCustomNetworks": 0
+    },
+    "ownerDecisions": []
+  },
+  "exactMainEvidence": {
+    "gitHead": "0000000000000000000000000000000000000000",
+    "surface": "repository",
+    "expectedGateIds": [],
+    "receipts": []
+  },
+  "existingReleaseLease": false,
+  "releaseWriters": [],
+  "releaseCaptain": {
+    "state": "inactive",
+    "agentId": null,
+    "leaseId": null,
+    "contentSha": null,
+    "evidence": []
+  },
+  "updatedAt": "1970-01-01T00:00:00.000Z"
+}

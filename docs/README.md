@@ -22,7 +22,7 @@ explain them.
 - Want to run something → [Local proof first](../README.md#local-proof-first).
 - Want a flag, a subcommand or an exit code → [CLI reference](reference/cli/README.md).
 - Want to understand a design decision → [`concepts/`](concepts/) for the model,
-  [`doctrine/`](../doctrine/) for the method, and the
+  [`method/doctrine/`](../method/doctrine/) for the method, and the
   [`ARCHITECTURE.md`](../ARCHITECTURE.md) for what is ratified.
 - Proposing a design → [numbered RFCs](rfcs/README.md), with pinned evidence and claim labels.
 - Want the details of one subsystem → its package README under [`packages/`](../packages/). Those
@@ -30,7 +30,7 @@ explain them.
 - Want to change something here → [`CONTRIBUTING.md`](../CONTRIBUTING.md), and
   [`SECURITY.md`](../SECURITY.md) before you touch an issue.
 
-[ADR 0005](../doctrine/decisions/0005-harness-framework-identity.md) records the current framework
+[ADR 0005](../method/doctrine/decisions/0005-harness-framework-identity.md) records the current framework
 on Orchid and Herdr. Existing `dsh-*` commands and the optional router retain their real names
 until the ordered compatibility/move PRs. Earlier decisions and run records remain historical evidence.
 

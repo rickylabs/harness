@@ -7,7 +7,7 @@ tab, no wiki, and no support channel other than the issue tracker — so the hon
 | --- | --- |
 | Do this for the first time | [From a clone to a moving board](docs/tutorials/01-from-clone-to-board.md) — fifteen minutes, no server |
 | Know what a flag or an exit code means | [CLI reference](docs/reference/cli/README.md), or `--help` on the binary — both are generated from the same source |
-| Know why it is built this way | [`docs/concepts/`](docs/concepts/), then [`doctrine/`](doctrine/) |
+| Know why it is built this way | [`docs/concepts/`](docs/concepts/), then [`method/doctrine/`](method/doctrine/) |
 | Know what is built and what is not | The [E0 roadmap](https://github.com/rickylabs/harness/issues/30) and the board — not a status section in a README |
 | Report something broken | [Open an issue](https://github.com/rickylabs/harness/issues/new/choose) with the matching form |
 | Report a vulnerability | [`SECURITY.md`](SECURITY.md). Never a public issue — in this repository that is worse than usual |

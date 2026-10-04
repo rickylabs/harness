@@ -37,7 +37,7 @@ which is precisely the set of situations where skipping the gate is most temptin
 The obvious first thing to build in a coordinator is the workflow engine. This package built the
 **refusal** first.
 
-`doctrine/WORKFLOW.md` says an independent evaluation stage must "use a model that did not author the
+`method/doctrine/WORKFLOW.md` says an independent evaluation stage must "use a model that did not author the
 artifact under review". As a sentence, that is addressed to whoever is reading it — and whoever is
 reading it is usually the author. An author deciding under time pressure whether they may review
 their own work, with the only other candidate rate-limited, is not a gate. It is a temptation with a

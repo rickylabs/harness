@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "resolution": {
+    "sourceRevision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "resolvedAt": "2026-01-02T03:04:05.000Z",
+    "selected": {
+      "logicalModel": "example_model",
+      "physicalModel": "vendor/example-model"
+    }
+  },
+  "requested": {
+    "model": "vendor/example-model",
+    "effort": "medium",
+    "transport": "example-cli",
+    "role": "plan_evaluation",
+    "tier": "example-tier"
+  },
+  "observed": {
+    "model": {
+      "status": "known",
+      "value": "vendor/example-model",
+      "source": "control-plane",
+      "evidenceRef": "synthetic-observation"
+    },
+    "effort": {
+      "status": "known",
+      "value": "medium",
+      "source": "control-plane",
+      "evidenceRef": "synthetic-observation"
+    },
+    "transport": {
+      "status": "known",
+      "value": "example-cli",
+      "source": "control-plane",
+      "evidenceRef": "synthetic-observation"
+    },
+    "role": {
+      "status": "known",
+      "value": "plan_evaluation",
+      "source": "control-plane",
+      "evidenceRef": "synthetic-observation"
+    },
+    "tier": {
+      "status": "known",
+      "value": "example-tier",
+      "source": "control-plane",
+      "evidenceRef": "synthetic-observation"
+    }
+  }
+}

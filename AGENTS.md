@@ -20,15 +20,15 @@ Optionally scoped:
 use harness, profile: architecture: design the run-state ownership model
 ```
 
-This binds you to the doctrine in [`doctrine/`](doctrine/). Read
-[`WORKFLOW.md`](doctrine/WORKFLOW.md) and [`PRINCIPLES.md`](doctrine/PRINCIPLES.md)
+This binds you to the doctrine in [`method/doctrine/`](method/doctrine/). Read
+[`WORKFLOW.md`](method/doctrine/WORKFLOW.md) and [`PRINCIPLES.md`](method/doctrine/PRINCIPLES.md)
 before your first mutation. They are short by design.
 
 ## What this repository is
 
 **Our portable agent framework on Orchid and Herdr.** The core packages own routing,
 native observations, provider boundaries, board/coordination mechanics and published contracts.
-The method and run record make the work resumable and reviewable. [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md)
+The method and run record make the work resumable and reviewable. [ADR 0005](method/doctrine/decisions/0005-harness-framework-identity.md)
 records Eric's Decision Q; [ARCHITECTURE.md](ARCHITECTURE.md) owns the charter.
 
 `experiments/routers/dsh` is the retained optional dsh-router experiment. It remains in the
@@ -82,10 +82,12 @@ Stubs reserve a boundary; their existence does not prove implemented or deployed
 packages/                    fourteen flat core packages
 experiments/routers/dsh/      opt-in router source, docs and deployment recipe
 profiles/                    stable root process/routing entrypoints
-doctrine/                    portable method; canonical home migration is pending
+method/doctrine/             canonical portable method and decisions
+method/tools/                canonical method validators and gate vocabulary
+run-record/templates/        canonical run and milestone templates
 .llm/runs/                   retained committed historical run evidence
-.llm/harness/                existing templates; compatibility preserved during migration
-.llm/tools/                  existing gates and method tools
+doctrine/, .llm/tools/       compatibility pointers and delegating entrypoints
+.llm/harness/templates/      generated compatibility template copies
 .claude/skills/              generated board-process rulebook
 ```
 
@@ -99,7 +101,7 @@ or wire naming migrations require exact paired consumer pins and rollout evidenc
 
 ## Ratified decisions you inherit
 
-[ADR 0005](doctrine/decisions/0005-harness-framework-identity.md) supersedes the former dsh-only
+[ADR 0005](method/doctrine/decisions/0005-harness-framework-identity.md) supersedes the former dsh-only
 premise while retaining historical decisions. Do not reinterpret an old roadmap as the current charter.
 
 1. Harness is our framework on Orchid and Herdr; dsh is an optional additional-router experiment.

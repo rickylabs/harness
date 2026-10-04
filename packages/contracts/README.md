@@ -17,7 +17,7 @@ authorization and the captured API/client used by its native companion. A native
 public type-only contract vocabulary; it must not run a duplicate native-source fold or import
 private backend/Harness runtime. [The three layers](../../docs/concepts/06-the-three-layers.md)
 owns that boundary. Publication makes the mechanism contract a versioned artifact, which is why
-this is the only non-private workspace package. [ADR 0005](../../doctrine/decisions/0005-harness-framework-identity.md)
+this is the only non-private workspace package. [ADR 0005](../../method/doctrine/decisions/0005-harness-framework-identity.md)
 records the current framework on Orchid and Herdr.
 
 That is also why this package has **no dependencies**, workspace or otherwise. A `workspace:*` edge

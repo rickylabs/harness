@@ -30,7 +30,7 @@ the question actually gets asked.
 argument instead of reading a clock, so projecting the same issues twice produces a byte-identical
 snapshot, and a diff between two snapshots means something.
 
-Nothing here writes to GitHub. The GitHub-truth decision, retained by [ADR 0005](../../doctrine/decisions/0005-harness-framework-identity.md), makes Harness the projection —
+Nothing here writes to GitHub. The GitHub-truth decision, retained by [ADR 0005](../../method/doctrine/decisions/0005-harness-framework-identity.md), makes Harness the projection —
 *if the projection and the issue disagree, the issue wins*. That is enforced by construction: the
 adapter has no write path at all. Every disagreement becomes an `Anomaly` naming what the issue
 says; nothing is repaired, reordered into plausibility, or hidden.

@@ -64,7 +64,7 @@ observation, decisions and steering. No consumer uses cross-repository workspace
 
 [Orchid](https://github.com/rickylabs/orchid) owns dispatch and physical launch admission;
 [Herdr](https://github.com/herdrdev/herdr) owns terminal control. Harness owns the portable mechanisms
-and method around them. [ADR 0005](../../doctrine/decisions/0005-harness-framework-identity.md)
+and method around them. [ADR 0005](../../method/doctrine/decisions/0005-harness-framework-identity.md)
 supersedes the former dsh-only premise while retaining the earlier decisions as historical evidence.
 
 The [package guide](../../packages/README.md) maps implemented, partial and stub boundaries.
@@ -76,7 +76,7 @@ after the next APK.
 
 ## Carry the method between projects
 
-The method lives in [`doctrine/`](../../doctrine/): portable markdown describing
+The method lives in [`method/doctrine/`](../../method/doctrine/): portable markdown describing
 how work is staged, reviewed and gated. The packages encode the parts a machine
 can enforce. Domain knowledge belongs to each project.
 

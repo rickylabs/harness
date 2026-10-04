@@ -23,16 +23,16 @@ the hazard is stated in full in [`AGENTS.md`](AGENTS.md#operational-hazard-this-
 Quick orientation:
 
 - Ratified decisions: [`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) — owner-amended through
-  [ADR 0005](doctrine/decisions/0005-harness-framework-identity.md), superseding the former
+  [ADR 0005](method/doctrine/decisions/0005-harness-framework-identity.md), superseding the former
   dsh-only premise — this repository is **our framework on Orchid and Herdr**;
   netscript is a service behind an adapter, not a build-time dependency.
 - Workspace layout and **the two seams** — native tasks and API/local-model calls: [`AGENTS.md`](AGENTS.md#workspace-layout-and-the-two-seams), with the
   package-by-package table in [`packages/README.md`](packages/README.md).
-- Doctrine lives in [`doctrine/`](doctrine/) — portable, plain markdown, zero runtime:
-  [`WORKFLOW.md`](doctrine/WORKFLOW.md), [`PRINCIPLES.md`](doctrine/PRINCIPLES.md),
-  [`GATES.md`](doctrine/GATES.md), [`TOOLCHAIN.md`](doctrine/TOOLCHAIN.md)
+- Doctrine lives in [`method/doctrine/`](method/doctrine/) — portable, plain markdown, zero runtime:
+  [`WORKFLOW.md`](method/doctrine/WORKFLOW.md), [`PRINCIPLES.md`](method/doctrine/PRINCIPLES.md),
+  [`GATES.md`](method/doctrine/GATES.md), [`TOOLCHAIN.md`](method/doctrine/TOOLCHAIN.md)
 - The board, without asking an agent: `harness-board status`, `harness-board check`.
 - The founding [architecture run](.llm/runs/architecture-foundation--seed/) is historical.
   Resume the active brief and its declared context/evidence surface.
-- Existing `dsh-*` core CLI names remain compatibility naming until cleanup PR 2;
+- Existing `dsh-*` core CLI names are compatibility aliases of the canonical `harness-*` commands;
   the optional dsh composition is not the framework host.
