@@ -152,3 +152,20 @@ test("coordinator scope must match its dedicated routing row", () => {
   assert.ok(codes(coordinator.replace("coordinator matrix", "matrix"))
     .includes("role:routing_mismatch"));
 });
+
+test("the fix profile is a required single-change bug-fix process on the implementation route", () => {
+  const missing = validateProfileCollection(documents().filter(document => document.path !== "fix.md"));
+  assert.ok(missing.some(problem => problem.path === "fix.md" && problem.code === "required_missing"));
+  const source = readFileSync(new URL("fix.md", profileDirectory), "utf8");
+  const result = validateProfileMarkdown("fix.md", source);
+  assert.deepEqual(result.problems, []);
+  assert.equal(result.value.name, "fix");
+  assert.equal(result.value.title, "Fix: one bug, one PR");
+  assert.equal(result.value.role, "implementation");
+  assert.equal(result.value.defaultTier, "straightforward");
+  for (const forbidden of ["model", "effort", "transport", "fallback", "budget"]) {
+    assert.equal(Object.hasOwn(result.value, forbidden), false);
+  }
+  assert.match(source, /`fix\(<scope>\): <summary>`/);
+  assert.match(source, /fails before the fix/);
+});

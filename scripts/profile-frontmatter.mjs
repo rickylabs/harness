@@ -6,7 +6,7 @@ import routing from "../packages/routing/config/routing.fleet.v2.json" with { ty
 const FIELDS = new Set(["name", "title", "role", "defaultTier", "description", "skills", "permissions", "guardrails"]);
 // Process names stay stable; routing vocabulary and available cells come from replaceable data.
 const REQUIRED = ["planner", "plan-evaluator", "leaf", "implementation-evaluator", "researcher",
-  "docs", "ui-ux", "vision-evaluator", "rfc", "milestone-coordinator"];
+  "docs", "ui-ux", "vision-evaluator", "rfc", "milestone-coordinator", "fix"];
 const text = (value, limit) => typeof value === "string" && value.length > 0 && value.length <= limit &&
   value === value.trim() && !/[\p{Cc}\u2028\u2029]/u.test(value);
 const record = value => value !== null && typeof value === "object" && !Array.isArray(value);
