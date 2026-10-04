@@ -3,7 +3,7 @@
  *
  * Ported from NetScript's `agentic:pr-checks` so that copy can be deleted: the same
  * classification, the same one-line JSON report and the same `--pretty` text. It is
- * self-contained on purpose — only `node:` built-ins — so `dsh-board checks` runs it from
+ * self-contained on purpose — only `node:` built-ins — so `harness-board checks` runs it from
  * the build and Deno can run this file from a pinned URL, the way NetScript already runs the
  * Harness matrix viewer.
  *

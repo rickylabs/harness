@@ -54,7 +54,7 @@ describe("core taxonomy", () => {
     const declared = new Set(STATUS_LABELS.map((s) => s.name));
     for (const phase of STATUS_LIFECYCLE) assert.ok(declared.has(phase), `${phase} has no label`);
     assert.ok(declared.has(STATUS_TERMINAL));
-    // The exact count, not a lower bound. `dsh-board` mirrors this list as its columns, and a
+    // The exact count, not a lower bound. `harness-board` mirrors this list as its columns, and a
     // status label the projector has no column for makes every item carrying it read as "no
     // status" — invisible, which is the failure `scripts/check-lifecycle.mjs` exists to catch.
     assert.equal(declared.size, STATUS_LIFECYCLE.length + 1);

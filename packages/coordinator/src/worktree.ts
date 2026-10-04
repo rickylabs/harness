@@ -364,7 +364,7 @@ export function unprotectedWorktrees(census: Census, judged: readonly Judgement[
  */
 export function keepFileBody(run: string, at: string): string {
   return [
-    `# ${KEEP_FILE} — written by dsh-coordinator`,
+    `# ${KEEP_FILE} — written by harness-coordinator`,
     `run: ${run}`,
     `at: ${at}`,
     "",

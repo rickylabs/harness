@@ -79,7 +79,7 @@ after(() => {
 
 beforeEach(async () => {
   if (root) await rm(root, { recursive: true, force: true });
-  root = await mkdtemp(join(tmpdir(), "dsh-forge-"));
+  root = await mkdtemp(join(tmpdir(), "harness-forge-"));
   previousGlobalConfig = process.env["GIT_CONFIG_GLOBAL"];
   previousSystemConfig = process.env["GIT_CONFIG_SYSTEM"];
   // Both fixture construction and the real `detectRepoSlug` subprocess inherit these. Do not

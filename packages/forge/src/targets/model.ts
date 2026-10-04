@@ -159,7 +159,7 @@ export function accountOf(agent: string): string {
  * Note what normalising costs: `["opencode", "codex"]` collapses to `["codex"]`, so a row that
  * asked to prefer OpenCode and fall back to Codex gets one candidate. That is divybot's behaviour,
  * and `checkTargets` does not refuse it — a table is not wrong for saying something the dispatcher
- * then flattens. It is visible in `dsh-forge targets show`, which is where it can be acted on.
+ * then flattens. It is visible in `harness-forge targets show`, which is where it can be acted on.
  */
 export function agentsOf(agents: readonly string[], fallback: string): readonly string[] {
   const out: string[] = [];

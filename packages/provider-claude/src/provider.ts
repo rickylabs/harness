@@ -474,7 +474,7 @@ export class ClaudeProvider implements SubagentProvider {
   /**
    * Where a run's evidence lands.
    *
-   * The isolated config directory is not the one `dsh-telemetry` scans by default, so a run launched
+   * The isolated config directory is not the one `harness-telemetry` scans by default, so a run launched
    * here would otherwise leave transcripts nothing goes looking for. The directory is reported
    * rather than the per-session file because the CLI's project-slug scheme is the CLI's, and
    * guessing it is the failure this package avoids everywhere else — the backfill walks for

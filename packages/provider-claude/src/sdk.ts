@@ -87,7 +87,7 @@ export interface AgentQuery extends AsyncIterable<unknown> {
   interrupt?: () => Promise<void>;
 }
 
-/** The vendor entry point, injected. `dsh-app` binds the real one; the suite binds a fake. */
+/** The vendor entry point, injected by a composition root; the suite binds a fake. */
 export type QueryFn = (input: {
   readonly prompt: AsyncIterable<SdkUserMessage>;
   readonly options: QueryOptions;

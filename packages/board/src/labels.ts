@@ -3,7 +3,7 @@
  *
  * `type:epic` sat in `project.ts` for the life of the file, as one of two alternatives in the
  * predicate deciding whether an issue is an epic. It never once evaluated true: the label does not
- * exist and `dsh-forge`'s taxonomy has never created it (#202, fixed in #232). Nothing could have
+ * exist and `harness-forge`'s taxonomy has never created it (#202, fixed in #232). Nothing could have
  * caught it. Types cannot — `labels.includes("type:epic")` is as well-typed as
  * `labels.includes("epic")`. Tests did not, and worse: a fixture manufactured the label, so the
  * dead branch had a passing test standing behind data that cannot occur. `labels plan` could not
@@ -13,7 +13,7 @@
  *
  * The drift nothing measured is a whole direction: the set of labels the code reads against the
  * set the taxonomy creates. {@link LABEL_USES} is this side of that comparison. The other side is
- * `dsh-forge`'s taxonomy, and `scripts/check-label-registry.mjs` is the only place that can see
+ * `harness-forge`'s taxonomy, and `scripts/check-label-registry.mjs` is the only place that can see
  * both — `board` must not depend on `forge`, since the projector is meant to be pointed at
  * repositories that were never forged.
  *
@@ -43,7 +43,7 @@ const PRIORITY_FAMILY: (typeof SINGLE_VALUE_FAMILIES)[number] = "priority";
 /**
  * The lane family's prefix when the caller does not name one.
  *
- * A default and not a fact: `dsh-forge` detects `orchestrator:`, `topic:` or `lane:` and keeps
+ * A default and not a fact: `harness-forge` detects `orchestrator:`, `topic:` or `lane:` and keeps
  * whichever prefix the repository already uses, so a repo on `topic:` is not in violation of
  * anything. What the check can insist on is that the *default* is a prefix the taxonomy can create.
  */

@@ -74,7 +74,7 @@ would eat something — an empty config dir (which is a fallback to `~/.claude`,
 relative one (whose meaning depends on the daemon's cwd), and one pointed at the home directory
 itself.
 
-Because that isolated directory is not the one `dsh-telemetry` scans by default, every `Observation`
+Because that isolated directory is not the one `harness-telemetry` scans by default, every `Observation`
 carries `<configDir>/projects` in `artifacts`. The directory, not a guessed per-session filename: the
 CLI owns its project-slug scheme, and the backfill walks for `*.jsonl` at any depth anyway.
 
@@ -129,7 +129,7 @@ Deferred deliberately, each with an owner:
   correction is a one-line diff. Same issue.
 - Verifying that no orphan CLI processes accumulate over a long run is a claim about a real process
   table. The structural half — one controller per run, aborted on every exit — is here and tested.
-- Nothing binds the real `query` yet; the composition-root row in `dsh-app` is not written.
+- Nothing binds the real `query` yet; this native adapter has no verified production composition binding here.
 - A deadline past `TIMER_CEILING_MS` is clamped rather than honoured, and says so through
   `untranslated()`.
 

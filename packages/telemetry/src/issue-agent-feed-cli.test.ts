@@ -234,6 +234,17 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     assert.equal(frame.issues[1]?.complete, true);
     assert.equal(frame.issues[1]?.dispatches[0]?.agents.length, 2);
     assert.ok(!JSON.stringify(frame).includes(rootId));
+    const canonical = await collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts,
+      HARNESS_TELEMETRY_WIRE_FAMILY: "harness" }, limit: 20, now: "2026-09-27T22:00:00.000Z" });
+    assert.equal(canonical.issues[1]?.complete, true);
+    const names = { subscriptionHeadroom: "governance.usage", meteredSpend: "runs", runTokens: "runs", localCapacity: "host-capacity" };
+    for (const agent of canonical.issues[1]!.dispatches[0]!.agents) {
+      const previous: IssueAgentTreeSnapshot["issues"][number]["dispatches"][number]["agents"][number] = frame.issues[1]!.dispatches[0]!.agents.find(row => row.observation.agentId === agent.observation.agentId)!;
+      for (const key of Object.keys(names) as (keyof typeof names)[]) {
+        assert.equal(agent.observation.cost[key].source, `harness-telemetry.${names[key]}`);
+        assert.deepEqual({ ...agent.observation.cost[key], source: previous.observation.cost[key].source }, previous.observation.cost[key]);
+      }
+    }
     const scoped = new Capture();
     const command = ["--json", "--issue", "example/project#387", "--home", home, "--limit", "20"];
     assert.equal(await issueAgentFeedCommand(command, { output: scoped, now: () => "2026-09-27T22:00:00.000Z",
@@ -241,6 +252,11 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     const scopedFrame = JSON.parse(scoped.lines[0]!);
     assert.equal(scopedFrame.complete, true);
     assert.deepEqual(scopedFrame.issues.map((row: { issueNumber: number }) => row.issueNumber), [387]);
+    const canonicalCLI = new Capture();
+    assert.equal(await issueAgentFeedCommand(command, { output: canonicalCLI, now: () => "2026-09-27T22:00:00.000Z",
+      env: { [ORCHID_DISPATCH_ROOT]: receipts, HARNESS_TELEMETRY_WIRE_FAMILY: "harness" } }), 0);
+    const canonicalFrame = JSON.parse(canonicalCLI.lines[0]!);
+    assert.equal(canonicalFrame.issues[0].dispatches[0].agents[0].observation.cost.runTokens.source, "harness-telemetry.runs");
     const missing = new Capture();
     assert.equal(await issueAgentFeedCommand(["--json", "--issue", "example/project#999", "--home", home],
       { output: missing, now: () => "2026-09-27T22:00:00.000Z", env: { [ORCHID_DISPATCH_ROOT]: receipts } }), 3);

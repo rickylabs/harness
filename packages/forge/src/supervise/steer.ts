@@ -528,7 +528,7 @@ const REASON_TEXT: Readonly<Record<SupervisionReason, string>> = {
   "nothing-new": "everything on this pull was forwarded on an earlier tick",
   quiet: "no review worth a turn, no failing check, no conflict",
   untargeted: "no target row names this repository",
-  "automerge-on": "the row merges its own PRs — not supervised; see 'dsh-forge targets check'",
+  "automerge-on": "the row merges its own PRs — not supervised; see 'harness-forge targets check'",
   draft: "a draft, where red CI is the expected reading",
 };
 

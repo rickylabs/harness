@@ -1,9 +1,10 @@
+import { producerAgentCost, validateWireFamily, type TelemetryWireFamily } from "./producer-names.js";
 import { OPERATOR_ENV } from "./operator-environment.js";
 /** A bounded, local-only RAM and AMD VRAM reading. No remote host is queried. */
 import { createHash } from "node:crypto";
 import { readFile, readdir, realpath } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { ISSUE_AGENT_TREE_FRESH_MS, unavailableAgentCost,
+import { ISSUE_AGENT_TREE_FRESH_MS,
   type AgentCost, type AgentUnavailableReason } from "@rickylabs/harness-contracts";
 
 export interface HostCapacityReading {
@@ -19,8 +20,6 @@ export interface HostCapacitySource {
 
 export const HOST_CAPACITY_PLACEMENT_HOST = OPERATOR_ENV.placementHost;
 const shortName = /^[A-Za-z][A-Za-z0-9_-]{0,62}$/;
-const unavailable = (host: string | null, reason: AgentUnavailableReason): HostCapacityReading =>
-  ({ host, cost: unavailableAgentCost(reason).localCapacity });
 const integer = (raw: string): number | null => {
   if (!/^\d+\s*$/.test(raw)) return null;
   const value = Number(raw.trim());
@@ -37,7 +36,10 @@ function meminfoBytes(raw: string, key: "MemTotal" | "MemAvailable"): number | n
 
 /** All cardN pairs must be present and sane; a missing GPU is never a measured zero. */
 export async function readLocalHostCapacity(capturedAt: string, configuredHost: string | undefined,
-  source: HostCapacitySource = {}): Promise<HostCapacityReading> {
+  source: HostCapacitySource = {}, wireFamily: TelemetryWireFamily = "legacy"): Promise<HostCapacityReading> {
+  validateWireFamily(wireFamily);
+  const unavailable = (host: string | null, reason: AgentUnavailableReason): HostCapacityReading =>
+    ({ host, cost: producerAgentCost(reason, wireFamily).localCapacity });
   if (configuredHost === undefined || configuredHost === "") return unavailable(null, "host_identity_unset");
   const host = configuredHost;
   if (!shortName.test(host) || !Number.isFinite(Date.parse(capturedAt)) ||
@@ -85,6 +87,6 @@ export async function readLocalHostCapacity(capturedAt: string, configuredHost: 
     vramUsedBytes, vramTotalBytes, cards: cardMeasurements };
   const validUntil = new Date(Date.parse(capturedAt) + ISSUE_AGENT_TREE_FRESH_MS).toISOString();
   const revision = createHash("sha256").update(JSON.stringify({ capturedAt, measurement })).digest("hex");
-  return { host, cost: { ...unavailableAgentCost().localCapacity, availability: "available", measurement,
+  return { host, cost: { ...producerAgentCost("source_not_bound", wireFamily).localCapacity, availability: "available", measurement,
     reason: null, observedAt: capturedAt, validUntil, revision } };
 }

@@ -263,7 +263,7 @@ describe("openOpencodeDb", () => {
     // The adapter between `node:sqlite`'s prepare(sql).all() and this module's all(sql) is the kind
     // of shape mismatch that type-checks and then fails on the one machine that has the store. It
     // only counts if a real database goes through it.
-    const dir = await mkdtemp(join(tmpdir(), "dsh-opencode-"));
+    const dir = await mkdtemp(join(tmpdir(), "harness-opencode-"));
     const path = join(dir, "opencode.db");
     try {
       const sqlite = (await import("node:sqlite")) as unknown as {
@@ -317,7 +317,7 @@ describe("openOpencodeDb", () => {
     assert.equal(missing.absent, true);
     assert.equal(missing.note, "opencode: no store on this box");
 
-    const dir = await mkdtemp(join(tmpdir(), "dsh-opencode-bad-"));
+    const dir = await mkdtemp(join(tmpdir(), "harness-opencode-bad-"));
     try {
       // A directory where the store belongs, because it is the failure `node:sqlite` reports at open
       // time. A file of the wrong content opens fine and only fails when a statement runs, which the

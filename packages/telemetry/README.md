@@ -1031,3 +1031,13 @@ by default; `HARNESS_TELEMETRY_LOG_NAME` explicitly selects the canonical or leg
 family. [The migration guide](../../docs/how-to/telemetry-operator-migration.md)
 owns exact resolution, source refusal and paired rollout requirements. No host
 settings or files change merely because this reader is upgraded.
+
+## Producer naming rollout
+
+Canonical CLI names are `harness-telemetry`; temporary `dsh-telemetry` aliases invoke the same
+entrypoint. Cost and governance output support explicit
+`HARNESS_TELEMETRY_WIRE_FAMILY=harness|legacy`. Absence retains legacy output while supported
+readers are upgraded; invalid values refuse collection. The selection affects only names on
+originated rows, preserving measurements, source clocks and native attribution. Received
+provenance remains unchanged. See the [wire migration guide](../../docs/how-to/telemetry-wire-migration.md)
+and the separate [operator/log migration](../../docs/how-to/telemetry-operator-migration.md).

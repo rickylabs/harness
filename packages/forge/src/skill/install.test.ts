@@ -15,7 +15,7 @@ const ctx = {
 };
 
 const withTempRepo = async (fn: (root: string) => Promise<void>): Promise<void> => {
-  const root = await mkdtemp(join(tmpdir(), "dsh-forge-skill-"));
+  const root = await mkdtemp(join(tmpdir(), "harness-forge-skill-"));
   try {
     await fn(root);
   } finally {

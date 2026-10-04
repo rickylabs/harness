@@ -1,3 +1,4 @@
+import { resolveWireFamily } from "./producer-names.js";
 /** Restartable JSONL source feed. The consuming cockpit owns durable replay. */
 import { randomUUID, createHash } from "node:crypto";
 import { resolveNativeOperatorBindings } from "./operator-environment.js";
@@ -46,13 +47,14 @@ const MAX_FRAME_TRANSCRIPT_BYTES = 32 * 1_048_576;
 /** Read each bound issue independently; one stale receipt never blanks its neighbours. */
 export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Promise<IssueAgentTreeSnapshot> {
   let bindings: ReturnType<typeof resolveNativeOperatorBindings>;
-  try { bindings = resolveNativeOperatorBindings(options.env); }
+  let wireFamily: ReturnType<typeof resolveWireFamily>;
+  try { wireFamily = resolveWireFamily(options.env); bindings = resolveNativeOperatorBindings(options.env); }
   catch { return unavailableSnapshot(options.now, "source_unavailable"); }
   if (bindings.dispatchRoot === undefined) return unavailableSnapshot(options.now, "source_not_bound");
   const orchid = await readOrchidDispatches(bindings.dispatchRoot);
   const nowMs = Date.parse(options.now);
   if (!Number.isFinite(nowMs) || orchid.reason !== null) return unavailableSnapshot(options.now, "source_unavailable");
-  const localCapacity = await readLocalHostCapacity(options.now, bindings.placementHost);
+  const localCapacity = await readLocalHostCapacity(options.now, bindings.placementHost, {}, wireFamily);
   const actionScan = await readActionReceipts(bindings.dispatchRoot);
   const groups = new Map<string, { repo: IssueAgentTree["repo"]; issueNumber: number;
     dispatches: DispatchEvidence[]; refusal?: Extract<OrchidLaunchState, { state: "refused" }>;
@@ -175,10 +177,10 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
         children, options.now, options.watchFiles);
       for (const [key, at] of starts) claudeChildStarts.set(key, at);
     }
-    const observations = buildAgentObservations({ dispatches: group.dispatches, runs,
+    const observations = buildAgentObservations({ wireFamily, dispatches: group.dispatches, runs,
       observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true,
       claudeChildStarts });
-    entry.snapshot = buildIssueAgentTreeSnapshot({ observations, dispatches: group.dispatches, runs,
+    entry.snapshot = buildIssueAgentTreeSnapshot({ wireFamily, observations, dispatches: group.dispatches, runs,
       localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete });
   }
   // A malformed receipt cannot be proven unrelated to a scoped issue.
@@ -247,7 +249,7 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
   const env = deps.env ?? process.env;
   let configurationUnavailable = false;
   let bindings: ReturnType<typeof resolveNativeOperatorBindings>;
-  try { bindings = resolveNativeOperatorBindings(env); }
+  try { resolveWireFamily(env); bindings = resolveNativeOperatorBindings(env); }
   catch {
     configurationUnavailable = true;
     bindings = { dispatchRoot: undefined, claudeChildEventRoot: undefined, placementHost: undefined };

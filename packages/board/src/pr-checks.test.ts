@@ -143,7 +143,7 @@ describe("reading a pull request", () => {
   });
 });
 
-describe("dsh-board checks", () => {
+describe("harness-board checks", () => {
   const cli = (runner: GhApiRunner, detected: string | null = "o/n") => {
     const out: string[] = [], err: string[] = [];
     const d: CliDeps = { fetchItems: async () => { throw new Error("the board is not read"); }, detectRepoSlug: async () => detected,

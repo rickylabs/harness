@@ -26,7 +26,7 @@ describe("detectRepoLabels", () => {
   let root: string;
 
   before(async () => {
-    root = await mkdtemp(join(tmpdir(), "dsh-forge-"));
+    root = await mkdtemp(join(tmpdir(), "harness-forge-"));
 
     await writeFile(
       join(root, "pnpm-workspace.yaml"),
@@ -239,7 +239,7 @@ describe("detectRepoLabels", () => {
   });
 
   it("says why, rather than proposing nothing silently, when there is no evidence", async () => {
-    const bare = await mkdtemp(join(tmpdir(), "dsh-forge-bare-"));
+    const bare = await mkdtemp(join(tmpdir(), "harness-forge-bare-"));
     try {
       const result = await detectRepoLabels({
         repoRoot: bare,

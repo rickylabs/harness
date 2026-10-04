@@ -5,7 +5,7 @@
  * — the provider is holding it — so the record is updated as messages arrive and `observe` is a read
  * of memory. That is worth being explicit about, because it inverts the usual cost: observation is
  * free and instantaneous here, where a PTY-scraping provider has to go look. It is also why the
- * decorator in `dsh-app` that writes an event only when liveness *changes* is the right decorator
+ * decorator in the optional router that writes an event only when liveness *changes* is the right decorator
  * for this provider rather than a lossy one.
  *
  * ## The record is a value

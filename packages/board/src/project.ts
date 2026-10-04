@@ -1,7 +1,7 @@
 /**
  * The projection itself: GitHub issues in, board snapshot out, no I/O and no clock.
  *
- * Decision 3 of #30 says GitHub is the truth and dsh projects the live view — "if the projection
+ * GitHub is board truth and Harness projects its live view — "if the projection
  * and the issue disagree, the issue wins". That is not a slogan here, it is the reason this
  * function has no writes in it. Every disagreement it finds becomes an `Anomaly` describing what
  * the issue says; nothing is repaired, reordered into plausibility, or hidden.
@@ -39,7 +39,7 @@ export interface ProjectOptions {
   /** Timestamp recorded on the snapshot. Passed in so the projection stays deterministic. */
   readonly generatedAt: string;
   readonly lifecycle?: Lifecycle;
-  /** Prefix for the lane family — `dsh-forge` detects `orchestrator`, `topic`, or `lane`. */
+  /** Prefix for the lane family — `harness-forge` detects `orchestrator`, `topic`, or `lane`. */
   readonly lanePrefix?: string;
   /** Priority order, most urgent first. Items sort by this within a column. */
   readonly priorityOrder?: readonly string[];
@@ -459,7 +459,7 @@ export function projectBoard(
 
 /**
  * Best-effort epic slug from a title like `E6 — Coordinator: ...`, matching the identifier rule
- * `dsh-forge` uses so the two agree on what an epic is called.
+ * `harness-forge` uses so the two agree on what an epic is called.
  */
 export function slugOfEpicTitle(title: string): string | null {
   const cleaned = title.replace(/^\s*(epic|umbrella)\s*[:—–-]\s*/i, "").trim();

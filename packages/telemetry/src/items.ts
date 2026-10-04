@@ -8,8 +8,8 @@
  *
  * Two things this module exists to fix.
  *
- * **The feed did not compose.** `dsh-telemetry status --items` documented "JSON array of board
- * items" and `dsh-board snapshot` emits `{ items: [...] }` whose entries nest the GitHub fields
+ * **The feed did not compose.** `harness-telemetry status --items` documented "JSON array of board
+ * items" and `harness-board snapshot` emits `{ items: [...] }` whose entries nest the GitHub fields
  * under `source` and carry `phase` as an object. Piping one into the other produced a file that
  * parsed, an array that was not empty, and refs with `number: undefined` — so every run came back
  * unattributed and the board looked idle. The reader below accepts both the envelope and the bare

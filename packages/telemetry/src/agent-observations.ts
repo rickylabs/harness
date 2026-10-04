@@ -1,8 +1,9 @@
 /** Project existing dispatch and native telemetry evidence. This module collects nothing. */
 import { createHash } from "node:crypto";
-import { ISSUE_AGENT_TREE_FRESH_MS, MAX_AGENT_OBSERVATIONS, projectRouteIdentity, readAgentObservations, unavailableAgentCost,
+import { ISSUE_AGENT_TREE_FRESH_MS, MAX_AGENT_OBSERVATIONS, projectRouteIdentity, readAgentObservations,
   unavailableOrchidRouteReasons, type AgentObservation, type AgentObservations, type AgentObservedValue,
   type AgentUnavailableReason } from "@rickylabs/harness-contracts";
+import { producerAgentCost, validateWireFamily, type TelemetryWireFamily } from "./producer-names.js";
 import { projectAgentCost } from "./agent-cost.js";
 import { CLAUDE_CHILD_START_FRESH_MS, childEventKey } from "./claude-child-events.js";
 import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
@@ -66,6 +67,7 @@ function claudeChildRunning(run: RunRecord, starts: ReadonlyMap<string, string> 
       child: digest(run.id), event: start, activity: at })) };
 }
 export function buildAgentObservations(input: {
+  readonly wireFamily?: TelemetryWireFamily;
   readonly dispatches: readonly DispatchEvidence[];
   readonly runs: readonly RunRecord[];
   readonly observedAt: string;
@@ -75,6 +77,7 @@ export function buildAgentObservations(input: {
   /** Private, already screened latest Start events keyed by exact parent session and child ID. */
   readonly claudeChildStarts?: ReadonlyMap<string, string>;
 }): AgentObservations {
+  const wireFamily = validateWireFamily(input.wireFamily);
   const agents: AgentObservation[] = [];
   let reason: AgentObservations["reason"] = !input.sourceBound ? "source_not_bound"
     : !input.dispatchComplete ? "binding_unavailable" : null;
@@ -105,7 +108,8 @@ export function buildAgentObservations(input: {
     const observedAt = d.observedAt;
     const external = resolveOrchidNativeRoot(d, input.runs)?.id ?? d.external;
     const routeObservedReasons = d.routeObservedReasons ?? unavailableOrchidRouteReasons();
-    const revision = digest(JSON.stringify({ dispatch: d.revision, binding: external === null ? null : digest(external), routeObservedReasons }));
+    const revision = digest(JSON.stringify({ dispatch: d.revision, binding: external === null ? null : digest(external), routeObservedReasons,
+      ...(wireFamily === "harness" ? { wireFamily } : {}) }));
     const reference = (value: string | undefined): AgentObservedValue<string> => value === undefined ? missing()
       : { value, reason: null, observedAt, validUntil: null, revision };
     const root: AgentObservation = {
@@ -115,7 +119,7 @@ export function buildAgentObservations(input: {
         ? { state: "unavailable", value: null, reason: "identity_unavailable" }
         : { state: "confirmed-root", value: null, reason: null },
       workspace: reference(d.location?.workspaceId), pane: reference(d.location?.paneId), tab: missing(), terminal: missing(), running: missing(external === null ? "observer-unavailable" : "identity_unavailable"),
-      route: projectRouteIdentity(d.route), routeObservedReasons, cost: unavailableAgentCost(), observedAt, revision,
+      route: projectRouteIdentity(d.route), routeObservedReasons, cost: producerAgentCost("source_not_bound", wireFamily), observedAt, revision,
     };
     agents.push(root);
     if (external === null || d.source === null) { reason = "ancestry_unavailable"; continue; }
@@ -128,7 +132,7 @@ export function buildAgentObservations(input: {
   // Bind only after every root identity and completeness fence has passed.
   for (const [key, root] of roots) {
     const run = native.get(key)!;
-    const cost = projectAgentCost(run, input.observedAt);
+    const cost = projectAgentCost(run, input.observedAt, wireFamily);
     const sourceDispatch = dispatches.find(d => opaque("agent", d.runId) === root.agentId);
     const nativeRunning = measuredRunning(run, input.observedAt);
     const running = nativeRunning.value === true || sourceDispatch?.source !== "claude" ? nativeRunning
@@ -158,7 +162,7 @@ export function buildAgentObservations(input: {
       if (duplicates.has(key)) { reason = "ancestry_unavailable"; return finish(); }
       if (agents.length === MAX_AGENT_OBSERVATIONS) { agents.length = 0; reason = "scan_limit"; return finish(); }
       const observedAt = run.updatedAt;
-      const cost = projectAgentCost(run, input.observedAt);
+      const cost = projectAgentCost(run, input.observedAt, wireFamily);
       const nativeRunning = measuredRunning(run, input.observedAt);
       const running = nativeRunning.value === true || run.source !== "claude" ? nativeRunning
         : claudeChildRunning(run, input.claudeChildStarts, input.observedAt);

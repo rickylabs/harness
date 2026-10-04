@@ -43,6 +43,25 @@ and the missing-capacity fallback still use legacy names in this slice. Publicat
 is not evidence that cockpit or mobile accepts canonical output. Operator environment and
 managed log files have a separate [migration guide](telemetry-operator-migration.md).
 
+## Select canonical producer output
+
+After the paired readers are ready, an operator can set
+`HARNESS_TELEMETRY_WIRE_FAMILY=harness` for the producer process. It selects canonical names
+for originated cost rows and the governance producer identifier. `issue-agents`, its watch
+mode, `runs --json` agent observations and `governance` use the same selection. Pure producer
+APIs also accept an optional `wireFamily`; no projector reads a mutable process environment.
+
+An absent setting or exact `legacy` value retains existing output. Empty, padded or unknown
+values are refused before source collection with a fixed diagnostic. There is no older alias
+for this new setting. Readers and tree projection preserve source names received from other
+producers, including mixed frames. No measurement, timestamp, reason, native binding or
+accounting rule changes with the family.
+
+Source support prepares the switch; it does not perform it. The default stays legacy until
+supported cockpit and mobile validators have compatible cost source unions. Log filenames
+have their own explicit selection and migration; changing wire family does not rename a log.
+To roll back canonical wire output, select `legacy` before rolling back its readers.
+
 ## Verify the installed boundary
 
 Run the repository's `typecheck`, `build` and `test` gates. `check:installed` packs and installs

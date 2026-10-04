@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { resolveWireFamily } from "./producer-names.js";
 /**
  * `harness-telemetry` — status without an agent in the loop.
  *
@@ -181,6 +182,7 @@ environment:
                                  (default: ~/archives)
   HARNESS_TELEMETRY_MAX_BYTES    bound per generation, e.g. 33554432 or 32M
   HARNESS_TELEMETRY_GENERATIONS  generations kept behind the live file
+  HARNESS_TELEMETRY_WIRE_FAMILY  harness or legacy; default legacy until reader rollout
   HARNESS_TELEMETRY_LOG_NAME     explicit harness-telemetry.jsonl or dsh-telemetry.jsonl
                                  (default remains dsh-telemetry.jsonl until producer rollout)
   HARNESS_TELEMETRY_DISPATCH_ROOT           private Orchid receipt root
@@ -383,7 +385,7 @@ async function readStdin(): Promise<string> {
  *
  * JSONL on stdin rather than an import, because the callers are a Go dispatcher, shell hooks and
  * tmux wrappers. A caller that can emit one line of JSON can now write into the same log an agent
- * writes into, which is the only way `~/observability/dsh-telemetry.jsonl` ends up holding the whole
+ * writes into, which is the only way the configured observability log ends up holding the whole
  * story rather than the part that happened to be in Node.
  */
 async function recordEvents(flags: Flags, env: OperatorEnvironment): Promise<number> {
@@ -550,6 +552,9 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
       process.stderr.write("governance: invalid command line\n"); return EXIT.usage;
     }
     try { instant(flags.now); } catch { process.stderr.write("governance: invalid command line\n"); return EXIT.usage; }
+    let wireFamily: ReturnType<typeof resolveWireFamily>;
+    try { wireFamily = resolveWireFamily(services.env); }
+    catch { process.stderr.write("governance: invalid HARNESS_TELEMETRY_WIRE_FAMILY\n"); return EXIT.usage; }
     let configured: GovernanceSource;
     try { configured = parseSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
     catch { process.stderr.write("governance: invalid descriptor\n"); return EXIT.usage; }
@@ -557,7 +562,7 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
       const log = configured.admissions === null ? { files: [], notes: [], degraded: false }
         : await readObservabilityLog(resolveObservability(flags.home, services.env), flags.now);
       const { observed, completion } = await collectGovernance(configured, log, services, flags.nowExplicit ? flags.now : undefined);
-      const document = governanceRead(observed, flags.nowExplicit ? flags.now : completion);
+      const document = governanceRead(observed, flags.nowExplicit ? flags.now : completion, wireFamily);
       process.stdout.write(`${JSON.stringify(document, null, 2)}\n`);
       return document.complete ? EXIT.ok : EXIT.incomplete;
     } catch { process.stderr.write("governance: document unavailable\n"); return EXIT.failed; }
@@ -565,6 +570,7 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
   if (command === "record") return await recordEvents(flags, services.env);
   if (command === "where") return whereItWrites(flags, services.env);
 
+  const wireFamily = command === "runs" && flags.json ? resolveWireFamily(services.env) : "legacy";
   let source: GovernanceSource | null = null;
   let observationPath = flags.observations;
   if (flags.observationsFrom !== null) {
@@ -646,7 +652,7 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
       const orchidIds = new Set(orchid.dispatches.map(d => d.runId));
       const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded && !bound.degraded,
         [...evidence.filter(d => !orchidIds.has(d.runId)), ...bound.dispatches]);
-      const agentObservations = buildAgentObservations({ dispatches: bound.dispatches, runs: merged.runs,
+      const agentObservations = buildAgentObservations({ wireFamily, dispatches: bound.dispatches, runs: merged.runs,
         observedAt: flags.now, sourceBound: resolveOperatorSetting(services.env, "dispatchRoot") !== undefined,
         dispatchComplete: !orchid.degraded && !bound.degraded, nativeComplete: !scan.degraded && !merged.degraded });
       process.stdout.write(`${JSON.stringify({ ...envelope, agentObservations }, null, 2)}\n`);

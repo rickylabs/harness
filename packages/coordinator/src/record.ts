@@ -85,7 +85,7 @@ export function recordOf(runId: string, at: string, decision: EvaluatorDecision)
 }
 
 /**
- * One JSONL line in the shape `dsh-telemetry record` reads.
+ * One JSONL line in the shape `harness-telemetry record` reads.
  *
  * `{ runId, kind, at, detail }`. Everything else moves into `detail`, so the envelope stays the
  * one telemetry already knows and this package can add fields to the payload without a coordinated

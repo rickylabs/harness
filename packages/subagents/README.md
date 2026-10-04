@@ -79,7 +79,7 @@ journal (#71) and checked in CI against a table of declarations with nothing ins
   passed it over.
 
 `conformanceProblems` and `registryProblems` check what a provider claims about itself before it is
-asked to do anything — composition-time validation for `dsh-app`. Blind and unstoppable are reported
+asked to do anything — composition-time validation for the optional router. Blind and unstoppable are reported
 without being failed, because divybot is genuinely both and saying so is the contract working. The
 two checks that live on the *registry* are the two a provider cannot answer about itself: whether
 another provider took its id, and whether the composition root remembered to wrap it.

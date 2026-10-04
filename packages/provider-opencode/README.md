@@ -210,7 +210,7 @@ Deferred deliberately, each with an owner:
   seats until `GET /provider` can be read live. Same issue.
 - `GET /global/health` and `readHealth()` exist and nothing calls them; a preflight belongs with the
   composition root that binds the transport.
-- Nothing binds the real `fetch` yet — the `dsh-app` row is not written.
+- Nothing binds the real `fetch` yet — this native adapter has no verified production composition binding here.
 - A deadline past `TIMER_CEILING_MS` is clamped rather than honoured, and says so through
   `untranslated()`.
 - `steer` reuses the run's own model rather than re-reading configuration, so an interjection cannot

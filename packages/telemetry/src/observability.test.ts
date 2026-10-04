@@ -241,7 +241,7 @@ describe("openObservabilitySink", () => {
   let root: string;
 
   beforeEach(async () => {
-    root = await mkdtemp(join(tmpdir(), "dsh-observability-"));
+    root = await mkdtemp(join(tmpdir(), "harness-observability-"));
   });
 
   afterEach(async () => {

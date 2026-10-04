@@ -25,7 +25,7 @@
 import type { MemoryStore, Target, TargetTable } from "./model.js";
 import { DEFAULT_TARGET_AGENT, agentsOf } from "./model.js";
 
-/** The conventional name, and what `dsh-forge targets` looks for when `--config` is absent. */
+/** The conventional name, and what `harness-forge targets` looks for when `--config` is absent. */
 export const CONFIG_FILE = "divybot.json";
 
 /** One thing wrong with the *file*, as opposed to with the table it describes. */

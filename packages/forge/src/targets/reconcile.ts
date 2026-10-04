@@ -3,7 +3,7 @@
  *
  * Pure arithmetic over a table and one or more board projections. No network, no `gh`, no clock —
  * the same inputs give the same answer, which is what makes this runnable in CI and quotable in an
- * issue. `dsh-board snapshot` produces the projections; this composes them with the table.
+ * issue. `harness-board snapshot` produces the projections; this composes them with the table.
  *
  * ## Why it takes several repositories
  *
@@ -36,7 +36,7 @@ import { closingKeywordTargets, type SourceIssue } from "@rickylabs/board";
 import type { Target, TargetProblem, TargetTable } from "./model.js";
 import { checkTargets, dispatchBranch, issueOfBranch, resolveTarget } from "./model.js";
 
-/** One repository's projection, as `dsh-board snapshot` emits it. */
+/** One repository's projection, as `harness-board snapshot` emits it. */
 export interface BridgeSource {
   readonly repo: string;
   readonly items: readonly SourceIssue[];
@@ -95,7 +95,7 @@ export interface BridgeSnapshot {
   /**
    * Deliveries naming an inbox issue that is not in the inbox projection.
    *
-   * Usually a truncated fetch — `dsh-board` caps at 500 items and says so. Occasionally a branch
+   * Usually a truncated fetch — `harness-board` caps at 500 items and says so. Occasionally a branch
    * left behind by a run for an issue somebody deleted. Either way it is evidence that was found
    * and could not be attached, which is worth a line rather than a discard.
    */
