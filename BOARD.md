@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **471/569 done · 34 running · 26 queued · 16 abandoned · 22 invisible**
+`[################----]` **472/570 done · 34 running · 26 queued · 16 abandoned · 22 invisible**
 
-_Latest board activity: 2026-10-04T06:27:01Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-04T07:35:17Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (34)
 
@@ -25,7 +25,7 @@ Something could be acting on these right now.
 | [#300 E3.8a — Observation surface for UHP-hosted runs needs a schema decision](https://github.com/rickylabs/harness/issues/300) | `impl-eval` | `e3` |
 | [#561 [cli-smoke] OpenCode OpenRouter Nova full-goal acceptance (one attempt)](https://github.com/rickylabs/harness/issues/561) | `plan` | — |
 | [#563 [cli-smoke] OpenCode OpenRouter Gemini first-prompt acceptance (one attempt)](https://github.com/rickylabs/harness/issues/563) | `plan` | — |
-| [PR583 refactor(cli): add Harness command names with compatible aliases](https://github.com/rickylabs/harness/pull/583) | `impl-eval` | — |
+| [PR584 refactor: isolate dsh as an optional router experiment](https://github.com/rickylabs/harness/pull/584) | `impl-eval` | — |
 | [#559 OpenCode managed acceptance: one OpenRouter Nova smoke](https://github.com/rickylabs/harness/issues/559) | `impl` | — |
 | [#560 Claude managed acceptance: one Sonnet 5.5 smoke](https://github.com/rickylabs/harness/issues/560) | `impl` | — |
 | [#87 E9.5 — Surface governance state alongside progress](https://github.com/rickylabs/harness/issues/87) | `impl` | `e9` |
@@ -69,7 +69,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 **`closed-but-unshipped`**
 
-- **#583** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
+- **#584** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
@@ -145,7 +145,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 270/320 done · 18 running · 3 queued · 10 abandoned · 19 invisible
+`[##########--]` 271/321 done · 18 running · 3 queued · 10 abandoned · 19 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -154,7 +154,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[##########--]` 237/283 done · 17 running · 2 queued · 10 abandoned · 17 invisible | — |
+| _(no epic)_ | `[##########--]` 238/284 done · 17 running · 2 queued · 10 abandoned · 17 invisible | — |
 
 ## Waiting to start
 
@@ -198,7 +198,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  471/569 done · 34 running · 26 queued · 16 abandoned · 22 invisible
+# rickylabs/harness  [################----]  472/570 done · 34 running · 26 queued · 16 abandoned · 22 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -486,7 +486,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  270/320 done · 18 running · 3 queued · 10 abandoned · 19 invisible
+## (no milestone)  [################----]  271/321 done · 18 running · 3 queued · 10 abandoned · 19 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -823,7 +823,8 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR580 fix(routing): read complete OpenCode catalog over bounded HTTP (p0)
     no status            #581 [rc-proof] Claude Haiku phone follow and steer (one attempt)
     no status            #582 [rc-proof] Codex Luna phone follow and steer (one attempt)
-    impl-eval            PR583 refactor(cli): add Harness command names with compatible aliases (p1)
+    shipped              PR583 refactor(cli): add Harness command names with compatible aliases (p1)
+    impl-eval            PR584 refactor: isolate dsh as an optional router experiment (p1)
 ```
 
 </details>
