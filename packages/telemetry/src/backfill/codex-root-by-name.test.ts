@@ -15,8 +15,11 @@ type FilePromises = typeof import("node:fs/promises");
 const fsp = createRequire(import.meta.url)("node:fs/promises") as FilePromises;
 let reads = 0;
 const opened: string[] = [];
+/** Runs before each rollout open; a test can remove or rewrite the file here. */
+let beforeOpen: ((path: string) => Promise<void>) | null = null;
 const open = fsp.open;
 (fsp as { open: FilePromises["open"] }).open = (async (...args: Parameters<FilePromises["open"]>) => {
+  if (basename(String(args[0])).endsWith(".jsonl")) await beforeOpen?.(String(args[0]));
   const handle = await open(...args);
   if (basename(String(args[0])).endsWith(".jsonl")) {
     opened.push(basename(String(args[0])));
@@ -86,6 +89,7 @@ async function fixture(fn: (f: {
       },
     });
   } finally {
+    beforeOpen = null;
     await fsp.rm(home, { recursive: true, force: true });
   }
 }
@@ -218,4 +222,77 @@ it("treats two descendant files under one session id as unreadable, never as the
   assert.equal(result.degraded, false, result.notes.join("\n"));
   assert.deepEqual(result.runs.map(run => run.id), [ROOT]);
   assert.deepEqual(result.partial, ["descendant_head_unreadable"]);
+}));
+
+/** Valid native tool output, to make a transcript large without changing its session. */
+const output = (bytes: number) => JSON.stringify({ timestamp: iso(ROOT_AT), type: "response_item",
+  payload: { type: "function_call_output", call_id: "fixture-call", output: "x".repeat(bytes) } }) + "\n";
+
+/** On the n-th open of `path`, run `effect` first (the first open reads the head). */
+function onOpen(path: string, n: number, effect: () => Promise<void>) {
+  let seen = 0;
+  beforeOpen = async opening => { if (opening === path && ++seen === n) await effect(); };
+}
+
+it("keeps the verified tree read when the frame budget stops a descendant transcript", () => fixture(async ({ put, scan, feed }) => {
+  // Nine children of about 4 MiB each: each fits its own 8 MiB bound, the 32 MiB frame does not
+  // hold them all. The root and the children read before the frame ran out stay.
+  await put(ROOT, 0);
+  for (let i = 0; i < 9; i++) await put(id(100 + i), 1_000 + i * 1_000, meta(id(100 + i), ROOT) + output(4 * 1_048_576));
+  const result = await scan();
+  assert.equal(result.degraded, false, result.notes.join("\n"));
+  assert.deepEqual(result.partial, ["descendant_transcript_bound"]);
+  assert.ok(result.runs.some(run => run.id === ROOT));
+  assert.ok(result.runs.length > 1 && result.runs.length < 10, `read ${result.runs.length}`);
+  const ids = new Set(result.runs.map(run => run.id));
+  for (const run of result.runs) assert.ok(run.parentId === null || ids.has(run.parentId), "a closed tree");
+  assert.ok(result.bytesRead <= FRAME);
+  const partial = await feed(true);
+  assert.equal(partial.complete, false);
+  assert.equal(partial.issues[0]?.reason, "scan_limit");
+  assert.equal(agents(partial).length, result.runs.length, "every verified agent read is published");
+  const legacy = await feed();
+  assert.deepEqual(legacy.issues[0]?.dispatches, []);
+}));
+
+it("omits a descendant that vanishes before its transcript read, with its own descendants, and keeps the root", () => fixture(async ({ put, scan, feed }) => {
+  await put(ROOT, 0);
+  const child = await put(id(2), 1_000, meta(id(2), ROOT));
+  await put(id(3), 2_000, meta(id(3), ROOT));
+  await put(id(4), 3_000, meta(id(4), id(2), 2)); // the vanishing child's own child
+  onOpen(child, 2, () => fsp.unlink(child));
+  const result = await scan();
+  assert.equal(result.degraded, false, result.notes.join("\n"));
+  assert.deepEqual(result.partial, ["descendant_transcript_unreadable"]);
+  assert.deepEqual(result.runs.map(run => run.id).sort(), [ROOT, id(3)], "the root and the sibling stay; the subtree goes");
+  assert.equal(opened.filter(name => name.includes(id(4))).length, 1, "the grandchild's transcript is never read");
+  await fsp.writeFile(child, meta(id(2), ROOT));
+  onOpen(child, 2, () => fsp.unlink(child));
+  const frame = await feed(true);
+  assert.equal(frame.issues[0]?.reason, "scan_limit");
+  assert.equal(agents(frame).length, 2);
+}));
+
+it("omits a descendant whose file holds another session at its transcript read", () => fixture(async ({ put, scan }) => {
+  await put(ROOT, 0);
+  const child = await put(id(2), 1_000, meta(id(2), ROOT));
+  onOpen(child, 2, () => fsp.writeFile(child, meta(id(9), ROOT)));
+  const result = await scan();
+  assert.equal(result.degraded, false, result.notes.join("\n"));
+  assert.deepEqual(result.runs.map(run => run.id), [ROOT]);
+  assert.deepEqual(result.partial, ["descendant_transcript_unreadable"]);
+}));
+
+it("still refuses when the root itself vanishes or changes before its transcript read", () => fixture(async ({ put, scan }) => {
+  const root = await put(ROOT, 0);
+  await put(id(2), 1_000, meta(id(2), ROOT));
+  onOpen(root, 2, () => fsp.unlink(root));
+  const gone = await scan();
+  assert.equal(gone.degraded, true);
+  assert.equal(gone.runs.some(run => run.id === ROOT), false);
+  await fsp.writeFile(root, meta(ROOT));
+  onOpen(root, 2, () => fsp.writeFile(root, meta(id(9))));
+  const changed = await scan();
+  assert.equal(changed.degraded, true);
+  assert.equal(changed.runs.some(run => run.id === ROOT), false);
 }));

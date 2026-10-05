@@ -89,9 +89,16 @@ export interface BackfillResult {
  *   descends from the root is unknown.
  * - `selected_files_bound`: the tree holds more transcripts than the scan limit; the nearest
  *   generations were kept, parents before children.
+ * - `descendant_transcript_bound`: a selected descendant's transcript did not fit what the frame
+ *   had left, not even as head and tail windows.
+ * - `descendant_transcript_unreadable`: a selected descendant's transcript could not be opened or
+ *   read, no longer held the session its head named, or yielded no run.
+ * A descendant omitted for either transcript reason takes its own descendants with it, so the
+ * agents served are always a closed tree from the roots.
  */
 export const CODEX_TREE_PARTIAL_REASONS = ["descendant_heads_bound", "descendant_heads_budget",
-  "descendant_head_unreadable", "selected_files_bound"] as const;
+  "descendant_head_unreadable", "selected_files_bound", "descendant_transcript_bound",
+  "descendant_transcript_unreadable"] as const;
 export type CodexTreePartialReason = typeof CODEX_TREE_PARTIAL_REASONS[number];
 
 /** One transcript found on disk, with the filesystem's own record of when it was last written. */
@@ -172,6 +179,8 @@ interface CodexSelection {
   /** A note that refuses the scan: the root itself could not be established. */
   readonly refused: string | null;
   readonly partial: readonly CodexTreePartialReason[];
+  /** The first `roots` selected rows are the roots; every later row is a descendant. */
+  readonly roots: number;
 }
 
 /**
@@ -187,10 +196,10 @@ async function selectCodexIssue(names: readonly CodexName[], rootMatches: (id: s
   const partial = new Set<CodexTreePartialReason>();
   const charge = (bytes: number) => { bytesRead += bytes; };
   const fits = () => bytesRead + CODEX_HEAD_BYTES + 1 <= remainingBytes;
-  const refuse = (note: string): CodexSelection => ({ selected: [], bytesRead, refused: note, partial: [] });
+  const refuse = (note: string): CodexSelection => ({ selected: [], bytesRead, refused: note, partial: [], roots: 0 });
   const transcript = (name: CodexName): Transcript => ({ path: name.path, mtimeMs: name.createdMs });
   const roots = names.filter(name => rootMatches(name.id)).sort((a, b) => compareStrings(a.path, b.path));
-  if (roots.length === 0) return { selected: [], bytesRead, refused: null, partial: [] };
+  if (roots.length === 0) return { selected: [], bytesRead, refused: null, partial: [], roots: 0 };
   if (roots.length > limit) return refuse("codex: head or selected-file scan_limit");
   const rootHeads: { file: Transcript; head: CodexHead }[] = [];
   const ids = new Set<string>();
@@ -229,7 +238,7 @@ async function selectCodexIssue(names: readonly CodexName[], rootMatches: (id: s
   const tree = [...rootHeads];
   for (let i = 0; i < tree.length; i++) tree.push(...children.get(tree[i]!.head.id) ?? []);
   if (tree.length > limit) partial.add("selected_files_bound");
-  return { selected: tree.slice(0, limit), bytesRead, refused: null,
+  return { selected: tree.slice(0, limit), bytesRead, refused: null, roots: rootHeads.length,
     partial: CODEX_TREE_PARTIAL_REASONS.filter(reason => partial.has(reason)) };
 }
 
@@ -540,6 +549,7 @@ export async function backfillFromDisk(
 
     let candidateFiles = scan.files;
     const expectedHeads = new Map<string, CodexHead>();
+    const rootPaths = new Set<string>();
     let issueTree = false;
     if (seam === "codex" && options.codexRootMatches !== undefined) {
       const names = scan.names ?? [];
@@ -553,6 +563,7 @@ export async function backfillFromDisk(
       for (const reason of selected.partial) { partialTree.push(reason); notes.push(`codex: tree partial (${reason})`); }
       candidateFiles = selected.selected.map(row => row.file);
       for (const row of selected.selected) expectedHeads.set(row.file.path, row.head);
+      for (const row of selected.selected.slice(0, selected.roots)) rootPaths.add(row.file.path);
       issueTree = true;
     }
     // An issue tree is read whole, in its selection order: roots first, parents before children.
@@ -572,11 +583,28 @@ export async function backfillFromDisk(
     let crashed = 0;
     let limited = 0;
     let windowed = 0;
+    let crashedDescendants = 0;
     // Degradation is counted across the whole seam rather than reported per file: one operator-
     // readable line beats five hundred, and the count is what says whether to care.
     const partial = new Map<string, { files: number; lines: number }>();
     const asOf = (text: string) => options.notAfterMs === undefined ? text : transcriptAsOf(text, options.notAfterMs);
+    // An issue tree's descendants, once its roots are established: a failure omits that descendant
+    // and its own descendants, under a named reason, and never the roots or their other branches.
+    const omitted = new Set<string>();
+    const omit = (head: CodexHead, reason: CodexTreePartialReason) => {
+      omitted.add(head.id);
+      if (!partialTree.includes(reason)) {
+        partialTree.push(reason);
+        notes.push(`${seam}: tree partial (${reason})`);
+      }
+    };
     for (const { path } of ordered.slice(0, limit)) {
+      const expected = expectedHeads.get(path);
+      const descendant = issueTree && expected !== undefined && !rootPaths.has(path) ? expected : null;
+      // Parents come first, so an omitted parent is already known when its child is reached.
+      if (descendant !== null && descendant.parentId !== null && omitted.has(descendant.parentId)) { // guard:omit-subtree
+        omitted.add(descendant.id); continue;
+      }
       let text = "";
       let window: Awaited<ReturnType<typeof readHeadTail>> = null;
       // Every byte read is charged as it is read, before the next read, usable or not.
@@ -592,14 +620,19 @@ export async function backfillFromDisk(
             // file's whole allowance within what the frame has left.
             window = await readHeadTail(path, budget, charge);
           }
-          if (bounded === null && window === null) { limited++; continue; }
+          if (bounded === null && window === null) {
+            if (descendant !== null) omit(descendant, "descendant_transcript_bound"); // guard:descendant-bound-partial
+            else limited++;
+            continue;
+          }
           if (bounded !== null) text = bounded;
         } else {
           text = await readFile(path, "utf8");
           bytesRead += Buffer.byteLength(text);
         }
       } catch {
-        unreadable += 1;
+        if (descendant !== null) omit(descendant, "descendant_transcript_unreadable"); // guard:descendant-read-partial
+        else unreadable += 1;
         continue;
       }
       let parsed: ParsedTranscript<RunRecord>;
@@ -619,12 +652,15 @@ export async function backfillFromDisk(
         // A parser that throws is this package's bug, not the store's — but a bug in one seam must
         // not take the other two down with it, and `status` has to answer while it is being fixed.
         // Finding F-4 on #105, where one `null` line reached a field access and ended the scan.
-        crashed += 1;
+        if (descendant !== null) { crashedDescendants += 1; omit(descendant, "descendant_transcript_unreadable"); }
+        else crashed += 1;
         continue;
       }
-      const expected = expectedHeads.get(path);
       if (expected !== undefined && (parsed.run?.id !== expected.id || parsed.run.parentId !== expected.parentId)) {
-        unreadable += 1; continue;
+        // The file no longer holds the session its head named (or holds none).
+        if (descendant !== null) omit(descendant, "descendant_transcript_unreadable"); // guard:descendant-identity-partial
+        else unreadable += 1;
+        continue;
       }
       for (const note of parsed.notes) {
         const seen = partial.get(note.reason) ?? { files: 0, lines: 0 };
@@ -647,6 +683,8 @@ export async function backfillFromDisk(
       notes.push(`${seam}: ${crashed} transcript(s) crashed the parser — please report`);
       degraded = true;
     }
+    // Still this package's bug to report, but only that descendant's subtree is withheld.
+    if (crashedDescendants > 0) notes.push(`${seam}: ${crashedDescendants} descendant transcript(s) crashed the parser — please report`);
     for (const [reason, seen] of [...partial].sort(([a], [b]) => compareStrings(a, b))) {
       notes.push(`${seam}: ${reason} — ${seen.lines} line(s) across ${seen.files} transcript(s)`);
       degraded = true;
