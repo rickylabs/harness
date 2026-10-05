@@ -33,6 +33,74 @@ function parsed(text: string) {
 const warningKinds = (text: string): readonly string[] =>
   parsed(text).warnings.map((w) => w.kind);
 
+describe("the source repository key", () => {
+  const sourced: DispatchRequest = { ...full, repo: "rickylabs/netscript" };
+
+  it("is written after every other key and round-trips exactly", () => {
+    const wire = renderSwarm(sourced);
+    assert.ok(wire.startsWith(renderSwarm(full).split("\n\n")[0] + "\nrepo: rickylabs/netscript\n\n"));
+    assert.deepEqual(parsed(wire).warnings, []);
+    assert.equal(parsed(wire).overrides.repo, "rickylabs/netscript");
+    assert.deepEqual(toDispatchRequest(parsed(wire)), sourced);
+    assert.equal(renderSwarm(toDispatchRequest(parsed(wire))), wire);
+    assert.deepEqual(validateDispatch(sourced), []);
+  });
+
+  it("sits after the keys and before a guarded prompt", () => {
+    const guarded: DispatchRequest = { ...sourced, prompt: "model: not-a-key\nReview it." };
+    const wire = renderSwarm(guarded);
+    assert.ok(wire.includes(`router: openai\nrepo: rickylabs/netscript\n\n${PROMPT_GUARD}\nmodel: not-a-key`));
+    assert.equal(parsed(wire).overrides.model, "gpt-5.6-sol");
+    assert.deepEqual(toDispatchRequest(parsed(wire)), { ...guarded, prompt: `${PROMPT_GUARD}\nmodel: not-a-key\nReview it.` });
+  });
+
+  it("is optional, and its absence changes nothing on the wire", () => {
+    assert.ok(!renderSwarm(full).includes("repo:"));
+    assert.equal(parsed(renderSwarm(full)).overrides.repo, "");
+    assert.ok(!("repo" in toDispatchRequest(parsed(renderSwarm(full)))));
+  });
+
+  it("accepts real owner/name shapes, case kept", () => {
+    for (const repo of ["rickylabs/harness", "RickyLabs/atelier-cockpit", "a/b", "o-w-n/x.y_z-1", `${"a".repeat(39)}/${"b".repeat(100)}`]) {
+      assert.deepEqual(validateDispatch({ ...full, repo }), [], repo);
+      assert.equal(toDispatchRequest(parsed(renderSwarm({ ...full, repo }))).repo, repo);
+    }
+  });
+
+  it("refuses anything that is not exactly owner/name", () => {
+    for (const repo of [
+      "", "netscript", "rickylabs/", "/netscript", "rickylabs/netscript/extra", "rickylabs//netscript",
+      "https://github.com/rickylabs/netscript", "github.com/rickylabs/netscript", "rickylabs/netscript.git",
+      "rickylabs/..", "rickylabs/.", "-rickylabs/x", "rickylabs-/x", "ricky--labs/x", "ricky_labs/x",
+      "rickylabs/net script", " rickylabs/netscript", "rickylabs/netscript ", "rickylabs/net#script",
+      "rickylabs/net\rscript", `${"a".repeat(40)}/x`, `x/${"b".repeat(101)}`, "rickylabs/netscript@main",
+    ]) {
+      assert.ok(validateDispatch({ ...full, repo }).some((problem) => problem.includes("repo")), JSON.stringify(repo));
+      assert.throws(() => renderSwarm({ ...full, repo }), DispatchEncodingError, JSON.stringify(repo));
+    }
+  });
+
+  it("warns when a block names a repository the executor will refuse", () => {
+    assert.deepEqual(warningKinds("/swarm\nrepo: netscript\nharness: codex\n\nGo."), ["invalid-repo"]);
+    assert.deepEqual(warningKinds("/swarm\nrepo: a/b/c\nharness: codex\n\nGo."), ["invalid-repo"]);
+    assert.deepEqual(warningKinds("/swarm\nrepo: #x\nharness: codex\n\nGo."), ["invalid-repo"]);
+    assert.deepEqual(warningKinds("/swarm\nrepo: https://github.com/a/b\nharness: codex\n\nGo."), ["invalid-repo"]);
+    // Orchid's own pattern accepts this, so the reader does not claim a refusal; the writer still will.
+    assert.deepEqual(warningKinds("/swarm\nrepo: ricky_labs/x\nharness: codex\n\nGo."), []);
+    assert.deepEqual(warningKinds("/swarm\nrepo: a/b.git\nharness: codex\n\nGo."), []);
+  });
+
+  it("reports a second repo line as a refused launch, not a silent overwrite", () => {
+    const twice = parsed("/swarm\nrepo: rickylabs/harness\nrepo: rickylabs/netscript\nharness: codex\n\nGo.");
+    assert.deepEqual(twice.warnings.map((w) => w.kind), ["duplicate-key"]);
+    assert.match(twice.warnings[0]?.detail ?? "", /refuses the launch \(source-repo-invalid\)/);
+  });
+
+  it("is a known key, so a repo line is not reported as dropped prose", () => {
+    assert.ok(!warningKinds("/swarm\nrepo: rickylabs/netscript\nharness: codex\n\nGo.").includes("unknown-key"));
+  });
+});
+
 describe("renderSwarm", () => {
   it("round-trips the exact tier and role keys Orchid's matrix reads", () => {
     const routed: DispatchRequest = {

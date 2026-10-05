@@ -92,6 +92,14 @@ export type Router = string;
  * `validateDispatch` rejects a request that omits either.
  */
 export interface DispatchRequest {
+  /**
+   * The source repository the agent works in, as `owner/name`.
+   *
+   * Without it the executor picks the work repository from the inbox issue's target label alone,
+   * so a binding filed in one inbox for another repository's issue runs in the wrong clone.
+   * Absent keeps that label-chosen target. See `isRepository`.
+   */
+  readonly repo?: string;
   readonly harness: Harness;
   /** Orchid matrix workload tier, when this request names a resolved workload route. */
   readonly tier?: string;
@@ -126,6 +134,8 @@ const FIELD_ORDER = [
   ["profile", (r: DispatchRequest) => r.profile],
   ["timeout", (r: DispatchRequest) => r.timeout],
   ["router", (r: DispatchRequest) => r.router],
+  // Last, so every block without a source repository renders byte-identical to before it existed.
+  ["repo", (r: DispatchRequest) => r.repo],
 ] as const;
 
 /**
@@ -189,6 +199,7 @@ const ALIASES: Readonly<Record<string, string>> = { agent: "harness", provider: 
 
 /** Keys divybot binds. Anything else is consumed and dropped. */
 const KNOWN_KEYS: ReadonlySet<string> = new Set([
+  "repo",
   "harness",
   "agent",
   "tier",
@@ -206,6 +217,7 @@ const KNOWN_KEYS: ReadonlySet<string> = new Set([
 export interface SwarmWarning {
   readonly kind:
     | "unknown-harness"
+    | "invalid-repo"
     | "unknown-router"
     | "duplicate-key"
     | "absorbed-prompt-line"
@@ -225,6 +237,7 @@ export interface SwarmWarning {
  * difference is recorded.
  */
 export interface SwarmOverrides {
+  readonly repo: string;
   readonly harness: string;
   readonly tier: string;
   readonly role: string;
@@ -401,7 +414,10 @@ export function parseSwarm(body: string): ParsedSwarm | null {
           if (seen.has(canonical)) {
             warnings.push({
               kind: "duplicate-key",
-              detail: `${canonical} is set more than once; line ${i + 1} wins (${JSON.stringify(value)})`,
+              detail: canonical === "repo"
+                ? `repo is set more than once (line ${i + 1}); the executor refuses the launch ` +
+                  "(source-repo-invalid) rather than pick one"
+                : `${canonical} is set more than once; line ${i + 1} wins (${JSON.stringify(value)})`,
             });
           }
           seen.add(canonical);
@@ -416,8 +432,18 @@ export function parseSwarm(body: string): ParsedSwarm | null {
   }
 
   const get = (key: string): string => bound.get(key) ?? "";
+  const repo = get("repo");
   const harness = get("harness");
   const router = get("router");
+
+  if (bound.has("repo") && !ORCHID_REPOSITORY.test(repo)) {
+    warnings.push({
+      kind: "invalid-repo",
+      detail:
+        `repo ${JSON.stringify(repo)} is not owner/name; the executor refuses the launch ` +
+        "(source-repo-invalid) rather than choose a repository",
+    });
+  }
 
   if (harness === "") {
     warnings.push({
@@ -435,6 +461,7 @@ export function parseSwarm(body: string): ParsedSwarm | null {
 
 
   const overrides: SwarmOverrides = {
+    repo,
     harness,
     tier: get("tier"),
     role: get("role"),
@@ -464,6 +491,9 @@ function bind(
   line: number,
 ): void {
   switch (key) {
+    case "repo":
+      bound.set("repo", value); // case kept: owner and name are case-insensitive on GitHub
+      return;
     case "harness":
     case "agent":
       bound.set("harness", value.toLowerCase());
@@ -519,6 +549,7 @@ export function toDispatchRequest(parsed: ParsedSwarm): DispatchRequest {
   const o = parsed.overrides;
   const some = (value: string): string | undefined => (value === "" ? undefined : value);
   return {
+    ...(some(o.repo) !== undefined ? { repo: o.repo } : {}),
     harness: parsed.executes,
     ...(some(o.tier) !== undefined ? { tier: o.tier } : {}),
     ...(some(o.role) !== undefined ? { role: o.role } : {}),
@@ -542,6 +573,31 @@ function formatGoDuration(ns: number): string {
 }
 
 const TOKEN_BUDGET = /^\d+(?:\.\d+)?[kKmM]?$/;
+
+/**
+ * A GitHub repository, `owner/name`, and nothing else.
+ *
+ * The owner is a GitHub login: letters, digits and single inner hyphens, at most 39. The name is
+ * letters, digits, `.`, `_` and `-`, at most 100, and is never `.`, `..` or a `.git` path. Both
+ * sides are a strict subset of Orchid's `repositoryName`, so a block this package writes is one the
+ * executor accepts. No URL, no host, no branch and no path: the key names a repository, never a
+ * place to fetch it from.
+ */
+const REPOSITORY = /^([A-Za-z0-9](?:-?[A-Za-z0-9])*)\/([A-Za-z0-9._-]{1,100})$/;
+
+/**
+ * Orchid's own `repositoryName`. A parsed `repo` value outside it is refused by the executor as
+ * `source-repo-invalid`, which is what `parseSwarm` reports; the writer holds the stricter shape.
+ */
+const ORCHID_REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
+/** Whether `value` is an `owner/name` this package will write as a `repo` key. */
+export function isRepository(value: string): boolean {
+  const match = REPOSITORY.exec(value);
+  if (match === null) return false;
+  const [, owner = "", name = ""] = match;
+  return owner.length <= 39 && name !== "." && name !== ".." && !name.toLowerCase().endsWith(".git");
+}
 
 /** Problems that would make the emitted block mean something other than the request. */
 function encodingProblems(request: DispatchRequest): readonly string[] {
@@ -580,6 +636,10 @@ function encodingProblems(request: DispatchRequest): readonly string[] {
     if (goTrimSpace(value) !== value) {
       problems.push(`${key} has leading or trailing whitespace, which the executor strips`);
     }
+  }
+
+  if (request.repo !== undefined && !isRepository(request.repo)) {
+    problems.push(`repo ${JSON.stringify(request.repo)} is not owner/name`);
   }
 
   // The executor lowercases these three. Emitting a capital means the record and the run disagree.
