@@ -134,6 +134,15 @@ it("a new process generation starts with seq zero and one-shot reports incomplet
   assert.equal(JSON.parse(next.lines[0]!).sequence, 0);
   assert.equal(JSON.parse(next.lines[0]!).generation, "generation-b");
 });
+it("passes --partial-trees to the scan only when asked, and refuses it twice", async () => {
+  const seen: (boolean | undefined)[] = [];
+  const collect = async (options: { partialTrees?: boolean }) => { seen.push(options.partialTrees); return snapshot(true); };
+  assert.equal(await issueAgentFeedCommand(["--json"], { output: new Capture(), now: () => at, collect }), 0);
+  assert.equal(await issueAgentFeedCommand(["--json", "--partial-trees"], { output: new Capture(), now: () => at, collect }), 0);
+  assert.deepEqual(seen, [undefined, true]);
+  assert.equal(await issueAgentFeedCommand(["--json", "--partial-trees", "--partial-trees"], { output: new Capture(), now: () => at, collect }), 2);
+  assert.equal(seen.length, 2);
+});
 it("awaits the write callback before collecting a second snapshot", async () => {
   let release: (() => void) | undefined, collected = 0;
   const output = new Writable({ write(_chunk, _encoding, callback) { release = () => callback(); } });

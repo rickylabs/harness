@@ -246,7 +246,12 @@ export interface IssueLaunchBlock {
 export interface IssueAgentTree {
   readonly repo: RepoRef;
   readonly issueNumber: number;
-  /** A failed issue is retained with a typed reason and no unverified tree prefix. */
+  /**
+   * A failed issue is retained with a typed reason and no unverified tree prefix. Since 0.37 a
+   * bounded issue (`complete: false`, reason `scan_limit`) may carry the tree it did read: a closed,
+   * verified tree from its roots, validated exactly like a complete one, whose extent was bounded.
+   * Every other incomplete reason still carries no dispatches.
+   */
   readonly complete: boolean;
   readonly reason: AgentObservations["reason"];
   readonly dispatches: readonly IssueAgentTreeDispatch[];
@@ -723,7 +728,9 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
         }
         dispatches.push({ dispatchId: dispatch.dispatchId, agents });
       }
-      if (legacyPartial ? dispatches.length === 0 : issueComplete ? dispatches.length === 0 && launchRefusal === undefined : dispatches.length !== 0) return bad();
+      const bounded = !legacy && !issueComplete && issueReason === "scan_limit";
+      if (legacyPartial ? dispatches.length === 0 : issueComplete ? dispatches.length === 0 && launchRefusal === undefined
+        : dispatches.length !== 0 && !bounded) return bad();
       if (legacyPartial) legacyPartials.add(issues.length);
       issues.push({ repo: { owner: repo.owner, name: repo.name }, issueNumber: issue.issueNumber,
         complete: issueComplete, reason: issueReason as IssueAgentTree["reason"], dispatches,
@@ -734,7 +741,8 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
     if (row.complete && issues.some(issue => !issue.complete)) return bad();
     for (let i = 0; i < issues.length; i++) {
       const issue = issues[i]!;
-      if (!issue.complete && !legacyPartials.has(i)) continue;
+      // A bounded issue's tree is checked as a closed tree, like a complete one.
+      if (!issue.complete && !legacyPartials.has(i) && issue.dispatches.length === 0) continue;
       const all = issue.dispatches.flatMap(dispatch => dispatch.agents);
       const base: AgentObservations = { schema: 1, protocol: 1, observedAt, revision: row.revision,
         complete: !legacyPartials.has(i), reason: legacyPartials.has(i) ? "ancestry_unavailable" : null,

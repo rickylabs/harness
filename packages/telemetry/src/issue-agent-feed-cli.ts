@@ -35,6 +35,12 @@ export interface IssueAgentFeedOptions {
   readonly watchFiles?: Set<string>;
   /** Exact private roots certified by native bindings; only watch hints, never evidence. */
   readonly watchStoreRoots?: Set<string>;
+  /**
+   * Publish a bounded Codex tree as a `scan_limit` issue that keeps the agents it read (contract
+   * 0.37 and later). Without it the issue is `scan_limit` with no agents, which every earlier
+   * reader accepts: a reader on 0.36 or older rejects a whole snapshot holding a bounded row.
+   */
+  readonly partialTrees?: boolean;
 }
 
 const PRE_DISPATCH_MS = 600_000;
@@ -113,6 +119,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     }
     const issueFileLimit = Math.min(options.limit, MAX_ISSUE_FILES);
     const runs: RunRecord[] = [];
+    let bounded = false;
     const codexDispatches = group.dispatches.filter(d => d.source === "codex");
     if (codexDispatches.length > 0) {
       const windows = codexDispatches.map(d => ({ startMs: Date.parse(d.observedAt!) - PRE_DISPATCH_MS, endMs: nowMs }));
@@ -127,6 +134,9 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
           scan.notes.some(note => note.includes("only the") || note.includes("read bound") || note.includes("scan_limit")) ? "scan_limit" : "source_unavailable");
         continue;
       }
+      // The roots were read and their tree is exact; only its descendants were bounded.
+      bounded = scan.partial.length > 0;
+      if (bounded && options.partialTrees !== true) { entry.snapshot = unavailableSnapshot(options.now, "scan_limit"); continue; }
       runs.push(...scan.runs);
     }
     if (group.dispatches.some(d => d.source === "claude")) {
@@ -181,7 +191,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true,
       claudeChildStarts });
     entry.snapshot = buildIssueAgentTreeSnapshot({ wireFamily, observations, dispatches: group.dispatches, runs,
-      localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete });
+      localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete, bounded });
   }
   // A malformed receipt cannot be proven unrelated to a scoped issue.
   const combined = combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,
@@ -220,7 +230,7 @@ const SAFETY_RESCAN_MS = 12_000;
 
 /** `--watch` writes full snapshots and heartbeats; every new process starts seq 0. */
 export async function issueAgentFeedCommand(args: readonly string[], deps: IssueAgentFeedDependencies = {}): Promise<number> {
-  let home = homedir(), limit = 500, intervalMs = 5000, watch = false, json = false, issueKey: string | undefined;
+  let home = homedir(), limit = 500, intervalMs = 5000, watch = false, json = false, partialTrees = false, issueKey: string | undefined;
   const seen = new Set<string>();
   try {
     for (let i = 0; i < args.length; i++) {
@@ -229,6 +239,7 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
       seen.add(flag);
       if (flag === "--watch") watch = true;
       else if (flag === "--json") json = true;
+      else if (flag === "--partial-trees") partialTrees = true;
       else if (flag === "--home" && args[i + 1]?.startsWith("/")) home = args[++i]!;
       else if (flag === "--limit" && /^[1-9]\d*$/.test(args[i + 1] ?? "")) limit = Number(args[++i]);
       else if (flag === "--issue") {
@@ -285,7 +296,7 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
         try {
           if (configurationUnavailable) throw Error();
           snapshot = await collect({ home, limit, env, now: at, watchFiles: files, watchStoreRoots: storeRoots,
-          ...(issueKey === undefined ? {} : { issueKey }) }); }
+          ...(partialTrees ? { partialTrees } : {}), ...(issueKey === undefined ? {} : { issueKey }) }); }
         catch { snapshot = unavailableSnapshot(at); }
         changes?.setFiles(files, storeRoots);
         scannedAt = elapsed();

@@ -1,6 +1,6 @@
 {
   "name": "@rickylabs/harness-contracts",
-  "version": "0.36.0",
+  "version": "0.37.0",
   "description": "Published Harness mechanism contracts, strict decoders and compatibility vocabulary",
   "keywords": [
     "harness",

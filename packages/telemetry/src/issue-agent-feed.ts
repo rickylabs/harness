@@ -363,6 +363,11 @@ export function buildIssueAgentTreeSnapshot(input: {
   readonly localCapacity?: HostCapacityReading;
   readonly actions?: readonly PublicActionReceipt[];
   readonly actionsComplete?: boolean;
+  /**
+   * The native tree was read whole from its roots but its extent was bounded: the rows say
+   * `scan_limit` and keep the agents read, never a complete claim. Contract 0.37 and later.
+   */
+  readonly bounded?: boolean;
 }): IssueAgentTreeSnapshot {
   const wireFamily = validateWireFamily(input.wireFamily);
   const { dispatches, runs } = input;
@@ -410,8 +415,9 @@ export function buildIssueAgentTreeSnapshot(input: {
     agents.push(node(observation, dispatch, run, observations.observedAt, input.localCapacity,
       input.actions ?? [], input.actionsComplete ?? false, verifiedClaudeChild, childCompletion, wireFamily));
   }
+  const bounded = input.bounded === true;
   const rows: IssueAgentTree[] = [...issues.values()].map(issue => ({ repo: issue.repo, issueNumber: issue.issueNumber,
-    complete: true, reason: null,
+    complete: !bounded, reason: bounded ? "scan_limit" as const : null,
     dispatches: [...issue.dispatches].map(([dispatchId, agents]) => {
       const root = agents.find(agent => agent.observation.parentAgentId.state === "confirmed-root");
       const childEvents = root === undefined ? [] : agents.filter(agent => agent.observation.parentAgentId.value === root.observation.agentId &&
@@ -427,7 +433,7 @@ export function buildIssueAgentTreeSnapshot(input: {
   const snapshot: IssueAgentTreeSnapshot = { schema: 1, protocol: 1, observedAt: observations.observedAt,
     validUntil: new Date(Date.parse(observations.observedAt) + ISSUE_AGENT_TREE_FRESH_MS).toISOString(),
     revision: digest(JSON.stringify({ observation: observations.revision, issues: rows })),
-    complete: observations.complete, reason: observations.reason, issues: rows };
+    complete: observations.complete && !bounded, reason: observations.reason ?? (bounded ? "scan_limit" : null), issues: rows };
   const decoded = readIssueAgentTreeSnapshot(snapshot);
   return decoded.ok ? decoded.snapshot : empty(decoded.reason === "oversized" ? "scan_limit" : "ancestry_unavailable");
 }
@@ -453,10 +459,14 @@ export function combineIssueAgentTreeSnapshots(input: {
     if (issueKeys.has(key)) { overflow = true; continue; }
     issueKeys.add(key);
     const read = readIssueAgentTreeSnapshot(entry.snapshot);
-    const issue = read.ok && read.snapshot.complete && read.snapshot.observedAt === input.observedAt &&
+    const row = read.ok && read.snapshot.observedAt === input.observedAt &&
       read.snapshot.issues.length === 1 && read.snapshot.issues[0]?.repo.owner === entry.repo.owner &&
       read.snapshot.issues[0]?.repo.name === entry.repo.name && read.snapshot.issues[0]?.issueNumber === entry.issueNumber
-      ? read.snapshot.issues[0] : null;
+      ? read.snapshot.issues[0]! : null;
+    // A bounded tree keeps the agents it read; any other incomplete snapshot keeps none.
+    const issue = row !== null && read.ok && (read.snapshot.complete ||
+      (!row.complete && row.reason === "scan_limit" && read.snapshot.reason === "scan_limit" && row.dispatches.length > 0))
+      ? row : null;
     const ids = issue?.dispatches.flatMap(dispatch => dispatch.agents.map(agent => agent.observation.agentId)) ?? [];
     const unavailable: IssueAgentTree = { repo: entry.repo, issueNumber: entry.issueNumber, complete: false,
       reason: read.ok && !read.snapshot.complete ? read.snapshot.reason : "binding_unavailable", dispatches: [],
@@ -466,7 +476,7 @@ export function combineIssueAgentTreeSnapshots(input: {
     const candidate = entry.launchBlock === undefined ? tree : { ...tree, launchBlock: entry.launchBlock };
     if (fits(candidate)) {
       issues.push(candidate);
-      if (candidate.complete) ids.forEach(id => agentIds.add(id));
+      if (tree === issue) ids.forEach(id => agentIds.add(id));
     } else if (fits({ ...unavailable, reason: "scan_limit" })) {
       issues.push({ ...unavailable, reason: "scan_limit" });
       overflow = true;

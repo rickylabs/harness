@@ -105,7 +105,7 @@ const USAGE = `harness-telemetry — board activity, read from disk, with no age
 usage:
   harness-telemetry codex-threads [--limit <n>] [--private] [--watch]  native thread JSON / goal JSONL
   harness-telemetry action-receipt --json --operation <uuid> [--digest <sha256>]  sanitized Orchid delivery
-  harness-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--issue <owner/repo#number>] [--interval-ms <n>]  per-issue agent trees
+  harness-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--issue <owner/repo#number>] [--interval-ms <n>] [--partial-trees]  per-issue agent trees
   harness-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   harness-telemetry governance --observations-from <descriptor>  typed governance JSON
   harness-telemetry account-usage --source <descriptor> [--watch]  subscription quota and session token JSON
