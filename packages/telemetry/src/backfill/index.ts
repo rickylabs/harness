@@ -154,15 +154,17 @@ async function selectCodexIssue(files: readonly Transcript[], rootMatches: (id: 
 }
 
 /**
- * Read at most the remaining byte budget, including a sentinel byte for a growing file. `charge`
- * receives every byte as it is read, usable or not, so a refusal or an error still pays for it.
+ * Read the file as it stood when it was opened: never past the size measured then, plus one
+ * sentinel byte that shows whether it grew. A file that grew keeps exactly the complete records it
+ * held at open; lines appended since belong to the next read. `charge` receives every byte as it is
+ * read, usable or not, so a refusal or an error still pays for it.
  */
 async function readBounded(path: string, maxBytes: number, charge: (bytes: number) => void): Promise<string | null> {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const info = await file.stat();
     if (!info.isFile() || info.size > maxBytes) return null;
-    const bytes = Buffer.allocUnsafe(maxBytes + 1);
+    const bytes = Buffer.allocUnsafe(info.size + 1);
     let size = 0;
     while (size < bytes.length) {
       const { bytesRead } = await file.read(bytes, size, bytes.length - size, size);
@@ -170,7 +172,8 @@ async function readBounded(path: string, maxBytes: number, charge: (bytes: numbe
       if (bytesRead === 0) break;
       size += bytesRead;
     }
-    return size > maxBytes ? null : bytes.subarray(0, size).toString("utf8");
+    if (size <= info.size) return bytes.subarray(0, size).toString("utf8");
+    return bytes.subarray(0, bytes.subarray(0, info.size).lastIndexOf(10) + 1).toString("utf8");
   } finally { await file.close(); }
 }
 
@@ -477,9 +480,9 @@ export async function backfillFromDisk(
           // An issue scan never drops a dispatch-matched rollout (a root or its native descendant)
           // for its size: it reads the head and the tail instead.
           if (bounded === null && expectedHeads.has(path)) {
-            // What the failed bounded read spent is gone from this file's budget too.
-            window = await readHeadTail(path, Math.min(options.maxTranscriptBytes ?? Infinity,
-              (options.maxTotalBytes ?? Infinity) - bytesRead), charge);
+            // A bounded read refuses only at open, before reading anything, so the window has this
+            // file's whole allowance within what the frame has left.
+            window = await readHeadTail(path, budget, charge);
           }
           if (bounded === null && window === null) { limited++; continue; }
           if (bounded !== null) text = bounded;

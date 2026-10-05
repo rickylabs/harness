@@ -8,18 +8,22 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { createRequire, syncBuiltinESMExports } from "node:module";
 import { tmpdir } from "node:os";
+import { appendFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { it } from "node:test";
 
 type FilePromises = typeof import("node:fs/promises");
 const fsp = createRequire(import.meta.url)("node:fs/promises") as FilePromises;
 let reads = 0;
+/** Runs before each rollout read with its requested length; a test can append to the file here. */
+let beforeRead: ((length: number) => void) | null = null;
 const open = fsp.open;
 (fsp as { open: FilePromises["open"] }).open = (async (...args: Parameters<FilePromises["open"]>) => {
   const handle = await open(...args);
   if (basename(String(args[0])).endsWith(".jsonl")) {
     const read = handle.read.bind(handle) as (...a: unknown[]) => Promise<{ bytesRead: number }>;
     (handle as { read: unknown }).read = async (...a: unknown[]) => {
+      beforeRead?.(Number(a[2]));
       const result = await read(...a);
       reads += result.bytesRead;
       return result;
@@ -44,7 +48,7 @@ const meta = (session: string, parent: string | null = null) => line(0, "session
   model_provider: "fixture", ...(parent ? { source: { subagent: { thread_spawn: { parent_thread_id: parent, depth: 1 } } } } : {}) });
 
 async function fixture(fn: (f: {
-  put: (session: string, text: string) => Promise<void>;
+  put: (session: string, text: string) => Promise<string>;
   scan: () => ReturnType<typeof backfillFromDisk>;
   feed: () => ReturnType<typeof collectIssueAgentTree>;
 }) => Promise<void>) {
@@ -63,7 +67,9 @@ async function fixture(fn: (f: {
   try {
     await fn({
       put: async (session, text) => {
-        await fsp.writeFile(join(day, `rollout-2026-10-05T12-00-00-${session}.jsonl`), text);
+        const path = join(day, `rollout-2026-10-05T12-00-00-${session}.jsonl`);
+        await fsp.writeFile(path, text);
+        return path;
       },
       scan: () => {
         reads = 0;
@@ -77,7 +83,10 @@ async function fixture(fn: (f: {
         return collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20, now: at(120) });
       },
     });
-  } finally { await fsp.rm(home, { recursive: true, force: true }); }
+  } finally {
+    beforeRead = null;
+    await fsp.rm(home, { recursive: true, force: true });
+  }
 }
 
 it("charges every byte a refused window read to the frame budget, and reads no more than it", () => fixture(async ({ put, scan }) => {
@@ -114,4 +123,26 @@ it("keeps a complete final record without a trailing newline that exactly fills 
   assert.equal(result.runs[0]?.outcome, "complete");
   const frame = await feed();
   assert.equal(frame.issues[0]?.dispatches[0]?.agents[0]?.terminalOutcome.value, "succeeded");
+}));
+
+it("a transcript that grows while it is read never spends more than its per-transcript bound", () => fixture(async ({ put, scan }) => {
+  const prefix = meta(id(1)) + event(2, "task_complete");
+  const text = prefix + filler(5, MAX - Buffer.byteLength(prefix) - Buffer.byteLength(filler(5, 0)) - 100);
+  assert.equal(Buffer.byteLength(text), MAX - 100);
+  const path = await put(id(1), text);
+  let grew = false;
+  const identityProbe = 512;
+  beforeRead = length => {
+    // A live writer appends after the reader measured the file, on its first full read.
+    if (!grew && length > identityProbe) {
+      grew = true;
+      appendFileSync(path, tokens(104) + event(105, "agent_message", { message: "late fixture activity" }));
+    }
+  };
+  const result = await scan();
+  assert.equal(grew, true, "the file grew during the read");
+  assert.ok(reads - identityProbe <= MAX + 1, `one transcript spent ${reads - identityProbe} bytes`);
+  assert.equal(result.bytesRead, reads);
+  // The read keeps the records the file held when it was opened.
+  assert.equal(result.runs[0]?.outcome, "complete");
 }));
