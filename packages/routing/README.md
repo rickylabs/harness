@@ -405,6 +405,8 @@ Primary source anchors: [Claude SDK model metadata](https://github.com/anthropic
 [Codex app-server methods](https://developers.openai.com/codex/app-server),
 [Codex 0.159.3 provider resolution](https://github.com/openai/codex/blob/rust-v0.159.3/codex-rs/core/src/config/mod.rs),
 [Codex 0.160.0 provider resolution](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/core/src/config/mod.rs),
+[Codex 0.160.1 provider resolution](https://github.com/openai/codex/blob/rust-v0.160.1/codex-rs/core/src/config/mod.rs)
+(byte-identical to 0.160.0's),
 [Codex scoped configuration reads](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/app-server/src/config_manager_service.rs#L119-L135),
 [OpenCode native model listing](https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/cli/cmd/models.ts),
 and [OpenCode provider handler](https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/server/routes/instance/httpapi/handlers/provider.ts).
@@ -432,6 +434,17 @@ reader refuses a label without that binding, on any other launcher, or failing t
 The observer records presence only, and keeps entitlement and quota unknown. Only the
 source-verified revision is enabled; native CLIs resolve their own authentication, without
 credential-file reads by Harness.
+
+Codex built-in default. With no configured provider, no custom provider definitions and an empty
+requirements read, Codex falls back to its compiled default (`openai` in every verified release).
+That default is bound only when the whole `--version` output is exactly one upstream release line,
+`codex-cli X.Y.Z` in canonical SemVer, and X.Y.Z is verified. Any other build (an auto-update, a
+fork banner, extra components, leading zeros, pre-release or build suffixes, trailing text) may
+compile a different default, and no metadata read reports the resolved one. So it keeps its models
+and auth, its provider stays unknown, and the source `codex.builtin-provider.unverified` names the
+case, so readers can say the version is not yet verified instead of dropping it silently. A
+configured provider (`codex.config/read`) is the runtime value the launch applies and binds whatever
+the version. The strict reader never accepts the marker beside any provider binding.
 
 Raw native provider responses can include private key/options fields. The observer discards
 all such values and publishes only exact connection IDs and fixed facts. It never emits

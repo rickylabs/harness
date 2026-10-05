@@ -11,7 +11,7 @@ export type DiscoveryFact = "yes" | "no" | "unknown";
 export type DiscoveryProblem = "not-installed" | "command-failed" | "timeout" | "oversized" |
   "malformed" | "unsupported" | "empty-catalog" | "not-requested";
 export const DISCOVERY_SOURCES = ["version", "auth-status", "model/list", "models", "declared",
-  "claude.sdk.initialize", "claude.auth.apiProvider", "codex.config/read", "codex.builtin-provider",
+  "claude.sdk.initialize", "claude.auth.apiProvider", "codex.config/read", "codex.builtin-provider", "codex.builtin-provider.unverified",
   "opencode.models.providerID", "opencode.models.providerPrefix", "opencode.models.variants", "opencode.provider/list.connected",
   "opencode.config/providers", "opencode.config/providers.providerID", "opencode.config/providers.variants", "agy.models", "agy.auth-gate", "agy.command.config", "agy.command.model"] as const;
 export type DiscoverySource = typeof DISCOVERY_SOURCES[number];
@@ -97,6 +97,9 @@ const PROVIDER_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const EFFORT = /^[a-z][a-z0-9_-]{0,63}$/;
 const UNKNOWN_PROVIDER: DiscoveryProvider = { id: null, source: null, scope: "unknown" };
 const CODEX_BUILTIN_PROVIDER_VERSIONS = new Set<string>(nativeBindings.codex.verifiedVersions);
+/** The whole `--version` output of an upstream Codex release: exactly one line, canonical SemVer (no leading zeros,
+ * no pre-release, build or extra components). Anything else (fork banners, suffixes) never earns a built-in binding. */
+const CODEX_RELEASE_LINE = /^codex-cli ((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))\r?\n?$/;
 const OPENCODE_NATIVE_VARIANT_VERSIONS = new Set<string>(nativeBindings.opencode.verifiedVersions);
 const OPENCODE_HTTP_CATALOG_VERSIONS = new Set<string>(nativeBindings.opencode.httpCatalogVersions);
 const AGY_METADATA_VERSIONS = new Set<string>(nativeBindings.agy.verifiedVersions);
@@ -277,8 +280,8 @@ async function command(binary: string, args: readonly string[], options: CliDisc
 function problem(error: unknown): DiscoveryProblem {
   return error instanceof DiscoveryError ? error.problem : "command-failed";
 }
-interface CodexCatalog { models: DiscoveredModel[]; authenticated: DiscoveryFact; provider: DiscoveryProvider }
-async function codexCatalog(binary: string, options: CliDiscoveryOptions, version: string | null): Promise<CodexCatalog> {
+interface CodexCatalog { models: DiscoveredModel[]; authenticated: DiscoveryFact; provider: DiscoveryProvider; unverifiedDefault: boolean }
+async function codexCatalog(binary: string, options: CliDiscoveryOptions, release: string | null): Promise<CodexCatalog> {
   const observationCwd = resolve(options.cwd);
   const running = child(binary, ["app-server", "--listen", "stdio://"], { ...options, cwd: observationCwd });
   let nextId = 0;
@@ -309,7 +312,7 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, versio
       if (account.account === null) authenticated = account.requiresOpenaiAuth === true ? "no" : "unknown";
       else if (typeof account.account === "object" && account.account !== null) authenticated = "yes";
     } catch (error) { if (problem(error) !== "unsupported") throw error; }
-    let binding = UNKNOWN_PROVIDER;
+    let binding = UNKNOWN_PROVIDER, unverifiedDefault = false;
     let configuration: Record<string, unknown> | undefined, requirements: Record<string, unknown> | undefined;
     try {
       // Without cwd, Codex excludes in-repo .codex layers and cannot bind this observation.
@@ -324,12 +327,16 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, versio
       try {
         if (typeof configuration.model_provider === "string") {
           binding = provider(configuration.model_provider, "codex.config/read", "cli");
-        } else if (CODEX_BUILTIN_PROVIDER_VERSIONS.has(version ?? "") && configuration.model_provider === null && configuration.model_providers !== undefined &&
+        } else if (configuration.model_provider === null && configuration.model_providers !== undefined &&
             Object.keys(object(configuration.model_providers)).length === 0) {
-          // Pinned rust-v0.159.3 and rust-v0.160.0 core/config/mod.rs default; other revisions stay unknown:
-          // required_model_provider.or(model_provider).or(cfg.model_provider).unwrap_or("openai").
-          // Require a successful empty requirements read and no custom provider definitions.
-          binding = provider(nativeBindings.codex.builtinProvider, "codex.builtin-provider", "cli");
+          // Unconfigured: Codex falls back to its compiled default. Pinned rust-v0.159.3, rust-v0.160.0 and rust-v0.160.1
+          // core/config/mod.rs: required_model_provider.or(model_provider).or(cfg.model_provider).unwrap_or("openai").
+          // Require a successful empty requirements read, no custom provider definitions, and the exact upstream
+          // release line of a verified version. Any other build (auto-update, fork, malformed output) may compile a
+          // different default, and no runtime read reports the resolved one: its provider stays unknown, named.
+          if (release !== null && CODEX_BUILTIN_PROVIDER_VERSIONS.has(release)) {
+            binding = provider(nativeBindings.codex.builtinProvider, "codex.builtin-provider", "cli");
+          } else unverifiedDefault = true;
         }
       } catch { /* Malformed binding metadata stays unknown, never defaulted. */ }
     }
@@ -353,7 +360,7 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, versio
       if (result.nextCursor === null) {
         checkedIds(models.map(m => m.id));
         if (!models.length) throw new DiscoveryError("empty-catalog");
-        return { models, authenticated, provider: binding };
+        return { models, authenticated, provider: binding, unverifiedDefault };
       }
       if (typeof result.nextCursor !== "string" || !result.nextCursor || result.nextCursor.length > 256 ||
           /[\s\u0000-\u001f\u007f]/.test(result.nextCursor) || cursors.has(result.nextCursor)) throw new DiscoveryError("malformed");
@@ -647,9 +654,12 @@ async function observe(launcher: DiscoveryLauncher, launcherOptions: CliDiscover
       return await openCodeHttpCatalog(binary, options, observation);
     }
     if (launcher === "codex") {
-      const catalog = await codexCatalog(binary, options, observation.version);
+      const catalog = await codexCatalog(binary, options, CODEX_RELEASE_LINE.exec(version.stdout)?.[1] ?? null);
+      // An unconfigured build that is not a verified upstream release keeps its models with an unknown provider,
+      // named by its own source so readers can say which version is not yet verified.
       return { ...observation, catalog: "observed", models: catalog.models, authenticated: catalog.authenticated,
-        provider: catalog.provider, sources: ["version", "auth-status", "model/list", ...(catalog.provider.source ? [catalog.provider.source] : [])] };
+        provider: catalog.provider, sources: ["version", "auth-status", "model/list", ...(catalog.provider.source ? [catalog.provider.source] : []),
+          ...(catalog.unverifiedDefault ? ["codex.builtin-provider.unverified" as const] : [])] };
     }
     const output = await command(binary, launcher === "agy" ? ["models"] : ["models", "--verbose", "--pure"], options);
     if (output.code !== 0) throw new DiscoveryError("command-failed");
@@ -691,7 +701,7 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
     if (!shape(launchers, DISCOVERY_LAUNCHERS)) return false;
     const nativeSources: Record<DiscoveryLauncher, readonly DiscoverySource[]> = {
       claude: ["version", "auth-status", "claude.sdk.initialize", "claude.auth.apiProvider"],
-      codex: ["version", "auth-status", "model/list", "codex.config/read", "codex.builtin-provider"],
+      codex: ["version", "auth-status", "model/list", "codex.config/read", "codex.builtin-provider", "codex.builtin-provider.unverified"],
       opencode: ["version", "models", "opencode.models.providerID", "opencode.models.providerPrefix", "opencode.models.variants", "opencode.provider/list.connected",
         "opencode.config/providers", "opencode.config/providers.providerID", "opencode.config/providers.variants"],
       agy: ["version", "declared", "agy.models", "agy.auth-gate", "agy.command.config", "agy.command.model"],
@@ -735,6 +745,9 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
             (httpCatalog && p.source === "opencode.config/providers.providerID"));
       };
       if (Object.hasOwn(record, "provider") && !binding(record.provider, "cli")) return false;
+      // The unverified marker names a build whose compiled default is unproven: never beside any provider binding.
+      if (record.sources.includes("codex.builtin-provider.unverified") &&
+          (object(record.provider).scope !== "unknown" || record.sources.some(v => v === "codex.builtin-provider" || v === "codex.config/read"))) return false;
       const ids: unknown[] = [], aliases = new Set<string>();
       for (const entry of record.models) {
         const model = object(entry);
