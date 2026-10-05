@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "mode": "role",
+  "role": "implementation_evaluation",
+  "tiers": [
+    {
+      "tier": "straightforward",
+      "description": "Straightforward implementations and features; medium temperature and medium complexity.",
+      "routes": [
+        {
+          "model": "glm_5_3_flash",
+          "effort": "provider_default"
+        },
+        {
+          "model": "deepseek_v4_pro",
+          "effort": "provider_default"
+        }
+      ],
+      "policy": {
+        "maxRounds": 5,
+        "notifyOwnerAfter": 3,
+        "reSteerSameSession": true
+      }
+    }
+  ]
+}

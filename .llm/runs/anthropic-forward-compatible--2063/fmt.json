@@ -1,0 +1,1 @@
+{"command":"deno fmt --check","cwd":"/home/agent/projects/netscript/worktrees/fix-anthropic-2063","mode":"check","summary":{"filesSelected":142,"batches":2,"failedBatches":0,"findings":0,"ignoredFindings":0},"coverage":{"filesSelected":142,"filesProcessed":142,"droppedFiles":[],"refusals":[]},"findings":[]}

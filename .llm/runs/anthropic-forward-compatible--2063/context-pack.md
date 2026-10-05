@@ -1,0 +1,3 @@
+# Context pack
+
+Source delivery is NetScript PR 2078 at initial commit 51d8e10d5. This Harness branch orch/divybot-600 preserves the evidence for inbox 600. New regression passes 10/10, whole AI/plugin suite passes 201/201, 142-file check/lint/fmt clean, source quality gate exit 0. Independent matrix-routed GLM evaluation, generated docs, publish dry-run and CLI E2E are running upstream. Next: finish those results, address evaluator findings, link final upstream head, run Harness gates, commit and ready this delivery PR. Stable publication and released-consumer acceptance remain pending on issue 2063; do not claim full upstream closure.
