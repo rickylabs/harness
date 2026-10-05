@@ -187,7 +187,10 @@ export function renderSwarm(request: DispatchRequest): string {
   // is a key line to Go and prose to a JavaScript regex, and that gap is precisely how a prompt got
   // past this guard and replaced the matrix-selected model at launch.
   const firstLine = goTrimSpace(goSplitLines(prompt)[0] ?? "");
-  const guarded = goKeyValue(firstLine) !== null ? `${PROMPT_GUARD}\n${prompt}` : prompt;
+  // An empty `repo:` heading is not a key to Orchid, but `parseSwarm` counts it as a repo
+  // declaration, so it would clear the request's repo. Guard it like a key line.
+  const keyShaped = goKeyValue(firstLine) !== null || EMPTY_REPO_LINE.test(firstLine); // guard:empty-repo-prompt
+  const guarded = keyShaped ? `${PROMPT_GUARD}\n${prompt}` : prompt;
 
   return `${lines.join("\n")}\n\n${guarded}\n`;
 }

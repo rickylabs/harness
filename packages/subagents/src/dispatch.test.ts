@@ -157,6 +157,23 @@ describe("the source repository key", () => {
     assert.equal(parsed(`${keys}\nGo.`).overrides.repo, "");
   });
 
+  it("guards a prompt that opens with an empty repo heading, so it never clears the repo", () => {
+    for (const prompt of ["repo:\nGo.", "repo :\nGo.", "repo:   \nGo.", "repo:\r\nGo."]) {
+      for (const repo of ["a/b", undefined]) {
+        const request: DispatchRequest = {
+          harness: "codex", model: "gpt-6-sol", effort: "high", ...(repo ? { repo } : {}), prompt,
+        };
+        assert.deepEqual(validateDispatch(request), [], JSON.stringify(prompt));
+        const wire = renderSwarm(request);
+        const result = parsed(wire);
+        assert.deepEqual(result.warnings, [], `${JSON.stringify(prompt)} ${repo}`);
+        assert.equal(result.overrides.repo, repo ?? "", JSON.stringify(prompt));
+        assert.equal(toDispatchRequest(result).repo, repo, JSON.stringify(prompt));
+        assert.ok(wire.includes(`${PROMPT_GUARD}\n`), JSON.stringify(prompt));
+      }
+    }
+  });
+
   it("is a known key, so a repo line is not reported as dropped prose", () => {
     assert.ok(!warningKinds("/swarm\nrepo: rickylabs/netscript\nharness: codex\n\nGo.").includes("unknown-key"));
   });
