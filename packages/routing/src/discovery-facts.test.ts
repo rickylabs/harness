@@ -50,7 +50,7 @@ if(kind==='agy'&&args.includes('--print')){
  if(behavior==='agy-command')result.command.name='other';
  console.log(JSON.stringify(result));process.exit(behavior==='agy-exit'?1:0);
 }
-if(args[0]==='--version'){console.log(kind==='codex'&&behavior!=='other-version'?(['new-version','project-provider','scoped-read-failed'].includes(behavior)?'0.160.0':'0.159.3'):'1.2.3');process.exit(0);}
+if(args[0]==='--version'){console.log(kind==='codex'&&behavior!=='other-version'?(['new-version','project-provider','scoped-read-failed'].includes(behavior)?'0.160.0':behavior==='patch-version'?'0.160.1':behavior==='unverified-patch'?'0.160.2':behavior==='older-version'?'0.158.0':behavior==='prerelease-version'?'0.161.0-alpha.1':'0.159.3'):'1.2.3');process.exit(0);}
 if(args[0]==='auth'){if(behavior==='auth-failed'){console.log('PRIVATE-CREDENTIAL-CANARY');process.exit(2);}const auth={...data.claudeAuth};if(behavior==='auth-type')auth.loggedIn='yes';if(behavior==='auth-provider')auth.apiProvider='unknown';console.log(JSON.stringify(auth));process.exit(behavior==='auth-exit'?1:0);}
 if(args[0]==='models'){
  if(kind==='agy'){const entries=behavior==='agy-bound'?Array.from({length:65},(_,i)=>({id:data.agyBoundModelPrefix+i,label:'Bound'})):data.agyModels;for(const m of entries)console.log(m.id+'\\t'+m.label);}
@@ -151,6 +151,32 @@ test("native facts: Claude resolves native aliases and per-model effort without 
   for(const flag of ['--bare','--no-session-persistence','--setting-sources=','--strict-mcp-config','--input-format','--output-format'])assert.ok(args.includes(flag),flag);
   assert.equal(args[args.indexOf('--mcp-config')+1],'{"mcpServers":{}}');
   for(const forbidden of ['"type":"user"','turn/start','thread/start','refreshToken":true'])assert.ok(!log.includes(forbidden));
+}));
+test("native facts: Codex 0.160.1 keeps the verified built-in provider",async()=>fixture(async(cwd,binary)=>{
+ const s=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","patch-version"))),o=wire(s).launchers.codex;
+ assert.equal(o.version,"0.160.1");assert.deepEqual(o.provider,{id:"openai",source:"codex.builtin-provider",scope:"cli"});
+ assert.ok(o.sources.includes("codex.builtin-provider"));assert.ok(validateCliDiscoverySnapshot(s));
+}));
+test("native facts: an auto-updated Codex newer than every verified release keeps its models under a named unverified binding",async()=>fixture(async(cwd,binary)=>{
+ const u=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","unverified-patch"))),ou=wire(u).launchers.codex;
+ assert.equal(ou.version,"0.160.2");assert.equal(ou.catalog,"observed");assert.ok(ou.models.length>0);
+ assert.deepEqual(ou.provider,{id:"openai",source:"codex.builtin-provider.unverified",scope:"cli"});
+ assert.ok(ou.sources.includes("codex.builtin-provider.unverified"));assert.ok(!ou.sources.includes("codex.builtin-provider"));
+ for(const m of ou.models)assert.deepEqual(m.provider,ou.provider);
+ assert.ok(validateCliDiscoverySnapshot(u));
+ // Older, pre-release and new-major versions are not an auto-update past the verified line: they stay unknown.
+ for(const [behavior,version] of [["older-version","0.158.0"],["prerelease-version","0.161.0-alpha.1"],["other-version","1.2.3"]] as const){
+  const s=await discoverCliCapabilities(options(cwd,"codex",await binary("codex",behavior))),o=wire(s).launchers.codex;
+  assert.equal(o.version,version);assert.equal(o.provider.id,null,behavior);assert.ok(validateCliDiscoverySnapshot(s));
+ }
+ // The strict reader never accepts the unverified source on a verified version, nor the verified source on an unverified one.
+ const verified=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","normal")));
+ const a=structuredClone(verified) as any;a.launchers.codex.sources=a.launchers.codex.sources.map((x:string)=>x==="codex.builtin-provider"?"codex.builtin-provider.unverified":x);
+ a.launchers.codex.provider.source="codex.builtin-provider.unverified";a.launchers.codex.models.forEach((m:any)=>{m.provider=a.launchers.codex.provider;});
+ assert.equal(validateCliDiscoverySnapshot(a),false);
+ const b=structuredClone(u) as any;b.launchers.codex.sources=b.launchers.codex.sources.map((x:string)=>x==="codex.builtin-provider.unverified"?"codex.builtin-provider":x);
+ b.launchers.codex.provider.source="codex.builtin-provider";b.launchers.codex.models.forEach((m:any)=>{m.provider=b.launchers.codex.provider;});
+ assert.equal(validateCliDiscoverySnapshot(b),false);
 }));
 test("native facts: AGY installation/catalog are observed while auth/provider/effort remain unknown", async()=>fixture(async(cwd,binary,data)=>{
   let s: Awaited<ReturnType<typeof discoverCliCapabilities>> | undefined;

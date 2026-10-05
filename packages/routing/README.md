@@ -405,6 +405,8 @@ Primary source anchors: [Claude SDK model metadata](https://github.com/anthropic
 [Codex app-server methods](https://developers.openai.com/codex/app-server),
 [Codex 0.159.3 provider resolution](https://github.com/openai/codex/blob/rust-v0.159.3/codex-rs/core/src/config/mod.rs),
 [Codex 0.160.0 provider resolution](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/core/src/config/mod.rs),
+[Codex 0.160.1 provider resolution](https://github.com/openai/codex/blob/rust-v0.160.1/codex-rs/core/src/config/mod.rs)
+(byte-identical to 0.160.0's),
 [Codex scoped configuration reads](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/app-server/src/config_manager_service.rs#L119-L135),
 [OpenCode native model listing](https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/cli/cmd/models.ts),
 and [OpenCode provider handler](https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/server/routes/instance/httpapi/handlers/provider.ts).
@@ -417,6 +419,15 @@ AGY 1.2.17 returned the identical report envelopes and exits 0 once stdin is clo
 The observer records presence only, and keeps entitlement and quota unknown. Only the
 source-verified revision is enabled; native CLIs resolve their own authentication, without
 credential-file reads by Harness.
+
+Codex auto-updates. A plain release newer than every verified one, on the same major line,
+keeps its catalog and gets the last verified built-in provider under the source
+`codex.builtin-provider.unverified`, only in the same unconfigured state (no `model_provider`, no
+custom provider definitions, an empty requirements read). Readers name that version as not yet
+verified instead of dropping every model. Nothing depends on the binding for safety: Codex
+resolves its own provider at launch, and the binding only names the route. Older, pre-release,
+build-tagged and new-major versions stay unknown. The strict reader accepts each source only on
+its own side of the verified line.
 
 Raw native provider responses can include private key/options fields. The observer discards
 all such values and publishes only exact connection IDs and fixed facts. It never emits

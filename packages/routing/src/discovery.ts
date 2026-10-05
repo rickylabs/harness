@@ -11,7 +11,7 @@ export type DiscoveryFact = "yes" | "no" | "unknown";
 export type DiscoveryProblem = "not-installed" | "command-failed" | "timeout" | "oversized" |
   "malformed" | "unsupported" | "empty-catalog" | "not-requested";
 export const DISCOVERY_SOURCES = ["version", "auth-status", "model/list", "models", "declared",
-  "claude.sdk.initialize", "claude.auth.apiProvider", "codex.config/read", "codex.builtin-provider",
+  "claude.sdk.initialize", "claude.auth.apiProvider", "codex.config/read", "codex.builtin-provider", "codex.builtin-provider.unverified",
   "opencode.models.providerID", "opencode.models.providerPrefix", "opencode.models.variants", "opencode.provider/list.connected",
   "opencode.config/providers", "opencode.config/providers.providerID", "opencode.config/providers.variants", "agy.models", "agy.auth-gate", "agy.command.config", "agy.command.model"] as const;
 export type DiscoverySource = typeof DISCOVERY_SOURCES[number];
@@ -76,6 +76,17 @@ const PROVIDER_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const EFFORT = /^[a-z][a-z0-9_-]{0,63}$/;
 const UNKNOWN_PROVIDER: DiscoveryProvider = { id: null, source: null, scope: "unknown" };
 const CODEX_BUILTIN_PROVIDER_VERSIONS = new Set<string>(nativeBindings.codex.verifiedVersions);
+const release = (version: string) => /^(\d+)\.(\d+)\.(\d+)$/.exec(version)?.slice(1).map(Number) ?? null;
+const later = (a: number[], b: number[]) => a[0]! !== b[0]! ? a[0]! > b[0]! : a[1]! !== b[1]! ? a[1]! > b[1]! : a[2]! > b[2]!;
+/** A plain release newer than every verified one, on the same major line (an auto-update). Older, pre-release,
+ * build-tagged and new-major versions are not. */
+function newerThanVerifiedCodex(version: string | null): boolean {
+  const current = version === null ? null : release(version);
+  if (current === null || CODEX_BUILTIN_PROVIDER_VERSIONS.has(version!)) return false;
+  return [...CODEX_BUILTIN_PROVIDER_VERSIONS].every(verified => {
+    const v = release(verified); return v !== null && later(current, v) && current[0] === v[0];
+  });
+}
 const OPENCODE_NATIVE_VARIANT_VERSIONS = new Set<string>(nativeBindings.opencode.verifiedVersions);
 const OPENCODE_HTTP_CATALOG_VERSIONS = new Set<string>(nativeBindings.opencode.httpCatalogVersions);
 const AGY_METADATA_VERSIONS = new Set<string>(nativeBindings.agy.verifiedVersions);
@@ -295,6 +306,13 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, versio
           // required_model_provider.or(model_provider).or(cfg.model_provider).unwrap_or("openai").
           // Require a successful empty requirements read and no custom provider definitions.
           binding = provider(nativeBindings.codex.builtinProvider, "codex.builtin-provider", "cli");
+        } else if (newerThanVerifiedCodex(version) && configuration.model_provider === null && configuration.model_providers !== undefined &&
+            Object.keys(object(configuration.model_providers)).length === 0) {
+          // An auto-updated release newer than every verified one: the same unconfigured state, with the last verified
+          // default, under a source that says it is unverified so readers can name it. No safety property depends on
+          // it: Codex resolves its own provider at launch; this only names the route. Older or pre-release versions
+          // stay unknown.
+          binding = provider(nativeBindings.codex.builtinProvider, "codex.builtin-provider.unverified", "cli");
         }
       } catch { /* Malformed binding metadata stays unknown, never defaulted. */ }
     }
@@ -635,7 +653,7 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
     if (!shape(launchers, DISCOVERY_LAUNCHERS)) return false;
     const nativeSources: Record<DiscoveryLauncher, readonly DiscoverySource[]> = {
       claude: ["version", "auth-status", "claude.sdk.initialize", "claude.auth.apiProvider"],
-      codex: ["version", "auth-status", "model/list", "codex.config/read", "codex.builtin-provider"],
+      codex: ["version", "auth-status", "model/list", "codex.config/read", "codex.builtin-provider", "codex.builtin-provider.unverified"],
       opencode: ["version", "models", "opencode.models.providerID", "opencode.models.providerPrefix", "opencode.models.variants", "opencode.provider/list.connected",
         "opencode.config/providers", "opencode.config/providers.providerID", "opencode.config/providers.variants"],
       agy: ["version", "declared", "agy.models", "agy.auth-gate", "agy.command.config", "agy.command.model"],
@@ -672,7 +690,8 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
         checkedIds([p.id]);
         if (name === "claude") return scope === "cli" && p.source === "claude.auth.apiProvider" && p.id === nativeBindings.claude.firstPartyProvider;
         if (name === "codex") return scope === "cli" && (p.source === "codex.config/read" ||
-          (p.source === "codex.builtin-provider" && p.id === nativeBindings.codex.builtinProvider && typeof record.version === "string" && CODEX_BUILTIN_PROVIDER_VERSIONS.has(record.version)));
+          (p.source === "codex.builtin-provider" && p.id === nativeBindings.codex.builtinProvider && typeof record.version === "string" && CODEX_BUILTIN_PROVIDER_VERSIONS.has(record.version)) ||
+          (p.source === "codex.builtin-provider.unverified" && p.id === nativeBindings.codex.builtinProvider && typeof record.version === "string" && newerThanVerifiedCodex(record.version)));
         if (name === "agy") return scope === "cli" && p.source === "agy.command.config" && record.authenticated === "yes" && Object.values(nativeBindings.agy.providerBindings).includes(p.id);
         return name === "opencode" && scope === "model" && modelID?.startsWith(p.id + "/") === true &&
           (p.source === "opencode.models.providerID" || p.source === "opencode.models.providerPrefix" ||
