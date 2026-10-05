@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **482/593 done · 47 running · 26 queued · 16 abandoned · 22 invisible**
+`[################----]` **482/594 done · 47 running · 26 queued · 16 abandoned · 23 invisible**
 
-_Latest board activity: 2026-10-05T20:09:33Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-05T20:41:10Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (47)
 
@@ -60,7 +60,7 @@ Something could be acting on these right now.
 | [PR602 fix(ai): deliver upstream Anthropic model compatibility fix](https://github.com/rickylabs/harness/pull/602) | `impl-eval` | — |
 | [#604 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/604) | `plan` | — |
 
-## Not on the board (9)
+## Not on the board (10)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -75,8 +75,9 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#575 App picker launch test (one per CLI)](https://github.com/rickylabs/harness/issues/575) | — | — |
 | [#581 [rc-proof] Claude Haiku phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/581) | — | — |
 | [#582 [rc-proof] Codex Luna phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/582) | — | — |
+| [PR609 fix(telemetry): find the dispatched Codex root by its rollout name; bounded descendants are partial, never refused](https://github.com/rickylabs/harness/pull/609) | — | — |
 
-## Anomalies (47)
+## Anomalies (48)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -138,6 +139,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#581** — open item has no status label, so it appears in no column
 - **#582** — open item has no status label, so it appears in no column
 - **#603** — open item has no status label, so it appears in no column
+- **#609** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -162,7 +164,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 281/344 done · 31 running · 3 queued · 10 abandoned · 19 invisible
+`[#########---]` 281/345 done · 31 running · 3 queued · 10 abandoned · 20 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -172,7 +174,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 244/303 done · 30 running · 2 queued · 10 abandoned · 17 invisible | — |
+| _(no epic)_ | `[#########---]` 244/304 done · 30 running · 2 queued · 10 abandoned · 18 invisible | — |
 
 ## Waiting to start
 
@@ -216,7 +218,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  482/593 done · 47 running · 26 queued · 16 abandoned · 22 invisible
+# rickylabs/harness  [################----]  482/594 done · 47 running · 26 queued · 16 abandoned · 23 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -504,7 +506,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  281/344 done · 31 running · 3 queued · 10 abandoned · 19 invisible
+## (no milestone)  [################----]  281/345 done · 31 running · 3 queued · 10 abandoned · 20 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -869,6 +871,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR606 fix(routing): verify AGY 1.2.17 for native metadata reports (p0)
     ready-merge          PR607 fix(routing): verify Codex 0.160.1; name an auto-updated Codex instead of dropping it (p0)
     ready-merge          PR608 feat(routing): AGY vendor labels under the verified binding; metadata reports fit the measured budget (p0)
+    no status            PR609 fix(telemetry): find the dispatched Codex root by its rollout name; bounded descendants are partial, never refused
 ```
 
 </details>
