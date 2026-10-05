@@ -156,8 +156,9 @@ async function selectCodexIssue(files: readonly Transcript[], rootMatches: (id: 
 /**
  * Read the file as it stood when it was opened: never past the size measured then, plus one
  * sentinel byte that shows whether it grew. A file that grew keeps exactly the complete records it
- * held at open; lines appended since belong to the next read. `charge` receives every byte as it is
- * read, usable or not, so a refusal or an error still pays for it.
+ * held at open, including a final record without its newline when that record is complete JSON on
+ * its own; bytes past the measured size are not yet seen and belong to the next read. `charge`
+ * receives every byte as it is read, usable or not, so a refusal or an error still pays for it.
  */
 async function readBounded(path: string, maxBytes: number, charge: (bytes: number) => void): Promise<string | null> {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
@@ -173,7 +174,16 @@ async function readBounded(path: string, maxBytes: number, charge: (bytes: numbe
       size += bytesRead;
     }
     if (size <= info.size) return bytes.subarray(0, size).toString("utf8");
-    return bytes.subarray(0, bytes.subarray(0, info.size).lastIndexOf(10) + 1).toString("utf8");
+    const snapshot = bytes.subarray(0, info.size);
+    const lastLine = snapshot.lastIndexOf(10) + 1;
+    try {
+      // Complete at open: it stays, whatever was appended after it.
+      JSON.parse(snapshot.subarray(lastLine).toString("utf8"));
+      return snapshot.toString("utf8");
+    } catch {
+      // Still being written at open: only the records before it were seen.
+      return snapshot.subarray(0, lastLine).toString("utf8");
+    }
   } finally { await file.close(); }
 }
 

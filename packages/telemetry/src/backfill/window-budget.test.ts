@@ -148,3 +148,60 @@ it("a transcript that grows while it is read never spends more than its per-tran
   // The read keeps the records the file held when it was opened.
   assert.equal(result.runs[0]?.outcome, "complete");
 }));
+
+// A complete final record without its newline was already seen at open; a later append (which
+// starts with that newline) never removes it, and never turns an active turn into a finished one.
+for (const finalType of ["task_started", "task_complete"] as const) {
+  for (const large of [false, true]) {
+    it(`a growing transcript keeps its complete final ${finalType} from open (${large ? "near the bound" : "small"})`, () => fixture(async ({ put, scan, feed }) => {
+      const prefix = meta(id(1)) + event(2, finalType === "task_started" ? "task_complete" : "task_started");
+      const final = event(100, finalType).trimEnd();
+      const padding = large ? MAX - 100 - Buffer.byteLength(prefix + filler(5, 0) + final) : 9_000;
+      const text = prefix + filler(5, padding) + final;
+      if (large) assert.equal(Buffer.byteLength(text), MAX - 100);
+      const path = await put(id(1), text);
+      let grew = false;
+      const arm = () => {
+        grew = false;
+        beforeRead = length => {
+          if (!grew && length > 512) {
+            grew = true;
+            appendFileSync(path, "\n" + tokens(104) + event(105, "agent_message", { message: "late fixture activity" }));
+          }
+        };
+      };
+      arm();
+      const result = await scan();
+      assert.equal(grew, true);
+      assert.equal(result.bytesRead, reads);
+      assert.equal(reads - 512, Buffer.byteLength(text) + 1, "read exactly the size at open plus the sentinel");
+      assert.equal(result.runs[0]?.outcome, finalType === "task_started" ? "running" : "complete");
+      await fsp.writeFile(path, text);
+      arm();
+      const frame = await feed();
+      assert.equal(grew, true);
+      const agent = frame.issues[0]?.dispatches[0]?.agents[0];
+      assert.equal(agent?.terminalOutcome.value, finalType === "task_started" ? null : "succeeded");
+      assert.equal(agent?.liveness.state, finalType === "task_started" ? "running" : "ended");
+    }));
+  }
+}
+
+it("a final record still being written at open is not seen; the earlier complete records are kept", () => fixture(async ({ put, scan }) => {
+  const complete = meta(id(1)) + event(2, "task_started") + filler(5, 9_000);
+  const last = event(100, "task_complete").trimEnd();
+  const text = complete + last.slice(0, -5);
+  const path = await put(id(1), text);
+  let grew = false;
+  beforeRead = length => {
+    if (!grew && length > 512) {
+      grew = true;
+      appendFileSync(path, last.slice(-5) + "\n");
+    }
+  };
+  const result = await scan();
+  assert.equal(grew, true);
+  assert.equal(reads, 512 + Buffer.byteLength(text) + 1);
+  assert.equal(result.runs[0]?.outcome, "running", "never success from bytes past the measured size");
+  assert.equal(result.degraded, false);
+}));
