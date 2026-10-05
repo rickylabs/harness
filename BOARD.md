@@ -4,7 +4,7 @@
 
 `[################----]` **478/588 done · 46 running · 26 queued · 16 abandoned · 22 invisible**
 
-_Latest board activity: 2026-10-05T04:06:37Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-05T04:53:49Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (46)
 
@@ -57,7 +57,7 @@ Something could be acting on these right now.
 | [#598 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/598) | `plan` | — |
 | [#599 [rickylabs/netscript#2077] [witness] No-op owner launch check (mobile APK gate)](https://github.com/rickylabs/harness/issues/599) | `plan` | — |
 | [#600 [rickylabs/netscript#2063] fix(ai/anthropic): Claude 5.5 IDs rejected locally on 0.0.7; qualify forward-compatible model support](https://github.com/rickylabs/harness/issues/600) | `plan` | — |
-| [PR602 fix(ai): deliver upstream Anthropic model compatibility fix](https://github.com/rickylabs/harness/pull/602) | `impl` | — |
+| [PR602 fix(ai): deliver upstream Anthropic model compatibility fix](https://github.com/rickylabs/harness/pull/602) | `impl-eval` | — |
 
 ## Not on the board (9)
 
@@ -861,7 +861,7 @@ Open, and carrying no `status:` label — real work no column can see.
     plan                 #599 [rickylabs/netscript#2077] [witness] No-op owner launch check (mobile APK gate)
     plan                 #600 [rickylabs/netscript#2063] fix(ai/anthropic): Claude 5.5 IDs rejected locally on 0.0.7; qualify forward-compatible model support
     impl-eval            PR601 fix(subagents): carry the source repository as a /swarm repo key (p0)
-    impl                 PR602 fix(ai): deliver upstream Anthropic model compatibility fix (draft)
+    impl-eval            PR602 fix(ai): deliver upstream Anthropic model compatibility fix
 ```
 
 </details>
