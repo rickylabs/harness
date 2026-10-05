@@ -142,6 +142,8 @@ it("a transcript that grows while it is read never spends more than its per-tran
   const result = await scan();
   assert.equal(grew, true, "the file grew during the read");
   assert.ok(reads - identityProbe <= MAX + 1, `one transcript spent ${reads - identityProbe} bytes`);
+  // Never past the size measured at open: that size plus the one sentinel byte.
+  assert.equal(reads - identityProbe, Buffer.byteLength(text) + 1);
   assert.equal(result.bytesRead, reads);
   // The read keeps the records the file held when it was opened.
   assert.equal(result.runs[0]?.outcome, "complete");
