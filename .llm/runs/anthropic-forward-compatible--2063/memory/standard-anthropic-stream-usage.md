@@ -1,0 +1,3 @@
+# Standard Messages usage spans two frames
+
+Official streaming doc sends input_tokens in message_start.message.usage and only cumulative output_tokens in message_delta. TanStack adapter0.18.3 ignores the start frame; buildAnthropicUsage(event.usage) in RUN_FINISHED yields promptTokens0 for that valid stream. Do not add synthetic input_tokens to the final delta to make a preservation test pass. Public chat debug Logger's provider callback receives raw frames in meta.chunk; a silent per-turn observer can preserve only reported usage fields before the SDK drops them. Main source0.52.0 and consumer0.52.3 expose the same public Logger seam.

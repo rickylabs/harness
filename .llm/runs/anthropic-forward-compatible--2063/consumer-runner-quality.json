@@ -1,0 +1,22 @@
+[
+  {
+    "gate": "check",
+    "exitCode": 0,
+    "diagnostics": "Check .llm/runs/anthropic-forward-compatible--2063/qualify-published-consumer.ts\n"
+  },
+  {
+    "gate": "lint",
+    "exitCode": 1,
+    "diagnostics": "error: No target files found.\n"
+  },
+  {
+    "gate": "fmt",
+    "exitCode": 0,
+    "diagnostics": "Checked 1 file\n"
+  },
+  {
+    "gate": "lint --no-config (run artifacts excluded by repository lint config)",
+    "exitCode": 0,
+    "diagnostics": "Checked 1 file\n"
+  }
+]

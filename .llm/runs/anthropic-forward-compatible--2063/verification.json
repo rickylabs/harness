@@ -1,14 +1,18 @@
 {
-  "sourceCommit": "51d8e10d5b69df3d75edbdd227c614481616518a",
+  "sourceCommit": "9e375a1765234d179c4945480d68e69ac2f6c906",
   "regression": {
     "baselineAssertionFailures": 2,
-    "fixedPassed": 10,
-    "fixedFailed": 0
+    "fixedPassed": 11,
+    "fixedFailed": 0,
+    "standardUsageBaselineAssertionFailures": 1,
+    "beforeReceipt": "standard-usage-before.json",
+    "independentBeforeReceipt": "receipts/usage-eval-before.json"
   },
   "aiPluginSuite": {
-    "passed": 201,
+    "passed": 202,
     "failed": 0,
-    "exitCode": 0
+    "exitCode": 0,
+    "receipt": "ai-suite-standard-usage.json"
   },
   "scopedQuality": {
     "files": 142,
@@ -19,43 +23,68 @@
   "repositoryCheck": {
     "files": 3162,
     "batches": 27,
-    "failedBatches": 0
+    "failedBatches": 0,
+    "sourceCommit": "9e375a1765234d179c4945480d68e69ac2f6c906",
+    "toolchain": "Deno2.9.5",
+    "receipt": "upstream check-usage.log (carrier-gates-usage.json here)"
   },
   "repositoryTest": {
+    "sourceCommit": "9e375a1765234d179c4945480d68e69ac2f6c906",
     "toolchain": "Deno2.9.5; native Git; --allow-all --no-lock",
-    "fullInvocationExitCode": 1,
-    "passed": 5425,
-    "failed": 2,
+    "partitionCount": 2,
+    "partitionExitCodes": [
+      0,
+      0
+    ],
+    "completePartitionCoverage": true,
+    "passedAcrossDisjointPartitions": 5429,
+    "failedAcrossPartitions": 0,
     "ignored": 19,
-    "failureCause": "Hook decoy fixtures reject a TMPDIR path containing worktrees; export-corpus tests need their temporary worktrees there under host layout constraints.",
-    "targetedRerunExitCode": 0,
-    "targetedRerunPassed": 2,
-    "passedAcrossRuns": 5427,
-    "singleGreenInvocation": false,
-    "fullReceipt": "repository-test-ci-toolchain.json",
-    "rerunReceipt": "hook-temp-rerun.json"
+    "singleGreenUnmodifiedInvocation": false,
+    "partitions": [
+      {
+        "receipt": "repository-test-partition-usage.json",
+        "passed": 5420,
+        "ignored": 19,
+        "selection": "all discovered tests except entire hook suite",
+        "TMPDIR": "project/worktrees"
+      },
+      {
+        "receipt": "hook-suite-usage.json",
+        "passed": 9,
+        "ignored": 0,
+        "selection": "entire hook suite",
+        "TMPDIR": "/tmp"
+      }
+    ],
+    "reasonForPartition": "Git worktrees must live under project/worktrees, but hook decoys reject a worktrees path component."
   },
   "qualityGate": {
     "exitCode": 0
   },
   "aiPublishDryRun": {
-    "exitCode": 0
+    "exitCode": 0,
+    "receipt": "upstream publish-dry-run-usage.log (carrier-gates-usage.json here)"
   },
   "documentation": {
     "accuracyExitCode": 0,
     "exportCorpusExitCode": 0,
     "proseExitCode": 0,
     "publishAssetsExitCode": 0,
-    "carrierDenoVersion": "2.9.5"
+    "carrierDenoVersion": "2.9.5",
+    "freshGateReceipt": "carrier-gates-usage.json"
   },
   "independentEvaluation": {
     "vendorFamily": "Zhipu",
     "model": "glm_5_3_flash",
     "verdict": "PASS",
-    "evaluatedCommit": "51d8e10d5",
-    "isolatedRegressionPassed": 10,
-    "isolatedAiPluginPassed": 201,
-    "exactConsumerGraphPassed": 10
+    "evaluatedCommit": "9e375a1765234d179c4945480d68e69ac2f6c906",
+    "isolatedRegressionPassed": 11,
+    "isolatedAiPluginPassed": 202,
+    "exactConsumerGraphPassed": 11,
+    "round": 3,
+    "sourceReport": "evaluate-usage.md",
+    "publishedConsumerProof": false
   },
   "harness": {
     "buildExitCode": 0,
@@ -70,10 +99,39 @@
     "Paid live Anthropic inference"
   ],
   "followUps": [
-    "Dependent release plus published-consumer acceptance on2063",
-    "CLI E2E on Aspire/Docker host",
-    "SDK message_start-only input usage preservation"
+    "Dependent coordinated release plus exact published-consumer acceptance on2063",
+    "CLI E2E on Aspire/Docker host"
   ],
   "ciPolled": false,
-  "independentFanoutScope": false
+  "independentFanoutScope": false,
+  "historicalSourceCommit": "51d8e10d5b69df3d75edbdd227c614481616518a",
+  "upstreamObjectiveComplete": false,
+  "publishedConsumer": {
+    "qualifiedFixedRelease": false,
+    "published007Typecheck": "PUBLIC_TYPECHECK_FAILED",
+    "planned008Qualification": "QUALIFICATION_REFUSED",
+    "sourceRehearsalPassed": 11,
+    "sourceRehearsalPublishedProof": false,
+    "stableRegistryLatest": "0.0.7",
+    "stable008Published": false,
+    "releaseAudit": "published-release-audit.json",
+    "exactPublishedRunner": "upstream NetScript qualify-published-consumer.ts"
+  },
+  "standardUsageFollowUpResolvedInSource": true,
+  "historicalRepositoryTest": {
+    "toolchain": "Deno2.9.5; native Git; --allow-all --no-lock",
+    "fullInvocationExitCode": 1,
+    "passed": 5425,
+    "failed": 2,
+    "ignored": 19,
+    "failureCause": "Hook decoy fixtures reject a TMPDIR path containing worktrees; export-corpus tests need their temporary worktrees there under host layout constraints.",
+    "targetedRerunExitCode": 0,
+    "targetedRerunPassed": 2,
+    "passedAcrossRuns": 5427,
+    "singleGreenInvocation": false,
+    "fullReceipt": "repository-test-ci-toolchain.json",
+    "rerunReceipt": "hook-temp-rerun.json"
+  },
+  "upstreamEvidenceHead": "2822f4125bfd50a117a625e1ab04f64af61f506d",
+  "upstreamDeliveryHead": "c3d68791f48fcc570decde8146456c32bd218ab7"
 }

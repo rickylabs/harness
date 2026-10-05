@@ -1,0 +1,7 @@
+# Exact published AI consumer gate — 2026-10-05
+
+Run `.llm/runs/anthropic-forward-compatible--2063/qualify-published-consumer.ts` with exactly one stable semver. The runner copies the existing11 native SDK regressions into a temporary consumer and rewrites every import to public AI exports. `--no-config --no-lock` avoids workspace substitution; exact registry module URLs must resolve; TanStack core0.52.3 and adapter0.18.3 are pinned and the resolved graph is verified. Child tests have environment/read permission but no runtime network permission, and receive no GitHub/provider credentials. A passing source rehearsal is explicitly proof=false.
+
+CI Deno2.9.5: `deno run --allow-read --allow-write --allow-env --allow-run .llm/runs/anthropic-forward-compatible--2063/qualify-published-consumer.ts --source-rehearsal` passes11. Published0.0.7 resolves actual registry source then fails public types because models is missing. Planned0.0.8 is absent; `deno info --json` can return exit0 even while no requested registry modules resolve, so verify resolved modules before accepting a graph. Do not treat info exit0 alone as publication evidence.
+
+The registry-fetch User-Agent workaround is documented separately. Release0.0.8 is not yet an adoption claim; run the same consumer command with the actual stable version only after its same-content coordinated canary pair and stable publish gates exist.

@@ -12,43 +12,76 @@
   },
   "tier": "straightforward",
   "role": "implementation_evaluation",
-  "freshMatrix": "matrix-impl-evaluator-resteer.json",
+  "freshMatrix": "matrix-impl-evaluator-usage.json",
   "preflightExitCode": 0,
   "evaluationExitCode": 0,
   "resteerExitCode": 0,
   "sameSessionResteer": true,
   "fallbackUsed": false,
-  "sourceHead": "51d8e10d5b69df3d75edbdd227c614481616518a",
+  "sourceHead": "9e375a1765234d179c4945480d68e69ac2f6c906",
   "verdict": "PASS",
   "processCorrection": "First pass used author workdir. Same session repeated baseline/fixed checks in detached eval worktree; corrected report supersedes first draft.",
   "baselineAssertions": {
     "exitCodes": [
-      1,
       1
     ],
-    "compilationFailures": false
+    "compilationFailures": false,
+    "reason": "standard message_start input lost: promptTokens0 versus3"
   },
   "fixedRegression": {
-    "passed": 10,
+    "passed": 11,
     "failed": 0,
     "exitCode": 0
   },
   "fullAiPlugin": {
-    "passed": 201,
+    "passed": 202,
     "failed": 0,
     "exitCode": 0
   },
   "exactConsumerGraph": {
     "core": "0.52.3",
     "adapter": "0.18.3",
-    "passed": 10,
+    "passed": 11,
     "failed": 0,
-    "exitCode": 0
+    "exitCode": 0,
+    "publishedConsumerProof": false
   },
   "limits": [
     "No paid Anthropic inference",
     "Stable release and released-fixed consumer remain outstanding",
     "Full repository suite rerun separately from evaluator source verdict",
     "CLI E2E requires missing Aspire/Docker"
-  ]
+  ],
+  "historicalSourceEvaluation": {
+    "sourceHead": "51d8e10d5b69df3d75edbdd227c614481616518a",
+    "verdict": "PASS",
+    "baselineAssertions": {
+      "exitCodes": [
+        1,
+        1
+      ],
+      "compilationFailures": false
+    },
+    "fixedRegression": {
+      "passed": 10,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "fullAiPlugin": {
+      "passed": 201,
+      "failed": 0,
+      "exitCode": 0
+    },
+    "exactConsumerGraph": {
+      "core": "0.52.3",
+      "adapter": "0.18.3",
+      "passed": 10,
+      "failed": 0,
+      "exitCode": 0
+    }
+  },
+  "usageReviewExitCode": 0,
+  "round": 3,
+  "notifyOwnerAfter": 3,
+  "currentReport": "evaluate-usage.md"
 }

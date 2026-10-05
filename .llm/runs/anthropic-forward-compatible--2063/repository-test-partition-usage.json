@@ -1,0 +1,1 @@
+{"schemaVersion":1,"command":["deno","test","--reporter=tap","--allow-all","--no-lock","--ignore=.llm/tools/maint/claude/claude-hook-log_test.ts"],"cwd":"/home/agent/projects/netscript/worktrees/fix-anthropic-2063","exitCode":0,"durationMs":549368,"summary":{"passed":5420,"failed":0,"ignored":19,"totalResults":5439,"uniqueFailures":0},"failures":[]}

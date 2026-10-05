@@ -1,0 +1,65 @@
+{
+  "sourceCommit": "9e375a176",
+  "deno": "2.9.5",
+  "gates": [
+    {
+      "task": "gen:mcp-export-corpus",
+      "exitCode": 0,
+      "durationSeconds": 10.977,
+      "receipt": "gen-mcp-export-corpus-usage.log"
+    },
+    {
+      "task": "gen:agent-docs-prose",
+      "exitCode": 0,
+      "durationSeconds": 10.766,
+      "receipt": "gen-agent-docs-prose-usage.log"
+    },
+    {
+      "task": "gen:assets-barrel",
+      "exitCode": 0,
+      "durationSeconds": 0.727,
+      "receipt": "gen-assets-barrel-usage.log"
+    },
+    {
+      "task": "gen:publish-assets",
+      "exitCode": 0,
+      "durationSeconds": 0.39,
+      "receipt": "gen-publish-assets-usage.log"
+    },
+    {
+      "task": "docs:accuracy",
+      "exitCode": 0,
+      "durationSeconds": 5.536,
+      "receipt": "docs-accuracy-usage.log"
+    },
+    {
+      "task": "check:mcp-export-corpus",
+      "exitCode": 0,
+      "durationSeconds": 7.555,
+      "receipt": "check-mcp-export-corpus-usage.log"
+    },
+    {
+      "task": "check:agent-docs-prose",
+      "exitCode": 0,
+      "durationSeconds": 9.587,
+      "receipt": "check-agent-docs-prose-usage.log"
+    },
+    {
+      "task": "check:publish-assets",
+      "exitCode": 0,
+      "durationSeconds": 0.471,
+      "receipt": "check-publish-assets-usage.log"
+    },
+    {
+      "task": "check",
+      "exitCode": 0,
+      "durationSeconds": 184.493,
+      "receipt": "check-usage.log"
+    },
+    {
+      "task": "AI publish:dry-run",
+      "exitCode": 0,
+      "receipt": "publish-dry-run-usage.log"
+    }
+  ]
+}

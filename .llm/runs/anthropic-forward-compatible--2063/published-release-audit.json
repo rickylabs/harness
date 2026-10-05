@@ -1,0 +1,13 @@
+{
+  "retrievedAt": "2026-10-05T04:57:46.761Z",
+  "url": "https://jsr.io/@netscript/ai/meta.json",
+  "status": 200,
+  "latest": "0.0.7",
+  "stable008Published": false,
+  "stable007": {
+    "createdAt": "2026-09-03T15:52:32.753082Z"
+  },
+  "canary008_1": {
+    "createdAt": "2026-09-08T05:46:45.055424Z"
+  }
+}

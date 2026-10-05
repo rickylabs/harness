@@ -1,0 +1,1 @@
+{"schemaVersion":1,"command":["deno","test","--reporter=tap","--allow-all","packages/ai/tests","plugins/ai"],"cwd":"/home/agent/projects/netscript/worktrees/eval-anthropic-2063","exitCode":0,"durationMs":15883,"summary":{"passed":202,"failed":0,"ignored":0,"totalResults":202,"uniqueFailures":0},"failures":[]}
