@@ -103,6 +103,49 @@ describe("backfillFromDisk", () => {
     assert.equal(changed.degraded, true);
     assert.match(changed.notes.join("\n"), /could not be read/);
   });
+  it("reads a dispatch-matched rollout past the read bound as head and tail, and only that one", async () => {
+    const store = join(root, ".codex", "sessions");
+    const day = join(store, "2026", "09", "27");
+    await mkdir(day, { recursive: true });
+    const id = "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d";
+    const stamp = (seconds: number) => new Date(Date.parse("2026-09-27T21:25:00.000Z") + seconds * 1000).toISOString();
+    const line = (seconds: number, type: string, payload: Record<string, unknown>) =>
+      JSON.stringify({ timestamp: stamp(seconds), type, payload }) + "\n";
+    // Generated here, never committed. The head starts turn one; the tail completes a later turn.
+    const text = line(0, "session_meta", { id, cwd: "/fixture", model_provider: "fixture" }) +
+      line(1, "turn_context", { model: "fixture-model", collaboration_mode: { settings: { reasoning_effort: "high" } } }) +
+      line(2, "event_msg", { type: "task_started" }) +
+      Array.from({ length: 9_000 }, (_, i) =>
+        line(10 + i * 0.1, "event_msg", { type: "agent_message", message: "m".repeat(1_000) })).join("") +
+      line(1_000, "event_msg", { type: "token_count", info: { total_token_usage: { input_tokens: 40, output_tokens: 2 } } }) +
+      line(1_001, "event_msg", { type: "task_complete" });
+    assert.ok(Buffer.byteLength(text) > 8_388_608);
+    await writeFile(join(day, `rollout-2026-09-27T21-25-00-${id}.jsonl`), text);
+    const options = { limit: 20,
+      codexWindows: [{ startMs: Date.parse("2026-09-27T21:20:00.000Z"), endMs: Date.parse("2026-09-27T22:00:00.000Z") }],
+      maxTranscriptBytes: 8_388_608, maxTotalBytes: 33_554_432 };
+    const matched = await backfillFromDisk({ codexSessions: store }, { ...options, codexRootMatches: candidate => candidate === id });
+    assert.equal(matched.degraded, false);
+    assert.equal(matched.runs.length, 1);
+    const run = matched.runs[0]!;
+    assert.deepEqual([run.id, run.parentId, run.startedAt, run.updatedAt], [id, null, stamp(0), stamp(1_001)]);
+    assert.deepEqual([run.outcome, run.terminalAt], ["complete", stamp(1_001)]);
+    assert.deepEqual([run.identity.model, run.identity.effort, run.identity.provider], ["fixture-model", "high", "fixture"]);
+    assert.deepEqual(run.usage, { inputTokens: 40, outputTokens: 2 });
+    assert.equal(run.tokenSamples?.partial, true);
+    assert.match(matched.notes.join("\n"), /head and tail/);
+    assert.ok(matched.bytesRead < 3 * 1_048_576, "the unread middle is never read");
+    // Only an issue scan's dispatch-matched rollout is windowed; any other is still refused whole.
+    const unmatched = await backfillFromDisk({ codexSessions: store }, options);
+    assert.equal(unmatched.degraded, true);
+    assert.deepEqual(unmatched.runs, []);
+    assert.match(unmatched.notes.join("\n"), /read bound/);
+    // A frame budget that cannot hold both windows still refuses, never a half read.
+    const starved = await backfillFromDisk({ codexSessions: store }, { ...options, maxTotalBytes: 1_048_576,
+      codexRootMatches: candidate => candidate === id });
+    assert.equal(starved.degraded, true);
+    assert.deepEqual(starved.runs, []);
+  });
   it("fails closed when a Codex session_meta head exceeds the bounded read", async () => {
     const store = join(root, ".codex", "sessions");
     const day = join(store, "2026", "09", "27");

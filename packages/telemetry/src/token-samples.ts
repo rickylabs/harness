@@ -5,6 +5,8 @@ export interface TokenSamples {
   readonly points: readonly TokenSample[];
   readonly truncated: boolean;
   readonly invalid: boolean;
+  /** The transcript was read as head and tail windows: the history between them is unread. */
+  readonly partial?: boolean;
 }
 
 export class TokenSampleCollector {
