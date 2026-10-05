@@ -153,8 +153,11 @@ async function selectCodexIssue(files: readonly Transcript[], rootMatches: (id: 
   return { selected: selected.slice(0, limit), bytesRead, limited, unreadable };
 }
 
-/** Read at most the remaining byte budget, including a sentinel byte for a growing file. */
-async function readBounded(path: string, maxBytes: number): Promise<string | null> {
+/**
+ * Read at most the remaining byte budget, including a sentinel byte for a growing file. `charge`
+ * receives every byte as it is read, usable or not, so a refusal or an error still pays for it.
+ */
+async function readBounded(path: string, maxBytes: number, charge: (bytes: number) => void): Promise<string | null> {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const info = await file.stat();
@@ -163,6 +166,7 @@ async function readBounded(path: string, maxBytes: number): Promise<string | nul
     let size = 0;
     while (size < bytes.length) {
       const { bytesRead } = await file.read(bytes, size, bytes.length - size, size);
+      charge(bytesRead);
       if (bytesRead === 0) break;
       size += bytesRead;
     }
@@ -175,12 +179,13 @@ const CODEX_WINDOW_TAIL_BYTES = 2_097_152;
 
 /**
  * A dispatch-matched rollout past the per-transcript read bound, as its first and last complete
- * lines. The head holds the session identity, the tail the latest state; the middle stays unread.
- * Null when the budget cannot hold both windows or either has no complete line.
+ * records. The head holds the session identity, the tail the latest state; the middle stays unread.
+ * Null when either part has no complete record. Nothing is read unless both windows and the tail's
+ * one byte of look-behind fit the budget; `charge` receives every byte read, usable or not.
  */
-async function readHeadTail(path: string, maxBytes: number):
-  Promise<{ readonly head: string; readonly tail: string; readonly bytes: number } | null> {
-  if (maxBytes < CODEX_WINDOW_HEAD_BYTES + CODEX_WINDOW_TAIL_BYTES) return null;
+async function readHeadTail(path: string, maxBytes: number, charge: (bytes: number) => void):
+  Promise<{ readonly head: string; readonly tail: string } | null> {
+  if (maxBytes < CODEX_WINDOW_HEAD_BYTES + CODEX_WINDOW_TAIL_BYTES + 1) return null;
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const info = await file.stat();
@@ -190,6 +195,7 @@ async function readHeadTail(path: string, maxBytes: number):
       let size = 0;
       while (size < length) {
         const { bytesRead } = await file.read(bytes, size, length - size, position + size);
+        charge(bytesRead);
         if (bytesRead === 0) break;
         size += bytesRead;
       }
@@ -199,11 +205,13 @@ async function readHeadTail(path: string, maxBytes: number):
     const head = await read(0, Math.min(info.size, CODEX_WINDOW_HEAD_BYTES));
     const headEnd = head.lastIndexOf(10);
     const tailStart = Math.max(info.size - CODEX_WINDOW_TAIL_BYTES, head.length);
-    const tail = await read(tailStart, info.size - tailStart);
-    const tailFrom = tail.indexOf(10);
-    if (headEnd < 0 || tailFrom < 0) return null;
-    return { head: head.subarray(0, headEnd + 1).toString("utf8"),
-      tail: tail.subarray(tailFrom + 1).toString("utf8"), bytes: head.length + tail.length };
+    // One byte of look-behind says whether the tail starts on a record boundary: after a newline its
+    // first record is complete and kept; otherwise the clipped first record is dropped unparsed.
+    const tail = await read(tailStart - 1, info.size - tailStart + 1);
+    const tailFrom = tail[0] === 10 ? 1 : tail.indexOf(10) + 1;
+    if (headEnd < 0 || tailFrom === 0) return null;
+    // The tail runs to the end of the file: a final record without its newline is still a record.
+    return { head: head.subarray(0, headEnd + 1).toString("utf8"), tail: tail.subarray(tailFrom).toString("utf8") };
   } finally { await file.close(); }
 }
 
@@ -459,17 +467,24 @@ export async function backfillFromDisk(
     for (const { path } of ordered.slice(0, limit)) {
       let text = "";
       let window: Awaited<ReturnType<typeof readHeadTail>> = null;
+      // Every byte read is charged as it is read, before the next read, usable or not.
+      const charge = (bytes: number) => { bytesRead += bytes; };
       try {
         if (options.maxTranscriptBytes !== undefined || options.maxTotalBytes !== undefined) {
           const budget = Math.min(options.maxTranscriptBytes ?? Infinity, (options.maxTotalBytes ?? Infinity) - bytesRead);
-          const bounded = await readBounded(path, budget);
+          const bounded = await readBounded(path, budget, charge);
           // An issue scan never drops a dispatch-matched rollout (a root or its native descendant)
           // for its size: it reads the head and the tail instead.
-          if (bounded === null && expectedHeads.has(path)) window = await readHeadTail(path, budget);
+          if (bounded === null && expectedHeads.has(path)) {
+            // What the failed bounded read spent is gone from this file's budget too.
+            window = await readHeadTail(path, Math.min(options.maxTranscriptBytes ?? Infinity,
+              (options.maxTotalBytes ?? Infinity) - bytesRead), charge);
+          }
           if (bounded === null && window === null) { limited++; continue; }
           if (bounded !== null) text = bounded;
         } else {
           text = await readFile(path, "utf8");
+          bytesRead += Buffer.byteLength(text);
         }
       } catch {
         unreadable += 1;
@@ -478,7 +493,6 @@ export async function backfillFromDisk(
       let parsed: ParsedTranscript<RunRecord>;
       try {
         if (window !== null) {
-          bytesRead += window.bytes;
           windowed += 1;
           const head = asOf(window.head);
           // The tail keeps the session identity line, so it parses as the same thread.
@@ -487,7 +501,6 @@ export async function backfillFromDisk(
           parsed = { run: first.run === null || last.run === null ? null : headTailRun(first.run, last.run),
             notes: [...first.notes, ...last.notes] };
         } else {
-          bytesRead += Buffer.byteLength(text);
           parsed = parse(asOf(text), path);
         }
       } catch {
