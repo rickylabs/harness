@@ -205,10 +205,11 @@ async function readHeadTail(path: string, maxBytes: number, charge: (bytes: numb
     const head = await read(0, Math.min(info.size, CODEX_WINDOW_HEAD_BYTES));
     const headEnd = head.lastIndexOf(10);
     const tailStart = Math.max(info.size - CODEX_WINDOW_TAIL_BYTES, head.length);
-    // One byte of look-behind says whether the tail starts on a record boundary: after a newline its
-    // first record is complete and kept; otherwise the clipped first record is dropped unparsed.
+    // One byte of look-behind says whether the tail starts on a record boundary: the first record
+    // begins after the first newline, so after a newline at the look-behind byte it is complete and
+    // kept, while a clipped first record is dropped unparsed.
     const tail = await read(tailStart - 1, info.size - tailStart + 1);
-    const tailFrom = tail[0] === 10 ? 1 : tail.indexOf(10) + 1;
+    const tailFrom = tail.indexOf(10) + 1;
     if (headEnd < 0 || tailFrom === 0) return null;
     // The tail runs to the end of the file: a final record without its newline is still a record.
     return { head: head.subarray(0, headEnd + 1).toString("utf8"), tail: tail.subarray(tailFrom).toString("utf8") };
