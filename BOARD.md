@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **478/586 done · 44 running · 26 queued · 16 abandoned · 22 invisible**
+`[################----]` **478/588 done · 46 running · 26 queued · 16 abandoned · 22 invisible**
 
-_Latest board activity: 2026-10-05T03:43:54Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-05T04:06:37Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (44)
+## Moving now (46)
 
 Something could be acting on these right now.
 
@@ -15,6 +15,7 @@ Something could be acting on these right now.
 | [#205 fix(telemetry): surface live capacity and admission reasons beside progress](https://github.com/rickylabs/harness/issues/205) | `impl-eval` | `e9` |
 | [#274 Routing configuration 4/5 — Detect capabilities and expose account and subscription configuration](https://github.com/rickylabs/harness/issues/274) | `plan` | `e11` |
 | [#373 fix(telemetry): consume Orchid native identity to join issue dispatches to sub-agent trees](https://github.com/rickylabs/harness/issues/373) | `impl-eval` | — |
+| [PR601 fix(subagents): carry the source repository as a /swarm repo key](https://github.com/rickylabs/harness/pull/601) | `impl-eval` | — |
 | [#191 E6/E9 — Plan the durable orchestration loop and restart visibility proof](https://github.com/rickylabs/harness/issues/191) | `plan` | `e6` |
 | [#258 E6.C — Live driver adapter after sidecar ratification](https://github.com/rickylabs/harness/issues/258) | `research` | `e6` |
 | [#259 E6 — Define a capability-gated run-stop contract](https://github.com/rickylabs/harness/issues/259) | `research` | `e6` |
@@ -56,6 +57,7 @@ Something could be acting on these right now.
 | [#598 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/598) | `plan` | — |
 | [#599 [rickylabs/netscript#2077] [witness] No-op owner launch check (mobile APK gate)](https://github.com/rickylabs/harness/issues/599) | `plan` | — |
 | [#600 [rickylabs/netscript#2063] fix(ai/anthropic): Claude 5.5 IDs rejected locally on 0.0.7; qualify forward-compatible model support](https://github.com/rickylabs/harness/issues/600) | `plan` | — |
+| [PR602 fix(ai): deliver upstream Anthropic model compatibility fix](https://github.com/rickylabs/harness/pull/602) | `impl` | — |
 
 ## Not on the board (9)
 
@@ -158,7 +160,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 277/337 done · 28 running · 3 queued · 10 abandoned · 19 invisible
+`[#########---]` 277/339 done · 30 running · 3 queued · 10 abandoned · 19 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -168,7 +170,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 240/296 done · 27 running · 2 queued · 10 abandoned · 17 invisible | — |
+| _(no epic)_ | `[#########---]` 240/298 done · 29 running · 2 queued · 10 abandoned · 17 invisible | — |
 
 ## Waiting to start
 
@@ -212,7 +214,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  478/586 done · 44 running · 26 queued · 16 abandoned · 22 invisible
+# rickylabs/harness  [################----]  478/588 done · 46 running · 26 queued · 16 abandoned · 22 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -500,7 +502,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  277/337 done · 28 running · 3 queued · 10 abandoned · 19 invisible
+## (no milestone)  [################----]  277/339 done · 30 running · 3 queued · 10 abandoned · 19 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -858,6 +860,8 @@ Open, and carrying no `status:` label — real work no column can see.
     plan                 #598 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)
     plan                 #599 [rickylabs/netscript#2077] [witness] No-op owner launch check (mobile APK gate)
     plan                 #600 [rickylabs/netscript#2063] fix(ai/anthropic): Claude 5.5 IDs rejected locally on 0.0.7; qualify forward-compatible model support
+    impl-eval            PR601 fix(subagents): carry the source repository as a /swarm repo key (p0)
+    impl                 PR602 fix(ai): deliver upstream Anthropic model compatibility fix (draft)
 ```
 
 </details>
