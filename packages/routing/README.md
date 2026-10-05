@@ -420,14 +420,16 @@ The observer records presence only, and keeps entitlement and quota unknown. Onl
 source-verified revision is enabled; native CLIs resolve their own authentication, without
 credential-file reads by Harness.
 
-Codex auto-updates. A plain release newer than every verified one, on the same major line,
-keeps its catalog and gets the last verified built-in provider under the source
-`codex.builtin-provider.unverified`, only in the same unconfigured state (no `model_provider`, no
-custom provider definitions, an empty requirements read). Readers name that version as not yet
-verified instead of dropping every model. Nothing depends on the binding for safety: Codex
-resolves its own provider at launch, and the binding only names the route. Older, pre-release,
-build-tagged and new-major versions stay unknown. The strict reader accepts each source only on
-its own side of the verified line.
+Codex built-in default. With no configured provider, no custom provider definitions and an empty
+requirements read, Codex falls back to its compiled default (`openai` in every verified release).
+That default is bound only when the whole `--version` output is exactly one upstream release line,
+`codex-cli X.Y.Z` in canonical SemVer, and X.Y.Z is verified. Any other build (an auto-update, a
+fork banner, extra components, leading zeros, pre-release or build suffixes, trailing text) may
+compile a different default, and no metadata read reports the resolved one. So it keeps its models
+and auth, its provider stays unknown, and the source `codex.builtin-provider.unverified` names the
+case, so readers can say the version is not yet verified instead of dropping it silently. A
+configured provider (`codex.config/read`) is the runtime value the launch applies and binds whatever
+the version. The strict reader never accepts the marker beside any provider binding.
 
 Raw native provider responses can include private key/options fields. The observer discards
 all such values and publishes only exact connection IDs and fixed facts. It never emits
