@@ -399,7 +399,7 @@ they add no matrix route, model allowlist, or family selection to TypeScript.
 | Claude | `--version`, `auth status`, bare SDK stream-JSON `initialize` | Login presence; native first-party backend maps to Anthropic; resolved aliases and per-model effort levels. SDK initialization uses no prompt, hooks, MCP servers, settings, or session persistence. |
 | Codex | `--version`, stdio `app-server`: `initialize`, `initialized`, `account/read` (`refreshToken: false`), paginated `model/list`, `config/read` (`cwd`: absolute observation directory), `configRequirements/read` | Exact IDs, declared efforts, login presence, scoped configured provider. The source-verified 0.159.3/0.160.0 built-in OpenAI default requires successful empty requirements, null configured provider and no custom provider definitions. The child and configuration read share one normalized absolute cwd so project `.codex` layers are included. Null alone, an unverified version, failed scoped reads or unknown constraints keep provider unknown; failed scoped reads never retry without cwd. |
 | OpenCode | `--version`, `models --verbose --pure`, owned authenticated loopback `serve --pure` with only `GET /provider` | Exact provider/model IDs, enabled variant names, explicitly matching effort bodies, and native provider connection IDs. No label-to-provider or family inference. |
-| AGY | `--version`, tab-separated `models`; verified 1.2.16 and 1.2.17 built-in JSON `/config` and exact-ID `/model` reports | Exact opaque IDs; native authentication-gate presence; effective scoped provider configuration; exact model effort. Every report must have zero turns and tokens, an empty conversation ID, a successful exit and the requested command. Other versions retain unknown facts without receiving print requests. Optional declared IDs remain unobserved when AGY is not requested. |
+| AGY | `--version`, tab-separated `models`; verified 1.2.16 and 1.2.17 built-in JSON `/config` and exact-ID `/model` reports | Exact opaque IDs; native authentication-gate presence; effective scoped provider configuration; exact model effort; the vendor display `label` from the exact-ID `/model` report, only under the verified first-party binding. Every report must have zero turns and tokens, an empty conversation ID, a successful exit and the requested command. Other versions retain unknown facts without receiving print requests. Optional declared IDs remain unobserved when AGY is not requested. |
 
 Primary source anchors: [Claude SDK model metadata](https://github.com/anthropics/claude-agent-sdk-typescript),
 [Codex app-server methods](https://developers.openai.com/codex/app-server),
@@ -416,6 +416,21 @@ metadata surface. AGY 1.2.16's installed `printmode.run` was inspected: `waitFor
 `waitForEligibility` precede built-in `runCommand`; that branch skips `session.start` and
 `runTurn`. Native measurements returned empty conversation IDs, zero turns and zero tokens.
 AGY 1.2.17 returned the identical report envelopes and exits 0 once stdin is closed.
+
+AGY display labels (policy). `models` prints a label beside each ID and `/model` returns
+`{id, label, effort, is_default}`. A label can be user-configured text (custom model
+configuration), so labels were withheld. They are now published, from `/model` only, when the
+same observation proved the verified first-party binding: the `/config` report was read, its
+`modelProvider` maps to a reviewed binding, `customModelsConfig` and `gcp` are null and no
+custom endpoint is set. Such labels are vendor product names (`Gemini 3.8 Flash (High)`). The
+label must also pass the screen: printable, at most 128 characters, no surrounding spaces, and no
+credential, address or path form anywhere in it (token prefixes such as `sk-`, `gh*_`,
+`github_pat_` even embedded or punctuated, `Bearer`, IPv4, tailnet names, `~`, backslashes, drive
+letters, absolute or multi-segment paths). It is at least as strict as the cockpit's publication
+screen, so one label can never make a reader refuse the capture. A refused label is dropped for that
+model alone and named by `labelWithheld: "screened"`; the ID, effort and provider stay. Under any other configuration, or for an unverified version, every
+label stays withheld and readers show the ID. `models` labels are never published. The strict
+reader refuses a label without that binding, on any other launcher, or failing the screen.
 The observer records presence only, and keeps entitlement and quota unknown. Only the
 source-verified revision is enabled; native CLIs resolve their own authentication, without
 credential-file reads by Harness.
@@ -439,9 +454,16 @@ only in child environment/memory, refuses redirects, and is destroyed with its p
 on every outcome. No credential file is read or copied by the observer; native CLIs resolve
 their own configuration.
 
-Default deadlines are 15 seconds (maximum 60); command stdout is bounded to 1 MiB, the private
+Default deadlines are 15 seconds. One child process runs at most 60 seconds. `timeoutMs` may be up
+to 180 seconds: each child still gets at most 60, and AGY's metadata reports share that deadline,
+which starts after the `--version` and `models` reads (those run under their own child cap). Command stdout is bounded to 1 MiB, the private
 provider response to 16 MiB. `maximumBytes` can lower both bounds. AGY reads at most one
-configuration report and 64 model reports, four model reports at a time, sharing one deadline.
+configuration report and 64 model reports, two at a time from a rolling queue, sharing one
+deadline. Measured on 1.2.17 (18 models): two in flight finish in about 41 s, four in flight
+stall reports inside AGY. AGY also stalls a report for about 61 s at random (one at a time too),
+while a fresh process answers in seconds; so each report is capped at 20 seconds
+(`agyReportTimeoutMs`, at most 60) and a timed-out report is tried again, at most three
+attempts, within the launcher deadline.
 Larger catalogs remain visible but unmeasured model efforts stay null and `oversized` is
 reported. Reports are built-in metadata requests, with no agent goal or dispatch. Native JSON duplicates,
 excessive nesting, conflicting capabilities, malformed IDs, empty catalogs and failed reads
