@@ -1,0 +1,20 @@
+{
+  "head": "1cca208127088912731d03e525b0eaea5bb06738",
+  "node": "24.20.0",
+  "npm": "11",
+  "TMPDIR": "/tmp",
+  "gates": [
+    {
+      "task": "build",
+      "exitCode": 0,
+      "durationSeconds": 27.974,
+      "receipt": "harness-build-continuation.log"
+    },
+    {
+      "task": "test",
+      "exitCode": 0,
+      "durationSeconds": 60.467,
+      "receipt": "harness-test-continuation.log"
+    }
+  ]
+}

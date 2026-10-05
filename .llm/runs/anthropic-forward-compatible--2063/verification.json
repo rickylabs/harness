@@ -91,7 +91,9 @@
     "buildStages": 14,
     "testExitCode": 0,
     "testStages": 6,
-    "nodeVersion": "24.20.0"
+    "nodeVersion": "24.20.0",
+    "verifiedCommit": "1cca208127088912731d03e525b0eaea5bb06738",
+    "freshGateReceipt": "harness-continuation-gates.json"
   },
   "unproven": [
     "Local CLI E2E: missing Aspire and Docker; stopped at preflight/cleanup",
