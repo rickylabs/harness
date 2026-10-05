@@ -399,7 +399,7 @@ they add no matrix route, model allowlist, or family selection to TypeScript.
 | Claude | `--version`, `auth status`, bare SDK stream-JSON `initialize` | Login presence; native first-party backend maps to Anthropic; resolved aliases and per-model effort levels. SDK initialization uses no prompt, hooks, MCP servers, settings, or session persistence. |
 | Codex | `--version`, stdio `app-server`: `initialize`, `initialized`, `account/read` (`refreshToken: false`), paginated `model/list`, `config/read` (`cwd`: absolute observation directory), `configRequirements/read` | Exact IDs, declared efforts, login presence, scoped configured provider. The source-verified 0.159.3/0.160.0 built-in OpenAI default requires successful empty requirements, null configured provider and no custom provider definitions. The child and configuration read share one normalized absolute cwd so project `.codex` layers are included. Null alone, an unverified version, failed scoped reads or unknown constraints keep provider unknown; failed scoped reads never retry without cwd. |
 | OpenCode | `--version`, `models --verbose --pure`, owned authenticated loopback `serve --pure` with only `GET /provider` | Exact provider/model IDs, enabled variant names, explicitly matching effort bodies, and native provider connection IDs. No label-to-provider or family inference. |
-| AGY | `--version`, tab-separated `models`; verified 1.2.16 built-in JSON `/config` and exact-ID `/model` reports | Exact opaque IDs; native authentication-gate presence; effective scoped provider configuration; exact model effort. Every report must have zero turns and tokens, an empty conversation ID, a successful exit and the requested command. Other versions retain unknown facts without receiving print requests. Optional declared IDs remain unobserved when AGY is not requested. |
+| AGY | `--version`, tab-separated `models`; verified 1.2.16 and 1.2.17 built-in JSON `/config` and exact-ID `/model` reports | Exact opaque IDs; native authentication-gate presence; effective scoped provider configuration; exact model effort. Every report must have zero turns and tokens, an empty conversation ID, a successful exit and the requested command. Other versions retain unknown facts without receiving print requests. Optional declared IDs remain unobserved when AGY is not requested. |
 
 Primary source anchors: [Claude SDK model metadata](https://github.com/anthropics/claude-agent-sdk-typescript),
 [Codex app-server methods](https://developers.openai.com/codex/app-server),
@@ -413,6 +413,7 @@ and [OpenCode provider handler](https://github.com/anomalyco/opencode/blob/aec0b
 metadata surface. AGY 1.2.16's installed `printmode.run` was inspected: `waitForAuth` and
 `waitForEligibility` precede built-in `runCommand`; that branch skips `session.start` and
 `runTurn`. Native measurements returned empty conversation IDs, zero turns and zero tokens.
+AGY 1.2.17 returned the identical report envelopes and exits 0 once stdin is closed.
 The observer records presence only, and keeps entitlement and quota unknown. Only the
 source-verified revision is enabled; native CLIs resolve their own authentication, without
 credential-file reads by Harness.
