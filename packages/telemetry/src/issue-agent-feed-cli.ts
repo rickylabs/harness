@@ -44,11 +44,48 @@ export interface IssueAgentFeedOptions {
 }
 
 const PRE_DISPATCH_MS = 600_000;
-const MAX_DISPATCH_AGE_MS = 86_400_000;
+/** A dispatch with no end evidence is read for at most this long after it was dispatched. */
+export const RUNNING_DISPATCH_CAP_MS = 7 * 86_400_000;
+/** An ended run is read for this long after its end, so its final tree is served complete. */
+export const ENDED_RUN_WINDOW_MS = 86_400_000;
+/** Native files written just after the end (a final record, a late child) still belong to the run. */
+const POST_END_MS = 600_000;
 const MAX_ISSUE_DISPATCHES = 8;
 const MAX_ISSUE_FILES = 20;
 const MAX_TRANSCRIPT_BYTES = 8 * 1_048_576;
 const MAX_FRAME_TRANSCRIPT_BYTES = 32 * 1_048_576;
+
+/**
+ * When Orchid saw the root end: the later of a paired seat and process absence, for a stop or an
+ * ordinary teardown, exactly the pair the tree treats as ended. The earliest such end counts; a
+ * lone seat or process observation, or one stamped after the read, is no end.
+ */
+export function dispatchEndMs(dispatch: DispatchEvidence, nowMs: number): number | null {
+  const ends: number[] = [];
+  for (const pair of [dispatch.stop, dispatch.teardown]) {
+    const seat = Date.parse(pair?.seatObservedAt ?? ""), process = Date.parse(pair?.processObservedAt ?? "");
+    if (Number.isFinite(seat) && Number.isFinite(process)) ends.push(Math.max(seat, process)); // guard:window-end-pair
+  }
+  const end = ends.length === 0 ? null : Math.min(...ends);
+  return end !== null && end <= nowMs ? end : null; // guard:window-end-not-future
+}
+
+/**
+ * The issue feed reads a dispatch while its run can still change or its final tree is fresh:
+ * without an end, until the running cap after dispatch; once ended (within that cap), until the
+ * ended window after its end. Its native window runs from just before dispatch to just after the
+ * end (or now), so it never spans more than the cap plus both margins.
+ */
+export function dispatchReadWindow(dispatch: DispatchEvidence, nowMs: number):
+  { readonly readable: boolean; readonly startMs: number; readonly endMs: number } {
+  const dispatchedMs = Date.parse(dispatch.observedAt ?? "");
+  const startMs = dispatchedMs - PRE_DISPATCH_MS;
+  if (!Number.isFinite(dispatchedMs)) return { readable: false, startMs, endMs: nowMs };
+  const endedMs = dispatchEndMs(dispatch, nowMs);
+  if (endedMs === null) return { readable: nowMs <= dispatchedMs + RUNNING_DISPATCH_CAP_MS, startMs, endMs: nowMs }; // guard:window-running-cap
+  return { readable: nowMs <= endedMs + ENDED_RUN_WINDOW_MS && endedMs <= dispatchedMs + RUNNING_DISPATCH_CAP_MS, // guard:window-ended
+    startMs, endMs: Math.min(nowMs, endedMs + POST_END_MS) }; // guard:window-native-end
+}
 
 /** Read each bound issue independently; one stale receipt never blanks its neighbours. */
 export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Promise<IssueAgentTreeSnapshot> {
@@ -114,7 +151,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     if (group.dispatches.length === 0) continue;
     if (group.dispatches.some(d => (d.source !== "codex" && d.source !== "claude" && d.source !== "agy" && d.source !== "opencode") || d.observedAt === undefined)) continue;
     if (group.dispatches.length > MAX_ISSUE_DISPATCHES || remainingBytes <= 0 ||
-        group.dispatches.some(d => nowMs > Date.parse(d.observedAt!) + MAX_DISPATCH_AGE_MS)) {
+        group.dispatches.some(d => !dispatchReadWindow(d, nowMs).readable)) {
       entry.snapshot = unavailableSnapshot(options.now, "scan_limit"); continue;
     }
     const issueFileLimit = Math.min(options.limit, MAX_ISSUE_FILES);
@@ -122,7 +159,10 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     let bounded = false;
     const codexDispatches = group.dispatches.filter(d => d.source === "codex");
     if (codexDispatches.length > 0) {
-      const windows = codexDispatches.map(d => ({ startMs: Date.parse(d.observedAt!) - PRE_DISPATCH_MS, endMs: nowMs }));
+      const windows = codexDispatches.map(d => {
+        const { startMs, endMs } = dispatchReadWindow(d, nowMs);
+        return { startMs, endMs };
+      });
       const codexSessions = defaultRoots(options.home).codexSessions;
       const scan = await backfillFromDisk(codexSessions === undefined ? {} : { codexSessions },
         { limit: issueFileLimit, codexWindows: windows,

@@ -428,6 +428,13 @@ async function collectBoundedJsonl(root: string, cap: number): Promise<Scan> {
 }
 
 /**
+ * The longest receipt window an issue scan accepts: a run read up to seven days after its dispatch,
+ * plus ten minutes before the dispatch and ten after the end. Rollout names stay under the same
+ * per-directory entry bound and per-scan name bound whatever the window's length.
+ */
+export const CODEX_WINDOW_MAX_MS = 7 * 86_400_000 + 2 * 600_000;
+
+/**
  * Visit an offset-safe envelope around receipt dates; filename clocks may be local to another process.
  * With `namesOnly`, canonical names are listed with their creation clock and session id and no
  * file is opened or stat'ed: an issue scan picks the ones it reads by name.
@@ -441,7 +448,7 @@ async function collectCodexWindows(root: string, windows: NonNullable<BackfillOp
     return reason === "ENOENT" ? { kind: "absent" } : { kind: "unreadable", reason };
   }
   if (windows.length === 0 || windows.length > 8 || windows.some(w => !Number.isSafeInteger(w.startMs) ||
-      !Number.isSafeInteger(w.endMs) || w.endMs < w.startMs || w.endMs - w.startMs > 86_400_000 + 600_000)) {
+      !Number.isSafeInteger(w.endMs) || w.endMs < w.startMs || w.endMs - w.startMs > CODEX_WINDOW_MAX_MS)) {
     return { kind: "unreadable", reason: "invalid receipt window" };
   }
   const dates = new Set<string>();

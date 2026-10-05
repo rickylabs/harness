@@ -873,6 +873,14 @@ For one issue, add `--issue owner/repo#number` to `--json` or `--watch`. The com
 that issue's dispatches and returns exit 0 when its tree is complete, even if unrelated old
 issues are incomplete; an absent or incomplete requested issue returns exit 3. The unscoped
 cockpit feed still reports every issue and its aggregate completeness.
+A dispatch is read until its run can no longer change. With no end yet, that is up to seven days
+after the dispatch. Once Orchid saw it end (a paired seat and process absence, for a stop or an
+ordinary teardown; the earliest such pair), it is read for 24 hours after that end, so the run's
+final tree, ended and complete, is served even when the run outlived its first day. A run that only
+ended after the seven days, or ended more than 24 hours ago, is `scan_limit`. Its Codex window runs
+from ten minutes before the dispatch to ten minutes after the end (or now), never longer than seven
+days and twenty minutes.
+
 A dispatched Codex root is found by its rollout name, which carries the session id, and confirmed
 by its own head; no other session is read to find it, however many share its window. Its
 descendants are read from the heads of the newest 128 rollouts created no earlier than the root
