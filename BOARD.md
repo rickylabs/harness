@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **480/589 done · 45 running · 26 queued · 16 abandoned · 22 invisible**
+`[################----]` **480/590 done · 46 running · 26 queued · 16 abandoned · 22 invisible**
 
-_Latest board activity: 2026-10-05T15:39:44Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-05T15:53:42Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (45)
+## Moving now (46)
 
 Something could be acting on these right now.
 
@@ -57,6 +57,7 @@ Something could be acting on these right now.
 | [#599 [rickylabs/netscript#2077] [witness] No-op owner launch check (mobile APK gate)](https://github.com/rickylabs/harness/issues/599) | `plan` | — |
 | [PR602 fix(ai): deliver upstream Anthropic model compatibility fix](https://github.com/rickylabs/harness/pull/602) | `impl-eval` | — |
 | [#604 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/604) | `plan` | — |
+| [PR605 fix(telemetry): the issue feed never drops a dispatched Codex root for transcript size](https://github.com/rickylabs/harness/pull/605) | `impl-eval` | — |
 
 ## Not on the board (9)
 
@@ -160,7 +161,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 279/340 done · 29 running · 3 queued · 10 abandoned · 19 invisible
+`[#########---]` 279/341 done · 30 running · 3 queued · 10 abandoned · 19 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -170,7 +171,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 242/299 done · 28 running · 2 queued · 10 abandoned · 17 invisible | — |
+| _(no epic)_ | `[#########---]` 242/300 done · 29 running · 2 queued · 10 abandoned · 17 invisible | — |
 
 ## Waiting to start
 
@@ -214,7 +215,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  480/589 done · 45 running · 26 queued · 16 abandoned · 22 invisible
+# rickylabs/harness  [################----]  480/590 done · 46 running · 26 queued · 16 abandoned · 22 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -502,7 +503,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  279/340 done · 29 running · 3 queued · 10 abandoned · 19 invisible
+## (no milestone)  [################----]  279/341 done · 30 running · 3 queued · 10 abandoned · 19 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -863,6 +864,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR601 fix(subagents): carry the source repository as a /swarm repo key (p0)
     impl-eval            PR602 fix(ai): deliver upstream Anthropic model compatibility fix
     plan                 #604 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)
+    impl-eval            PR605 fix(telemetry): the issue feed never drops a dispatched Codex root for transcript size
 ```
 
 </details>
