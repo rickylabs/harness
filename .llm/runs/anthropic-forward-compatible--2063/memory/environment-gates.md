@@ -1,0 +1,7 @@
+# Gate execution environment
+
+/ephemeral is noexec; temporary executable fixtures fail there. Harness build must run in a clean project worktree (the ignored injected assignment contains a broken Markdown link). Native /usr/bin/git creates the requested worktree; the login git shim silently rewrites worktree destinations. Set TMPDIR to an executable location for executable fixtures. NetScript export-corpus tests themselves create worktrees via TMPDIR: set TMPDIR=/home/agent/projects/netscript/worktrees and put /usr/bin ahead of the git shim in PATH. The initial full suite passed5418/failed9; all failures were executable temp fixtures or git-shim worktree relocation, not AI tests. Harness npm12 changes npm pack --json to an object; existing tests expect npm11 arrays, so verify with the supported Node24 installation.
+
+For authenticated gh and upstream pushes use login shell: GH_TOKEN is injected there. With login=false, gh falls back to stale stored credentials. Do not print tokens; use gh auth git-credential as the explicit Git credential helper if the default helper cannot write upstream.
+
+Full suite with TMPDIR under project/worktrees passes all corpus/browser tests but hook decoy tests explicitly assert TMPDIR lacks a worktrees component (claude-hook-log_test.ts:192). Retain the full receipt5425pass/2fail/19ignored and rerun only the two hook cases with TMPDIR=/tmp; both pass. Report all5427activecases verified across runs, never a single full gate green. No source workaround is required.

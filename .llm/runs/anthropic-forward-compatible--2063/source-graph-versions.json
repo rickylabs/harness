@@ -1,0 +1,13 @@
+{
+  "packages": [
+    "@tanstack/ai@0.52.0_@opentelemetry+api@1.9.1_zod@4.4.3",
+    "@tanstack/ai-anthropic@0.18.3_@tanstack+ai@0.52.0_@opentelemetry+api@1.9.1_zod@4.4.3"
+  ],
+  "command": [
+    "deno",
+    "info",
+    "--json",
+    "packages/ai/tests/anthropic_forward_compatible_test.ts"
+  ],
+  "exitCode": 0
+}

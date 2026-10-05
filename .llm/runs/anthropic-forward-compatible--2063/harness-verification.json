@@ -1,0 +1,27 @@
+{
+  "repository": "rickylabs/harness",
+  "checkout": "/home/agent/projects/harness/worktrees/validate-600",
+  "head": "8e8d39a",
+  "install": {
+    "command": "pnpm install --frozen-lockfile",
+    "exitCode": 0
+  },
+  "build": {
+    "command": "pnpm run build",
+    "exitCode": 0,
+    "stages": 14
+  },
+  "test": {
+    "command": "env TMPDIR=/tmp PATH=<installed Node24.20.0 bin>:$PATH pnpm run test",
+    "exitCode": 0,
+    "stages": 6
+  },
+  "environmentFindings": [
+    "/ephemeral noexec prevents compiler and fixture execution",
+    "npm12 pack JSON object differs from npm11 array expected by existing tests; supported Node24/npm11 passes"
+  ],
+  "limitations": [
+    "clean validation checkout excludes dispatcher injected assignment whose embedded leaf.md link is not a repository document",
+    "no remote CI polled"
+  ]
+}

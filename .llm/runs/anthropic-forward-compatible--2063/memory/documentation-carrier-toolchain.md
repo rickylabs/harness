@@ -1,0 +1,3 @@
+# Generate carriers with CI Deno
+
+CI pins Deno2.9.5 in .github/workflows/ci.yml:70. Generation with2.9.7 changes deno doc normalization and causes export-corpus freshness tests to differ. Use PATH=/home/agent/.local/share/mise/installs/deno/2.9.5/bin:$PATH for gen:mcp-export-corpus, gen:agent-docs-prose, gen:assets-barrel, gen:publish-assets, docs:accuracy, check:mcp-export-corpus, check:agent-docs-prose, check:publish-assets. Commit required carrier files BEFORE running corpus tests that create detached HEAD worktrees, otherwise tests see stale carriers. docs:accuracy is the real task name; check:docs-accuracy does not exist. Never commit incidental deno.lock normalization from a tool-version change.

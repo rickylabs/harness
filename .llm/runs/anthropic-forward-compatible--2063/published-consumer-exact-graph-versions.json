@@ -1,0 +1,18 @@
+{
+  "tanstackPackages": [
+    "@tanstack/ai@0.52.3",
+    "@tanstack/ai-anthropic@0.18.3_@tanstack+ai@0.52.3"
+  ],
+  "commands": [
+    "deno",
+    "run",
+    "--no-config",
+    "--no-lock",
+    "--import-map",
+    ".llm/runs/anthropic-forward-compatible--2063/consumer-import-map.json",
+    "--allow-env",
+    "--allow-read",
+    ".llm/runs/anthropic-forward-compatible--2063/published-consumer-probe.ts"
+  ],
+  "denoInfoExit": 0
+}

@@ -1,0 +1,3 @@
+# Pin the complete consumer graph
+
+A bare `jsr:@netscript/ai@0.0.7` consumer resolves adapter 0.18.13 with core0.52.3 on 2026-10-05; Fable constructs, Opus/Sonnet still reject. The reported graph pins core0.52.3 and adapter0.18.3 and rejects all three IDs offline. `consumer-import-map.json` maps published npm specifiers to exact versions; use --no-config --no-lock. Source workspace actually resolves core0.52.0/adapter0.18.3. To exercise source on the exact reported graph use --no-config --no-lock with `source-consumer-import-map.json`; import-map overrides alongside workspace config alone do not override package scopes reliably. Both source graphs pass10/10. Never report bare consumer results as exact pinned results.

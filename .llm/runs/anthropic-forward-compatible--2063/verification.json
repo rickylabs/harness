@@ -1,0 +1,79 @@
+{
+  "sourceCommit": "51d8e10d5b69df3d75edbdd227c614481616518a",
+  "regression": {
+    "baselineAssertionFailures": 2,
+    "fixedPassed": 10,
+    "fixedFailed": 0
+  },
+  "aiPluginSuite": {
+    "passed": 201,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "scopedQuality": {
+    "files": 142,
+    "checkFindings": 0,
+    "lintFindings": 0,
+    "fmtFindings": 0
+  },
+  "repositoryCheck": {
+    "files": 3162,
+    "batches": 27,
+    "failedBatches": 0
+  },
+  "repositoryTest": {
+    "toolchain": "Deno2.9.5; native Git; --allow-all --no-lock",
+    "fullInvocationExitCode": 1,
+    "passed": 5425,
+    "failed": 2,
+    "ignored": 19,
+    "failureCause": "Hook decoy fixtures reject a TMPDIR path containing worktrees; export-corpus tests need their temporary worktrees there under host layout constraints.",
+    "targetedRerunExitCode": 0,
+    "targetedRerunPassed": 2,
+    "passedAcrossRuns": 5427,
+    "singleGreenInvocation": false,
+    "fullReceipt": "repository-test-ci-toolchain.json",
+    "rerunReceipt": "hook-temp-rerun.json"
+  },
+  "qualityGate": {
+    "exitCode": 0
+  },
+  "aiPublishDryRun": {
+    "exitCode": 0
+  },
+  "documentation": {
+    "accuracyExitCode": 0,
+    "exportCorpusExitCode": 0,
+    "proseExitCode": 0,
+    "publishAssetsExitCode": 0,
+    "carrierDenoVersion": "2.9.5"
+  },
+  "independentEvaluation": {
+    "vendorFamily": "Zhipu",
+    "model": "glm_5_3_flash",
+    "verdict": "PASS",
+    "evaluatedCommit": "51d8e10d5",
+    "isolatedRegressionPassed": 10,
+    "isolatedAiPluginPassed": 201,
+    "exactConsumerGraphPassed": 10
+  },
+  "harness": {
+    "buildExitCode": 0,
+    "buildStages": 14,
+    "testExitCode": 0,
+    "testStages": 6,
+    "nodeVersion": "24.20.0"
+  },
+  "unproven": [
+    "Local CLI E2E: missing Aspire and Docker; stopped at preflight/cleanup",
+    "Stable0.0.8 publication and released-fixed consumer qualification",
+    "Paid live Anthropic inference"
+  ],
+  "followUps": [
+    "Dependent release plus published-consumer acceptance on2063",
+    "CLI E2E on Aspire/Docker host",
+    "SDK message_start-only input usage preservation"
+  ],
+  "ciPolled": false,
+  "independentFanoutScope": false
+}

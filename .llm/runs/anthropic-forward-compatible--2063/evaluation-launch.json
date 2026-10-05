@@ -1,0 +1,54 @@
+{
+  "generator": {
+    "vendorFamily": "OpenAI",
+    "model": "gpt-6.1-sol",
+    "effort": "xhigh"
+  },
+  "evaluator": {
+    "vendorFamily": "Zhipu",
+    "model": "glm_5_3_flash",
+    "providerModel": "opencode-go/glm-5.3-flash",
+    "effort": "provider_default"
+  },
+  "tier": "straightforward",
+  "role": "implementation_evaluation",
+  "freshMatrix": "matrix-impl-evaluator-resteer.json",
+  "preflightExitCode": 0,
+  "evaluationExitCode": 0,
+  "resteerExitCode": 0,
+  "sameSessionResteer": true,
+  "fallbackUsed": false,
+  "sourceHead": "51d8e10d5b69df3d75edbdd227c614481616518a",
+  "verdict": "PASS",
+  "processCorrection": "First pass used author workdir. Same session repeated baseline/fixed checks in detached eval worktree; corrected report supersedes first draft.",
+  "baselineAssertions": {
+    "exitCodes": [
+      1,
+      1
+    ],
+    "compilationFailures": false
+  },
+  "fixedRegression": {
+    "passed": 10,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "fullAiPlugin": {
+    "passed": 201,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "exactConsumerGraph": {
+    "core": "0.52.3",
+    "adapter": "0.18.3",
+    "passed": 10,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "limits": [
+    "No paid Anthropic inference",
+    "Stable release and released-fixed consumer remain outstanding",
+    "Full repository suite rerun separately from evaluator source verdict",
+    "CLI E2E requires missing Aspire/Docker"
+  ]
+}

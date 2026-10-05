@@ -1,0 +1,3 @@
+# Harness gates in the dispatcher host
+
+/ephemeral is noexec, so tsc binaries and temp executable fixtures cannot run there. Validate in /home/agent/projects/harness/worktrees/<branch> using native /usr/bin/git worktree add. A git shim relocates normal git worktree destinations. Use Node24.20.0/npm11 for existing npm pack --json tests (npm12 returns keyed objects), and executable TMPDIR=/tmp. pnpm run build passed14stages; pnpm run test passed6stages including installed contracts. The injected ignored assignment contains a leaf.md Markdown link that causes check:links to fail if included as repository docs; clean validation checkout does not contain it. No runtime patch is needed for these host constraints.
