@@ -4,7 +4,7 @@
 
 `[################----]` **478/588 done · 46 running · 26 queued · 16 abandoned · 22 invisible**
 
-_Latest board activity: 2026-10-05T04:53:49Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-05T05:14:07Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (46)
 
@@ -75,12 +75,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#581 [rc-proof] Claude Haiku phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/581) | — | — |
 | [#582 [rc-proof] Codex Luna phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/582) | — | — |
 
-## Anomalies (46)
+## Anomalies (47)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
+- **#601** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
