@@ -296,3 +296,33 @@ it("still refuses when the root itself vanishes or changes before its transcript
   assert.equal(changed.degraded, true);
   assert.equal(changed.runs.some(run => run.id === ROOT), false);
 }));
+
+// A descendant whose transcript holds a line the parser cannot read (a record still being written,
+// an envelope this package does not know) is omitted with its subtree; the root and its healthy
+// sibling stay. The same line in the root still refuses.
+for (const [name, bad] of [
+  ["a half-written last record", `{"timestamp":"${iso(ROOT_AT)}","type":"event_msg"`],
+  ["an unknown native envelope", JSON.stringify({ timestamp: iso(ROOT_AT), type: "fixture_future_event", payload: {} }) + "\n"],
+] as const) {
+  it(`omits a descendant whose transcript holds ${name}, keeping the root and its sibling`, () => fixture(async ({ put, scan, feed }) => {
+    await put(ROOT, 0);
+    await put(id(2), 1_000, meta(id(2), ROOT) + bad);
+    await put(id(3), 2_000, meta(id(3), ROOT));
+    await put(id(4), 3_000, meta(id(4), id(2), 2));
+    const result = await scan();
+    assert.equal(result.degraded, false, result.notes.join("\n"));
+    assert.deepEqual(result.partial, ["descendant_transcript_unreadable"]);
+    assert.deepEqual(result.runs.map(run => run.id).sort(), [ROOT, id(3)]);
+    const frame = await feed(true);
+    assert.equal(frame.issues[0]?.reason, "scan_limit");
+    assert.equal(agents(frame).length, 2);
+  }));
+}
+
+it("still refuses when the root's own transcript holds a line the parser cannot read", () => fixture(async ({ put, scan }) => {
+  await put(ROOT, 0, meta(ROOT) + '{"type":"unfinished"');
+  await put(id(3), 2_000, meta(id(3), ROOT));
+  const result = await scan();
+  assert.equal(result.degraded, true);
+  assert.deepEqual(result.partial, []);
+}));

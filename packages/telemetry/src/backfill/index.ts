@@ -92,7 +92,8 @@ export interface BackfillResult {
  * - `descendant_transcript_bound`: a selected descendant's transcript did not fit what the frame
  *   had left, not even as head and tail windows.
  * - `descendant_transcript_unreadable`: a selected descendant's transcript could not be opened or
- *   read, no longer held the session its head named, or yielded no run.
+ *   read, no longer held the session its head named, yielded no run, or held lines the parser
+ *   could not read.
  * A descendant omitted for either transcript reason takes its own descendants with it, so the
  * agents served are always a closed tree from the roots.
  */
@@ -660,6 +661,13 @@ export async function backfillFromDisk(
         // The file no longer holds the session its head named (or holds none).
         if (descendant !== null) omit(descendant, "descendant_transcript_unreadable"); // guard:descendant-identity-partial
         else unreadable += 1;
+        continue;
+      }
+      // A descendant whose transcript holds lines the parser could not read (a record still being
+      // written, an envelope this package does not know) has a state this scan cannot vouch for:
+      // that descendant and its subtree are omitted. A root's notes still refuse below.
+      if (descendant !== null && parsed.notes.length > 0) { // guard:descendant-notes-partial
+        omit(descendant, "descendant_transcript_unreadable");
         continue;
       }
       for (const note of parsed.notes) {

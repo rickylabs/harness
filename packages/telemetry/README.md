@@ -881,7 +881,8 @@ Every bound stays explicit: 4096 rollout names per issue scan (past it the root 
 the issue is `scan_limit`), 128 descendant heads of at most 64 KiB, the frame byte budget, and the
 scan limit on transcripts kept, parents before children. Once the root is established, nothing
 that happens to a descendant refuses the issue: a bound reached, or a descendant transcript that
-does not fit the frame, cannot be read, or no longer holds the session its head named, omits that
+does not fit the frame, cannot be read, no longer holds the session its head named, or holds lines
+the parser cannot read (a record still being written, an unknown envelope), omits that
 descendant and its own descendants, and the tree is partial with a named reason
 (`descendant_heads_bound`, `descendant_heads_budget`, `descendant_head_unreadable`,
 `selected_files_bound`, `descendant_transcript_bound`, `descendant_transcript_unreadable`). The
