@@ -22,8 +22,10 @@ if(args[0]==='--version'&&kind==='agy'&&behavior.startsWith('agy-')){console.log
 if(args[0]==='--version'&&kind==='claude'&&behavior==='known-serializer'){console.log('2.1.288');process.exit(0);}
 if(kind==='agy'&&args.includes('--print')){
  const name=args[args.indexOf('--print')+1].slice(1), id=args[args.indexOf('--model')+1];
- const entry=data.agyModels.find(m=>m.id===id);
- let payload=name==='config'?{config:{modelProvider:'',customModelsConfig:null,gcp:null,private:data.privateProviderPayload}}:{id,effort:entry?.nativeEffort,is_default:false};
+ const entry=data.agyModels.find(m=>m.id===id)??(behavior==='agy-pool'?{nativeEffort:'medium',reportLabel:'Fixture Pool'}:undefined);
+ const unverified=['agy-custom','agy-gcp','agy-unknown-provider','agy-provider-type','agy-config-failed'].includes(behavior)||!!process.env.GOOGLE_GEMINI_BASE_URL;
+ const label=unverified?entry?.label:behavior==='agy-unsafe-label'?'Fixture /home/PRIVATE/label':behavior==='agy-long-label'?'L'.repeat(129):behavior==='agy-control-label'?'Fixture\\u0007Label':entry?.reportLabel;
+ let payload=name==='config'?{config:{modelProvider:'',customModelsConfig:null,gcp:null,private:data.privateProviderPayload}}:{id,label,effort:entry?.nativeEffort,is_default:false};
  if(behavior==='agy-custom'&&name==='config')payload.config.customModelsConfig={private:data.privateProviderPayload};
  if(behavior==='agy-provider-type'&&name==='config')payload.config.modelProvider=1;
  if(behavior==='agy-gcp'&&name==='config')payload.config.gcp={private:data.privateProviderPayload};
@@ -34,6 +36,8 @@ if(kind==='agy'&&args.includes('--print')){
  if(behavior==='agy-config-failed'&&name==='config')process.exit(2);
  if(behavior==='agy-model-failed'&&name==='model')process.exit(2);
  if(behavior==='agy-delay')await new Promise(resolve=>setTimeout(resolve,name==='config'?450:250));
+ if(behavior==='agy-stall-once'&&name==='model'&&id===data.agyModels[0].id){const fs=await import('node:fs');const marker=${JSON.stringify(join(cwd,'stalled'))};if(!fs.existsSync(marker)){fs.writeFileSync(marker,'');note({stalled:id});await new Promise(resolve=>setTimeout(resolve,5000));}}
+ if(behavior==='agy-pool'&&name==='model'){const fs=await import('node:fs');const dir=${JSON.stringify(join(cwd,'inflight'))};fs.mkdirSync(dir,{recursive:true});const mine=dir+'/'+process.pid;fs.writeFileSync(mine,'');note({inflight:fs.readdirSync(dir).length});await new Promise(resolve=>setTimeout(resolve,150));fs.rmSync(mine);}
  const result={conversation_id:'',status:'SUCCESS',num_turns:0,usage:{input_tokens:0,output_tokens:0,thinking_tokens:0,cache_read_tokens:0,total_tokens:0},command:{name,data:payload},private:data.privateProviderPayload};
  if(behavior==='agy-turn')result.num_turns=1;
  if(behavior==='agy-session')result.conversation_id='PRIVATE-SESSION-CANARY';
@@ -53,7 +57,7 @@ if(kind==='agy'&&args.includes('--print')){
 if(args[0]==='--version'){console.log(kind==='codex'&&behavior!=='other-version'?(['new-version','project-provider','scoped-read-failed'].includes(behavior)?'0.160.0':'0.159.3'):'1.2.3');process.exit(0);}
 if(args[0]==='auth'){if(behavior==='auth-failed'){console.log('PRIVATE-CREDENTIAL-CANARY');process.exit(2);}const auth={...data.claudeAuth};if(behavior==='auth-type')auth.loggedIn='yes';if(behavior==='auth-provider')auth.apiProvider='unknown';console.log(JSON.stringify(auth));process.exit(behavior==='auth-exit'?1:0);}
 if(args[0]==='models'){
- if(kind==='agy'){const entries=behavior==='agy-bound'?Array.from({length:65},(_,i)=>({id:data.agyBoundModelPrefix+i,label:'Bound'})):data.agyModels;for(const m of entries)console.log(m.id+'\\t'+m.label);}
+ if(kind==='agy'){const entries=behavior==='agy-bound'?Array.from({length:65},(_,i)=>({id:data.agyBoundModelPrefix+i,label:'Bound'})):behavior==='agy-pool'?Array.from({length:6},(_,i)=>({id:data.agyBoundModelPrefix+i,label:'Pool'})):data.agyModels;for(const m of entries)console.log(m.id+'\\t'+m.label);}
  else for(const original of data.opencodeModels){
  let model=structuredClone(original);
  if(behavior==='model-conflict')model.providerID='conflicting-provider';
@@ -351,6 +355,52 @@ test("native facts: AGY 1.2.17 receives the same verified metadata reports; an u
  for(const m of ou.models){assert.equal(m.efforts,null);}
  const after=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").slice(before).map(line=>JSON.parse(line));
  assert.ok(!after.some((c:any)=>c.args?.includes('--print')),"an unverified version never receives a print request");
+}));
+test("native facts: AGY vendor labels come back verbatim from /model under the verified first-party binding",async()=>fixture(async(cwd,binary,data)=>{
+ const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-normal"))),o=wire(s).launchers.agy;
+ assert.deepEqual(o.provider,{id:"google",source:"agy.command.config",scope:"cli"});
+ assert.deepEqual(o.models.map((m:any)=>m.label),data.agyModels.map((m:any)=>m.reportLabel));
+ assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
+ // The strict reader refuses a label without the verified binding, on another launcher, or failing the screen.
+ for(const edit of [(x:any)=>{x.launchers.agy.models[0].provider={id:null,source:null,scope:"unknown"};x.launchers.agy.provider={id:null,source:null,scope:"unknown"};x.launchers.agy.models.forEach((m:any)=>{m.provider=x.launchers.agy.provider;});},
+   (x:any)=>{x.launchers.agy.models[0].label="Fixture /home/PRIVATE/label";},(x:any)=>{x.launchers.agy.models[0].label="L".repeat(129);},
+   (x:any)=>{x.launchers.agy.models[0].effortSource=null;x.launchers.agy.models[0].efforts=null;}]){
+  const copy=structuredClone(s);edit(copy);assert.equal(validateCliDiscoverySnapshot(copy),false);
+ }
+}));
+test("native facts: AGY labels stay withheld under custom, GCP, unproven, failed or custom-endpoint configs, unverified versions and the screen",async()=>fixture(async(cwd,binary)=>{
+ const runs:[string,string][]=[["agy-custom",""],["agy-gcp",""],["agy-unknown-provider",""],["agy-provider-type",""],["agy-config-failed",""],["agy-normal","endpoint"],
+   ["agy-v18",""],["agy-unsafe-label",""],["agy-long-label",""],["agy-control-label",""]];
+ for(const [behavior,mode] of runs){
+  const previous=process.env.GOOGLE_GEMINI_BASE_URL;
+  try{if(mode==="endpoint")process.env.GOOGLE_GEMINI_BASE_URL="http://127.0.0.1:1";
+   const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy",behavior))),o=wire(s).launchers.agy;
+   assert.ok(o.models.length>0,behavior);assert.ok(o.models.every((m:any)=>!Object.hasOwn(m,"label")),behavior+mode);
+   assert.ok(validateCliDiscoverySnapshot(s),behavior);assert.ok(!JSON.stringify(s).includes("PRIVATE"),behavior+mode);
+  }finally{if(previous===undefined)delete process.env.GOOGLE_GEMINI_BASE_URL;else process.env.GOOGLE_GEMINI_BASE_URL=previous;}
+ }
+}));
+test("native facts: AGY metadata runs as a rolling pool of two and may spend a launcher budget above one child's ceiling",async()=>fixture(async(cwd,binary)=>{
+ const s=await discoverCliCapabilities({...options(cwd,"agy",await binary("agy","agy-pool")),timeoutMs:120_000});
+ assert.equal(s.launchers.agy.problems.length,0);assert.ok(s.launchers.agy.models.every(m=>m.efforts!==null));
+ const inflight=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(line=>JSON.parse(line)).filter((c:any)=>c.inflight!==undefined).map((c:any)=>c.inflight);
+ assert.equal(Math.max(...inflight),2,"two reports in flight, never more");
+ const over=await discoverCliCapabilities({...options(cwd,"agy",await binary("agy","agy-normal")),timeoutMs:180_001});
+ assert.deepEqual(over.launchers.agy.problems,["malformed"]);
+ const log=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(line=>JSON.parse(line));
+ assert.ok(log.filter((c:any)=>c.args?.includes('--model')).length>0);
+}));
+test("native facts: an AGY report that stalls is retried in a fresh process; three stalls stay a timeout",async()=>fixture(async(cwd,binary,data)=>{
+ const s=await discoverCliCapabilities({...options(cwd,"agy",await binary("agy","agy-stall-once")),timeoutMs:20_000,agyReportTimeoutMs:600});
+ const o=wire(s).launchers.agy;
+ assert.deepEqual(o.problems,[]);assert.deepEqual(o.models.map((m:any)=>m.efforts),data.agyModels.map((m:any)=>m.nativeEffort?[m.nativeEffort]:[]));
+ const log=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(line=>JSON.parse(line));
+ assert.equal(log.filter((c:any)=>c.args?.includes(data.agyModels[0].id)).length,2,"exactly one retry");
+ const twice=await discoverCliCapabilities({...options(cwd,"agy",await binary("agy","agy-delay")),timeoutMs:20_000,agyReportTimeoutMs:100});
+ assert.ok(twice.launchers.agy.problems.includes("timeout"));assert.ok(twice.launchers.agy.models.every(m=>m.efforts===null));
+ const attempts=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(line=>JSON.parse(line)).slice(log.length).filter((c:any)=>c.args?.includes('/model'));
+ for(const m of data.agyModels)assert.equal(attempts.filter((c:any)=>c.args.includes(m.id)).length,3,"at most three attempts per report");
+ assert.ok(validateCliDiscoverySnapshot(s));assert.ok(validateCliDiscoverySnapshot(twice));
 }));
 test("native facts: AGY custom, GCP and unproven provider configurations stay unknown",async()=>fixture(async(cwd,binary)=>{
  for(const behavior of ['agy-custom','agy-gcp','agy-unknown-provider','agy-provider-type','agy-config-failed']){

@@ -35,6 +35,9 @@ export interface DiscoveredModel {
   readonly aliases?: readonly string[];
   readonly variants?: readonly string[];
   readonly effortSource?: DiscoverySource | null;
+  /** AGY only: the vendor display name from the exact-ID /model report, published only under the verified first-party
+   * binding and after the label screen. Absent everywhere else: a label can be user-configured text. */
+  readonly label?: string;
 }
 export interface CliObservation {
   readonly installed: DiscoveryFact;
@@ -65,12 +68,28 @@ export interface CliDiscoveryOptions {
   readonly only?: readonly DiscoveryLauncher[];
   readonly declaredAgyModels?: readonly string[];
   readonly timeoutMs?: number;
+  /** One AGY /model report's cap (default 20 s, at most 60 s). A report past it is retried in a fresh process, at most
+   * three attempts in all. */
+  readonly agyReportTimeoutMs?: number;
   readonly maximumBytes?: number;
   readonly now?: () => string;
 }
 const ID = /^[^\s\u0000-\u001f\u007f]{1,256}$/u;
 const VERSION = /\b\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?\b/;
 const MAX_MODELS = 4096;
+/** One child process never runs longer than this; a launcher budget above it spans several children. */
+const CHILD_MAX_MS = 60_000;
+/** Whole-launcher budget ceiling. AGY metadata spans one report per model and may need more than one child's time. */
+const LAUNCHER_MAX_MS = 180_000;
+/** Measured on AGY 1.2.17 (18 models): 2 in flight finish in 40.7 s, 4 in flight stall two reports ~61 s inside AGY. */
+const AGY_REPORT_CONCURRENCY = 2;
+/** Measured on AGY 1.2.17: a report takes 2-12 s, but AGY stalls one for ~61 s at random (2 of 18 even one at a time;
+ * 3 of 18 two at a time under load). A fresh process answers in seconds, so a report is capped well below the stall
+ * and tried at most three times, all within the launcher deadline. */
+const AGY_REPORT_MS = 20_000;
+const AGY_REPORT_ATTEMPTS = 3;
+/** Printable, bounded label text; the path/token screen is applied as for IDs. */
+const LABEL = /^[^\u0000-\u001f\u007f-\u009f]{1,128}$/u;
 const MAX_PAGES = 32;
 const PROVIDER_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const EFFORT = /^[a-z][a-z0-9_-]{0,63}$/;
@@ -81,6 +100,11 @@ const OPENCODE_HTTP_CATALOG_VERSIONS = new Set<string>(nativeBindings.opencode.h
 const AGY_METADATA_VERSIONS = new Set<string>(nativeBindings.agy.verifiedVersions);
 const CLAUDE_EFFORT_OMISSION_VERSIONS = new Set<string>(nativeBindings.claude.effortOmissionVersions);
 const MAX_PROVIDER_BYTES = 16 * 1024 * 1024;
+function screenedLabel(value: unknown): string | null {
+  if (typeof value !== "string" || !LABEL.test(value) || value.trim() !== value || value.startsWith("/") || value.includes("\\") ||
+      /(?:^|[\/\s])(?:home|tmp|PRIVATE)(?:[\/\s]|$)|(?:^|\s)(?:gh[pousr]_|sk-)[A-Za-z0-9]|\/[^\s]*\//.test(value)) return null;
+  return value;
+}
 function checkedEfforts(value: unknown): string[] {
   const values = checkedIds(value);
   if (values.length > 64 || values.some(v => !EFFORT.test(v))) throw new DiscoveryError("malformed");
@@ -526,7 +550,7 @@ async function agyFacts(binary: string, ids: string[], options: CliDiscoveryOpti
   const bounded = () => {
     const remaining = deadline - Date.now();
     if (remaining < 1) throw new DiscoveryError("timeout");
-    return { ...scoped, timeoutMs: remaining };
+    return { ...scoped, timeoutMs: Math.min(remaining, CHILD_MAX_MS) };
   };
   const sources = new Set<DiscoverySource>(base.sources), problems = new Set<DiscoveryProblem>();
   let binding = UNKNOWN_PROVIDER;
@@ -540,25 +564,43 @@ async function agyFacts(binary: string, ids: string[], options: CliDiscoveryOpti
       binding = provider(bindings[config.modelProvider], "agy.command.config", "cli");
     }
   } catch (error) { problems.add(problem(error)); }
-  // A catalog cannot drive an unbounded number of subprocesses. Each batch shares one deadline.
+  // A catalog cannot drive an unbounded number of subprocesses. A rolling pool shares one deadline.
   if (ids.length > 64) problems.add("oversized");
-  for (let start = 0; start < Math.min(ids.length, 64); start += 4) {
-    const batch = await Promise.allSettled(ids.slice(start, Math.min(start + 4, 64)).map(async id => {
-      const data = await agyReport(binary, "model", bounded(), id);
-      if (data.id !== id || typeof data.effort !== "string") throw new DiscoveryError("malformed");
-      const efforts = data.effort === "" ? [] : checkedEfforts([data.effort]);
-      return { id, efforts, provider: binding, effortSource: "agy.command.model" as const };
-    }));
-    for (const [offset, result] of batch.entries()) {
-      if (result.status === "fulfilled") { models[start + offset] = result.value; authenticate(); sources.add("agy.command.model"); }
-      else problems.add(problem(result.reason));
+  const limit = Math.min(ids.length, 64);
+  const reportMs = options.agyReportTimeoutMs ?? AGY_REPORT_MS;
+  if (!Number.isSafeInteger(reportMs) || reportMs < 1 || reportMs > CHILD_MAX_MS) throw new DiscoveryError("malformed");
+  const queue = Array.from({ length: limit }, (_, index) => index), attempts = new Map<number, number>();
+  const worker = async () => {
+    for (let index = queue.shift(); index !== undefined; index = queue.shift()) {
+      if (Date.now() >= deadline) { problems.add("timeout"); return; }
+      const id = ids[index]!;
+      attempts.set(index, (attempts.get(index) ?? 0) + 1);
+      try {
+        const scopedReport = bounded();
+        const data = await agyReport(binary, "model", { ...scopedReport, timeoutMs: Math.min(scopedReport.timeoutMs, reportMs) }, id);
+        if (data.id !== id || typeof data.effort !== "string") throw new DiscoveryError("malformed");
+        const efforts = data.effort === "" ? [] : checkedEfforts([data.effort]);
+        // Policy: the vendor label is published only under the verified first-party binding (config read, provider
+        // bound, no custom models, no GCP, no custom endpoint). Anything else may be user text, so it stays withheld.
+        const label = binding.scope === "cli" ? screenedLabel(data.label) : null;
+        models[index] = { id, efforts, provider: binding, effortSource: "agy.command.model", ...(label === null ? {} : { label }) };
+        authenticate(); sources.add("agy.command.model");
+      } catch (error) {
+        const why = problem(error);
+        if (why === "timeout" && attempts.get(index)! < AGY_REPORT_ATTEMPTS && Date.now() < deadline) queue.push(index);
+        else problems.add(why);
+      }
     }
-    if (Date.now() >= deadline) { problems.add("timeout"); break; }
-  }
+  };
+  await Promise.all(Array.from({ length: Math.min(AGY_REPORT_CONCURRENCY, limit) }, worker));
   return { ...base, authenticated: sources.has("agy.auth-gate") ? "yes" : "unknown", authenticationSource: sources.has("agy.auth-gate") ? "agy.auth-gate" : null,
     provider: binding, models: models.map(model => ({ ...model, provider: binding })), sources: [...sources], problems: [...problems] };
 }
-async function observe(launcher: DiscoveryLauncher, options: CliDiscoveryOptions): Promise<CliObservation> {
+async function observe(launcher: DiscoveryLauncher, launcherOptions: CliDiscoveryOptions): Promise<CliObservation> {
+  const budget = launcherOptions.timeoutMs ?? 15_000;
+  if (!Number.isSafeInteger(budget) || budget < 1 || budget > LAUNCHER_MAX_MS) return { ...unknown("not-requested"), problems: ["malformed"] };
+  // Every single child keeps the 60 s ceiling; only AGY metadata spends the remaining launcher budget across children.
+  const options = { ...launcherOptions, timeoutMs: Math.min(budget, CHILD_MAX_MS) };
   const binary = options.binaries?.[launcher] ?? launcher, base = unknown("not-requested");
   let version;
   try { version = await command(binary, ["--version"], options); }
@@ -600,7 +642,7 @@ async function observe(launcher: DiscoveryLauncher, options: CliDiscoveryOptions
     if (launcher === "agy") {
       const ids = checkedIds(output.stdout.split(/\r?\n/).filter(line => line.trim()).map(line => line.split("\t")[0]));
       if (!ids.length) throw new DiscoveryError("empty-catalog");
-      return await agyFacts(binary, ids, options, observation);
+      return await agyFacts(binary, ids, launcherOptions, observation);
     }
     const models = openCodeModels(output.stdout, observation.version);
     const catalog: CliObservation = { ...observation, catalog: "observed", models, sources: [...new Set<DiscoverySource>(["version", "models", ...models.flatMap(m =>
@@ -682,7 +724,9 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
       const ids: unknown[] = [], aliases = new Set<string>();
       for (const entry of record.models) {
         const model = object(entry);
-        if (!shape(model, ["id", "efforts"], ["provider", "aliases", "variants", "effortSource"])) return false;
+        if (!shape(model, ["id", "efforts"], ["provider", "aliases", "variants", "effortSource", "label"])) return false;
+        if (Object.hasOwn(model, "label") && (name !== "agy" || screenedLabel(model.label) !== model.label || model.effortSource !== "agy.command.model" ||
+            object(model.provider).scope !== "cli" || object(model.provider).source !== "agy.command.config")) return false;
         if (httpCatalog && object(model.provider).source !== "opencode.config/providers.providerID") return false;
         ids.push(model.id);
         if (model.efforts !== null) checkedEfforts(model.efforts);
