@@ -551,6 +551,10 @@ async function agyReport(binary: string, name: "config" | "model", options: CliD
   const result = await command(binary, [...(id === undefined ? [] : ["--model", id]), "--print", "/" + name, "--output-format", "json"],
     options, { ...process.env, AGY_CLI_NONINTERACTIVE_HEADLESS: "1" });
   const envelope = object(nativeJson(result.stdout));
+  // AGY occasionally answers a metadata report with its own error envelope (exit 1, status ERROR, still no
+  // conversation, turn or usage). That is a native failure worth one more fresh attempt, never malformed data.
+  if (result.code !== 0 && envelope.status === "ERROR" && envelope.conversation_id === "" && envelope.num_turns === 0 &&
+      Object.values(object(envelope.usage)).every(value => value === 0)) throw new DiscoveryError("command-failed");
   if (result.code !== 0 || envelope.status !== "SUCCESS" || envelope.conversation_id !== "" || envelope.num_turns !== 0) throw new DiscoveryError("malformed");
   const usage = object(envelope.usage);
   const counters = ["input_tokens", "output_tokens", "thinking_tokens", "cache_read_tokens", "total_tokens"];
@@ -573,8 +577,20 @@ async function agyFacts(binary: string, ids: string[], options: CliDiscoveryOpti
   const sources = new Set<DiscoverySource>(base.sources), problems = new Set<DiscoveryProblem>();
   let binding = UNKNOWN_PROVIDER;
   const authenticate = () => { sources.add("agy.auth-gate"); };
+  const reportMs = options.agyReportTimeoutMs ?? AGY_REPORT_MS;
+  if (!Number.isSafeInteger(reportMs) || reportMs < 1 || reportMs > CHILD_MAX_MS) throw new DiscoveryError("malformed");
+  /** A stalled (timeout) or natively failed (command-failed) report is tried again in a fresh process, at most three attempts. */
+  const retryable = (why: DiscoveryProblem) => why === "timeout" || why === "command-failed";
+  const report = async (name: "config" | "model", id?: string) => {
+    const scopedReport = bounded();
+    return await agyReport(binary, name, { ...scopedReport, timeoutMs: Math.min(scopedReport.timeoutMs, reportMs) }, id);
+  };
   try {
-    const data = await agyReport(binary, "config", bounded());
+    let data: Record<string, unknown> | undefined;
+    for (let attempt = 1; data === undefined; attempt++) {
+      try { data = await report("config"); }
+      catch (error) { if (!retryable(problem(error)) || attempt >= AGY_REPORT_ATTEMPTS || Date.now() >= deadline) throw error; }
+    }
     const config = object(data.config); sources.add("agy.command.config"); authenticate();
     if (typeof config.modelProvider === "string" && Object.hasOwn(nativeBindings.agy.providerBindings, config.modelProvider) &&
         config.customModelsConfig === null && config.gcp === null && !process.env.GOOGLE_GEMINI_BASE_URL) {
@@ -585,8 +601,6 @@ async function agyFacts(binary: string, ids: string[], options: CliDiscoveryOpti
   // A catalog cannot drive an unbounded number of subprocesses. A rolling pool shares one deadline.
   if (ids.length > 64) problems.add("oversized");
   const limit = Math.min(ids.length, 64);
-  const reportMs = options.agyReportTimeoutMs ?? AGY_REPORT_MS;
-  if (!Number.isSafeInteger(reportMs) || reportMs < 1 || reportMs > CHILD_MAX_MS) throw new DiscoveryError("malformed");
   const queue = Array.from({ length: limit }, (_, index) => index), attempts = new Map<number, number>();
   const worker = async () => {
     for (let index = queue.shift(); index !== undefined; index = queue.shift()) {
@@ -594,8 +608,7 @@ async function agyFacts(binary: string, ids: string[], options: CliDiscoveryOpti
       const id = ids[index]!;
       attempts.set(index, (attempts.get(index) ?? 0) + 1);
       try {
-        const scopedReport = bounded();
-        const data = await agyReport(binary, "model", { ...scopedReport, timeoutMs: Math.min(scopedReport.timeoutMs, reportMs) }, id);
+        const data = await report("model", id);
         if (data.id !== id || typeof data.effort !== "string") throw new DiscoveryError("malformed");
         const efforts = data.effort === "" ? [] : checkedEfforts([data.effort]);
         // Policy: the vendor label is published only under the verified first-party binding (config read, provider
@@ -608,7 +621,7 @@ async function agyFacts(binary: string, ids: string[], options: CliDiscoveryOpti
         authenticate(); sources.add("agy.command.model");
       } catch (error) {
         const why = problem(error);
-        if (why === "timeout" && attempts.get(index)! < AGY_REPORT_ATTEMPTS && Date.now() < deadline) queue.push(index);
+        if (retryable(why) && attempts.get(index)! < AGY_REPORT_ATTEMPTS && Date.now() < deadline) queue.push(index);
         else problems.add(why);
       }
     }

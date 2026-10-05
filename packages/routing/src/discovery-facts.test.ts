@@ -53,6 +53,8 @@ if(kind==='agy'&&args.includes('--print')){
  if(behavior==='agy-config-failed'&&name==='config')process.exit(2);
  if(behavior==='agy-model-failed'&&name==='model')process.exit(2);
  if(behavior==='agy-delay')await new Promise(resolve=>setTimeout(resolve,name==='config'?450:250));
+ if((behavior==='agy-error-once'&&name==='model'&&id===data.agyModels[0].id)||(behavior==='agy-config-error-once'&&name==='config')){const fs=await import('node:fs');const marker=${JSON.stringify(join(cwd,'errored'))};if(!fs.existsSync(marker)){fs.writeFileSync(marker,'');console.log(JSON.stringify({conversation_id:'',status:'ERROR',response:'',error:'PRIVATE-ERROR-CANARY',duration_seconds:0,num_turns:0,usage:{input_tokens:0,output_tokens:0,thinking_tokens:0,cache_read_tokens:0,total_tokens:0}}));process.exit(1);}}
+ if(behavior==='agy-config-stall-once'&&name==='config'){const fs=await import('node:fs');const marker=${JSON.stringify(join(cwd,'config-stalled'))};if(!fs.existsSync(marker)){fs.writeFileSync(marker,'');await new Promise(resolve=>setTimeout(resolve,5000));}}
  if(behavior==='agy-stall-once'&&name==='model'&&id===data.agyModels[0].id){const fs=await import('node:fs');const marker=${JSON.stringify(join(cwd,'stalled'))};if(!fs.existsSync(marker)){fs.writeFileSync(marker,'');note({stalled:id});await new Promise(resolve=>setTimeout(resolve,5000));}}
  if(behavior==='agy-pool'&&name==='model'){const fs=await import('node:fs');const dir=${JSON.stringify(join(cwd,'inflight'))};fs.mkdirSync(dir,{recursive:true});const mine=dir+'/'+process.pid;fs.writeFileSync(mine,'');note({inflight:fs.readdirSync(dir).length});await new Promise(resolve=>setTimeout(resolve,150));fs.rmSync(mine);}
  const result={conversation_id:'',status:'SUCCESS',num_turns:0,usage:{input_tokens:0,output_tokens:0,thinking_tokens:0,cache_read_tokens:0,total_tokens:0},command:{name,data:payload},private:data.privateProviderPayload};
@@ -478,6 +480,20 @@ test("native facts: an AGY report that stalls is retried in a fresh process; thr
  assert.ok(validateCliDiscoverySnapshot(s));assert.ok(validateCliDiscoverySnapshot(twice));
 }));
 
+test("native facts: a native AGY error report or a stalled /config is retried in a fresh process, never published",async()=>fixture(async(cwd,binary,data)=>{
+ const reports=(runs:string[][],name:string,id?:string)=>runs.filter(args=>args.includes('/'+name)&&(id===undefined||args.includes(id))).length;
+ for(const behavior of ["agy-error-once","agy-config-error-once","agy-config-stall-once"]){
+  await rm(join(cwd,'errored'),{force:true});await rm(join(cwd,'config-stalled'),{force:true});
+  const path=await binary("agy",behavior);
+  const {result:s,launched}=await countingSpawns(()=>discoverCliCapabilities({...options(cwd,"agy",path),timeoutMs:20_000,agyReportTimeoutMs:1500}));
+  const o=wire(s).launchers.agy;
+  assert.deepEqual(o.problems,[],behavior);assert.deepEqual(o.provider,{id:"google",source:"agy.command.config",scope:"cli"},behavior);
+  assert.deepEqual(o.models.map((m:any)=>m.efforts),data.agyModels.map((m:any)=>m.nativeEffort?[m.nativeEffort]:[]),behavior);
+  assert.equal(reports(launched,"config"),behavior==="agy-error-once"?1:2,behavior);
+  if(behavior==="agy-error-once")assert.equal(reports(launched,"model",data.agyModels[0].id),2,behavior);
+  assert.ok(validateCliDiscoverySnapshot(s),behavior);assert.ok(!JSON.stringify(s).includes("PRIVATE"),behavior);
+ }
+}));
 test("native facts: AGY custom, GCP and unproven provider configurations stay unknown",async()=>fixture(async(cwd,binary)=>{
  for(const behavior of ['agy-custom','agy-gcp','agy-unknown-provider','agy-provider-type','agy-config-failed']){
   const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy",behavior))),o=wire(s).launchers.agy;
