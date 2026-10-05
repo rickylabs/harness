@@ -362,6 +362,11 @@ export function parseSwarm(body: string): ParsedSwarm | null {
   let inKeys = true;
   let sawBlank = false;
   let truncated = false;
+  // Every `repo` declaration in key position, counted from the raw line. The shared grammar cuts a
+  // value at `#` and does not match an empty value at all, so neither can be judged from `bound`.
+  let repoDeclarations = 0;
+  let repoDuplicateWarned = false;
+  const repoProblems: string[] = [];
 
   for (let i = start + 1; i < lines.length; i += 1) {
     const raw = lines[i] ?? "";
@@ -405,6 +410,12 @@ export function parseSwarm(body: string): ParsedSwarm | null {
           });
         }
         const canonical = ALIASES[key] ?? key;
+        if (key === "repo") {
+          repoDeclarations += 1;
+          if (trimmed.slice(trimmed.indexOf(":") + 1).includes("#")) {
+            repoProblems.push(`line ${i + 1} contains "#", which would cut the value short`);
+          }
+        }
         if (!KNOWN_KEYS.has(key)) {
           warnings.push({
             kind: "unknown-key",
@@ -412,6 +423,7 @@ export function parseSwarm(body: string): ParsedSwarm | null {
           });
         } else {
           if (seen.has(canonical)) {
+            if (canonical === "repo") repoDuplicateWarned = true;
             warnings.push({
               kind: "duplicate-key",
               detail: canonical === "repo"
@@ -425,6 +437,12 @@ export function parseSwarm(body: string): ParsedSwarm | null {
         bind(bound, key, value, warnings, i + 1);
         continue;
       }
+      if (EMPTY_REPO_LINE.test(trimmed)) {
+        // Not a key to the executor (its value is empty), so it ends the key run like any prose. It
+        // is still an explicit repo declaration, and an empty one is never "no repo".
+        repoDeclarations += 1;
+        repoProblems.push(`line ${i + 1} declares an empty repo`);
+      }
       inKeys = false; // the first line that is not key-shaped ends the key run, permanently
     }
 
@@ -432,18 +450,32 @@ export function parseSwarm(body: string): ParsedSwarm | null {
   }
 
   const get = (key: string): string => bound.get(key) ?? "";
-  const repo = get("repo");
+  let repo = get("repo");
   const harness = get("harness");
   const router = get("router");
 
-  if (bound.has("repo") && !ORCHID_REPOSITORY.test(repo)) {
+  // Anything other than exactly one well-formed `owner/name` warns and resolves to no repository,
+  // never to a different valid one.
+  if (repoDeclarations > 1 && !repoDuplicateWarned) {
+    warnings.push({
+      kind: "duplicate-key",
+      detail:
+        `repo is declared ${repoDeclarations} times; the executor refuses the launch ` +
+        "(source-repo-invalid) rather than pick one",
+    });
+  }
+  if (repoProblems.length === 0 && bound.has("repo") && !ORCHID_REPOSITORY.test(repo)) {
+    repoProblems.push(`${JSON.stringify(repo)} is not owner/name`);
+  }
+  if (repoProblems.length > 0) {
     warnings.push({
       kind: "invalid-repo",
       detail:
-        `repo ${JSON.stringify(repo)} is not owner/name; the executor refuses the launch ` +
-        "(source-repo-invalid) rather than choose a repository",
+        `repo: ${repoProblems.join("; ")}; the executor refuses the launch (source-repo-invalid) ` +
+        "rather than choose a repository",
     });
   }
+  if (repoDeclarations > 1 || repoProblems.length > 0) repo = ""; // guard:repo-exactly-one
 
   if (harness === "") {
     warnings.push({
@@ -590,6 +622,9 @@ const REPOSITORY = /^([A-Za-z0-9](?:-?[A-Za-z0-9])*)\/([A-Za-z0-9._-]{1,100})$/;
  * `source-repo-invalid`, which is what `parseSwarm` reports; the writer holds the stricter shape.
  */
 const ORCHID_REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
+/** A `repo:` line with nothing after the colon, on a line trimmed Go's way; `\s` is RE2's. */
+const EMPTY_REPO_LINE = /^repo[\t\n\f\r ]*:$/;
 
 /** Whether `value` is an `owner/name` this package will write as a `repo` key. */
 export function isRepository(value: string): boolean {

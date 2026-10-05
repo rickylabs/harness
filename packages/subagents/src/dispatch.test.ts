@@ -96,6 +96,67 @@ describe("the source repository key", () => {
     assert.match(twice.warnings[0]?.detail ?? "", /refuses the launch \(source-repo-invalid\)/);
   });
 
+  const keys = "/swarm\nharness: codex\nmodel: gpt-6-sol\neffort: high\n";
+  const withRepo = (lines: string) => parsed(`${keys}${lines}\n\nGo.`);
+
+  it("never turns a value cut at # into a different valid repo", () => {
+    for (const line of ["repo: a/b #x", "repo: a/b#suffix", "repo: rickylabs/netscript # the source", "repo: #a/b"]) {
+      const result = withRepo(line);
+      assert.deepEqual(result.warnings.map((w) => w.kind), ["invalid-repo"], line);
+      assert.match(result.warnings[0]?.detail ?? "", /contains "#"/, line);
+      assert.equal(result.overrides.repo, "", line);
+      assert.ok(!("repo" in toDispatchRequest(result)), line);
+    }
+  });
+
+  it("reports an explicit empty repo instead of reading it as no repo", () => {
+    for (const line of ["repo:", "repo:   ", "repo :"]) {
+      const result = withRepo(line);
+      assert.deepEqual(result.warnings.map((w) => w.kind), ["invalid-repo"], JSON.stringify(line));
+      assert.match(result.warnings[0]?.detail ?? "", /empty repo/);
+      assert.equal(result.overrides.repo, "");
+      assert.ok(!("repo" in toDispatchRequest(result)));
+    }
+  });
+
+  it("reports an empty duplicate and resolves to no repo", () => {
+    for (const lines of ["repo: a/b\nrepo:", "repo: a/b\n\nrepo:"]) {
+      const result = withRepo(lines);
+      const kinds = result.warnings.map((w) => w.kind);
+      assert.ok(kinds.includes("duplicate-key") && kinds.includes("invalid-repo"), `${JSON.stringify(lines)}: ${kinds}`);
+      assert.equal(result.overrides.repo, "", JSON.stringify(lines));
+      assert.ok(!("repo" in toDispatchRequest(result)));
+    }
+    // An empty repo ends the key run, as in Orchid, so a later repo line is prompt text, not a key.
+    // The block still warns and still names no repository.
+    const emptyFirst = withRepo("repo:\nrepo: a/b");
+    assert.deepEqual(emptyFirst.warnings.map((w) => w.kind), ["invalid-repo"]);
+    assert.equal(emptyFirst.overrides.repo, "");
+    assert.ok(!("repo" in toDispatchRequest(emptyFirst)));
+  });
+
+  it("resolves two nonempty repos to no repo, never the last one", () => {
+    const result = withRepo("repo: a/b\nrepo: c/d");
+    assert.deepEqual(result.warnings.map((w) => w.kind), ["duplicate-key"]);
+    assert.equal(result.overrides.repo, "");
+    assert.ok(!("repo" in toDispatchRequest(result)));
+  });
+
+  it("resolves a malformed repo to no repo", () => {
+    for (const line of ["repo: a/b/c", "repo: https://github.com/a/b", "repo: a"]) {
+      const result = withRepo(line);
+      assert.deepEqual(result.warnings.map((w) => w.kind), ["invalid-repo"], line);
+      assert.equal(result.overrides.repo, "", line);
+    }
+  });
+
+  it("keeps exactly one well-formed repo, and an absent one, unchanged", () => {
+    assert.deepEqual(withRepo("repo: RickyLabs/netscript").warnings, []);
+    assert.equal(withRepo("repo: RickyLabs/netscript").overrides.repo, "RickyLabs/netscript");
+    assert.deepEqual(parsed(`${keys}\nGo.`).warnings, []);
+    assert.equal(parsed(`${keys}\nGo.`).overrides.repo, "");
+  });
+
   it("is a known key, so a repo line is not reported as dropped prose", () => {
     assert.ok(!warningKinds("/swarm\nrepo: rickylabs/netscript\nharness: codex\n\nGo.").includes("unknown-key"));
   });

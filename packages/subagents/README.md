@@ -162,9 +162,11 @@ a `.git` suffix). It carries no host, URL, branch or path, and its case is kept 
 shape is a strict subset of Orchid's `repositoryName`, so a block written here is one the executor
 accepts.
 
-`parseSwarm` reports what Orchid will do. A value outside Orchid's own `repositoryName` is
-`invalid-repo`, and a repeated `repo` is a `duplicate-key` that refuses the launch rather than
-letting the last line win; Orchid's code for both is `source-repo-invalid`. On the Orchid side the
+`parseSwarm` accepts exactly one well-formed `repo` and nothing else. A value outside Orchid's own
+`repositoryName`, a value with a `#` in it (which the shared grammar would cut short), and an empty
+`repo:` are each `invalid-repo`. A repeated `repo`, including an empty repeat, is a `duplicate-key`.
+Orchid's code for all of them is `source-repo-invalid`. In every such case the parsed `repo` is
+empty, so the block names no repository rather than a different valid one. On the Orchid side the
 key resolves to the one configured target with that repository and refuses plainly
 (`source-repo-unavailable`) when there is none, never falling back to the label. Until that Orchid
 change is deployed, Orchid consumes the line as an unknown key and keeps choosing by label.
