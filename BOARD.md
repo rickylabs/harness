@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **478/581 done · 39 running · 26 queued · 16 abandoned · 22 invisible**
+`[################----]` **478/582 done · 40 running · 26 queued · 16 abandoned · 22 invisible**
 
-_Latest board activity: 2026-10-04T23:32:55Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-05T00:10:26Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (39)
+## Moving now (40)
 
 Something could be acting on these right now.
 
@@ -51,6 +51,7 @@ Something could be acting on these right now.
 | [#593 [rickylabs/netscript#2009] docs/cli: renaming or moving a route is undocumented, unsupported by CLI verbs, and misdocumented as type-safe](https://github.com/rickylabs/harness/issues/593) | `plan` | — |
 | [#594 [rickylabs/netscript#2063] fix(ai/anthropic): Claude 5.5 IDs rejected locally on 0.0.7; qualify forward-compatible model support](https://github.com/rickylabs/harness/issues/594) | `plan` | — |
 | [#595 [rickylabs/netscript#2009] docs/cli: renaming or moving a route is undocumented, unsupported by CLI verbs, and misdocumented as type-safe](https://github.com/rickylabs/harness/issues/595) | `plan` | — |
+| [#596 [rickylabs/netscript#2063] fix(ai/anthropic): Claude 5.5 IDs rejected locally on 0.0.7; qualify forward-compatible model support](https://github.com/rickylabs/harness/issues/596) | `plan` | — |
 
 ## Not on the board (9)
 
@@ -153,7 +154,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[##########--]` 277/332 done · 23 running · 3 queued · 10 abandoned · 19 invisible
+`[#########---]` 277/333 done · 24 running · 3 queued · 10 abandoned · 19 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -163,7 +164,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 240/291 done · 22 running · 2 queued · 10 abandoned · 17 invisible | — |
+| _(no epic)_ | `[#########---]` 240/292 done · 23 running · 2 queued · 10 abandoned · 17 invisible | — |
 
 ## Waiting to start
 
@@ -207,7 +208,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  478/581 done · 39 running · 26 queued · 16 abandoned · 22 invisible
+# rickylabs/harness  [################----]  478/582 done · 40 running · 26 queued · 16 abandoned · 22 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -495,7 +496,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  277/332 done · 23 running · 3 queued · 10 abandoned · 19 invisible
+## (no milestone)  [################----]  277/333 done · 24 running · 3 queued · 10 abandoned · 19 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -848,6 +849,7 @@ Open, and carrying no `status:` label — real work no column can see.
     plan                 #593 [rickylabs/netscript#2009] docs/cli: renaming or moving a route is undocumented, unsupported by CLI verbs, and misdocumented as type-safe
     plan                 #594 [rickylabs/netscript#2063] fix(ai/anthropic): Claude 5.5 IDs rejected locally on 0.0.7; qualify forward-compatible model support
     plan                 #595 [rickylabs/netscript#2009] docs/cli: renaming or moving a route is undocumented, unsupported by CLI verbs, and misdocumented as type-safe
+    plan                 #596 [rickylabs/netscript#2063] fix(ai/anthropic): Claude 5.5 IDs rejected locally on 0.0.7; qualify forward-compatible model support
 ```
 
 </details>
