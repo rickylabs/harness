@@ -1,0 +1,95 @@
+{
+  "retrievedAt": "2026-10-05T05:33:35.786888+00:00",
+  "previousGoalTurnClassification": "progress: usage source repair pushed; independent evaluation and complete partition verification; executable released-consumer acceptance prepared",
+  "blockingCondition": "Fix remains in an unmerged source PR, outside a proven coordinated release candidate; exact stable publication and published-fixed consumer qualification are unachieved.",
+  "sameConditionConsecutiveGoalTurns": 3,
+  "turns": [
+    "original source delivery: stable publication and released-consumer proof missing",
+    "continuation usage repair: source progress, same release dependency retained",
+    "current authoritative audit: source PR still open, registry latest0.0.7, only September target canary"
+  ],
+  "registry": {
+    "retrievedAt": "2026-10-05T05:33:34.364Z",
+    "url": "https://jsr.io/@netscript/ai/meta.json",
+    "status": 200,
+    "latest": "0.0.7",
+    "stableVersions": {
+      "0.0.3": {
+        "createdAt": "2026-08-02T12:33:26.270388Z"
+      },
+      "0.0.7": {
+        "createdAt": "2026-09-03T15:52:32.753082Z"
+      },
+      "0.0.2": {
+        "createdAt": "2026-08-01T03:07:10.866887Z"
+      },
+      "0.0.5": {
+        "createdAt": "2026-08-09T23:42:03.418496Z"
+      },
+      "0.0.4": {
+        "createdAt": "2026-08-03T19:04:13.151172Z"
+      },
+      "0.0.6": {
+        "createdAt": "2026-08-13T04:21:58.951095Z"
+      }
+    },
+    "targetCanaryVersions": {
+      "0.0.8-canary.1": {
+        "createdAt": "2026-09-08T05:46:45.055424Z"
+      }
+    }
+  },
+  "pullRequests": [
+    {
+      "headRefOid": "c3d68791f48fcc570decde8146456c32bd218ab7",
+      "isDraft": false,
+      "mergeCommit": null,
+      "mergedAt": null,
+      "state": "OPEN",
+      "url": "https://github.com/rickylabs/netscript/pull/2078",
+      "repository": "rickylabs/netscript",
+      "number": 2078
+    },
+    {
+      "headRefOid": "2dc7184a27afbfee1dccc723841386ab7e0c1491",
+      "isDraft": false,
+      "mergeCommit": null,
+      "mergedAt": null,
+      "state": "OPEN",
+      "url": "https://github.com/rickylabs/harness/pull/602",
+      "repository": "rickylabs/harness",
+      "number": 602
+    }
+  ],
+  "localCliE2eEnvironment": {
+    "aspireAvailable": true,
+    "dockerDaemonAccessible": false,
+    "dockerInfoExitCode": 1
+  },
+  "remainingRequiredAcceptance": [
+    "Merge source fix into coordinated release candidate",
+    "Run CLI E2E and readiness on capable host",
+    "Establish same-content coordinated canary publish and artifact-pinned production E2E pair",
+    "Publish exact stable coordinated package version through OIDC",
+    "Run committed public-export consumer qualifier against that published stable fix and record exact adoption pin"
+  ],
+  "skillAuthority": {
+    "path": ".agents/skills/netscript-release/SKILL.md",
+    "url": "https://github.com/rickylabs/netscript/blob/9e375a1765234d179c4945480d68e69ac2f6c906/.agents/skills/netscript-release/SKILL.md#L33",
+    "requirements": [
+      "Do not publish from a local machine or hand-run the underlying publish scripts.",
+      "No release:publish without a green canary pair for the same content",
+      "Canaries are coordinated release-candidate gates, not per-slice checks."
+    ]
+  },
+  "assignmentConstraints": [
+    "No remote CI polling or merge waiting",
+    "No independent fanout for a dependent release step",
+    "Do not commit .divybot-goal.md"
+  ],
+  "remoteCIPolled": false,
+  "liveWaitHandle": null,
+  "independentImplementationWorkRemaining": false,
+  "upstreamObjectiveComplete": false,
+  "blockedAuditPassed": true
+}
