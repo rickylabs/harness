@@ -18,7 +18,7 @@ import { createServer } from 'node:http';
 const kind=${JSON.stringify(kind)}, behavior=${JSON.stringify(behavior)}, data=JSON.parse(readFileSync(${JSON.stringify(dataPath)},'utf8'));
 const log=${JSON.stringify(join(cwd, "commands.jsonl"))}, args=process.argv.slice(2);
 const note=value=>appendFileSync(log,JSON.stringify(value)+'\\n'); note({args,pid:process.pid,cwd:process.cwd()});
-if(args[0]==='--version'&&kind==='agy'&&behavior.startsWith('agy-')){console.log('1.2.16');process.exit(0);}
+if(args[0]==='--version'&&kind==='agy'&&behavior.startsWith('agy-')){console.log(behavior==='agy-v17'?'1.2.17':behavior==='agy-v18'?'1.2.18':'1.2.16');process.exit(0);}
 if(args[0]==='--version'&&kind==='claude'&&behavior==='known-serializer'){console.log('2.1.288');process.exit(0);}
 if(kind==='agy'&&args.includes('--print')){
  const name=args[args.indexOf('--print')+1].slice(1), id=args[args.indexOf('--model')+1];
@@ -338,6 +338,19 @@ test("native facts: AGY native authentication gate, effective config and exact m
  const reads=commands.filter(c=>c.args?.includes('--print'));
  assert.equal(reads.length,data.agyModels.length+1);
  for(const c of reads){assert.ok(['/config','/model'].includes(c.args[c.args.indexOf('--print')+1]));assert.equal(c.args[c.args.indexOf('--output-format')+1],'json');assert.equal(c.cwd,cwd);}
+}));
+test("native facts: AGY 1.2.17 receives the same verified metadata reports; an unverified version receives none",async()=>fixture(async(cwd,binary,data)=>{
+ const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-v17"))),o=wire(s).launchers.agy;
+ assert.equal(o.version,"1.2.17");assert.equal(o.authenticated,"yes");assert.equal(o.authenticationSource,"agy.auth-gate");
+ assert.deepEqual(o.provider,{id:"google",source:"agy.command.config",scope:"cli"});
+ assert.deepEqual(o.models.map((m:any)=>m.efforts),data.agyModels.map((m:any)=>m.nativeEffort?[m.nativeEffort]:[]));
+ assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
+ const before=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").length;
+ const u=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-v18"))),ou=wire(u).launchers.agy;
+ assert.equal(ou.version,"1.2.18");assert.equal(ou.authenticated,"unknown");assert.equal(ou.provider.id,null);
+ for(const m of ou.models){assert.equal(m.efforts,null);}
+ const after=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").slice(before).map(line=>JSON.parse(line));
+ assert.ok(!after.some((c:any)=>c.args?.includes('--print')),"an unverified version never receives a print request");
 }));
 test("native facts: AGY custom, GCP and unproven provider configurations stay unknown",async()=>fixture(async(cwd,binary)=>{
  for(const behavior of ['agy-custom','agy-gcp','agy-unknown-provider','agy-provider-type','agy-config-failed']){

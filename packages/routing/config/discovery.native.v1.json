@@ -38,7 +38,8 @@
   },
   "agy": {
     "verifiedVersions": [
-      "1.2.16"
+      "1.2.16",
+      "1.2.17"
     ],
     "providerBindings": {
       "": "google",
@@ -48,6 +49,6 @@
       "https://www.agy.dev/docs/cli/install/",
       "https://www.agy.dev/docs/cli/headless/"
     ],
-    "verification": "Native 1.2.16 printmode.run authenticates before built-in metadata reports; effective empty provider is the default Google account transport, gemini is the explicit Google API-key transport. Custom models, GCP and custom endpoints are not established by this binding."
+    "verification": "Native 1.2.16 printmode.run authenticates before built-in metadata reports; 1.2.17 returns the identical /config and exact-ID /model JSON envelopes (SUCCESS, empty conversation_id, zero turns, all usage counters zero) and exits 0 once stdin is closed; effective empty provider is the default Google account transport, gemini is the explicit Google API-key transport. Custom models, GCP and custom endpoints are not established by this binding."
   }
 }
