@@ -510,7 +510,8 @@ it("keeps a block through missing native identity, verified root activity, scan 
       assert.ok(!JSON.stringify(full).includes(rootId));
       assert.ok(!JSON.stringify(full).includes("PRIVATE-"));
     }
-    await writeFile(join(record, "dispatch.json"), JSON.stringify({ ...dispatch, observedAt: "2026-09-25T21:24:00.000Z" }));
+    // Past the running cap with no end: the scan bound still keeps the block.
+    await writeFile(join(record, "dispatch.json"), JSON.stringify({ ...dispatch, observedAt: "2026-09-19T21:24:00.000Z" }));
     assertPartial(await collectIssueAgentTree(options), "scan_limit");
     await writeFile(join(record, "dispatch.json"), JSON.stringify(dispatch));
     const big = await open(rollout, "w");
