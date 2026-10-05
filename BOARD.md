@@ -4,7 +4,7 @@
 
 `[################----]` **482/594 done · 47 running · 26 queued · 16 abandoned · 23 invisible**
 
-_Latest board activity: 2026-10-05T21:12:54Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-05T21:28:45Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (47)
 
@@ -77,13 +77,14 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#582 [rc-proof] Codex Luna phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/582) | — | — |
 | [PR609 fix(telemetry): find the dispatched Codex root by its rollout name; bounded descendants are partial, never refused](https://github.com/rickylabs/harness/pull/609) | — | — |
 
-## Anomalies (49)
+## Anomalies (50)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
 **`closed-but-unshipped`**
 
 - **#607** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#608** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
