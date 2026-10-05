@@ -873,6 +873,20 @@ For one issue, add `--issue owner/repo#number` to `--json` or `--watch`. The com
 that issue's dispatches and returns exit 0 when its tree is complete, even if unrelated old
 issues are incomplete; an absent or incomplete requested issue returns exit 3. The unscoped
 cockpit feed still reports every issue and its aggregate completeness.
+A dispatched Codex root is found by its rollout name, which carries the session id, and confirmed
+by its own head; no other session is read to find it, however many share its window. Its
+descendants are read from the heads of the newest 128 rollouts created no earlier than the root
+(less a two-hour margin for a writer's clock set back), and linked through their parent ids.
+Every bound stays explicit: 4096 rollout names per issue scan (past it the root may be unseen and
+the issue is `scan_limit`), 128 descendant heads of at most 64 KiB, the frame byte budget, and the
+scan limit on transcripts kept, parents before children. A bound reached on descendants never
+refuses the issue: the root and the tree read are exact, and the tree is partial with a named
+reason (`descendant_heads_bound`, `descendant_heads_budget`, `descendant_head_unreadable`,
+`selected_files_bound`). With `--partial-trees` such an issue is published as `complete: false`,
+reason `scan_limit`, and keeps the agents it read (contract 0.37). Without it the issue is
+`scan_limit` with no agents, which every earlier reader accepts: pass the flag only once every
+consumer decodes with contract 0.37 or later, since an older reader rejects a whole snapshot that
+holds such a row.
 For the host-scoped capacity row, set `HARNESS_TELEMETRY_PLACEMENT_HOST` to this machine's
 operator-configured short dispatch placement name. If it is unset, the row reports
 `host_identity_unset`; a different placement host reports `binding_invalid`. The reader

@@ -638,6 +638,18 @@ GPU never becomes a zero reading. Version 0.7.0 adds optional per-card VRAM read
 sum must equal the aggregate. The decoder accepts 0.5.x observations without the fourth row
 and normalizes it to unavailable. Version 0.6.0 was published from its tagged merge.
 
+## Bounded issue trees in 0.37.0
+
+An issue row may now be `complete: false` with reason `scan_limit` and still carry dispatches: the
+closed, verified tree a producer read from the dispatched roots before a bound on descendants. Its
+agents are validated exactly like a complete row's, and the snapshot is never complete around it.
+Every other incomplete reason still carries no dispatches, and an incomplete row with no
+dispatches decodes as before. Schema and protocol remain 1.
+
+A 0.36 or older reader rejects a whole snapshot that holds a bounded row. Telemetry emits one only
+under `issue-agents --partial-trees`, so a consumer bumps this package first (or with the same
+change) and passes the flag after; without it a bounded issue is `scan_limit` with no agents.
+
 ## Cost source compatibility in 0.36.0
 
 The strict observation and issue-tree readers accept canonical `harness-telemetry.*` cost
