@@ -64,6 +64,7 @@ export {
   PROMPT_GUARD,
   ROUTERS,
   TIMER_CEILING_MS,
+  isRepository,
   parseGoDuration,
   parseSwarm,
   renderSwarm,

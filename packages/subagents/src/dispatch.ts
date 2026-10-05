@@ -92,6 +92,14 @@ export type Router = string;
  * `validateDispatch` rejects a request that omits either.
  */
 export interface DispatchRequest {
+  /**
+   * The source repository the agent works in, as `owner/name`.
+   *
+   * Without it the executor picks the work repository from the inbox issue's target label alone,
+   * so a binding filed in one inbox for another repository's issue runs in the wrong clone.
+   * Absent keeps that label-chosen target. See `isRepository`.
+   */
+  readonly repo?: string;
   readonly harness: Harness;
   /** Orchid matrix workload tier, when this request names a resolved workload route. */
   readonly tier?: string;
@@ -126,6 +134,8 @@ const FIELD_ORDER = [
   ["profile", (r: DispatchRequest) => r.profile],
   ["timeout", (r: DispatchRequest) => r.timeout],
   ["router", (r: DispatchRequest) => r.router],
+  // Last, so every block without a source repository renders byte-identical to before it existed.
+  ["repo", (r: DispatchRequest) => r.repo],
 ] as const;
 
 /**
@@ -177,7 +187,10 @@ export function renderSwarm(request: DispatchRequest): string {
   // is a key line to Go and prose to a JavaScript regex, and that gap is precisely how a prompt got
   // past this guard and replaced the matrix-selected model at launch.
   const firstLine = goTrimSpace(goSplitLines(prompt)[0] ?? "");
-  const guarded = goKeyValue(firstLine) !== null ? `${PROMPT_GUARD}\n${prompt}` : prompt;
+  // An empty `repo:` heading is not a key to Orchid, but `parseSwarm` counts it as a repo
+  // declaration, so it would clear the request's repo. Guard it like a key line.
+  const keyShaped = goKeyValue(firstLine) !== null || EMPTY_REPO_LINE.test(firstLine); // guard:empty-repo-prompt
+  const guarded = keyShaped ? `${PROMPT_GUARD}\n${prompt}` : prompt;
 
   return `${lines.join("\n")}\n\n${guarded}\n`;
 }
@@ -189,6 +202,7 @@ const ALIASES: Readonly<Record<string, string>> = { agent: "harness", provider: 
 
 /** Keys divybot binds. Anything else is consumed and dropped. */
 const KNOWN_KEYS: ReadonlySet<string> = new Set([
+  "repo",
   "harness",
   "agent",
   "tier",
@@ -206,6 +220,7 @@ const KNOWN_KEYS: ReadonlySet<string> = new Set([
 export interface SwarmWarning {
   readonly kind:
     | "unknown-harness"
+    | "invalid-repo"
     | "unknown-router"
     | "duplicate-key"
     | "absorbed-prompt-line"
@@ -225,6 +240,7 @@ export interface SwarmWarning {
  * difference is recorded.
  */
 export interface SwarmOverrides {
+  readonly repo: string;
   readonly harness: string;
   readonly tier: string;
   readonly role: string;
@@ -349,6 +365,11 @@ export function parseSwarm(body: string): ParsedSwarm | null {
   let inKeys = true;
   let sawBlank = false;
   let truncated = false;
+  // Every `repo` declaration in key position, counted from the raw line. The shared grammar cuts a
+  // value at `#` and does not match an empty value at all, so neither can be judged from `bound`.
+  let repoDeclarations = 0;
+  let repoDuplicateWarned = false;
+  const repoProblems: string[] = [];
 
   for (let i = start + 1; i < lines.length; i += 1) {
     const raw = lines[i] ?? "";
@@ -392,6 +413,12 @@ export function parseSwarm(body: string): ParsedSwarm | null {
           });
         }
         const canonical = ALIASES[key] ?? key;
+        if (key === "repo") {
+          repoDeclarations += 1;
+          if (trimmed.slice(trimmed.indexOf(":") + 1).includes("#")) {
+            repoProblems.push(`line ${i + 1} contains "#", which would cut the value short`);
+          }
+        }
         if (!KNOWN_KEYS.has(key)) {
           warnings.push({
             kind: "unknown-key",
@@ -399,15 +426,25 @@ export function parseSwarm(body: string): ParsedSwarm | null {
           });
         } else {
           if (seen.has(canonical)) {
+            if (canonical === "repo") repoDuplicateWarned = true;
             warnings.push({
               kind: "duplicate-key",
-              detail: `${canonical} is set more than once; line ${i + 1} wins (${JSON.stringify(value)})`,
+              detail: canonical === "repo"
+                ? `repo is set more than once (line ${i + 1}); the executor refuses the launch ` +
+                  "(source-repo-invalid) rather than pick one"
+                : `${canonical} is set more than once; line ${i + 1} wins (${JSON.stringify(value)})`,
             });
           }
           seen.add(canonical);
         }
         bind(bound, key, value, warnings, i + 1);
         continue;
+      }
+      if (EMPTY_REPO_LINE.test(trimmed)) {
+        // Not a key to the executor (its value is empty), so it ends the key run like any prose. It
+        // is still an explicit repo declaration, and an empty one is never "no repo".
+        repoDeclarations += 1;
+        repoProblems.push(`line ${i + 1} declares an empty repo`);
       }
       inKeys = false; // the first line that is not key-shaped ends the key run, permanently
     }
@@ -416,8 +453,32 @@ export function parseSwarm(body: string): ParsedSwarm | null {
   }
 
   const get = (key: string): string => bound.get(key) ?? "";
+  let repo = get("repo");
   const harness = get("harness");
   const router = get("router");
+
+  // Anything other than exactly one well-formed `owner/name` warns and resolves to no repository,
+  // never to a different valid one.
+  if (repoDeclarations > 1 && !repoDuplicateWarned) {
+    warnings.push({
+      kind: "duplicate-key",
+      detail:
+        `repo is declared ${repoDeclarations} times; the executor refuses the launch ` +
+        "(source-repo-invalid) rather than pick one",
+    });
+  }
+  if (repoProblems.length === 0 && bound.has("repo") && !ORCHID_REPOSITORY.test(repo)) {
+    repoProblems.push(`${JSON.stringify(repo)} is not owner/name`);
+  }
+  if (repoProblems.length > 0) {
+    warnings.push({
+      kind: "invalid-repo",
+      detail:
+        `repo: ${repoProblems.join("; ")}; the executor refuses the launch (source-repo-invalid) ` +
+        "rather than choose a repository",
+    });
+  }
+  if (repoDeclarations > 1 || repoProblems.length > 0) repo = ""; // guard:repo-exactly-one
 
   if (harness === "") {
     warnings.push({
@@ -435,6 +496,7 @@ export function parseSwarm(body: string): ParsedSwarm | null {
 
 
   const overrides: SwarmOverrides = {
+    repo,
     harness,
     tier: get("tier"),
     role: get("role"),
@@ -464,6 +526,9 @@ function bind(
   line: number,
 ): void {
   switch (key) {
+    case "repo":
+      bound.set("repo", value); // case kept: owner and name are case-insensitive on GitHub
+      return;
     case "harness":
     case "agent":
       bound.set("harness", value.toLowerCase());
@@ -519,6 +584,7 @@ export function toDispatchRequest(parsed: ParsedSwarm): DispatchRequest {
   const o = parsed.overrides;
   const some = (value: string): string | undefined => (value === "" ? undefined : value);
   return {
+    ...(some(o.repo) !== undefined ? { repo: o.repo } : {}),
     harness: parsed.executes,
     ...(some(o.tier) !== undefined ? { tier: o.tier } : {}),
     ...(some(o.role) !== undefined ? { role: o.role } : {}),
@@ -542,6 +608,34 @@ function formatGoDuration(ns: number): string {
 }
 
 const TOKEN_BUDGET = /^\d+(?:\.\d+)?[kKmM]?$/;
+
+/**
+ * A GitHub repository, `owner/name`, and nothing else.
+ *
+ * The owner is a GitHub login: letters, digits and single inner hyphens, at most 39. The name is
+ * letters, digits, `.`, `_` and `-`, at most 100, and is never `.`, `..` or a `.git` path. Both
+ * sides are a strict subset of Orchid's `repositoryName`, so a block this package writes is one the
+ * executor accepts. No URL, no host, no branch and no path: the key names a repository, never a
+ * place to fetch it from.
+ */
+const REPOSITORY = /^([A-Za-z0-9](?:-?[A-Za-z0-9])*)\/([A-Za-z0-9._-]{1,100})$/;
+
+/**
+ * Orchid's own `repositoryName`. A parsed `repo` value outside it is refused by the executor as
+ * `source-repo-invalid`, which is what `parseSwarm` reports; the writer holds the stricter shape.
+ */
+const ORCHID_REPOSITORY = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
+/** A `repo:` line with nothing after the colon, on a line trimmed Go's way; `\s` is RE2's. */
+const EMPTY_REPO_LINE = /^repo[\t\n\f\r ]*:$/;
+
+/** Whether `value` is an `owner/name` this package will write as a `repo` key. */
+export function isRepository(value: string): boolean {
+  const match = REPOSITORY.exec(value);
+  if (match === null) return false;
+  const [, owner = "", name = ""] = match;
+  return owner.length <= 39 && name !== "." && name !== ".." && !name.toLowerCase().endsWith(".git");
+}
 
 /** Problems that would make the emitted block mean something other than the request. */
 function encodingProblems(request: DispatchRequest): readonly string[] {
@@ -580,6 +674,10 @@ function encodingProblems(request: DispatchRequest): readonly string[] {
     if (goTrimSpace(value) !== value) {
       problems.push(`${key} has leading or trailing whitespace, which the executor strips`);
     }
+  }
+
+  if (request.repo !== undefined && !isRepository(request.repo)) {
+    problems.push(`repo ${JSON.stringify(request.repo)} is not owner/name`);
   }
 
   // The executor lowercases these three. Emitting a capital means the record and the run disagree.

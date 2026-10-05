@@ -56,6 +56,7 @@ interface Case {
 }
 
 const EMPTY: SwarmOverrides = {
+  repo: "",
   harness: "",
   tier: "",
   role: "",
@@ -69,6 +70,22 @@ const EMPTY: SwarmOverrides = {
 };
 
 const CASES: readonly Case[] = [
+  {
+    // Pinned to the Orchid change that binds `repo` (the wrong-repo workspace of #600). Before it,
+    // Go consumed the line as an unknown key, so the prompt was the same.
+    what: "the source repository is bound verbatim, case kept, and leaves the prompt alone",
+    rule: "(K)",
+    body: "/swarm\nrepo: RickyLabs/netscript\nharness: codex\nmodel: gpt-6-sol\neffort: high\n\nFix #2063.",
+    overrides: {
+      ...EMPTY,
+      repo: "RickyLabs/netscript",
+      harness: "codex",
+      model: "gpt-6-sol",
+      effort: "high",
+      prompt: "Fix #2063.",
+    },
+    executes: "codex",
+  },
   {
     what: "Orchid binds workload tier and normalizes the role's hyphen spelling",
     rule: "(K)",

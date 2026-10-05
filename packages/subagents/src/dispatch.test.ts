@@ -33,6 +33,152 @@ function parsed(text: string) {
 const warningKinds = (text: string): readonly string[] =>
   parsed(text).warnings.map((w) => w.kind);
 
+describe("the source repository key", () => {
+  const sourced: DispatchRequest = { ...full, repo: "rickylabs/netscript" };
+
+  it("is written after every other key and round-trips exactly", () => {
+    const wire = renderSwarm(sourced);
+    assert.ok(wire.startsWith(renderSwarm(full).split("\n\n")[0] + "\nrepo: rickylabs/netscript\n\n"));
+    assert.deepEqual(parsed(wire).warnings, []);
+    assert.equal(parsed(wire).overrides.repo, "rickylabs/netscript");
+    assert.deepEqual(toDispatchRequest(parsed(wire)), sourced);
+    assert.equal(renderSwarm(toDispatchRequest(parsed(wire))), wire);
+    assert.deepEqual(validateDispatch(sourced), []);
+  });
+
+  it("sits after the keys and before a guarded prompt", () => {
+    const guarded: DispatchRequest = { ...sourced, prompt: "model: not-a-key\nReview it." };
+    const wire = renderSwarm(guarded);
+    assert.ok(wire.includes(`router: openai\nrepo: rickylabs/netscript\n\n${PROMPT_GUARD}\nmodel: not-a-key`));
+    assert.equal(parsed(wire).overrides.model, "gpt-5.6-sol");
+    assert.deepEqual(toDispatchRequest(parsed(wire)), { ...guarded, prompt: `${PROMPT_GUARD}\nmodel: not-a-key\nReview it.` });
+  });
+
+  it("is optional, and its absence changes nothing on the wire", () => {
+    assert.ok(!renderSwarm(full).includes("repo:"));
+    assert.equal(parsed(renderSwarm(full)).overrides.repo, "");
+    assert.ok(!("repo" in toDispatchRequest(parsed(renderSwarm(full)))));
+  });
+
+  it("accepts real owner/name shapes, case kept", () => {
+    for (const repo of ["rickylabs/harness", "RickyLabs/atelier-cockpit", "a/b", "o-w-n/x.y_z-1", `${"a".repeat(39)}/${"b".repeat(100)}`]) {
+      assert.deepEqual(validateDispatch({ ...full, repo }), [], repo);
+      assert.equal(toDispatchRequest(parsed(renderSwarm({ ...full, repo }))).repo, repo);
+    }
+  });
+
+  it("refuses anything that is not exactly owner/name", () => {
+    for (const repo of [
+      "", "netscript", "rickylabs/", "/netscript", "rickylabs/netscript/extra", "rickylabs//netscript",
+      "https://github.com/rickylabs/netscript", "github.com/rickylabs/netscript", "rickylabs/netscript.git",
+      "rickylabs/..", "rickylabs/.", "-rickylabs/x", "rickylabs-/x", "ricky--labs/x", "ricky_labs/x",
+      "rickylabs/net script", " rickylabs/netscript", "rickylabs/netscript ", "rickylabs/net#script",
+      "rickylabs/net\rscript", `${"a".repeat(40)}/x`, `x/${"b".repeat(101)}`, "rickylabs/netscript@main",
+    ]) {
+      assert.ok(validateDispatch({ ...full, repo }).some((problem) => problem.includes("repo")), JSON.stringify(repo));
+      assert.throws(() => renderSwarm({ ...full, repo }), DispatchEncodingError, JSON.stringify(repo));
+    }
+  });
+
+  it("warns when a block names a repository the executor will refuse", () => {
+    assert.deepEqual(warningKinds("/swarm\nrepo: netscript\nharness: codex\n\nGo."), ["invalid-repo"]);
+    assert.deepEqual(warningKinds("/swarm\nrepo: a/b/c\nharness: codex\n\nGo."), ["invalid-repo"]);
+    assert.deepEqual(warningKinds("/swarm\nrepo: #x\nharness: codex\n\nGo."), ["invalid-repo"]);
+    assert.deepEqual(warningKinds("/swarm\nrepo: https://github.com/a/b\nharness: codex\n\nGo."), ["invalid-repo"]);
+    // Orchid's own pattern accepts this, so the reader does not claim a refusal; the writer still will.
+    assert.deepEqual(warningKinds("/swarm\nrepo: ricky_labs/x\nharness: codex\n\nGo."), []);
+    assert.deepEqual(warningKinds("/swarm\nrepo: a/b.git\nharness: codex\n\nGo."), []);
+  });
+
+  it("reports a second repo line as a refused launch, not a silent overwrite", () => {
+    const twice = parsed("/swarm\nrepo: rickylabs/harness\nrepo: rickylabs/netscript\nharness: codex\n\nGo.");
+    assert.deepEqual(twice.warnings.map((w) => w.kind), ["duplicate-key"]);
+    assert.match(twice.warnings[0]?.detail ?? "", /refuses the launch \(source-repo-invalid\)/);
+  });
+
+  const keys = "/swarm\nharness: codex\nmodel: gpt-6-sol\neffort: high\n";
+  const withRepo = (lines: string) => parsed(`${keys}${lines}\n\nGo.`);
+
+  it("never turns a value cut at # into a different valid repo", () => {
+    for (const line of ["repo: a/b #x", "repo: a/b#suffix", "repo: rickylabs/netscript # the source", "repo: #a/b"]) {
+      const result = withRepo(line);
+      assert.deepEqual(result.warnings.map((w) => w.kind), ["invalid-repo"], line);
+      assert.match(result.warnings[0]?.detail ?? "", /contains "#"/, line);
+      assert.equal(result.overrides.repo, "", line);
+      assert.ok(!("repo" in toDispatchRequest(result)), line);
+    }
+  });
+
+  it("reports an explicit empty repo instead of reading it as no repo", () => {
+    for (const line of ["repo:", "repo:   ", "repo :"]) {
+      const result = withRepo(line);
+      assert.deepEqual(result.warnings.map((w) => w.kind), ["invalid-repo"], JSON.stringify(line));
+      assert.match(result.warnings[0]?.detail ?? "", /empty repo/);
+      assert.equal(result.overrides.repo, "");
+      assert.ok(!("repo" in toDispatchRequest(result)));
+    }
+  });
+
+  it("reports an empty duplicate and resolves to no repo", () => {
+    for (const lines of ["repo: a/b\nrepo:", "repo: a/b\n\nrepo:"]) {
+      const result = withRepo(lines);
+      const kinds = result.warnings.map((w) => w.kind);
+      assert.ok(kinds.includes("duplicate-key") && kinds.includes("invalid-repo"), `${JSON.stringify(lines)}: ${kinds}`);
+      assert.equal(result.overrides.repo, "", JSON.stringify(lines));
+      assert.ok(!("repo" in toDispatchRequest(result)));
+    }
+    // An empty repo ends the key run, as in Orchid, so a later repo line is prompt text, not a key.
+    // The block still warns and still names no repository.
+    const emptyFirst = withRepo("repo:\nrepo: a/b");
+    assert.deepEqual(emptyFirst.warnings.map((w) => w.kind), ["invalid-repo"]);
+    assert.equal(emptyFirst.overrides.repo, "");
+    assert.ok(!("repo" in toDispatchRequest(emptyFirst)));
+  });
+
+  it("resolves two nonempty repos to no repo, never the last one", () => {
+    const result = withRepo("repo: a/b\nrepo: c/d");
+    assert.deepEqual(result.warnings.map((w) => w.kind), ["duplicate-key"]);
+    assert.equal(result.overrides.repo, "");
+    assert.ok(!("repo" in toDispatchRequest(result)));
+  });
+
+  it("resolves a malformed repo to no repo", () => {
+    for (const line of ["repo: a/b/c", "repo: https://github.com/a/b", "repo: a"]) {
+      const result = withRepo(line);
+      assert.deepEqual(result.warnings.map((w) => w.kind), ["invalid-repo"], line);
+      assert.equal(result.overrides.repo, "", line);
+    }
+  });
+
+  it("keeps exactly one well-formed repo, and an absent one, unchanged", () => {
+    assert.deepEqual(withRepo("repo: RickyLabs/netscript").warnings, []);
+    assert.equal(withRepo("repo: RickyLabs/netscript").overrides.repo, "RickyLabs/netscript");
+    assert.deepEqual(parsed(`${keys}\nGo.`).warnings, []);
+    assert.equal(parsed(`${keys}\nGo.`).overrides.repo, "");
+  });
+
+  it("guards a prompt that opens with an empty repo heading, so it never clears the repo", () => {
+    for (const prompt of ["repo:\nGo.", "repo :\nGo.", "repo:   \nGo.", "repo:\r\nGo."]) {
+      for (const repo of ["a/b", undefined]) {
+        const request: DispatchRequest = {
+          harness: "codex", model: "gpt-6-sol", effort: "high", ...(repo ? { repo } : {}), prompt,
+        };
+        assert.deepEqual(validateDispatch(request), [], JSON.stringify(prompt));
+        const wire = renderSwarm(request);
+        const result = parsed(wire);
+        assert.deepEqual(result.warnings, [], `${JSON.stringify(prompt)} ${repo}`);
+        assert.equal(result.overrides.repo, repo ?? "", JSON.stringify(prompt));
+        assert.equal(toDispatchRequest(result).repo, repo, JSON.stringify(prompt));
+        assert.ok(wire.includes(`${PROMPT_GUARD}\n`), JSON.stringify(prompt));
+      }
+    }
+  });
+
+  it("is a known key, so a repo line is not reported as dropped prose", () => {
+    assert.ok(!warningKinds("/swarm\nrepo: rickylabs/netscript\nharness: codex\n\nGo.").includes("unknown-key"));
+  });
+});
+
 describe("renderSwarm", () => {
   it("round-trips the exact tier and role keys Orchid's matrix reads", () => {
     const routed: DispatchRequest = {

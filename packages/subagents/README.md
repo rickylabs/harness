@@ -142,6 +142,35 @@ is a key line to Go and prose to a JavaScript regex, which is how a prompt line 
 and replaced the matrix-selected model at launch. `dispatch.conformance.test.ts` holds that port to
 the original.
 
+## The source repository
+
+`repo: owner/name` is optional and comes last in the key block, so a block without it renders
+byte-identical to before. It names the repository the agent works in. Without it, the executor
+picks the work repository from the inbox issue's target label alone, so a binding filed in this
+inbox for another repository's issue ran in a clone of this one.
+
+    /swarm
+    harness: codex
+    model: gpt-6-sol
+    effort: high
+    repo: rickylabs/netscript
+
+The value is exactly `owner/name`: a GitHub login (letters, digits and single inner hyphens, at
+most 39), a slash, and a name of letters, digits, `.`, `_` and `-` (at most 100, never `.`, `..` or
+a `.git` suffix). It carries no host, URL, branch or path, and its case is kept as written.
+`isRepository` is the check, and `renderSwarm` and `validateDispatch` refuse anything else. That
+shape is a strict subset of Orchid's `repositoryName`, so a block written here is one the executor
+accepts.
+
+`parseSwarm` accepts exactly one well-formed `repo` and nothing else. A value outside Orchid's own
+`repositoryName`, a value with a `#` in it (which the shared grammar would cut short), and an empty
+`repo:` are each `invalid-repo`. A repeated `repo`, including an empty repeat, is a `duplicate-key`.
+Orchid's code for all of them is `source-repo-invalid`. In every such case the parsed `repo` is
+empty, so the block names no repository rather than a different valid one. On the Orchid side the
+key resolves to the one configured target with that repository and refuses plainly
+(`source-repo-unavailable`) when there is none, never falling back to the label. Until that Orchid
+change is deployed, Orchid consumes the line as an unknown key and keeps choosing by label.
+
 ## Consuming UHP
 
 Spike **S11 · #289**, over the wire contract spike **S10 · #288** established. Four modules, and the
