@@ -4,7 +4,7 @@
 
 `[################----]` **479/588 done · 45 running · 26 queued · 16 abandoned · 22 invisible**
 
-_Latest board activity: 2026-10-05T05:34:35Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-05T10:59:08Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (45)
 
@@ -74,7 +74,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#581 [rc-proof] Claude Haiku phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/581) | — | — |
 | [#582 [rc-proof] Codex Luna phone follow and steer (one attempt)](https://github.com/rickylabs/harness/issues/582) | — | — |
 
-## Anomalies (46)
+## Anomalies (47)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -135,6 +135,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#575** — open item has no status label, so it appears in no column
 - **#581** — open item has no status label, so it appears in no column
 - **#582** — open item has no status label, so it appears in no column
+- **#603** — open item has no status label, so it appears in no column
 
 ## Epics
 
