@@ -280,6 +280,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const nativeSamples = run?.tokenSamples;
   const tokenPoints = nativeSamples?.points.map(point => ({ at: time(point.at, now), usedTokens: point.usedTokens }));
   const validTokenPoints = tokenUsage.usedTokens !== null && nativeSamples !== undefined && !nativeSamples.invalid &&
+    nativeSamples.partial !== true &&
     tokenPoints !== undefined && tokenPoints.length > 0 && tokenPoints.length <= MAX_AGENT_RESOURCE_POINTS &&
     tokenPoints.every(point => point.at !== null && Number.isSafeInteger(point.usedTokens) && point.usedTokens >= 0) &&
     tokenPoints.every((point, i) => i === 0 || point.at! > tokenPoints[i - 1]!.at! &&
@@ -289,7 +290,9 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     ? { points: tokenPoints.map(point => ({ at: point.at!, usedTokens: point.usedTokens })),
         truncated: nativeSamples.truncated, source: tokenUsage.source as "codex-token-count" | "claude-usage", reason: null }
     : { points: [], truncated: false, source: "unavailable",
-        reason: nativeSamples?.invalid ? "source_incomplete" : run === undefined ? "source_not_bound" : "measurement_missing" };
+        // A history read only at its head and tail is served as incomplete, never as a full series.
+        reason: nativeSamples?.invalid || nativeSamples?.partial === true ? "source_incomplete"
+          : run === undefined ? "source_not_bound" : "measurement_missing" };
   const launchAt = root ? time(dispatch.observedAt, now) : null;
   const budgetPoints = launchAt !== null && launchBudget.tokenLimit !== null
     ? [{ at: launchAt, tokenLimit: launchBudget.tokenLimit, source: launchBudget.source },

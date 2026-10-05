@@ -153,21 +153,97 @@ async function selectCodexIssue(files: readonly Transcript[], rootMatches: (id: 
   return { selected: selected.slice(0, limit), bytesRead, limited, unreadable };
 }
 
-/** Read at most the remaining byte budget, including a sentinel byte for a growing file. */
-async function readBounded(path: string, maxBytes: number): Promise<string | null> {
+/**
+ * Read the file as it stood when it was opened: never past the size measured then, plus one
+ * sentinel byte that shows whether it grew. A file that grew keeps exactly the complete records it
+ * held at open, including a final record without its newline when that record is complete JSON on
+ * its own; bytes past the measured size are not yet seen and belong to the next read. `charge`
+ * receives every byte as it is read, usable or not, so a refusal or an error still pays for it.
+ */
+async function readBounded(path: string, maxBytes: number, charge: (bytes: number) => void): Promise<string | null> {
   const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const info = await file.stat();
     if (!info.isFile() || info.size > maxBytes) return null;
-    const bytes = Buffer.allocUnsafe(maxBytes + 1);
+    const bytes = Buffer.allocUnsafe(info.size + 1);
     let size = 0;
     while (size < bytes.length) {
       const { bytesRead } = await file.read(bytes, size, bytes.length - size, size);
+      charge(bytesRead);
       if (bytesRead === 0) break;
       size += bytesRead;
     }
-    return size > maxBytes ? null : bytes.subarray(0, size).toString("utf8");
+    if (size <= info.size) return bytes.subarray(0, size).toString("utf8");
+    const snapshot = bytes.subarray(0, info.size);
+    const lastLine = snapshot.lastIndexOf(10) + 1;
+    try {
+      // Complete at open: it stays, whatever was appended after it.
+      JSON.parse(snapshot.subarray(lastLine).toString("utf8"));
+      return snapshot.toString("utf8");
+    } catch {
+      // Still being written at open: only the records before it were seen.
+      return snapshot.subarray(0, lastLine).toString("utf8");
+    }
   } finally { await file.close(); }
+}
+
+const CODEX_WINDOW_HEAD_BYTES = 262_144;
+const CODEX_WINDOW_TAIL_BYTES = 2_097_152;
+
+/**
+ * A dispatch-matched rollout past the per-transcript read bound, as its first and last complete
+ * records. The head holds the session identity, the tail the latest state; the middle stays unread.
+ * Null when either part has no complete record. Nothing is read unless both windows and the tail's
+ * one byte of look-behind fit the budget; `charge` receives every byte read, usable or not.
+ */
+async function readHeadTail(path: string, maxBytes: number, charge: (bytes: number) => void):
+  Promise<{ readonly head: string; readonly tail: string } | null> {
+  if (maxBytes < CODEX_WINDOW_HEAD_BYTES + CODEX_WINDOW_TAIL_BYTES + 1) return null;
+  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const info = await file.stat();
+    if (!info.isFile()) return null;
+    const read = async (position: number, length: number) => {
+      const bytes = Buffer.allocUnsafe(length);
+      let size = 0;
+      while (size < length) {
+        const { bytesRead } = await file.read(bytes, size, length - size, position + size);
+        charge(bytesRead);
+        if (bytesRead === 0) break;
+        size += bytesRead;
+      }
+      return bytes.subarray(0, size);
+    };
+    // The size is fixed here: lines a growing file appends later belong to the next read.
+    const head = await read(0, Math.min(info.size, CODEX_WINDOW_HEAD_BYTES));
+    const headEnd = head.lastIndexOf(10);
+    const tailStart = Math.max(info.size - CODEX_WINDOW_TAIL_BYTES, head.length);
+    // One byte of look-behind says whether the tail starts on a record boundary: the first record
+    // begins after the first newline, so after a newline at the look-behind byte it is complete and
+    // kept, while a clipped first record is dropped unparsed.
+    const tail = await read(tailStart - 1, info.size - tailStart + 1);
+    const tailFrom = tail.indexOf(10) + 1;
+    if (headEnd < 0 || tailFrom === 0) return null;
+    // The tail runs to the end of the file: a final record without its newline is still a record.
+    return { head: head.subarray(0, headEnd + 1).toString("utf8"), tail: tail.subarray(tailFrom).toString("utf8") };
+  } finally { await file.close(); }
+}
+
+/**
+ * One run from a head and a tail window. Identity comes from the head. State comes only from the
+ * tail: a turn the head saw finish says nothing about one the unread middle may have started, so
+ * no outcome crosses the gap. The token history between the windows is unread and marked so.
+ */
+function headTailRun(head: RunRecord, tail: RunRecord): RunRecord {
+  const samples = tail.tokenSamples;
+  return {
+    ...tail,
+    startedAt: head.startedAt,
+    identity: { model: tail.identity.model ?? head.identity.model, effort: tail.identity.effort ?? head.identity.effort,
+      provider: head.identity.provider ?? tail.identity.provider, profile: head.identity.profile ?? tail.identity.profile },
+    linkedIssues: head.linkedIssues,
+    ...(samples === undefined ? {} : { tokenSamples: { ...samples, partial: true } }),
+  };
 }
 
 type Scan =
@@ -397,29 +473,50 @@ export async function backfillFromDisk(
     let empty = 0;
     let crashed = 0;
     let limited = 0;
+    let windowed = 0;
     // Degradation is counted across the whole seam rather than reported per file: one operator-
     // readable line beats five hundred, and the count is what says whether to care.
     const partial = new Map<string, { files: number; lines: number }>();
+    const asOf = (text: string) => options.notAfterMs === undefined ? text : transcriptAsOf(text, options.notAfterMs);
     for (const { path } of ordered.slice(0, limit)) {
-      let text: string;
+      let text = "";
+      let window: Awaited<ReturnType<typeof readHeadTail>> = null;
+      // Every byte read is charged as it is read, before the next read, usable or not.
+      const charge = (bytes: number) => { bytesRead += bytes; };
       try {
         if (options.maxTranscriptBytes !== undefined || options.maxTotalBytes !== undefined) {
           const budget = Math.min(options.maxTranscriptBytes ?? Infinity, (options.maxTotalBytes ?? Infinity) - bytesRead);
-          const bounded = await readBounded(path, budget);
-          if (bounded === null) { limited++; continue; }
-          text = bounded;
+          const bounded = await readBounded(path, budget, charge);
+          // An issue scan never drops a dispatch-matched rollout (a root or its native descendant)
+          // for its size: it reads the head and the tail instead.
+          if (bounded === null && expectedHeads.has(path)) {
+            // A bounded read refuses only at open, before reading anything, so the window has this
+            // file's whole allowance within what the frame has left.
+            window = await readHeadTail(path, budget, charge);
+          }
+          if (bounded === null && window === null) { limited++; continue; }
+          if (bounded !== null) text = bounded;
         } else {
           text = await readFile(path, "utf8");
+          bytesRead += Buffer.byteLength(text);
         }
       } catch {
         unreadable += 1;
         continue;
       }
-      bytesRead += Buffer.byteLength(text);
-      if (options.notAfterMs !== undefined) text = transcriptAsOf(text, options.notAfterMs);
       let parsed: ParsedTranscript<RunRecord>;
       try {
-        parsed = parse(text, path);
+        if (window !== null) {
+          windowed += 1;
+          const head = asOf(window.head);
+          // The tail keeps the session identity line, so it parses as the same thread.
+          const identity = head.slice(0, head.indexOf("\n") + 1);
+          const first = parse(head, path), last = parse(identity + asOf(window.tail), path);
+          parsed = { run: first.run === null || last.run === null ? null : headTailRun(first.run, last.run),
+            notes: [...first.notes, ...last.notes] };
+        } else {
+          parsed = parse(asOf(text), path);
+        }
       } catch {
         // A parser that throws is this package's bug, not the store's — but a bug in one seam must
         // not take the other two down with it, and `status` has to answer while it is being fixed.
@@ -443,6 +540,8 @@ export async function backfillFromDisk(
       degraded = true;
     }
     if (limited > 0) { notes.push(`${seam}: ${limited} transcript(s) exceeded the read bound`); degraded = true; }
+    // Not degraded: identity and the latest state were read; only the history between is partial.
+    if (windowed > 0) notes.push(`${seam}: ${windowed} large transcript(s) read as head and tail windows`);
     // Not degraded: the file was read completely and had no session identity in it, which is an
     // answer about the transcript rather than a gap in what this scan saw.
     if (empty > 0) notes.push(`${seam}: ${empty} transcript(s) carried no session identity`);

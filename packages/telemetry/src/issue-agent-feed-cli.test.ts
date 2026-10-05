@@ -520,3 +520,73 @@ it("keeps a block through missing native identity, verified root activity, scan 
     await rm(receipts, { recursive: true, force: true });
   }
 });
+
+it("keeps a dispatched Codex root and its child whose rollouts outgrew the transcript read bound, read by head and tail", async () => {
+  const home = await mkdtemp(join(tmpdir(), "issue-feed-"));
+  const receipts = await mkdtemp(join(tmpdir(), "issue-receipts-"));
+  try {
+    const rootId = "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c60";
+    const childId = "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c61";
+    const issueId = "fixture-601", repo = "example/project", brief = "b".repeat(64);
+    const key = createHash("sha256").update(`${issueId}\0${repo}\0${brief}`).digest("hex");
+    const record = join(receipts, key, "record");
+    await mkdir(record, { recursive: true, mode: 0o700 });
+    await writeFile(join(record, "dispatch.json"), JSON.stringify({ schemaVersion: 1,
+      runId: `orchid-${key}`, issue: { repo, number: 601 }, parentRunId: null, source: "codex",
+      provider: "fixture-router", model: "fixture-model", effort: "high", profile: "leaf",
+      state: "dispatched", observedAt: "2026-09-27T21:24:00.000Z",
+      location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" } }), { mode: 0o600 });
+    await writeFile(join(record, "binding.json"), JSON.stringify({ IssueID: issueId, Repo: repo,
+      BriefDigest: brief, Route: { transport: "codex", provider: "fixture-router", model: "fixture-model", effort: "high" },
+      NativeSessionID: rootId }), { mode: 0o600 });
+    const sessions = join(home, ".codex", "sessions", "2026", "09", "27");
+    await mkdir(sessions, { recursive: true });
+    const stamp = (seconds: number) => new Date(Date.parse("2026-09-27T21:25:00.000Z") + seconds * 1000).toISOString();
+    const line = (seconds: number, type: string, payload: Record<string, unknown>) =>
+      JSON.stringify({ timestamp: stamp(seconds), type, payload }) + "\n";
+    // Generated here, never committed: a head that finished turn one, a middle (past the read bound)
+    // that starts turn two, and a tail with only activity and the latest cumulative token count.
+    const rollout = (id: string, parentId: string | null) => {
+      const head = line(0, "session_meta", { session_id: id, cwd: "/fixture", model_provider: "fixture",
+          ...(parentId ? { parent_thread_id: parentId } : {}) }) +
+        line(1, "turn_context", { model: "fixture-model", cwd: "/fixture",
+          collaboration_mode: { settings: { reasoning_effort: "high" } } }) +
+        line(2, "event_msg", { type: "user_message", message: "fixture task" }) +
+        line(3, "event_msg", { type: "task_started" }) +
+        line(4, "event_msg", { type: "token_count", info: { total_token_usage: { input_tokens: 100, output_tokens: 10 } } }) +
+        line(5, "event_msg", { type: "task_complete" });
+      // Turn two starts just past the head window, in the middle the read never reaches.
+      const filler = line(6, "event_msg", { type: "agent_message", message: "m".repeat(300_000) }) +
+        line(7, "event_msg", { type: "task_started" }) + Array.from({ length: 9_300 }, (_, i) =>
+        line(10 + i * 0.2, "event_msg", { type: "agent_message", message: "m".repeat(1_000) })).join("");
+      const tail = line(1_950, "event_msg", { type: "token_count",
+        info: { total_token_usage: { input_tokens: 5_000, output_tokens: 700 } } }) +
+        line(1_960, "event_msg", { type: "agent_message", message: "latest" });
+      return head + filler + tail;
+    };
+    for (const [minute, id, parent] of [["25", rootId, null], ["26", childId, rootId]] as const) {
+      const text = rollout(id, parent);
+      assert.ok(Buffer.byteLength(text) > 9 * 1_048_576);
+      await writeFile(join(sessions, `rollout-2026-09-27T23-${minute}-00-${id}.jsonl`), text);
+    }
+    const frame = await collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20,
+      now: "2026-09-27T22:00:00.000Z" });
+    const issue = frame.issues.find(row => row.issueNumber === 601)!;
+    assert.deepEqual([issue.complete, issue.reason], [true, null]);
+    const agents = issue.dispatches[0]!.agents;
+    assert.equal(agents.length, 2, "the root and its child are present, never silently absent");
+    for (const agent of agents) {
+      // The latest cumulative count comes from the tail; the unread history between is served as incomplete.
+      assert.equal(agent.tokenUsage?.usedTokens, 5_700);
+      assert.deepEqual(agent.observation.cost.runTokens.measurement, { inputTokens: 5_000, outputTokens: 700 });
+      assert.deepEqual(agent.resourceHistory?.tokens, { points: [], truncated: false, source: "unavailable",
+        reason: "source_incomplete" });
+      // Turn one completed in the head, but turn two started in the unread middle: no outcome is claimed.
+      assert.equal(agent.terminalOutcome.value, null);
+    }
+    assert.ok(!JSON.stringify(frame).includes(rootId));
+  } finally {
+    await rm(home, { recursive: true, force: true });
+    await rm(receipts, { recursive: true, force: true });
+  }
+});
