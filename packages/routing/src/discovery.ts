@@ -35,10 +35,10 @@ export interface DiscoveredModel {
   readonly aliases?: readonly string[];
   readonly variants?: readonly string[];
   readonly effortSource?: DiscoverySource | null;
-  /** AGY only: the vendor display name from the exact-ID /model report, published only under the verified first-party
-   * binding and after the label screen. Absent everywhere else: a label can be user-configured text. */
+  /** The vendor display name, published only under a verified first-party binding and after the label screen: AGY's
+   * exact-ID /model report, Codex's model/list displayName. Absent everywhere else: a label can be user-configured text. */
   readonly label?: string;
-  /** AGY only: the vendor label existed under the verified binding but failed the publication screen. */
+  /** AGY or Codex: the vendor label existed under the verified binding but failed the publication screen. */
   readonly labelWithheld?: "screened";
 }
 export interface CliObservation {
@@ -354,7 +354,12 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, releas
           if (!Array.isArray(record.supportedReasoningEfforts)) throw new DiscoveryError("malformed");
           efforts = checkedEfforts(record.supportedReasoningEfforts.map(e => object(e).reasoningEffort));
         }
-        models.push({ id: ids[0]!, efforts, provider: binding, effortSource: efforts === null ? null : "model/list" });
+        // Policy (as for AGY): Codex's own displayName is published only under the verified built-in binding, where
+        // it names a vendor model. A configured or custom provider may list user-named models, so names stay withheld.
+        const native = binding.source === "codex.builtin-provider" && record.displayName !== undefined;
+        const label = native ? screenedLabel(record.displayName) : null;
+        models.push({ id: ids[0]!, efforts, provider: binding, effortSource: efforts === null ? null : "model/list",
+          ...(label === null ? {} : { label }), ...(native && label === null ? { labelWithheld: "screened" as const } : {}) });
         if (models.length > MAX_MODELS) throw new DiscoveryError("oversized");
       }
       if (result.nextCursor === null) {
@@ -765,8 +770,10 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
       for (const entry of record.models) {
         const model = object(entry);
         if (!shape(model, ["id", "efforts"], ["provider", "aliases", "variants", "effortSource", "label", "labelWithheld"])) return false;
-        if ((Object.hasOwn(model, "label") || Object.hasOwn(model, "labelWithheld")) && (name !== "agy" || model.effortSource !== "agy.command.model" ||
-            object(model.provider).scope !== "cli" || object(model.provider).source !== "agy.command.config")) return false;
+        // A label (or its withholding) exists only under a verified first-party binding: AGY's /config, Codex's built-in default.
+        if ((Object.hasOwn(model, "label") || Object.hasOwn(model, "labelWithheld")) && !(object(model.provider).scope === "cli" &&
+            (name === "agy" ? model.effortSource === "agy.command.model" && object(model.provider).source === "agy.command.config"
+              : name === "codex" && object(model.provider).source === "codex.builtin-provider"))) return false;
         if (Object.hasOwn(model, "label") && (typeof model.label !== "string" || screenedLabel(model.label) !== model.label || Object.hasOwn(model, "labelWithheld"))) return false;
         if (Object.hasOwn(model, "labelWithheld") && model.labelWithheld !== "screened") return false;
         if (httpCatalog && object(model.provider).source !== "opencode.config/providers.providerID") return false;

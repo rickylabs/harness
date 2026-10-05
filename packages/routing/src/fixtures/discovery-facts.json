@@ -33,6 +33,7 @@
   "codexModels": [
     {
       "model": "fixture-codex",
+      "displayName": "Fixture Codex Model",
       "supportedReasoningEfforts": [
         {
           "reasoningEffort": "medium"

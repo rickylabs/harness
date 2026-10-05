@@ -138,7 +138,7 @@ if(args[0]==='serve'){
  if(behavior==='config-server-request'&&item.method==='config/read')console.log(JSON.stringify({id:999,method:'turn/start',params:{}}));
  let result={};
  if(item.method==='account/read')result={account:{type:'chatgpt',email:'PRIVATE-ACCOUNT-CANARY'}};
- if(item.method==='model/list')result={data:data.codexModels,nextCursor:null};
+ if(item.method==='model/list')result={data:behavior==='codex-unsafe-label'?data.codexModels.map(m=>({...m,displayName:'Fixture (sk-canary123456789012)'})):data.codexModels,nextCursor:null};
  if(item.method==='config/read')result={config:{model_provider:behavior==='configured-provider'?'fixture-gateway':null,model_providers:{},private:'/PRIVATE/CONFIG'}};
  if(item.method==='config/read'&&behavior==='project-provider'&&item.params?.cwd===process.cwd())result.config.model_provider='fixture-gateway';
  if(item.method==='config/read'&&behavior==='custom-provider')result.config.model_providers={'fixture-custom':{}};
@@ -434,7 +434,8 @@ test("native facts: an AGY label the screen refuses is dropped for that model al
  const edits=[(x:any)=>{x.launchers.agy.models[0].label=null;},(x:any)=>{x.launchers.agy.models[0].labelWithheld="screened";},
   (x:any)=>{delete x.launchers.agy.models[0].label;x.launchers.agy.models[0].labelWithheld="other";}];
  for(const edit of edits){const x=structuredClone(good) as any;edit(x);assert.equal(validateCliDiscoverySnapshot(x),false);}
- const codex=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","normal")));
+ // A configured (not built-in) Codex provider may list user-named models: no label and no withholding on its rows.
+ const codex=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","configured-provider")));
  const y=structuredClone(codex) as any;y.launchers.codex.models[0].labelWithheld="screened";assert.equal(validateCliDiscoverySnapshot(y),false);
 }));
 test("native facts: AGY labels stay withheld under custom, GCP, unproven, failed or custom-endpoint configs, unverified versions and the screen",async()=>fixture(async(cwd,binary)=>{
@@ -493,6 +494,24 @@ test("native facts: a native AGY error report or a stalled /config is retried in
   if(behavior==="agy-error-once")assert.equal(reports(launched,"model",data.agyModels[0].id),2,behavior);
   assert.ok(validateCliDiscoverySnapshot(s),behavior);assert.ok(!JSON.stringify(s).includes("PRIVATE"),behavior);
  }
+}));
+test("native facts: Codex's own displayName is published under the verified built-in binding only, screened",async()=>fixture(async(cwd,binary,data)=>{
+ const s=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","normal"))),o=wire(s).launchers.codex;
+ assert.equal(o.provider.source,"codex.builtin-provider");
+ assert.deepEqual(o.models.map((m:any)=>m.label),data.codexModels.map((m:any)=>m.displayName));assert.ok(validateCliDiscoverySnapshot(s));
+ // A configured provider, custom provider definitions or an unverified build: names stay withheld (no label at all).
+ for(const behavior of ["configured-provider","custom-provider","unverified-patch"]){
+  const x=wire(await discoverCliCapabilities(options(cwd,"codex",await binary("codex",behavior)))).launchers.codex;
+  assert.ok(x.models.every((m:any)=>!Object.hasOwn(m,"label")&&!Object.hasOwn(m,"labelWithheld")),behavior);
+ }
+ // A name the screen refuses is dropped for that model with its reason; nothing private is published.
+ const u=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","codex-unsafe-label"))),ou=wire(u).launchers.codex;
+ assert.ok(ou.models.every((m:any)=>!Object.hasOwn(m,"label")&&m.labelWithheld==="screened"));assert.ok(!JSON.stringify(u).includes("canary"));
+ assert.ok(validateCliDiscoverySnapshot(u));
+ // The reader refuses a Codex label without the built-in binding, or one failing the screen.
+ const configured=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","configured-provider")));
+ const a=structuredClone(configured) as any;a.launchers.codex.models[0].label="Fixture Codex Model";assert.equal(validateCliDiscoverySnapshot(a),false);
+ const b=structuredClone(s) as any;b.launchers.codex.models[0].label="Fixture ~/private";assert.equal(validateCliDiscoverySnapshot(b),false);
 }));
 test("native facts: AGY custom, GCP and unproven provider configurations stay unknown",async()=>fixture(async(cwd,binary)=>{
  for(const behavior of ['agy-custom','agy-gcp','agy-unknown-provider','agy-provider-type','agy-config-failed']){

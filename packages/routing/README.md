@@ -435,6 +435,13 @@ The observer records presence only, and keeps entitlement and quota unknown. Onl
 source-verified revision is enabled; native CLIs resolve their own authentication, without
 credential-file reads by Harness.
 
+Codex display names (same policy as AGY labels). `model/list` returns each model's `displayName`
+("Codex Auto Review" for `codex-auto-review`). It is published as the model `label` only under the
+verified built-in binding (`codex.builtin-provider`), where it names a vendor model, and only after
+the same label screen; a refused name is withheld with `labelWithheld: "screened"`. A configured or
+custom provider may list user-named models, and an unverified build has no binding, so their
+names stay withheld. The strict reader accepts a Codex label only under that binding.
+
 Codex built-in default. With no configured provider, no custom provider definitions and an empty
 requirements read, Codex falls back to its compiled default (`openai` in every verified release).
 That default is bound only when the whole `--version` output is exactly one upstream release line,
