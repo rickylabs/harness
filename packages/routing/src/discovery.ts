@@ -38,6 +38,8 @@ export interface DiscoveredModel {
   /** AGY only: the vendor display name from the exact-ID /model report, published only under the verified first-party
    * binding and after the label screen. Absent everywhere else: a label can be user-configured text. */
   readonly label?: string;
+  /** AGY only: the vendor label existed under the verified binding but failed the publication screen. */
+  readonly labelWithheld?: "screened";
 }
 export interface CliObservation {
   readonly installed: DiscoveryFact;
@@ -100,9 +102,18 @@ const OPENCODE_HTTP_CATALOG_VERSIONS = new Set<string>(nativeBindings.opencode.h
 const AGY_METADATA_VERSIONS = new Set<string>(nativeBindings.agy.verifiedVersions);
 const CLAUDE_EFFORT_OMISSION_VERSIONS = new Set<string>(nativeBindings.claude.effortOmissionVersions);
 const MAX_PROVIDER_BYTES = 16 * 1024 * 1024;
+/** Credential and path forms anywhere in a label, embedded or punctuated. At least as strict as every known
+ * consumer's publication screen (atelier-cockpit safePublicDispatch), so a published label never makes a reader
+ * refuse the whole capture. */
+const LABEL_PRIVATE = [
+  /(?:github_pat_|gh[pousr]_|sk-|xox[abprs]-|AKIA|AIza)[A-Za-z0-9_-]{4,}/i, // tokens, wherever they start
+  /\bBearer\b/i, /\.ts\.net\b/i, /\b(?:\d{1,3}\.){3}\d{1,3}\b/, // auth headers, tailnet names, IPv4
+  /~|\\|[A-Za-z]:[\\/]/, // home-relative, Windows and UNC paths
+  /\/(?:home|Users|root|tmp|var|etc|opt|private)\b/i, /(?:^|[\s(])\//, /\/[^\s]*\//, // absolute or multi-segment paths
+  /\b(?:home|tmp|PRIVATE)\b/,
+];
 function screenedLabel(value: unknown): string | null {
-  if (typeof value !== "string" || !LABEL.test(value) || value.trim() !== value || value.startsWith("/") || value.includes("\\") ||
-      /(?:^|[\/\s])(?:home|tmp|PRIVATE)(?:[\/\s]|$)|(?:^|\s)(?:gh[pousr]_|sk-)[A-Za-z0-9]|\/[^\s]*\//.test(value)) return null;
+  if (typeof value !== "string" || !LABEL.test(value) || value.trim() !== value || LABEL_PRIVATE.some(pattern => pattern.test(value))) return null;
   return value;
 }
 function checkedEfforts(value: unknown): string[] {
@@ -583,7 +594,10 @@ async function agyFacts(binary: string, ids: string[], options: CliDiscoveryOpti
         // Policy: the vendor label is published only under the verified first-party binding (config read, provider
         // bound, no custom models, no GCP, no custom endpoint). Anything else may be user text, so it stays withheld.
         const label = binding.scope === "cli" ? screenedLabel(data.label) : null;
-        models[index] = { id, efforts, provider: binding, effortSource: "agy.command.model", ...(label === null ? {} : { label }) };
+        // A label the screen refuses is dropped for that model alone, with a named reason; the ID and facts stay.
+        const withheld = binding.scope === "cli" && label === null && data.label !== undefined;
+        models[index] = { id, efforts, provider: binding, effortSource: "agy.command.model",
+          ...(label === null ? {} : { label }), ...(withheld ? { labelWithheld: "screened" as const } : {}) };
         authenticate(); sources.add("agy.command.model");
       } catch (error) {
         const why = problem(error);
@@ -724,9 +738,11 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
       const ids: unknown[] = [], aliases = new Set<string>();
       for (const entry of record.models) {
         const model = object(entry);
-        if (!shape(model, ["id", "efforts"], ["provider", "aliases", "variants", "effortSource", "label"])) return false;
-        if (Object.hasOwn(model, "label") && (name !== "agy" || screenedLabel(model.label) !== model.label || model.effortSource !== "agy.command.model" ||
+        if (!shape(model, ["id", "efforts"], ["provider", "aliases", "variants", "effortSource", "label", "labelWithheld"])) return false;
+        if ((Object.hasOwn(model, "label") || Object.hasOwn(model, "labelWithheld")) && (name !== "agy" || model.effortSource !== "agy.command.model" ||
             object(model.provider).scope !== "cli" || object(model.provider).source !== "agy.command.config")) return false;
+        if (Object.hasOwn(model, "label") && (typeof model.label !== "string" || screenedLabel(model.label) !== model.label || Object.hasOwn(model, "labelWithheld"))) return false;
+        if (Object.hasOwn(model, "labelWithheld") && model.labelWithheld !== "screened") return false;
         if (httpCatalog && object(model.provider).source !== "opencode.config/providers.providerID") return false;
         ids.push(model.id);
         if (model.efforts !== null) checkedEfforts(model.efforts);

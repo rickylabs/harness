@@ -421,8 +421,12 @@ configuration), so labels were withheld. They are now published, from `/model` o
 same observation proved the verified first-party binding: the `/config` report was read, its
 `modelProvider` maps to a reviewed binding, `customModelsConfig` and `gcp` are null and no
 custom endpoint is set. Such labels are vendor product names (`Gemini 3.8 Flash (High)`). The
-label must also pass the screen: printable, at most 128 characters, no surrounding spaces, no
-path-like or token-like text. Under any other configuration, or for an unverified version, every
+label must also pass the screen: printable, at most 128 characters, no surrounding spaces, and no
+credential, address or path form anywhere in it (token prefixes such as `sk-`, `gh*_`,
+`github_pat_` even embedded or punctuated, `Bearer`, IPv4, tailnet names, `~`, backslashes, drive
+letters, absolute or multi-segment paths). It is at least as strict as the cockpit's publication
+screen, so one label can never make a reader refuse the capture. A refused label is dropped for that
+model alone and named by `labelWithheld: "screened"`; the ID, effort and provider stay. Under any other configuration, or for an unverified version, every
 label stays withheld and readers show the ID. `models` labels are never published. The strict
 reader refuses a label without that binding, on any other launcher, or failing the screen.
 The observer records presence only, and keeps entitlement and quota unknown. Only the
@@ -437,8 +441,9 @@ only in child environment/memory, refuses redirects, and is destroyed with its p
 on every outcome. No credential file is read or copied by the observer; native CLIs resolve
 their own configuration.
 
-Default deadlines are 15 seconds. One child process runs at most 60 seconds; a launcher budget
-may be up to 180 seconds, which only AGY metadata spends across several children. Command stdout is bounded to 1 MiB, the private
+Default deadlines are 15 seconds. One child process runs at most 60 seconds. `timeoutMs` may be up
+to 180 seconds: each child still gets at most 60, and AGY's metadata reports share that deadline,
+which starts after the `--version` and `models` reads (those run under their own child cap). Command stdout is bounded to 1 MiB, the private
 provider response to 16 MiB. `maximumBytes` can lower both bounds. AGY reads at most one
 configuration report and 64 model reports, two at a time from a rolling queue, sharing one
 deadline. Measured on 1.2.17 (18 models): two in flight finish in about 41 s, four in flight

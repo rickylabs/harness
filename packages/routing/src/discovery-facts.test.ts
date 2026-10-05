@@ -3,9 +3,16 @@ import assert from "node:assert/strict";
 import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
 import { isAbsolute, join, relative } from "node:path";
 import { tmpdir } from "node:os";
+import { createRequire, syncBuiltinESMExports } from "node:module";
 import { discoverCliCapabilities, validateCliDiscoverySnapshot, type CliDiscoveryOptions, type DiscoveryLauncher } from "./discovery.js";
 
 /** All model-bearing case data lives in JSON; fake binaries only, never native turns. */
+/** Labels the publication screen must refuse (review of #608: embedded, punctuated and home-relative forms). */
+const UNSAFE_LABELS = ["Fixture (sk-canary123456789012)","Fixture github_pat_canary123456789012","Fixture ~/private","Fixture(ghp_canary1234567890)",
+ "Fixture,gho_canary1234567890","Fixture/secret/path","Fixture /secret","Fixture C:\\Users\\fixture","Fixture \\\\share\\x","Fixture Bearer abc",
+ "Fixture 10.1.2.3","Fixture host.fixture.ts.net","Fixture xoxb-canary1234","Fixture /home/PRIVATE/label","L".repeat(129),"Fixture\u0007Label"," Fixture"];
+/** Vendor label shapes measured from AGY 1.2.17 /model reports: they must stay publishable. */
+const VENDOR_LABELS = ["Gemini 3.8 Flash (High)","Gemini 3.1 Pro (Low)","Claude Opus 5.5 (Medium)","Claude Sonnet 5.5 (High)","GPT-OSS 120B (Medium)"];
 async function fixture(run: (cwd: string, binary: (kind: string, behavior?: string) => Promise<string>, data: any) => Promise<void>) {
   const cwd = await mkdtemp(join(tmpdir(), "discovery-facts-"));
   const data = JSON.parse(await readFile(new URL("../src/fixtures/discovery-facts.json", import.meta.url), "utf8"));
@@ -24,7 +31,7 @@ if(kind==='agy'&&args.includes('--print')){
  const name=args[args.indexOf('--print')+1].slice(1), id=args[args.indexOf('--model')+1];
  const entry=data.agyModels.find(m=>m.id===id)??(behavior==='agy-pool'?{nativeEffort:'medium',reportLabel:'Fixture Pool'}:undefined);
  const unverified=['agy-custom','agy-gcp','agy-unknown-provider','agy-provider-type','agy-config-failed'].includes(behavior)||!!process.env.GOOGLE_GEMINI_BASE_URL;
- const label=unverified?entry?.label:behavior==='agy-unsafe-label'?'Fixture /home/PRIVATE/label':behavior==='agy-long-label'?'L'.repeat(129):behavior==='agy-control-label'?'Fixture\\u0007Label':entry?.reportLabel;
+ const label=unverified?entry?.label:behavior.startsWith('agy-label-')?${JSON.stringify(UNSAFE_LABELS)}[Number(behavior.slice(10))]:behavior==='agy-unsafe-label'?'Fixture /home/PRIVATE/label':behavior==='agy-long-label'?'L'.repeat(129):behavior==='agy-control-label'?'Fixture\\u0007Label':entry?.reportLabel;
  let payload=name==='config'?{config:{modelProvider:'',customModelsConfig:null,gcp:null,private:data.privateProviderPayload}}:{id,label,effort:entry?.nativeEffort,is_default:false};
  if(behavior==='agy-custom'&&name==='config')payload.config.customModelsConfig={private:data.privateProviderPayload};
  if(behavior==='agy-provider-type'&&name==='config')payload.config.modelProvider=1;
@@ -368,6 +375,23 @@ test("native facts: AGY vendor labels come back verbatim from /model under the v
   const copy=structuredClone(s);edit(copy);assert.equal(validateCliDiscoverySnapshot(copy),false);
  }
 }));
+test("native facts: an AGY label the screen refuses is dropped for that model alone, with a named reason; the reader refuses it outright",async()=>fixture(async(cwd,binary,data)=>{
+ for(const [index,label] of UNSAFE_LABELS.entries()){
+  const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-label-"+index))),o=wire(s).launchers.agy;
+  assert.deepEqual(o.provider,{id:"google",source:"agy.command.config",scope:"cli"},label);assert.deepEqual(o.problems,[],label);
+  assert.equal(o.models.length,data.agyModels.length,label);
+  for(const m of o.models){assert.ok(!Object.hasOwn(m,"label"),label);assert.equal(m.labelWithheld,"screened",label);assert.ok(m.efforts!==null,label);}
+  assert.ok(validateCliDiscoverySnapshot(s),label);assert.ok(!JSON.stringify(s).includes("canary"),label);assert.ok(!JSON.stringify(s).includes("PRIVATE"),label);
+ }
+ const good=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-normal")));
+ for(const label of UNSAFE_LABELS){const x=structuredClone(good) as any;x.launchers.agy.models[0].label=label;assert.equal(validateCliDiscoverySnapshot(x),false,label);}
+ for(const label of VENDOR_LABELS){const x=structuredClone(good) as any;x.launchers.agy.models[0].label=label;assert.ok(validateCliDiscoverySnapshot(x),label);}
+ const edits=[(x:any)=>{x.launchers.agy.models[0].label=null;},(x:any)=>{x.launchers.agy.models[0].labelWithheld="screened";},
+  (x:any)=>{delete x.launchers.agy.models[0].label;x.launchers.agy.models[0].labelWithheld="other";}];
+ for(const edit of edits){const x=structuredClone(good) as any;edit(x);assert.equal(validateCliDiscoverySnapshot(x),false);}
+ const codex=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","normal")));
+ const y=structuredClone(codex) as any;y.launchers.codex.models[0].labelWithheld="screened";assert.equal(validateCliDiscoverySnapshot(y),false);
+}));
 test("native facts: AGY labels stay withheld under custom, GCP, unproven, failed or custom-endpoint configs, unverified versions and the screen",async()=>fixture(async(cwd,binary)=>{
  const runs:[string,string][]=[["agy-custom",""],["agy-gcp",""],["agy-unknown-provider",""],["agy-provider-type",""],["agy-config-failed",""],["agy-normal","endpoint"],
    ["agy-v18",""],["agy-unsafe-label",""],["agy-long-label",""],["agy-control-label",""]];
@@ -390,18 +414,27 @@ test("native facts: AGY metadata runs as a rolling pool of two and may spend a l
  const log=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(line=>JSON.parse(line));
  assert.ok(log.filter((c:any)=>c.args?.includes('--model')).length>0);
 }));
+/** Counts launched children at the parent's spawn boundary: a killed child may never reach its own log line. */
+async function countingSpawns<T>(run: () => Promise<T>): Promise<{ result: T; launched: string[][] }> {
+ const childProcess = createRequire(import.meta.url)("node:child_process"), original = childProcess.spawn, launched: string[][] = [];
+ childProcess.spawn = (command: string, args: string[], ...rest: unknown[]) => { launched.push([...args]); return original(command, args, ...rest); };
+ syncBuiltinESMExports();
+ try { return { result: await run(), launched }; } finally { childProcess.spawn = original; syncBuiltinESMExports(); }
+}
 test("native facts: an AGY report that stalls is retried in a fresh process; three stalls stay a timeout",async()=>fixture(async(cwd,binary,data)=>{
- const s=await discoverCliCapabilities({...options(cwd,"agy",await binary("agy","agy-stall-once")),timeoutMs:20_000,agyReportTimeoutMs:600});
+ const once=await binary("agy","agy-stall-once"),delayed=await binary("agy","agy-delay");
+ const {result:s,launched}=await countingSpawns(()=>discoverCliCapabilities({...options(cwd,"agy",once),timeoutMs:20_000,agyReportTimeoutMs:600}));
  const o=wire(s).launchers.agy;
  assert.deepEqual(o.problems,[]);assert.deepEqual(o.models.map((m:any)=>m.efforts),data.agyModels.map((m:any)=>m.nativeEffort?[m.nativeEffort]:[]));
- const log=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(line=>JSON.parse(line));
- assert.equal(log.filter((c:any)=>c.args?.includes(data.agyModels[0].id)).length,2,"exactly one retry");
- const twice=await discoverCliCapabilities({...options(cwd,"agy",await binary("agy","agy-delay")),timeoutMs:20_000,agyReportTimeoutMs:100});
+ const reports=(runs:string[][],id:string)=>runs.filter(args=>args.includes('/model')&&args.includes(id)).length;
+ assert.equal(reports(launched,data.agyModels[0].id),2,"exactly one retry, in a fresh process");
+ assert.equal(reports(launched,data.agyModels[1].id),1,"an answered report is not repeated");
+ const {result:twice,launched:capped}=await countingSpawns(()=>discoverCliCapabilities({...options(cwd,"agy",delayed),timeoutMs:20_000,agyReportTimeoutMs:100}));
  assert.ok(twice.launchers.agy.problems.includes("timeout"));assert.ok(twice.launchers.agy.models.every(m=>m.efforts===null));
- const attempts=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(line=>JSON.parse(line)).slice(log.length).filter((c:any)=>c.args?.includes('/model'));
- for(const m of data.agyModels)assert.equal(attempts.filter((c:any)=>c.args.includes(m.id)).length,3,"at most three attempts per report");
+ for(const m of data.agyModels)assert.equal(reports(capped,m.id),3,"at most three attempts per report");
  assert.ok(validateCliDiscoverySnapshot(s));assert.ok(validateCliDiscoverySnapshot(twice));
 }));
+
 test("native facts: AGY custom, GCP and unproven provider configurations stay unknown",async()=>fixture(async(cwd,binary)=>{
  for(const behavior of ['agy-custom','agy-gcp','agy-unknown-provider','agy-provider-type','agy-config-failed']){
   const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy",behavior))),o=wire(s).launchers.agy;
