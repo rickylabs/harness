@@ -47,6 +47,36 @@ it("reads bound private teardown observations without projecting a private nativ
   } finally { await rm(f.root, { recursive: true, force: true }); }
 });
 
+it("harness#613: reads the teardown of an inbox run whose binding names its work repository", async () => {
+  // An inbox issue (example/inbox) launched from a source elsewhere: Orchid resolves the target from
+  // the body's authoritative repo: key, so its binding names the work repository, keyed with it.
+  const work = "example/work";
+  const workKey = createHash("sha256").update(issueId + "\0" + work + "\0" + briefDigest).digest("hex");
+  const workRun = "orchid-" + workKey;
+  const f = await fixture();
+  try {
+    await f.write("binding.json", { NativeSessionID: intent.nativeSessionId, Repo: work, Host: expected.host,
+      IssueID: issueId, BriefDigest: briefDigest });
+    await f.write("teardown-intent.json", { ...intent, dispatchKey: workKey, nativeRunId: workRun, cause: "teardown" });
+    await f.write("teardown-seat-observed.json", { ...observation("seat_absent", seatAt), nativeRunId: workRun });
+    await f.write("teardown-process-observed.json", { ...observation("process_absent", processAt), nativeRunId: workRun });
+    const read = await readOrchidTeardownObservation(f.record, { ...expected, runId: workRun });
+    assert.deepEqual(read, { cause: "teardown", seatObservedAt: "2026-01-01T00:00:02.123Z",
+      processObservedAt: "2026-01-01T00:00:03.000Z" });
+    // The dispatch key still binds the repository: a binding naming another one is withheld.
+    await f.write("binding.json", { NativeSessionID: intent.nativeSessionId, Repo: "example/other", Host: expected.host,
+      IssueID: issueId, BriefDigest: briefDigest });
+    assert.equal(await readOrchidTeardownObservation(f.record, { ...expected, runId: workRun }), undefined);
+    // A repository that is not an owner/name is withheld even when it hashes to the key.
+    const odd = "not a repository";
+    const oddKey = createHash("sha256").update(issueId + "\0" + odd + "\0" + briefDigest).digest("hex");
+    await f.write("binding.json", { NativeSessionID: intent.nativeSessionId, Repo: odd, Host: expected.host,
+      IssueID: issueId, BriefDigest: briefDigest });
+    await f.write("teardown-intent.json", { ...intent, dispatchKey: oddKey, nativeRunId: "orchid-" + oddKey });
+    assert.equal(await readOrchidTeardownObservation(f.record, { ...expected, runId: "orchid-" + oddKey }), undefined);
+  } finally { await rm(f.root, { recursive: true, force: true }); }
+});
+
 it("withholds an unbound intent, an absent anchor, and malformed process proof", async () => {
   const f = await fixture();
   try {
