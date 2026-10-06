@@ -6,6 +6,7 @@ import { join } from "node:path";
 import type { DispatchEvidence } from "./dispatch-evidence.js";
 
 const hash = /^[a-f0-9]{64}$/;
+const repository = /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/;
 const object = (value: unknown): Record<string, unknown> | null =>
   value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 const exact = (row: Record<string, unknown>, fields: readonly string[]) =>
@@ -50,7 +51,12 @@ export async function readOrchidTeardownObservation(record: string, expected: {
       (intent.cause !== "operator-timeout" && intent.cause !== "teardown") ||
       typeof intent.nativeSessionId !== "string" || intent.nativeSessionId.length === 0 ||
       Buffer.byteLength(intent.nativeSessionId) > 256 || /[\x00\r\n\t /\\]/.test(intent.nativeSessionId) ||
-      binding === null || binding.NativeSessionID !== intent.nativeSessionId || binding.Repo !== expected.repository ||
+      // The binding names the WORK repository Orchid resolved (an inbox issue's authoritative `repo:`
+      // key), which differs from the inbox issue's own repository for a launch from a source outside
+      // it. The dispatch key below binds that repository to this run; it is never compared to the
+      // inbox issue's repository (harness#613).
+      binding === null || binding.NativeSessionID !== intent.nativeSessionId ||
+      typeof binding.Repo !== "string" || !repository.test(binding.Repo) ||
       binding.Host !== expected.host || typeof binding.IssueID !== "string" ||
       typeof binding.BriefDigest !== "string" || !hash.test(binding.BriefDigest) ||
       createHash("sha256").update(binding.IssueID + "\0" + binding.Repo + "\0" + binding.BriefDigest).digest("hex") !== key ||

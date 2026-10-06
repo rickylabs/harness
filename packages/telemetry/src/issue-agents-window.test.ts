@@ -59,18 +59,21 @@ it("reads a running dispatch up to the running cap, and an ended one for the win
 });
 
 /** A bound Codex dispatch with real receipts and its root rollout, optionally torn down. */
-async function feedAt(nowMs: number, options: { teardownAt?: number; withRollout?: boolean } = {}) {
+async function feedAt(nowMs: number, options: { teardownAt?: number; withRollout?: boolean; workRepo?: string } = {}) {
   const home = await mkdtemp(join(tmpdir(), "issue-agents-window-"));
   try {
     const receipts = join(home, "receipts"), issueId = "fixture-13", brief = "a".repeat(64), repo = "example/project";
-    const key = createHash("sha256").update(`${issueId}\0${repo}\0${brief}`).digest("hex");
+    // Orchid keys the run with its binding's WORK repository: for an inbox launch from a source
+    // elsewhere (the body's repo: key) that is not the inbox issue's repository (harness#613).
+    const work = options.workRepo ?? repo;
+    const key = createHash("sha256").update(`${issueId}\0${work}\0${brief}`).digest("hex");
     const record = join(receipts, key, "record"), runId = `orchid-${key}`, host = "fixture-node";
     await mkdir(record, { recursive: true, mode: 0o700 });
     const write = (name: string, value: unknown) => writeFile(join(record, name), JSON.stringify(value), { mode: 0o600 });
     await write("dispatch.json", { schemaVersion: 1, runId, issue: { repo, number: 13 }, parentRunId: null, source: "codex",
       provider: "fixture", model: "fixture-model", effort: "high", state: "dispatched", observedAt: iso(DISPATCHED), host,
       location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" } });
-    await write("binding.json", { IssueID: issueId, Repo: repo, BriefDigest: brief, Host: host,
+    await write("binding.json", { IssueID: issueId, Repo: work, BriefDigest: brief, Host: host,
       Route: { transport: "codex", provider: "fixture", model: "fixture-model", effort: "high" }, NativeSessionID: ROOT });
     if (options.teardownAt !== undefined) {
       const end = options.teardownAt;
@@ -115,6 +118,16 @@ it("serves the final tree of a run that ended a day after its dispatch, complete
   assert.deepEqual(root(frame)?.liveness, { state: "ended", evidence: "teardown-observation", observedAt: iso(end), reason: null });
   assert.equal(root(frame)?.endedBy, "teardown");
   assert.equal(root(frame)?.endedAt, iso(end));
+});
+
+it("harness#613: an inbox run whose binding names its work repository ends at its teardown", async () => {
+  const end = DISPATCHED + 3 * HOUR;
+  const frame = await feedAt(end + HOUR, { teardownAt: end, workRepo: "example/work" });
+  assert.equal(frame.issues[0]?.issueNumber, 13);
+  assert.deepEqual(root(frame)?.liveness, { state: "ended", evidence: "teardown-observation", observedAt: iso(end), reason: null });
+  assert.equal(root(frame)?.endedBy, "teardown");
+  assert.equal(root(frame)?.endedAt, iso(end));
+  assert.equal(root(frame)?.timeline?.events.find(event => event.kind === "ended")?.reason, "teardown");
 });
 
 it("stops reading a run a day after its end, and a run with no end after the running cap", async () => {
