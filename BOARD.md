@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[################----]` **488/606 done · 48 running · 26 queued · 16 abandoned · 28 invisible**
+`[################----]` **488/607 done · 48 running · 26 queued · 16 abandoned · 29 invisible**
 
-_Latest board activity: 2026-10-06T05:37:34Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-06T06:14:50Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (48)
 
@@ -61,7 +61,7 @@ Something could be acting on these right now.
 | [#613 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/613) | `plan` | — |
 | [#624 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)](https://github.com/rickylabs/harness/issues/624) | `plan` | — |
 
-## Not on the board (15)
+## Not on the board (16)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -82,8 +82,9 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#619 Launch controls: context and session hygiene](https://github.com/rickylabs/harness/issues/619) | — | — |
 | [#620 Launch controls: permissions, sandbox and tools](https://github.com/rickylabs/harness/issues/620) | — | — |
 | [#621 Launch controls: background work and observability](https://github.com/rickylabs/harness/issues/621) | — | — |
+| [#625 App launch on a new target: worker could not push, and five app/prompt defects (run #624)](https://github.com/rickylabs/harness/issues/625) | — | — |
 
-## Anomalies (57)
+## Anomalies (58)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -155,6 +156,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#621** — open item has no status label, so it appears in no column
 - **#622** — open item has no status label, so it appears in no column
 - **#623** — open item has no status label, so it appears in no column
+- **#625** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -179,7 +181,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 287/357 done · 32 running · 3 queued · 10 abandoned · 25 invisible
+`[#########---]` 287/358 done · 32 running · 3 queued · 10 abandoned · 26 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -189,7 +191,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 250/316 done · 31 running · 2 queued · 10 abandoned · 23 invisible | — |
+| _(no epic)_ | `[#########---]` 250/317 done · 31 running · 2 queued · 10 abandoned · 24 invisible | — |
 
 ## Waiting to start
 
@@ -233,7 +235,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  488/606 done · 48 running · 26 queued · 16 abandoned · 28 invisible
+# rickylabs/harness  [################----]  488/607 done · 48 running · 26 queued · 16 abandoned · 29 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -521,7 +523,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  287/357 done · 32 running · 3 queued · 10 abandoned · 25 invisible
+## (no milestone)  [################----]  287/358 done · 32 running · 3 queued · 10 abandoned · 26 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -899,6 +901,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #620 Launch controls: permissions, sandbox and tools
     no status            #621 Launch controls: background work and observability
     plan                 #624 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)
+    no status            #625 App launch on a new target: worker could not push, and five app/prompt defects (run #624)
 ```
 
 </details>
