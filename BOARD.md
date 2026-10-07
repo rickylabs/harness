@@ -4,7 +4,7 @@
 
 `[################----]` **495/618 done · 49 running · 26 queued · 16 abandoned · 32 invisible**
 
-_Latest board activity: 2026-10-07T19:36:26Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-07T20:30:18Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (49)
 
@@ -59,7 +59,7 @@ Something could be acting on these right now.
 | [PR602 fix(ai): deliver upstream Anthropic model compatibility fix](https://github.com/rickylabs/harness/pull/602) | `impl-eval` | — |
 | [#604 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/604) | `plan` | — |
 | [#613 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/613) | `plan` | — |
-| [PR635 fix(routing): keep native discovery working across CLI updates](https://github.com/rickylabs/harness/pull/635) | `impl-eval` | — |
+| [PR635 Remove CLI version gates and preserve exact owner launch choices](https://github.com/rickylabs/harness/pull/635) | `impl-eval` | — |
 | [#636 [rickylabs/netscript#2080] fix(streams): bound durable log recovery and tail-read allocations](https://github.com/rickylabs/harness/issues/636) | `plan` | — |
 
 ## Not on the board (18)
@@ -916,7 +916,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #632 [rickylabs/atelier-mobile#345] Open in Codex / Open in Claude jumps to the run in the vendor app
     shipped              #633 [rickylabs/atelier-cockpit#526] Epic #515 phase 7: deploy via netscript deploy compose, delete ops/
     no status            #634 Never block launches on CLI version: remove discovery version allow-lists (Codex, OpenCode, agy)
-    impl-eval            PR635 fix(routing): keep native discovery working across CLI updates
+    impl-eval            PR635 Remove CLI version gates and preserve exact owner launch choices
     plan                 #636 [rickylabs/netscript#2080] fix(streams): bound durable log recovery and tail-read allocations
 ```
 
