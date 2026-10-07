@@ -217,14 +217,14 @@ const CASES: readonly Case[] = [
     executes: "opencode",
   },
   {
-    what: "harness, router and effort are lowercased; model and profile keep their case",
+    what: "harness and router are lowercased; effort, model and profile keep their case",
     rule: "(K)",
     body: "/swarm\nharness: CoDeX\nrouter: OpenAI\neffort: XHigh\nmodel: GPT-5.6-Sol\nprofile: Review",
     overrides: {
       ...EMPTY,
       harness: "codex",
       router: "openai",
-      effort: "xhigh",
+      effort: "XHigh",
       model: "GPT-5.6-Sol",
       profile: "Review",
     },
