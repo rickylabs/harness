@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **494/615 done · 48 running · 26 queued · 16 abandoned · 31 invisible**
+`[################----]` **495/618 done · 49 running · 26 queued · 16 abandoned · 32 invisible**
 
-_Latest board activity: 2026-10-07T14:12:21Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-07T19:36:26Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (48)
+## Moving now (49)
 
 Something could be acting on these right now.
 
@@ -59,9 +59,10 @@ Something could be acting on these right now.
 | [PR602 fix(ai): deliver upstream Anthropic model compatibility fix](https://github.com/rickylabs/harness/pull/602) | `impl-eval` | — |
 | [#604 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/604) | `plan` | — |
 | [#613 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/613) | `plan` | — |
-| [#633 [rickylabs/atelier-cockpit#526] Epic #515 phase 7: deploy via netscript deploy compose, delete ops/](https://github.com/rickylabs/harness/issues/633) | `plan` | — |
+| [PR635 fix(routing): keep native discovery working across CLI updates](https://github.com/rickylabs/harness/pull/635) | `impl-eval` | — |
+| [#636 [rickylabs/netscript#2080] fix(streams): bound durable log recovery and tail-read allocations](https://github.com/rickylabs/harness/issues/636) | `plan` | — |
 
-## Not on the board (17)
+## Not on the board (18)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -84,8 +85,9 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#621 Launch controls: background work and observability](https://github.com/rickylabs/harness/issues/621) | — | — |
 | [#625 App launch on a new target: worker could not push, and five app/prompt defects (run #624)](https://github.com/rickylabs/harness/issues/625) | — | — |
 | [#626 Refused /swarm trigger becomes a 'Needs you: approve launch' request in the app](https://github.com/rickylabs/harness/issues/626) | — | — |
+| [#634 Never block launches on CLI version: remove discovery version allow-lists (Codex, OpenCode, agy)](https://github.com/rickylabs/harness/issues/634) | — | — |
 
-## Anomalies (59)
+## Anomalies (60)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -159,6 +161,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#623** — open item has no status label, so it appears in no column
 - **#625** — open item has no status label, so it appears in no column
 - **#626** — open item has no status label, so it appears in no column
+- **#634** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -183,7 +186,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 293/366 done · 32 running · 3 queued · 10 abandoned · 28 invisible
+`[#########---]` 294/369 done · 33 running · 3 queued · 10 abandoned · 29 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -193,7 +196,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 256/325 done · 31 running · 2 queued · 10 abandoned · 26 invisible | — |
+| _(no epic)_ | `[#########---]` 257/328 done · 32 running · 2 queued · 10 abandoned · 27 invisible | — |
 
 ## Waiting to start
 
@@ -237,7 +240,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  494/615 done · 48 running · 26 queued · 16 abandoned · 31 invisible
+# rickylabs/harness  [################----]  495/618 done · 49 running · 26 queued · 16 abandoned · 32 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -525,7 +528,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  293/366 done · 32 running · 3 queued · 10 abandoned · 28 invisible
+## (no milestone)  [###############-----]  294/369 done · 33 running · 3 queued · 10 abandoned · 29 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -911,7 +914,10 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #630 [rickylabs/atelier-mobile#344] Needs you card: approve or decline refused launches
     shipped              #631 [rickylabs/atelier-cockpit#519] Open in Codex / Open in Claude: per-run link to the exact vendor session
     shipped              #632 [rickylabs/atelier-mobile#345] Open in Codex / Open in Claude jumps to the run in the vendor app
-    plan                 #633 [rickylabs/atelier-cockpit#526] Epic #515 phase 7: deploy via netscript deploy compose, delete ops/
+    shipped              #633 [rickylabs/atelier-cockpit#526] Epic #515 phase 7: deploy via netscript deploy compose, delete ops/
+    no status            #634 Never block launches on CLI version: remove discovery version allow-lists (Codex, OpenCode, agy)
+    impl-eval            PR635 fix(routing): keep native discovery working across CLI updates
+    plan                 #636 [rickylabs/netscript#2080] fix(streams): bound durable log recovery and tail-read allocations
 ```
 
 </details>
