@@ -2,18 +2,10 @@
   "schemaVersion": 1,
   "claude": {
     "firstPartyProvider": "anthropic",
-    "source": "https://github.com/anthropics/claude-agent-sdk-typescript",
-    "effortOmissionVersions": [
-      "2.1.288"
-    ]
+    "source": "https://github.com/anthropics/claude-agent-sdk-typescript"
   },
   "codex": {
     "builtinProvider": "openai",
-    "verifiedVersions": [
-      "0.159.3",
-      "0.160.0",
-      "0.160.1"
-    ],
     "sources": [
       "https://github.com/openai/codex/blob/rust-v0.159.3/codex-rs/core/src/config/mod.rs",
       "https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/core/src/config/mod.rs",
@@ -21,15 +13,9 @@
     ]
   },
   "opencode": {
-    "httpCatalogVersions": [
-      "1.18.34"
-    ],
     "httpCatalogSources": [
       "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/server/routes/instance/httpapi/handlers/config.ts",
       "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/server/routes/instance/httpapi/groups/config.ts"
-    ],
-    "verifiedVersions": [
-      "1.18.34"
     ],
     "sources": [
       "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/provider/provider.ts",
@@ -39,10 +25,6 @@
     "verification": "The final native model object includes normalized variants, with disabled choices removed. An explicit empty map establishes no selectable named variant; use the native default with no variant argument. Missing maps and nonempty opaque variants do not establish this contract."
   },
   "agy": {
-    "verifiedVersions": [
-      "1.2.16",
-      "1.2.17"
-    ],
     "providerBindings": {
       "": "google",
       "gemini": "google"

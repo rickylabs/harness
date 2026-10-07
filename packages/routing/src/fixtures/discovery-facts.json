@@ -112,5 +112,33 @@
   "servedOpus": "claude-opus-5-5",
   "agyBoundModelPrefix": "fixture-bound-",
   "fleetLegacyAlias": "opus_5",
-  "fleetCanonicalAlias": "opus_5_5"
+  "fleetCanonicalAlias": "opus_5_5",
+  "codexVersionLines": [
+    "codex-cli 0.160.1\n",
+    "codex-cli 0.160.1",
+    "codex-cli 0.160.0\r\n",
+    "codex-cli 0.160.2\n",
+    "codex-cli 0.161.0\n",
+    "codex-cli 1.0.0\n",
+    "codex-cli 0.158.0\n",
+    "codex-cli 0.160.2+\n",
+    "codex-cli 0.160.2.1\n",
+    "codex-cli 0.0160.2\n",
+    "codex-cli 00.160.1\n",
+    "codex-cli 0.160.01\n",
+    "codex-cli 0.160.1-foo_bar\n",
+    "codex-cli 0.160.1-alpha.1+build.7\n",
+    "codex-cli 0.160.1+build.7\n",
+    "fork-cli 0.160.1 (upstream 0.158.0)\n",
+    "codex-cli 0.160.1 (fork)\n",
+    "codex-cli 0.160.1\nextra\n",
+    " codex-cli 0.160.1\n",
+    "0.160.1\n",
+    "codex-cli 0.999.0\n"
+  ],
+  "newVersions": {
+    "codex": "0.999.0",
+    "agy": "9.0.0",
+    "claude": "9.0.0"
+  }
 }

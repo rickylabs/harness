@@ -547,7 +547,7 @@ function bind(
       bound.set("router", value.toLowerCase());
       return;
     case "effort":
-      bound.set("effort", value.toLowerCase());
+      bound.set("effort", value);
       return;
     case "max-tokens":
       bound.set("max-tokens", value);
@@ -680,8 +680,8 @@ function encodingProblems(request: DispatchRequest): readonly string[] {
     problems.push(`repo ${JSON.stringify(request.repo)} is not owner/name`);
   }
 
-  // The executor lowercases these three. Emitting a capital means the record and the run disagree.
-  for (const key of ["harness", "tier", "role", "effort", "router"] as const) {
+  // Routing keys are canonicalized; model and effort preserve the requested spelling.
+  for (const key of ["harness", "tier", "role", "router"] as const) {
     const value = request[key];
     if (typeof value === "string" && value !== value.toLowerCase()) {
       problems.push(`${key} ${JSON.stringify(value)} will be lowercased by the executor`);
@@ -746,9 +746,6 @@ export function validateDispatch(request: DispatchRequest): readonly string[] {
           "would discard it silently and run to the default deadline",
       );
     }
-  }
-  if (request.harness === "opencode" && request.router === undefined) {
-    problems.push("opencode runs need a router; without one the provider prefix is ambiguous");
   }
 
   return problems;

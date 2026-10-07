@@ -11,6 +11,7 @@ import {
   validateDispatch,
 } from "./dispatch.js";
 import type { DispatchRequest } from "./dispatch.js";
+import ownerChoice from "../config/owner-launch-choice.json" with { type: "json" };
 
 const full: DispatchRequest = {
   harness: "codex",
@@ -290,8 +291,8 @@ describe("renderSwarm", () => {
     );
   });
 
-  it("refuses an uppercase harness, effort or router, which the executor lowercases", () => {
-    assert.throws(() => renderSwarm({ ...full, effort: "XHIGH" }), /lowercased/);
+  it("refuses an uppercase harness or router, which the executor lowercases", () => {
+    assert.throws(() => renderSwarm({ ...full, router: "OPENAI" }), /lowercased/);
   });
 });
 
@@ -400,10 +401,10 @@ describe("parseSwarm", () => {
       assert.equal(parsed("/swarm\nharness: codex\nmax-tokens: 500k\n\nx").overrides.maxTokens, "500k");
     });
 
-    it("lowercases harness, router and effort but not model or profile", () => {
+    it("lowercases harness and router but preserves effort, model and profile", () => {
       const p = parsed("/swarm\nharness: CODEX\neffort: XHigh\nmodel: Sol-1\nprofile: Review\n\nx");
       assert.equal(p.overrides.harness, "codex");
-      assert.equal(p.overrides.effort, "xhigh");
+      assert.equal(p.overrides.effort, "XHigh");
       assert.equal(p.overrides.model, "Sol-1");
       assert.equal(p.overrides.profile, "Review");
     });
@@ -474,10 +475,10 @@ describe("validateDispatch", () => {
     );
   });
 
-  it("requires a router for opencode, where the provider prefix is otherwise ambiguous", () => {
-    assert.match(
-      validateDispatch({ harness: "opencode", model: "m", effort: "high", prompt: "x" }).join(" "),
-      /router/,
+  it("leaves optional OpenCode provider selection to the native CLI", () => {
+    assert.deepEqual(
+      validateDispatch({ harness: "opencode", model: "m", effort: "high", prompt: "x" }),
+      [],
     );
   });
 
@@ -566,4 +567,11 @@ describe("the writer, on characters that render as nothing", () => {
   it("still accepts an ordinary value", () => {
     assert.deepEqual(validateDispatch({ ...base, model: "z-ai/glm-5.3-flash" }), []);
   });
+});
+
+// Owner selections are data; transport discovery never rewrites their spelling.
+it("owner choice round-trips exact effort without an OpenCode router", () => {
+  const request: DispatchRequest = { ...ownerChoice, harness: "opencode" };
+  assert.deepEqual(validateDispatch(request), []);
+  assert.deepEqual(toDispatchRequest(parsed(renderSwarm(request))), request);
 });

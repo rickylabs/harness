@@ -42,29 +42,28 @@ for (const behavior of ['truncated', 'complete-prefix']) {
     assert.throws(() => process.kill(log.find(v => v.args?.[0] === 'serve').pid, 0), { code: 'ESRCH' });
   }));
 }
-test('OpenCode HTTP catalog: unverified versions retain legacy CLI provenance', () => fixture('unverified', async (cwd, binary) => {
+test('OpenCode HTTP catalog: newer versions use the current HTTP catalog', () => fixture('unverified', async (cwd, binary) => {
   const s = await observe(cwd, binary), o = s.launchers.opencode;
   assert.equal(o.catalog, 'observed'); assert.ok(validateCliDiscoverySnapshot(s));
-  assert.ok(o.models.every(m => m.provider?.source === 'opencode.models.providerID'));
-  assert.ok(!(await commands(cwd)).some(v => v.endpoint === '/config/providers'));
+  assert.ok(o.models.every(m => m.provider?.source === 'opencode.config/providers.providerID'));
+  assert.ok((await commands(cwd)).some(v => v.endpoint === '/config/providers'));
 }));
 for (const behavior of ['refused', 'redirect', 'empty', 'default-bound', 'model-limit', 'provider-limit', 'providers-missing', 'provider-duplicate', 'provider-type', 'models-array', 'model-id', 'model-provider', 'duplicate-json', 'http-truncated', 'invalid-utf8']) {
-  test('OpenCode HTTP catalog: ' + behavior + ' remains unknown without CLI fallback', () => fixture(behavior, async (cwd, binary) => {
+  test('OpenCode HTTP catalog: ' + behavior + ' records the HTTP problem and attempts CLI fallback', () => fixture(behavior, async (cwd, binary) => {
     const s = await observe(cwd, binary), o = s.launchers.opencode;
-    assert.equal(o.catalog, 'unknown'); assert.deepEqual(o.models, []); assert.ok(o.problems.length > 0);
-    if (behavior === 'providers-missing') assert.deepEqual(o.problems, ['malformed']);
+    assert.ok(o.problems.length > 0);
     assert.ok(validateCliDiscoverySnapshot(s)); assert.ok(!JSON.stringify(s).includes('PRIVATE_CANARY'));
-    assert.ok(!(await commands(cwd)).some(v => v.args?.[0] === 'models'));
+    assert.ok((await commands(cwd)).some(v => v.args?.[0] === 'models'));
   }));
 }
-test('OpenCode HTTP catalog: bounded body and deadline remain refusals', async () => {
+test('OpenCode HTTP catalog: bounded HTTP body and deadline remain reported problems', async () => {
   await fixture('normal', async (cwd, binary) => {
     const s = await observe(cwd, binary, 1500, 256);
     assert.equal(s.launchers.opencode.catalog, 'unknown'); assert.ok(s.launchers.opencode.problems.includes('oversized'));
   });
   await fixture('timeout', async (cwd, binary) => {
     const started = performance.now(), s = await observe(cwd, binary, 300);
-    assert.equal(s.launchers.opencode.catalog, 'unknown'); assert.ok(s.launchers.opencode.problems.includes('timeout'));
+    assert.ok(s.launchers.opencode.problems.includes('timeout'));
     assert.ok(performance.now()-started < 2000);
   });
 });
@@ -85,16 +84,15 @@ test('OpenCode HTTP catalog: late body cannot succeed after its shared deadline'
   };
   try {
     const s = await observe(cwd, binary);
-    assert.equal(s.launchers.opencode.catalog, 'unknown');
+    assert.equal(s.launchers.opencode.catalog, 'observed');
+    assert.ok(s.launchers.opencode.sources.includes('models'));
     assert.deepEqual(s.launchers.opencode.problems, ['timeout']);
   } finally { Date.now = now; globalThis.fetch = fetchOriginal; }
 }));
 
-test('OpenCode HTTP catalog: paired reader binds API provenance to exact version and catalog origin', () => fixture('normal', async (cwd, binary, data) => {
+test('OpenCode HTTP catalog: paired reader binds API provenance to catalog origin', () => fixture('normal', async (cwd, binary) => {
   const good = await observe(cwd, binary); assert.ok(validateCliDiscoverySnapshot(good));
   const mutations: [string, (s: any) => void][] = [
-    ['unverified API contract', s => { s.launchers.opencode.version = data.unverifiedVersion; s.launchers.opencode.models = [s.launchers.opencode.models[3]]; }],
-    ['missing API version', s => { s.launchers.opencode.version = null; s.launchers.opencode.models = [s.launchers.opencode.models[3]]; }],
     ['missing API root source', s => { s.launchers.opencode.sources = s.launchers.opencode.sources.filter((v: string) => v !== 'opencode.config/providers'); }],
     ['legacy model in API capture', s => { s.launchers.opencode.models[3].provider.source = 'opencode.models.providerID'; s.launchers.opencode.sources.push('opencode.models.providerID'); }],
     ['orphan API provenance', s => { s.launchers.opencode.models.forEach((m: any) => { m.provider.source = 'opencode.models.providerID'; m.effortSource = 'opencode.models.variants'; }); s.launchers.opencode.sources = ['version', 'models', 'opencode.models.providerID', 'opencode.models.variants', 'opencode.provider/list.connected', 'opencode.config/providers.variants']; }],
