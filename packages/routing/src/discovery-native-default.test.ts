@@ -42,7 +42,7 @@ test("native default: real empty variant maps establish default only; named ROCm
   assert.throws(() => process.kill(server.pid, 0), { code: "ESRCH" });
 }));
 
-for (const behavior of ["unverified", "missing", "header-only", "opaque", "disabled"]) {
+for (const behavior of ["missing", "opaque", "disabled"]) {
   test("native default: " + behavior + " does not assert default-only support", async () => fixture(async (cwd, binary) => {
     const s = await observe(cwd, binary), o = s.launchers.opencode;
     assert.equal(o.catalog, "observed");
@@ -87,8 +87,6 @@ test("native default: paired validator rejects default claims without the exact 
   Object.assign(other.launchers, { claude: data.otherLauncher });
   assert.ok(validateCliDiscoverySnapshot(other), "another launcher's proven empty efforts need its own contract");
   const mutations: [string, (value: any) => void][] = [
-    ["unknown serializer", v => { v.launchers.opencode.version = data.unverifiedVersion; }],
-    ["missing version", v => { v.launchers.opencode.version = null; }],
     ["named variant in default claim", v => { v.launchers.opencode.models[0].variants = ["low"]; }],
     ["missing variant proof", v => { delete v.launchers.opencode.models[0].variants; }],
     ["missing source", v => { v.launchers.opencode.models[0].effortSource = null; }],

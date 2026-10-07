@@ -96,14 +96,6 @@ const MAX_PAGES = 32;
 const PROVIDER_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const EFFORT = /^[a-z][a-z0-9_-]{0,63}$/;
 const UNKNOWN_PROVIDER: DiscoveryProvider = { id: null, source: null, scope: "unknown" };
-const CODEX_BUILTIN_PROVIDER_VERSIONS = new Set<string>(nativeBindings.codex.verifiedVersions);
-/** The whole `--version` output of an upstream Codex release: exactly one line, canonical SemVer (no leading zeros,
- * no pre-release, build or extra components). Anything else (fork banners, suffixes) never earns a built-in binding. */
-const CODEX_RELEASE_LINE = /^codex-cli ((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))\r?\n?$/;
-const OPENCODE_NATIVE_VARIANT_VERSIONS = new Set<string>(nativeBindings.opencode.verifiedVersions);
-const OPENCODE_HTTP_CATALOG_VERSIONS = new Set<string>(nativeBindings.opencode.httpCatalogVersions);
-const AGY_METADATA_VERSIONS = new Set<string>(nativeBindings.agy.verifiedVersions);
-const CLAUDE_EFFORT_OMISSION_VERSIONS = new Set<string>(nativeBindings.claude.effortOmissionVersions);
 const MAX_PROVIDER_BYTES = 16 * 1024 * 1024;
 /** Credential and path forms anywhere in a label, embedded or punctuated. At least as strict as every known
  * consumer's publication screen (atelier-cockpit safePublicDispatch), so a published label never makes a reader
@@ -280,8 +272,8 @@ async function command(binary: string, args: readonly string[], options: CliDisc
 function problem(error: unknown): DiscoveryProblem {
   return error instanceof DiscoveryError ? error.problem : "command-failed";
 }
-interface CodexCatalog { models: DiscoveredModel[]; authenticated: DiscoveryFact; provider: DiscoveryProvider; unverifiedDefault: boolean }
-async function codexCatalog(binary: string, options: CliDiscoveryOptions, release: string | null): Promise<CodexCatalog> {
+interface CodexCatalog { models: DiscoveredModel[]; authenticated: DiscoveryFact; provider: DiscoveryProvider; problems: DiscoveryProblem[] }
+async function codexCatalog(binary: string, options: CliDiscoveryOptions): Promise<CodexCatalog> {
   const observationCwd = resolve(options.cwd);
   const running = child(binary, ["app-server", "--listen", "stdio://"], { ...options, cwd: observationCwd });
   let nextId = 0;
@@ -312,16 +304,18 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, releas
       if (account.account === null) authenticated = account.requiresOpenaiAuth === true ? "no" : "unknown";
       else if (typeof account.account === "object" && account.account !== null) authenticated = "yes";
     } catch (error) { if (problem(error) !== "unsupported") throw error; }
-    let binding = UNKNOWN_PROVIDER, unverifiedDefault = false;
+    let binding = UNKNOWN_PROVIDER;
+    const problems: DiscoveryProblem[] = [];
     let configuration: Record<string, unknown> | undefined, requirements: Record<string, unknown> | undefined;
     try {
       // Without cwd, Codex excludes in-repo .codex layers and cannot bind this observation.
       const result = await response(write("config/read", { includeLayers: false, cwd: observationCwd }));
       requirements = await response(write("configRequirements/read", {}));
-      try { configuration = object(result.config); } catch { /* Unproven configuration stays unknown. */ }
+      try { configuration = object(result.config); } catch { problems.push("malformed"); }
     } catch (error) {
       if (problem(error) !== "unsupported") throw error;
-      // Unsupported metadata methods cannot establish a provider; protocol errors still refuse the catalog.
+      // Keep the catalog when a metadata method is unsupported, and retain the actual failure.
+      problems.push(problem(error));
     }
     if (configuration && requirements?.requirements === null) {
       try {
@@ -329,16 +323,10 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, releas
           binding = provider(configuration.model_provider, "codex.config/read", "cli");
         } else if (configuration.model_provider === null && configuration.model_providers !== undefined &&
             Object.keys(object(configuration.model_providers)).length === 0) {
-          // Unconfigured: Codex falls back to its compiled default. Pinned rust-v0.159.3, rust-v0.160.0 and rust-v0.160.1
-          // core/config/mod.rs: required_model_provider.or(model_provider).or(cfg.model_provider).unwrap_or("openai").
-          // Require a successful empty requirements read, no custom provider definitions, and the exact upstream
-          // release line of a verified version. Any other build (auto-update, fork, malformed output) may compile a
-          // different default, and no runtime read reports the resolved one: its provider stays unknown, named.
-          if (release !== null && CODEX_BUILTIN_PROVIDER_VERSIONS.has(release)) {
-            binding = provider(nativeBindings.codex.builtinProvider, "codex.builtin-provider", "cli");
-          } else unverifiedDefault = true;
+          // Use the current built-in binding for every version; runtime configuration still takes precedence.
+          binding = provider(nativeBindings.codex.builtinProvider, "codex.builtin-provider", "cli");
         }
-      } catch { /* Malformed binding metadata stays unknown, never defaulted. */ }
+      } catch { problems.push("malformed"); }
     }
     const models: DiscoveredModel[] = [];
     const cursors = new Set<string>();
@@ -365,7 +353,7 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, releas
       if (result.nextCursor === null) {
         checkedIds(models.map(m => m.id));
         if (!models.length) throw new DiscoveryError("empty-catalog");
-        return { models, authenticated, provider: binding, unverifiedDefault };
+        return { models, authenticated, provider: binding, problems };
       }
       if (typeof result.nextCursor !== "string" || !result.nextCursor || result.nextCursor.length > 256 ||
           /[\s\u0000-\u001f\u007f]/.test(result.nextCursor) || cursors.has(result.nextCursor)) throw new DiscoveryError("malformed");
@@ -375,7 +363,7 @@ async function codexCatalog(binary: string, options: CliDiscoveryOptions, releas
   } finally { await running.close(); }
 }
 /** SDK initialize is metadata only: no prompt, hooks, tools, persistence or MCP servers. */
-async function claudeCatalog(binary: string, options: CliDiscoveryOptions, version: string | null): Promise<DiscoveredModel[]> {
+async function claudeCatalog(binary: string, options: CliDiscoveryOptions): Promise<DiscoveredModel[]> {
   const running = child(binary, ["--print", "--bare", "--verbose", "--input-format", "stream-json",
     "--output-format", "stream-json", "--no-session-persistence", "--setting-sources=",
     "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}'], options);
@@ -403,8 +391,8 @@ async function claudeCatalog(binary: string, options: CliDiscoveryOptions, versi
       if (entry.supportsEffort !== undefined && typeof entry.supportsEffort !== "boolean") throw new DiscoveryError("malformed");
       let efforts: string[] | null = null;
       // Native 2.1.288 N7 spreads both effort fields only when nw(resolvedModel) is true.
-      // That verified serializer proves omission is unsupported; unverified serializers stay unknown.
-      if (entry.supportsEffort === false || (entry.supportsEffort === undefined && CLAUDE_EFFORT_OMISSION_VERSIONS.has(version ?? ""))) efforts = [];
+      // Use the current serializer contract regardless of the informational CLI version.
+      if (entry.supportsEffort === false || entry.supportsEffort === undefined) efforts = [];
       if (entry.supportedEffortLevels !== undefined) {
         efforts = checkedEfforts(entry.supportedEffortLevels);
         if (entry.supportsEffort !== true || !efforts.length) throw new DiscoveryError("malformed");
@@ -418,12 +406,12 @@ async function claudeCatalog(binary: string, options: CliDiscoveryOptions, versi
     return [...models.values()];
   } finally { await running.close(); }
 }
-function nativeVariantEfforts(value: unknown, version: string | null): { variants: string[]; efforts: string[] | null } {
+function nativeVariantEfforts(value: unknown): { variants: string[]; efforts: string[] | null } {
   if (value === undefined) return { variants: [], efforts: null };
   const variants = object(value), names = checkedVariants(Object.keys(variants)), efforts: string[] = [];
   // A verified complete native map with no choices establishes default-only support.
   // It does not mean reasoning is disabled or that a named effort was applied.
-  if (names.length === 0 && OPENCODE_NATIVE_VARIANT_VERSIONS.has(version ?? "")) return { variants: [], efforts: [] };
+  if (names.length === 0) return { variants: [], efforts: [] };
   for (const name of names) {
     const body = object(variants[name]);
     if (body.disabled !== undefined && typeof body.disabled !== "boolean") throw new DiscoveryError("malformed");
@@ -441,7 +429,7 @@ function nativeVariantEfforts(value: unknown, version: string | null): { variant
   }
   return { variants: names.filter(name => object(variants[name]).disabled !== true), efforts: efforts.length ? efforts : null };
 }
-function openCodeModels(stdout: string, version: string | null): DiscoveredModel[] {
+function openCodeModels(stdout: string): DiscoveredModel[] {
   const models: DiscoveredModel[] = [];
   let at = 0;
   while (at < stdout.length) {
@@ -458,7 +446,7 @@ function openCodeModels(stdout: string, version: string | null): DiscoveredModel
       at = objectEnd;
       if (at < stdout.length && !/\s/.test(stdout[at]!)) throw new DiscoveryError("malformed");
       if (record.id !== nativeID || record.providerID !== prefix) throw new DiscoveryError("malformed");
-      const capability = nativeVariantEfforts(record.variants, version);
+      const capability = nativeVariantEfforts(record.variants);
       models.push({ id, ...capability, provider: provider(record.providerID, "opencode.models.providerID", "model"),
         effortSource: capability.efforts === null ? null : "opencode.models.variants" });
     } else {
@@ -520,7 +508,7 @@ function openCodeConnectionFacts(data: Record<string, unknown>, models: readonly
 async function openCodeConnections(binary: string, models: readonly DiscoveredModel[], options: CliDiscoveryOptions): Promise<ProviderConnection[]> {
   return await openCodeMetadata(binary, options, async get => openCodeConnectionFacts(await get("/provider"), models));
 }
-function openCodeHttpModels(data: Record<string, unknown>, version: string | null): DiscoveredModel[] {
+function openCodeHttpModels(data: Record<string, unknown>): DiscoveredModel[] {
   if (!Array.isArray(data.providers)) throw new DiscoveryError("malformed");
   if (data.providers.length > 512) throw new DiscoveryError("oversized");
   checkedIds(data.providers.map(value => object(value).id));
@@ -530,7 +518,7 @@ function openCodeHttpModels(data: Record<string, unknown>, version: string | nul
     for (const id of checkedIds(Object.keys(nativeModels))) {
       const record = object(nativeModels[id]);
       if (record.id !== id || record.providerID !== binding.id) throw new DiscoveryError("malformed");
-      const capability = nativeVariantEfforts(record.variants, version);
+      const capability = nativeVariantEfforts(record.variants);
       models.push({ id: binding.id + "/" + id, ...capability, provider: binding,
         effortSource: capability.efforts === null ? null : "opencode.config/providers.variants" });
     }
@@ -541,7 +529,7 @@ function openCodeHttpModels(data: Record<string, unknown>, version: string | nul
 }
 async function openCodeHttpCatalog(binary: string, options: CliDiscoveryOptions, observation: CliObservation): Promise<CliObservation> {
   return await openCodeMetadata(binary, options, async get => {
-    const models = openCodeHttpModels(await get("/config/providers"), observation.version);
+    const models = openCodeHttpModels(await get("/config/providers"));
     const catalog: CliObservation = { ...observation, catalog: "observed", models,
       sources: [...new Set<DiscoverySource>(["version", "opencode.config/providers", ...models.flatMap(m =>
         [m.provider?.source, m.effortSource].filter((source): source is DiscoverySource => source != null))])] };
@@ -551,7 +539,7 @@ async function openCodeHttpCatalog(binary: string, options: CliDiscoveryOptions,
   });
 }
 /** Native built-in reports are metadata: verified auth gate, no conversation, no turns or tokens.
- * Raw response/configuration is discarded; unknown versions never receive a print request. */
+ * Raw response/configuration is discarded; every version uses the current metadata protocol. */
 async function agyReport(binary: string, name: "config" | "model", options: CliDiscoveryOptions, id?: string) {
   const result = await command(binary, [...(id === undefined ? [] : ["--model", id]), "--print", "/" + name, "--output-format", "json"],
     options, { ...process.env, AGY_CLI_NONINTERACTIVE_HEADLESS: "1" });
@@ -571,7 +559,6 @@ async function agyReport(binary: string, name: "config" | "model", options: CliD
 async function agyFacts(binary: string, ids: string[], options: CliDiscoveryOptions, observation: CliObservation): Promise<CliObservation> {
   const models: DiscoveredModel[] = ids.map(id => ({ id, efforts: null, provider: UNKNOWN_PROVIDER, effortSource: null }));
   const base: CliObservation = { ...observation, catalog: "observed", models, sources: ["version", "agy.models"] };
-  if (!AGY_METADATA_VERSIONS.has(observation.version ?? "")) return base;
   const deadline = Date.now() + (options.timeoutMs ?? 15_000);
   const scoped = { ...options, cwd: resolve(options.cwd) };
   const bounded = () => {
@@ -662,22 +649,21 @@ async function observe(launcher: DiscoveryLauncher, launcherOptions: CliDiscover
       }
     } catch (error) { problems.push(problem(error)); }
     try {
-      const models = (await claudeCatalog(binary, options, observation.version)).map(model => ({ ...model, provider: binding }));
+      const models = (await claudeCatalog(binary, options)).map(model => ({ ...model, provider: binding }));
       return { ...observation, authenticated, provider: binding, catalog: "observed", models,
         sources: [...sources, "claude.sdk.initialize"], problems };
     } catch (error) { return { ...observation, authenticated, provider: binding, sources, problems: [...problems, problem(error)] }; }
   }
+  const fallbackProblems: DiscoveryProblem[] = [];
   try {
-    if (launcher === "opencode" && OPENCODE_HTTP_CATALOG_VERSIONS.has(observation.version ?? "")) {
-      return await openCodeHttpCatalog(binary, options, observation);
+    if (launcher === "opencode") {
+      try { return await openCodeHttpCatalog(binary, options, observation); }
+      catch (error) { fallbackProblems.push(problem(error)); }
     }
     if (launcher === "codex") {
-      const catalog = await codexCatalog(binary, options, CODEX_RELEASE_LINE.exec(version.stdout)?.[1] ?? null);
-      // An unconfigured build that is not a verified upstream release keeps its models with an unknown provider,
-      // named by its own source so readers can say which version is not yet verified.
+      const catalog = await codexCatalog(binary, options);
       return { ...observation, catalog: "observed", models: catalog.models, authenticated: catalog.authenticated,
-        provider: catalog.provider, sources: ["version", "auth-status", "model/list", ...(catalog.provider.source ? [catalog.provider.source] : []),
-          ...(catalog.unverifiedDefault ? ["codex.builtin-provider.unverified" as const] : [])] };
+        provider: catalog.provider, problems: catalog.problems, sources: ["version", "auth-status", "model/list", ...(catalog.provider.source ? [catalog.provider.source] : [])] };
     }
     const output = await command(binary, launcher === "agy" ? ["models"] : ["models", "--verbose", "--pure"], options);
     if (output.code !== 0) throw new DiscoveryError("command-failed");
@@ -686,13 +672,13 @@ async function observe(launcher: DiscoveryLauncher, launcherOptions: CliDiscover
       if (!ids.length) throw new DiscoveryError("empty-catalog");
       return await agyFacts(binary, ids, launcherOptions, observation);
     }
-    const models = openCodeModels(output.stdout, observation.version);
-    const catalog: CliObservation = { ...observation, catalog: "observed", models, sources: [...new Set<DiscoverySource>(["version", "models", ...models.flatMap(m =>
+    const models = openCodeModels(output.stdout);
+    const catalog: CliObservation = { ...observation, catalog: "observed", models, problems: fallbackProblems, sources: [...new Set<DiscoverySource>(["version", "models", ...models.flatMap(m =>
       [m.provider?.source, m.effortSource].filter((source): source is DiscoverySource => source != null))])] };
     try { return { ...catalog, providerConnections: await openCodeConnections(binary, models, options),
       sources: [...catalog.sources, "opencode.provider/list.connected"] }; }
-    catch (error) { return { ...catalog, problems: [problem(error)] }; }
-  } catch (error) { return { ...observation, problems: [problem(error)] }; }
+    catch (error) { return { ...catalog, problems: [...new Set([...fallbackProblems, problem(error)])] }; }
+  } catch (error) { return { ...observation, problems: [...new Set([...fallbackProblems, problem(error)])] }; }
 }
 /** No model/provider whitelist: IDs and effort options are discovered as data. No turns or credential reads. */
 export async function discoverCliCapabilities(options: CliDiscoveryOptions): Promise<CliDiscoverySnapshot> {
@@ -738,12 +724,12 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
       if (name === "opencode" && record.authenticated !== "unknown") return false;
       const httpCatalog = record.sources.includes("opencode.config/providers");
       if (record.sources.some(source => typeof source === "string" && source.startsWith("opencode.config/providers")) &&
-          (!httpCatalog || !OPENCODE_HTTP_CATALOG_VERSIONS.has(record.version as string) || record.catalog !== "observed")) return false;
+          (!httpCatalog || record.catalog !== "observed")) return false;
       if (Object.hasOwn(record, "authenticationSource")) {
         if (name !== "agy" || (record.authenticated === "unknown" ? record.authenticationSource !== null : record.authenticationSource !== "agy.auth-gate")) return false;
       }
       if (name === "agy" && (record.authenticated !== "unknown" || record.sources.some(source => source !== "version" && source !== "agy.models" && source !== "declared"))) {
-        if (record.installed !== "yes" || record.catalog !== "observed" || !AGY_METADATA_VERSIONS.has(typeof record.version === "string" ? record.version : "") ||
+        if (record.installed !== "yes" || record.catalog !== "observed" ||
             record.authenticated !== "yes" || record.authenticationSource !== "agy.auth-gate" || !record.sources.includes("agy.auth-gate") ||
             !(record.sources.includes("agy.command.config") || record.sources.includes("agy.command.model"))) return false;
       }
@@ -756,7 +742,7 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
         checkedIds([p.id]);
         if (name === "claude") return scope === "cli" && p.source === "claude.auth.apiProvider" && p.id === nativeBindings.claude.firstPartyProvider;
         if (name === "codex") return scope === "cli" && (p.source === "codex.config/read" ||
-          (p.source === "codex.builtin-provider" && p.id === nativeBindings.codex.builtinProvider && typeof record.version === "string" && CODEX_BUILTIN_PROVIDER_VERSIONS.has(record.version)));
+          (p.source === "codex.builtin-provider" && p.id === nativeBindings.codex.builtinProvider));
         if (name === "agy") return scope === "cli" && p.source === "agy.command.config" && record.authenticated === "yes" && Object.values(nativeBindings.agy.providerBindings).includes(p.id);
         return name === "opencode" && scope === "model" && modelID?.startsWith(p.id + "/") === true &&
           (p.source === "opencode.models.providerID" || p.source === "opencode.models.providerPrefix" ||
@@ -796,7 +782,7 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
         }
         if (Object.hasOwn(model, "variants")) { if (name !== "opencode") return false; checkedVariants(model.variants); }
         if (name === "opencode" && model.efforts !== null && (model.efforts as unknown[]).length === 0 &&
-            (!OPENCODE_NATIVE_VARIANT_VERSIONS.has(record.version as string) || checkedVariants(model.variants).length !== 0 ||
+            (checkedVariants(model.variants).length !== 0 ||
              model.effortSource !== (httpCatalog ? "opencode.config/providers.variants" : "opencode.models.variants"))) return false;
         if (Object.hasOwn(model, "effortSource")) {
           const expected = name === "claude" ? "claude.sdk.initialize" : name === "codex" ? "model/list" : name === "agy" ? "agy.command.model" : httpCatalog ? "opencode.config/providers.variants" : "opencode.models.variants";

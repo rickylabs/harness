@@ -13,16 +13,6 @@ const UNSAFE_LABELS = ["Fixture (sk-canary123456789012)","Fixture github_pat_can
  "Fixture 10.1.2.3","Fixture host.fixture.ts.net","Fixture xoxb-canary1234","Fixture /home/PRIVATE/label","L".repeat(129),"Fixture\u0007Label"," Fixture"];
 /** Vendor label shapes measured from AGY 1.2.17 /model reports: they must stay publishable. */
 const VENDOR_LABELS = ["Gemini 3.8 Flash (High)","Gemini 3.1 Pro (Low)","Claude Opus 5.5 (Medium)","Claude Sonnet 5.5 (High)","GPT-OSS 120B (Medium)"];
-/** Whole `--version` outputs and whether they may bind the verified built-in default (review of #607). */
-const CODEX_VERSION_CASES: readonly (readonly [string, boolean])[] = [
- ["codex-cli 0.160.1\n",true],["codex-cli 0.160.1",true],["codex-cli 0.160.0\r\n",true],
- ["codex-cli 0.160.2\n",false],["codex-cli 0.161.0\n",false],["codex-cli 1.0.0\n",false],["codex-cli 0.158.0\n",false],
- ["codex-cli 0.160.2+\n",false],["codex-cli 0.160.2.1\n",false],["codex-cli 0.0160.2\n",false],["codex-cli 00.160.1\n",false],
- ["codex-cli 0.160.01\n",false],["codex-cli 0.160.1-foo_bar\n",false],["codex-cli 0.160.1-alpha.1+build.7\n",false],
- ["codex-cli 0.160.1+build.7\n",false],["fork-cli 0.160.1 (upstream 0.158.0)\n",false],["codex-cli 0.160.1 (fork)\n",false],
- ["codex-cli 0.160.1\nextra\n",false],[" codex-cli 0.160.1\n",false],["0.160.1\n",false],
-];
-const CODEX_VERSION_LINES = CODEX_VERSION_CASES.map(([line]) => line);
 async function fixture(run: (cwd: string, binary: (kind: string, behavior?: string) => Promise<string>, data: any) => Promise<void>) {
   const cwd = await mkdtemp(join(tmpdir(), "discovery-facts-"));
   const data = JSON.parse(await readFile(new URL("../src/fixtures/discovery-facts.json", import.meta.url), "utf8"));
@@ -35,6 +25,7 @@ import { createServer } from 'node:http';
 const kind=${JSON.stringify(kind)}, behavior=${JSON.stringify(behavior)}, data=JSON.parse(readFileSync(${JSON.stringify(dataPath)},'utf8'));
 const log=${JSON.stringify(join(cwd, "commands.jsonl"))}, args=process.argv.slice(2);
 const note=value=>appendFileSync(log,JSON.stringify(value)+'\\n'); note({args,pid:process.pid,cwd:process.cwd()});
+if(args[0]==='--version'&&behavior==='future-version'){console.log((kind==='codex'?'codex-cli ':'')+data.newVersions[kind]);process.exit(0);}
 if(args[0]==='--version'&&kind==='agy'&&behavior.startsWith('agy-')){console.log(behavior==='agy-v17'?'1.2.17':behavior==='agy-v18'?'1.2.18':'1.2.16');process.exit(0);}
 if(args[0]==='--version'&&kind==='claude'&&behavior==='known-serializer'){console.log('2.1.288');process.exit(0);}
 if(kind==='agy'&&args.includes('--print')){
@@ -73,7 +64,7 @@ if(kind==='agy'&&args.includes('--print')){
  if(behavior==='agy-command')result.command.name='other';
  console.log(JSON.stringify(result));process.exit(behavior==='agy-exit'?1:0);
 }
-if(args[0]==='--version'&&kind==='codex'&&behavior.startsWith('ver-')){process.stdout.write(${JSON.stringify(CODEX_VERSION_LINES)}[Number(behavior.slice(4))]);process.exit(0);}
+if(args[0]==='--version'&&kind==='codex'&&behavior.startsWith('ver-')){process.stdout.write(data.codexVersionLines[Number(behavior.slice(4))]);process.exit(0);}
 if(args[0]==='--version'){console.log(kind==='codex'&&behavior!=='other-version'?'codex-cli '+(['new-version','project-provider','scoped-read-failed'].includes(behavior)?'0.160.0':behavior==='patch-version'?'0.160.1':behavior==='unverified-patch'?'0.160.2':'0.159.3'):'1.2.3');process.exit(0);}
 if(args[0]==='auth'){if(behavior==='auth-failed'){console.log('PRIVATE-CREDENTIAL-CANARY');process.exit(2);}const auth={...data.claudeAuth};if(behavior==='auth-type')auth.loggedIn='yes';if(behavior==='auth-provider')auth.apiProvider='unknown';console.log(JSON.stringify(auth));process.exit(behavior==='auth-exit'?1:0);}
 if(args[0]==='models'){
@@ -165,7 +156,7 @@ test("native facts: Claude resolves native aliases and per-model effort without 
   assert.equal(o.authenticated,"yes");assert.equal(o.models.length,2);
   assert.equal(o.models[0].id,data.claudeModels[0].resolvedModel);
   assert.deepEqual(o.models[0].aliases,data.claudeModels.slice(0,2).map((v:any)=>v.value));
-  assert.deepEqual(o.models[0].efforts,["low","high"]);assert.equal(o.models[1].efforts,null);
+  assert.deepEqual(o.models[0].efforts,["low","high"]);assert.deepEqual(o.models[1].efforts,[]);
   assert.equal(o.provider.id,"anthropic");assert.equal(o.models[0].provider.scope,"cli");
   assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
   const log=await readFile(join(cwd,"commands.jsonl"),"utf8"); assert.ok(log.includes('"subtype":"initialize"'));
@@ -181,19 +172,12 @@ test("native facts: Codex 0.160.1 keeps the verified built-in provider",async()=
  assert.equal(o.version,"0.160.1");assert.deepEqual(o.provider,{id:"openai",source:"codex.builtin-provider",scope:"cli"});
  assert.ok(o.sources.includes("codex.builtin-provider"));assert.ok(validateCliDiscoverySnapshot(s));
 }));
-test("native facts: only an exact verified upstream Codex release line binds the built-in default; any other build keeps its models, named and unbound",async()=>fixture(async(cwd,binary)=>{
- // [line, bound]: the whole --version output decides; nothing is cut down before classification.
- for(const [index,[line,bound]] of CODEX_VERSION_CASES.entries()){
+test("native facts: every Codex version uses the current built-in binding",async()=>fixture(async(cwd,binary,data)=>{
+ for(const [index,line] of data.codexVersionLines.entries()){
   const s=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","ver-"+index))),o=wire(s).launchers.codex;
   assert.equal(o.catalog,"observed",line);assert.ok(o.models.length>0,line);assert.ok(validateCliDiscoverySnapshot(s),line);
-  if(bound){
-   assert.deepEqual(o.provider,{id:"openai",source:"codex.builtin-provider",scope:"cli"},line);
-   assert.ok(!o.sources.includes("codex.builtin-provider.unverified"),line);
-  }else{
-   assert.deepEqual(o.provider,{id:null,source:null,scope:"unknown"},line);
-   for(const m of o.models)assert.equal(m.provider.id,null,line);
-   assert.ok(o.sources.includes("codex.builtin-provider.unverified"),line);assert.ok(!o.sources.includes("codex.builtin-provider"),line);
-  }
+  assert.deepEqual(o.provider,{id:"openai",source:"codex.builtin-provider",scope:"cli"},line);
+  assert.ok(!o.sources.includes("codex.builtin-provider.unverified"),line);
  }
  // A configured provider is the runtime value the launch applies: it binds whatever the version, and is never marked.
  const configured=wire(await discoverCliCapabilities(options(cwd,"codex",await binary("codex","configured-provider")))).launchers.codex;
@@ -208,21 +192,19 @@ test("native facts: only an exact verified upstream Codex release line binds the
  assert.equal(validateCliDiscoverySnapshot(b),false);
 }));
 
-test("native facts: AGY installation/catalog are observed while auth/provider/effort remain unknown", async()=>fixture(async(cwd,binary,data)=>{
-  let s: Awaited<ReturnType<typeof discoverCliCapabilities>> | undefined;
-  await assert.doesNotReject(async()=>{s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy")));});
-  const o=wire(s).launchers.agy;assert.equal(o.installed,"yes");assert.equal(o.version,"1.2.3");assert.equal(o.catalog,"observed");
-  assert.deepEqual(o.models.map((m:any)=>m.id),data.agyModels.map((m:any)=>m.id));assert.equal(o.authenticated,"unknown");
-  for(const m of o.models){assert.equal(m.efforts,null);assert.equal(m.provider.id,null);assert.equal(m.provider.scope,"unknown");}
-  assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
-  assert.ok(!(await readFile(join(cwd,"commands.jsonl"),"utf8")).includes('--print'));
+test("native facts: AGY all versions attempt native auth/provider/effort metadata",async()=>fixture(async(cwd,binary)=>{
+ const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy"))),o=wire(s).launchers.agy;
+ assert.equal(o.catalog,"observed");assert.equal(o.authenticated,"yes");assert.equal(o.provider.id,"google");
+ assert.ok(o.models.every((m:any)=>m.efforts!==null));assert.ok(validateCliDiscoverySnapshot(s));
+ assert.ok((await readFile(join(cwd,"commands.jsonl"),"utf8")).includes('--print'));
 }));
 test("native facts: Codex configuration binding covers CLI-only models with exact source scope", async()=>fixture(async(cwd,binary)=>{
   for(const behavior of ["normal","configured-provider","config-failed","provider-constraint","custom-provider","invalid-provider","credential-provider","missing-requirements","other-version","new-version"]){
     const s=await discoverCliCapabilities(options(cwd,"codex",await binary("codex",behavior))),o=wire(s).launchers.codex;
-    assert.equal(o.catalog,"observed");const expected=behavior==='normal'||behavior==='new-version'?'openai':behavior==='configured-provider'?'fixture-gateway':null;
+    assert.equal(o.catalog,"observed");const expected=['normal','new-version','other-version'].includes(behavior)?'openai':behavior==='configured-provider'?'fixture-gateway':null;
     assert.equal(o.provider.id,expected,"successful scoped configuration proof required");assert.equal(o.models[0].provider.id,expected);
     assert.equal(o.models[0].provider.scope,expected===null?'unknown':'cli');assert.ok(validateCliDiscoverySnapshot(s));
+    if (behavior === "config-failed") assert.ok(o.problems.includes("unsupported"));
     assert.ok(!JSON.stringify(s).includes("PRIVATE"));
   }
 }));
@@ -283,7 +265,7 @@ test("native facts: OpenCode exact connections and effort bodies never rely on l
   assert.equal(o.providerConnections.find((p:any)=>p.id===data.opencodeModels[1].providerID).connected,"no");
   assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
   const lines=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").map(s=>JSON.parse(s));
-  const requests=lines.filter(v=>v.endpoint);assert.equal(requests.length,1);assert.equal(requests[0].endpoint,"/provider");
+  const requests=lines.filter(v=>v.endpoint);assert.deepEqual(requests.map(r=>r.endpoint),["/config/providers","/provider"]);
   assert.equal(requests[0].authenticated,true);assert.equal(requests[0].privatePasswordPresent,true);assert.equal(requests[0].freshPasswordFormat,true);
   const server=lines.find(v=>v.args?.[0]==='serve');assert.deepEqual(server.args,['serve','--pure','--hostname','127.0.0.1','--port','0']);
   assert.throws(()=>process.kill(server.pid,0),{code:'ESRCH'},'owned metadata server must be reaped');
@@ -300,7 +282,7 @@ for(const behavior of ["provider-failed","provider-redirect","provider-duplicate
     assert.equal(o.catalog,"observed");assert.equal(o.providerConnections,undefined);assert.ok(o.problems.length>0);
     assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
     const log=await readFile(join(cwd,"commands.jsonl"),"utf8");assert.ok(!log.includes('"endpoint":"/session'));
-    if(behavior==='provider-redirect')assert.equal(log.split('\"endpoint\":').length-1,1,'redirect must never issue a second request');
+    if(behavior==='provider-redirect')assert.equal(log.split('\"endpoint\":').length-1,2,'catalog attempt and provider read never follow redirects');
   }));
 }
 test("native facts: mismatched OpenCode header/provider metadata stays unavailable",async()=>fixture(async(cwd,binary)=>{
@@ -336,7 +318,7 @@ test("native facts: configuration-phase server requests are refused and never an
 test("native facts: provider response deadline is bounded and cannot create connections",async()=>fixture(async(cwd,binary)=>{
   const started=performance.now();
   const s=await discoverCliCapabilities({...options(cwd,"opencode",await binary("opencode","provider-timeout")),timeoutMs:300}),o=wire(s).launchers.opencode;
-  assert.equal(o.catalog,"observed");assert.equal(o.providerConnections,undefined);assert.deepEqual(o.problems,["timeout"]);
+  assert.equal(o.catalog,"observed");assert.equal(o.providerConnections,undefined);assert.ok(o.problems.includes("timeout"));
   assert.ok(performance.now()-started<2000);assert.ok(validateCliDiscoverySnapshot(s));
 }));
 test("native facts: strict additive snapshot decoder rejects forged provenance and private fields",async()=>fixture(async(cwd,binary)=>{
@@ -351,7 +333,6 @@ test("native facts: strict additive snapshot decoder rejects forged provenance a
     ['unknown provider value',s=>s.launchers.agy.provider.id='fixture-provider'],
     ['unknown provider provenance',s=>s.launchers.agy.provider.source='agy.models'],
     ['forged Claude provider',s=>{s.launchers.claude.provider.id='fixture-provider';s.launchers.claude.models.forEach((m:any)=>m.provider.id='fixture-provider');}],
-    ['builtin source revision',s=>s.launchers.codex.version='1.2.3'],
     ['model binding differs from CLI',s=>{s.launchers.codex.provider={id:'fixture-gateway',scope:'cli',source:'codex.config/read'};s.launchers.codex.sources.push('codex.config/read');s.launchers.codex.models[0].provider={id:'fixture-other',scope:'cli',source:'codex.config/read'};}],
     ['cross-vendor source',s=>s.launchers.claude.sources.push('opencode.models.variants')],
     ['missing source',s=>s.launchers.codex.sources=s.launchers.codex.sources.filter((v:string)=>v!=='codex.builtin-provider')],
@@ -374,7 +355,7 @@ test("native facts: strict additive snapshot decoder rejects forged provenance a
     ['connection facts missing',s=>delete s.launchers.opencode.providerConnections],
     ['connection on wrong CLI',s=>s.launchers.claude.providerConnections=[]],
     ['OpenCode global auth assertion',s=>s.launchers.opencode.authenticated='yes'],
-    ['AGY global auth assertion',s=>s.launchers.agy.authenticated='yes'],
+    ['AGY global auth assertion',s=>s.launchers.agy.authenticated='no'],
   ];
   for(const [label,change] of cases){const s:any=structuredClone(good);change(s);assert.equal(validateCliDiscoverySnapshot(s),false,label);}
   const reordered:any=structuredClone(good), p=reordered.launchers.codex.models[0].provider;
@@ -395,7 +376,7 @@ test("native facts: AGY native authentication gate, effective config and exact m
  assert.equal(reads.length,data.agyModels.length+1);
  for(const c of reads){assert.ok(['/config','/model'].includes(c.args[c.args.indexOf('--print')+1]));assert.equal(c.args[c.args.indexOf('--output-format')+1],'json');assert.equal(c.cwd,cwd);}
 }));
-test("native facts: AGY 1.2.17 receives the same verified metadata reports; an unverified version receives none",async()=>fixture(async(cwd,binary,data)=>{
+test("native facts: AGY newer versions receive the current metadata reports",async()=>fixture(async(cwd,binary,data)=>{
  const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-v17"))),o=wire(s).launchers.agy;
  assert.equal(o.version,"1.2.17");assert.equal(o.authenticated,"yes");assert.equal(o.authenticationSource,"agy.auth-gate");
  assert.deepEqual(o.provider,{id:"google",source:"agy.command.config",scope:"cli"});
@@ -403,10 +384,10 @@ test("native facts: AGY 1.2.17 receives the same verified metadata reports; an u
  assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
  const before=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").length;
  const u=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-v18"))),ou=wire(u).launchers.agy;
- assert.equal(ou.version,"1.2.18");assert.equal(ou.authenticated,"unknown");assert.equal(ou.provider.id,null);
- for(const m of ou.models){assert.equal(m.efforts,null);}
+ assert.equal(ou.version,"1.2.18");assert.equal(ou.authenticated,"yes");assert.equal(ou.provider.id,"google");assert.ok(validateCliDiscoverySnapshot(u));
+ assert.deepEqual(ou.models.map((m:any)=>m.efforts),data.agyModels.map((m:any)=>m.nativeEffort?[m.nativeEffort]:[]));
  const after=(await readFile(join(cwd,"commands.jsonl"),"utf8")).trim().split("\n").slice(before).map(line=>JSON.parse(line));
- assert.ok(!after.some((c:any)=>c.args?.includes('--print')),"an unverified version never receives a print request");
+ assert.ok(after.some((c:any)=>c.args?.includes('--print')), "newer versions receive metadata requests");
 }));
 test("native facts: AGY vendor labels come back verbatim from /model under the verified first-party binding",async()=>fixture(async(cwd,binary,data)=>{
  const s=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-normal"))),o=wire(s).launchers.agy;
@@ -438,9 +419,9 @@ test("native facts: an AGY label the screen refuses is dropped for that model al
  const codex=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","configured-provider")));
  const y=structuredClone(codex) as any;y.launchers.codex.models[0].labelWithheld="screened";assert.equal(validateCliDiscoverySnapshot(y),false);
 }));
-test("native facts: AGY labels stay withheld under custom, GCP, unproven, failed or custom-endpoint configs, unverified versions and the screen",async()=>fixture(async(cwd,binary)=>{
+test("native facts: AGY labels stay withheld under custom, GCP, unproven, failed or custom-endpoint configs and the screen",async()=>fixture(async(cwd,binary)=>{
  const runs:[string,string][]=[["agy-custom",""],["agy-gcp",""],["agy-unknown-provider",""],["agy-provider-type",""],["agy-config-failed",""],["agy-normal","endpoint"],
-   ["agy-v18",""],["agy-unsafe-label",""],["agy-long-label",""],["agy-control-label",""]];
+   ["agy-unsafe-label",""],["agy-long-label",""],["agy-control-label",""]];
  for(const [behavior,mode] of runs){
   const previous=process.env.GOOGLE_GEMINI_BASE_URL;
   try{if(mode==="endpoint")process.env.GOOGLE_GEMINI_BASE_URL="http://127.0.0.1:1";
@@ -499,8 +480,8 @@ test("native facts: Codex's own displayName is published under the verified buil
  const s=await discoverCliCapabilities(options(cwd,"codex",await binary("codex","normal"))),o=wire(s).launchers.codex;
  assert.equal(o.provider.source,"codex.builtin-provider");
  assert.deepEqual(o.models.map((m:any)=>m.label),data.codexModels.map((m:any)=>m.displayName));assert.ok(validateCliDiscoverySnapshot(s));
- // A configured provider, custom provider definitions or an unverified build: names stay withheld (no label at all).
- for(const behavior of ["configured-provider","custom-provider","unverified-patch"]){
+ // A configured provider or custom provider definitions: names stay withheld (no label at all).
+ for(const behavior of ["configured-provider","custom-provider"]){
   const x=wire(await discoverCliCapabilities(options(cwd,"codex",await binary("codex",behavior)))).launchers.codex;
   assert.ok(x.models.every((m:any)=>!Object.hasOwn(m,"label")&&!Object.hasOwn(m,"labelWithheld")),behavior);
  }
@@ -540,11 +521,11 @@ test("native facts: AGY selected model mismatch and invalid effort never bind ca
   assert.ok(validateCliDiscoverySnapshot(s));assert.ok(!JSON.stringify(s).includes("PRIVATE"));
  }
 }));
-test("native facts: verified Claude serializer omission proves unsupported effort, newer unknown serializers do not",async()=>fixture(async(cwd,binary)=>{
+test("native facts: Claude newer serializers use current effort omission semantics",async()=>fixture(async(cwd,binary)=>{
  const s=await discoverCliCapabilities(options(cwd,"claude",await binary("claude","known-serializer"))),m=wire(s).launchers.claude.models[1];
  assert.deepEqual(m.efforts,[]);assert.equal(m.effortSource,"claude.sdk.initialize");assert.ok(validateCliDiscoverySnapshot(s));
  const other=await discoverCliCapabilities(options(cwd,"claude",await binary("claude")));
- assert.equal(other.launchers.claude.models[1]?.efforts,null);
+ assert.deepEqual(other.launchers.claude.models[1]?.efforts,[]);assert.ok(validateCliDiscoverySnapshot(other));
 }));
 test("native facts: fleet legacy Opus alias uses the served native wire id in JSON",async()=>fixture(async(_cwd,_binary,data)=>{
  const fleet=JSON.parse(await readFile(new URL('../config/routing.fleet.v2.json',import.meta.url),'utf8'));
@@ -580,7 +561,7 @@ test("native facts: AGY metadata calls share one deadline",async()=>fixture(asyn
 test("native facts: strict AGY snapshot rejects unbound auth/provider/effort provenance",async()=>fixture(async(cwd,binary)=>{
  const original=await discoverCliCapabilities(options(cwd,"agy",await binary("agy","agy-normal")));
  const edits=[
-  (o:any)=>{o.version='9.9.9';},(o:any)=>{o.installed='unknown';},(o:any)=>{o.catalog='declared';},
+  (o:any)=>{o.installed='unknown';},(o:any)=>{o.catalog='declared';},
   (o:any)=>{o.authenticated='no';},(o:any)=>{o.authenticationSource=null;},(o:any)=>{delete o.authenticationSource;},
   (o:any)=>{o.sources=o.sources.filter((s:string)=>s!=='agy.auth-gate');},
   (o:any)=>{o.sources=['version','agy.models','agy.auth-gate'];o.models.forEach((m:any)=>{m.efforts=null;m.effortSource=null;m.provider={id:null,source:null,scope:'unknown'};});o.provider={id:null,source:null,scope:'unknown'};},
@@ -592,3 +573,17 @@ test("native facts: strict AGY snapshot rejects unbound auth/provider/effort pro
  for(const edit of edits){const s=structuredClone(original),o=wire(s).launchers.agy;edit(o);assert.equal(validateCliDiscoverySnapshot(s),false,'exact AGY provenance required');}
  const foreign=structuredClone(original);wire(foreign).launchers.claude.authenticationSource='agy.auth-gate';assert.equal(validateCliDiscoverySnapshot(foreign),false);
 }));
+
+for (const launcher of ["codex", "agy", "claude"] as const) {
+ test("future CLI version retains current discovery: " + launcher, async () => fixture(async (cwd, binary, data) => {
+  const snapshot = await discoverCliCapabilities(options(cwd, launcher, await binary(launcher, "future-version")));
+  const observation = snapshot.launchers[launcher];
+  assert.equal(observation.version, data.newVersions[launcher]);
+  assert.equal(observation.catalog, "observed");
+  assert.ok(observation.models.length > 0);
+  assert.ok(observation.models.every(model => model.provider?.id));
+  assert.ok(observation.models.every(model => model.efforts !== null));
+  assert.deepEqual(observation.problems, []);
+  assert.ok(validateCliDiscoverySnapshot(snapshot));
+ }));
+}
