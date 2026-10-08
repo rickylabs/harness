@@ -4,7 +4,7 @@
 
 `[###############-----]` **501/631 done · 55 running · 26 queued · 16 abandoned · 33 invisible**
 
-_Latest board activity: 2026-10-08T17:16:57Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T17:52:32Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (55)
 
@@ -66,7 +66,7 @@ Something could be acting on these right now.
 | [#644 [rickylabs/atelier-cockpit#451] Complete Harness/Orchid limit collection, refusal ledger and advisory governor](https://github.com/rickylabs/harness/issues/644) | `impl` | — |
 | [#645 [rickylabs/atelier-cockpit#451] Complete mobile Costs and model-picker limit consumers](https://github.com/rickylabs/harness/issues/645) | `augment-review` | — |
 | [PR647 feat(telemetry): read OpenCode token usage on the issue tree, labelled per vendor](https://github.com/rickylabs/harness/pull/647) | `impl-eval` | — |
-| [PR649 feat(provider-limits): publish durable limit evidence and advisory admission](https://github.com/rickylabs/harness/pull/649) | `impl` | — |
+| [PR649 feat(provider-limits): expose strict evidence contract and telemetry reader](https://github.com/rickylabs/harness/pull/649) | `impl` | — |
 
 ## Not on the board (18)
 
@@ -936,7 +936,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR646 fix(telemetry): read OpenCode sessions by store structure, never the CLI version
     impl-eval            PR647 feat(telemetry): read OpenCode token usage on the issue tree, labelled per vendor
     no status            #648 Provider history: stop gating OpenCode token totals on the CLI version
-    impl                 PR649 feat(provider-limits): publish durable limit evidence and advisory admission (draft)
+    impl                 PR649 feat(provider-limits): expose strict evidence contract and telemetry reader (draft)
 ```
 
 </details>
