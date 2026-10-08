@@ -3,13 +3,15 @@ import { open } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { RegimeStatus } from "@rickylabs/harness-contracts";
+import type { GovernanceReadSnapshot, RegimeStatus } from "@rickylabs/harness-contracts";
 import type { LiveLog } from "../live.js";
 import { SourceError, type GovernanceSource, type UsageSource, type Leg } from "../source.js";
 import { mapUsage } from "./usage.js";
 import { mapSpend } from "./spend.js";
 import { mapCapacity } from "./capacity.js";
-import { composeGovernance, type ComposedGovernance } from "./compose.js";
+import { composeGovernance } from "./compose.js";
+import { governanceRead } from "./read.js";
+import type { TelemetryWireFamily } from "../producer-names.js";
 import { mapTransportAvailability, readTransportAvailabilityFile } from "./transport-availability.js";
 
 /** Service injection keeps offline tests independent of Deno, credentials and networking. */
@@ -110,7 +112,10 @@ async function isolatedLeg<T = RegimeStatus>(read: () => Promise<Leg<T>>, fallba
   try { return await read(); }
   catch (error) { return { ok: false, code: error instanceof SourceError ? error.code : fallback }; }
 }
-export async function collectGovernance(source: GovernanceSource, log: LiveLog, services: SourceServices, now?: string): Promise<{ observed: ComposedGovernance; completion: string }> {
+/** Read every configured leg, compose at completion, evaluate at `now`, and decode through the contract.
+ * Throws the fixed `governance document unavailable` when the composed document does not decode. */
+export async function collectGovernance(source: GovernanceSource, log: LiveLog, services: SourceServices, now?: string,
+  wireFamily: TelemetryWireFamily = "legacy"): Promise<{ observed: GovernanceReadSnapshot; completion: string }> {
   const missing: Leg<RegimeStatus> = { ok: false, code: "not-configured" };
   const [usage, spend, capacity] = await Promise.all([
     isolatedLeg(async () => {
@@ -151,6 +156,7 @@ export async function collectGovernance(source: GovernanceSource, log: LiveLog, 
     ? await isolatedLeg(async () => mapTransportAvailability(await (services.readPrivateText ?? readTransportAvailabilityFile)(source.transportAvailability!.path)), "file-unreadable")
     : undefined;
   const completion = services.clock();
-  return { observed: composeGovernance(source, { usage, spend, capacity, events: log.files.flatMap(file => file.events), logDegraded: log.degraded,
-    ...(transportAvailability === undefined ? {} : { transportAvailability }) }, completion, now ?? completion), completion };
+  return { observed: governanceRead(composeGovernance(source, { usage, spend, capacity, events: log.files.flatMap(file => file.events),
+    logDegraded: log.degraded, ...(transportAvailability === undefined ? {} : { transportAvailability }) }, completion, now ?? completion, wireFamily)),
+  completion };
 }

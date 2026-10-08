@@ -39,7 +39,7 @@ import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
 import { instant, parseSource, type GovernanceSource } from "./source.js";
 import { collectRepositoryRunObservation, type RepositoryRunReadOptions } from "./repository-run-observation.js";
-import { governanceRead } from "./governance/read.js";
+import { invalidGovernance } from "./governance/read.js";
 import { collectGovernance, defaultSourceServices, type SourceServices } from "./governance/collect.js";
 import { parseFlags, type Flags } from "./cli-flags.js";
 import { loadGovernance, loadItems, recordEvents, whereItWrites, writeNotes } from "./cli-io.js";
@@ -99,7 +99,7 @@ options:
   --home <path>          home directory the stores live under (default: this user's)
   --items <path>         board items to join runs to: "harness-board snapshot" output, or a
                          JSON array of {number, title, epic, milestone, phase} refs
-  --observations <path>  governance observation JSON for tree/status
+  --observations <path>  governance read JSON (the "governance" output) for tree/status
   --observations-from <spec>  live source descriptor JSON path, or file:<absolute-path>
   --limit <n>            runs to read per seam, most recent first (default: 500)
   --since <iso>          only runs with activity at or after this time
@@ -109,11 +109,11 @@ options:
   --kind <name>          with "record": write that one event instead of reading stdin
   --help
 
-"--observations" is optional and applies to "tree" and "status". It reads one typed governance
-snapshot: account subscription windows, provider spend, host RAM/VRAM, and item-scoped refused
-admissions. The file is read again on every invocation. No flag is explicit UNKNOWN/UNAVAILABLE;
-a requested unreadable or invalid file is incomplete (exit 3). Stale values stay visible as STALE,
-and missing measurements stay unknown rather than becoming zero.
+"--observations" is optional and applies to "tree" and "status". It reads one governance read
+document, the JSON "governance" prints: subscription windows, provider spend, host RAM/VRAM and
+item-scoped refused admissions, evaluated again at --now. The file is reread on every invocation.
+No flag is explicit UNKNOWN/UNAVAILABLE; a requested unreadable or invalid file is incomplete
+(exit 3). Stale values stay visible as STALE, and missing measurements stay unknown, never zero.
 
 "--observations-from" applies to governance/tree/status and excludes "--observations". A descriptor
 configures independent usage, spend, configured-cgroup-v2 and recorded-admission readers.
@@ -241,8 +241,7 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
     try {
       const log = configured.admissions === null ? { files: [], notes: [], degraded: false }
         : await readObservabilityLog(resolveObservability(flags.home, services.env), flags.now);
-      const { observed, completion } = await collectGovernance(configured, log, services, flags.nowExplicit ? flags.now : undefined);
-      const document = governanceRead(observed, flags.nowExplicit ? flags.now : completion, wireFamily);
+      const { observed: document } = await collectGovernance(configured, log, services, flags.nowExplicit ? flags.now : undefined, wireFamily);
       process.stdout.write(`${JSON.stringify(document, null, 2)}\n`);
       return document.complete ? EXIT.ok : EXIT.incomplete;
     } catch { process.stderr.write("governance: document unavailable\n"); return EXIT.failed; }
@@ -358,7 +357,14 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
       loadItems(flags.items),
       source === null
         ? loadGovernance(observationPath, flags.now).then(observed => ({ observed, completion: flags.now }))
-        : collectGovernance(source, log, services, flags.nowExplicit ? flags.now : undefined),
+        : collectGovernance(source, log, services, flags.nowExplicit ? flags.now : undefined).then(
+          ({ observed, completion }) => ({ observed: { governance: observed, notes: observed.notes, ok: observed.complete }, completion }),
+          (error: unknown) => {
+            // Only a document the contract refused becomes visible unavailability; anything else is a bug.
+            const reason = "governance document unavailable";
+            if (!(error instanceof Error) || error.message !== reason) throw error;
+            return { observed: { governance: invalidGovernance(flags.now, [reason]), notes: [reason], ok: false }, completion: flags.now };
+          }),
     ]);
     const { observed } = collected;
     const now = source !== null && !flags.nowExplicit ? collected.completion : flags.now;

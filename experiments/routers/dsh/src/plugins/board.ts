@@ -46,9 +46,9 @@ import {
   buildTree,
   normaliseItems,
   publicTree,
-  type GovernanceView,
   type RunRecord,
 } from "@rickylabs/telemetry";
+import type { GovernanceReadSnapshot } from "@rickylabs/harness-contracts";
 import {
   appendBoardRefresh,
   boardProjectionDefinition,
@@ -118,7 +118,7 @@ export interface BoardRefreshInput {
   readonly notes?: readonly string[];
   readonly telemetryComplete: boolean;
   /** Optional typed governance cut captured with these board inputs. */
-  readonly observations?: GovernanceView;
+  readonly observations?: GovernanceReadSnapshot;
 }
 
 declare module "@deepseek-ai/cordis" {

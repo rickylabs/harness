@@ -59,13 +59,13 @@ describe("live governance CLI and services", () => {
     } });
     const result = await collectGovernance(source, emptyLog, services);
     assert.equal(calls, 1);
-    assert.equal(result.observed.ok, false);
-    assert.equal(result.observed.governance.availability, "fresh");
+    assert.equal(result.observed.complete, false);
+    assert.equal(result.observed.availability, "fresh");
     assert.match(JSON.stringify(result), /"spentUsd":2/);
     assert.match(JSON.stringify(result), /"ramUsedBytes":1024/);
     assert.doesNotMatch(JSON.stringify(result), /secret-canary|private-project/);
     const failedCapacity = await collectGovernance(source, emptyLog, fakeServices({ readText: async () => { throw new Error(PRIVATE_CANARY); } }));
-    assert.equal(failedCapacity.observed.ok, false);
+    assert.equal(failedCapacity.observed.complete, false);
     assert.match(JSON.stringify(failedCapacity), /"usedPercent":42/);
     assert.match(failedCapacity.observed.notes.join(" "), /capacity: cgroup-unreadable/);
   });
@@ -74,7 +74,7 @@ describe("live governance CLI and services", () => {
     const services = fakeServices({ env: {}, usage: async () => { called = true; throw new Error(); }, fetch: async () => { called = true; throw new Error(); } });
     const result = await collectGovernance(parseSource(liveDescriptor()), emptyLog, services);
     assert.equal(called, false);
-    assert.equal(result.observed.ok, false);
+    assert.equal(result.observed.complete, false);
     assert.match(result.observed.notes.join(" "), /usage: credential-unbound/);
     assert.match(result.observed.notes.join(" "), /spend: credential-unbound/);
     assert.match(JSON.stringify(result), /"ramUsedBytes":1024/);
@@ -89,7 +89,7 @@ describe("live governance CLI and services", () => {
     ] as const) {
       const source = parseSource({ ...liveDescriptor(), spend: { ...liveDescriptor().spend, timeoutMs: 5 } });
       const result = await collectGovernance(source, emptyLog, fakeServices({ fetch: fetcher }));
-      assert.equal(result.observed.ok, false);
+      assert.equal(result.observed.complete, false);
       assert.match(result.observed.notes.join(" "), new RegExp(`spend: ${reason}`));
       assert.match(JSON.stringify(result), /"usedPercent":42/);
     }
@@ -101,11 +101,11 @@ describe("live governance CLI and services", () => {
       return usagePayload();
     } }), "2026-09-07T13:00:00Z");
     assert.equal(result.completion, "2026-09-07T12:00:03Z");
-    assert.equal(result.observed.governance.availability, "stale");
+    assert.equal(result.observed.availability, "stale");
     assert.match(JSON.stringify(result), /2026-09-07T12:00:00.000Z/);
     for (const capturedAt of ["2026-09-07T11:00:00Z", "2026-09-07T12:00:01Z"]) {
       const result = await collectGovernance(parseSource(liveDescriptor()), emptyLog, fakeServices({ usage: async () => usagePayload(capturedAt) }));
-      assert.equal(result.observed.ok, false);
+      assert.equal(result.observed.complete, false);
       assert.doesNotMatch(JSON.stringify(result), /"usedPercent"/);
       assert.match(JSON.stringify(result), /"spentUsd":2/);
     }

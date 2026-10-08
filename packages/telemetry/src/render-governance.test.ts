@@ -4,64 +4,26 @@ import { describe, it } from "node:test";
 
 import { renderSnapshot } from "./render.js";
 import { buildSnapshot } from "./snapshot.js";
-import { parseGovernanceObservation } from "./observations.js";
+import { readGovernanceSnapshot, type GovernanceReadSnapshot } from "@rickylabs/harness-contracts";
+import { governanceDocument } from "./governance/test-fixture.js";
 
 const NOW = "2026-09-04T22:00:00.000Z";
 const empty = buildSnapshot({ generatedAt: NOW, runs: [], items: [] });
 
-function observed(over: Readonly<Record<string, unknown>> = {}) {
-  return parseGovernanceObservation({
-    observedAt: "2026-09-04T21:55:00.000Z",
-    validUntil: "2026-09-04T22:05:00.000Z",
-    provenance: "synthetic:test",
-    state: {
-      generatedAt: "2026-09-04T21:55:00.000Z",
-      regimes: [
-        {
-          regime: "subscription",
-          state: "throttle",
-          accounts: [{
-            seam: "codex",
-            account: "primary",
-            state: "throttle",
-            windows: [{ label: "5h", windowMinutes: 300, usedPercent: 63, resetsAt: "2026-09-04T23:00:00.000Z", binding: true }],
-            observedAt: "2026-09-04T21:55:00.000Z",
-          }],
-          note: "paced against binding window",
-        },
-        {
-          regime: "metered",
-          state: "allow",
-          providers: [{ provider: "openrouter", spentUsd: 12.5, ceilingUsd: 50, windowLabel: "monthly", observedAt: "2026-09-04T21:55:00.000Z" }],
-          note: null,
-        },
-        {
-          regime: "capacity",
-          state: "allow",
-          hosts: [{ host: "n5-fixture", vramUsedBytes: 8 * 1024 ** 3, vramTotalBytes: 24 * 1024 ** 3, ramUsedBytes: 32 * 1024 ** 3, ramTotalBytes: 128 * 1024 ** 3, observedAt: "2026-09-04T21:55:00.000Z" }],
-          note: null,
-        },
-      ],
-      pending: [],
-      notes: [],
-    },
-    admissions: [{
-      item: { number: 205 },
-      regime: "subscription",
-      state: "throttle",
-      observedAt: "2026-09-04T21:54:00.000Z",
-      validUntil: "2026-09-04T22:01:00.000Z",
-      provenance: "synthetic:dispatcher",
-      outcome: { accepted: false, reason: "quota-paced", detail: "waiting for the next subscription slot" },
-    }],
-    ...over,
-  }, NOW);
+type Available = Extract<GovernanceReadSnapshot, { readonly availability: "fresh" | "stale" }>;
+const decoded = readGovernanceSnapshot(governanceDocument(NOW));
+if (!decoded.ok || decoded.snapshot.availability === "unavailable") throw new Error("the synthetic governance document must decode");
+const canonical: Available = decoded.snapshot;
+
+/** The document the one model produces, with display-only overrides for states the renderer must still show. */
+function observed(over: Partial<Available> = {}): GovernanceReadSnapshot {
+  return { ...canonical, ...over };
 }
 
 describe("renderSnapshot governance", () => {
   it("says out loud that governance is unavailable, instead of showing nothing", () => {
     // A missing governance section reads as "all clear", which is the one thing it does not mean.
-    assert.match(renderSnapshot(empty, NOW), /governance: UNKNOWN\/UNAVAILABLE — no --observations supplied/);
+    assert.match(renderSnapshot(empty, NOW), /governance: UNKNOWN\/UNAVAILABLE — not-configured/);
   });
 
   it("shows quota, spend, headroom, and the actual admission reason before progress", () => {
@@ -70,7 +32,7 @@ describe("renderSnapshot governance", () => {
     assert.match(text, /binding 5h: 63% used/);
     assert.match(text, /openrouter: \$12\.50 spent \/ \$50\.00 ceiling/);
     assert.match(text, /VRAM 8\.0 GiB used \/ 24\.0 GiB total · 16\.0 GiB headroom/);
-    assert.match(text, /#205 throttle \[subscription\] — quota-paced: waiting for the next subscription slot/);
+    assert.match(text, /#205 throttle \[subscription\] — quota-paced · synthetic:dispatcher/);
     assert.ok(text.indexOf("#205 throttle") < text.indexOf("run(s) across"));
   });
 
@@ -79,9 +41,10 @@ describe("renderSnapshot governance", () => {
     assert.notEqual(base.availability, "unavailable");
     if (base.availability === "unavailable") return;
     const governance = observed({
-      admissions: base.admissions.map(({ availability: _availability, ...admission }) => ({
+      admissions: base.admissions.map(admission => ({
         ...admission,
         validUntil: "2026-09-04T21:59:00.000Z",
+        freshness: "stale" as const,
       })),
     });
     const text = renderSnapshot({ ...empty, governance }, NOW);

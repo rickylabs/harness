@@ -26,7 +26,7 @@ describe("harness-telemetry governance observations", () => {
     assert.match(out, /codex\/primary/);
     assert.match(out, /openrouter: \$12\.50 spent/);
     assert.match(out, /16\.0 GiB headroom/);
-    assert.match(out, /#205 throttle \[subscription\] — quota-paced: waiting for the next subscription slot/);
+    assert.match(out, /#205 throttle \[subscription\] — quota-paced · synthetic:dispatcher/);
     assert.ok(out.indexOf("#205 throttle") < out.indexOf("run(s) across"));
   });
 
@@ -75,12 +75,33 @@ describe("harness-telemetry governance observations", () => {
     assert.equal(unreadableJson.complete, false);
     assert.equal(unreadableJson.governance.availability, "unavailable");
 
-    const malformed = await seedGovernance("malformed-governance.json", { provenance: "/home/private/canary" });
+    const malformed = await seedGovernance("malformed-governance.json", { ...(governanceFixture() as object), provenance: "/private/canary" });
     const invalid = await runIsolated([
       "tree", "--home", home, "--observations", malformed, "--now", "2026-09-07T12:00:00.000Z", "--json",
     ]);
     assert.equal(invalid.code, EXIT.incomplete);
-    assert.equal(invalid.out.includes("/home/private/canary"), false);
+    assert.equal(invalid.out.includes("/private/canary"), false);
+  });
+
+  it("reports a non-JSON file without retaining its bytes", async () => {
+    const path = join(home, "not-json.json");
+    await writeFile(path, "{private canary");
+    const result = await runIsolated(["status", "--home", home, "--observations", path, "--now", "2026-09-07T12:00:00.000Z", "--json"]);
+    assert.equal(result.code, EXIT.incomplete);
+    assert.equal(JSON.parse(result.out).complete, false);
+    assert.equal(result.out.includes("private canary"), false);
+    assert.equal(result.out.includes(path), false);
+  });
+
+  it("evaluates a stored document at --now: expired stays visible as STALE, a future one is unavailable", async () => {
+    const path = await seedGovernance("evaluated-governance.json");
+    const later = await runIsolated(["status", "--home", home, "--observations", path, "--now", "2026-09-07T12:10:00.000Z"]);
+    assert.equal(later.code, EXIT.ok);
+    assert.match(later.out, /governance: STALE/);
+    assert.match(later.out, /#205 STALE throttle/);
+    const earlier = await runIsolated(["status", "--home", home, "--observations", path, "--now", "2026-09-07T11:50:00.000Z", "--json"]);
+    assert.equal(earlier.code, EXIT.incomplete);
+    assert.equal(JSON.parse(earlier.out).governance.availability, "unavailable");
   });
 });
 

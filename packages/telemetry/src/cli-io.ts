@@ -3,11 +3,12 @@ import { readFile } from "node:fs/promises";
 import { ALL_POINTERS } from "./diagnostics.js";
 import { parseItems, type LoadedItems } from "./items.js";
 import { humanBytes, livePath, logPaths, openObservabilitySink, parseEvents, resolveObservability } from "./observability.js";
-import { parseGovernanceText, unavailableGovernance, type ParsedGovernance } from "./observations.js";
 import { assertObservabilityWriteTarget } from "./log-source.js";
 import type { OperatorEnvironment } from "./operator-environment.js";
 import type { TelemetryEvent } from "./sink.js";
+import type { GovernanceReadSnapshot } from "@rickylabs/harness-contracts";
 import type { Flags } from "./cli-flags.js";
+import { governanceAt, invalidGovernance, unconfiguredGovernance } from "./governance/read.js";
 
 /** The `EXIT` name a command resolved to; `cli.ts` owns the numbers. */
 export type CliExit = "ok" | "usage" | "incomplete";
@@ -38,21 +39,26 @@ export async function loadItems(path: string | null): Promise<LoadedItems> {
   return parseItems(text, path);
 }
 
-/** Read typed governance input without allowing its local path into public notes. */
-export async function loadGovernance(path: string | null, now: string): Promise<ParsedGovernance> {
-  if (path === null) {
-    return {
-      governance: unavailableGovernance("no --observations supplied"),
-      notes: [],
-      ok: true,
-    };
-  }
-  try {
-    return parseGovernanceText(await readFile(path, "utf8"), now);
-  } catch {
-    const reason = "governance observations could not be read";
-    return { governance: unavailableGovernance(reason), notes: [reason], ok: false };
-  }
+/** Governance as `status` and `tree` take it: the read document, the notes it adds, and whether it is complete. */
+export interface LoadedGovernance {
+  readonly governance: GovernanceReadSnapshot;
+  readonly notes: readonly string[];
+  readonly ok: boolean;
+}
+
+/**
+ * Read one stored governance read document (the `governance` command's output) as of `now`, without
+ * allowing its local path or bytes into public notes. No file is the explicit unknown, not a failure.
+ */
+export async function loadGovernance(path: string | null, now: string): Promise<LoadedGovernance> {
+  if (path === null) return { governance: unconfiguredGovernance(now), notes: [], ok: true };
+  const refuse = (reason: string): LoadedGovernance => ({ governance: invalidGovernance(now, [reason]), notes: [reason], ok: false });
+  let text: string;
+  try { text = await readFile(path, "utf8"); } catch { return refuse("governance observations could not be read"); }
+  let decoded: unknown;
+  try { decoded = JSON.parse(text) as unknown; } catch { return refuse("invalid governance observations: input is not JSON"); }
+  const read = governanceAt(decoded, now);
+  return read.ok ? { governance: read.snapshot, notes: [], ok: true } : refuse(`invalid governance observations: ${read.detail}`);
 }
 
 /** Print the notes under a heading. Used when a command's own output would otherwise be silent. */

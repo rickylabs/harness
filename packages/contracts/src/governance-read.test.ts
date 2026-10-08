@@ -361,9 +361,9 @@ it("M7 approvals keep every field where they are carried; the document refuses a
 });
 it("M8 an unsafe provenance is refused without echoing it", () => {
   const input = fixture();
-  input.provenance = "/home/private/PRIVATE_CANARY";
+  input.provenance = "/private/PRIVATE_CANARY";
   refuse(input);
-  assert.equal(readRecordedAdmission(refusal({ provenance: "/home/private/PRIVATE_CANARY" }), "2026-09-07T12:00:00.000Z"), null);
+  assert.equal(readRecordedAdmission(refusal({ provenance: "/private/PRIVATE_CANARY" }), "2026-09-07T12:00:00.000Z"), null);
 });
 it("M9 missing regimes, unknown states, negative headroom and accepted refusals are refused", () => {
   assert.throws(() => parseState(state({ regimes: state().regimes.slice(0, 2) }), OBSERVED_MS));

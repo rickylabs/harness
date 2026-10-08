@@ -44,7 +44,8 @@ const observe = (native: readonly RunRecord[], wireFamily?: "harness" | "legacy"
   runs: native, dispatches: [d], observedAt: capturedAt, sourceBound: true, dispatchComplete: true, nativeComplete,
   ...(wireFamily === undefined ? {} : { wireFamily }) });
 const source: GovernanceSource = { accountLabel: "fixture", usage: null, spend: null, capacity: null, admissions: null };
-const governance = composeGovernance(source, { usage: { ok: false, code: "timeout" }, spend: { ok: false, code: "timeout" }, capacity: { ok: false, code: "timeout" }, events: [], logDegraded: false }, capturedAt, capturedAt);
+const legs = { usage: { ok: false, code: "timeout" }, spend: { ok: false, code: "timeout" }, capacity: { ok: false, code: "timeout" }, events: [], logDegraded: false } as const;
+const governance = (wireFamily?: "harness" | "legacy") => composeGovernance(source, legs, capturedAt, capturedAt, wireFamily);
 it("explicit canonical run producers preserve measurements and stamps while the default remains legacy", () => {
   for (const native of [run, { ...run, usage: {}, quota: [] }, { ...run, updatedAt: "invalid" },
     { ...run, usage: { inputTokens: -1, costUsd: -1 } }, { ...run, quota: [{ ...run.quota[0]!, usedPercent: 101 }] }]) {
@@ -110,8 +111,7 @@ it("canonical host measurements and unplaced tree fallbacks retain strict placem
   } finally { await rm(home, { recursive: true, force: true }); }
 });
 it("canonical governance producer keeps independent source provenance and legacy byte compatibility", () => {
-  const read = governanceRead;
-  const old = read(governance, capturedAt), current = read(governance, capturedAt, "harness");
+  const old = governanceRead(governance()), current = governanceRead(governance("harness"));
   assert.equal(old.producer, "dsh-telemetry"); assert.equal(current.producer, "harness-telemetry");
   assert.deepEqual({ ...current, producer: old.producer }, old); assert.ok(readGovernanceSnapshot(current).ok);
 });
@@ -125,7 +125,7 @@ it("family resolution retains absence and refuses invalid selections without ref
       () => Reflect.apply(producerAgentCost, undefined, ["source_not_bound", value]),
       () => Reflect.apply(wireProducer, undefined, [value]),
       () => Reflect.apply(projectAgentCost, undefined, [run, "invalid", value]),
-      () => Reflect.apply(governanceRead, undefined, [governance, capturedAt, value]),
+      () => Reflect.apply(composeGovernance, undefined, [source, legs, capturedAt, capturedAt, value]),
       () => buildAgentObservations({ runs: [], dispatches: [], observedAt: capturedAt,
         sourceBound: false, dispatchComplete: false, nativeComplete: false, ...({ wireFamily: value } as object) }),
       () => buildIssueAgentTreeSnapshot({ observations: observe([]), dispatches: [], runs: [], ...({ wireFamily: value } as object) }),

@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { main } from "./cli.js";
 import { defaultSourceServices, type SourceServices } from "./governance/collect.js";
 import { SPEND_URL } from "./source.js";
+import { governanceDocument } from "./governance/test-fixture.js";
 
 export let home: string;
 let heldEnvironment: Record<string, string | undefined>;
@@ -81,53 +82,8 @@ export async function seedClaude(sessionId: string, branch: string): Promise<voi
   await writeFile(join(dir, `${sessionId}.jsonl`), `${line}\n`);
 }
 
-export function governanceFixture(usedPercent = 63): unknown {
-  return {
-    observedAt: "2026-09-07T11:55:00.000Z",
-    validUntil: "2026-09-07T12:05:00.000Z",
-    provenance: "synthetic:test",
-    state: {
-      generatedAt: "2026-09-07T11:55:00.000Z",
-      regimes: [
-        {
-          regime: "subscription",
-          state: "throttle",
-          accounts: [{
-            seam: "codex",
-            account: "primary",
-            state: "throttle",
-            windows: [{ label: "5h", windowMinutes: 300, usedPercent, resetsAt: null, binding: true }],
-            observedAt: "2026-09-07T11:55:00.000Z",
-          }],
-          note: null,
-        },
-        {
-          regime: "metered",
-          state: "allow",
-          providers: [{ provider: "openrouter", spentUsd: 12.5, ceilingUsd: 50, windowLabel: "monthly", observedAt: "2026-09-07T11:55:00.000Z" }],
-          note: null,
-        },
-        {
-          regime: "capacity",
-          state: "allow",
-          hosts: [{ host: "n5-fixture", vramUsedBytes: 8 * 1024 ** 3, vramTotalBytes: 24 * 1024 ** 3, ramUsedBytes: null, ramTotalBytes: null, observedAt: "2026-09-07T11:55:00.000Z" }],
-          note: null,
-        },
-      ],
-      pending: [],
-      notes: [],
-    },
-    admissions: [{
-      item: { number: 205 },
-      regime: "subscription",
-      state: "throttle",
-      observedAt: "2026-09-07T11:54:00.000Z",
-      validUntil: "2026-09-07T12:01:00.000Z",
-      provenance: "synthetic:dispatcher",
-      outcome: { accepted: false, reason: "quota-paced", detail: "waiting for the next subscription slot" },
-    }],
-  };
-}
+/** The governance read document `--observations` reads, evaluated at the CLI tests' clock. */
+export const governanceFixture = (usedPercent = 63): unknown => governanceDocument("2026-09-07T12:00:00.000Z", usedPercent);
 
 export async function seedGovernance(name: string, value: unknown = governanceFixture()): Promise<string> {
   const path = join(home, name);

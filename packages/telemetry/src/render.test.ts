@@ -16,7 +16,7 @@ import {
 } from "./render.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
-import { unavailableGovernance } from "./observations.js";
+import { unconfiguredGovernance } from "./governance/read.js";
 
 const NOW = "2026-09-04T22:00:00.000Z";
 
@@ -40,7 +40,7 @@ const empty: TelemetrySnapshot = {
   epics: [],
   unattributed: [],
   quota: [],
-  governance: unavailableGovernance("no --observations supplied"),
+  governance: unconfiguredGovernance(NOW),
   notes: [],
 };
 

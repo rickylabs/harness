@@ -21,7 +21,7 @@ import {
   type TelemetrySnapshot,
 } from "./model.js";
 import { humanBytes } from "./observability.js";
-import type { GovernanceView } from "./observations.js";
+import type { GovernanceReadSnapshot } from "@rickylabs/harness-contracts";
 import { flatten } from "./snapshot.js";
 import type { ActivityTree, EpicNode, ItemNode, LinkedRef, MilestoneNode } from "./tree.js";
 
@@ -105,7 +105,7 @@ function headroom(used: number | null, total: number | null): string {
 
 /** Render the same leading governance block for both status and tree. */
 export function renderGovernance(
-  governance: GovernanceView,
+  governance: GovernanceReadSnapshot,
   legacyQuota: readonly QuotaReading[],
   now: string,
 ): string[] {
@@ -166,9 +166,9 @@ export function renderGovernance(
   }
 
   for (const admission of governance.admissions) {
-    const freshness = admission.availability === "stale" ? "STALE " : "";
+    const freshness = admission.freshness === "stale" ? "STALE " : "";
     lines.push(
-      `  #${admission.item.number} ${freshness}${admission.state} [${admission.regime}] — ${admission.outcome.reason}: ${admission.outcome.detail} · ${admission.provenance} · read ${humanAge(admission.observedAt, now)} ago`,
+      `  #${admission.item} ${freshness}${admission.state} [${admission.regime}] — ${admission.reason} · ${admission.provenance} · read ${humanAge(admission.observedAt, now)} ago`,
     );
   }
   for (const approval of governance.state.pending) {
