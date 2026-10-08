@@ -210,6 +210,16 @@ function admission(value: unknown, field: string, evaluated: number): RecordedAd
     provenance: identifier(input.provenance, `${field}.provenance`), reason: identifier(input.reason, `${field}.reason`), accepted: false };
 }
 
+/** One recorded refusal, decoded by the same rules as `admissions[i]` of the document, evaluated at
+ * `evaluatedAt` (0.38.0). For a producer that checks a refusal before it has an envelope. Null on any failure. */
+export function readRecordedAdmission(value: unknown, evaluatedAt: string): RecordedAdmission | null {
+  try {
+    return admission(value, "admission", timestamp(evaluatedAt, "evaluatedAt").ms);
+  } catch {
+    return null; // Hostile reflection failures never escape this public boundary.
+  }
+}
+
 /** Decode JSON-derived values into independently owned data. Never reads a clock or performs I/O.
  * Schema depth and collections are bounded. Portable JavaScript cannot inspect a Proxy trap-free.
  */
