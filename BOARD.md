@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **503/650 done · 60 running · 27 queued · 16 abandoned · 44 invisible**
+`[###############-----]` **505/651 done · 60 running · 27 queued · 16 abandoned · 43 invisible**
 
-_Latest board activity: 2026-10-08T21:55:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T22:32:34Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (60)
 
@@ -73,7 +73,7 @@ Something could be acting on these right now.
 | [#665 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)](https://github.com/rickylabs/harness/issues/665) | `plan` | — |
 | [PR668 chore(scripts): add check:leaks scan of added lines for every PR](https://github.com/rickylabs/harness/pull/668) | `impl` | — |
 
-## Not on the board (28)
+## Not on the board (27)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -101,14 +101,13 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#653 rearch(4): prune dead code - stub packages, experiments/ (dsh), dsh-* aliases, unreferenced scripts](https://github.com/rickylabs/harness/issues/653) | — | — |
 | [#654 rearch(6): one governance read model - contracts owns the shape, telemetry imports it](https://github.com/rickylabs/harness/issues/654) | — | — |
 | [#655 rearch(7): move governance out of telemetry into packages/governance](https://github.com/rickylabs/harness/issues/655) | — | — |
-| [#656 rearch(1): doctrine, target structure and starter skills - docs/DOCTRINE.md, docs/STRUCTURE.md, ADR 0006](https://github.com/rickylabs/harness/issues/656) | — | — |
 | [#657 rearch(3): consumer parity test - pin what atelier-cockpit and orchid read from harness](https://github.com/rickylabs/harness/issues/657) | — | — |
 | [#658 rearch(5): prune root prose and the second toolchain - method/, run-record/, deno.json, BOARD.md into packages/method](https://github.com/rickylabs/harness/issues/658) | — | — |
 | [#659 rearch(8): move provider packages to packages/providers/* with the doctrine layout](https://github.com/rickylabs/harness/issues/659) | — | — |
 | [#660 rearch(9): move orchid observations out of telemetry into packages/hosts/orchid](https://github.com/rickylabs/harness/issues/660) | — | — |
 | [#666 orchid retires a waiting coordinator as failed and kills its lanes](https://github.com/rickylabs/harness/issues/666) | — | — |
 
-## Anomalies (70)
+## Anomalies (69)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -187,7 +186,6 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#653** — open item has no status label, so it appears in no column
 - **#654** — open item has no status label, so it appears in no column
 - **#655** — open item has no status label, so it appears in no column
-- **#656** — open item has no status label, so it appears in no column
 - **#657** — open item has no status label, so it appears in no column
 - **#658** — open item has no status label, so it appears in no column
 - **#659** — open item has no status label, so it appears in no column
@@ -272,7 +270,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  503/650 done · 60 running · 27 queued · 16 abandoned · 44 invisible
+# rickylabs/harness  [###############-----]  505/651 done · 60 running · 27 queued · 16 abandoned · 43 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -560,7 +558,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## rearch-2026-10-08  [--------------------]  0/11 done · 1 running · 10 invisible
+## rearch-2026-10-08  [###-----------------]  2/12 done · 1 running · 9 invisible
 
   (no epic)
     no status            #651 rearch(2): leak-scan script for every PR (public repo) - descoped to scripts/check-leaks.mjs
@@ -568,12 +566,13 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #653 rearch(4): prune dead code - stub packages, experiments/ (dsh), dsh-* aliases, unreferenced scripts
     no status            #654 rearch(6): one governance read model - contracts owns the shape, telemetry imports it
     no status            #655 rearch(7): move governance out of telemetry into packages/governance
-    no status            #656 rearch(1): doctrine, target structure and starter skills - docs/DOCTRINE.md, docs/STRUCTURE.md, ADR 0006
+    shipped              #656 rearch(1): doctrine, target structure and starter skills - docs/DOCTRINE.md, docs/STRUCTURE.md, ADR 0006
     no status            #657 rearch(3): consumer parity test - pin what atelier-cockpit and orchid read from harness
     no status            #658 rearch(5): prune root prose and the second toolchain - method/, run-record/, deno.json, BOARD.md into packages/method
     no status            #659 rearch(8): move provider packages to packages/providers/* with the doctrine layout
     no status            #660 rearch(9): move orchid observations out of telemetry into packages/hosts/orchid
     impl                 PR668 chore(scripts): add check:leaks scan of added lines for every PR (draft)
+    shipped              PR669 docs(doctrine): one doctrine page, target structure, ADR 0006 and starter skills
 
 ## (no milestone)  [###############-----]  302/390 done · 43 running · 4 queued · 10 abandoned · 31 invisible
 
