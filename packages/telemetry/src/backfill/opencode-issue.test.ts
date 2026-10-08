@@ -10,13 +10,13 @@ import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { collectIssueAgentTree } from "../issue-agent-feed-cli.js";
 import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "../orchid-dispatch.js";
 import { verifyOrchidOpenCodeBinding } from "../orchid-native-binding.js";
-import { scanOpenCodeIssue } from "./opencode-issue.js";
+import { OPENCODE_SUPPORTED_VERSIONS, openCodeConversation, scanOpenCodeIssue } from "./opencode-issue.js";
 
 const rootID = "ses_fixture_root", epoch = Date.parse("2026-01-01T00:00:00.000Z");
 const provider = "fixture-provider", model = "nested/model:1", qualified = provider + "/" + model;
 const now = new Date(epoch + 30_000).toISOString();
 type FixtureOptions = { finish?: string; completed?: boolean; text?: string; error?: string; tool?: boolean;
-  userSummary?: unknown; assistantSummary?: unknown };
+  userSummary?: unknown; assistantSummary?: unknown; version?: string };
 async function fixture(o: FixtureOptions = {}) {
   const base = await mkdtemp(join(tmpdir(), "opencode-reader-"));
   const store = join(base, ".local/share/opencode"); await mkdir(store, { recursive: true, mode: 0o700 });
@@ -25,7 +25,7 @@ async function fixture(o: FixtureOptions = {}) {
     CREATE TABLE session(id TEXT PRIMARY KEY,parent_id TEXT,version TEXT,time_created INTEGER,time_updated INTEGER);
     CREATE TABLE message(id TEXT PRIMARY KEY,session_id TEXT,time_created INTEGER,time_updated INTEGER,data TEXT);
     CREATE TABLE part(id TEXT PRIMARY KEY,message_id TEXT,session_id TEXT,time_created INTEGER,time_updated INTEGER,data TEXT);`);
-  db.prepare("INSERT INTO session VALUES(?,?,?,?,?)").run(rootID, null, "1.18.34", epoch, epoch + 25_000);
+  db.prepare("INSERT INTO session VALUES(?,?,?,?,?)").run(rootID, null, o.version ?? "1.18.34", epoch, epoch + 25_000);
   const message = (id: string, data: object, session = rootID, at = epoch) =>
     db.prepare("INSERT INTO message VALUES(?,?,?,?,?)").run(id, session, at, epoch + 25_000, JSON.stringify(data));
   const part = (id: string, msg: string, data: object, session = rootID) =>
@@ -331,4 +331,59 @@ it("OpenCode duplicate nested summary keys and trailing summary JSON remain refu
       assert.equal((await scanOpenCodeIssue(f.path, rootID, 20, 8_388_608, epoch + 30_000)).reason, "source_unavailable");
     }
   } finally { await f.close(); }
+});
+
+/** Reads the fixture rows exactly as scanOpenCodeIssue selects them, for the pure projection. */
+function nativeRows(db: DatabaseSync) {
+  const session = db.prepare("SELECT id,parent_id,version,time_created FROM session WHERE id=?").get(rootID)!;
+  const messages = db.prepare("SELECT id,session_id,CAST(data AS BLOB) AS data FROM message WHERE session_id=? ORDER BY id").all(rootID);
+  const parts = db.prepare("SELECT id,message_id,session_id,CAST(data AS BLOB) AS data FROM part WHERE session_id=? ORDER BY id").all(rootID);
+  return { session, messages, parts };
+}
+it("OpenCode 1.18.35 recorded session decodes on the issue page with outcome, model and activity", async () => {
+  assert.deepEqual([...OPENCODE_SUPPORTED_VERSIONS], ["1.18.34", "1.18.35"]);
+  const f = await fixture({ version: "1.18.35", completed: false });
+  try {
+    // Shaped like a live 1.18.35 run mid-turn: assistant header without time.completed, a text part and a running tool part.
+    f.part("prt_fixture_tool", "msg_fixture_assistant", { type: "tool", callID: "call_fixture", tool: "bash",
+      state: { status: "running", input: { command: "PRIVATE-TOOL-CANARY" }, time: { start: epoch + 2000 } } });
+    const rows = nativeRows(f.db);
+    assert.equal(rows.session.version, "1.18.35");
+    const run = openCodeConversation(rows.session, rows.messages, rows.parts, f.path, epoch + 30_000);
+    assert.ok(run, "a 1.18.35 session must decode");
+    assert.equal(run.outcome, "running"); assert.equal(run.terminalAt, undefined);
+    assert.equal(run.identity.provider, provider); assert.equal(run.identity.model, qualified);
+    assert.equal(run.activitySteps?.length, 1); assert.equal(run.activitySteps?.[0]?.summary, "The work is complete.");
+    const scan = await scanOpenCodeIssue(f.path, rootID, 20, 8_388_608, epoch + 30_000);
+    assert.equal(scan.reason, null); assert.equal(scan.runs[0]?.outcome, "running");
+    const snapshot = await f.collect(); assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
+    const a = snapshot.issues[0]?.dispatches[0]?.agents[0]!;
+    assert.equal(a.harness.value, "opencode"); assert.equal(a.model.value, qualified);
+    assert.equal(a.observation.route.observed.model.value, qualified);
+    assert.equal(a.liveness.state, "running"); assert.equal(a.endedAt, null);
+    assert.equal(a.activity?.steps[0]?.summary, "The work is complete.");
+    assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
+    // The same 1.18.35 rows reach the existing native Done rule once the turn completes.
+    f.db.prepare("DELETE FROM part WHERE id=?").run("prt_fixture_tool");
+    f.db.prepare("UPDATE message SET data=json_set(data,'$.time.completed',?) WHERE id=?").run(epoch + 3000, "msg_fixture_assistant");
+    const done = (await f.collect()).issues[0]?.dispatches[0]?.agents[0]!;
+    assert.equal(done.terminalOutcome.value, "succeeded"); assert.equal(done.endedAt, new Date(epoch + 3000).toISOString());
+  } finally { await f.close(); }
+});
+it("OpenCode unknown native versions stay unavailable, never a fabricated timeline", async () => {
+  for (const version of ["9.9.9", "1.18.36", "1.18.3", ""]) {
+    const f = await fixture({ version, completed: false });
+    try {
+      f.part("prt_fixture_tool", "msg_fixture_assistant", { type: "tool", callID: "call_fixture", tool: "bash",
+        state: { status: "running", input: { command: "PRIVATE-TOOL-CANARY" }, time: { start: epoch + 2000 } } });
+      const rows = nativeRows(f.db);
+      assert.equal(openCodeConversation(rows.session, rows.messages, rows.parts, f.path, epoch + 30_000), null, version);
+      const scan = await scanOpenCodeIssue(f.path, rootID, 20, 8_388_608, epoch + 30_000);
+      assert.equal(scan.reason, "source_unavailable", version); assert.equal(scan.runs.length, 0);
+      const snapshot = await f.collect(); assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
+      assert.equal(snapshot.issues[0]?.complete, false, version);
+      const wire = JSON.stringify(snapshot);
+      assert.ok(!wire.includes("The work is complete."), version); assert.ok(!wire.includes("PRIVATE-"), version);
+    } finally { await f.close(); }
+  }
 });

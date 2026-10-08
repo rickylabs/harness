@@ -803,11 +803,13 @@ for a fresh read, with the periodic safety scan retained.
 
 OpenCode issue collection joins the dispatched reservation's private
 `NativeSessionID` to one root in the explicitly configured native database.
-The 1.18.34 legacy adapter reads fixed session/message/part columns read-only with
-WAL visibility and per-issue/session/row/byte limits. It excludes unbound history,
-titles, paths, user text, reasoning and tool output. Unknown or mixed next-schema
-rows affect only their bound issue. Native database/WAL watches trigger rereads;
-they never prove a message or terminal state.
+The legacy adapter reads native versions listed in `OPENCODE_SUPPORTED_VERSIONS`
+(1.18.34 and 1.18.35; any other version is unavailable for its issue). It reads
+fixed session/message/part columns read-only with WAL visibility and
+per-issue/session/row/byte limits. It excludes unbound history, titles, paths,
+user text, reasoning and tool output. Unknown or mixed next-schema rows affect
+only their bound issue. Native database/WAL watches trigger rereads; they never
+prove a message or terminal state.
 
 Only persisted assistant text parts reach the existing screening function.
 Native token deltas are live-only, so this SQLite reader does not promise

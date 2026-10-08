@@ -1,4 +1,5 @@
-/** OpenCode 1.18.34 legacy message/part projection. Only an exact private root is read. */
+/** OpenCode legacy message/part projection for the native versions in OPENCODE_SUPPORTED_VERSIONS.
+ * Only an exact private root is read. */
 import { createHash } from "node:crypto";
 import { lstat, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, normalize } from "node:path";
@@ -12,6 +13,8 @@ const nativeID = (v: unknown, prefix: string): v is string => typeof v === "stri
 const providerID = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9][a-z0-9._-]{0,63}$/.test(v);
 const modelID = (v: unknown): v is string => typeof v === "string" && /^~?[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(v);
 type Row = Readonly<Record<string, unknown>>;
+/** Each entry is a native version whose message/part rows were verified against this projection; any other version reads as unavailable. */
+export const OPENCODE_SUPPORTED_VERSIONS: ReadonlySet<string> = new Set(["1.18.34", "1.18.35"]);
 const object = (v: unknown): Record<string, unknown> => {
   if (v === null || typeof v !== "object" || Array.isArray(v)) throw Error();
   return v as Record<string, unknown>;
@@ -80,7 +83,8 @@ export function openCodeConversation(session: Row, messages: readonly Row[], par
   try {
     const id = session.id, parent = session.parent_id;
     if (!sessionID(id) || (parent !== null && (!sessionID(parent) || parent === id)) ||
-        session.version !== "1.18.34" || messages.length + parts.length > MAX_ROWS) return null;
+        typeof session.version !== "string" || !OPENCODE_SUPPORTED_VERSIONS.has(session.version) ||
+        messages.length + parts.length > MAX_ROWS) return null;
     const start = millis(session.time_created, 1, nowMs), byMessage = new Map<string, Row[]>();
     const seenParts = new Set<string>();
     for (const part of parts) {
