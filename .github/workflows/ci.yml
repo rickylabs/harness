@@ -2,7 +2,8 @@
 # scripts compose: `typecheck` emits declarations, `build` emits JS, `test` runs against that
 # emitted JS. The root scripts also run `scripts/check-*.mjs` around them — the project graph and
 # the board lifecycle before, the publishability of `contracts` after — so all three are checked
-# here without this file having to know they exist.
+# here without this file having to know they exist. On a pull request, `check:leaks` also scans the
+# lines the branch adds, because this repository is public.
 #
 # Still deliberately absent: any publish step. `contracts` is the only package meant to leave this
 # repository and it has its own pipeline in `release-contracts.yml` (#81), triggered by a tag rather
@@ -17,8 +18,7 @@ on:
   push:
     branches: [main]
 
-# This repository is private, so these minutes are billed. One job, and a push that supersedes an
-# in-flight run cancels it rather than queueing behind it.
+# One job, and a push that supersedes an in-flight run cancels it rather than queueing behind it.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -35,6 +35,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history: `check:leaks` diffs from the merge base, and a shallow clone has none, which
+          # makes the scan inconclusive rather than green.
+          fetch-depth: 0
 
       # Ahead of setup-node, because `cache: pnpm` needs the pnpm binary to resolve the store path.
       # No `version:` input on purpose — the action reads `packageManager` from package.json, so CI
@@ -56,6 +60,10 @@ jobs:
       # `--frozen-lockfile` is most of the reason to run this at all: an install that quietly
       # resolves a different tree than the lockfile records has reproduced nothing.
       - run: pnpm install --frozen-lockfile
+
+      # Lines added by this pull request only. It prints `file:line reason`, never the matched text.
+      - if: github.event_name == 'pull_request'
+        run: pnpm run check:leaks -- --base origin/${{ github.base_ref }}
 
       - run: pnpm run typecheck
 
