@@ -18,22 +18,25 @@ import {
 } from "./delegation-matrix.ts";
 import { assertEvaluatorIndependence, resolveCoordinatorRoute, resolveWorkloadRoute } from "./routing-policy.ts";
 import { matrixTable } from "./cli/delegation-matrix-table.ts";
+import { OWNER_ROUTING_2026_10_08, ownerCoordinatorRoutes, ownerWorkloadRoutes } from "../test-fixtures/owner-routing.2026-10-08.mjs";
 
 const fixture = name => JSON.parse(readFileSync(new URL(`../test-fixtures/${name}`, import.meta.url), "utf8"));
 const referenceTable = fixture("matrix-table.0985265.json");
 const referenceCatalog = fixture("matrix-catalog.0985265.json");
 const roles = [...DELEGATION_ROLES];
 
-// The frozen source is historical evidence. Apply only the owner's 2026-09-30
-// Codex policy to the expected table; other routes, order and loop policies stay exact.
+// The frozen source is historical evidence. Apply only the owner's 2026-09-30 Codex policy and
+// 2026-10-08 Opus/Sol routing to the expected table; other routes, order and loop policies stay exact.
 function currentOwnerTable() {
   const expected = structuredClone(referenceTable.table);
   const update = routes => routes.map(candidate =>
     candidate.model === "luna" ? { model: "sol", effort: "low" } :
       candidate.model === "sol" ? { model: "sol", effort: "xhigh" } :
       candidate.model === "grok_4_6" ? { ...candidate, model: "grok_4_7" } : candidate);
-  for (const tier of expected.tiers) for (const role of roles) tier[role] = update(tier[role]);
-  for (const scope of Object.keys(expected.coordinators)) expected.coordinators[scope] = update(expected.coordinators[scope]);
+  for (const tier of expected.tiers) for (const role of roles) tier[role] = ownerWorkloadRoutes(tier.tier, role, update(tier[role]));
+  for (const scope of Object.keys(expected.coordinators)) {
+    expected.coordinators[scope] = ownerCoordinatorRoutes(scope, update(expected.coordinators[scope]));
+  }
   return expected;
 }
 const expectedTable = currentOwnerTable();
@@ -75,29 +78,48 @@ test("catalog retains each source capability and prefers newer Harness native ID
   }
   assert.equal(MODEL_CATALOG.sol.capabilities[0].model, "gpt-6.1-sol");
   assert.equal(MODEL_CATALOG.luna.capabilities[0].model, "gpt-6-luna");
-  assert.equal(resolveWorkloadRoute({ tier: "feature", role: "implementation", worktree: "." }).model, "gpt-6.1-sol");
+  assert.equal(resolveWorkloadRoute({ tier: "feature", role: "implementation", worktree: "." }).model, "claude-opus-5-5");
+});
+
+test("the 2026-10-08 owner decision routes Opus 5.5 authors, Sol high evaluators and an Opus 5.5 milestone coordinator", () => {
+  const coordinator = resolveCoordinatorRoute({ tier: "milestone", worktree: "." });
+  assert.deepEqual([coordinator.agent, coordinator.model, coordinator.effort], ["claude", "claude-opus-5-5", "xhigh"]);
+  const privilegedTierAuthorization = { authorizer: "owner", rationale: "Owner routing 2026-10-08" };
+  for (const tier of OWNER_ROUTING_2026_10_08.tiers) {
+    const author = resolveWorkloadRoute({ tier, role: "implementation", worktree: ".", privilegedTierAuthorization });
+    assert.deepEqual([author.agent, author.model, author.effort, author.family], ["claude", "claude-opus-5-5", "high", "anthropic"], tier);
+    for (const role of ["plan_evaluation", "implementation_evaluation"]) {
+      if (!DELEGATION_MATRIX[tier][role].length) continue;
+      const evaluator = resolveWorkloadRoute({ tier, role, worktree: ".", generatorModel: "opus_5_5", privilegedTierAuthorization });
+      assert.deepEqual([evaluator.agent, evaluator.model, evaluator.effort, evaluator.family], ["codex", "gpt-6.1-sol", "high", "openai"], `${tier}/${role}`);
+    }
+  }
+  assert.deepEqual(DELEGATION_MATRIX.simple.plan_evaluation, []);
+  assert.equal(DELEGATION_MATRIX.architecture.implementation[0].model, "astra");
 });
 
 test("Codex uses Sol 6.1 low for former Luna cells, xhigh otherwise, and unchanged Astra", () => {
   for (const tier of ["simple", "straightforward", "feature"]) {
-    const selected = resolveWorkloadRoute({ tier, role: "implementation", worktree: "." });
+    const selected = resolveWorkloadRoute({ tier, role: "implementation", worktree: ".", unavailableModels: ["opus_5_5"] });
     assert.deepEqual([selected.model, selected.effort], ["gpt-6.1-sol", tier === "simple" ? "low" : "xhigh"], tier);
   }
   for (const tier of WORKLOAD_TIERS) for (const role of roles) {
     for (const candidate of DELEGATION_MATRIX[tier][role]) {
       assert.notEqual(candidate.model, "luna", `${tier}/${role}`);
       if (candidate.model === "sol") {
-        const effort = role === "deep_research" || (tier === "simple" && role === "implementation") ? "low" : "xhigh";
+        const owned = OWNER_ROUTING_2026_10_08.tiers.includes(tier) && OWNER_ROUTING_2026_10_08.roles[role]?.model === "sol" &&
+          candidate === DELEGATION_MATRIX[tier][role][0];
+        const effort = owned ? "high" : role === "deep_research" || (tier === "simple" && role === "implementation") ? "low" : "xhigh";
         assert.equal(candidate.effort, effort, `${tier}/${role}`);
       }
     }
   }
   for (const tier of Object.keys(COORDINATOR_MATRIX)) {
-    const selected = resolveCoordinatorRoute({ tier, worktree: "." });
+    const selected = resolveCoordinatorRoute({ tier, worktree: ".", unavailableModels: ["opus_5_5"] });
     assert.deepEqual([selected.model, selected.effort], ["gpt-6.1-sol", "xhigh"], tier);
   }
   for (const [tier, effort] of [["complex", "medium"], ["architecture", "xhigh"]]) {
-    const selected = resolveWorkloadRoute({ tier, role: "implementation", worktree: ".",
+    const selected = resolveWorkloadRoute({ tier, role: "implementation", worktree: ".", unavailableModels: ["opus_5_5"],
       privilegedTierAuthorization: { authorizer: "owner", rationale: "Approved complex work" } });
     assert.deepEqual([selected.model, selected.effort], ["gpt-6-astra", effort], tier);
   }
@@ -107,7 +129,8 @@ test("Codex uses Sol 6.1 low for former Luna cells, xhigh otherwise, and unchang
 test("privileged routes and owner overrides keep source-backed guards", () => {
   assert.throws(() => resolveWorkloadRoute({ tier: "complex", role: "implementation", worktree: "." }));
   const auth = { authorizer: "owner", rationale: "Approved architecture review" };
-  assert.equal(resolveWorkloadRoute({ tier: "complex", role: "implementation", worktree: ".", privilegedTierAuthorization: auth }).logicalModel, "astra");
+  assert.equal(resolveWorkloadRoute({ tier: "complex", role: "implementation", worktree: ".", privilegedTierAuthorization: auth }).logicalModel, "opus_5_5");
+  assert.equal(resolveWorkloadRoute({ tier: "architecture", role: "implementation", worktree: ".", privilegedTierAuthorization: auth }).logicalModel, "astra");
   const override = { authorizer: "owner", rationale: "Measured proof", worklogPath: ".llm/runs/proof--one/worklog.md", route: { model: "opus_5_5", effort: "high" } };
   assertOwnerMatrixOverride("feature", "implementation", override);
   assert.equal(ownerMatrixOverrideWorklogEntry("feature", "implementation", override),
@@ -117,7 +140,7 @@ test("privileged routes and owner overrides keep source-backed guards", () => {
 });
 
 test("fallback, role transport and cross-family evaluator remain enforced", () => {
-  const fallback = resolveWorkloadRoute({ tier: "feature", role: "implementation", worktree: ".", unavailableTransports: ["codex"] });
+  const fallback = resolveWorkloadRoute({ tier: "feature", role: "implementation", worktree: ".", unavailableTransports: ["claude", "codex"] });
   assert.equal(fallback.logicalModel, "muse_spark_1_3");
   assert.throws(() => resolveWorkloadRoute({ tier: "feature", role: "deep_research", worktree: ".", unavailableTransports: ["agy", "codex", "github_copilot"] }));
   const evaluator = selectEvaluator("feature", "implementation", "sol");

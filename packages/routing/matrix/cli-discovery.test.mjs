@@ -5,8 +5,9 @@ import { resolveWorkloadRoute } from './routing-policy.ts';
 import { preflightDiscoveredWorkloadRoute } from './cli-preflight.ts';
 import { routeLaunchability, assertRouteLaunchable, RouteLaunchError } from './launchability.ts';
 
+// Opus 5.5 leads simple implementation; withholding it keeps these Codex catalog fixtures on Sol.
 const request = (tier = 'simple', role = 'implementation') => ({
-  tier, role, ...(role.endsWith('_evaluation') ? { generatorModel: 'sol' } : {}), worktree: '.',
+  tier, role, ...(role.endsWith('_evaluation') ? { generatorModel: 'sol' } : {}), worktree: '.', unavailableModels: ['opus_5_5'],
   privilegedTierAuthorization: { authorizer: 'owner', rationale: 'Synthetic evaluator coverage' },
 });
 function snapshot(launcher, ids, observedAt = new Date().toISOString()) {
