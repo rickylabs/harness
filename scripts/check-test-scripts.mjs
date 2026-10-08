@@ -15,9 +15,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** Packages declared as carrying no tests, each with the condition that removes the entry. */
 export const DECLARED_UNCOVERED = [
-  { name: "governance", reason: "Single source file, no behaviour to cover. ARCHITECTURE.md retains these core responsibilities with explicit implementation gaps. Remove this entry when the package gains behaviour." },
-  { name: "netscript-bridge", reason: "Single source file, no behaviour to cover. ARCHITECTURE.md retains these core responsibilities with explicit implementation gaps. Remove this entry when the package gains behaviour." },
-  { name: "provider-acp", reason: "Single source file, no behaviour to cover. ARCHITECTURE.md retains these core responsibilities with explicit implementation gaps. Remove this entry when the package gains behaviour." },
+  { name: "governance", reason: "Single source file, no behaviour to cover. docs/STRUCTURE.md assigns this package to its owning rearch issue. Remove this entry when the package gains behaviour." },
+  { name: "netscript-bridge", reason: "Single source file, no behaviour to cover. docs/STRUCTURE.md assigns this package to its owning rearch issue. Remove this entry when the package gains behaviour." },
+  { name: "provider-acp", reason: "Single source file, no behaviour to cover. docs/STRUCTURE.md assigns this package to its owning rearch issue. Remove this entry when the package gains behaviour." },
 ];
 
 /** Pure so the test can drive it without a filesystem. */

@@ -1,7 +1,7 @@
 # Blocked decisions in a cluster snapshot
 
 A blocked report row or leaf must reference one complete, open decision for its lane.
-The cluster validator enforces charter [I4](../../ARCHITECTURE.md#7-invariants).
+The cluster validator enforces run invariant [I4](../DOCTRINE.md#run-invariants).
 A successful check establishes consistency of the supplied snapshot. It does not establish
 that a decision is still open in cockpit, was durably appended, or was read by the owner.
 

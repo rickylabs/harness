@@ -18,7 +18,7 @@ quota observations to three permanently separate rows. It collects no data and a
 The existing `dsh-telemetry runs --json` / `agentObservations` surface and exported decoder retain
 schema 1, protocol 1. No matching cockpit contract change is needed.
 
-**CITED.** [Charter section 9](../../ARCHITECTURE.md#9-cost) requires subscription headroom, metered
+**CITED.** [The doctrine's cost rule](../DOCTRINE.md#cost) requires subscription headroom, metered
 spend and run tokens as separate truths. [The task](https://github.com/rickylabs/harness/issues/377)
 requires unknown and zero to remain distinct.
 

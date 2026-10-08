@@ -1,7 +1,7 @@
 /**
  * The decision, for a person.
  *
- * Principle 10: the conclusion first, then how it got there. So the evaluator's name is on line one
+ * Summary first: the conclusion first, then how it got there. So the evaluator's name is on line one
  * and the rejections are underneath — a reader deciding whether to trust the gate needs the verdict
  * in one glance and the working only if they doubt it.
  *

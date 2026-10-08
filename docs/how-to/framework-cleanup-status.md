@@ -10,7 +10,7 @@ older schemas or settings.
 | 1 | Owner decision, charter and current framework documentation | Coordinator-owned issue text updates and board regeneration |
 | 2 | Canonical core CLI names and callable compatibility aliases | Alias retirement requires a complete supported caller census |
 | 3 | Optional router isolated under experiments; default checks select fourteen core packages | Router acceptance remains separately authorized after the next APK |
-| 4 | Canonical method and run-record homes with cold compatibility entrypoints | Vault refresh uses this truthful structure; storage/checkpoint work is separate |
+| 4 | Canonical method and run-record homes; the compatibility copies were later deleted by ADR 0006 | Vault refresh uses this truthful structure; storage/checkpoint work is separate |
 | 5 | Canonical operator settings, conflict refusal and fenced log-family selection | Paired reader forwarding and operator file/settings migration |
 | 6 | Exact canonical/legacy cost reader unions in released contracts 0.36.0 | Cockpit schema/client regeneration and supported mobile captures |
 | 7 | Explicit canonical producer selection, current core naming and classified residual references | Canonical default promotion and live wire/log activation await paired readiness |

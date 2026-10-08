@@ -30,7 +30,7 @@
 
 | Decision     | Source                 | Notes     |
 | ------------ | ---------------------- | --------- |
-| `<decision>` | `<plan/doctrine/code>` | `<notes>` |
+| `<decision>` | `<plan, doctrine or code>` | `<notes>` |
 
 ## Files Changed
 

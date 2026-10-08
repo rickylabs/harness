@@ -26,8 +26,8 @@ draws the full deployment picture those five pages sit inside.
 
 - **How to do a specific thing** → [`how-to/`](../how-to/).
 - **Flags, subcommands, exit codes** → [`reference/`](../reference/), generated.
-- **How work is staged, reviewed and gated** → [`method/doctrine/`](../../method/doctrine/). That is method, it is
-  portable to any repository, and it deliberately lives outside `docs/`.
+- **How work is staged, reviewed and gated** → [`DOCTRINE.md`](../DOCTRINE.md). That is method: the
+  rules every change and run is held to.
 - **The design rationale for one package** → that package's README. Those are the deepest documents
   in the repository; these pages link to them rather than summarising them.
 

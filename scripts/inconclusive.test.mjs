@@ -13,7 +13,7 @@ function scratch() { return mkdtempSync(join(tmpdir(), "inconclusive-guard-")); 
 
 test("inconclusive is not zero, because a gate that did not run is never green", () => {
   assert.equal(INCONCLUSIVE_EXIT, 2);
-  assert.notEqual(INCONCLUSIVE_EXIT, 0, "a green inconclusive inverts principle 6");
+  assert.notEqual(INCONCLUSIVE_EXIT, 0, "a green inconclusive inverts the three-state gate rule");
   assert.notEqual(INCONCLUSIVE_EXIT, 1, "an inconclusive indistinguishable from a failure is the defect");
 });
 

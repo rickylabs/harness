@@ -1,6 +1,6 @@
 # RFC 0001: First-class Layer 1 adoption
 
-- Status: proposed; no charter amendment or runtime acceptance
+- Status: proposed; no decision record or runtime acceptance
 - Date: 2026-09-14
 - Scope: Harness board, matrix, admission, telemetry, two seams, sandbox boundary and forge
 - Evidence snapshot: Harness `eb33b3aa149f475e85d53c2fcf2e5dba7718679e`;
@@ -28,9 +28,10 @@ composition point, an explicit source binding and a reproducible refusal/accepta
 Adopt supported NetScript implementations through their existing service boundary where needed.
 Do not translate the Deno framework into a second Node runtime.
 
-**CURRENT.** The [locked family charter](../../ARCHITECTURE.md) owns the portable runtime,
+**CURRENT.** The [doctrine](../DOCTRINE.md) and [decisions](../decisions/) own the portable runtime,
 keeps divybot as dispatcher, parks UHP dispatch and puts profiles plus matrix-before-spawn first.
-[Cockpit's Layer 1 description](https://github.com/rickylabs/atelier-cockpit/blob/041e620e4fbaf68828fa44f49a63b55a0eec16cd/doctrine/ARCHITECTURE.md#layer-1--coordination)
+Cockpit's Layer 1 description (the Layer 1 coordination section of the ARCHITECTURE page in its
+[pinned doctrine directory](https://github.com/rickylabs/atelier-cockpit/tree/041e620e4fbaf68828fa44f49a63b55a0eec16cd/doctrine))
 names the same coordination responsibilities. Its Layer 2 owns product event-log/worker/saga
 composition. Adoption does not transfer those product responsibilities into Harness.
 
@@ -100,7 +101,7 @@ installation, live source binding and product acceptance. It names the exact com
 version, bounds and completeness/refusal semantics. Incomplete trees are rejected as a whole;
 a prefix must not appear to be complete ancestry. Native session identities stay private.
 
-**CURRENT.** The charter's three cost rows have distinct sources and units. The per-issue
+**CURRENT.** The doctrine's [three cost truths](../DOCTRINE.md#cost) have distinct sources and units. The per-issue
 candidate keeps all three explicitly unavailable until bound. Provider-wide subscription
 headroom does not become one run's metered spend. The current task does not authorize another
 collector or a native model/session observer.
@@ -145,10 +146,10 @@ verifiable behavior. It does not mean importing every framework subsystem into t
 The main cost is retaining explicit incomplete/unavailable states while integration evidence
 is missing; that prevents the phone from presenting invented operational truth.
 
-**CURRENT.** The family charter takes precedence over older repository descriptions. The
+**CURRENT.** The doctrine and decisions take precedence over older repository descriptions. The
 cockpit document's historical fixed trigger vocabulary does not override Harness's current
 configuration-driven routing source. No runtime constants are introduced to imitate an older
-matrix snapshot. Any actual change of ownership or charter requires a numbered owner decision.
+matrix snapshot. Any actual change of ownership or doctrine requires a numbered owner decision.
 
 ## Revisit triggers
 
