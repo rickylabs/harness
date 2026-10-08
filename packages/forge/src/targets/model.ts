@@ -66,7 +66,7 @@ export interface Target {
  * of this type: the field's *default* is the inbox repository, so a config that simply omits it is
  * a config that puts an unreviewed five-minute commit loop on the inbox's default branch. Applying
  * the default at the parse is what lets `checkTargets` refuse the omission and the explicit spelling
- * with one rule instead of two — see `method/doctrine/decisions/0001-doctrine-and-memory.md`.
+ * with one rule instead of two — see `docs/decisions/0001-doctrine-and-memory.md`.
  */
 export interface MemoryStore {
   readonly enabled: boolean;
@@ -302,10 +302,10 @@ export function checkTargets(table: TargetTable): readonly TargetProblem[] {
 }
 
 /**
- * The one rule `method/doctrine/decisions/0001-doctrine-and-memory.md` asked for something to enforce.
+ * The one rule `docs/decisions/0001-doctrine-and-memory.md` asked for something to enforce.
  *
  * The store is a five-minute commit loop, driven by agents, pushing straight onto a branch. Pointed
- * at the inbox it would run that loop on the repository that holds `method/doctrine/`, `packages/` and the
+ * at the inbox it would run that loop on the repository that holds `docs/`, `packages/` and the
  * board's own rulebook. The ADR closes with "nothing enforces this boundary mechanically"; this is
  * the mechanism.
  *

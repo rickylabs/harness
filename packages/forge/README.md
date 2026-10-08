@@ -1,7 +1,7 @@
 # @rickylabs/forge
 
 GitHub taxonomy/process setup and bridge rules. Owned by epic E7 · #37. Orchid remains the
-physical dispatcher; [ADR 0005](../../method/doctrine/decisions/0005-harness-framework-identity.md)
+physical dispatcher; [ADR 0005](../../docs/decisions/0005-harness-framework-identity.md)
 supersedes the absorption/Herdr-retirement premise.
 
 The board taxonomy lands ahead of that epic because it is the mechanism the epic will drive: labels

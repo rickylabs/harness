@@ -5,12 +5,17 @@ source structure and naming support below. Source support and product/operator a
 have separate evidence; the naming rollout remains pending while supported consumers use
 older schemas or settings.
 
+The slices below are the earlier cleanup history under ADR 0005. The policy now in force is
+[ADR 0006](../decisions/0006-rearch-2026-10-08.md): no compatibility retention, delete and do not
+deprecate. The remaining method and CLI cleanup belongs to
+[#658](https://github.com/rickylabs/harness/issues/658).
+
 | Slice | Source result | Remaining rollout |
 | --- | --- | --- |
 | 1 | Owner decision, charter and current framework documentation | Coordinator-owned issue text updates and board regeneration |
-| 2 | Canonical core CLI names and callable compatibility aliases | Alias retirement requires a complete supported caller census |
+| 2 | Canonical core CLI names and callable compatibility aliases | Superseded by ADR 0006: the aliases are to be deleted, with no census gate; the remaining CLI cleanup belongs to #658 |
 | 3 | Optional router isolated under experiments; default checks select fourteen core packages | Router acceptance remains separately authorized after the next APK |
-| 4 | Canonical method and run-record homes with cold compatibility entrypoints | Vault refresh uses this truthful structure; storage/checkpoint work is separate |
+| 4 | Canonical method and run-record homes; the compatibility copies were later deleted by ADR 0006 | Vault refresh uses this truthful structure; storage/checkpoint work is separate |
 | 5 | Canonical operator settings, conflict refusal and fenced log-family selection | Paired reader forwarding and operator file/settings migration |
 | 6 | Exact canonical/legacy cost reader unions in released contracts 0.36.0 | Cockpit schema/client regeneration and supported mobile captures |
 | 7 | Explicit canonical producer selection, current core naming and classified residual references | Canonical default promotion and live wire/log activation await paired readiness |
@@ -30,9 +35,9 @@ in unrelated identifiers are recorded separately. Remaining references have expl
 
 - Real upstream package, SDK, profile and optional-router identities describe the retained
   experiment. They are not renamed into fictional dependencies.
-- Legacy protocol, cookie, service-key, cost-source and log identities are compatibility
-  boundaries. Readers keep their exact provenance and guards; supported callers and stored
-  data prevent unmeasured alias retirement.
+- Legacy protocol, cookie, service-key, cost-source and log identities are wire and stored-data
+  boundaries. Readers keep their exact provenance and guards, because contracts change only
+  additively (ADR 0005, kept by ADR 0006).
 - Synthetic old/new fixtures and alias controls prove that compatibility still works.
 - Completed records and earlier owner decisions retain their original source text. Current
   supersession guidance links the framework decision without rewriting historical evidence.

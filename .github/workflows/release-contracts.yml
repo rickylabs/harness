@@ -69,11 +69,6 @@ jobs:
           # Writes the .npmrc that makes NODE_AUTH_TOKEN mean something to `npm publish`.
           registry-url: "https://registry.npmjs.org"
 
-      # Release re-runs the cold method commands that CI also checks.
-      - uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.9.7
-
       - run: pnpm install --frozen-lockfile
 
       # The same three commands CI runs, against the tagged tree rather than the merge commit.

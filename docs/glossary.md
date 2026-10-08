@@ -25,10 +25,9 @@ tag, and it is applied deliberately.
 
 ### doctrine
 
-The portable half of this project: how work is staged, reviewed and gated, written as markdown with
-no runtime, in [`method/doctrine/`](../method/doctrine/). It works in any repository in any language, which is why
-it is not in `docs/` and not in a package. Compare **mechanics** — the parts a machine can enforce,
-which are the packages.
+The rules this project is held to: the golden rules, the run invariants and how work is staged,
+reviewed and gated, written as one markdown page with no runtime, [`DOCTRINE.md`](DOCTRINE.md).
+Compare **mechanics** — the parts a machine can enforce, which are the packages.
 
 ### drift
 
@@ -137,7 +136,7 @@ composition uses `ctx.subagents`/`ctx.llm`; its coordinator vocabulary is `subsc
 
 The **mutation surface**: the exact set of paths a run declares, up front, that it may write.
 Anything found outside it afterwards is **drift**, not scope. Declared in a run's `supervisor.md`
-([`method/doctrine/WORKFLOW.md`](../method/doctrine/WORKFLOW.md)). An **evidence set** carries a `surface` field in
+([run lifecycle](DOCTRINE.md#run-lifecycle)). An **evidence set** carries a `surface` field in
 the same sense — the scope the gates it collects are claimed to cover.
 
 ---

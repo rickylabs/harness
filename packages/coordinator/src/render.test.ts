@@ -32,7 +32,7 @@ const lines = (candidates: readonly Candidate[]): readonly string[] =>
 
 describe("renderDecision", () => {
   it("puts the verdict on line one", () => {
-    // Principle 10. A reader who stops after one line has still read the answer.
+    // Summary first. A reader who stops after one line has still read the answer.
     assert.equal(lines([codex])[0], "evaluator: run-codex  (openai · subscription · gpt-5.6-sol · xhigh)");
   });
 

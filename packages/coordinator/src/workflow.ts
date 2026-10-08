@@ -1,11 +1,12 @@
 /**
  * The workflow, as data — milestone down to subagent run.
  *
- * The reason this is a definition and not a procedure is Principle 7: deterministic work belongs in
- * the daemon. A workflow expressed as code that calls things is a workflow you can only inspect by
- * running it, and running it is exactly what you are not allowed to do before the gates pass. So the
- * shape is inert: steps, what each one needs, and what it must cite. Deciding what may run next is a
- * pure function over that shape and the current state (`plan.ts`); *doing* it is somebody else's job.
+ * The reason this is a definition and not a procedure is the working rule that deterministic work
+ * belongs in the daemon. A workflow expressed as code that calls things is a workflow you can only
+ * inspect by running it, and running it is exactly what you are not allowed to do before the gates
+ * pass. So the shape is inert: steps, what each one needs, and what it must cite. Deciding what may
+ * run next is a pure function over that shape and the current state (`plan.ts`); *doing* it is
+ * somebody else's job.
  *
  * Two words collide here and it is worth being plain about it. `stage` is one of the five phases the
  * owner named — decompose, dispatch, gate, review, land — and it is where a step sits in the story.
@@ -13,10 +14,10 @@
  * refuse. Most gates live in the `gate` stage; not all of them do, because a decomposition has to be
  * gated before anything is written down, and that gate belongs to decompose.
  *
- * The one structural rule is Principle 5, and it is checked rather than asserted: **every effect step
- * must have a gate somewhere in what it needs.** A workflow whose effects can be reached without
- * passing a gate is not a workflow with a governance problem, it is a workflow that does not encode
- * governance at all, and `checkWorkflow` refuses it by name.
+ * The one structural rule is "nothing mutates before the gate", and it is checked rather than
+ * asserted: **every effect step must have a gate somewhere in what it needs.** A workflow whose
+ * effects can be reached without passing a gate is not a workflow with a governance problem, it is a
+ * workflow that does not encode governance at all, and `checkWorkflow` refuses it by name.
  */
 
 import type { CitationKind } from "./citation.js";
@@ -60,7 +61,7 @@ export interface Step {
   /** Step ids that must be done first. Declaration order is the plan's order. */
   readonly needs: readonly string[];
   /**
-   * What this step must cite to be recorded as done — Principle 3, as a field.
+   * What this step must cite to be recorded as done — the citation rule, as a field.
    *
    * An empty list means the step makes no claim. Anything else, and `settle` refuses to mark it done
    * without citations that parse as references, which is the difference between a workflow that says
@@ -143,8 +144,9 @@ export function checkWorkflow(workflow: Workflow): readonly Problem[] {
     }
   }
 
-  // Principle 5, checked. An effect with no gate upstream is the whole failure mode this system
-  // exists to prevent, so it is named as its own rule rather than folded into a generic warning.
+  // Nothing mutates before the gate, checked. An effect with no gate upstream is the whole failure
+  // mode this system exists to prevent, so it is named as its own rule rather than folded into a
+  // generic warning.
   for (const step of workflow.steps) {
     if (step.kind !== "effect") continue;
     if (cycleThrough(workflow, step.id)) continue;
@@ -179,7 +181,7 @@ export function checkWorkflow(workflow: Workflow): readonly Problem[] {
  * per agent. Each gate here corresponds to something that exists or is being built: the decomposition
  * gate to coverage of a milestone's acceptance items, the admission gate to E5's regimes, the
  * evaluator gate to `independence.ts`, the review and land gates to the verdicts in
- * `method/doctrine/WORKFLOW.md`.
+ * `docs/DOCTRINE.md` (run lifecycle).
  */
 export const MILESTONE_WORKFLOW: Workflow = {
   name: "milestone",

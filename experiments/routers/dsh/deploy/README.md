@@ -1,7 +1,7 @@
 # deploy
 
 Retained deployment recipe for the **optional dsh-router experiment**. It does not deploy the
-Harness framework on Orchid and Herdr. [ADR 0005](../../../../method/doctrine/decisions/0005-harness-framework-identity.md)
+Harness framework on Orchid and Herdr. [ADR 0005](../../../../docs/decisions/0005-harness-framework-identity.md)
 records the approved relocation to `experiments/routers/dsh`.. No boot or
 live experiment acceptance is implied; testing waits until after the next APK. Two files:
 

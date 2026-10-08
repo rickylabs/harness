@@ -54,7 +54,7 @@ full requirement.
 
 | Decision     | Reason     | Source                 |
 | ------------ | ---------- | ---------------------- |
-| `<decision>` | `<reason>` | `<plan/doctrine/code>` |
+| `<decision>` | `<reason>` | `<plan, doctrine or code>` |
 
 ## Drift
 

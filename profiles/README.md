@@ -25,7 +25,9 @@ The dispatcher injects this line into every brief that names one:
 So a profile file is not documentation *about* a process. It is the process, addressed to the
 agent that just woke up holding it.
 
-See [`../ARCHITECTURE.md`](../ARCHITECTURE.md) §5–§6 for how a profile reaches an agent.
+See [dispatch and route authority](../docs/DOCTRINE.md#dispatch-and-route-authority) and the
+[live-inbox hazard](../AGENTS.md#operational-hazard-this-repository-is-a-live-inbox) for how a profile
+reaches an agent.
 
 ---
 
@@ -51,7 +53,7 @@ Then the phases, in order, each one saying what it produces and what proves it.
    a routing decision by reading source with `grep`, `sed` or `awk`.
 2. **Record requested versus observed.** Every launch records the model, effort, transport,
    role, tier, session reference and branch it *asked for* and the ones it *got*. A run without
-   that record is not a valid run (ARCHITECTURE.md I1).
+   that record is not a valid run ([I1](../docs/DOCTRINE.md#run-invariants)).
 3. **Never self-certify.** The agent that produced work never evaluates it. Evaluator and
    generator are separate sessions from different vendor families (I2).
 4. **Privileged tiers need authority.** `complex` and `architecture` require a named authorizer

@@ -10,18 +10,17 @@ is explicit, mechanical, and the same for a person and a machine.
 
 ## Where a decision lives
 
-**Architecture is ratified in [`ARCHITECTURE.md`](ARCHITECTURE.md); everything else is ratified on
-the board.** The four decisions that constrain everything else were taken in the *Decisions taken*
-table of [#30](https://github.com/rickylabs/harness/issues/30), which records where they were
-ratified. That issue is closed and the charter supersedes it: where the two differ, the charter
-wins. They are restated in [`README.md`](README.md#ratified-decisions) and
+**Architecture is ratified in numbered decisions in [`docs/decisions/`](docs/decisions/), with the
+rules in [`docs/DOCTRINE.md`](docs/DOCTRINE.md); everything else is ratified on the board.** The
+original decisions were taken in the *Decisions taken* table of
+[#30](https://github.com/rickylabs/harness/issues/30). That issue is closed and later decisions
+supersede it: where they differ, the latest decision wins. They are restated in [`README.md`](README.md#ratified-decisions) and
 [`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) because root documents are what a reader
 meets first and a root document that contradicts a ratified decision propagates the contradiction
 silently.
 
-Reversing one is a numbered decision in [`method/doctrine/decisions/`](method/doctrine/decisions/) before it is a
-change to code — [`ARCHITECTURE.md`](ARCHITECTURE.md) §13, carrying the evidence, the
-recommendation, and the cost of being wrong. Not a change to #30, which is closed.
+Reversing one is a new numbered decision in [`docs/decisions/`](docs/decisions/) before it is a
+change to code, carrying the evidence, the recommendation, and the cost of being wrong. Not a change to #30, which is closed.
 
 A decision is one of three things, and the difference is load-bearing:
 
@@ -31,7 +30,7 @@ A decision is one of three things, and the difference is load-bearing:
 | **Taken, reversible** | Decided, and expected to be revisited — the MIT licence, the divybot strangler-fig | The owner, on the board |
 | **Owner fork** | Open. Depends on what the owner wants, not on what is true. | Only the owner |
 
-Architecture decision records live in [`method/doctrine/decisions/`](method/doctrine/decisions/) for the reasoning
+Architecture decision records live in [`docs/decisions/`](docs/decisions/) for the reasoning
 that outlives the issue thread.
 
 ## Owner forks: the escalation primitive

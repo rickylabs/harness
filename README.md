@@ -3,13 +3,13 @@
 [![ci](https://github.com/rickylabs/harness/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/rickylabs/harness/actions/workflows/ci.yml)
 [![licence: MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
 [![node](https://img.shields.io/badge/node-%E2%89%A524-informational)](https://nodejs.org)
-[![portable agent runtime](https://img.shields.io/badge/portable-agent%20runtime-6f42c1)](ARCHITECTURE.md)
+[![portable agent runtime](https://img.shields.io/badge/portable-agent%20runtime-6f42c1)](docs/DOCTRINE.md)
 
 **Our portable agent framework, built on Orchid and Herdr.** Routing, native
 activity, board and coordination tools, published contracts, profiles and the
 method make agent work governed and observable. The retained DeepSeek Harness
 integration is an optional additional-router experiment, not the framework's host.
-[ADR 0005](method/doctrine/decisions/0005-harness-framework-identity.md) records the owner decision.
+[ADR 0005](docs/decisions/0005-harness-framework-identity.md) and [ADR 0006](docs/decisions/0006-rearch-2026-10-08.md) record the owner decisions.
 
 [Understand the loop](#how-the-layer-works) | [Try a local proof](#local-proof-first) |
 [The board](BOARD.md) | [Documentation](docs/)
@@ -39,8 +39,7 @@ The method is not new here. The doctrine this repository encodes ran across
 three codebases with nothing in common — a Deno runtime spine, a Deno chat
 harness at depth, and a Next.js marketing site — and transferred cleanly for
 mechanics and not at all for domain knowledge. That asymmetry is the product
-seam: **mechanics are portable, knowledge is specific.** The prior-art table
-in [`AGENTS.md`](AGENTS.md) names all three.
+seam: **mechanics are portable, knowledge is specific.**
 
 ## How the layer works
 
@@ -138,10 +137,10 @@ These operational references distinguish implemented behavior from planned work.
 
 | You are… | Go | First outcome |
 | --- | --- | --- |
-| evaluating or reviewing | the diagram above → [method/doctrine/WORKFLOW.md](method/doctrine/WORKFLOW.md) → [concepts](docs/concepts/) | how work is staged, gated and independently reviewed, and what counts as evidence |
+| evaluating or reviewing | the diagram above → [docs/DOCTRINE.md](docs/DOCTRINE.md#run-lifecycle) → [concepts](docs/concepts/) | how work is staged, gated and independently reviewed, and what counts as evidence |
 | contributing | the [status](#status) section → [packages/README.md](packages/README.md) → [CONTRIBUTING.md](CONTRIBUTING.md) | the current implementation truth and a safe change surface |
 | adopting locally | [local proof](#local-proof-first) → the [tutorial](docs/tutorials/01-from-clone-to-board.md) | deterministic behavior proven on your machine, without a daemon |
-| operating a live host | the [charter](ARCHITECTURE.md) → [Orchid](https://github.com/rickylabs/orchid) and [Herdr](https://github.com/herdrdev/herdr) → native provider and telemetry docs | dispatch/control ownership and each observed prerequisite |
+| operating a live host | the [structure](docs/STRUCTURE.md) → [Orchid](https://github.com/rickylabs/orchid) and [Herdr](https://github.com/herdrdev/herdr) → native provider and telemetry docs | dispatch/control ownership and each observed prerequisite |
 
 ## Local proof first
 
@@ -241,10 +240,10 @@ belongs to the optional router; core CLI use above requires no profile installat
 
 ## Architecture commitments
 
-[ADR 0005](method/doctrine/decisions/0005-harness-framework-identity.md) establishes Harness
+[ADR 0005](docs/decisions/0005-harness-framework-identity.md) establishes Harness
 as our framework on [Orchid](https://github.com/rickylabs/orchid) and
 [Herdr](https://github.com/herdrdev/herdr). The core packages do not require the
-optional dsh composition. [ARCHITECTURE.md](ARCHITECTURE.md) owns the charter and
+optional dsh composition. [docs/DOCTRINE.md](docs/DOCTRINE.md) owns the rules, [docs/STRUCTURE.md](docs/STRUCTURE.md) the tree, and
 [the package guide](packages/README.md) states shipped, partial and stub boundaries.
 
 - **Two execution boundaries.** Native CLIs own their autonomous loops. API and
@@ -277,11 +276,10 @@ mobile are separate products. Their runtime product API is cockpit's captured,
 generated client; an old protocol-1/mux contract is a compatibility surface, not a
 claim that the app runs on dsh.
 
-Cleanup proceeds one reviewed PR at a time: documentation, CLI compatibility,
-experiment isolation, then method/run-record homes. The vault refresh starts after
-these four PRs merge. Operator and wire/producer naming migrations 5–7 remain
-pending until their paired rollouts are proved. No source merge authorizes a live
-configuration change, activation or deployment.
+[ADR 0006](docs/decisions/0006-rearch-2026-10-08.md) supersedes ADR 0005's compatibility
+posture where they differ: no shims, aliases or generated copies inside this repository, and
+only the consumer surfaces in [docs/STRUCTURE.md](docs/STRUCTURE.md#consumer-surfaces) are held
+stable. No source merge authorizes a live configuration change, activation or deployment.
 
 ## Packages
 
@@ -309,15 +307,12 @@ owns the complete package-to-epic table and implementation status.
 
 ```
 packages/             fourteen flat core packages
-docs/                 concepts, tutorials, how-to, reference, glossary
-method/doctrine/      how to work here: portable, stable, no runtime
+docs/                 DOCTRINE, STRUCTURE, decisions, concepts, tutorials, how-to, reference, glossary
 method/tools/         method validators and gates
-run-record/templates/ canonical run artifacts; legacy entrypoints remain available
+run-record/templates/ the artifact templates a run fills in
 experiments/routers/  optional router source, docs and deployment recipes
 scripts/              the repository-wide checks the root scripts run
 .llm/runs/            run artifacts — durable, reviewed via PR
-.llm/harness/         the artifact templates a run fills in
-.llm/tools/           milestone and gate tooling (Deno; see below)
 .github/labels.yml    the ejected label taxonomy — generated, then reviewed
 .github/workflows/    the CI gate, the release pipeline, the status-label settler, the board
 .claude/skills/       the generated board skill (`pnpm run skill:install`)
@@ -328,9 +323,9 @@ deno.json             see below
 ```
 
 `deno.json` and `deno.lock` at the root of a pnpm monorepo look like debris
-and are not: they run the milestone and gate tooling under `.llm/tools/`.
-Whether that second toolchain stays is an open owner fork, recorded on
-[#140](https://github.com/rickylabs/harness/issues/140).
+and are not: they run the milestone and gate tooling under `method/tools/`.
+[ADR 0006](docs/decisions/0006-rearch-2026-10-08.md) settles that second toolchain: it goes when
+[#658](https://github.com/rickylabs/harness/issues/658) moves that tooling into a package.
 
 ## Contributing
 

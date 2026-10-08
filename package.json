@@ -27,7 +27,7 @@
     "typecheck": "node scripts/run-stages.mjs --label typecheck --compile-stage typecheck:packages check:stages check:core-selection check:graph check:lifecycle typecheck:packages",
     "check:cluster": "node --test method/tools/harness/blocked-decisions.test.mjs",
     "check:test-scripts": "node --test scripts/check-test-scripts.test.mjs && node scripts/check-test-scripts.mjs",
-    "test": "node scripts/run-stages.mjs --label test check:stages check:core-selection check:test-scripts check:receipts check:cluster check:method test:packages check:cli-aliases check:installed",
+    "test": "node scripts/run-stages.mjs --label test check:stages check:core-selection check:test-scripts check:receipts check:cluster test:packages check:cli-aliases check:installed",
     "skill:install": "pnpm --filter @rickylabs/forge run build && node packages/forge/dist/cli.js skill install --dispatch-label harness",
     "golden:bless": "pnpm run experiment:dsh:golden:bless",
     "clean": "node scripts/core-packages.mjs clean",
@@ -48,8 +48,7 @@
     "docs:cli:dsh": "pnpm run experiment:dsh:build && node scripts/cli-reference.mjs --experiment-dsh --write",
     "check:tutorial:dsh": "node scripts/check-tutorial.mjs --experiment-dsh",
     "experiment:dsh:check": "node scripts/run-stages.mjs --label experimental-dsh --compile-stage experiment:dsh:build check:graph experiment:dsh:build experiment:dsh:unit check:docs:dsh check:tutorial:dsh",
-    "experiment:dsh:golden:bless": "pnpm run experiment:dsh:build && node experiments/routers/dsh/dist/bless.js",
-    "check:method": "node --test scripts/method-layout.test.mjs && node scripts/method-compatibility.mjs"
+    "experiment:dsh:golden:bless": "pnpm run experiment:dsh:build && node experiments/routers/dsh/dist/bless.js"
   },
   "devDependencies": {
     "@types/node": "^26.4.1",
