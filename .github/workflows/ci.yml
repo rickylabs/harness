@@ -60,4 +60,9 @@ jobs:
       # all 74 .js. If that ever stopped holding, `test` below would find no files to run and pass.
       - run: pnpm run build
 
+      # orchid runs packages/routing/matrix/cli/delegation-matrix-table.ts under Deno; test:parity runs it the same way.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+
       - run: pnpm test
