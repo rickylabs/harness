@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[###############-----]` **505/651 done · 60 running · 27 queued · 16 abandoned · 43 invisible**
+`[###############-----]` **505/652 done · 61 running · 27 queued · 16 abandoned · 43 invisible**
 
-_Latest board activity: 2026-10-08T22:39:33Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T23:02:20Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (60)
+## Moving now (61)
 
 Something could be acting on these right now.
 
@@ -72,6 +72,7 @@ Something could be acting on these right now.
 | [#664 [rickylabs/atelier-mobile#343] Epic: production-grade Expo app (one api layer, one route tree, gates)](https://github.com/rickylabs/harness/issues/664) | `plan` | — |
 | [#665 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)](https://github.com/rickylabs/harness/issues/665) | `plan` | — |
 | [PR668 chore(scripts): add check:leaks scan of added lines for every PR](https://github.com/rickylabs/harness/pull/668) | `impl` | — |
+| [PR670 test(parity): pin the atelier-cockpit and orchid consumer surfaces](https://github.com/rickylabs/harness/pull/670) | `impl` | — |
 
 ## Not on the board (27)
 
@@ -270,7 +271,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  505/651 done · 60 running · 27 queued · 16 abandoned · 43 invisible
+# rickylabs/harness  [###############-----]  505/652 done · 61 running · 27 queued · 16 abandoned · 43 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -558,7 +559,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## rearch-2026-10-08  [###-----------------]  2/12 done · 1 running · 9 invisible
+## rearch-2026-10-08  [###-----------------]  2/13 done · 2 running · 9 invisible
 
   (no epic)
     no status            #651 rearch(2): leak-scan script for every PR (public repo) - descoped to scripts/check-leaks.mjs
@@ -573,6 +574,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #660 rearch(9): move orchid observations out of telemetry into packages/hosts/orchid
     impl                 PR668 chore(scripts): add check:leaks scan of added lines for every PR (draft)
     shipped              PR669 docs(doctrine): one doctrine page, target structure, ADR 0006 and starter skills
+    impl                 PR670 test(parity): pin the atelier-cockpit and orchid consumer surfaces (draft)
 
 ## (no milestone)  [###############-----]  302/390 done · 43 running · 4 queued · 10 abandoned · 31 invisible
 
