@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[###############-----]` **503/643 done · 55 running · 26 queued · 16 abandoned · 43 invisible**
+`[###############-----]` **503/647 done · 59 running · 26 queued · 16 abandoned · 43 invisible**
 
-_Latest board activity: 2026-10-08T20:48:50Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T21:09:29Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (55)
+## Moving now (59)
 
 Something could be acting on these right now.
 
@@ -67,6 +67,10 @@ Something could be acting on these right now.
 | [PR647 feat(telemetry): read OpenCode token usage on the issue tree, labelled per vendor](https://github.com/rickylabs/harness/pull/647) | `impl-eval` | — |
 | [PR649 feat(provider-limits): expose strict evidence contract and telemetry reader](https://github.com/rickylabs/harness/pull/649) | `ready-merge` | — |
 | [#650 [rickylabs/atelier-cockpit#451] Finish installed provider-limit wiring and end-to-end acceptance proof](https://github.com/rickylabs/harness/issues/650) | `research` | — |
+| [#662 [rickylabs/harness#622] Epic: structured, doctrine-first harness monorepo (tree, rules, native signals, gates)](https://github.com/rickylabs/harness/issues/662) | `plan` | — |
+| [#663 [rickylabs/atelier-cockpit#541] Agents screen: one row per run, running count matches, dispatched runs never shown as stale operator sessions](https://github.com/rickylabs/harness/issues/663) | `plan` | — |
+| [#664 [rickylabs/atelier-mobile#343] Epic: production-grade Expo app (one api layer, one route tree, gates)](https://github.com/rickylabs/harness/issues/664) | `plan` | — |
+| [#665 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)](https://github.com/rickylabs/harness/issues/665) | `plan` | — |
 
 ## Not on the board (27)
 
@@ -210,7 +214,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 302/384 done · 39 running · 3 queued · 10 abandoned · 30 invisible
+`[#########---]` 302/388 done · 43 running · 3 queued · 10 abandoned · 30 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -220,7 +224,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 265/343 done · 38 running · 2 queued · 10 abandoned · 28 invisible | — |
+| _(no epic)_ | `[#########---]` 265/347 done · 42 running · 2 queued · 10 abandoned · 28 invisible | — |
 
 ## Waiting to start
 
@@ -264,7 +268,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  503/643 done · 55 running · 26 queued · 16 abandoned · 43 invisible
+# rickylabs/harness  [###############-----]  503/647 done · 59 running · 26 queued · 16 abandoned · 43 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -566,7 +570,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #659 rearch(8): move provider packages to packages/providers/* with the doctrine layout
     no status            #660 rearch(9): move orchid observations out of telemetry into packages/hosts/orchid
 
-## (no milestone)  [###############-----]  302/384 done · 39 running · 3 queued · 10 abandoned · 30 invisible
+## (no milestone)  [###############-----]  302/388 done · 43 running · 3 queued · 10 abandoned · 30 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -971,6 +975,10 @@ Open, and carrying no `status:` label — real work no column can see.
     ready-merge          PR649 feat(provider-limits): expose strict evidence contract and telemetry reader
     research             #650 [rickylabs/atelier-cockpit#451] Finish installed provider-limit wiring and end-to-end acceptance proof
     shipped              PR661 feat(routing): Opus 5.5 authors and milestone coordinator, Sol high evaluators (owner 2026-10-08)
+    plan                 #662 [rickylabs/harness#622] Epic: structured, doctrine-first harness monorepo (tree, rules, native signals, gates)
+    plan                 #663 [rickylabs/atelier-cockpit#541] Agents screen: one row per run, running count matches, dispatched runs never shown as stale operator sessions
+    plan                 #664 [rickylabs/atelier-mobile#343] Epic: production-grade Expo app (one api layer, one route tree, gates)
+    plan                 #665 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)
 ```
 
 </details>
