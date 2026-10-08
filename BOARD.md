@@ -4,7 +4,7 @@
 
 `[###############-----]` **498/629 done · 55 running · 28 queued · 16 abandoned · 32 invisible**
 
-_Latest board activity: 2026-10-08T15:06:22Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T15:21:04Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (55)
 
@@ -65,7 +65,7 @@ Something could be acting on these right now.
 | [#640 [rickylabs/atelier-mobile#355] Issue lists: badge showing which issues have an agent running, on every list](https://github.com/rickylabs/harness/issues/640) | `plan` | — |
 | [#641 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)](https://github.com/rickylabs/harness/issues/641) | `plan` | — |
 | [#643 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)](https://github.com/rickylabs/harness/issues/643) | `plan` | — |
-| [PR646 fix(telemetry): read OpenCode 1.18.35 sessions on the issue page](https://github.com/rickylabs/harness/pull/646) | `impl-eval` | — |
+| [PR646 fix(telemetry): read OpenCode sessions by store structure, never the CLI version](https://github.com/rickylabs/harness/pull/646) | `impl-eval` | — |
 | [PR647 feat(telemetry): read OpenCode token usage on the issue tree, labelled per vendor](https://github.com/rickylabs/harness/pull/647) | `impl-eval` | — |
 
 ## Not on the board (17)
@@ -933,7 +933,7 @@ Open, and carrying no `status:` label — real work no column can see.
     plan                 #643 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)
     triage               #644 [rickylabs/atelier-cockpit#451] Complete Harness/Orchid limit collection, refusal ledger and advisory governor
     triage               #645 [rickylabs/atelier-cockpit#451] Complete mobile Costs and model-picker limit consumers
-    impl-eval            PR646 fix(telemetry): read OpenCode 1.18.35 sessions on the issue page
+    impl-eval            PR646 fix(telemetry): read OpenCode sessions by store structure, never the CLI version
     impl-eval            PR647 feat(telemetry): read OpenCode token usage on the issue tree, labelled per vendor
 ```
 
