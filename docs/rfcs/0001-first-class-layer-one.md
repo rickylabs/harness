@@ -29,7 +29,7 @@ Adopt supported NetScript implementations through their existing service boundar
 Do not translate the Deno framework into a second Node runtime.
 
 **CURRENT.** The [doctrine](../DOCTRINE.md) and [decisions](../decisions/) own the portable runtime,
-keeps divybot as dispatcher, parks UHP dispatch and puts profiles plus matrix-before-spawn first.
+keep divybot as dispatcher, park UHP dispatch and put profiles plus matrix-before-spawn first.
 Cockpit's Layer 1 description (the Layer 1 coordination section of the ARCHITECTURE page in its
 [pinned doctrine directory](https://github.com/rickylabs/atelier-cockpit/tree/041e620e4fbaf68828fa44f49a63b55a0eec16cd/doctrine))
 names the same coordination responsibilities. Its Layer 2 owns product event-log/worker/saga
