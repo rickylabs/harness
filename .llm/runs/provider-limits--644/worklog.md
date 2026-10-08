@@ -1,0 +1,7 @@
+# provider-limits--644 worklog
+
+2026-10-08: verified Cockpit542 merged, upstream451 open,644/645 unassigned with no comments, no existing linked producer PR. Selected644; cloned isolated Harness/Orchid worktrees, read live Harness charter and doctrine, consulted memory before source. Queried fresh matrix three roles JSON. Found current governor still caps0 at ceilings and adjusts below via burn estimator; existing sampling owns Claude/Codex both windows, no second poller needed. No implementation or board changes before plan gate.
+
+Design checkpoint (all seven): public surface strict ProviderLimitSnapshotV1 decoder/reader+CLI and Orchid compatible source; vocabulary meter/window/binding/outcome/tombstone; ports existing native sampler, private ledger filesystem, fixed own-key HTTPS, bound native export; constants schema1/max1024/max1MiB/warn90/deadline15s; ordered commit slices in plan; deferred live deployment/mobile/publication only; contributor docs/provider-limits.md. Plan ready for independent adversarial review, no code or board mutation yet.
+
+Plan fallback round1 FAIL_FIX; dispositions: same-native-clock timestamps plus replay fences, reserve finite configured scope capacity and explicit inactive-success compaction (success tombstones retain actual contract meaning), source behavior expressly authorized while live activation remains forbidden, remove operator-import clearance entirely. Baseline race0 recorded. Nonblocking private directory/O_EXCL/output-path/diagnostic invariants added. Resubmit same session; max2 rounds.

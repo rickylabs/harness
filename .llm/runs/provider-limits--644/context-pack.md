@@ -1,0 +1,7 @@
+# provider-limits--644 discovery handoff
+
+Active complete unit Harness644 after merged Cockpit542. Own Harness and Orchid worktrees in projects/provider-limits-{harness,orchid}/worktrees/feat-provider-limits-644. Start with supervisor.md for paths/base/routing. Fresh matrix recorded; plan not written/evaluated yet, so no product/board mutation. Need finish source discovery of governor admission, native provider outcome roots, auth/key boundary, strict published reader and production snapshot configuration. Mobile645 remains independent. Prior639 evaluator exhausted; new unit needs its own independent session. Exact contract is Cockpit contracts/versions/v1/provider-limits.ts on merged542; null-account provider-wide outcome must retain own row. Next implement whole producer/governor and Harness published-contract/reader unit after planPASS, dependency PR Orchid plus Harness PR. Do not stop after another reader-only placeholder.
+
+Plan round1 FAIL_FIX amended and ready round2 same Fable session. Primary GLM exact API/native no usable verdict within bounded waits; run artifacts record unreachable, no formal failure. No product mutation yet.
+
+Plan independent Fable fallback round2 PASS. GLM native120s/API180s without usable verdict, own attempts terminated. StageG passed. Full Orchid baseline race0. Proceed full coupled implementation slice, supervisor commits after independent review.
