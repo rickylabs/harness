@@ -112,10 +112,19 @@ export type AgentActivity =
       readonly steps: readonly AgentActivityStep[] }
   | { readonly availability: "unavailable"; readonly reason: AgentUnavailableReason; readonly observedAt: null;
       readonly steps: readonly [] };
-/** Processed input + output: Codex input already holds cached input; Claude adds cache read and write. Reasoning is a subset. */
+/** The native counter a measured used-tokens figure came from, one per vendor that has one (0.38.0 adds OpenCode). */
+export const AGENT_TOKEN_SOURCES = Object.freeze(["codex-token-count", "claude-usage", "opencode-usage"] as const);
+export type AgentTokenSource = typeof AGENT_TOKEN_SOURCES[number];
+const tokenSource = (value: unknown): value is AgentTokenSource =>
+  typeof value === "string" && (AGENT_TOKEN_SOURCES as readonly string[]).includes(value);
+/**
+ * Processed input + output. Codex input already holds cached input and its reasoning is a subset of output.
+ * Claude adds cache read and write. OpenCode adds cache read and write and its reasoning, which its native
+ * output excludes.
+ */
 export type AgentTokenUsage =
   | { readonly usedTokens: number; readonly budgetTokens: number | null; readonly observedAt: string;
-      readonly source: "codex-token-count" | "claude-usage"; readonly reason: null }
+      readonly source: AgentTokenSource; readonly reason: null }
   | { readonly usedTokens: null; readonly budgetTokens: number | null; readonly observedAt: null;
       readonly source: "unavailable"; readonly reason: AgentUnavailableReason };
 /** Independent native cumulative samples and confirmed root budget changes; never an issue-wide sum. */
@@ -127,7 +136,7 @@ export interface AgentBudgetPoint {
 }
 export type AgentTokenHistory =
   | { readonly points: readonly AgentTokenPoint[]; readonly truncated: boolean;
-      readonly source: "codex-token-count" | "claude-usage"; readonly reason: null }
+      readonly source: AgentTokenSource; readonly reason: null }
   | { readonly points: readonly []; readonly truncated: false; readonly source: "unavailable";
       readonly reason: AgentUnavailableReason };
 export type AgentBudgetHistory =
@@ -420,7 +429,7 @@ function tokenUsageRow(value: unknown, capturedAt: string, budgetTokens: number 
     return { usedTokens: null, budgetTokens, observedAt: null, source: "unavailable", reason: reason(row.reason) };
   }
   if (typeof row.usedTokens !== "number" || !Number.isSafeInteger(row.usedTokens) || row.usedTokens < 0 ||
-      (row.source !== "codex-token-count" && row.source !== "claude-usage") || row.reason !== null) return bad();
+      !tokenSource(row.source) || row.reason !== null) return bad();
   const observedAt = stamp(row.observedAt);
   if (observedAt > capturedAt) return bad();
   return { usedTokens: row.usedTokens, budgetTokens, observedAt, source: row.source, reason: null };
@@ -434,7 +443,7 @@ function resourceHistoryRow(value: unknown, capturedAt: string, root: boolean,
     if (tokens.reason === null || tokens.truncated !== false || array(tokens.points, 0).length !== 0) return bad();
     tokenHistory = { points: [], truncated: false, source: "unavailable", reason: reason(tokens.reason) };
   } else {
-    if ((tokens.source !== "codex-token-count" && tokens.source !== "claude-usage") ||
+    if (!tokenSource(tokens.source) ||
         tokens.reason !== null || typeof tokens.truncated !== "boolean" ||
         usage?.source !== tokens.source || usage.usedTokens === null) return bad();
     const points = array(tokens.points, MAX_AGENT_RESOURCE_POINTS).map(point => {

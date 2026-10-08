@@ -821,7 +821,18 @@ native completion clock and no continuation tool. Resumed turns and pending
 children clear the root's prior end. Known native error/cancellation retain
 their own clock; unknown/empty/tool finishes and contradictory clocks cannot
 become Done. Typed provider/model/variant observations stay separate from the
-requested route; usage, quota and spend are not fabricated.
+requested route; quota and spend are not fabricated.
+
+Token usage is the sum of every assistant header's native `tokens` object
+(`input`, `output`, `reasoning`, `cache.read`, `cache.write`), mapped onto the
+same fields the session-column backfill uses. The issue tree labels it
+`opencode-usage` and counts input + cache read + cache write + output +
+reasoning, because OpenCode's input excludes both cache kinds and its output
+excludes reasoning. One absent or malformed reading leaves the run's usage
+unavailable rather than a partial sum. The label is per vendor
+(`ISSUE_TOKEN_SOURCES`): Codex `codex-token-count`, Claude `claude-usage`,
+OpenCode `opencode-usage`; AGY has no token reading and stays unavailable.
+Contracts 0.38.0 adds `opencode-usage`; a consumer upgrades its decoder first.
 
 Contracts 0.35.0 adds `opencode-transcript`, direct OpenCode route decoding and
 bounded model-specific syntax for exact qualified identifiers. Model observation

@@ -638,6 +638,19 @@ GPU never becomes a zero reading. Version 0.7.0 adds optional per-card VRAM read
 sum must equal the aggregate. The decoder accepts 0.5.x observations without the fourth row
 and normalizes it to unavailable. Version 0.6.0 was published from its tagged merge.
 
+## OpenCode token usage in 0.38.0
+
+`AgentTokenUsage.source` and the resource-history `tokens.source` accept `opencode-usage` beside
+`codex-token-count` and `claude-usage`. `AGENT_TOKEN_SOURCES` exports the frozen vocabulary and
+`AgentTokenSource` its union. Each label names the vendor's own counter. An OpenCode figure is
+the sum of the native assistant `tokens` objects, counted as input + cache read + cache write +
+output + reasoning, because OpenCode's input excludes both cache kinds and its output excludes
+reasoning. A vendor with no token reading (AGY) stays `unavailable`; telemetry never borrows
+another vendor's label. Schema and protocol remain 1, and every 0.37 frame decodes unchanged.
+
+A 0.37 or older reader rejects a whole snapshot that holds an `opencode-usage` row, so a consumer
+upgrades this package before it reads a telemetry build that emits one.
+
 ## Bounded issue trees in 0.37.0
 
 An issue row may now be `complete: false` with reason `scan_limit` and still carry dispatches: the

@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { lstat, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, normalize } from "node:path";
 import { nativeMessageActivity, recentActivity } from "../native-activity.js";
-import type { RunRecord } from "../model.js";
+import type { RunRecord, RunUsage } from "../model.js";
 
 const MAX_ROWS = 4096, MAX_ROW_BYTES = 1_048_576, MAX_ISSUE_BYTES = 8 * MAX_ROW_BYTES;
 const sessionID = (v: unknown): v is string => typeof v === "string" && /^ses_[A-Za-z0-9_-]{1,252}$/.test(v);
@@ -84,6 +84,25 @@ function messageSummary(value: unknown, assistant: boolean): boolean {
   return false;
 }
 
+const tokenCount = (v: unknown): v is number => Number.isSafeInteger(v) && (v as number) >= 0;
+/** One assistant header's native `tokens` ({input, output, reasoning, cache: {read, write}}, optional total),
+ * mapped onto the same RunUsage fields backfill/opencode.ts reads from the session token columns.
+ * Absent or malformed is null: that message has no reading, and the run's total is then unavailable.
+ */
+function messageTokens(value: unknown): RunUsage | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const tokens = value as Record<string, unknown>, cache = tokens.cache as Record<string, unknown> | null | undefined;
+  if (Object.keys(tokens).some(key => !["total", "input", "output", "reasoning", "cache"].includes(key)) ||
+      cache === null || typeof cache !== "object" || Array.isArray(cache) ||
+      Object.keys(cache).some(key => key !== "read" && key !== "write") ||
+      ![tokens.input, tokens.output, tokens.reasoning, cache.read, cache.write].every(tokenCount) ||
+      (tokens.total !== undefined && !tokenCount(tokens.total))) return null;
+  return { inputTokens: tokens.input as number, outputTokens: tokens.output as number,
+    reasoningTokens: tokens.reasoning as number, cacheReadTokens: cache.read as number, cacheWriteTokens: cache.write as number };
+}
+const TOKEN_FIELDS = ["inputTokens", "outputTokens", "reasoningTokens", "cacheReadTokens", "cacheWriteTokens"] as const;
+type TokenTotals = Record<(typeof TOKEN_FIELDS)[number], number>;
+
 /** Pure typed projection. Native header/part clocks are authoritative; SQL update time is not. */
 export function openCodeConversation(session: Row, messages: readonly Row[], parts: readonly Row[],
   origin: string, nowMs: number): RunRecord | null {
@@ -110,6 +129,8 @@ export function openCodeConversation(session: Row, messages: readonly Row[], par
     let latestUser: string | null = null, updated = start;
     let identity: RunRecord["identity"] = { model: null, provider: null, effort: null, profile: null };
     let outcome: RunRecord["outcome"] = "unknown", terminalAt: string | undefined, terminalCause: RunRecord["terminalCause"];
+    // The session total is the sum of every assistant header's reading; one missing reading leaves it unmeasured.
+    let usage: TokenTotals | null = null, tokensMissing = false;
     for (const { row, data, created, time } of rows) {
       const message = row.id as string;
       if (seen.has(message)) return null; seen.add(message); updated = Math.max(updated, created);
@@ -149,6 +170,14 @@ export function openCodeConversation(session: Row, messages: readonly Row[], par
           (typeof data.variant !== "string" || !/^[a-z][a-z0-9_-]{0,63}$/.test(data.variant)))) return null;
       identity = { provider: data.providerID, model: data.providerID + "/" + data.modelID,
         effort: typeof data.variant === "string" ? data.variant : null, profile: null };
+      const tokens = messageTokens(data.tokens);
+      if (tokens === null) tokensMissing = true;
+      else {
+        const sum: TokenTotals = usage ?? { inputTokens: 0, outputTokens: 0, reasoningTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+        for (const field of TOKEN_FIELDS) sum[field] += tokens[field]!;
+        if (!TOKEN_FIELDS.every(field => Number.isSafeInteger(sum[field]))) tokensMissing = true;
+        usage = sum;
+      }
       if (latestUser === null || data.parentID !== latestUser || summary) { outcome = "unknown"; continue; }
       if (time.completed === undefined) continue;
       const completed = millis(time.completed, Math.max(created, lastPart), nowMs); updated = Math.max(updated, completed);
@@ -164,7 +193,8 @@ export function openCodeConversation(session: Row, messages: readonly Row[], par
     const activitySteps = recentActivity(steps);
     if (terminalAt !== undefined && steps.some(step => step.at > terminalAt!)) return null;
     return { id, source: "opencode", parentId: parent as string | null, startedAt: new Date(start).toISOString(),
-      updatedAt: new Date(updated).toISOString(), branch: null, identity, usage: {}, quota: [], linkedIssues: [], origin,
+      updatedAt: new Date(updated).toISOString(), branch: null, identity,
+      usage: usage === null || tokensMissing ? {} : usage, quota: [], linkedIssues: [], origin,
       activitySteps, outcome, ...(terminalAt === undefined ? {} : { terminalAt, terminalCause }) };
   } catch { return null; }
 }
