@@ -1,5 +1,6 @@
-/** OpenCode legacy message/part projection for the native versions in OPENCODE_SUPPORTED_VERSIONS.
- * Only an exact private root is read. */
+/** OpenCode legacy message/part projection. The family is decided by the store's structure
+ * (LEGACY_COLUMNS, no bound next-family rows, strict row/part validation), never by the CLI
+ * version. Only an exact private root is read. */
 import { createHash } from "node:crypto";
 import { lstat, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, normalize } from "node:path";
@@ -13,8 +14,14 @@ const nativeID = (v: unknown, prefix: string): v is string => typeof v === "stri
 const providerID = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9][a-z0-9._-]{0,63}$/.test(v);
 const modelID = (v: unknown): v is string => typeof v === "string" && /^~?[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(v);
 type Row = Readonly<Record<string, unknown>>;
-/** Each entry is a native version whose message/part rows were verified against this projection; any other version reads as unavailable. */
-export const OPENCODE_SUPPORTED_VERSIONS: ReadonlySet<string> = new Set(["1.18.34", "1.18.35"]);
+/** Every table and column this projection reads. A store missing any of them is not the legacy family. */
+const LEGACY_COLUMNS = {
+  session: ["id", "parent_id", "version", "time_created"],
+  message: ["id", "session_id", "data"],
+  part: ["id", "message_id", "session_id", "data"],
+} as const;
+/** Bounded and non-empty only: the label is never a family or compatibility decision. */
+const versionLabel = (v: unknown): boolean => typeof v === "string" && v.length > 0 && v.length <= 64;
 const object = (v: unknown): Record<string, unknown> => {
   if (v === null || typeof v !== "object" || Array.isArray(v)) throw Error();
   return v as Record<string, unknown>;
@@ -83,7 +90,7 @@ export function openCodeConversation(session: Row, messages: readonly Row[], par
   try {
     const id = session.id, parent = session.parent_id;
     if (!sessionID(id) || (parent !== null && (!sessionID(parent) || parent === id)) ||
-        typeof session.version !== "string" || !OPENCODE_SUPPORTED_VERSIONS.has(session.version) ||
+        !versionLabel(session.version) ||
         messages.length + parts.length > MAX_ROWS) return null;
     const start = millis(session.time_created, 1, nowMs), byMessage = new Map<string, Row[]>();
     const seenParts = new Set<string>();
@@ -186,6 +193,11 @@ export async function scanOpenCodeIssue(path: string, root: string, limit: numbe
       const opened = await lstat(path);
       if (before.ino !== opened.ino || before.dev !== opened.dev) return fail("source_unavailable");
       db.exec("PRAGMA query_only=ON; BEGIN");
+      // Structure before any row bytes: a store without the legacy tables/columns is refused unread.
+      for (const [table, required] of Object.entries(LEGACY_COLUMNS)) {
+        const names = new Set(db.prepare("SELECT name FROM pragma_table_info(?)").all(table).map(row => row.name));
+        if (required.some(column => !names.has(column))) return fail("source_unavailable");
+      }
       const columns = `CASE WHEN length(CAST(id AS BLOB)) <= 256 THEN id END AS id,
         CASE WHEN parent_id IS NULL OR length(CAST(parent_id AS BLOB)) <= 256 THEN parent_id END AS parent_id,
         length(CAST(parent_id AS BLOB)) AS parent_bytes,
