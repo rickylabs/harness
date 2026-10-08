@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[################----]` **498/619 done · 48 running · 26 queued · 16 abandoned · 31 invisible**
+`[###############-----]` **498/623 done · 52 running · 26 queued · 16 abandoned · 31 invisible**
 
-_Latest board activity: 2026-10-08T13:03:34Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T13:41:47Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (48)
+## Moving now (52)
 
 Something could be acting on these right now.
 
@@ -60,6 +60,10 @@ Something could be acting on these right now.
 | [#604 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/604) | `plan` | — |
 | [#613 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/613) | `plan` | — |
 | [#637 [rickylabs/atelier-cockpit#538] Needs-you: clear launch requests whose work is already done](https://github.com/rickylabs/harness/issues/637) | `plan` | — |
+| [#638 [rickylabs/atelier-mobile#352] Choose model: one row per model, one status line, no reason dumps](https://github.com/rickylabs/harness/issues/638) | `plan` | — |
+| [#639 [rickylabs/atelier-cockpit#451] Budget limits warn at 90%, never block (all subscriptions + OpenRouter key limits)](https://github.com/rickylabs/harness/issues/639) | `plan` | — |
+| [#640 [rickylabs/atelier-mobile#355] Issue lists: badge showing which issues have an agent running, on every list](https://github.com/rickylabs/harness/issues/640) | `plan` | — |
+| [#641 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)](https://github.com/rickylabs/harness/issues/641) | `plan` | — |
 
 ## Not on the board (17)
 
@@ -183,7 +187,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 297/370 done · 32 running · 3 queued · 10 abandoned · 28 invisible
+`[#########---]` 297/374 done · 36 running · 3 queued · 10 abandoned · 28 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -193,7 +197,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 260/329 done · 31 running · 2 queued · 10 abandoned · 26 invisible | — |
+| _(no epic)_ | `[#########---]` 260/333 done · 35 running · 2 queued · 10 abandoned · 26 invisible | — |
 
 ## Waiting to start
 
@@ -237,7 +241,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [################----]  498/619 done · 48 running · 26 queued · 16 abandoned · 31 invisible
+# rickylabs/harness  [###############-----]  498/623 done · 52 running · 26 queued · 16 abandoned · 31 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -525,7 +529,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [################----]  297/370 done · 32 running · 3 queued · 10 abandoned · 28 invisible
+## (no milestone)  [###############-----]  297/374 done · 36 running · 3 queued · 10 abandoned · 28 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -916,6 +920,10 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR635 Remove CLI version gates and preserve exact owner launch choices
     shipped              #636 [rickylabs/netscript#2080] fix(streams): bound durable log recovery and tail-read allocations
     plan                 #637 [rickylabs/atelier-cockpit#538] Needs-you: clear launch requests whose work is already done
+    plan                 #638 [rickylabs/atelier-mobile#352] Choose model: one row per model, one status line, no reason dumps
+    plan                 #639 [rickylabs/atelier-cockpit#451] Budget limits warn at 90%, never block (all subscriptions + OpenRouter key limits)
+    plan                 #640 [rickylabs/atelier-mobile#355] Issue lists: badge showing which issues have an agent running, on every list
+    plan                 #641 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)
 ```
 
 </details>
