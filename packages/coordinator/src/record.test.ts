@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { EXIT, eventFlagProblem, EVENT_COMMANDS } from "./cli.js";
+import { EXIT, eventFlagProblem, EVENT_COMMANDS } from "./cli-contract.js";
 import { planOf, statesOf, admit, type StepState } from "./plan.js";
 import { MILESTONE_WORKFLOW as MILESTONE } from "./workflow.js";
 import {
