@@ -1,6 +1,6 @@
 # @rickylabs/harness-router-dsh
 
-This package retains the **optional additional-router experiment**. [ADR 0005](../../../method/doctrine/decisions/0005-harness-framework-identity.md) records Harness on Orchid and Herdr; this composition is not the core host. It lives under `experiments/routers/dsh` and is excluded from default core build, typecheck and test stages. Live testing waits until after the next APK.
+This package retains the **optional additional-router experiment**. [ADR 0005](../../../docs/decisions/0005-harness-framework-identity.md) records Harness on Orchid and Herdr; this composition is not the core host. It lives under `experiments/routers/dsh` and is excluded from default core build, typecheck and test stages. Live testing waits until after the next APK.
 
 
 Our dsh profile and bundle (`cordis.patch.yml`) composing every plugin package.

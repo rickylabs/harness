@@ -4,8 +4,8 @@
  * #72's second acceptance item is that the selection is *recorded on the run*, and that word is
  * doing real work. A gate whose verdict lives only in the process that made it is a gate nobody can
  * audit afterwards: the run finishes, the reviewer is named nowhere, and six weeks later the only
- * evidence that the rule was applied is that somebody says it was. Principle 2 — a conclusion that
- * exists only in a conversation does not exist.
+ * evidence that the rule was applied is that somebody says it was. Artifacts over chat — a
+ * conclusion that exists only in a conversation does not exist.
  *
  * The record carries the rejections as well as the choice. That is the expensive half and the half
  * worth keeping: "codex reviewed it" is an outcome, while "codex reviewed it because the two

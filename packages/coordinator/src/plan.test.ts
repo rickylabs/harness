@@ -199,8 +199,8 @@ describe("settle", () => {
   });
 
   it("refuses to record done without a citation for every declared piece of evidence", () => {
-    // Principle 3, as a refusal rather than a convention. A step that declares evidence and produces
-    // none has made a claim nobody can check, which is the thing the principle forbids.
+    // The citation rule, as a refusal rather than a convention. A step that declares evidence and
+    // produces none has made a claim nobody can check, which is the thing the rule forbids.
     const result = settle(SMALL, [], "look", { outcome: "done", citations: {} });
     if (result.settled) throw new Error("expected a refusal");
     assert.equal(result.rule, "uncited");

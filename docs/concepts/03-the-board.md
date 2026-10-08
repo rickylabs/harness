@@ -1,9 +1,10 @@
 # The board
 
 **GitHub holds board truth. Harness projects it.** The original roadmap established that
-boundary; [ADR 0005](../../method/doctrine/decisions/0005-harness-framework-identity.md) retains it while
-correcting the framework identity. Existing `harness-board` commands are compatibility naming until
-the ordered CLI migration, not evidence that a dsh host owns the board.
+boundary; [ADR 0005](../decisions/0005-harness-framework-identity.md) retains it while
+correcting the framework identity. Command names are not evidence that a dsh host owns the board;
+[ADR 0006](../decisions/0006-rearch-2026-10-08.md) replaces the ordered CLI migration, and the
+remaining CLI cleanup belongs to [#658](https://github.com/rickylabs/harness/issues/658).
 
 ## The problem it is answering
 

@@ -9,17 +9,17 @@
  * Three doctrine commitments are executable in this file, and each one is a named refusal rather
  * than a warning:
  *
- * - **Principle 5, nothing mutates before the gate.** `ungated-effect` walks an effect's *transitive*
+ * - **Nothing mutates before the gate.** `ungated-effect` walks an effect's *transitive*
  *   prerequisites and refuses while any gate among them is unpassed. Checking only direct needs would
  *   be satisfied by a hand-edited state file marking one step done, which is exactly the case the
  *   principle is about.
- * - **Principle 3, citations or it is not a claim.** `settle` will not record a step done without a
+ * - **Citations or it is not a claim.** `settle` will not record a step done without a
  *   citation for every piece of evidence its definition declares, and each citation must parse as a
  *   reference to something — a URL, an issue, a run, a file, or a sha (`citation.ts`). It names what
  *   was not cited, what does not refer to anything, and what refers to the wrong kind of thing. What
  *   it does not do is check that the thing referred to exists: that needs the network, and this file
  *   stays pure so the plan remains journallable.
- * - **Principle 4, owner forks are raised, not resolved.** A forked step is terminal for its branch.
+ * - **Owner forks are raised, not resolved.** A forked step is terminal for its branch.
  *   Nothing downstream becomes runnable, no default is chosen, and the fork is surfaced by name so it
  *   can be routed to the issue bridge in #37.
  */

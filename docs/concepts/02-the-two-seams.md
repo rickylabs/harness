@@ -1,7 +1,7 @@
 # Two seams, not one
 
 Native autonomous tasks and API/local-model calls have different loop, enforcement and lifecycle
-boundaries. Harness keeps those boundaries explicit. [ADR 0005](../../method/doctrine/decisions/0005-harness-framework-identity.md)
+boundaries. Harness keeps those boundaries explicit. [ADR 0005](../decisions/0005-harness-framework-identity.md)
 records the framework on Orchid and Herdr; the retained dsh router is an optional composition.
 
 | Boundary | Native autonomous task | API/local-model call |
@@ -54,7 +54,7 @@ or owner route waives that rule. A model's family is independent of the transpor
 
 These adapters are distinct from Orchid's native CLI transports and Herdr's terminal control.
 An Orchid Codex or AGY launch does not finish a missing workspace provider. UHP-hosted dispatch
-remains parked under [ADR 0004](../../method/doctrine/decisions/0004-uhp-park-evidence.md).
+remains parked under [ADR 0004](../decisions/0004-uhp-park-evidence.md).
 
 ## Retained experiment vocabulary
 

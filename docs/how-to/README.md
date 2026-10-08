@@ -34,8 +34,8 @@ Tasks a person actually performs, each with a real starting condition:
 
 - **Why the design is this way** → [`concepts/`](../concepts/).
 - **Every flag of every command** → [`reference/`](../reference/), which is generated.
-- **How work is staged and reviewed** → [`method/doctrine/`](../../method/doctrine/). The method is portable and
-  deliberately lives outside `docs/`.
+- **How work is staged and reviewed** → [`DOCTRINE.md`](../DOCTRINE.md), the one page of rules and
+  method.
 
 ## Writing one
 

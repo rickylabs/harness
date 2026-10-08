@@ -163,6 +163,9 @@ const main = async () => {
     for (const required of [
       "package.json",
       "README.md",
+      "docs/protocol-1.md",
+      "docs/agent-trees-and-stop-state.md",
+      "docs/workflows-and-providers.md",
       "dist/index.js",
       "dist/index.d.ts",
       "dist/server.js",

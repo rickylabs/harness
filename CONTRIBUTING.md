@@ -102,7 +102,6 @@ refuse drift rather than accepting a separately maintained copy.
 | `experiments/routers/dsh/dump-config.golden.yml` | `pnpm run experiment:dsh:golden:bless -- "the reason it changed"` |
 | `experiments/routers/dsh/cordis.patch.yml` | editing `experiments/routers/dsh/src/bundle.ts` — never the file |
 | `.github/labels.yml` | `node packages/forge/dist/cli.js labels eject` |
-| `doctrine/*.md`, `doctrine/decisions/*.md`, `.llm/tools/{harness,gates}/*`, `.llm/harness/templates/*` | edit their canonical homes in `method/` or `run-record/templates/`, then `node scripts/method-compatibility.mjs --write` |
 | `BOARD.md` | nothing you can run — move the issue, and the next scheduled render follows |
 
 `BOARD.md` is the exception, so it gets its own warning. No check guards it; the
@@ -168,10 +167,10 @@ node packages/board/dist/cli.js check
 
 ## Substantial changes
 
-For anything beyond a scoped fix, the method is [`method/doctrine/`](method/doctrine/) — eight stages, and nothing
-mutates the world before the gate at stage G. [`WORKFLOW.md`](method/doctrine/WORKFLOW.md) has the
-lifecycle; [`PRINCIPLES.md`](method/doctrine/PRINCIPLES.md) has the rules a run is judged against. Both are
-short on purpose.
+For anything beyond a scoped fix, the method is the
+[run lifecycle](docs/DOCTRINE.md#run-lifecycle) — eight stages, and nothing mutates the world before
+the gate at stage G. [`docs/DOCTRINE.md`](docs/DOCTRINE.md) has the lifecycle, the golden rules a
+change is judged against, and the working rules. It is one page on purpose.
 
 Two constraints apply to every change here, large or small, and are not restated per task:
 
@@ -183,11 +182,10 @@ Two constraints apply to every change here, large or small, and are not restated
    and the cost if the recommendation is wrong. Do not pick one and move on, and do not bury it in
    prose.
 
-The four **ratified decisions** taken in [#30](https://github.com/rickylabs/harness/issues/30) are
-not open questions. A design that contradicts one is wrong before it is reviewed; reversing one is a
-numbered decision in [`method/doctrine/decisions/`](method/doctrine/decisions/) first, per
-[`ARCHITECTURE.md`](ARCHITECTURE.md) §13, not a change to #30, which is closed.
-[`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) lists all four with the status of each.
+The **ratified decisions** in [`docs/decisions/`](docs/decisions/) are not open questions; the current
+one is [ADR 0006](docs/decisions/0006-rearch-2026-10-08.md). A design that contradicts one is wrong
+before it is reviewed; reversing one is a new numbered decision in `docs/decisions/` first.
+[`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) lists the decisions in force.
 
 ## Review
 

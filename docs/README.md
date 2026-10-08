@@ -22,17 +22,20 @@ explain them.
 - Want to run something → [Local proof first](../README.md#local-proof-first).
 - Want a flag, a subcommand or an exit code → [CLI reference](reference/cli/README.md).
 - Want to understand a design decision → [`concepts/`](concepts/) for the model,
-  [`method/doctrine/`](../method/doctrine/) for the method, and the
-  [`ARCHITECTURE.md`](../ARCHITECTURE.md) for what is ratified.
+  [`DOCTRINE.md`](DOCTRINE.md) for the rules and the method, [`STRUCTURE.md`](STRUCTURE.md) for the
+  tree, and [`decisions/`](decisions/) for what is ratified.
 - Proposing a design → [numbered RFCs](rfcs/README.md), with pinned evidence and claim labels.
 - Want the details of one subsystem → its package README under [`packages/`](../packages/). Those
   are the deepest documents in the repository and they are where design rationale lives.
 - Want to change something here → [`CONTRIBUTING.md`](../CONTRIBUTING.md), and
   [`SECURITY.md`](../SECURITY.md) before you touch an issue.
 
-[ADR 0005](../method/doctrine/decisions/0005-harness-framework-identity.md) records the current framework
-on Orchid and Herdr. Existing `dsh-*` commands and the optional router retain their real names
-until the ordered compatibility/move PRs. Earlier decisions and run records remain historical evidence.
+[ADR 0005](decisions/0005-harness-framework-identity.md) records the current framework
+on Orchid and Herdr. Its ordered compatibility/move PRs are earlier cleanup history:
+[ADR 0006](decisions/0006-rearch-2026-10-08.md) supersedes that posture with no compatibility
+retention (delete, do not deprecate), and the remaining method and CLI cleanup belongs to
+[#658](https://github.com/rickylabs/harness/issues/658). Earlier decisions and run records remain
+historical evidence.
 
 ## The rule these docs are held to
 
