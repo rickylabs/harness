@@ -37,7 +37,7 @@ export const reasonsFor = text => DETECTORS.filter(([, pattern]) => pattern.test
  * header is only read once a hunk's counts are used up, so an added line starting with `++` is
  * content, and a context line (should `--unified=0` ever be overridden) still advances the counter.
  * Anything that would misplace or drop a line throws: an unexpected `+++` header (neither `b/<path>`
- * nor `/dev/null`), or a hunk that ends before its counts do. Dropping or misplacing would be green.
+ * nor `/dev/null`), a hunk that ends before its counts do, or a binary record whose lines are unseen.
  */
 export function addedLines(diff) {
   const added = [];
@@ -61,6 +61,8 @@ export function addedLines(diff) {
       oldLeft = hunk[1] === undefined ? 1 : Number(hunk[1]);
       line = Number(hunk[2]);
       newLeft = hunk[3] === undefined ? 1 : Number(hunk[3]);
+    } else if (raw.startsWith("Binary files ") || raw === "GIT binary patch") {
+      throw new Error("binary record");
     } else if (raw.startsWith("+++ ")) {
       // A rename with edits names the new path here; a deletion names /dev/null and adds nothing.
       const target = raw.slice(4).replace(/^"(.*)"$/, "$1");
@@ -87,21 +89,22 @@ function main() {
   } catch {
     inconclusive("usage");
   }
-  // Prefixes and hunk shape are pinned: `diff.noprefix` or `diff.mnemonicPrefix` would rename the `b/`
-  // the parser keys on, `diff.interHunkContext` would fuse hunks with context lines, and a textconv
-  // driver would scan something other than the committed text.
+  // Pinned so repository config and attributes cannot reshape the diff: `diff.noprefix` and
+  // `diff.mnemonicPrefix` rename the `b/` the parser keys on, `diff.interHunkContext` fuses hunks,
+  // `-diff` or a NUL byte would turn a file into a binary record, and textconv rewrites the content.
   const diff = spawnSync("git", [
     "-c", "core.quotePath=false", "-c", "diff.noprefix=false", "-c", "diff.mnemonicPrefix=false",
     "-c", "diff.interHunkContext=0", "diff", "--src-prefix=a/", "--dst-prefix=b/", "--no-relative",
-    "--no-textconv", "--no-ext-diff", "--no-color", "--unified=0", "--inter-hunk-context=0", "--find-renames",
-    `${base}...HEAD`, "--", ".", ":(exclude).llm/runs/**", ":(exclude)pnpm-lock.yaml",
+    "--no-textconv", "--no-ext-diff", "--no-color", "--text", "--unified=0", "--inter-hunk-context=0",
+    "--find-renames", `${base}...HEAD`, "--", ".", ":(exclude).llm/runs/**", ":(exclude)pnpm-lock.yaml",
   ], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
   if (diff.error || diff.status !== 0) inconclusive("git diff failed");
 
   let added;
   try { added = addedLines(diff.stdout); } catch { inconclusive("unreadable diff"); }
   for (const { path, line, text } of added) {
-    for (const reason of reasonsFor(text)) {
+    // UTF-16 text arrives with a NUL after every ASCII byte; the patterns are ASCII-shaped.
+    for (const reason of reasonsFor(text.replaceAll("\0", ""))) {
       console.log(`${path}:${line} ${reason}`);
       process.exitCode = 1;
     }

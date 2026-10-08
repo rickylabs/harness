@@ -1,5 +1,4 @@
-// Every fixture below is assembled at runtime. A literal leak string in this file would make
-// `check:leaks` flag the pull request that adds its own test, so no line here holds one whole.
+// Fixtures are assembled at runtime: a whole leak string here would make check:leaks flag this file.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -45,20 +44,16 @@ function git(cwd, ...args) {
 function repo(t, files, before = {}) {
   const dir = mkdtempSync(join(tmpdir(), "check-leaks-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
-  const write = entries => {
-    for (const [path, content] of Object.entries(entries)) {
-      mkdirSync(dirname(join(dir, path)), { recursive: true });
-      writeFileSync(join(dir, path), content);
-    }
-  };
+  const write = entries => Object.entries(entries).forEach(([path, content]) => {
+    mkdirSync(dirname(join(dir, path)), { recursive: true }), writeFileSync(join(dir, path), content);
+  });
+  const commit = message => (git(dir, "add", "-A"), git(dir, "commit", "-q", "--allow-empty", "-m", message));
   git(dir, "init", "-q", "-b", "main");
   write({ "README.md": "base\n", ...before });
-  git(dir, "add", "-A");
-  git(dir, "commit", "-q", "-m", "base");
+  commit("base");
   git(dir, "checkout", "-q", "-b", "feature");
   write(files);
-  git(dir, "add", "-A");
-  git(dir, "commit", "-q", "--allow-empty", "-m", "change");
+  commit("change");
   return dir;
 }
 
@@ -77,14 +72,9 @@ for (const [reason, lines] of FAMILIES) {
 }
 
 test("a clean diff exits 0 with both streams empty, near-misses included", t => {
-  const benign = [
-    "see src/data/x, ./mnt/ and lib/home/x for details",
-    "scripts/x.mjs:42 and README.md:12 and src/a.test.ts:1234",
-    "key: 1 with a space, version 10.2, at 21:20, stamped 2026-10-08T21:43:00Z",
-    "https://example.com/path without a port",
-    "the session ended",
-    "sk-x",
-  ];
+  const benign = ["see src/data/x, ./mnt/ and lib/home/x for details", "scripts/x.mjs:42 and README.md:12 and src/a.test.ts:1234",
+    "key: 1 with a space, version 10.2, at 21:20, stamped 2026-10-08T21:43:00Z", "https://example.com/path without a port",
+    "the session ended", "sk-x"];
   const result = scan(repo(t, { "clean.txt": benign.join("\n") + "\n" }));
   assert.deepEqual([result.status, result.out, result.err], [0, "", ""]);
 });
@@ -119,6 +109,7 @@ test("diff.noprefix and diff.mnemonicPrefix in the repository cannot hide a find
 test("the parser refuses a header without b/ or a hunk cut short, and counts context lines", () => {
   assert.throws(() => addedLines("+++ x.txt\n@@ -0,0 +1 @@\n+text\n"), /unexpected file header/);
   assert.deepEqual(addedLines("+++ /dev/null\n@@ -1 +0,0 @@\n-gone\n"), []);
+  assert.throws(() => addedLines("diff --git a/x b/x\nBinary files /dev/null and b/x differ\n"), /binary record/);
   // A context line advances the line counter, and a hunk cut short is refused.
   const fused = addedLines("+++ b/a\n@@ -1,3 +1,3 @@\n-1\n+X\n 2\n-3\n+Y\n+++ b/b\n@@ -0,0 +1 @@\n+Z\n");
   assert.deepEqual(fused.map(({ path, line, text }) => [path, line, text]), [["a", 1, "X"], ["a", 3, "Y"], ["b", 1, "Z"]]);
@@ -132,6 +123,17 @@ test("diff.interHunkContext in the repository cannot move a finding into the wro
   writeFileSync(join(dir, "b.txt"), ["localhost", 8080].join(":") + "\n");
   git(dir, "commit", "-q", "-am", "edit");
   assert.deepEqual(scan(dir).findings, ["a.txt:4 host-port", "b.txt:1 host-port"]);
+});
+
+test("binary attributes, NUL bytes, UTF-16 and a textconv driver cannot hide an added line", t => {
+  const token = "gh" + "p_" + "e".repeat(36), home = ["", "home", "someone"].join("/");
+  const dir = repo(t, { ".gitattributes": "*.txt -diff\n*.json diff=hide\n", "attr.txt": token + "\n", "conv.json": token + "\n",
+    "nul.sh": "\0" + token + "\n", "wide.yml": Buffer.from("x\n" + home + "\n", "utf16le") });
+  git(dir, "config", "diff.hide.textconv", "true");
+  const result = scan(dir);
+  assert.deepEqual([result.status, result.err], [1, ""]);
+  assert.deepEqual(result.findings, ["attr.txt:1 token-shape", "conv.json:1 token-shape", "nul.sh:1 token-shape", "wide.yml:2 home-path"]);
+  assert.ok(!result.out.includes(token) && !result.out.includes(home), "matched text was printed");
 });
 
 test("the -- that pnpm forwards is tolerated", t => {
