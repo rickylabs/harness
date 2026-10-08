@@ -8,6 +8,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
+import { addedLines } from "./check-leaks.mjs";
+
 const script = resolve(dirname(fileURLToPath(import.meta.url)), "check-leaks.mjs");
 const env = { ...process.env, GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
 const uuid = ["0123abcd", "4567", "89ab", "cdef", "0123456789ab"].join("-");
@@ -19,14 +21,18 @@ const FAMILIES = [
     ["", "home", "someone", "x"].join("/"),
     ["", "Users", "someone", "x"].join("/"),
     "C:" + "\\Users\\" + "someone",
+    "cd " + ["", "home", "someone"].join("/"),
+    "(" + ["", "Users", "someone"].join("/") + ")",
   ]],
-  ["data-path", [["", "mnt", "disk", "x"].join("/"), ["", "ephemeral", "work", ""].join("/")]],
+  ["data-path", [["", "mnt", "disk", "x"].join("/"), ["", "ephemeral", "work", ""].join("/"), "`" + ["", "data"].join("/") + "`"]],
   ["private-ipv4", [[10, 1, 2, 3], [192, 168, 0, 9], [172, 16, 0, 1], [100, 64, 0, 1]].map(ip => ip.join("."))],
   ["host-port", [
     ["localhost", 8080].join(":"),
     ["localhost", 9].join(":"),
     url(["example", "com"].join("."), 443),
     url("worker", 8080),
+    "endpoint " + ["api", "example", "com"].join(".") + ":" + 8443,
+    "proxy " + ["worker", 8080].join(":"),
   ]],
   ["tailnet-host", ["node." + "tail" + "1a2b" + ".ts.net"]],
   ["token-shape", [
@@ -36,7 +42,8 @@ const FAMILIES = [
     "Bear" + "er " + "d".repeat(24),
   ]],
   ["private-key", ["-".repeat(5) + "BEGIN OPENSSH PRIVATE KEY" + "-".repeat(5)]],
-  ["session-id", ["session_id = " + uuid, uuid + " is the session", "Session (" + uuid + ")"]],
+  ["session-id", ["session_id = " + uuid, uuid + " is the session", "Session (" + uuid + ")",
+    "session `" + uuid + "`", JSON.stringify({ session: { id: uuid } })]],
 ];
 
 function git(cwd, ...args) {
@@ -74,23 +81,23 @@ function scan(cwd, args = ["--base", "main"]) {
 for (const [reason, lines] of FAMILIES) {
   test(`${reason}: every fixture line is reported with that reason and never echoed`, t => {
     const result = scan(repo(t, { "leak.txt": lines.join("\n") + "\n" }));
-    assert.equal(result.status, 1);
+    assert.deepEqual([result.status, result.err], [1, ""]);
     assert.deepEqual(result.findings, lines.map((_, i) => `leak.txt:${i + 1} ${reason}`));
     for (const line of lines) assert.ok(!(result.out + result.err).includes(line), "matched text was printed");
   });
 }
 
-test("a clean diff exits 0 and prints no finding, near-misses included", t => {
+test("a clean diff exits 0 with both streams empty, near-misses included", t => {
   const benign = [
-    "see src/data/x and ./mnt/ for details",
-    ["scripts", "x.mjs:42"].join("/"),
-    "image node:20, retries:3, version 10.2",
+    "see src/data/x, ./mnt/ and lib/home/x for details",
+    "scripts/x.mjs:42 and README.md:12 and src/a.test.ts:1234",
+    "image node:20, redis:7, retries:3, version 10.2, at 21:20",
     "https://example.com/path without a port",
     "the session ended",
     "sk-x",
   ];
   const result = scan(repo(t, { "clean.txt": benign.join("\n") + "\n" }));
-  assert.deepEqual([result.status, result.findings], [0, []]);
+  assert.deepEqual([result.status, result.out, result.err], [0, "", ""]);
 });
 
 test("owner-controlled run records and the lockfile are not scanned", t => {
@@ -112,12 +119,27 @@ test("an added line that starts with ++ is content, not a file header", t => {
   assert.deepEqual(result.findings, ["x.txt:1 host-port"]);
 });
 
+test("diff.noprefix and diff.mnemonicPrefix in the repository cannot hide a finding", t => {
+  const dir = repo(t, { "x.txt": ["localhost", 8080].join(":") + "\n" });
+  git(dir, "config", "diff.noprefix", "true");
+  git(dir, "config", "diff.mnemonicPrefix", "true");
+  const result = scan(dir);
+  assert.deepEqual([result.status, result.findings], [1, ["x.txt:1 host-port"]]);
+});
+
+test("a file header without the b/ prefix is refused rather than skipped", () => {
+  assert.throws(() => addedLines("+++ x.txt\n@@ -0,0 +1 @@\n+text\n"), /unexpected file header/);
+  assert.deepEqual(addedLines("+++ /dev/null\n@@ -1 +0,0 @@\n-gone\n"), []);
+});
+
 test("the -- that pnpm forwards is tolerated", t => {
   const result = scan(repo(t, { "x.txt": "fine\n" }), ["--", "--base", "main"]);
   assert.deepEqual([result.status, result.findings], [0, []]);
 });
 
-test("an unresolvable base is inconclusive (exit 2), never green", t => {
-  const result = scan(repo(t, { "x.txt": "fine\n" }), ["--base", "no-such-ref"]);
+test("an unresolvable base is inconclusive (exit 2) and never echoes the base it was given", t => {
+  const base = ["", "home", "someone", "ref"].join("/");
+  const result = scan(repo(t, { "x.txt": "fine\n" }), ["--base", base]);
   assert.deepEqual([result.status, result.out], [2, ""]);
+  assert.equal(result.err, "check:leaks inconclusive: git diff failed\n");
 });
