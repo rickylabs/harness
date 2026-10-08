@@ -31,8 +31,11 @@ explain them.
   [`SECURITY.md`](../SECURITY.md) before you touch an issue.
 
 [ADR 0005](decisions/0005-harness-framework-identity.md) records the current framework
-on Orchid and Herdr. Existing `dsh-*` commands and the optional router retain their real names
-until the ordered compatibility/move PRs. Earlier decisions and run records remain historical evidence.
+on Orchid and Herdr. Its ordered compatibility/move PRs are earlier cleanup history:
+[ADR 0006](decisions/0006-rearch-2026-10-08.md) supersedes that posture with no compatibility
+retention (delete, do not deprecate), and the remaining method and CLI cleanup belongs to
+[#658](https://github.com/rickylabs/harness/issues/658). Earlier decisions and run records remain
+historical evidence.
 
 ## The rule these docs are held to
 
