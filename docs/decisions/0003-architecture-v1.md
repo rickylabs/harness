@@ -1,13 +1,13 @@
 # ADR 0003 — `ARCHITECTURE.md` v1 is the ratified charter
 
 **Status:** accepted · **Date:** 2026-09-13 · **Supersedes:** the architecture recorded in
-[#30](https://github.com/rickylabs/harness/issues/30) · **Issue:** #304
+[#30](https://github.com/rickylabs/harness/issues/30) · **Issue:** #304 · **Superseded where they differ by:** [ADR 0006](0006-rearch-2026-10-08.md)
 
 ---
 
 ## Decision
 
-**[`ARCHITECTURE.md`](../../../ARCHITECTURE.md), version 1, locked 2026-09-13, is the charter of this
+**`ARCHITECTURE.md`, version 1, locked 2026-09-13, is the charter of this
 repository.** The owner made this decision; this record files it in the place the charter's own
 amendment rule points to, so that the next amendment has a predecessor to supersede.
 

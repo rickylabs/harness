@@ -19,6 +19,20 @@ Delete any section that genuinely does not apply. Do not leave it empty.
 - Closes #<!-- the issue this finishes. A bare `#N` does not close anything; a keyword does. -->
 - Part of #<!-- epic, if any. Never put a closing keyword on an epic. -->
 
+## Golden rules
+
+<!-- docs/DOCTRINE.md#golden-rules. Answer all four owner rules, one line each, in order, each citing a
+     NetScript doc slug (from the NetScript MCP or docs) or a repository file. If the MCP was
+     unavailable, say so and cite repository files. A reviewer checks the diff against these lines
+     and the doctrine rules cited, and rejects it for any rule it breaks. -->
+
+- O1 idiomatic NetScript: <!-- the seam or primitive used, and the slug or file that says so -->
+- O2 SOLID: <!-- the ownership split, with the file -->
+- O3 performant: <!-- the cost, with the file or measurement -->
+- O4 doctrine: <!-- the doctrine rules below, and that none is broken -->
+- Doctrine rules cited: <!-- e.g. 3 (deleted the generated copies), 10 (.llm/runs untouched) -->
+- [ ] `pnpm run check:leaks` passed on this head.
+
 ## Verification
 
 <!-- Real results. Name the exit code. "Passes" is not a result. -->
@@ -26,6 +40,7 @@ Delete any section that genuinely does not apply. Do not leave it empty.
 - `pnpm run typecheck` —
 - `pnpm run build` —
 - `pnpm test` —
+- `pnpm run check:leaks` —
 
 <!-- Add whatever else this change makes falsifiable: a CLI run and its output, a board check, a
      golden diff. A docs-only PR still runs the four, because `check:docs` lives in `build`. -->
@@ -59,6 +74,8 @@ none
 
 - [ ] Branch is `<type>/<issue>-<slug>`, and the labels match the taxonomy (exactly one `status:`).
 - [ ] Every acceptance box on the linked issue is checked, against evidence in this PR.
+- [ ] The PR answers owner rules O1-O4 and cites the doctrine rules it relies on, and breaks none of them (no touched file over 500 lines).
+- [ ] `pnpm run check:leaks` passed on this head: no hosts, IPs, ports, home or data paths, session ids or usage numbers.
 - [ ] Documentation that this change makes untrue is updated — generated pages regenerated, hand-written pages edited.
 - [ ] No unrelated churn: no lockfile change without a reason stated above, no drive-by formatting.
 - [ ] Nothing in the diff prints, logs, or commits a credential.
