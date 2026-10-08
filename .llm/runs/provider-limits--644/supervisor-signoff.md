@@ -1,26 +1,28 @@
-# Supervisor source sign-off — Harness644 contract and private reader (2026-10-08)
+# Supervisor source sign-off — Harness644 contract and private reader, final Owner549 state (2026-10-08)
 
-Verdict: PASS. Independent different-family Meta MuseSpark1.3/xhigh implementation review PASS (attempt2; attempt1 output-exhausted, UNPROVEN). This sign-off is a separate substantive read of the exact reviewed bytes, not a restatement: every product path in reviewed-product-source.json matched current SHA256 before commit (12 of 12), `git diff --check` clean, run records screened for credentials, native session IDs, private operational paths and real addresses (only loopback fixture URL and a fixture bearer token in integration scripts).
+Verdict: PASS. Supersedes the earlier sign-off recorded at commit 1a287c2. Harness product bytes are unchanged since that commit: all 12 paths in reviewed-product-source.json match current SHA256 and the full configured typecheck, build and test wrappers exit 0 on them. This commit carries final run records only.
 
-## Reviewed invariants (packages/contracts/src/provider-limits.ts, packages/telemetry/src/provider-limits.ts, provider-limits-cli.ts, cli.ts)
+The Owner549 policy change (rate_limited/429 informational, quota_exhausted and payment_required blocking until verified success) lives in the Orchid producer. Its effect on this contract was reviewed by this supervisor: the closed outcome reason enum is unchanged; two outcome rows per scope (hard and rate) decode because the decoder enforces identity uniqueness on meters only; the 1024 outcome-row bound is guaranteed by the producer's 512-scope reservation; observedAt and resetsAt are copied verbatim and bounded by generatedAt; the same-UID 0600 no-follow reader and fixed CLI exit codes are unaffected. The same independent Meta MuseSpark1.3/xhigh conversation returned PASS on call3 for the final frozen paired source (call1 UNPROVEN, call2 prior bytes, no terminal failures).
 
-- Closed copying decoder: root/meter/outcome records require exact own-key counts, plain or null prototype, enumerable data properties only (accessors are refused without invocation); arrays require Array prototype, dense indices and bounded length (1024 rows, 256 routes). Accepted fields are copied, so later mutation of the input cannot change the decoded snapshot.
-- Timestamps: calendar-valid UTC strings only (impossible dates such as 2026-02-30 are refused through round-trip comparison); meter observedAt and outcome observedAt never exceed generatedAt; the reader additionally refuses generatedAt in the future. Source times are copied verbatim, never refreshed.
-- Scope and binding: subscription meters carry no keyName and may bind routes only with an accountRef and provider-prefixed routes; key meters are openrouter-only, model-less, with usd amounts and openrouter-prefixed routes, and an unnamed key is unknown with no routes. Duplicate meter identities are refused; a route bound by two different account/key identities is refused; separate native windows (5h/weekly) of one account may share a binding.
-- State consistency: unknown rows carry no quantities and a reason; known rows carry no reason, a non-unavailable source and an observedAt; percent meters have usedPercent at most 100; usd meters reconcile used = limit - remaining within float tolerance. 100 percent is valid advisory evidence and never becomes an outcome.
-- Outcomes: refused if and only if a reason is present; keyName only for openrouter; sources restricted to provider-run and inference-probe. The decoder never invents a refusal.
-- Privacy: the whole decoded document is scanned for token shapes, bearer strings, tailscale names, dotted-quad addresses and home/temp/Windows paths and refused on match (fail closed, even for an exotic but legitimate model id).
-- Private reader: absolute path equal to its realpath, O_NOFOLLOW|O_NONBLOCK open, regular file, same UID as the process, mode exactly 0600 (no setuid/setgid/sticky), size at most 4 MiB, read of size+1 must return exactly size bytes, pre/post fstat and lstat compare dev/ino/size/mtime/ctime/mode/uid so replacement or in-place change during the read is refused, fatal UTF-8 decode, contract decode. One fixed diagnostic; no path, environment or error detail leaks.
-- CLI: `provider-limits --source <absolute file>` only; exit 0 with the complete valid JSON document, exit 2 for argument errors, exit 3 for an unavailable or unsafe source with no partial JSON. Dispatched before operator-environment resolution so no operator setting is read.
-- Tests cover copy semantics, closed schema and secret refusal, duplicate identities, binding rules, accessor refusal, private file and CLI exit codes, 0644 refusal, symlink alias refusal, missing file and extra flag.
+## Reviewed invariants, unchanged bytes
 
-## Observations (non-blocking)
+Closed copying decoder with exact key counts, plain or null prototypes and accessor refusal; calendar-valid UTC timestamps with observedAt at most generatedAt and reader refusal of future generatedAt; subscription/key scope rules and exclusive route bindings; state and quantity consistency with 100 percent as advisory evidence; outcome refused if and only if a reason is present; document-wide secret, address and path scan; reader fences on realpath, O_NOFOLLOW, regular file, same UID, mode 0600, size bound and pre/post stat equality; CLI exit 0/2/3 with no partial JSON and no path or environment leak.
 
-- The unsafe-pattern scan can refuse a legitimate model id that happens to contain a dotted quad or a path-like substring. This is fail-closed and consistent with the Orchid producer scan.
-- Wire compatibility with Cockpit542 is proven by fixture integration in this run, not by a live deployment.
+## Final gates and paired proof
 
-## Gate limitations preserved
+| Gate | Exit |
+| --- | --- |
+| Harness configured typecheck, 12-path unchanged manifest | 0 |
+| Harness configured build | 0 |
+| Harness configured test | 0 |
+| Actual CLI to offline-installed contract decoder and declarations | 0 |
+| Orchid final race (561.451 s), vet, build | 0 |
+| Orchid source-trigger 41, endpoint non-root 7, producer 10 mutations, all compiled assertion-red and restored | 0 |
+| Configured privileged two-UID kernel | 127, UNPROVEN, sudo absent |
+| Configured privileged root endpoint mutations | 1, UNPROVEN, sudo absent |
 
-- Harness typecheck/build/test full configured stages exit 0 on these exact bytes (validation.md). No package publication, no live host activation.
-- Orchid privileged two-UID kernel gate (exit 127) and root owner-endpoint mutants (exit 1) remain UNPROVEN because sudo is absent on this host; the non-root subsets do not prove two-UID behavior.
-- Live activation, production settings, restarts, secret stores, mobile645 and the canonical parent report are out of scope and unproven.
+Four actual-producer snapshots against the separately owned renewed Cockpit550 checkout fd059e62944e9cf7d890df3bc87d270337b3ca59 exit 0: hard refusal remains blocking through picker and admission despite a later 429; rate-only and verified-success histories launch. Fixture only; no foreign source changed.
+
+## Limitations preserved
+
+Root gates UNPROVEN, not green. Live activation, production settings, restarts, secret stores, package publication, mobile645 and the canonical parent report are out of scope and unproven. Wire compatibility is fixture-proven, not deployment-proven. The fail-closed pattern scan may refuse an exotic but legitimate model id.
