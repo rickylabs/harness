@@ -4,7 +4,7 @@
 
 `[###############-----]` **498/629 done · 55 running · 28 queued · 16 abandoned · 32 invisible**
 
-_Latest board activity: 2026-10-08T15:21:04Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T16:01:57Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (55)
 
@@ -92,7 +92,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#625 App launch on a new target: worker could not push, and five app/prompt defects (run #624)](https://github.com/rickylabs/harness/issues/625) | — | — |
 | [#626 Refused /swarm trigger becomes a 'Needs you: approve launch' request in the app](https://github.com/rickylabs/harness/issues/626) | — | — |
 
-## Anomalies (59)
+## Anomalies (60)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -100,6 +100,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 - **#607** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
 - **#388** — closed on GitHub but sits in ready-merge; the issue wins, the column is stale
+- **#646** — closed on GitHub but sits in impl-eval; the issue wins, the column is stale
 
 **`epic-milestone-conflict`**
 
