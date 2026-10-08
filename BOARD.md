@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **502/643 done · 55 running · 26 queued · 16 abandoned · 44 invisible**
+`[###############-----]` **503/643 done · 55 running · 26 queued · 16 abandoned · 43 invisible**
 
-_Latest board activity: 2026-10-08T20:34:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T20:48:50Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (55)
 
@@ -68,7 +68,7 @@ Something could be acting on these right now.
 | [PR649 feat(provider-limits): expose strict evidence contract and telemetry reader](https://github.com/rickylabs/harness/pull/649) | `ready-merge` | — |
 | [#650 [rickylabs/atelier-cockpit#451] Finish installed provider-limit wiring and end-to-end acceptance proof](https://github.com/rickylabs/harness/issues/650) | `research` | — |
 
-## Not on the board (28)
+## Not on the board (27)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -101,9 +101,8 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#658 rearch(5): prune root prose and the second toolchain - method/, run-record/, deno.json, BOARD.md into packages/method](https://github.com/rickylabs/harness/issues/658) | — | — |
 | [#659 rearch(8): move provider packages to packages/providers/* with the doctrine layout](https://github.com/rickylabs/harness/issues/659) | — | — |
 | [#660 rearch(9): move orchid observations out of telemetry into packages/hosts/orchid](https://github.com/rickylabs/harness/issues/660) | — | — |
-| [PR661 feat(routing): Opus 5.5 authors and milestone coordinator, Sol high evaluators (owner 2026-10-08)](https://github.com/rickylabs/harness/pull/661) | — | — |
 
-## Anomalies (70)
+## Anomalies (69)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -187,7 +186,6 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#658** — open item has no status label, so it appears in no column
 - **#659** — open item has no status label, so it appears in no column
 - **#660** — open item has no status label, so it appears in no column
-- **#661** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -212,7 +210,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 301/384 done · 39 running · 3 queued · 10 abandoned · 31 invisible
+`[#########---]` 302/384 done · 39 running · 3 queued · 10 abandoned · 30 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -222,7 +220,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 264/343 done · 38 running · 2 queued · 10 abandoned · 29 invisible | — |
+| _(no epic)_ | `[#########---]` 265/343 done · 38 running · 2 queued · 10 abandoned · 28 invisible | — |
 
 ## Waiting to start
 
@@ -266,7 +264,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  502/643 done · 55 running · 26 queued · 16 abandoned · 44 invisible
+# rickylabs/harness  [###############-----]  503/643 done · 55 running · 26 queued · 16 abandoned · 43 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -568,7 +566,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #659 rearch(8): move provider packages to packages/providers/* with the doctrine layout
     no status            #660 rearch(9): move orchid observations out of telemetry into packages/hosts/orchid
 
-## (no milestone)  [###############-----]  301/384 done · 39 running · 3 queued · 10 abandoned · 31 invisible
+## (no milestone)  [###############-----]  302/384 done · 39 running · 3 queued · 10 abandoned · 30 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -972,7 +970,7 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #648 Provider history: stop gating OpenCode token totals on the CLI version
     ready-merge          PR649 feat(provider-limits): expose strict evidence contract and telemetry reader
     research             #650 [rickylabs/atelier-cockpit#451] Finish installed provider-limit wiring and end-to-end acceptance proof
-    no status            PR661 feat(routing): Opus 5.5 authors and milestone coordinator, Sol high evaluators (owner 2026-10-08)
+    shipped              PR661 feat(routing): Opus 5.5 authors and milestone coordinator, Sol high evaluators (owner 2026-10-08)
 ```
 
 </details>
