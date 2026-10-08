@@ -1072,3 +1072,10 @@ Only a completed final nonempty stop without continuation tools can succeed;
 native error and cancellation remain distinct, and resumed turns clear old ends.
 Consumers must upgrade this decoder before a reader emits the new activity source
 or route provenance. Release 0.35.0 follows the AGY 0.34.0 release.
+
+`readProviderLimitSnapshot` decodes the closed version-one provider-limit source
+accepted by Cockpit542. Subscription windows and named OpenRouter key amounts
+remain separate. Percentages are advisory; durable actual inference outcomes
+are the only quota refusal evidence. Both source collections are bounded1024.
+The decoder copies accepted fields and rejects extra fields, credentials,
+ambiguous route bindings, malformed quantities and future-to-generation rows.

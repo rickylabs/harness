@@ -1072,3 +1072,11 @@ readers are upgraded; invalid values refuse collection. The selection affects on
 originated rows, preserving measurements, source clocks and native attribution. Received
 provenance remains unchanged. See the [wire migration guide](../../docs/how-to/telemetry-wire-migration.md)
 and the separate [operator/log migration](../../docs/how-to/telemetry-operator-migration.md).
+
+Provider limits: `harness-telemetry provider-limits --source <absolute file>` reads
+one bounded0600 same-UID normalized snapshot, with no API or credential read.
+Exit0 emits the complete valid document; exit2 is invalid arguments; exit3 is
+unavailable or unsafe source with a fixed diagnostic and no partial JSON. The
+[Orchid contributor guide](https://github.com/rickylabs/orchid/blob/main/docs/provider-limits.md)
+owns the collector, durable ledger, exact native inference proof and rollout.
+This additive source contract does not publish a package or activate a host.

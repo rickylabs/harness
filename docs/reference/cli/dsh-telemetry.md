@@ -35,6 +35,7 @@ usage:
   harness-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--issue <owner/repo#number>] [--interval-ms <n>] [--partial-trees]  per-issue agent trees
   harness-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   harness-telemetry governance --observations-from <descriptor>  typed governance JSON
+  harness-telemetry provider-limits --source <absolute snapshot path>  normalized advisory meters and durable outcomes
   harness-telemetry account-usage --source <descriptor> [--watch]  subscription quota and session token JSON
   harness-telemetry tree [options]       milestone → epic → task → subagent, the whole board
   harness-telemetry status [options]     runs grouped by epic

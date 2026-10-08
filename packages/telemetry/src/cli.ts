@@ -19,6 +19,7 @@ import { resolveWireFamily } from "./producer-names.js";
 
 import { codexThreadsCommand } from "./codex-threads-cli.js";
 import { issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
+import { providerLimitsCommand } from "./provider-limits-cli.js";
 import { actionReceiptCommand } from "./action-receipt-cli.js";
 import { OperatorConfigurationError, resolveOperatorSetting, type OperatorEnvironment } from "./operator-environment.js";
 import { OperatorLogError, readObservabilityLog, assertObservabilityWriteTarget } from "./log-source.js";
@@ -108,6 +109,7 @@ usage:
   harness-telemetry issue-agents [--json | --watch] [--home <path>] [--limit <n>] [--issue <owner/repo#number>] [--interval-ms <n>] [--partial-trees]  per-issue agent trees
   harness-telemetry run-observation --source <absolute descriptor path>  selected enrolled run JSON
   harness-telemetry governance --observations-from <descriptor>  typed governance JSON
+  harness-telemetry provider-limits --source <absolute snapshot path>  normalized advisory meters and durable outcomes
   harness-telemetry account-usage --source <descriptor> [--watch]  subscription quota and session token JSON
   harness-telemetry tree [options]       milestone → epic → task → subagent, the whole board
   harness-telemetry status [options]     runs grouped by epic
@@ -509,6 +511,7 @@ export async function main(argv: readonly string[], services: SourceServices = d
 }
 
 async function mainConfigured(argv: readonly string[], services: SourceServices, observationOptions: RepositoryRunReadOptions): Promise<number> {
+  if (argv[0] === "provider-limits") return providerLimitsCommand(argv.slice(1), { out: text => process.stdout.write(text), err: text => process.stderr.write(text) });
   if (argv[0] === "account-usage") return accountUsageCommand(argv.slice(1));
   if (argv[0] === "codex-threads") return codexThreadsCommand(argv.slice(1));
   if (argv[0] === "issue-agents") return issueAgentFeedCommand(argv.slice(1), { env: services.env });
