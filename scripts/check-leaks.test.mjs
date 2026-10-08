@@ -18,29 +18,18 @@ const url = (host, port) => ["http", "://", host, ":", port, "/"].join("");
 /** One entry per DETECTORS row. Each line trips exactly that row, so removing it cannot be masked. */
 const FAMILIES = [
   ["home-path", [
-    ["", "home", "someone", "x"].join("/"),
-    ["", "Users", "someone", "x"].join("/"),
-    "C:" + "\\Users\\" + "someone",
-    "cd " + ["", "home", "someone"].join("/"),
-    "(" + ["", "Users", "someone"].join("/") + ")",
+    ["", "home", "someone", "x"].join("/"), ["", "Users", "someone", "x"].join("/"),
+    "cd " + ["", "home", "someone"].join("/"), "(" + ["", "Users", "someone"].join("/") + ")",
+    ...["Users", "users"].map(dir => ["C:", dir, "someone"].join("\\")), ["d:", "UsErS", "someone"].join("/"),
   ]],
   ["data-path", [["", "mnt", "disk", "x"].join("/"), ["", "ephemeral", "work", ""].join("/"), "`" + ["", "data"].join("/") + "`"]],
   ["private-ipv4", [[10, 1, 2, 3], [192, 168, 0, 9], [172, 16, 0, 1], [100, 64, 0, 1]].map(ip => ip.join("."))],
-  ["host-port", [
-    ["localhost", 8080].join(":"),
-    ["localhost", 9].join(":"),
-    url(["example", "com"].join("."), 443),
-    url("worker", 8080),
-    "endpoint " + ["api", "example", "com"].join(".") + ":" + 8443,
-    "proxy " + ["worker", 8080].join(":"),
-  ]],
+  ["host-port", [["localhost", 8080].join(":"), ["localhost", 9].join(":"), url(["example", "com"].join("."), 443),
+    url("worker", 8080), "endpoint " + ["api", "example", "com"].join(".") + ":" + 8443,
+    "proxy " + ["worker", 8080].join(":"), "jump " + ["bastion", 22].join(":")]],
   ["tailnet-host", ["node." + "tail" + "1a2b" + ".ts.net"]],
-  ["token-shape", [
-    "gh" + "p_" + "a".repeat(36),
-    "github" + "_pat_" + "b".repeat(30),
-    "sk" + "-" + "c".repeat(24),
-    "Bear" + "er " + "d".repeat(24),
-  ]],
+  ["token-shape", ["gh" + "p_" + "a".repeat(36), "github" + "_pat_" + "b".repeat(30), "sk" + "-" + "c".repeat(24),
+    "Bear" + "er " + "d".repeat(24)]],
   ["private-key", ["-".repeat(5) + "BEGIN OPENSSH PRIVATE KEY" + "-".repeat(5)]],
   ["session-id", ["session_id = " + uuid, uuid + " is the session", "Session (" + uuid + ")",
     "session `" + uuid + "`", JSON.stringify({ session: { id: uuid } })]],
@@ -91,7 +80,7 @@ test("a clean diff exits 0 with both streams empty, near-misses included", t => 
   const benign = [
     "see src/data/x, ./mnt/ and lib/home/x for details",
     "scripts/x.mjs:42 and README.md:12 and src/a.test.ts:1234",
-    "image node:20, redis:7, retries:3, version 10.2, at 21:20",
+    "key: 1 with a space, version 10.2, at 21:20, stamped 2026-10-08T21:43:00Z",
     "https://example.com/path without a port",
     "the session ended",
     "sk-x",
@@ -127,9 +116,22 @@ test("diff.noprefix and diff.mnemonicPrefix in the repository cannot hide a find
   assert.deepEqual([result.status, result.findings], [1, ["x.txt:1 host-port"]]);
 });
 
-test("a file header without the b/ prefix is refused rather than skipped", () => {
+test("the parser refuses a header without b/ or a hunk cut short, and counts context lines", () => {
   assert.throws(() => addedLines("+++ x.txt\n@@ -0,0 +1 @@\n+text\n"), /unexpected file header/);
   assert.deepEqual(addedLines("+++ /dev/null\n@@ -1 +0,0 @@\n-gone\n"), []);
+  // A context line advances the line counter, and a hunk cut short is refused.
+  const fused = addedLines("+++ b/a\n@@ -1,3 +1,3 @@\n-1\n+X\n 2\n-3\n+Y\n+++ b/b\n@@ -0,0 +1 @@\n+Z\n");
+  assert.deepEqual(fused.map(({ path, line, text }) => [path, line, text]), [["a", 1, "X"], ["a", 3, "Y"], ["b", 1, "Z"]]);
+  assert.throws(() => addedLines("+++ b/a\n@@ -1,2 +1,2 @@\n-1\n+X\ndiff --git a/b b/b\n"), /hunk ended early/);
+});
+
+test("diff.interHunkContext in the repository cannot move a finding into the wrong file or line", t => {
+  const dir = repo(t, {}, { "a.txt": "1\n2\n3\n4\n5\n", "b.txt": "\n" });
+  git(dir, "config", "diff.interHunkContext", "2");
+  writeFileSync(join(dir, "a.txt"), "1\nX\n3\n" + ["localhost", 4].join(":") + "\n5\n");
+  writeFileSync(join(dir, "b.txt"), ["localhost", 8080].join(":") + "\n");
+  git(dir, "commit", "-q", "-am", "edit");
+  assert.deepEqual(scan(dir).findings, ["a.txt:4 host-port", "b.txt:1 host-port"]);
 });
 
 test("the -- that pnpm forwards is tolerated", t => {
