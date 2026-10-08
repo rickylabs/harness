@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **502/632 done · 55 running · 26 queued · 16 abandoned · 33 invisible**
+`[###############-----]` **502/638 done · 55 running · 26 queued · 16 abandoned · 39 invisible**
 
-_Latest board activity: 2026-10-08T19:06:50Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T20:07:00Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (55)
 
@@ -68,7 +68,7 @@ Something could be acting on these right now.
 | [PR649 feat(provider-limits): expose strict evidence contract and telemetry reader](https://github.com/rickylabs/harness/pull/649) | `ready-merge` | — |
 | [#650 [rickylabs/atelier-cockpit#451] Finish installed provider-limit wiring and end-to-end acceptance proof](https://github.com/rickylabs/harness/issues/650) | `research` | — |
 
-## Not on the board (18)
+## Not on the board (24)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -92,8 +92,14 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#625 App launch on a new target: worker could not push, and five app/prompt defects (run #624)](https://github.com/rickylabs/harness/issues/625) | — | — |
 | [#626 Refused /swarm trigger becomes a 'Needs you: approve launch' request in the app](https://github.com/rickylabs/harness/issues/626) | — | — |
 | [#648 Provider history: stop gating OpenCode token totals on the CLI version](https://github.com/rickylabs/harness/issues/648) | — | — |
+| [#651 rearch(1): leak-scan gate on every pull request (public repo)](https://github.com/rickylabs/harness/issues/651) | — | — |
+| [#652 rearch(2): fitness gates - 500-line file cap ratchet and pane-read allowlist](https://github.com/rickylabs/harness/issues/652) | — | — |
+| [#653 rearch(3): delete empty stub packages provider-acp and netscript-bridge](https://github.com/rickylabs/harness/issues/653) | — | — |
+| [#654 rearch(4): one governance read model - contracts owns the shape, telemetry imports it](https://github.com/rickylabs/harness/issues/654) | — | — |
+| [#655 rearch(5): move governance out of telemetry into packages/governance](https://github.com/rickylabs/harness/issues/655) | — | — |
+| [#656 rearch(6): lock the target architecture - ADR 0006 and docs/ARCHITECTURE.md](https://github.com/rickylabs/harness/issues/656) | — | — |
 
-## Anomalies (60)
+## Anomalies (66)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -168,6 +174,12 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#625** — open item has no status label, so it appears in no column
 - **#626** — open item has no status label, so it appears in no column
 - **#648** — open item has no status label, so it appears in no column
+- **#651** — open item has no status label, so it appears in no column
+- **#652** — open item has no status label, so it appears in no column
+- **#653** — open item has no status label, so it appears in no column
+- **#654** — open item has no status label, so it appears in no column
+- **#655** — open item has no status label, so it appears in no column
+- **#656** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -246,7 +258,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  502/632 done · 55 running · 26 queued · 16 abandoned · 33 invisible
+# rickylabs/harness  [###############-----]  502/638 done · 55 running · 26 queued · 16 abandoned · 39 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -533,6 +545,16 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #535 Tour (retry): read-only walk of the issue feed's named tools
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
+
+## rearch-2026-10-08  [--------------------]  0/6 done · 6 invisible
+
+  (no epic)
+    no status            #651 rearch(1): leak-scan gate on every pull request (public repo)
+    no status            #652 rearch(2): fitness gates - 500-line file cap ratchet and pane-read allowlist
+    no status            #653 rearch(3): delete empty stub packages provider-acp and netscript-bridge
+    no status            #654 rearch(4): one governance read model - contracts owns the shape, telemetry imports it
+    no status            #655 rearch(5): move governance out of telemetry into packages/governance
+    no status            #656 rearch(6): lock the target architecture - ADR 0006 and docs/ARCHITECTURE.md
 
 ## (no milestone)  [###############-----]  301/383 done · 39 running · 3 queued · 10 abandoned · 30 invisible
 
