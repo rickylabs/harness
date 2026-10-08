@@ -141,5 +141,6 @@ test("an unresolvable base is inconclusive (exit 2) and never echoes the base it
   const base = ["", "home", "someone", "ref"].join("/");
   const result = scan(repo(t, { "x.txt": "fine\n" }), ["--base", base]);
   assert.deepEqual([result.status, result.out], [2, ""]);
+  assert.ok(!result.err.includes(base), "the caller's base was printed");
   assert.equal(result.err, "check:leaks inconclusive: git diff failed\n");
 });
