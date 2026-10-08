@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **498/629 done · 55 running · 28 queued · 16 abandoned · 32 invisible**
+`[###############-----]` **501/631 done · 55 running · 26 queued · 16 abandoned · 33 invisible**
 
-_Latest board activity: 2026-10-08T15:21:04Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T16:39:02Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (55)
 
@@ -59,16 +59,16 @@ Something could be acting on these right now.
 | [PR602 fix(ai): deliver upstream Anthropic model compatibility fix](https://github.com/rickylabs/harness/pull/602) | `impl-eval` | — |
 | [#604 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/604) | `plan` | — |
 | [#613 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/613) | `plan` | — |
-| [#637 [rickylabs/atelier-cockpit#538] Needs-you: clear launch requests whose work is already done](https://github.com/rickylabs/harness/issues/637) | `plan` | — |
 | [#638 [rickylabs/atelier-mobile#352] Choose model: one row per model, one status line, no reason dumps](https://github.com/rickylabs/harness/issues/638) | `plan` | — |
 | [#639 [rickylabs/atelier-cockpit#451] Budget limits warn at 90%, never block (all subscriptions + OpenRouter key limits)](https://github.com/rickylabs/harness/issues/639) | `plan` | — |
-| [#640 [rickylabs/atelier-mobile#355] Issue lists: badge showing which issues have an agent running, on every list](https://github.com/rickylabs/harness/issues/640) | `plan` | — |
 | [#641 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)](https://github.com/rickylabs/harness/issues/641) | `plan` | — |
 | [#643 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)](https://github.com/rickylabs/harness/issues/643) | `plan` | — |
-| [PR646 fix(telemetry): read OpenCode sessions by store structure, never the CLI version](https://github.com/rickylabs/harness/pull/646) | `impl-eval` | — |
+| [#644 [rickylabs/atelier-cockpit#451] Complete Harness/Orchid limit collection, refusal ledger and advisory governor](https://github.com/rickylabs/harness/issues/644) | `impl` | — |
+| [#645 [rickylabs/atelier-cockpit#451] Complete mobile Costs and model-picker limit consumers](https://github.com/rickylabs/harness/issues/645) | `augment-review` | — |
 | [PR647 feat(telemetry): read OpenCode token usage on the issue tree, labelled per vendor](https://github.com/rickylabs/harness/pull/647) | `impl-eval` | — |
+| [PR649 feat(provider-limits): publish durable limit evidence and advisory admission](https://github.com/rickylabs/harness/pull/649) | `impl` | — |
 
-## Not on the board (17)
+## Not on the board (18)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -91,8 +91,9 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#621 Launch controls: background work and observability](https://github.com/rickylabs/harness/issues/621) | — | — |
 | [#625 App launch on a new target: worker could not push, and five app/prompt defects (run #624)](https://github.com/rickylabs/harness/issues/625) | — | — |
 | [#626 Refused /swarm trigger becomes a 'Needs you: approve launch' request in the app](https://github.com/rickylabs/harness/issues/626) | — | — |
+| [#648 Provider history: stop gating OpenCode token totals on the CLI version](https://github.com/rickylabs/harness/issues/648) | — | — |
 
-## Anomalies (59)
+## Anomalies (60)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -166,6 +167,7 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#623** — open item has no status label, so it appears in no column
 - **#625** — open item has no status label, so it appears in no column
 - **#626** — open item has no status label, so it appears in no column
+- **#648** — open item has no status label, so it appears in no column
 
 ## Epics
 
@@ -190,7 +192,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 297/380 done · 39 running · 5 queued · 10 abandoned · 29 invisible
+`[#########---]` 300/382 done · 39 running · 3 queued · 10 abandoned · 30 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -200,12 +202,12 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 260/339 done · 38 running · 4 queued · 10 abandoned · 27 invisible | — |
+| _(no epic)_ | `[#########---]` 263/341 done · 38 running · 2 queued · 10 abandoned · 28 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>28 filed, nothing started</summary>
+<summary>26 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -235,8 +237,6 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#66 E5.5 — Wire the gate at the sandbox boundary](https://github.com/rickylabs/harness/issues/66) | `triage` | `e5` |
 | [#67 E5.6 — Boot-parameter verification after every kernel update](https://github.com/rickylabs/harness/issues/67) | `triage` | `e5` |
 | [#181 fix(routing): resolve complex evaluators across both implementer families](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
-| [#644 [rickylabs/atelier-cockpit#451] Complete Harness/Orchid limit collection, refusal ledger and advisory governor](https://github.com/rickylabs/harness/issues/644) | `triage` | — |
-| [#645 [rickylabs/atelier-cockpit#451] Complete mobile Costs and model-picker limit consumers](https://github.com/rickylabs/harness/issues/645) | `triage` | — |
 
 </details>
 
@@ -246,7 +246,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  498/629 done · 55 running · 28 queued · 16 abandoned · 32 invisible
+# rickylabs/harness  [###############-----]  501/631 done · 55 running · 26 queued · 16 abandoned · 33 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -534,7 +534,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [###############-----]  297/380 done · 39 running · 5 queued · 10 abandoned · 29 invisible
+## (no milestone)  [###############-----]  300/382 done · 39 running · 3 queued · 10 abandoned · 30 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -924,17 +924,19 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #634 Never block launches on CLI version: remove discovery version allow-lists (Codex, OpenCode, agy)
     shipped              PR635 Remove CLI version gates and preserve exact owner launch choices
     shipped              #636 [rickylabs/netscript#2080] fix(streams): bound durable log recovery and tail-read allocations
-    plan                 #637 [rickylabs/atelier-cockpit#538] Needs-you: clear launch requests whose work is already done
+    shipped              #637 [rickylabs/atelier-cockpit#538] Needs-you: clear launch requests whose work is already done
     plan                 #638 [rickylabs/atelier-mobile#352] Choose model: one row per model, one status line, no reason dumps
     plan                 #639 [rickylabs/atelier-cockpit#451] Budget limits warn at 90%, never block (all subscriptions + OpenRouter key limits)
-    plan                 #640 [rickylabs/atelier-mobile#355] Issue lists: badge showing which issues have an agent running, on every list
+    shipped              #640 [rickylabs/atelier-mobile#355] Issue lists: badge showing which issues have an agent running, on every list
     plan                 #641 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)
     no status            #642 Managed Claude launch abandoned: Remote Control identity never registers
     plan                 #643 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)
-    triage               #644 [rickylabs/atelier-cockpit#451] Complete Harness/Orchid limit collection, refusal ledger and advisory governor
-    triage               #645 [rickylabs/atelier-cockpit#451] Complete mobile Costs and model-picker limit consumers
-    impl-eval            PR646 fix(telemetry): read OpenCode sessions by store structure, never the CLI version
+    impl                 #644 [rickylabs/atelier-cockpit#451] Complete Harness/Orchid limit collection, refusal ledger and advisory governor
+    augment-review       #645 [rickylabs/atelier-cockpit#451] Complete mobile Costs and model-picker limit consumers
+    shipped              PR646 fix(telemetry): read OpenCode sessions by store structure, never the CLI version
     impl-eval            PR647 feat(telemetry): read OpenCode token usage on the issue tree, labelled per vendor
+    no status            #648 Provider history: stop gating OpenCode token totals on the CLI version
+    impl                 PR649 feat(provider-limits): publish durable limit evidence and advisory admission (draft)
 ```
 
 </details>
