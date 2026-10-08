@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **501/631 done · 55 running · 26 queued · 16 abandoned · 33 invisible**
+`[###############-----]` **502/632 done · 55 running · 26 queued · 16 abandoned · 33 invisible**
 
-_Latest board activity: 2026-10-08T17:52:32Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-08T19:06:50Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (55)
 
@@ -59,14 +59,14 @@ Something could be acting on these right now.
 | [PR602 fix(ai): deliver upstream Anthropic model compatibility fix](https://github.com/rickylabs/harness/pull/602) | `impl-eval` | — |
 | [#604 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/604) | `plan` | — |
 | [#613 [rickylabs/netscript#2076] [witness] No-op owner launch check (Codex Run 2)](https://github.com/rickylabs/harness/issues/613) | `plan` | — |
-| [#638 [rickylabs/atelier-mobile#352] Choose model: one row per model, one status line, no reason dumps](https://github.com/rickylabs/harness/issues/638) | `plan` | — |
 | [#639 [rickylabs/atelier-cockpit#451] Budget limits warn at 90%, never block (all subscriptions + OpenRouter key limits)](https://github.com/rickylabs/harness/issues/639) | `plan` | — |
 | [#641 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)](https://github.com/rickylabs/harness/issues/641) | `plan` | — |
 | [#643 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)](https://github.com/rickylabs/harness/issues/643) | `plan` | — |
-| [#644 [rickylabs/atelier-cockpit#451] Complete Harness/Orchid limit collection, refusal ledger and advisory governor](https://github.com/rickylabs/harness/issues/644) | `impl` | — |
+| [#644 [rickylabs/atelier-cockpit#451] Complete Harness/Orchid limit collection, refusal ledger and advisory governor](https://github.com/rickylabs/harness/issues/644) | `ready-merge` | — |
 | [#645 [rickylabs/atelier-cockpit#451] Complete mobile Costs and model-picker limit consumers](https://github.com/rickylabs/harness/issues/645) | `augment-review` | — |
 | [PR647 feat(telemetry): read OpenCode token usage on the issue tree, labelled per vendor](https://github.com/rickylabs/harness/pull/647) | `impl-eval` | — |
-| [PR649 feat(provider-limits): expose strict evidence contract and telemetry reader](https://github.com/rickylabs/harness/pull/649) | `impl` | — |
+| [PR649 feat(provider-limits): expose strict evidence contract and telemetry reader](https://github.com/rickylabs/harness/pull/649) | `ready-merge` | — |
+| [#650 [rickylabs/atelier-cockpit#451] Finish installed provider-limit wiring and end-to-end acceptance proof](https://github.com/rickylabs/harness/issues/650) | `research` | — |
 
 ## Not on the board (18)
 
@@ -192,7 +192,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 300/382 done · 39 running · 3 queued · 10 abandoned · 30 invisible
+`[#########---]` 301/383 done · 39 running · 3 queued · 10 abandoned · 30 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -202,7 +202,7 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 263/341 done · 38 running · 2 queued · 10 abandoned · 28 invisible | — |
+| _(no epic)_ | `[#########---]` 264/342 done · 38 running · 2 queued · 10 abandoned · 28 invisible | — |
 
 ## Waiting to start
 
@@ -246,7 +246,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  501/631 done · 55 running · 26 queued · 16 abandoned · 33 invisible
+# rickylabs/harness  [###############-----]  502/632 done · 55 running · 26 queued · 16 abandoned · 33 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -534,7 +534,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## (no milestone)  [###############-----]  300/382 done · 39 running · 3 queued · 10 abandoned · 30 invisible
+## (no milestone)  [###############-----]  301/383 done · 39 running · 3 queued · 10 abandoned · 30 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -925,18 +925,19 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR635 Remove CLI version gates and preserve exact owner launch choices
     shipped              #636 [rickylabs/netscript#2080] fix(streams): bound durable log recovery and tail-read allocations
     shipped              #637 [rickylabs/atelier-cockpit#538] Needs-you: clear launch requests whose work is already done
-    plan                 #638 [rickylabs/atelier-mobile#352] Choose model: one row per model, one status line, no reason dumps
+    shipped              #638 [rickylabs/atelier-mobile#352] Choose model: one row per model, one status line, no reason dumps
     plan                 #639 [rickylabs/atelier-cockpit#451] Budget limits warn at 90%, never block (all subscriptions + OpenRouter key limits)
     shipped              #640 [rickylabs/atelier-mobile#355] Issue lists: badge showing which issues have an agent running, on every list
     plan                 #641 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)
     no status            #642 Managed Claude launch abandoned: Remote Control identity never registers
     plan                 #643 [rickylabs/atelier-cockpit#540] OpenCode runs show no activity on the issue page (Claude and Codex do)
-    impl                 #644 [rickylabs/atelier-cockpit#451] Complete Harness/Orchid limit collection, refusal ledger and advisory governor
+    ready-merge          #644 [rickylabs/atelier-cockpit#451] Complete Harness/Orchid limit collection, refusal ledger and advisory governor
     augment-review       #645 [rickylabs/atelier-cockpit#451] Complete mobile Costs and model-picker limit consumers
     shipped              PR646 fix(telemetry): read OpenCode sessions by store structure, never the CLI version
     impl-eval            PR647 feat(telemetry): read OpenCode token usage on the issue tree, labelled per vendor
     no status            #648 Provider history: stop gating OpenCode token totals on the CLI version
-    impl                 PR649 feat(provider-limits): expose strict evidence contract and telemetry reader (draft)
+    ready-merge          PR649 feat(provider-limits): expose strict evidence contract and telemetry reader
+    research             #650 [rickylabs/atelier-cockpit#451] Finish installed provider-limit wiring and end-to-end acceptance proof
 ```
 
 </details>
