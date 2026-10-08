@@ -260,6 +260,13 @@ per array, 64 notes per list, 128-character identifiers, 256-character labels an
 notes. The producer applies these limits before serialization and refuses over-cap evidence without
 truncation or invented drop reasons. Transport byte limits remain the caller's concern.
 
+This document is the one governance read model: telemetry builds, decodes, renders and publishes
+it, and keeps no parser of its own. Two narrowly scoped decoders (0.38.0) serve a producer that
+checks one refusal before it has an envelope. `readRecordedAdmission(value, evaluatedAt)` decodes one
+`RecordedAdmission` by the same rules as `admissions[i]`. `readDispatchRefusal(value, observedAt)`
+decodes a refused `DispatchOutcome`, including the detail bound and an optional approval, for private
+comparison only: the read document carries neither detail nor approval. Both return null on failure.
+
 Portable JavaScript cannot inspect arbitrary Proxies without executing traps. Inspection throws
 are contained, and ordinary getters are not invoked; no trap-free, side-effect-free or bounded-time
 claim is made for hostile Proxy traps that themselves loop or allocate. Schema traversal is bounded
@@ -274,7 +281,7 @@ implement reconnect freshness (#265).
 
 The producer half — the CLI that collects configured sources and emits the
 document — is built from this repository's source and documented in the
-[telemetry README](../telemetry/README.md#published-governance-read-command).
+[telemetry governance page](../telemetry/docs/governance.md#published-governance-read-command).
 The consumer half decodes with the decoder published to npm, so a consumer
 pins a released decoder version instead of rebuilding one from source.
 Source merge, tests and `npm pack` are not publication; publication is the
