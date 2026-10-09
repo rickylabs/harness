@@ -14,7 +14,7 @@ import { dirname, join } from "node:path";
 import { EXIT } from "./cli.js";
 import { parseFlags } from "./cli-flags.js";
 import { livePath, resolveObservability } from "./observability.js";
-import { home, run, seedClaude, useTemporaryHome } from "./cli-test-support.js";
+import { home, run, seedClaude, seedFlatItems, useTemporaryHome } from "./cli-test-support.js";
 
 useTemporaryHome();
 
@@ -91,11 +91,7 @@ describe("harness-telemetry", () => {
 
   it("attributes runs to epics once it is given the board", async () => {
     await seedClaude("ses-a", "orch/divybot-39");
-    const items = join(home, "items.json");
-    await writeFile(
-      items,
-      JSON.stringify([{ number: 39, title: "telemetry sink", epic: "E9", milestone: "W2", phase: null }]),
-    );
+    const items = await seedFlatItems();
     const { out } = await run(["status", "--home", home, "--items", items, "--now", "2026-09-04T22:00:00.000Z"]);
     assert.match(out, /epic:E9 \(W2\)/);
     assert.match(out, /#39 telemetry sink/);

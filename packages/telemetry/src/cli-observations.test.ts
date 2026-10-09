@@ -5,7 +5,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { EXIT } from "./cli.js";
 import { livePath, resolveObservability } from "./observability.js";
-import { governanceFixture, home, run, runIsolated, seedClaude, seedGovernance, useTemporaryHome } from "./cli-test-support.js";
+import { governanceFixture, home, run, runIsolated, seedClaude, seedFlatItems, seedGovernance, useTemporaryHome } from "./cli-test-support.js";
 
 useTemporaryHome();
 
@@ -195,11 +195,7 @@ describe("harness-telemetry tree", () => {
 
   it("reads the documented flat --items array too, so nothing that worked stopped working", async () => {
     await seedClaude("ses-a", "orch/divybot-39");
-    const items = join(home, "items.json");
-    await writeFile(
-      items,
-      JSON.stringify([{ number: 39, title: "telemetry sink", epic: "E9", milestone: "W2", phase: null }]),
-    );
+    const items = await seedFlatItems();
     const { code, out } = await run([
       "tree",
       "--home",

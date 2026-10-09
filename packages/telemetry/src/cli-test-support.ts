@@ -91,6 +91,13 @@ export async function seedGovernance(name: string, value: unknown = governanceFi
   return path;
 }
 
+/** The documented flat `--items` array: one task, #39 "telemetry sink" in epic E9. */
+export async function seedFlatItems(): Promise<string> {
+  const items = join(home, "items.json");
+  await writeFile(items, JSON.stringify([{ number: 39, title: "telemetry sink", epic: "E9", milestone: "W2", phase: null }]));
+  return items;
+}
+
 export const LIVE_NOW = "2026-09-07T12:00:00.000Z";
 export const USAGE_CANARY = "synthetic-usage-secret-canary";
 export const SPEND_CANARY = "synthetic-spend-secret-canary";
