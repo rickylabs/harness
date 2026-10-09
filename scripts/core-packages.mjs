@@ -1,4 +1,4 @@
-/** Default lifecycle selection: fourteen core packages; optional routers require explicit commands. */
+/** Default lifecycle selection: fifteen core packages; optional routers require explicit commands. */
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
@@ -17,7 +17,7 @@ export function corePackages() {
       dir: `packages/${dir}`,
       manifest: JSON.parse(readFileSync(join(ROOT, "packages", dir, "package.json"), "utf8")),
     }));
-  if (core.length !== 14) throw new Error("expected fourteen core packages; review the core inventory");
+  if (core.length !== 15) throw new Error("expected fifteen core packages; review the core inventory");
   const names = new Set(core.map(row => row.manifest.name));
   if (names.size !== core.length) throw new Error("duplicate core package identity");
   for (const row of core) {

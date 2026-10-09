@@ -12,7 +12,7 @@ integration is an optional additional-router experiment, not the framework's hos
 [ADR 0005](docs/decisions/0005-harness-framework-identity.md) and [ADR 0006](docs/decisions/0006-rearch-2026-10-08.md) record the owner decisions.
 
 [Understand the loop](#how-the-layer-works) | [Try a local proof](#local-proof-first) |
-[The board](BOARD.md) | [Documentation](docs/)
+[The board](https://github.com/rickylabs/harness/issues) | [Documentation](docs/)
 
 ---
 
@@ -125,8 +125,8 @@ auditable at all.
 ## Status
 
 This README and the concept pages describe the intended product. Delivery progress
-lives on [the board](BOARD.md) and the [roadmap](https://github.com/rickylabs/harness/issues/30);
-issues are authoritative when a generated board page lags a change.
+lives on [the board](https://github.com/rickylabs/harness/issues) and the
+[roadmap](https://github.com/rickylabs/harness/issues/30); `harness-board status` reads it from a checkout.
 
 For interfaces you can use today, follow the [package guides](packages/README.md),
 [generated CLI reference](docs/reference/cli/README.md), and
@@ -138,7 +138,7 @@ These operational references distinguish implemented behavior from planned work.
 | You are… | Go | First outcome |
 | --- | --- | --- |
 | evaluating or reviewing | the diagram above → [docs/DOCTRINE.md](docs/DOCTRINE.md#run-lifecycle) → [concepts](docs/concepts/) | how work is staged, gated and independently reviewed, and what counts as evidence |
-| contributing | the [status](#status) section → [packages/README.md](packages/README.md) → [CONTRIBUTING.md](CONTRIBUTING.md) | the current implementation truth and a safe change surface |
+| contributing | the [status](#status) section → [packages/README.md](packages/README.md) → [AGENTS.md](AGENTS.md) | the current implementation truth and a safe change surface |
 | adopting locally | [local proof](#local-proof-first) → the [tutorial](docs/tutorials/01-from-clone-to-board.md) | deterministic behavior proven on your machine, without a daemon |
 | operating a live host | the [structure](docs/STRUCTURE.md) → [Orchid](https://github.com/rickylabs/orchid) and [Herdr](https://github.com/herdrdev/herdr) → native provider and telemetry docs | dispatch/control ownership and each observed prerequisite |
 
@@ -218,8 +218,8 @@ Further proofs, by what they need:
   [telemetry README](packages/telemetry/README.md#synthetic-governance-fixture),
   and every value in it is synthetic by construction.
 - **Network: `gh` or `GITHUB_TOKEN`.** `harness-board columns` projects a
-  repository; `harness-board digest` prints the markdown page
-  [BOARD.md](BOARD.md) is made of; `harness-forge doctor` reports what a target
+  repository; `harness-board digest` prints the board as a
+  markdown page; `harness-forge doctor` reports what a target
   repository and your environment support. The tools whose whole job is
   reading GitHub exit **3** and say so when no transport is available. Two
   forge commands are deliberately not in that set: `doctor` exits **0** and
@@ -257,7 +257,7 @@ optional dsh composition. [docs/DOCTRINE.md](docs/DOCTRINE.md) owns the rules, [
   Verified Eric-authorized native overrides retain their own provenance and share
   physical checks and accounting. Neither path waives evaluator independence.
 - **Generated files stay generated.** CLI references, skill, taxonomy and board
-  projections retain their owning generators and checks. [CONTRIBUTING.md](CONTRIBUTING.md)
+  projections retain their owning generators and checks. [AGENTS.md](AGENTS.md#generated-files)
   owns the regeneration commands; frozen evidence is not rewritten to erase history.
 - **Artifacts carry evidence.** Conclusions need sources and separate evaluation.
   Method records and private operational evidence follow their authorized storage
@@ -305,27 +305,26 @@ owns the complete package-to-epic table and implementation status.
 
 ### Repository map
 
+[docs/STRUCTURE.md](docs/STRUCTURE.md) owns the target tree; this is the checkout as it stands.
+
 ```
-packages/             fourteen flat core packages
+packages/             the core packages, each with its README (packages/README.md lists them)
+packages/method/      milestone render and validate, route receipts (`harness-method`), run templates
+profiles/             agent profiles, read by orchid at a pinned revision
 docs/                 DOCTRINE, STRUCTURE, decisions, concepts, tutorials, how-to, reference, glossary
-method/tools/         method validators and gates
-run-record/templates/ the artifact templates a run fills in
 experiments/routers/  optional router source, docs and deployment recipes
 scripts/              the repository-wide checks the root scripts run
 .llm/runs/            run artifacts — durable, reviewed via PR
 .github/labels.yml    the ejected label taxonomy — generated, then reviewed
-.github/workflows/    the CI gate, the release pipeline, the status-label settler, the board
-.claude/skills/       the generated board skill (`pnpm run skill:install`)
-BOARD.md              the published board — generated every half hour, never hand-edited
-AGENTS.md             entry point, agent mode
+.github/workflows/    the CI gate, the release pipeline, the status-label settler
+.claude/skills/       agent skills; the board skill is generated (`pnpm run skill:install`)
+AGENTS.md             entry point, agent mode; conventions, generated files, ownership
 CLAUDE.md             entry point, standard mode
-deno.json             see below
+SECURITY.md           the security surfaces of an agent inbox
 ```
 
-`deno.json` and `deno.lock` at the root of a pnpm monorepo look like debris
-and are not: they run the milestone and gate tooling under `method/tools/`.
-[ADR 0006](docs/decisions/0006-rearch-2026-10-08.md) settles that second toolchain: it goes when
-[#658](https://github.com/rickylabs/harness/issues/658) moves that tooling into a package.
+The board itself is GitHub: issues, labels and pull requests. `harness-board status` and
+`harness-board check` read it; no board page is committed.
 
 ## Contributing
 
@@ -337,17 +336,12 @@ starts something. Label deliberately —
 owns the full statement of what follows from that.
 
 Most pull requests here are opened by an agent, and the rules that matter are
-the ones a machine can check: [`CONTRIBUTING.md`](CONTRIBUTING.md) owns the
-four-command local loop, the branch and PR conventions, and the generated
-files you must not hand-edit.
+the ones a machine can check.
 
 | File | What it settles |
 | --- | --- |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | The local loop, conventions, and the six generated files |
+| [`AGENTS.md`](AGENTS.md) | The four-command local loop, branch and PR conventions, the generated files you must not hand-edit, who decides, releases and conduct |
 | [`SECURITY.md`](SECURITY.md) | Three surfaces an ordinary repository does not have: content that instructs an agent, a label that executes, and run artifacts that are committed |
-| [`GOVERNANCE.md`](GOVERNANCE.md) | Where a decision lives, and the owner-fork rule that makes autonomous work safe here |
-| [`SUPPORT.md`](SUPPORT.md) | Where to go for each kind of question, given that there are no Discussions |
-| [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | Short. An agent's output is its operator's responsibility. |
 
 ## Licence
 

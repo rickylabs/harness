@@ -4,10 +4,10 @@ Validate explicit receipt files with Node 24 or later. The checker reports recei
 and requested/observed routing agreement. It does not resolve a matrix, authorize a launch,
 verify evidence references, or establish that the dispatcher recorded every spawn.
 
-    node method/tools/harness/matrix-receipts.mjs receipt.json another-receipt.json
+    pnpm exec harness-method receipts receipt.json another-receipt.json
 
-`pnpm run check:receipts` runs synthetic validator/CLI tests. The root `pnpm test` aggregate
-executes this stage in CI; it does not scan a private runtime store for receipts.
+The `@rickylabs/method` package tests run the synthetic validator/CLI tests in CI as part of
+`pnpm test`; `pnpm run check:receipts` runs them alone. They do not scan a private runtime store for receipts.
 
 ## Receipt shape
 
@@ -54,8 +54,9 @@ parser exceptions. Exit 2 composes with the repository's inconclusive stage runn
 
 ## Extending and reviewing
 
-The implementation is [matrix-receipts.mjs](../../method/tools/harness/matrix-receipts.mjs); the
-[tests](../../method/tools/harness/matrix-receipts.test.mjs) cover the real CLI and its CI wiring.
+The rules are in [route-receipt.ts](../../packages/method/src/domain/receipts/route-receipt.ts) and the
+CLI is `harness-method receipts`; the [tests](../../packages/method/tests/matrix-receipts.test.mjs) cover
+the real CLI, including a symlinked entry point.
 Use synthetic fixtures only; operational receipts and identifiers stay private.
 
 A reviewer should temporarily bypass the CLI's call to `validateReceiptText`, run

@@ -27,7 +27,7 @@ explain them.
 - Proposing a design → [numbered RFCs](rfcs/README.md), with pinned evidence and claim labels.
 - Want the details of one subsystem → its package README under [`packages/`](../packages/). Those
   are the deepest documents in the repository and they are where design rationale lives.
-- Want to change something here → [`CONTRIBUTING.md`](../CONTRIBUTING.md), and
+- Want to change something here → [`AGENTS.md`](../AGENTS.md), and
   [`SECURITY.md`](../SECURITY.md) before you touch an issue.
 
 [ADR 0005](decisions/0005-harness-framework-identity.md) records the current framework

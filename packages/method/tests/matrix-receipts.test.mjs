@@ -5,11 +5,11 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
-import { ROUTE_FIELDS, SCOPE, validateReceipt, validateReceiptText } from "./matrix-receipts.mjs";
+import { jsYamlDuplicateKeys, ROUTE_FIELDS, SCOPE, validateReceipt, validateReceiptText } from "../mod.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../../..");
-const cli = join(here, "matrix-receipts.mjs");
+const cli = join(here, "../src/adapters/cli/main.ts");
 
 // Invented data only. Model mappings and observer references are assertions, not fleet fixtures.
 function receipt() {
@@ -28,7 +28,7 @@ function receipt() {
 }
 const unknown = (reasonCode = "not-observed") => ({ status: "unknown", reasonCode, reason: "Synthetic observer cannot establish this field." });
 function run(files) {
-  return spawnSync(process.execPath, [cli, ...files], { encoding: "utf8", cwd: root });
+  return spawnSync(process.execPath, [cli, "receipts", ...files], { encoding: "utf8", cwd: root });
 }
 function fixtureFiles(t, values) {
   const dir = mkdtempSync(join(tmpdir(), "receipt-fixture-"));
@@ -122,19 +122,19 @@ test("timestamps require real UTC calendar dates at second or millisecond precis
 test("JSON duplicates are semantic, scoped, and never inferred from text inside a value", () => {
   const r = receipt();
   r.observed.model.evidenceRef = '{"status":1,"status":2}';
-  assert.equal(validateReceiptText(JSON.stringify(r)).verdict, "pass");
+  assert.equal(validateReceiptText(JSON.stringify(r), jsYamlDuplicateKeys).verdict, "pass");
   const input = JSON.stringify(receipt());
   for (const bad of [
     input.replace('"schemaVersion":1', '"schemaVersion":1,"schemaVersion":1'),
     input.replace('"status":"known"', '"status":"unknown","status":"known"'),
     input.replace('"status":"known"', '"sta\\u0074us":"unknown","status":"known"'),
   ]) {
-    assert.equal(validateReceiptText(bad).verdict, "fail");
-    assert.equal(validateReceiptText(bad).findings[0].code, "duplicate-key");
+    assert.equal(validateReceiptText(bad, jsYamlDuplicateKeys).verdict, "fail");
+    assert.equal(validateReceiptText(bad, jsYamlDuplicateKeys).findings[0].code, "duplicate-key");
   }
   // JSON.parse rejects YAML conveniences before the duplicate detector sees them.
   for (const bad of ["", "{", "schemaVersion: 1", "{\"schemaVersion\": 1,}", "[]", "null", "{}"])
-    assert.equal(validateReceiptText(bad).verdict, "fail");
+    assert.equal(validateReceiptText(bad, jsYamlDuplicateKeys).verdict, "fail");
 });
 
 test("applied effort, prose-only effort and role/tier unknowns retain distinct verdicts", (t) => {
@@ -170,13 +170,13 @@ test("a symlink entry point executes the checker instead of silently exiting zer
   const [valid, malformed] = fixtureFiles(t, [receipt(), "{"]);
   const alias = join(dirname(valid), "receipt-alias.mjs");
   symlinkSync(cli, alias);
-  const empty = spawnSync(process.execPath, [alias], { encoding: "utf8" });
+  const empty = spawnSync(process.execPath, [alias, "receipts"], { encoding: "utf8" });
   assert.equal(empty.status, 2);
   assert.equal(JSON.parse(empty.stdout).reason, "no-inputs");
-  const checked = spawnSync(process.execPath, [alias, valid], { encoding: "utf8" });
+  const checked = spawnSync(process.execPath, [alias, "receipts", valid], { encoding: "utf8" });
   assert.equal(checked.status, 0);
   assert.equal(JSON.parse(checked.stdout).results.length, 1);
-  const invalid = spawnSync(process.execPath, [alias, malformed], { encoding: "utf8" });
+  const invalid = spawnSync(process.execPath, [alias, "receipts", malformed], { encoding: "utf8" });
   assert.equal(invalid.status, 1);
   assert.equal(JSON.parse(invalid.stdout).results[0].findings[0].code, "invalid-json");
 });
@@ -204,10 +204,4 @@ test("hostile values, keys and malformed input are never echoed by the CLI", (t)
     assert.equal((output.stdout + output.stderr).includes(sentinel), false);
     assert.equal(output.stderr, "");
   }
-});
-
-test("the root CI aggregate reaches this suite as an explicit named stage", () => {
-  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-  assert.ok(manifest.scripts.test.split(/\s+/).includes("check:receipts"));
-  assert.equal(manifest.scripts["check:receipts"], "node --test method/tools/harness/matrix-receipts.test.mjs");
 });

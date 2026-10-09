@@ -1,0 +1,34 @@
+{
+  "name": "@rickylabs/method",
+  "version": "0.0.0",
+  "description": "Method tools: milestone run-record render and validate, route receipt checks, run templates",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "harness-method": "./src/adapters/cli/main.ts"
+  },
+  "exports": {
+    ".": {
+      "types": "./mod.ts",
+      "default": "./mod.ts"
+    }
+  },
+  "files": [
+    "mod.ts",
+    "src",
+    "templates"
+  ],
+  "dependencies": {
+    "js-yaml": "^4.3.2"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "test": "node --test \"tests/*.test.mjs\"",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  }
+}

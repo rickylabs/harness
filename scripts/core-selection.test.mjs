@@ -35,16 +35,16 @@ function selection(script) {
     .filter(dir => dir !== "").sort();
 }
 for (const [script, action] of [["build:packages", "build"], ["typecheck:packages", "typecheck"], ["test:packages", "test"], ["clean", "clean"]]) {
-  test(`default ${action} selects exactly the fourteen core packages`, () => {
+  test(`default ${action} selects exactly the fifteen core packages`, () => {
     const core = expected();
-    assert.equal(core.length, 14, "the core package count changed");
+    assert.equal(core.length, 15, "the core package count changed");
     assert.deepEqual(selection(manifest().scripts[script]), core);
   });
 }
 
 test("the root TS graph contains every core project and no experimental router", () => {
   const config = JSON.parse(readFileSync(join(root, "tsconfig.json"), "utf8"));
-  assert.equal(expected().length, 14);
+  assert.equal(expected().length, 15);
   assert.deepEqual(config.references.map(row => row.path).sort(), expected());
 });
 
@@ -117,7 +117,7 @@ test("a core workspace dependency on the experiment refuses before invoking pnpm
 });
 
 for (const [label, edit, reason] of [
-  ["missing core package", (directory) => rmSync(join(directory, expected()[0]), {recursive: true}), /expected fourteen core packages/],
+  ["missing core package", (directory) => rmSync(join(directory, expected()[0]), {recursive: true}), /expected fifteen core packages/],
   ["duplicate core identity", (directory) => {
     const first = JSON.parse(readFileSync(join(directory, expected()[0], "package.json"), "utf8"));
     const path = join(directory, expected()[1], "package.json");
@@ -180,7 +180,7 @@ test("the project guard accepts the whole workspace while rejecting experimental
   const directory = isolatedGraph(t);
   const before = graphCheck(directory);
   assert.ifError(before.error); assert.equal(before.status, 0, before.stderr);
-  assert.match(before.stdout, /15 packages/);
+  assert.match(before.stdout, /16 packages/);
   const path = join(directory, "tsconfig.json");
   const config = JSON.parse(readFileSync(path, "utf8"));
   config.references.push({path: "experiments/routers/dsh"});
