@@ -4,7 +4,7 @@
  *
  * A hand-written CLI reference is wrong within one milestone, and wrong quietly: nothing goes red
  * when a flag is added, so the page keeps being served to whoever reads it. This repository already
- * refuses that for `cordis.patch.yml`, `SKILL.md` and `.github/labels.yml` — the same treatment,
+ * refuses that for `SKILL.md` and `.github/labels.yml` — the same treatment,
  * applied to prose.
  *
  * Two inputs, both from the code:
