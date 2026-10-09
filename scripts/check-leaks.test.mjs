@@ -25,7 +25,10 @@ const FAMILIES = [
   ["host-port", [["localhost", 8080].join(":"), ["localhost", 9].join(":"), url(["example", "com"].join("."), 443),
     url("worker", 8080), "-" + url("worker", 8081), "endpoint " + ["api", "example", "com"].join(".") + ":" + 8443,
     "proxy " + ["worker", 8080].join(":"), "jump " + ["bastion", 22].join(":"),
-    "share on " + ["NAS", 5000].join(":") + " tonight", "ran on " + ["buildBox", 8080].join(":") + " again"]],
+    "share on " + ["NAS", 5000].join(":") + " tonight", "ran on " + ["buildBox", 8080].join(":") + " again",
+    // Object syntax exempts only schema/unit keys, never a camelCase host.
+    "connect to {" + ["buildBox", 8080].join(":") + "}", "{" + ["a", "1,buildBox", 8080].join(":") + "}",
+    "{" + ["schemaVersion", "2,buildBox", 8080].join(":") + "}"]],
   ["tailnet-host", ["node." + "tail" + "1a2b" + ".ts.net"]],
   ["token-shape", ["gh" + "p_" + "a".repeat(36), "github" + "_pat_" + "b".repeat(30), "sk" + "-" + "c".repeat(24),
     "Bear" + "er " + "d".repeat(24)]],
