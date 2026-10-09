@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - packages/providers/*
   - experiments/routers/*
 
 # Native build scripts pulled in transitively by @deepseek-ai/dsh (node-pty, koffi, ...).

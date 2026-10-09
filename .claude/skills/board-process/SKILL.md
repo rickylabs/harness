@@ -83,7 +83,7 @@ silence one level up. The board reports one left behind as `stale-owner-decision
 
 - `type:` — `feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`, `umbrella`, `sub-pr`. Every open issue and PR carries exactly one.
 - `priority:` — `p0`, `p1`, `p2`, `p3`. `p0` is a release blocker.
-- `area:` — `board`, `contracts`, `coordinator`, `dsh-app`, `forge`, `governance`, `llm-local`, `netscript-bridge`, `provider-acp`, `provider-claude`, `provider-codex`, `provider-opencode`, `routing`, `telemetry`, `subagents`, `dsh`. Derived from this repository's packages; additive.
+- `area:` — `board`, `contracts`, `coordinator`, `dsh-app`, `forge`, `governance`, `llm-local`, `netscript-bridge`, `provider-acp`, `routing`, `telemetry`, `subagents`, `claude`, `codex`, `opencode`, `dsh`. Derived from this repository's packages; additive.
 - `topic:` — `docs`, `internals`, `fixes`, `features`. Which lane owns the item.
 - `gate:` — `release-contracts`. Opt in to an expensive CI gate on this PR.
 - `ci:` — `full`, `skip-release-contracts`. `ci:full` wins over every skip label.
@@ -101,6 +101,9 @@ hold stays readable. Do not apply them to new work — they are listed here prec
 the label picker cannot say any of this:
 
 - `status:close-gate-override` — use `flag:close-gate-override` instead.
+- `area:provider-claude` — use `area:claude` instead.
+- `area:provider-codex` — use `area:codex` instead.
+- `area:provider-opencode` — use `area:opencode` instead.
 
 ## Branch naming
 
