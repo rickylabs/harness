@@ -6,7 +6,6 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
-
 import { addedLines } from "./check-leaks.mjs";
 
 const script = resolve(dirname(fileURLToPath(import.meta.url)), "check-leaks.mjs");
@@ -35,25 +34,21 @@ const FAMILIES = [
 ];
 
 function git(cwd, ...args) {
-  const run = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", ...args],
-    { cwd, env, encoding: "utf8" });
+  const run = spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "-c", "commit.gpgsign=false", ...args], { cwd, env });
   assert.equal(run.status, 0, `git ${args[0]} failed`);
 }
 
-/** A repository with one commit on `main` and `files` committed on top of it on `feature`. */
-function repo(t, files, before = {}) {
+function repo(t, files, before = {}) { // `before` committed on main, then `files` committed on feature
   const dir = mkdtempSync(join(tmpdir(), "check-leaks-"));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const write = entries => Object.entries(entries).forEach(([path, content]) => {
     mkdirSync(dirname(join(dir, path)), { recursive: true }), writeFileSync(join(dir, path), content);
   });
-  const commit = message => (git(dir, "add", "-A"), git(dir, "commit", "-q", "--allow-empty", "-m", message));
+  const commit = (entries, message) => (write(entries), git(dir, "add", "-A"), git(dir, "commit", "-q", "--allow-empty", "-m", message));
   git(dir, "init", "-q", "-b", "main");
-  write({ "README.md": "base\n", ...before });
-  commit("base");
+  commit({ "README.md": "base\n", ...before }, "base");
   git(dir, "checkout", "-q", "-b", "feature");
-  write(files);
-  commit("change");
+  commit(files, "change");
   return dir;
 }
 
