@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
 import { readFileSync, readdirSync } from "node:fs";
-import { readGovernanceSnapshot, readOpenCodeProviderPools } from "./governance-read.js";
+import { readGovernanceSnapshot, readOpenCodeProviderPools, readRecordedAdmission } from "./governance-read.js";
+import { parseState, timestamp } from "./governance-read-fields.js";
+import { readDispatchRefusal } from "./dispatch-refusal.js";
 const root = new URL("../test-fixtures/governance-read/", import.meta.url);
 // Mutable JSON is deliberate: each negative changes independent transport input.
 const fixture = (name = "mixed-timeout"): any => JSON.parse(readFileSync(new URL(`${name}.json`, root), "utf8"));
@@ -274,4 +276,100 @@ it("governance budgets preserve native nested models and refuse a provider-prefi
       if (read.ok) assert.deepEqual(read.snapshot.transportAvailability?.providerBudgets, [row]);
     }
   }
+});
+
+// Cases migrated from the deleted telemetry observation parser (#654). Field behaviour the canonical
+// model still supports is tested on the shared helpers; the document's stricter rules are stated.
+const OBSERVED = "2026-09-07T11:55:00.000Z";
+const OBSERVED_MS = Date.parse(OBSERVED);
+const approval = (id = "approval-1") => ({ id, kind: "dispatch-admission", summary: "Approve paid fallback for item 205",
+  item: 205, runId: null, regime: "metered", requestedAt: "2026-09-07T11:54:00.000Z", expiresAt: null });
+const host = (over: Record<string, unknown> = {}) => ({ host: "fixture-host", vramUsedBytes: 8, vramTotalBytes: 24,
+  ramUsedBytes: 32, ramTotalBytes: 128, observedAt: OBSERVED, ...over });
+const state = (over: Record<string, unknown> = {}): any => ({ generatedAt: OBSERVED, regimes: [
+  { regime: "capacity", state: "allow", hosts: [host()], note: null },
+  { regime: "subscription", state: "allow", note: null, accounts: [
+    { seam: "codex", account: "primary", state: "allow", observedAt: OBSERVED, windows: [
+      { label: "weekly", windowMinutes: 10080, usedPercent: 52, resetsAt: null, binding: false },
+      { label: "5h", windowMinutes: 300, usedPercent: 63, resetsAt: "2026-09-07T13:00:00.000Z", binding: true }] },
+    { seam: "claude", account: "backup", state: "allow", windows: [], observedAt: OBSERVED }] },
+  { regime: "metered", state: "allow", note: null,
+    providers: [{ provider: "openrouter", spentUsd: 12.5, ceilingUsd: 50, windowLabel: "monthly", observedAt: OBSERVED }] },
+], pending: [], notes: ["synthetic note b", "synthetic note a"], ...over });
+const refusal = (over: Record<string, unknown> = {}) => ({ item: 205, regime: "subscription", state: "throttle",
+  observedAt: "2026-09-07T11:54:00.000Z", validUntil: "2026-09-07T12:01:00.000Z", freshness: "fresh",
+  provenance: "synthetic:dispatcher", reason: "quota-paced", accepted: false, ...over });
+it("M1 state decoding normalizes regimes, pending, notes, accounts and binding-first windows", () => {
+  const parsed = parseState(state({ pending: [approval("z"), approval("a")] }), OBSERVED_MS);
+  assert.deepEqual(parsed.regimes.map(r => r.regime), ["subscription", "metered", "capacity"]);
+  assert.deepEqual(parsed.pending.map(p => p.id), ["a", "z"]);
+  assert.deepEqual(parsed.notes, ["synthetic note a", "synthetic note b"]);
+  const subscription = parsed.regimes[0];
+  assert.ok(subscription?.regime === "subscription");
+  assert.deepEqual(subscription.accounts.map(a => `${a.seam}/${a.account}`), ["claude/backup", "codex/primary"]);
+  assert.equal(subscription.accounts[1]?.windows[0]?.binding, true);
+});
+it("M1 the document orders admissions by item", () => {
+  const input = fixture("admissions-only");
+  input.admissions = [{ ...input.admissions[0], item: 9 }, input.admissions[0]];
+  input.sources.admissions.records = 2;
+  const read = readGovernanceSnapshot(input);
+  assert.ok(read.ok);
+  assert.deepEqual(read.snapshot.admissions.map(a => a.item), [7, 9]);
+});
+it("M2 one refusal classifies its own freshness; the document refuses a fresh envelope over a stale refusal", () => {
+  assert.equal(readRecordedAdmission(refusal({ freshness: "stale", validUntil: "2026-09-07T11:59:00.000Z" }), "2026-09-07T12:00:00.000Z")?.freshness, "stale");
+  assert.equal(readRecordedAdmission(refusal({ validUntil: "2026-09-07T11:59:00.000Z" }), "2026-09-07T12:00:00.000Z"), null);
+  const input = fixture("admissions-only");
+  input.admissions[0].validUntil = "2026-09-07T12:01:00.000Z";
+  refuse(input);
+});
+it("M3 instants compare as epoch milliseconds, keeping the producer's spelling", () => {
+  const read = readRecordedAdmission(refusal({ observedAt: "2026-09-07T13:54:00+02:00", validUntil: "2026-09-07T14:01:00+02:00" }), "2026-09-07T12:00:00.000Z");
+  assert.equal(read?.observedAt, "2026-09-07T13:54:00+02:00");
+  assert.equal(timestamp("2026-09-07T13:55:00+02:00", "t").ms, OBSERVED_MS);
+  assert.equal(parseState(state({ generatedAt: "2026-09-07T13:55:00+02:00" }), OBSERVED_MS).generatedAt, "2026-09-07T13:55:00+02:00");
+});
+it("M4 a refusal observed after the evaluation instant is refused", () => {
+  assert.equal(readRecordedAdmission(refusal({ observedAt: "2026-09-07T12:00:01.000Z", validUntil: "2026-09-07T12:05:00.000Z" }), "2026-09-07T12:00:00.000Z"), null);
+});
+it("M5 null readings stay never-read evidence in state; the document refuses them on a retained read source", () => {
+  const parsed = parseState(state({ regimes: [{ regime: "capacity", state: "allow", note: null,
+    hosts: [host({ vramUsedBytes: null, vramTotalBytes: null, observedAt: null })] }, ...state().regimes.slice(1)] }), OBSERVED_MS);
+  const capacity = parsed.regimes[2];
+  assert.ok(capacity?.regime === "capacity");
+  assert.deepEqual([capacity.hosts[0]?.observedAt, capacity.hosts[0]?.vramUsedBytes], [null, null]);
+  const input = fixture();
+  input.state.regimes[2].hosts[0].observedAt = null;
+  refuse(input);
+});
+it("M6 generatedAt, pending and notes are required, never defaulted", () => {
+  for (const key of ["generatedAt", "pending", "notes"]) {
+    const input = state(); delete input[key];
+    assert.throws(() => parseState(input, OBSERVED_MS));
+  }
+});
+it("M7 approvals keep every field where they are carried; the document refuses any pending approval", () => {
+  assert.deepEqual(parseState(state({ pending: [approval()] }), OBSERVED_MS).pending, [approval()]);
+  const outcome = { accepted: false, reason: "needs-approval", detail: "waiting for an operator", approval: approval() };
+  assert.deepEqual(readDispatchRefusal(outcome, OBSERVED), outcome);
+  assert.equal(readDispatchRefusal({ ...outcome, approval: { ...approval(), requestedAt: "2026-09-07T11:56:00.000Z" } }, OBSERVED), null);
+  for (const detail of ["", "x".repeat(4097)]) assert.equal(readDispatchRefusal({ ...outcome, detail }, OBSERVED), null);
+  const input = fixture();
+  input.state.pending = [approval()];
+  refuse(input);
+});
+it("M8 an unsafe provenance is refused without echoing it", () => {
+  const input = fixture();
+  input.provenance = "/private/PRIVATE_CANARY";
+  refuse(input);
+  assert.equal(readRecordedAdmission(refusal({ provenance: "/private/PRIVATE_CANARY" }), "2026-09-07T12:00:00.000Z"), null);
+});
+it("M9 missing regimes, unknown states, negative headroom and accepted refusals are refused", () => {
+  assert.throws(() => parseState(state({ regimes: state().regimes.slice(0, 2) }), OBSERVED_MS));
+  assert.throws(() => parseState(state({ regimes: [{ ...state().regimes[0], state: "green" }, ...state().regimes.slice(1)] }), OBSERVED_MS));
+  assert.throws(() => parseState(state({ regimes: [{ regime: "capacity", state: "allow", note: null, hosts: [host({ vramUsedBytes: 25 })] },
+    ...state().regimes.slice(1)] }), OBSERVED_MS));
+  assert.equal(readRecordedAdmission(refusal({ accepted: true }), "2026-09-07T12:00:00.000Z"), null);
+  assert.equal(readDispatchRefusal({ accepted: true, reason: "quota-paced", detail: "x" }, OBSERVED), null);
 });

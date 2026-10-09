@@ -4,7 +4,7 @@ import { Context } from "@deepseek-ai/cordis";
 import { Session, SessionId, SessionStore } from "@deepseek-ai/dsh-session";
 import { SessionProjectionRegistry } from "@deepseek-ai/dsh-session-projection";
 import * as todoPlugin from "@deepseek-ai/dsh-tool-todo";
-import { parseGovernanceObservation } from "@rickylabs/telemetry";
+import { readGovernanceSnapshot } from "@rickylabs/harness-contracts";
 import boardPlugin, { CONTEXT_KEY, createService } from "./plugins/board.js";
 import { boardProjectionSchema } from "./plugins/board-projection.js";
 import { runBoardProjectionSmoke, smokeInput } from "./board-smoke-fixture.js";
@@ -101,74 +101,34 @@ describe("board session projection composition", () => {
     const service = ctx.get(CONTEXT_KEY);
     if (service === undefined) throw new Error("board service missing");
     const session = ctx.sessions.create();
-    const observations = parseGovernanceObservation({
-      observedAt: "2026-09-06T23:55:00.000Z",
-      validUntil: "2026-09-07T00:05:00.000Z",
-      provenance: "synthetic:test",
+    const observedAt = "2026-09-06T23:55:00.000Z";
+    const read = (provenance: string) => ({ status: "read", observedAt, validUntil: "2026-09-07T00:05:00.000Z", freshness: "fresh", provenance });
+    const decoded = readGovernanceSnapshot({
+      schema: 1, protocol: 1, producer: "harness-telemetry", evaluatedAt: "2026-09-07T00:00:00.000Z",
+      sources: { usage: read("synthetic:usage"), spend: read("synthetic:spend"), capacity: read("synthetic:capacity"),
+        admissions: { status: "read", records: 1, empty: false, dropped: [], provenance: "synthetic:admissions", collectedAt: observedAt },
+        approvals: { status: "not-observed" } },
+      notes: [], availability: "fresh", observedAt, validUntil: "2026-09-07T00:01:00.000Z", provenance: "synthetic:test",
+      complete: true, unavailableReason: null,
       state: {
-        generatedAt: "2026-09-06T23:55:00.000Z",
+        generatedAt: observedAt,
         regimes: [
-          {
-            regime: "subscription",
-            state: "throttle",
-            accounts: [{
-              seam: "codex",
-              account: "primary",
-              state: "throttle",
-              windows: [{
-                label: "5h",
-                windowMinutes: 300,
-                usedPercent: 91,
-                resetsAt: "2026-09-07T01:00:00.000Z",
-                binding: true,
-              }],
-              observedAt: "2026-09-06T23:55:00.000Z",
-            }],
-            note: "synthetic binding window",
-          },
-          {
-            regime: "metered",
-            state: "allow",
-            providers: [{
-              provider: "openrouter",
-              spentUsd: 12.5,
-              ceilingUsd: 50,
-              windowLabel: "monthly",
-              observedAt: "2026-09-06T23:55:00.000Z",
-            }],
-            note: null,
-          },
-          {
-            regime: "capacity",
-            state: "allow",
-            hosts: [{
-              host: "n5-fixture",
-              vramUsedBytes: 8 * 1024 ** 3,
-              vramTotalBytes: 24 * 1024 ** 3,
-              ramUsedBytes: 32 * 1024 ** 3,
-              ramTotalBytes: 128 * 1024 ** 3,
-              observedAt: "2026-09-06T23:55:00.000Z",
-            }],
-            note: null,
-          },
+          { regime: "subscription", state: "throttle", note: "synthetic binding window", accounts: [{ seam: "codex", account: "primary",
+            state: "throttle", observedAt,
+            windows: [{ label: "5h", windowMinutes: 300, usedPercent: 91, resetsAt: "2026-09-07T01:00:00.000Z", binding: true }] }] },
+          { regime: "metered", state: "allow", note: null,
+            providers: [{ provider: "openrouter", spentUsd: 12.5, ceilingUsd: 50, windowLabel: "monthly", observedAt }] },
+          { regime: "capacity", state: "allow", note: null, hosts: [{ host: "n5-fixture", vramUsedBytes: 8 * 1024 ** 3,
+            vramTotalBytes: 24 * 1024 ** 3, ramUsedBytes: 32 * 1024 ** 3, ramTotalBytes: 128 * 1024 ** 3, observedAt }] },
         ],
         pending: [],
         notes: ["synthetic governance note"],
       },
-      admissions: [{
-        item: { number: 204 },
-        regime: "subscription",
-        state: "throttle",
-        observedAt: "2026-09-06T23:54:00.000Z",
-        validUntil: "2026-09-07T00:01:00.000Z",
-        provenance: "synthetic:dispatcher",
-        outcome: {
-          accepted: false,
-          reason: "quota-paced",
-          detail: "waiting for the next synthetic subscription slot",
-        },
-      }],
-    }, "2026-09-07T00:00:00.000Z");
+      admissions: [{ item: 204, regime: "subscription", state: "throttle", observedAt: "2026-09-06T23:54:00.000Z",
+        validUntil: "2026-09-07T00:01:00.000Z", freshness: "fresh", provenance: "synthetic:dispatcher", reason: "quota-paced", accepted: false }],
+    });
+    if (!decoded.ok) throw new Error("synthetic governance document must decode");
+    const observations = decoded.snapshot;
     assert.equal(observations.availability, "fresh");
 
     const result = service.refresh(session, { ...smokeInput(), observations });
@@ -178,7 +138,8 @@ describe("board session projection composition", () => {
     assert.equal(governance?.admissions[0]?.item.number, 204);
     assert.equal(governance?.admissions[0]?.outcome.accepted, false);
     assert.equal(governance?.admissions[0]?.outcome.reason, "quota-paced");
-    assert.equal(governance?.admissions[0]?.outcome.detail, "waiting for the next synthetic subscription slot");
+    // The read document carries no operator detail; the published outcome withholds it explicitly.
+    assert.match(governance?.admissions[0]?.outcome.detail ?? "", /private operator detail withheld/);
     await fiber.dispose();
   });
 });
@@ -204,7 +165,7 @@ describe("board projection wire schema", () => {
       provenance: null,
       state: null,
       admissions: [],
-      unavailableReason: "no --observations supplied",
+      unavailableReason: "not-configured",
     },
     notes: [],
   } as const;

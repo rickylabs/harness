@@ -16,7 +16,7 @@ it("admissions use explicit detail time, latest per item/regime, collapse replay
   assert.equal(Date.parse(result.admissions[0]!.observedAt), Date.parse(latest.detail.observedAt));
   assert.deepEqual(mapAdmissions([latest, duplicate], now), mapAdmissions([duplicate, latest], now));
   assert.equal(result.admissions[0]?.provenance, "reader:recorded-admission");
-  assert.equal(result.admissions[0]?.outcome.reason, "quota-paced");
+  assert.equal(result.admissions[0]?.reason, "quota-paced");
   assert.doesNotMatch(JSON.stringify(result), /private-|canary/);
   assert.deepEqual(mapAdmissions([first, latest], now), mapAdmissions([latest, first], now));
 });
@@ -34,7 +34,7 @@ it("same-time conflicts block only their key and newer malformed records never r
   ]) {
     const result = mapAdmissions([event("2026-09-07T11:58:00Z"), event(), bad, other], now);
     assert.equal(result.ok, false);
-    assert.deepEqual(result.admissions.map(a => a.item.number), [206]);
+    assert.deepEqual(result.admissions.map(a => a.item), [206]);
   }
 });
 it("private operator-detail differences still conflict before redaction", () => {
@@ -67,7 +67,7 @@ it("preserves published contract examples and producer-defined reason codes with
   for (const reason of ["quota-paused", "lane-unknown", "needs-approval", "provider_rate_limited", "future-gate-code"]) {
     const result = mapAdmissions([event(undefined, { outcome: { accepted: false, reason, detail: "private/path withheld" } })], now);
     assert.equal(result.ok, true);
-    assert.equal(result.admissions[0]?.outcome.reason, reason);
+    assert.equal(result.admissions[0]?.reason, reason);
     assert.doesNotMatch(JSON.stringify(result), /private\/path/);
   }
   for (const reason of ["", "private/path", "private prose", "private\nvalue", "x".repeat(129)]) {

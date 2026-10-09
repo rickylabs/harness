@@ -46,7 +46,7 @@ The decision E5 waited on is answered: the sandboxctl sidecar was ratified on
 **[#257](https://github.com/rickylabs/harness/issues/257)**, and defines the permitted channel authority. That decision does not prove deployed sidecar
 activation or a live admission read. The published
 governance *read* boundary already ships through `telemetry` and `contracts`
-(see the [telemetry README](../telemetry/README.md#published-governance-read-command));
+(see the [telemetry governance page](../telemetry/docs/governance.md#published-governance-read-command));
 this package — the unimplemented admission boundary — remains a
 stub until E5 implements it. Building it before the epic that owns it defines
 the contract would mean building the readings twice.

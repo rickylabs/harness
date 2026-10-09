@@ -1,8 +1,8 @@
 import { SOURCE_FAILURE_REASONS, type SourceFailureReason, type SourceDiscardReason, type MeterCoverage, type GovernanceSourceCoverage, type RegimeStatus,
-  type TransportAvailability } from "@rickylabs/harness-contracts";
-import { parseGovernanceObservation, unavailableGovernance, type ParsedGovernance } from "../observations.js";
+  type TransportAvailability, type GovernanceReadSnapshot, type UnavailableReason } from "@rickylabs/harness-contracts";
+import { wireProducer, type TelemetryWireFamily } from "../producer-names.js";
 import { instant, type GovernanceSource, type Leg } from "../source.js";
-import { mapAdmissions, unreadRegimes } from "./admissions.js";
+import { freshnessAt, mapAdmissions, unreadRegimes } from "./admissions.js";
 
 export interface CollectedSources {
   readonly usage: Leg<RegimeStatus>;
@@ -12,12 +12,6 @@ export interface CollectedSources {
   readonly logDegraded: boolean;
   /** Required when the source configures transportAvailability. */
   readonly transportAvailability?: Leg<TransportAvailability>;
-}
-
-export interface ComposedGovernance extends ParsedGovernance {
-  readonly coverage: GovernanceSourceCoverage;
-  /** Its own validity, beside the governance envelope. Omitted when the source is not configured. */
-  readonly transportAvailability?: TransportAvailability | null;
 }
 
 /** A leg's time checks, shared by the meters and transport availability. */
@@ -48,8 +42,10 @@ function composeTransportAvailability(source: GovernanceSource, leg: Leg<Transpo
 }
 const PROVENANCE = { usage: "reader:opencode-usage", spend: "reader:openrouter-key", capacity: "reader:cgroup-memory" } as const;
 
-/** Completion and evaluation clocks are separate. Successful leaves retain their source stamps. */
-export function composeGovernance(source: GovernanceSource, collected: CollectedSources, completion: string, now = completion): ComposedGovernance {
+/** Completion and evaluation clocks are separate. Successful leaves retain their source stamps.
+ * Returns the published read document, not yet decoded: `governanceRead` decodes it before it is used. */
+export function composeGovernance(source: GovernanceSource, collected: CollectedSources, completion: string, now = completion,
+  wireFamily: TelemetryWireFamily = "legacy"): GovernanceReadSnapshot {
   const meters: Record<"usage" | "spend" | "capacity", MeterCoverage> = {
     usage: source.usage === null ? { status: "not-configured" } : { status: "failed", reason: "shape-mismatch" },
     spend: source.spend === null ? { status: "not-configured" } : { status: "failed", reason: "shape-mismatch" },
@@ -59,6 +55,10 @@ export function composeGovernance(source: GovernanceSource, collected: Collected
   // Only a configured source adds its keys, so an unconfigured document stays byte-identical to 0.27.0.
   const configured = availability.coverage === null ? {} : { transportAvailability: availability.coverage };
   const transportAvailability = availability.coverage === null ? {} : { transportAvailability: availability.value };
+  const unavailable = (reason: UnavailableReason, notes: readonly string[], sources: GovernanceSourceCoverage): GovernanceReadSnapshot => ({
+    schema: 1, protocol: 1, producer: wireProducer(wireFamily), evaluatedAt: now, complete: false, sources, notes: [...notes],
+    ...transportAvailability, availability: "unavailable", observedAt: null, validUntil: null, provenance: null,
+    unavailableReason: reason, state: null, admissions: [] });
   let coverage: GovernanceSourceCoverage = { ...meters, admissions: source.admissions === null ? { status: "not-configured" } : { status: "failed", reason: "shape-mismatch" }, approvals: { status: "not-observed" },
     ...configured };
   const notes: string[] = ["pending approvals unobserved"];
@@ -66,7 +66,7 @@ export function composeGovernance(source: GovernanceSource, collected: Collected
   const regimes = unreadRegimes("source unavailable");
   let ok = true;
   try { instant(completion); instant(now); } catch {
-    return { governance: unavailableGovernance("envelope-invalid"), notes: ["envelope-invalid"], ok: false, coverage, ...transportAvailability };
+    return unavailable("envelope-invalid", ["envelope-invalid"], coverage);
   }
   for (const [index, name] of (["usage", "spend", "capacity"] as const).entries()) {
     const leg = collected[name];
@@ -100,14 +100,15 @@ export function composeGovernance(source: GovernanceSource, collected: Collected
   ok &&= recorded.ok;
   for (const admission of recorded.admissions) expiries.push(Date.parse(admission.validUntil));
   if (expiries.length === 0) {
-    return { governance: unavailableGovernance("no successful live sources"), notes, ok: false, coverage, ...transportAvailability };
+    const sources = [coverage.usage, coverage.spend, coverage.capacity, coverage.admissions];
+    return unavailable(sources.every(entry => entry.status === "not-configured") ? "not-configured" : "no-successful-sources", notes, coverage);
   }
-  const governance = parseGovernanceObservation({
-    observedAt: completion, validUntil: new Date(expiries.reduce((minimum, until) => Math.min(minimum, until), Infinity)).toISOString(), provenance: "reader:composed",
-    state: { generatedAt: completion, regimes, pending: [], notes }, admissions: recorded.admissions,
-  }, now);
-  if (governance.availability === "unavailable") {
-    return { governance: unavailableGovernance("envelope-invalid"), notes: [...notes, "envelope-invalid"], ok: false, coverage, ...transportAvailability };
-  }
-  return { governance, notes, ok, coverage, ...transportAvailability };
+  // Retained evidence observed at completion cannot be read at an earlier evaluation clock.
+  if (Date.parse(now) < Date.parse(completion)) return unavailable("envelope-invalid", [...notes, "envelope-invalid"], coverage);
+  const validUntil = new Date(expiries.reduce((minimum, until) => Math.min(minimum, until), Infinity)).toISOString();
+  return { schema: 1, protocol: 1, producer: wireProducer(wireFamily), evaluatedAt: now, complete: ok, sources: coverage, notes: [...notes],
+    ...transportAvailability, availability: freshnessAt(validUntil, now), observedAt: completion, validUntil, provenance: "reader:composed",
+    unavailableReason: null, state: { generatedAt: completion, regimes, pending: [], notes: [...notes] },
+    // Filtering happened at completion; freshness is the evaluation clock's, as the contract requires.
+    admissions: recorded.admissions.map(admission => ({ ...admission, freshness: freshnessAt(admission.validUntil, now) })) };
 }

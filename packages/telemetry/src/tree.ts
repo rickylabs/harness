@@ -36,7 +36,7 @@ import {
   type LivenessWindows,
 } from "./liveness.js";
 import type { AttributedRun, BoardItemRef, QuotaReading, TelemetrySnapshot } from "./model.js";
-import type { GovernanceView } from "./observations.js";
+import type { GovernanceReadSnapshot } from "@rickylabs/harness-contracts";
 import { compareNullableStrings } from "./order.js";
 import { flatten } from "./snapshot.js";
 
@@ -106,7 +106,7 @@ export interface ActivityTree {
   /** Runs that joined to no board item at all: real work the board cannot see. */
   readonly unattributed: readonly AttributedRun[];
   readonly quota: readonly QuotaReading[];
-  readonly governance: GovernanceView;
+  readonly governance: GovernanceReadSnapshot;
   readonly notes: readonly string[];
 }
 

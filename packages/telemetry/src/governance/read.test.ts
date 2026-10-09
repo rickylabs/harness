@@ -44,8 +44,8 @@ const cases = [
 for (const [name, configured, collected, evaluated] of cases) {
   it(`round-trips and byte-locks synthetic ${name}`, () => {
     const composed = composeGovernance(configured, collected, now, evaluated);
-    const document = governanceRead(composed, evaluated);
-    assert.equal(document.complete, composed.ok);
+    const document = governanceRead(composed);
+    assert.equal(document.complete, composed.complete);
     assert.equal(readGovernanceSnapshot(document).ok, true);
     const fixture = readFileSync(new URL(`../../../contracts/test-fixtures/governance-read/${name}.json`, import.meta.url), "utf8");
     assert.equal(`${JSON.stringify(document, null, 2)}\n`, fixture);
@@ -53,7 +53,7 @@ for (const [name, configured, collected, evaluated] of cases) {
   });
 }
 it("preserves each source's original observation and independent provenance", () => {
-  const document = governanceRead(composeGovernance(source, all(), "2026-09-07T12:00:01.000Z"), "2026-09-07T12:00:01.000Z");
+  const document = governanceRead(composeGovernance(source, all(), "2026-09-07T12:00:01.000Z"));
   for (const name of ["usage", "spend", "capacity"] as const) {
     const c = document.sources[name]; assert.equal(c.status, "read");
     if (c.status === "read") { assert.equal(c.observedAt, now); assert.notEqual(c.observedAt, document.observedAt); }
@@ -70,7 +70,7 @@ it("keeps empty, malformed, stale and conflicting admissions distinct", () => {
     [[event(), conflict], ["admission-conflict"]],
   ] as const) {
     const at = "2026-09-07T12:00:01.000Z";
-    const result = governanceRead(composeGovernance(source, { ...all(), events }, at), at);
+    const result = governanceRead(composeGovernance(source, { ...all(), events }, at));
     assert.equal(result.complete, false);
     assert.equal(result.sources.admissions.status, "read");
     if (result.sources.admissions.status === "read") {
@@ -83,9 +83,9 @@ it("keeps empty, malformed, stale and conflicting admissions distinct", () => {
 it("structured meter refusal codes agree with fixed display notes", () => {
   for (const reason of SOURCE_FAILURE_REASONS) {
     const result = composeGovernance(source, { ...all(), usage: { ok: false, code: reason } }, now);
-    assert.deepEqual(result.coverage.usage, { status: "failed", reason });
+    assert.deepEqual(result.sources.usage, { status: "failed", reason });
     assert.ok(result.notes.includes(`usage: ${reason}`));
-    assert.equal(governanceRead(result, now).complete, false);
+    assert.equal(governanceRead(result).complete, false);
   }
   const original = all().usage;
   assert.equal(original.ok, true);
@@ -96,18 +96,18 @@ it("structured meter refusal codes agree with fixed display notes", () => {
     ["2026-09-07T12:00:01Z", "2026-09-07T12:01:00Z", "future-source"],
   ] as const) {
     const result = composeGovernance(source, { ...all(), usage: { ...original, observedAt, validUntil } }, now);
-    assert.deepEqual(result.coverage.usage, { status: "discarded", reason });
+    assert.deepEqual(result.sources.usage, { status: "discarded", reason });
     assert.ok(result.notes.includes(`usage: ${reason}`));
   }
 });
 it("fails closed on over-cap composed admission evidence, without truncation", () => {
   const composed = composeGovernance(source, { ...all(), events: Array.from({ length: 1001 }, (_, i) => event(i + 1)) }, now);
-  assert.equal(composed.governance.admissions.length, 1001);
-  assert.throws(() => governanceRead(composed, now), /^Error: governance document unavailable$/);
+  assert.equal(composed.admissions.length, 1001);
+  assert.throws(() => governanceRead(composed), /^Error: governance document unavailable$/);
 });
 it("represents future-invalid envelope without fabricating retained data", () => {
   const evaluated = "2026-09-07T11:00:00.000Z";
-  const result = governanceRead(composeGovernance(source, all(), now, evaluated), evaluated);
+  const result = governanceRead(composeGovernance(source, all(), now, evaluated));
   assert.equal(result.availability, "unavailable"); assert.equal(result.unavailableReason, "envelope-invalid");
   assert.equal(result.state, null); assert.equal(result.sources.capacity.status, "read");
 });
