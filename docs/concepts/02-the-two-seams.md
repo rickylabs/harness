@@ -2,7 +2,7 @@
 
 Native autonomous tasks and API/local-model calls have different loop, enforcement and lifecycle
 boundaries. Harness keeps those boundaries explicit. [ADR 0005](../decisions/0005-harness-framework-identity.md)
-records the framework on Orchid and Herdr; the retained dsh router is an optional composition.
+records the framework on Orchid and Herdr.
 
 | Boundary | Native autonomous task | API/local-model call |
 | --- | --- | --- |
@@ -49,26 +49,17 @@ or owner route waives that rule. A model's family is independent of the transpor
 | [`provider-claude`](../../packages/provider-claude) | Claude Agent SDK injected by a composition root |
 | [`provider-opencode`](../../packages/provider-opencode) | Configured OpenCode server; does not start or own it |
 | [`provider-codex`](../../packages/provider-codex) | Partial route-identity and pre-turn prerequisite; not a composed provider |
-| [`provider-acp`](../../packages/provider-acp) | Empty ACP stub |
 | [`llm-local`](../../packages/llm-local) | API/local adapter destinations and capability/budget configuration |
 
 These adapters are distinct from Orchid's native CLI transports and Herdr's terminal control.
 An Orchid Codex or AGY launch does not finish a missing workspace provider. UHP-hosted dispatch
 remains parked under [ADR 0004](../decisions/0004-uhp-park-evidence.md).
 
-## Retained experiment vocabulary
-
-The optional [`harness-router-dsh`](../../experiments/routers/dsh/README.md) attaches native provider services to
-`ctx.subagents` and API/local adapters to `ctx.llm`. Its native registry is composed empty;
-a missing provider yields `no-providers` rather than proof of a working launch. The API adapter
-has configured destinations, whose reachability and credentials are host facts.
+## Coordinator seam vocabulary
 
 The coordinator's existing `Seam` union uses `subscription` and `relay`, and its policies include
-`opposite-family` and `seam-or-family`. These are source contracts used by the retained composition,
-not permission to infer a native transport's billing or relax the fleet's evaluator rule. The
-experiment's relay open-weights constraint and preference order are documented in its own
-[README](../../experiments/routers/dsh/README.md); they do not assert that every paid native route is a relay.
-Actual service keys, upstream package names and historical fixtures remain unchanged.
+`opposite-family` and `seam-or-family`. These are source contracts, not permission to infer a native
+transport's billing or relax the fleet's evaluator rule.
 
 ---
 

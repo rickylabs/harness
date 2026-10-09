@@ -15,8 +15,8 @@ The interim pinned fleet adapter for Orchid and Cockpit lives in [`matrix/`](mat
 [versioned fleet data](config/routing.fleet.v2.json): a complete
 role × tier matrix, logical model catalog, route resolver, owner override and evaluator rules.
 Orchid and cockpit consumers use reviewed immutable source pins; their exact selected revisions
-and live activation are consumer facts. The optional dsh profile still selects the packaged
-[v1 compatibility transcription](config/routing.v1.json), which does not establish current fleet parity.
+and live activation are consumer facts. The packaged
+[v1 compatibility transcription](config/routing.v1.json) does not establish current fleet parity.
 
 ## Loading and provenance
 

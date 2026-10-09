@@ -76,8 +76,7 @@ your first board mutation, not after.
 [ADR 0006](docs/decisions/0006-rearch-2026-10-08.md) supersedes ADR 0003 and ADR 0005 where they
 differ. Together they settle these decisions. Do not re-derive them in a run, a PR or a prompt:
 
-1. Harness is our framework on Orchid and Herdr. The dsh router under `experiments/routers/dsh` is an
-   optional experiment, not the host.
+1. Harness is our framework on Orchid and Herdr.
 2. pnpm and Node form the only toolchain. NetScript is an external service behind an adapter, never a
    build-time dependency.
 3. GitHub owns the board. [BOARD.md](BOARD.md) is a generated projection; where it and an issue

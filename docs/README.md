@@ -60,8 +60,8 @@ that run. Output must not imply live execution where live forge, GitHub, or fail
 | Page | What it settles |
 | --- | --- |
 | [01 — What this is](concepts/01-what-this-is.md) | The coordination product and the responsibilities it owns |
-| [02 — Two seams, not one](concepts/02-the-two-seams.md) | Native tasks vs API/local calls, with experimental service vocabulary |
+| [02 — Two seams, not one](concepts/02-the-two-seams.md) | Native tasks vs API/local calls |
 | [03 — The board](concepts/03-the-board.md) | Why GitHub holds board truth and Harness projects it |
 | [04 — What "run" means](concepts/04-the-run.md) | The word means two different things here. Both are correct. |
-| [05 — Determinism](concepts/05-determinism.md) | Generated files, golden snapshots, and why drift is a bug |
+| [05 — Determinism](concepts/05-determinism.md) | Generated files and why drift is a bug |
 | [06 — The three layers](concepts/06-the-three-layers.md) | The locked responsibility model across coordination, the product backend and the client |

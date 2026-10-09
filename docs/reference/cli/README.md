@@ -12,18 +12,10 @@ them.
 | [`harness-board`](harness-board.md) | project a GitHub repository as a board | `0` `1` `2` `3` `4` |
 | [`harness-coordinator`](harness-coordinator.md) | the deterministic gate between authoring and review | `0` `1` `2` `3` `4` |
 | [`harness-telemetry`](harness-telemetry.md) | board activity, read from disk, with no agent awake | `0` `1` `2` `3` `4` |
-| [`dsh-forge`](dsh-forge.md) | board taxonomy and process skill, installable into any repository | `0` `1` `2` `3` |
-| [`dsh-board`](dsh-board.md) | project a GitHub repository as a board | `0` `1` `2` `3` `4` |
-| [`dsh-coordinator`](dsh-coordinator.md) | the deterministic gate between authoring and review | `0` `1` `2` `3` `4` |
-| [`dsh-telemetry`](dsh-telemetry.md) | board activity, read from disk, with no agent awake | `0` `1` `2` `3` `4` |
-
-The four core `harness-*` commands keep temporary `dsh-*` compatibility aliases. Each pair
-shares one entrypoint; the aliases are retained for existing callers and reference links.
-The optional router has a [separate CLI reference](../../../experiments/routers/dsh/docs/reference/cli/README.md). Its checks are explicit; default core checks do not execute it.
 
 `2` is a usage error in every command. `3` is a missing GitHub transport for
-`harness-board` and `harness-forge`, an unreadable input for `harness-coordinator`, an unwritable destination
-for the experimental profile command, and an incomplete picture for `harness-telemetry`. Read the table on the page.
+`harness-board` and `harness-forge`, an unreadable input for `harness-coordinator`, and an incomplete
+picture for `harness-telemetry`. Read the table on the page.
 
 ---
 

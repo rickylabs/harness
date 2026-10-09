@@ -95,8 +95,6 @@ refuse drift rather than accepting a separately maintained copy.
 | --- | --- |
 | `docs/reference/cli/*.md` | `pnpm run docs:cli` |
 | `.claude/skills/board-process/SKILL.md` | `pnpm run skill:install` |
-| `experiments/routers/dsh/dump-config.golden.yml` | `pnpm run experiment:dsh:golden:bless -- "the reason it changed"` |
-| `experiments/routers/dsh/cordis.patch.yml` | editing `experiments/routers/dsh/src/bundle.ts` — never the file |
 | `.github/labels.yml` | `node packages/forge/dist/cli.js labels eject` |
 | `BOARD.md` | nothing you can run — move the issue, and the next scheduled render follows |
 
@@ -104,10 +102,6 @@ refuse drift rather than accepting a separately maintained copy.
 [`board`](.github/workflows/board.yml) workflow simply overwrites it every half hour. An edit there
 is not rejected, it is *reverted*, silently, by a run nobody was watching — and in the meantime the
 page says something GitHub does not. The board is repaired on the issue. Always.
-
-The golden snapshot takes a required reason and writes it into the file's own header, because a
-snapshot updated by whoever was annoyed by the failing test has stopped being evidence. Put that
-same reason in the pull request.
 
 "Verified against it" is now literal for the first two: `check:docs` re-derives every CLI reference
 page from its binary, and `check:skill` re-runs the skill generator and compares. Both are in

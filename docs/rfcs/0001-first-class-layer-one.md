@@ -43,14 +43,13 @@ This document adopts that shape without treating a proposed RFC as a ratified de
 
 **CURRENT.** Harness already uses explicit contracts and thin Cordis composition. Its
 [package map](../../packages/README.md) separates board, routing, coordinator, telemetry,
-providers and the published contracts package. The
-[routing plugin](../../experiments/routers/dsh/src/plugins/routing.ts) loads an explicit document;
-missing configuration is a refusal. The
-[subagent plugin](../../experiments/routers/dsh/src/plugins/subagents.ts) deliberately registers an
-empty instrumented registry. An implemented provider is not a composed provider.
+providers and the published contracts package. The former dsh router's routing plugin loaded an
+explicit document; missing configuration was a refusal. Its subagent plugin deliberately registered
+an empty instrumented registry. An implemented provider is not a composed provider. Issue #653
+deleted that router experiment.
 
-**CURRENT.** The [NetScript bridge](../../packages/netscript-bridge/README.md) and
-[governance admission package](../../packages/governance/README.md) remain stubs. Their owning
+**CURRENT.** The [governance admission package](../../packages/governance/README.md) remains a stub;
+the empty NetScript bridge stub was deleted by #653. Their owning
 epics must establish their contracts before behavior is added. Telemetry governance reads do
 not imply that spend admission is wired.
 
@@ -81,13 +80,13 @@ they are not asserted byte-identical to the pinned repository snapshot.
 
 | Capability | Existing source and owner | Next proof; no replacement runtime |
 | --- | --- | --- |
-| Board and forge | **CURRENT:** [board](../../packages/board/README.md) projects GitHub; [forge](../reference/cli/dsh-forge.md) owns taxonomy and dispatch admission helpers. | **PLANNED:** preserve issue identity from the labeled inbox through the dispatch receipt and consumer read. Keep label application a deliberate execution act. |
+| Board and forge | **CURRENT:** [board](../../packages/board/README.md) projects GitHub; [forge](../reference/cli/harness-forge.md) owns taxonomy and dispatch admission helpers. | **PLANNED:** preserve issue identity from the labeled inbox through the dispatch receipt and consumer read. Keep label application a deliberate execution act. |
 | Profiles and matrix | **CURRENT:** [profiles](../../profiles/README.md), [routing](../../packages/routing/README.md), and the [Orchid matrix hook](https://github.com/rickylabs/orchid/pull/2). | **PLANNED:** installed dispatcher resolves the authority before each effect. Explicit configurable pins require the trusted owner-override record; a pin alone is not authority. |
 | Registration and supervision | **CURRENT:** [Orchid #3](https://github.com/rickylabs/orchid/pull/3) is the source fix for [#352](https://github.com/rickylabs/harness/issues/352), stacked on the matrix hook. | **PLANNED:** coordinator-owned issue 316 / leaf dispatch reaches registered, goal-delivered and working. A ready PR or a busy-pane negative control is not that live proof. |
 | Coordinator admission | **CURRENT:** [coordinator](../../packages/coordinator/README.md) owns deterministic admission and durable state/effect boundaries; its README distinguishes shipped decisions from wiring. | **PLANNED:** preserve admission versus execution. Reuse existing state-store contracts and receipts; do not create a second product effect ledger. |
 | Telemetry and public reads | **CURRENT:** [telemetry](../../packages/telemetry/README.md) supplies run and governance observations. [PR #353](https://github.com/rickylabs/harness/pull/353) adds the bounded collection/decoder under [#354](https://github.com/rickylabs/harness/issues/354). | **PLANNED:** bind explicit dispatcher/native ancestry and each cost source, then verify the installed published package through cockpit. An unavailable row remains unavailable until its own source is enrolled. |
 | Two seams and sandbox | **CURRENT:** [the two-seam contract](../concepts/02-the-two-seams.md) separates autonomous seats from token calls and places the seat gate at the sandbox boundary. | **PLANNED:** any new binding proves the appropriate seam and refusal behavior. Keep sandbox/governance implementation under [#35](https://github.com/rickylabs/harness/issues/35); do not infer interception inside vendor CLIs. |
-| NetScript service adoption | **CURRENT:** [netscript-bridge](../../packages/netscript-bridge/README.md) is a runtime adapter placeholder under [#37](https://github.com/rickylabs/harness/issues/37). | **PLANNED:** identify a concrete caller, discover the served operation and schema, then implement only its adapter. Cockpit retains its product runtime composition. |
+| NetScript service adoption | **CURRENT:** no NetScript adapter package exists; the empty placeholder under [#37](https://github.com/rickylabs/harness/issues/37) was deleted by #653. | **PLANNED:** identify a concrete caller, discover the served operation and schema, then implement only its adapter. Cockpit retains its product runtime composition. |
 
 ## Contract-first boundaries
 
