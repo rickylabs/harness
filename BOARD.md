@@ -2,9 +2,9 @@
 
 # rickylabs/harness
 
-`[###############-----]` **507/655 done · 64 running · 26 queued · 16 abandoned · 42 invisible**
+`[###############-----]` **511/657 done · 64 running · 26 queued · 16 abandoned · 40 invisible**
 
-_Latest board activity: 2026-10-09T04:49:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-09T05:24:12Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (64)
 
@@ -72,12 +72,12 @@ Something could be acting on these right now.
 | [#664 [rickylabs/atelier-mobile#343] Epic: production-grade Expo app (one api layer, one route tree, gates)](https://github.com/rickylabs/harness/issues/664) | `plan` | — |
 | [#665 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)](https://github.com/rickylabs/harness/issues/665) | `plan` | — |
 | [#667 [rickylabs/atelier-cockpit#541] Mobile Agents native feed join, unified counts and live-device acceptance](https://github.com/rickylabs/harness/issues/667) | `augment-review` | — |
-| [PR668 chore(scripts): add check:leaks scan of added lines for every PR](https://github.com/rickylabs/harness/pull/668) | `impl` | — |
-| [PR671 refactor(providers): move provider packages to packages/providers/* with the doctrine layout](https://github.com/rickylabs/harness/pull/671) | `impl-eval` | — |
-| [PR672 refactor(contracts): one governance read model, telemetry imports it](https://github.com/rickylabs/harness/pull/672) | `impl` | — |
+| [PR672 refactor(contracts): one governance read model, telemetry imports it](https://github.com/rickylabs/harness/pull/672) | `impl-eval` | — |
 | [PR673 refactor(method): packages/method replaces method/, run-record/, deno.json and BOARD.md](https://github.com/rickylabs/harness/pull/673) | `impl-eval` | — |
+| [PR674 refactor(hosts): move orchid observations out of telemetry into packages/hosts/orchid](https://github.com/rickylabs/harness/pull/674) | `impl-eval` | — |
+| [PR675 chore(prune): delete stub packages, the dsh experiment, dsh-* aliases and unreferenced scripts](https://github.com/rickylabs/harness/pull/675) | `impl` | — |
 
-## Not on the board (26)
+## Not on the board (24)
 
 Open, and carrying no `status:` label — real work no column can see.
 
@@ -101,16 +101,14 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#625 App launch on a new target: worker could not push, and five app/prompt defects (run #624)](https://github.com/rickylabs/harness/issues/625) | — | — |
 | [#626 Refused /swarm trigger becomes a 'Needs you: approve launch' request in the app](https://github.com/rickylabs/harness/issues/626) | — | — |
 | [#648 Provider history: stop gating OpenCode token totals on the CLI version](https://github.com/rickylabs/harness/issues/648) | — | — |
-| [#651 rearch(2): leak-scan script for every PR (public repo) - descoped to scripts/check-leaks.mjs](https://github.com/rickylabs/harness/issues/651) | — | — |
 | [#653 rearch(4): prune dead code - stub packages, experiments/ (dsh), dsh-* aliases, unreferenced scripts](https://github.com/rickylabs/harness/issues/653) | — | — |
 | [#654 rearch(6): one governance read model - contracts owns the shape, telemetry imports it](https://github.com/rickylabs/harness/issues/654) | — | — |
 | [#655 rearch(7): move governance out of telemetry into packages/governance](https://github.com/rickylabs/harness/issues/655) | — | — |
 | [#658 rearch(5): prune root prose and the second toolchain - method/, run-record/, deno.json, BOARD.md into packages/method](https://github.com/rickylabs/harness/issues/658) | — | — |
-| [#659 rearch(8): move provider packages to packages/providers/* with the doctrine layout](https://github.com/rickylabs/harness/issues/659) | — | — |
 | [#660 rearch(9): move orchid observations out of telemetry into packages/hosts/orchid](https://github.com/rickylabs/harness/issues/660) | — | — |
 | [#666 orchid retires a waiting coordinator as failed and kills its lanes](https://github.com/rickylabs/harness/issues/666) | — | — |
 
-## Anomalies (68)
+## Anomalies (66)
 
 `harness-board check` fails on these. The board contradicts itself until they are repaired, and it is repaired on the issue, never here.
 
@@ -185,12 +183,10 @@ Open, and carrying no `status:` label — real work no column can see.
 - **#625** — open item has no status label, so it appears in no column
 - **#626** — open item has no status label, so it appears in no column
 - **#648** — open item has no status label, so it appears in no column
-- **#651** — open item has no status label, so it appears in no column
 - **#653** — open item has no status label, so it appears in no column
 - **#654** — open item has no status label, so it appears in no column
 - **#655** — open item has no status label, so it appears in no column
 - **#658** — open item has no status label, so it appears in no column
-- **#659** — open item has no status label, so it appears in no column
 - **#660** — open item has no status label, so it appears in no column
 - **#666** — open item has no status label, so it appears in no column
 
@@ -271,7 +267,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  507/655 done · 64 running · 26 queued · 16 abandoned · 42 invisible
+# rickylabs/harness  [###############-----]  511/657 done · 64 running · 26 queued · 16 abandoned · 40 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -559,10 +555,10 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## rearch-2026-10-08  [#####---------------]  4/16 done · 4 running · 8 invisible
+## rearch-2026-10-08  [########------------]  8/18 done · 4 running · 6 invisible
 
   (no epic)
-    no status            #651 rearch(2): leak-scan script for every PR (public repo) - descoped to scripts/check-leaks.mjs
+    shipped              #651 rearch(2): leak-scan script for every PR (public repo) - descoped to scripts/check-leaks.mjs
     no status            #652 rearch(2): fitness gates - 500-line file cap ratchet and pane-read allowlist
     no status            #653 rearch(4): prune dead code - stub packages, experiments/ (dsh), dsh-* aliases, unreferenced scripts
     no status            #654 rearch(6): one governance read model - contracts owns the shape, telemetry imports it
@@ -570,14 +566,16 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #656 rearch(1): doctrine, target structure and starter skills - docs/DOCTRINE.md, docs/STRUCTURE.md, ADR 0006
     shipped              #657 rearch(3): consumer parity test - pin what atelier-cockpit and orchid read from harness
     no status            #658 rearch(5): prune root prose and the second toolchain - method/, run-record/, deno.json, BOARD.md into packages/method
-    no status            #659 rearch(8): move provider packages to packages/providers/* with the doctrine layout
+    shipped              #659 rearch(8): move provider packages to packages/providers/* with the doctrine layout
     no status            #660 rearch(9): move orchid observations out of telemetry into packages/hosts/orchid
-    impl                 PR668 chore(scripts): add check:leaks scan of added lines for every PR (draft)
+    shipped              PR668 chore(scripts): add check:leaks scan of added lines for every PR
     shipped              PR669 docs(doctrine): one doctrine page, target structure, ADR 0006 and starter skills
     shipped              PR670 test(parity): pin the atelier-cockpit and orchid consumer surfaces
-    impl-eval            PR671 refactor(providers): move provider packages to packages/providers/* with the doctrine layout (draft)
-    impl                 PR672 refactor(contracts): one governance read model, telemetry imports it (draft)
+    shipped              PR671 refactor(providers): move provider packages to packages/providers/* with the doctrine layout
+    impl-eval            PR672 refactor(contracts): one governance read model, telemetry imports it (draft)
     impl-eval            PR673 refactor(method): packages/method replaces method/, run-record/, deno.json and BOARD.md (draft)
+    impl-eval            PR674 refactor(hosts): move orchid observations out of telemetry into packages/hosts/orchid (draft)
+    impl                 PR675 chore(prune): delete stub packages, the dsh experiment, dsh-* aliases and unreferenced scripts (draft)
 
 ## (no milestone)  [###############-----]  302/390 done · 44 running · 3 queued · 10 abandoned · 31 invisible
 

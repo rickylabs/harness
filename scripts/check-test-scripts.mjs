@@ -35,18 +35,21 @@ export function readPackages(from = root) {
   const directory = join(from, "packages");
   let packages;
   try {
-    packages = readdirSync(directory, { withFileTypes: true })
+    // A directory without a manifest is not a package, but it may be a group of them
+    // (`packages/providers/`): its children are read once, one level deep, as `group/name`.
+    const read = (base, prefix, nested) => readdirSync(base, { withFileTypes: true })
       .filter(entry => entry.isDirectory())
       .flatMap(entry => {
         let content;
-        try { content = readFileSync(join(directory, entry.name, "package.json"), "utf8"); } catch (error) {
-          // A directory without a manifest is not a package. An inaccessible manifest is unknown.
-          if (error.code === "ENOENT") return [];
-          throw error;
+        try { content = readFileSync(join(base, entry.name, "package.json"), "utf8"); } catch (error) {
+          // An inaccessible manifest is unknown.
+          if (error.code !== "ENOENT") throw error;
+          return nested ? [] : read(join(base, entry.name), `${entry.name}/`, true);
         }
         const manifest = JSON.parse(content);
-        return [{ name: entry.name, hasTestScript: typeof manifest.scripts?.test === "string" && manifest.scripts.test.trim().length > 0 }];
+        return [{ name: `${prefix}${entry.name}`, hasTestScript: typeof manifest.scripts?.test === "string" && manifest.scripts.test.trim().length > 0 }];
       });
+    packages = read(directory, "", false);
   } catch (error) {
     if (typeof error.code !== "string" || typeof error.syscall !== "string") throw error;
     throw new Inconclusive("workspace-unreadable",
