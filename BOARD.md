@@ -4,7 +4,7 @@
 
 `[###############-----]` **509/655 done · 63 running · 26 queued · 16 abandoned · 41 invisible**
 
-_Latest board activity: 2026-10-09T05:09:42Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-09T05:11:06Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (63)
 
@@ -72,7 +72,7 @@ Something could be acting on these right now.
 | [#664 [rickylabs/atelier-mobile#343] Epic: production-grade Expo app (one api layer, one route tree, gates)](https://github.com/rickylabs/harness/issues/664) | `plan` | — |
 | [#665 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)](https://github.com/rickylabs/harness/issues/665) | `plan` | — |
 | [#667 [rickylabs/atelier-cockpit#541] Mobile Agents native feed join, unified counts and live-device acceptance](https://github.com/rickylabs/harness/issues/667) | `augment-review` | — |
-| [PR671 refactor(providers): move provider packages to packages/providers/* with the doctrine layout](https://github.com/rickylabs/harness/pull/671) | `impl-eval` | — |
+| [PR671 refactor(providers): move provider packages to packages/providers/* with the doctrine layout](https://github.com/rickylabs/harness/pull/671) | `impl` | — |
 | [PR672 refactor(contracts): one governance read model, telemetry imports it](https://github.com/rickylabs/harness/pull/672) | `impl-eval` | — |
 | [PR673 refactor(method): packages/method replaces method/, run-record/, deno.json and BOARD.md](https://github.com/rickylabs/harness/pull/673) | `impl-eval` | — |
 
@@ -572,7 +572,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR668 chore(scripts): add check:leaks scan of added lines for every PR
     shipped              PR669 docs(doctrine): one doctrine page, target structure, ADR 0006 and starter skills
     shipped              PR670 test(parity): pin the atelier-cockpit and orchid consumer surfaces
-    impl-eval            PR671 refactor(providers): move provider packages to packages/providers/* with the doctrine layout (draft)
+    impl                 PR671 refactor(providers): move provider packages to packages/providers/* with the doctrine layout (draft)
     impl-eval            PR672 refactor(contracts): one governance read model, telemetry imports it (draft)
     impl-eval            PR673 refactor(method): packages/method replaces method/, run-record/, deno.json and BOARD.md (draft)
 
