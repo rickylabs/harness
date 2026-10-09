@@ -16,13 +16,11 @@ const allow = [
   { file: 'packages/forge/src/swarm/teardown-render.ts', identifiers: ['harness'], values: [''], reason: 'Empty display suffix; E7 (#37).' },
   { file: 'packages/telemetry/src/cli.ts', identifiers: ['model'], values: ['model unrecorded'], reason: 'Missing-observation display; E9 (#39).' },
   { file: 'packages/telemetry/src/diagnostics.ts', identifiers: ['model'], values: [''], reason: 'Absent observation for diagnostic classification; E9 (#39).' },
-  { file: 'experiments/routers/dsh/src/board-smoke-fixture.ts', identifiers: ['model', 'effort'], reason: 'Synthetic board projection smoke data; E2 (#204), no dispatch consumer.' },
   { file: 'packages/forge/src/labels/taxonomy.ts', identifiers: ['lane'], reason: 'Label palette color, not a routing lane assignment; E7 (#37).' },
   { file: 'packages/forge/src/swarm/teardown.ts', identifiers: ['harness'], values: [''], reason: 'Empty missing-harness sentinel in orphan evidence; E7 (#37).' },
   { file: 'packages/contracts/src/route.ts', identifiers: ['model', 'effort'], values: ['request.model', 'request.effort', 'thread/start.result.model', 'thread/start.result.reasoningEffort', 'opencode.message.providerID+modelID', 'opencode.message.variant'], reason: 'Canonical structural route provenance paths moved to the published contract; no routing values.' },
   { file: 'packages/routing/src/schema.ts', identifiers: ['harness'], reason: 'Structural schema vocabulary (#271).' },
   { file: 'packages/subagents/src/dispatch.ts', identifiers: ['harness'], reason: 'Executor harness vocabulary/default; E3 (#33), outside E11 step 1.' },
-  { file: 'experiments/routers/dsh/src/dry-run-test-fixtures.ts', identifiers: [...identifiers], reason: 'Test-only fake dispatch fixture, not imported by production entry points (#271).' },
   { file: 'packages/subagents/src/uhp-mock.ts', identifiers: ['model', 'effort'], reason: 'Test-only UHP wire fixtures for spike S10 (#288); mock server, not exported from index.ts and not imported by any production entry point; E3 (#33).' },
   { file: 'packages/telemetry/src/cli-test-support.ts', identifiers: ['model', 'effort'], reason: 'Test-only CLI fixture support split out of cli.test.ts under the line cap (#654); imported only by *.test.ts, not exported from index.ts.' },
   { file: 'packages/telemetry/src/backfill/claude.ts', identifiers: ['harness'], reason: 'Observed provider inference, owned by E9 (#39), not routing policy.' },
@@ -110,13 +108,6 @@ try {
 const root = process.cwd();
 const sources = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '*.ts'], { encoding: 'utf8' }).trim().split('\n').filter(file => file && !file.startsWith('.llm/runs/') && !file.startsWith('docs/'));
 const problems = sources.flatMap(file => scan(relative(root, join(root, file)), readFileSync(file, 'utf8')));
-// The test fixture exception must never become an executable fallback through a runtime import.
-for (const file of sources.filter(f => !f.endsWith('.test.ts') && !/dry-run-(child|test-fixtures)\.ts$/.test(f))) {
-  const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
-  for (const statement of source.statements) if (ts.isImportDeclaration(statement) && ts.isStringLiteral(statement.moduleSpecifier) && statement.moduleSpecifier.text.includes('dry-run-test-fixtures')) {
-    problems.push(`${file}: runtime import of test-only routing fixture`);
-  }
-}
 if (problems.length) { process.stderr.write(problems.join('\n') + '\n'); process.exitCode = 1; }
 else process.stdout.write(`compiled routing policy: ${sources.length} sources checked; mutation self-test passed\n`);
 

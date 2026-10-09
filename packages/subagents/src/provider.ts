@@ -1,12 +1,12 @@
 /**
  * `SubagentProvider` — the one interface every autonomous vendor CLI attaches behind.
  *
- * Owned by E3 · #33, defined by #51. Four packages implement it (`provider-claude`,
- * `provider-codex`, `provider-acp`, `provider-opencode`) and one more consumes it without
- * implementing it: the divybot path in E7, which dispatches by writing a `/swarm` block into a
- * GitHub issue and has no process to hold on to. That last case is why this file is written the
- * way it is. A contract shaped around an SDK that hands back a session object would fit three of
- * the five and force the fourth to lie.
+ * Owned by E3 · #33, defined by #51. Three packages implement it (`provider-claude`,
+ * `provider-codex`, `provider-opencode`) and one more consumes it without implementing it: the
+ * divybot path in E7, which dispatches by writing a `/swarm` block into a GitHub issue and has no
+ * process to hold on to. That last case is why this file is written the way it is. A contract
+ * shaped around an SDK that hands back a session object would fit the SDK-backed providers and
+ * force that last one to lie.
  *
  * ## The vocabulary is four verbs and one word
  *
@@ -43,13 +43,13 @@
  * run in CI against a table of declarations with nothing installed.
  */
 
-import { validateDispatch, type DispatchRequest, type Harness } from "./dispatch.js";
+import type { DispatchRequest, Harness } from "./dispatch.js";
 import { isRouteEvidenceVerified, type RouteIdentityEvidence } from "./route.js";
 
 /**
- * The optional router context key for a `SubagentRegistry`.
+ * The context key for a `SubagentRegistry`.
  *
- * Named here so the four provider packages and the optional router agree on it without a shared string
+ * Named here so the provider packages and their composition root agree on it without a shared string
  * literal drifting between them. The other seam is `ctx.llm` (E4 · #34) and the two are kept
  * apart on purpose: vendor CLIs are metered by quota window, API and local models per token.
  */
@@ -120,8 +120,8 @@ export interface DispatchResult {
  * question about the same run: not what the executor said, but what the *evidence* supports — a
  * growing artifact, a new commit, a live turn. The two disagree exactly where a status screen earns
  * its keep, on the run that claims `running` and has produced nothing for six hours. Both types were
- * once called `Liveness`, in one npm scope, and the optional router already imports from both packages in one
- * file. See #206.
+ * once called `Liveness`, in one npm scope, and a consumer that imports from both packages in one
+ * file could not tell them apart. See #206.
  */
 export type RunLiveness = "queued" | "running" | "finished" | "failed" | "unknown";
 
@@ -195,11 +195,11 @@ const INSTRUMENTED = Symbol.for("@rickylabs/subagents.instrumented");
  *
  * ## Why this exists at all
  *
- * The seam's promise was prose. `plugins/subagents.ts` wraps the registry it builds, and its comment
- * concluded from that that "an uninstrumented provider is not something a provider package can
+ * The seam's promise was prose. The former router's subagent plugin wrapped the registry it built, and
+ * its comment concluded from that that "an uninstrumented provider is not something a provider package can
  * produce by forgetting" — but `providers` is a readonly array on a plain object, and the only way
  * for E3 to add a provider is to hand over a **new registry**. That path never touches the wrapper.
- * The guarantee held for the empty registry the plugin builds itself and for nothing that would ever
+ * The guarantee held for the empty registry the plugin built itself and for nothing that would ever
  * actually run. A property that can only be read is not enforced; this is the mark that lets it be
  * checked. See #208.
  *
@@ -307,319 +307,4 @@ export function capabilityProblem(provider: SubagentProvider, call: OptionalCall
     case "stop":
       return `${provider.id} cannot stop a run — it ends on its own deadline or not at all`;
   }
-}
-
-/** How a provider was passed over. Every candidate gets one; none is dropped silently. */
-export type RejectionRule =
-  | "duplicate-id"
-  | "uninstrumented"
-  | "wrong-harness"
-  | "cannot-observe"
-  | "not-preferred";
-
-export interface Rejection {
-  readonly provider: string;
-  readonly rule: RejectionRule;
-  readonly detail: string;
-}
-
-export type BlockRule =
-  | "invalid-request"
-  | "no-providers"
-  | "duplicate-id"
-  | "uninstrumented"
-  | "no-candidate";
-
-export interface SelectedProvider {
-  readonly selected: true;
-  readonly provider: SubagentProvider;
-  readonly rejected: readonly Rejection[];
-}
-
-export interface BlockedSelection {
-  readonly selected: false;
-  readonly rule: BlockRule;
-  readonly detail: string;
-  readonly rejected: readonly Rejection[];
-}
-
-export type Selection = SelectedProvider | BlockedSelection;
-
-export interface SelectionOptions {
-  /**
-   * Whether the run has to be watchable.
-   *
-   * Defaults to `true`, and the default is the argument: this whole project exists because the
-   * owner had to ask an orchestrator "status ?" to find out what was happening. A provider that
-   * cannot answer that question is not a cheaper option, it is the problem. Setting this to
-   * `false` is legitimate — a fire-and-forget formatting run does not need supervision — but it
-   * has to be written down at the call site rather than inherited from a permissive default.
-   */
-  readonly supervised?: boolean;
-}
-
-/**
- * Choose the provider that will carry a request, or say why none will.
- *
- * Pure, and deliberately so: this is the decision that has to be reproducible from the journal
- * (#71), and a selection that consulted the network would replay differently every time.
- *
- * The request is validated first. `validateDispatch` is the wire-format validator that already
- * exists for the `/swarm` path, and it is reused rather than paraphrased — a second, laxer check
- * here would let a dispatch through this seam that the other seam refuses, and the two seams are
- * supposed to be two encodings of one request.
- *
- * It then fails closed on telemetry: a registry holding any provider that nothing has marked as
- * instrumented is refused whole, rather than the unmarked one being passed over. The argument is
- * with the check itself.
- */
-export function selectProvider(
-  registry: SubagentRegistry,
-  request: DispatchRequest,
-  options: SelectionOptions = {},
-): Selection {
-  const supervised = options.supervised ?? true;
-  const rejected: Rejection[] = [];
-
-  const problems = validateDispatch(request);
-  if (problems.length > 0) {
-    return {
-      selected: false,
-      rule: "invalid-request",
-      detail: `the request would not dispatch faithfully: ${problems.join("; ")}`,
-      rejected,
-    };
-  }
-
-  if (registry.providers.length === 0) {
-    return {
-      selected: false,
-      rule: "no-providers",
-      detail: "no providers are registered on ctx.subagents",
-      rejected,
-    };
-  }
-
-  // Two providers answering to one id is not a tie to break. `RunRef.provider` is how an
-  // observation finds its way home, so an ambiguous id means a later `observe` or `stop` can be
-  // routed to the wrong executor — and picking the first registration is a coin toss wearing a
-  // rule's clothes. Refuse the whole selection rather than resolve it.
-  const duplicates = duplicateIds(registry.providers);
-  if (duplicates.length > 0) {
-    for (const id of duplicates) {
-      rejected.push({
-        provider: id,
-        rule: "duplicate-id",
-        detail: "more than one provider is registered under this id",
-      });
-    }
-    return {
-      selected: false,
-      rule: "duplicate-id",
-      detail:
-        `provider id(s) ${duplicates.join(", ")} are registered more than once; a run reference ` +
-        "would not identify one executor",
-      rejected,
-    };
-  }
-
-  // A provider nothing has wrapped is a wiring defect, not a candidate that happens not to fit, so
-  // it fails the whole selection the way a duplicate id does rather than being quietly passed over.
-  //
-  // Skipping it instead would be worse than useless on the registry that matters — a half-wired one.
-  // Dispatches would keep succeeding through the wrapped half while the raw provider sat there
-  // reachable by anything that iterates `registry.providers` itself, and the first run that reached
-  // it would be the one run nobody could account for afterwards. The defect is the registry's, and
-  // that is the granularity the refusal is stated at.
-  const unmarked = registry.providers.filter((provider) => !isInstrumented(provider));
-  if (unmarked.length > 0) {
-    for (const provider of unmarked) {
-      rejected.push({
-        provider: provider.id,
-        rule: "uninstrumented",
-        detail: "nothing has marked this provider as instrumented, so its runs would leave no trace",
-      });
-    }
-    return {
-      selected: false,
-      rule: "uninstrumented",
-      detail:
-        `provider(s) ${unmarked.map((provider) => provider.id).join(", ")} reached the registry ` +
-        "without being wrapped for telemetry; a dispatch through them would run an agent that no " +
-        "log can account for. Register through the composition root that wraps, or call " +
-        "markInstrumented if something else already did",
-      rejected,
-    };
-  }
-
-  const candidates: SubagentProvider[] = [];
-  for (const provider of registry.providers) {
-    if (!provider.capabilities.harnesses.includes(request.harness)) {
-      rejected.push({
-        provider: provider.id,
-        rule: "wrong-harness",
-        detail: `cannot launch ${request.harness} (declares ${describeHarnesses(provider)})`,
-      });
-      continue;
-    }
-    if (supervised && !provider.capabilities.observe) {
-      rejected.push({
-        provider: provider.id,
-        rule: "cannot-observe",
-        detail: "cannot observe its runs, and this dispatch is supervised",
-      });
-      continue;
-    }
-    candidates.push(provider);
-  }
-
-  const chosen = candidates[0];
-  if (chosen === undefined) {
-    return {
-      selected: false,
-      rule: "no-candidate",
-      detail: `no registered provider can launch ${request.harness}${supervised ? " and be observed" : ""}`,
-      rejected,
-    };
-  }
-
-  // Registration order is the tiebreak, and it is a real choice rather than an accident of
-  // iteration: the composition root decides precedence by the order it registers, which is
-  // visible in one file, instead of this function inventing a ranking nobody can see.
-  for (const other of candidates.slice(1)) {
-    rejected.push({
-      provider: other.id,
-      rule: "not-preferred",
-      detail: `legal, but ${chosen.id} is registered ahead of it`,
-    });
-  }
-
-  return { selected: true, provider: chosen, rejected };
-}
-
-/** Ids registered more than once, sorted, each named once. */
-function duplicateIds(providers: readonly SubagentProvider[]): readonly string[] {
-  const counts = new Map<string, number>();
-  for (const provider of providers) {
-    counts.set(provider.id, (counts.get(provider.id) ?? 0) + 1);
-  }
-  return [...counts.entries()]
-    .filter(([, count]) => count > 1)
-    .map(([id]) => id)
-    .sort();
-}
-
-const describeHarnesses = (provider: SubagentProvider): string =>
-  provider.capabilities.harnesses.length === 0
-    ? "none"
-    : provider.capabilities.harnesses.join(", ");
-
-/** A provider declaration that contradicts itself or cannot be used. */
-export type ConformanceRule =
-  | "no-id"
-  | "unusable-id"
-  | "no-harnesses"
-  | "blind"
-  | "unstoppable"
-  | "uninstrumented";
-
-export interface ConformanceProblem {
-  readonly provider: string;
-  readonly rule: ConformanceRule;
-  readonly detail: string;
-  /** `true` when the provider cannot be used at all, `false` when it is usable but diminished. */
-  readonly fatal: boolean;
-}
-
-const USABLE_ID = /^[a-z][a-z0-9-]*$/;
-
-/**
- * Check what a provider claims about itself, before it is asked to do anything.
- *
- * This is composition-time validation: the optional router builds a registry from config and can run this
- * over it with no executor present. It catches the declarations that are wrong on their face —
- * a provider that launches nothing, an id that cannot appear in a `RunRef` — and reports the two
- * that are merely bad news (blind, unstoppable) without failing them, because both are real
- * providers. divybot is genuinely unsteerable, and saying so is the contract working.
- */
-export function conformanceProblems(provider: SubagentProvider): readonly ConformanceProblem[] {
-  const found: ConformanceProblem[] = [];
-  const id = provider.id;
-
-  if (id === "") {
-    found.push({
-      provider: "(unnamed)",
-      rule: "no-id",
-      detail: "a provider with no id cannot be named in a RunRef, so its runs cannot be found again",
-      fatal: true,
-    });
-  } else if (!USABLE_ID.test(id)) {
-    found.push({
-      provider: id,
-      rule: "unusable-id",
-      detail: `id ${JSON.stringify(id)} is not a lowercase slug; it appears verbatim in run references and telemetry`,
-      fatal: true,
-    });
-  }
-
-  if (provider.capabilities.harnesses.length === 0) {
-    found.push({
-      provider: id,
-      rule: "no-harnesses",
-      detail: "declares no harnesses, so selectProvider can never choose it",
-      fatal: true,
-    });
-  }
-
-  if (!provider.capabilities.observe) {
-    found.push({
-      provider: id,
-      rule: "blind",
-      detail: "cannot observe; every supervised dispatch will pass it over",
-      fatal: false,
-    });
-  }
-
-  if (!provider.capabilities.stop) {
-    found.push({
-      provider: id,
-      rule: "unstoppable",
-      detail: "cannot stop a run; a governance decision to reclaim capacity cannot be enforced here",
-      fatal: false,
-    });
-  }
-
-  return found;
-}
-
-/**
- * Whether a registry is usable as it stands. Fatal problems only; the rest are reported, not blocking.
- *
- * The two checks that live here rather than in `conformanceProblems` are the two that a provider
- * cannot answer about itself: whether another provider took its id, and whether the composition root
- * remembered to wrap it. Both are properties of the assembly, and both are visible at boot — which
- * is when a deployment should hear about them, rather than at the first dispatch of the night.
- */
-export function registryProblems(registry: SubagentRegistry): readonly ConformanceProblem[] {
-  const found = registry.providers.flatMap((provider) => conformanceProblems(provider));
-  for (const id of duplicateIds(registry.providers)) {
-    found.push({
-      provider: id,
-      rule: "unusable-id",
-      detail: "registered more than once; run references under this id are ambiguous",
-      fatal: true,
-    });
-  }
-  for (const provider of registry.providers) {
-    if (isInstrumented(provider)) continue;
-    found.push({
-      provider: provider.id,
-      rule: "uninstrumented",
-      // Fatal, and it says the same thing `selectProvider` will say: this registry cannot dispatch.
-      // Reporting it as merely diminished would describe a seam that in fact refuses every request.
-      detail: "not wrapped for telemetry, so selectProvider refuses every dispatch to this registry",
-      fatal: true,
-    });
-  }
-  return found;
 }

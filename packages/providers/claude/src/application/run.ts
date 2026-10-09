@@ -4,9 +4,9 @@
  * `observe` on this provider does not go and ask anything. The SDK's message stream is already open
  * — the provider is holding it — so the record is updated as messages arrive and `observe` is a read
  * of memory. That is worth being explicit about, because it inverts the usual cost: observation is
- * free and instantaneous here, where a PTY-scraping provider has to go look. It is also why the
- * decorator in the optional router that writes an event only when liveness *changes* is the right decorator
- * for this provider rather than a lossy one.
+ * free and instantaneous here, where a PTY-scraping provider has to go look. It is also why a
+ * decorator that writes an event only when liveness *changes* is the right decorator for this
+ * provider rather than a lossy one.
  *
  * ## The record is a value
  *

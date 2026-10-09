@@ -34,9 +34,9 @@
  * different incidents with different responses: one is a retry, the other is a routing failure a human
  * has to look at.
  *
- * This module follows `experiments/routers/dsh/src/dry-run-internal.ts` instead, which decides on the
- * strongest available negative — `if (!isRouteEvidenceVerified(route)) refuse({ status, fields })` —
- * and carries `status` along only to explain. Same shape here:
+ * This module decides on the strongest available negative instead — the shape
+ * `if (!isRouteEvidenceVerified(route)) refuse({ status, fields })` — and carries `status` along only to
+ * explain:
  *
  * - **A contradiction outranks a silence.** A reported difference is a positive fact about the server;
  *   an absent field is the absence of a fact. Refusal beats unknown.
