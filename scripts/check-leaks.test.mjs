@@ -23,7 +23,7 @@ const FAMILIES = [
   ["data-path", [["", "mnt", "disk", "x"].join("/"), ["", "ephemeral", "work", ""].join("/"), "`" + ["", "data"].join("/") + "`"]],
   ["private-ipv4", [[10, 1, 2, 3], [192, 168, 0, 9], [172, 16, 0, 1], [100, 64, 0, 1]].map(ip => ip.join("."))],
   ["host-port", [["localhost", 8080].join(":"), ["localhost", 9].join(":"), url(["example", "com"].join("."), 443),
-    url("worker", 8080), "endpoint " + ["api", "example", "com"].join(".") + ":" + 8443,
+    url("worker", 8080), "-" + url("worker", 8081), "endpoint " + ["api", "example", "com"].join(".") + ":" + 8443,
     "proxy " + ["worker", 8080].join(":"), "jump " + ["bastion", 22].join(":")]],
   ["tailnet-host", ["node." + "tail" + "1a2b" + ".ts.net"]],
   ["token-shape", ["gh" + "p_" + "a".repeat(36), "github" + "_pat_" + "b".repeat(30), "sk" + "-" + "c".repeat(24),
@@ -45,15 +45,13 @@ function repo(t, files, before = {}) { // `before` committed on main, then `file
     mkdirSync(dirname(join(dir, path)), { recursive: true }), writeFileSync(join(dir, path), content);
   });
   const commit = (entries, message) => (write(entries), git(dir, "add", "-A"), git(dir, "commit", "-q", "--allow-empty", "-m", message));
-  git(dir, "init", "-q", "-b", "main");
-  commit({ "README.md": "base\n", ...before }, "base");
-  git(dir, "checkout", "-q", "-b", "feature");
-  commit(files, "change");
+  git(dir, "init", "-q", "-b", "main"), commit({ "README.md": "base\n", ...before }, "base");
+  git(dir, "checkout", "-q", "-b", "feature"), commit(files, "change");
   return dir;
 }
 
-function scan(cwd, args = ["--base", "main"]) {
-  const run = spawnSync(process.execPath, [script, ...args], { cwd, env, encoding: "utf8" });
+function scan(cwd, args = ["--base", "main"], timeout) {
+  const run = spawnSync(process.execPath, [script, ...args], { cwd, env, encoding: "utf8", timeout });
   return { status: run.status, out: run.stdout, err: run.stderr, findings: run.stdout.split("\n").filter(Boolean) };
 }
 
@@ -82,21 +80,18 @@ test("owner-controlled run records and the lockfile are not scanned", t => {
 
 test("a renamed file with an added line is reported under its new path", t => {
   const dir = repo(t, {}, { "old.txt": "one\ntwo\nthree\nfour\n" });
-  git(dir, "mv", "old.txt", "new.txt");
-  writeFileSync(join(dir, "new.txt"), "one\ntwo\n" + ["localhost", 5].join(":") + "\nthree\nfour\n");
+  git(dir, "mv", "old.txt", "new.txt"), writeFileSync(join(dir, "new.txt"), "one\ntwo\n" + ["localhost", 5].join(":") + "\nthree\nfour\n");
   git(dir, "commit", "-q", "-am", "rename");
   assert.deepEqual(scan(dir).findings, ["new.txt:3 host-port"]);
 });
 
 test("an added line that starts with ++ is content, not a file header", t => {
-  const result = scan(repo(t, { "x.txt": "++ " + ["localhost", 7].join(":") + "\n" }));
-  assert.deepEqual(result.findings, ["x.txt:1 host-port"]);
+  assert.deepEqual(scan(repo(t, { "x.txt": "++ " + ["localhost", 7].join(":") + "\n" })).findings, ["x.txt:1 host-port"]);
 });
 
 test("diff.noprefix and diff.mnemonicPrefix in the repository cannot hide a finding", t => {
   const dir = repo(t, { "x.txt": ["localhost", 8080].join(":") + "\n" });
-  git(dir, "config", "diff.noprefix", "true");
-  git(dir, "config", "diff.mnemonicPrefix", "true");
+  git(dir, "config", "diff.noprefix", "true"), git(dir, "config", "diff.mnemonicPrefix", "true");
   const result = scan(dir);
   assert.deepEqual([result.status, result.findings], [1, ["x.txt:1 host-port"]]);
 });
@@ -105,7 +100,6 @@ test("the parser refuses a header without b/ or a hunk cut short, and counts con
   assert.throws(() => addedLines("+++ x.txt\n@@ -0,0 +1 @@\n+text\n"), /unexpected file header/);
   assert.deepEqual(addedLines("+++ /dev/null\n@@ -1 +0,0 @@\n-gone\n"), []);
   assert.throws(() => addedLines("diff --git a/x b/x\nBinary files /dev/null and b/x differ\n"), /binary record/);
-  // A context line advances the line counter, and a hunk cut short is refused.
   const fused = addedLines("+++ b/a\n@@ -1,3 +1,3 @@\n-1\n+X\n 2\n-3\n+Y\n+++ b/b\n@@ -0,0 +1 @@\n+Z\n");
   assert.deepEqual(fused.map(({ path, line, text }) => [path, line, text]), [["a", 1, "X"], ["a", 3, "Y"], ["b", 1, "Z"]]);
   assert.throws(() => addedLines("+++ b/a\n@@ -1,2 +1,2 @@\n-1\n+X\ndiff --git a/b b/b\n"), /hunk ended early/);
@@ -131,6 +125,17 @@ test("binary attributes, NUL bytes, UTF-16 and a textconv driver cannot hide an 
   assert.ok(!result.out.includes(token) && !result.out.includes(home), "matched text was printed");
 });
 
+test("a long line is scanned in linear time: a clean one stays clean, a leak at its end is still found", t => {
+  // The quadratic patterns these replace took minutes on lines this long; the bound is per scan, not a benchmark.
+  const dir = repo(t, { "clean.txt": ["a".repeat(400000), "a-".repeat(150000), "a.".repeat(150000)].join(" ") + "\n" });
+  const clean = scan(dir, undefined, 5000);
+  assert.deepEqual([clean.status, clean.out, clean.err], [0, "", ""]);
+  writeFileSync(join(dir, "leak.txt"), "a".repeat(200000) + " " + url("worker", 8080) + "\n"), git(dir, "add", "-A");
+  git(dir, "commit", "-q", "-m", "leak");
+  const leak = scan(dir, undefined, 5000);
+  assert.deepEqual([leak.status, leak.err, leak.findings], [1, "", ["leak.txt:1 host-port"]]);
+});
+
 test("the -- that pnpm forwards is tolerated", t => {
   const result = scan(repo(t, { "x.txt": "fine\n" }), ["--", "--base", "main"]);
   assert.deepEqual([result.status, result.findings], [0, []]);
@@ -140,6 +145,5 @@ test("an unresolvable base is inconclusive (exit 2) and never echoes the base it
   const base = ["", "home", "someone", "ref"].join("/");
   const result = scan(repo(t, { "x.txt": "fine\n" }), ["--base", base]);
   assert.deepEqual([result.status, result.out], [2, ""]);
-  assert.ok(!result.err.includes(base), "the caller's base was printed");
-  assert.equal(result.err, "check:leaks inconclusive: git diff failed\n");
+  assert.equal(result.err, "check:leaks inconclusive: git diff failed\n", "only the fixed diagnostic, never the caller's base");
 });
