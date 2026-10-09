@@ -15,3 +15,4 @@ export { composeGovernance, type CollectedSources } from "./src/application/comp
 export { governanceAt, governanceRead, invalidGovernance, unconfiguredGovernance, type GovernanceAt } from "./src/application/read.js";
 export { collectGovernance } from "./src/application/collect.js";
 export { defaultSourceServices, readSourceText, runUsageProbe } from "./src/adapters/node-sources.js";
+export { readProviderLimitsFile } from "./src/adapters/provider-limits.js";

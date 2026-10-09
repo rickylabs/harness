@@ -56,7 +56,7 @@ cap:
   closed and open vocabularies.
 - [Agent trees, placement and stop state](docs/agent-trees-and-stop-state.md): 0.5.3 to 0.12.0.
 - [Workflows, receipts and providers](docs/workflows-and-providers.md): 0.15.0 to 0.35.0, except
-  the account usage projection below.
+  the account usage projection below, and the provider-limit evidence snapshot.
 
 ## Using it
 

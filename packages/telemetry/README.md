@@ -409,7 +409,7 @@ deep-comparing the runs, which is the property the whole no-cursor design rests 
 ## More
 
 - [Governance reads](docs/governance.md): live governance sources, recorded admissions, freshness and
-  failure behavior, and the published `governance` command. The readers are
+  failure behavior, the published `governance` command and the `provider-limits` snapshot command. The readers are
   [`@rickylabs/governance`](../governance/README.md); this package wires them (`src/governance-wiring.ts`).
 - [Native reads](docs/native-reads.md): the selected repository run observation, Codex thread reads,
   account quota and session token usage, provider meters, and producer naming.

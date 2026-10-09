@@ -17,9 +17,9 @@ or any other workspace package, or if `src/domain` imports anything outward.
 | Layer | Holds |
 | --- | --- |
 | `src/domain/` | The source descriptor types and value checks, and the pure usage, spend and capacity mappers |
-| `src/application/` | `parseSource`, recorded admissions, transport availability, `composeGovernance`, `collectGovernance`, `governanceRead`, `governanceAt` |
+| `src/application/` | `parseSource`, recorded admissions, transport availability, provider-limit snapshot decoding, `composeGovernance`, `collectGovernance`, `governanceRead`, `governanceAt` |
 | `src/ports/` | `SourceServices`, `AdmissionLog`, `GovernanceWiring`: what a caller passes in |
-| `src/adapters/` | The Node source services: bounded file reads, the usage-probe subprocess, the owner-only transport availability file |
+| `src/adapters/` | The Node source services: bounded file reads, the usage-probe subprocess, the owner-only transport availability file, `readProviderLimitsFile` |
 
 ## What the caller wires in
 
@@ -46,6 +46,19 @@ omitted. Whatever this package cannot read, it says it could not read, rather th
 
 The commands, descriptor fields and failure behaviour are documented with the CLI that publishes them:
 [telemetry governance reads](../telemetry/docs/governance.md).
+
+## Provider-limit evidence
+
+`readProviderLimitsFile(path)` reads one normalized provider-limit snapshot: an absolute, canonical
+path to a same-UID `0600` regular file, never a link, opened without following links, at most the
+contract's byte bound, and unchanged between the stat before and after the read. The bytes must be
+valid UTF-8 and decode through `readProviderLimitSnapshot` from [`contracts`](../contracts/docs/workflows-and-providers.md#provider-limit-evidence-snapshot);
+a snapshot generated in the future is refused. Every refusal is one fixed error that names no path.
+It opens no credential and calls no provider API. The collector, the durable outcome ledger and the
+admission decisions belong to the producer in
+Orchid ([rickylabs/orchid#97](https://github.com/rickylabs/orchid/pull/97)), not to this package.
+The `provider-limits` command that publishes it is documented in
+[telemetry governance reads](../telemetry/docs/governance.md#provider-limit-snapshot-command).
 
 ---
 
