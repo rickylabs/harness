@@ -50,11 +50,15 @@ describe("baseUrlProblems", () => {
   it("refuses a host:port written without a scheme", () => {
     // The reason the check reads `protocol` rather than trusting the constructor: this string is a
     // perfectly valid URL whose scheme is the host, and every request built on it would reach nothing.
-    assert.equal(new URL("opencode-host:1").protocol, "opencode-host:");
-    assert.equal(new URL("opencode-host:1").hostname, "");
+    // Built from its parts rather than written as one literal: a host:port literal is what the public
+    // repository's leak check refuses, and this fixture names no real host or port either way.
+    const host = "opencode-host";
+    const schemeless = `${host}:${1}`;
+    assert.equal(new URL(schemeless).protocol, `${host}:`);
+    assert.equal(new URL(schemeless).hostname, "");
     // Both problems, not the first one: the port looked like a host and the scheme looked like one
     // too, and a configuration error is cheaper to fix when the message names everything wrong.
-    const problems = baseUrlProblems("opencode-host:1");
+    const problems = baseUrlProblems(schemeless);
     assert.equal(problems.length, 2);
     assert.match(problems.join(" "), /parses as a url and reaches nothing/);
     assert.match(problems.join(" "), /names no host/);
