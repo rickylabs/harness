@@ -267,7 +267,8 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     : { tokenLimit: raisedBudget, source: "action-receipt", reason: null };
   const steps = (run?.activitySteps ?? []).filter(step => time(step.at, now) !== null).slice(0, 20);
   const activity: NonNullable<IssueAgentTreeAgent["activity"]> = run !== undefined && time(run.updatedAt, now) !== null
-    ? { availability: "available", reason: null, observedAt: run.updatedAt, steps }
+    ? { availability: "available", reason: null, observedAt: run.updatedAt, steps,
+        ...(run.activityCoverage === undefined ? {} : { coverage: run.activityCoverage }) }
     : { availability: "unavailable", reason: "source_not_bound", observedAt: null, steps: [] };
   const input = run === undefined ? undefined : processedInputTokens(run.source, run.usage), output = run?.usage.outputTokens;
   const measured = (run?.source === "codex" || run?.source === "claude") && input !== undefined && output !== undefined && Number.isSafeInteger(input) && Number.isSafeInteger(output) &&

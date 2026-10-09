@@ -128,6 +128,9 @@ importers:
       '@rickylabs/host-orchid':
         specifier: workspace:*
         version: link:../hosts/orchid
+      '@rickylabs/provider-agy':
+        specifier: workspace:*
+        version: link:../providers/agy
       '@rickylabs/subagents':
         specifier: workspace:*
         version: link:../subagents

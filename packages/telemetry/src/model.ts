@@ -172,6 +172,8 @@ export interface RunRecord {
   readonly turnUsage?: readonly { readonly turnId: string; readonly observedAt: string; readonly usage: RunUsage }[];
   /** Sanitized, bounded native work steps; never raw transcript content. */
   readonly activitySteps?: readonly import("@rickylabs/harness-contracts").AgentActivityStep[];
+  /** Producer coverage of `activitySteps`, set only when lifecycle publication was requested. */
+  readonly activityCoverage?: import("@rickylabs/harness-contracts").AgentActivityCoverage;
   readonly outcome: RunOutcome;
   /** Exact terminal signal, when the native reader can distinguish failure from cancellation. */
   readonly terminalCause?: "error" | "cancelled" | undefined;

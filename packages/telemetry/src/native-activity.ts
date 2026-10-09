@@ -1,6 +1,6 @@
 /** Small public-safe native activity facts; raw tool input and prose never leave this reader. */
 import { createHash } from "node:crypto";
-import { publicActivityTarget, publicActivityText, type AgentActivityStep } from "@rickylabs/harness-contracts";
+import { publicActivityTarget, publicActivityText, type AgentActivityState, type AgentActivityStep } from "@rickylabs/harness-contracts";
 
 import { codeModeToolCalls, codeModePatchPaths, type CodeModeToolCall } from "./code-mode-tools.js";
 
@@ -62,6 +62,21 @@ function firstSentence(value: unknown): string | null {
 export function nativeMessageActivity(source: Source, nativeID: string, index: number, at: string,
   text: unknown): AgentActivityStep | null {
   return step(source, nativeID, index, 0, at, "message", null, null, null, firstSentence(text));
+}
+/** A provider-named native call, or an unnamed native step when `call` is null, through the shared screens. */
+export function nativeToolActivity(source: Source, origin: string, line: number, part: number, at: string,
+  call: { readonly kind: "command" | "file" | "tool"; readonly toolName: string | null; readonly commandLine: string | null;
+    readonly relativePath: string | null } | null, state?: AgentActivityState): AgentActivityStep | null {
+  const command = call?.kind === "command" ? commandHead(call.commandLine) : null;
+  const filePath = call?.kind === "file" ? relativeFile(call.relativePath) : null;
+  const toolName = typeof call?.toolName === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(call.toolName) ? call.toolName : null;
+  const kind = command !== null ? "command" : filePath !== null ? "file" : "tool";
+  const summary = call === null ? null : command !== null ? `Ran ${command}` : filePath !== null ? "Opened a repository file"
+    : toolName !== null ? `Used ${toolName}` : "Used a tool";
+  const target: AgentActivityStep["target"] = command !== null && publicActivityTarget("command", command) !== null
+    ? { kind: "command", value: command } : null;
+  const found = step(source, origin, line, part, at, kind, toolName, command, filePath, summary, target);
+  return found === null || state === undefined ? found : { ...found, state };
 }
 function args(value: unknown): Record<string, unknown> | null {
   if (typeof value === "string" && value.length <= 4096) {

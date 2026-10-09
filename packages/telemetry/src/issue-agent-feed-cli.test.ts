@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { appendFile, mkdir, mkdtemp, open, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { collectIssueAgentTree, issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
+import { collectIssueAgentTree, frameByteLimit, issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "./operator-environment.js";
 import { CLAUDE_CHILD_EVENT_ROOT } from "./claude-child-events.js";
 import { chmod } from "node:fs/promises";
@@ -136,6 +136,24 @@ it("passes --partial-trees to the scan only when asked, and refuses it twice", a
   assert.deepEqual(seen, [undefined, true]);
   assert.equal(await issueAgentFeedCommand(["--json", "--partial-trees", "--partial-trees"], { output: new Capture(), now: () => at, collect }), 2);
   assert.equal(seen.length, 2);
+});
+it("passes --activity-lifecycle to the scan only when asked, and refuses it twice", async () => {
+  const seen: (boolean | undefined)[] = [];
+  const collect = async (options: { activityLifecycle?: boolean }) => { seen.push(options.activityLifecycle); return snapshot(true); };
+  assert.equal(await issueAgentFeedCommand(["--json"], { output: new Capture(), now: () => at, collect }), 0);
+  assert.equal(await issueAgentFeedCommand(["--json", "--activity-lifecycle"], { output: new Capture(), now: () => at, collect }), 0);
+  assert.deepEqual(seen, [undefined, true]);
+  assert.equal(await issueAgentFeedCommand(["--json", "--activity-lifecycle", "--activity-lifecycle"], { output: new Capture(), now: () => at, collect }), 2);
+  assert.equal(seen.length, 2);
+});
+it("frame byte limit can only be lowered", () => {
+  const max = frameByteLimit(undefined);
+  assert.equal(max, 32 * 1_048_576);
+  assert.equal(frameByteLimit(2 * max), max);
+  assert.equal(frameByteLimit(Number.MAX_SAFE_INTEGER), max);
+  for (const invalid of [Number.NaN, 0, -1, 1.5, "9", null, Infinity]) assert.equal(frameByteLimit(invalid), max, String(invalid));
+  assert.equal(frameByteLimit(1000), 1000);
+  assert.equal(frameByteLimit(1), 1);
 });
 it("awaits the write callback before collecting a second snapshot", async () => {
   let release: (() => void) | undefined, collected = 0;

@@ -4,9 +4,14 @@ import { join } from "node:path";
 import { MAX_AGENT_ACTIVITY_STEPS } from "@rickylabs/harness-contracts";
 import { nativeMessageActivity } from "../native-activity.js";
 import type { RunRecord } from "../model.js";
+import { agyWorkspaceRoot, type AgyConversationRead, type AgyStepFact } from "./agy-activity.js";
+import { AGY_CANCELLED_STATUSES, AGY_DONE_STATUS, AGY_ERROR_STATUS, AGY_PENDING_STATUSES, AGY_STEP_STATUSES,
+  AGY_STEP_TYPE } from "./agy-status.js";
 
 const ID = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
 const MAX_SESSIONS = 20, MAX_STEPS = 4096, MAX_BLOB = 1_048_576;
+/** Workspace metadata above this is never materialized; it only relativizes paths, so it is optional. */
+export const MAX_WORKSPACE_URIS_BYTES = 4096;
 type Field = number | Uint8Array;
 type Fields = ReadonlyMap<number, Field>;
 /** Wire definitions measured in installed 1.2.14: gemini_coder.Step and CortexStepPlannerResponse.
@@ -91,10 +96,13 @@ export interface AGYScan {
   readonly bytesRead: number;
   readonly reason: "scan_limit" | "source_unavailable" | null;
   readonly files: readonly string[];
+  /** Per accepted conversation, the authority facts the descriptor phase joins against. */
+  readonly conversations: readonly AgyConversationRead[];
 }
 
 /** Pure mapping, intentionally drops titles, prompts, thinking, tool output, IDs from display text. */
-export function agyConversation(summary: Row, rows: readonly Row[], origin: string, nowMs: number): RunRecord | null {
+export function agyConversation(summary: Row, rows: readonly Row[], origin: string, nowMs: number,
+  facts?: AgyStepFact[]): RunRecord | null {
   try {
     const id = summary.conversation_id, parent = summary.parent_conversation_id;
     if (typeof id !== "string" || !ID.test(id) || (parent !== null && parent !== "" &&
@@ -110,25 +118,27 @@ export function agyConversation(summary: Row, rows: readonly Row[], origin: stri
     const startedAt = timestamp(native, 7, nowMs);
     if (startedAt === null) return null;
     const steps: NonNullable<RunRecord["activitySteps"]>[number][] = [];
+    const observed: AgyStepFact[] = [];
     let updatedAt = startedAt, latestUser = -1, pending = false;
     let final: { at: string; status: number; type: number; nonempty: boolean; stop: number | null; error: boolean } | null = null;
     for (let index = 0; index < rows.length; index++) {
       const row = rows[index]!;
       if (row.idx !== index || row.step_format !== 0 || !Number.isSafeInteger(row.step_type) ||
-          ![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12].includes(row.status as number)) return null;
+          !AGY_STEP_STATUSES.includes(row.status as number)) return null;
       const payload = blob(row.step_payload), metadata = blob(row.metadata);
       if (payload === null || metadata === null) return null;
       const frame = protobuf(payload), header = protobuf(metadata);
-      if (numeric(frame, 1) !== row.step_type || numeric(frame, 4) !== row.status || row.step_type === 15 && !frame.has(5) ||
+      if (numeric(frame, 1) !== row.step_type || numeric(frame, 4) !== row.status || row.step_type === AGY_STEP_TYPE.planner && !frame.has(5) ||
           frame.has(5) && (!(frame.get(5) instanceof Uint8Array) ||
             !Buffer.from(frame.get(5) as Uint8Array).equals(metadata))) return null;
       const at = timestamp(header, 1, nowMs), completed = timestamp(header, 8, nowMs);
       if (at === null || at < startedAt || completed !== null && completed < at) return null;
       const recent = timestamp(header, 22, nowMs) ?? completed ?? at;
       if (recent > updatedAt) updatedAt = recent;
-      if (row.step_type === 14) { latestUser = index; pending = false; final = null; }
-      if (latestUser >= 0 && [1, 2, 8, 9, 11].includes(row.status as number)) pending = true;
-      const response = row.step_type === 15 ? nested(frame, 20) : null;
+      observed.push({ idx: index, type: row.step_type as number, status: row.status as number, at });
+      if (row.step_type === AGY_STEP_TYPE.user) { latestUser = index; pending = false; final = null; }
+      if (latestUser >= 0 && AGY_PENDING_STATUSES.includes(row.status as number)) pending = true;
+      const response = row.step_type === AGY_STEP_TYPE.planner ? nested(frame, 20) : null;
       let responseText: string | null = null, stop: number | null = null;
       if (response !== null) {
         responseText = text(response, 8) ?? text(response, 1);
@@ -155,14 +165,15 @@ export function agyConversation(summary: Row, rows: readonly Row[], origin: stri
     let outcome: RunRecord["outcome"] = active ? "running" : "unknown";
     let terminalAt: string | undefined, terminalCause: RunRecord["terminalCause"];
     if (!active && !pending && final !== null && final.at >= updatedAt) {
-      if ([6, 12].includes(final.status) || interrupted || final.stop === 16) { outcome = "failed"; terminalCause = "cancelled"; terminalAt = final.at; }
-      else if (final.status === 7 || final.error || [13, 17, 18, 19, 20].includes(final.stop ?? 0)) { outcome = "failed"; terminalCause = "error"; terminalAt = final.at; }
+      if (AGY_CANCELLED_STATUSES.includes(final.status) || interrupted || final.stop === 16) { outcome = "failed"; terminalCause = "cancelled"; terminalAt = final.at; }
+      else if (final.status === AGY_ERROR_STATUS || final.error || [13, 17, 18, 19, 20].includes(final.stop ?? 0)) { outcome = "failed"; terminalCause = "error"; terminalAt = final.at; }
       // STOP_PATTERN is the native explicit stop enum; unknown, function-call,
       // length, filtered, partial or empty responses never become success.
-      else if (idle && !killed && final.type === 15 && final.status === 3 && final.nonempty && final.stop === 2) {
+      else if (idle && !killed && final.type === AGY_STEP_TYPE.planner && final.status === AGY_DONE_STATUS && final.nonempty && final.stop === 2) {
         outcome = "complete"; terminalAt = final.at;
       }
     }
+    facts?.push(...observed);
     return { id, source: "agy", parentId: typeof parent === "string" && parent !== "" ? parent : null,
       startedAt, updatedAt, branch: null, identity: { provider: null, model: null, effort: null, profile: null },
       usage: {}, quota: [], linkedIssues: [], origin, outcome,
@@ -176,7 +187,7 @@ export async function scanAGYIssue(root: string, matches: (id: string) => boolea
   limit: number, maxBytes: number, nowMs: number): Promise<AGYScan> {
   let bytesRead = 0;
   const files: string[] = [];
-  const fail = (reason: AGYScan["reason"]): AGYScan => ({ runs: [], bytesRead, reason, files });
+  const fail = (reason: AGYScan["reason"]): AGYScan => ({ runs: [], bytesRead, reason, files, conversations: [] });
   try {
     for (const path of [root, join(root, ".."), join(root, "../.."), join(root, "conversations")].map(path => join(path))) {
       const s = await lstat(path);
@@ -195,13 +206,18 @@ export async function scanAGYIssue(root: string, matches: (id: string) => boolea
       files.push(path, path + "-wal"); return db;
     };
     files.push(root, join(root, "conversations"));
-    const summaryQuery = `SELECT conversation_id,parent_conversation_id,step_count,
-      last_user_input_step_index,not_fully_idle,killed,length(raw_summary) AS summary_bytes,
-      CASE WHEN length(raw_summary) <= 1048576 THEN raw_summary ELSE NULL END AS raw_summary
-      FROM conversation_summaries ORDER BY conversation_id LIMIT ?`;
     const summaries = await open(join(root, "conversation_summaries.db"));
-    let candidates: Row[];
+    let candidates: Row[], summaryQuery: string;
     try {
+      // Older stores have no workspace column; paths then stay unrelativized, never the scan unavailable.
+      const workspace = summaries.prepare("SELECT 1 FROM pragma_table_info('conversation_summaries') WHERE name='workspace_uris'").get()
+        ? `length(workspace_uris) AS workspace_bytes,
+      CASE WHEN length(workspace_uris) <= ${MAX_WORKSPACE_URIS_BYTES} THEN workspace_uris ELSE NULL END AS workspace_uris`
+        : "NULL AS workspace_bytes,NULL AS workspace_uris";
+      summaryQuery = `SELECT conversation_id,parent_conversation_id,step_count,
+      last_user_input_step_index,not_fully_idle,killed,length(raw_summary) AS summary_bytes,
+      CASE WHEN length(raw_summary) <= 1048576 THEN raw_summary ELSE NULL END AS raw_summary,${workspace}
+      FROM conversation_summaries ORDER BY conversation_id LIMIT ?`;
       candidates = summaries.prepare(summaryQuery).all(MAX_SESSIONS + 1);
     } finally { summaries.close(); }
     if (candidates.length > MAX_SESSIONS) return fail("scan_limit");
@@ -216,7 +232,7 @@ export async function scanAGYIssue(root: string, matches: (id: string) => boolea
       }
     }
     if (selected.size > limit) return fail("scan_limit");
-    const runs: RunRecord[] = [];
+    const runs: RunRecord[] = [], conversations: AgyConversationRead[] = [];
     for (const summary of candidates.filter(row => selected.has(row.conversation_id))) {
       if (typeof summary.conversation_id !== "string" || !ID.test(summary.conversation_id)) return fail("source_unavailable");
       if (!Number.isSafeInteger(summary.step_count) || (summary.step_count as number) > MAX_STEPS) return fail("scan_limit");
@@ -231,15 +247,20 @@ export async function scanAGYIssue(root: string, matches: (id: string) => boolea
           coalesce(max(length(error_details)),0) AS error_max
           FROM (SELECT metadata,step_payload,error_details FROM steps ORDER BY idx LIMIT ?)`).get(MAX_STEPS + 1);
         const summarySize = blob(summary.raw_summary)?.length;
+        // Only what was materialized is counted: an oversized value was never read (and is NULL).
+        const workspaceBytes = typeof summary.workspace_uris === "string" ? Buffer.byteLength(summary.workspace_uris) : 0;
         if (!sizes || typeof sizes.bytes !== "number" || !Number.isSafeInteger(sizes.bytes) || sizes.bytes < 0 || summarySize === undefined) return fail("source_unavailable");
         if (sizes.count !== summary.step_count || (sizes.count as number) > MAX_STEPS ||
             (sizes.metadata_max as number) > MAX_BLOB || (sizes.payload_max as number) > MAX_BLOB || (sizes.error_max as number) > MAX_BLOB ||
-            summarySize > MAX_BLOB || bytesRead + sizes.bytes + summarySize > maxBytes) return fail("scan_limit");
+            summarySize > MAX_BLOB || bytesRead + sizes.bytes + summarySize + workspaceBytes > maxBytes) return fail("scan_limit");
         const rows = db.prepare("SELECT idx,step_type,status,metadata,error_details,step_payload,step_format FROM steps ORDER BY idx LIMIT ?").all(MAX_STEPS + 1);
-        bytesRead += sizes.bytes + summarySize;
-        const run = agyConversation({ ...summary, trajectory_id: identities[0]!.trajectory_id }, rows, path, nowMs);
+        bytesRead += sizes.bytes + summarySize + workspaceBytes;
+        const facts: AgyStepFact[] = [];
+        const run = agyConversation({ ...summary, trajectory_id: identities[0]!.trajectory_id }, rows, path, nowMs, facts);
         if (run === null) return fail("source_unavailable");
         runs.push(run);
+        conversations.push({ run, storeRoot: root, conversationId: summary.conversation_id, stepCount: rows.length,
+          facts, workspaceRoot: agyWorkspaceRoot(summary.workspace_uris) });
       } finally { db.close(); }
     }
     // The summary and trajectory are separate databases. Reopen the summary
@@ -255,6 +276,6 @@ export async function scanAGYIssue(root: string, matches: (id: string) => boolea
           : row[key] !== other[key]);
       })) return fail("source_unavailable");
     } finally { verify.close(); }
-    return { runs, bytesRead, reason: null, files };
+    return { runs, bytesRead, reason: null, files, conversations };
   } catch { return fail("source_unavailable"); }
 }
