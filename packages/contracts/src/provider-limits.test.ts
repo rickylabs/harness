@@ -27,3 +27,13 @@ test("decoder refuses accessors without invoking them", () => {
   Object.defineProperty(raw, "meters", { get: () => { calls++; return []; }, enumerable: true });
   assert.equal(readProviderLimitSnapshot(raw).ok, false); assert.equal(calls, 0);
 });
+test("model identifiers are bounded at 256 characters, a leading ~ included, as Cockpit's schema bounds them", () => {
+  const routed = (id: string) => ({ ...meter, accountRef: "aref:v1:codex:" + "a".repeat(43), launchModels: [id] });
+  const outcome = (id: string) => ({ provider: "codex", keyName: null, accountRef: null, model: id, outcome: "succeeded", reason: null, source: "provider-run", observedAt: at, resetsAt: null });
+  for (const [id, ok] of [["m".repeat(256), true], ["~" + "m".repeat(255), true], ["~" + "m".repeat(256), false], ["m".repeat(257), false]] as const) {
+    assert.equal(readProviderLimitSnapshot({ ...doc(), meters: [{ ...meter, model: id }] }).ok, ok, `meter model ${id.length}`);
+    assert.equal(readProviderLimitSnapshot({ ...doc(), outcomes: [outcome(id)] }).ok, ok, `outcome model ${id.length}`);
+  }
+  assert.equal(readProviderLimitSnapshot({ ...doc(), meters: [routed("codex/" + "m".repeat(250))] }).ok, true);
+  assert.equal(readProviderLimitSnapshot({ ...doc(), meters: [routed("codex/" + "m".repeat(251))] }).ok, false);
+});

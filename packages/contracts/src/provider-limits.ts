@@ -43,7 +43,7 @@ export interface ProviderLimitSnapshotV1 {
 const meterKeys = "provider scope keyName accountRef limitId model launchModels window unit used limit remaining usedPercent state source reason observedAt resetsAt";
 const outcomeKeys = "provider keyName accountRef model outcome reason source observedAt resetsAt";
 const provider = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9][a-z0-9._-]{0,63}$/.test(v);
-const model = (v: unknown): v is string => typeof v === "string" && /^~?[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(v);
+const model = (v: unknown): v is string => typeof v === "string" && v.length <= 256 && /^~?[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(v);
 const key = (v: unknown): v is string => typeof v === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(v);
 const account = (v: unknown): v is string => typeof v === "string" && /^(?:aref:v1:(?:claude|codex):[A-Za-z0-9_-]{43}|paccount_[a-f0-9]{64})$/.test(v);
 const time = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0, 19) === v.slice(0, 19);

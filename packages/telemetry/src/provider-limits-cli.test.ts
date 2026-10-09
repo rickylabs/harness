@@ -17,5 +17,7 @@ test("provider-limits CLI emits the whole snapshot; unsafe files get a fixed dia
     assert.equal(await providerLimitsCommand(["--source", path], io), 3); assert.equal(out, ""); assert.equal(err, "provider limits unavailable\n");
     await chmod(path, 0o600);
     assert.equal(await providerLimitsCommand(["--source", path, "--watch"], io), 2);
+    await writeFile(path, JSON.stringify({ ...doc, generatedAt: "2999-01-01T00:00:00.000Z" }), { mode: 0o600 }); out = "";
+    assert.equal(await providerLimitsCommand(["--source", path], io), 3); assert.equal(out, "");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

@@ -282,7 +282,8 @@ Percentages, including 100%, are advisory, and so is a `rate_limited` refusal. O
 inference outcome refused with `quota_exhausted` or `payment_required` is refusal evidence, until a
 later verified success; the decoder never invents a refusal. Each collection holds at
 most `MAX_PROVIDER_LIMIT_SOURCE_ROWS` rows, and `MAX_PROVIDER_LIMIT_SOURCE_BYTES` bounds the source
-file. The decoder rejects extra fields, accessors, credentials, private paths and hosts, ambiguous
-route bindings, duplicate meter identities, malformed quantities and rows observed after
-`generatedAt`. The private file reader is `readProviderLimitsFile` in
+file. Model identifiers, in `model`, `launchModels` and outcome `model`, are at most 256 characters,
+a leading `~` included, as in Cockpit's schema. The decoder rejects extra fields, accessors,
+credentials, private paths and hosts, ambiguous route bindings, duplicate meter identities, malformed
+quantities and rows observed after `generatedAt`. The private file reader is `readProviderLimitsFile` in
 [`@rickylabs/governance`](../../governance/README.md#provider-limit-evidence).

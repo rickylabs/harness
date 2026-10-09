@@ -19,3 +19,13 @@ test("private snapshot file preserves history; unsafe files never expose path or
     await assert.rejects(readProviderLimitsFile(join(dir, "missing-private-path.json")), { message: "provider limits unavailable" });
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test("a valid private snapshot generated after the reader's clock is refused with the fixed diagnostic", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "provider-limits-"));
+  try {
+    const path = join(dir, "source.json");
+    const future = { schemaVersion: 1, generatedAt: "2999-01-01T00:00:00.000Z", meters: [], outcomes: [{ provider: "opencode-go", keyName: null, accountRef: null, model: null, outcome: "refused", reason: "quota_exhausted", source: "provider-run", observedAt: "2999-01-01T00:00:00.000Z", resetsAt: null }] };
+    await writeFile(path, JSON.stringify(future), { mode: 0o600 });
+    await assert.rejects(readProviderLimitsFile(path), { message: "provider limits unavailable" });
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
