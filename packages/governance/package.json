@@ -1,18 +1,17 @@
 {
   "name": "@rickylabs/governance",
   "version": "0.0.0",
-  "description": "Admission-control package boundary (stub; live governor owned by Orchid)",
+  "description": "Tri-regime governance read: subscription, metered and capacity sources plus recorded admissions, decoded through the published contract",
   "license": "MIT",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/mod.js",
+  "types": "./dist/mod.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./package.json": "./package.json"
+      "types": "./dist/mod.d.ts",
+      "default": "./dist/mod.js"
+    }
   },
   "files": [
     "dist"
@@ -20,6 +19,10 @@
   "scripts": {
     "build": "tsc -b",
     "typecheck": "tsc -b --emitDeclarationOnly",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "test": "tsc -b && node --test \"dist/tests/**/*.test.js\" \"tests/architecture/*.test.mjs\""
+  },
+  "dependencies": {
+    "@rickylabs/harness-contracts": "workspace:*"
   }
 }

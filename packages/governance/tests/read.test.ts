@@ -2,12 +2,16 @@ import assert from "node:assert/strict";
 import { it } from "node:test";
 import { readFileSync } from "node:fs";
 import { readGovernanceSnapshot, SOURCE_FAILURE_REASONS } from "@rickylabs/harness-contracts";
-import { composeGovernance, type CollectedSources } from "./compose.js";
-import { governanceRead } from "./read.js";
-import { mapUsage } from "./usage.js";
-import { mapSpend } from "./spend.js";
-import { mapCapacity } from "./capacity.js";
-import { SPEND_URL, type GovernanceSource } from "../source.js";
+import { composeGovernance as compose, type CollectedSources } from "../src/application/compose.js";
+import { governanceRead } from "../src/application/read.js";
+import { mapUsage } from "../src/domain/usage.js";
+import { mapSpend } from "../src/domain/spend.js";
+import { mapCapacity } from "../src/domain/capacity.js";
+import type { GovernanceSource } from "../src/domain/source.js";
+import { SPEND_URL, wiring } from "./fixture.js";
+
+const composeGovernance = (source: GovernanceSource, collected: CollectedSources, completion: string, now?: string) =>
+  compose(source, collected, wiring, completion, now);
 
 const now = "2026-09-07T12:00:00.000Z";
 const later = "2026-09-07T12:10:00.000Z";

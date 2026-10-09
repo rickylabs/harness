@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { resolveWireFamily } from "./producer-names.js";
+import { resolveWireFamily, wireProducer } from "./producer-names.js";
 /**
  * `harness-telemetry` — status without an agent in the loop.
  *
@@ -38,10 +38,9 @@ import { publicRuns, publicSnapshot, publicTree } from "./public.js";
 import { renderSnapshot, renderTree } from "./render.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
-import { instant, parseSource, type GovernanceSource } from "./source.js";
+import { collectGovernance, defaultSourceServices, instant, invalidGovernance, type GovernanceSource, type SourceServices } from "@rickylabs/governance";
+import { governanceWiring, parseGovernanceSource } from "./governance-wiring.js";
 import { collectRepositoryRunObservation, type RepositoryRunReadOptions } from "./repository-run-observation.js";
-import { invalidGovernance } from "./governance/read.js";
-import { collectGovernance, defaultSourceServices, type SourceServices } from "./governance/collect.js";
 import { parseFlags, type Flags } from "./cli-flags.js";
 import { loadGovernance, loadItems, recordEvents, whereItWrites, writeNotes } from "./cli-io.js";
 /** Composition root: the Orchid host behind the telemetry-owned port. */
@@ -239,12 +238,12 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
     try { wireFamily = resolveWireFamily(services.env); }
     catch { process.stderr.write("governance: invalid HARNESS_TELEMETRY_WIRE_FAMILY\n"); return EXIT.usage; }
     let configured: GovernanceSource;
-    try { configured = parseSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
+    try { configured = parseGovernanceSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
     catch { process.stderr.write("governance: invalid descriptor\n"); return EXIT.usage; }
     try {
       const log = configured.admissions === null ? { files: [], notes: [], degraded: false }
         : await readObservabilityLog(resolveObservability(flags.home, services.env), flags.now);
-      const { observed: document } = await collectGovernance(configured, log, services, flags.nowExplicit ? flags.now : undefined, wireFamily);
+      const { observed: document } = await collectGovernance(configured, log, services, governanceWiring(wireFamily), flags.nowExplicit ? flags.now : undefined);
       process.stdout.write(`${JSON.stringify(document, null, 2)}\n`);
       return document.complete ? EXIT.ok : EXIT.incomplete;
     } catch { process.stderr.write("governance: document unavailable\n"); return EXIT.failed; }
@@ -258,7 +257,7 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
   if (flags.observationsFrom !== null) {
     if (flags.observationsFrom.startsWith("file:")) observationPath = flags.observationsFrom.slice(5);
     else {
-      try { source = parseSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
+      try { source = parseGovernanceSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
       catch { process.stdout.write("governance source: invalid-descriptor\n"); return EXIT.usage; }
     }
   }
@@ -360,13 +359,13 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
       loadItems(flags.items),
       source === null
         ? loadGovernance(observationPath, flags.now).then(observed => ({ observed, completion: flags.now }))
-        : collectGovernance(source, log, services, flags.nowExplicit ? flags.now : undefined).then(
+        : collectGovernance(source, log, services, governanceWiring(), flags.nowExplicit ? flags.now : undefined).then(
           ({ observed, completion }) => ({ observed: { governance: observed, notes: observed.notes, ok: observed.complete }, completion }),
           (error: unknown) => {
             // Only a document the contract refused becomes visible unavailability; anything else is a bug.
             const reason = "governance document unavailable";
             if (!(error instanceof Error) || error.message !== reason) throw error;
-            return { observed: { governance: invalidGovernance(flags.now, [reason]), notes: [reason], ok: false }, completion: flags.now };
+            return { observed: { governance: invalidGovernance(wireProducer(), flags.now, [reason]), notes: [reason], ok: false }, completion: flags.now };
           }),
     ]);
     const { observed } = collected;

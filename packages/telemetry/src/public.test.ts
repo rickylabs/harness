@@ -12,8 +12,9 @@ import { describe, it } from "node:test";
 
 import type { RunRecord, TelemetrySnapshot } from "./model.js";
 import { readGovernanceSnapshot, type GovernanceReadSnapshot } from "@rickylabs/harness-contracts";
-import { unconfiguredGovernance } from "./governance/read.js";
-import { governanceDocument } from "./governance/test-fixture.js";
+import { unconfiguredGovernance } from "@rickylabs/governance";
+import { governanceDocument } from "./governance-test-fixture.js";
+import { wireProducer } from "./producer-names.js";
 import { publicGovernance, publicRun, publicRuns, publicSnapshot, PUBLIC_RUN_KEYS } from "./public.js";
 
 const RUN: RunRecord = {
@@ -82,7 +83,7 @@ describe("the published envelopes", () => {
       ],
       unattributed: [{ run: { ...RUN, id: "ses-c" }, item: null, children: [] }],
       quota: [],
-      governance: unconfiguredGovernance("2026-09-04T22:00:00.000Z"),
+      governance: unconfiguredGovernance(wireProducer(), "2026-09-04T22:00:00.000Z"),
       notes: [],
     };
     const published = publicSnapshot(snapshot, true);

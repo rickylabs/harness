@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { mapUsage } from "./usage.js";
-import type { UsageSource } from "../source.js";
+import { mapUsage } from "../src/domain/usage.js";
+import type { UsageSource } from "../src/domain/source.js";
 const config: UsageSource = { denoBin: "/fixture/deno", probe: "/fixture/probe", checkout: "/fixture/checkout", model: "fixture/model", credentialEnv: "FIXTURE_API_KEY", timeoutMs: 100, maxBytes: 4096,
   windows: { rolling_five_hours: { label: "short", windowMinutes: 1 }, weekly: { label: "week", windowMinutes: 2 }, monthly: { label: "month", windowMinutes: 3 } } };
 const window = { percent: 73, status: "allowed", resetsAt: "2026-09-07T12:30:00Z" };

@@ -4,8 +4,9 @@ import { chmod, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
-import { SourceError } from "../source.js";
-import { mapTransportAvailability, readTransportAvailabilityFile } from "./transport-availability.js";
+import { SourceError } from "../src/domain/source.js";
+import { readTransportAvailabilityFile } from "../src/adapters/transport-availability.js";
+import { mapTransportAvailability } from "../src/application/transport-availability.js";
 
 const row = (transport: string, available: boolean, reason: string | null) => ({ transport, available, reason });
 const snapshot = (over: Record<string, unknown> = {}) => JSON.stringify({ schemaVersion: 1,

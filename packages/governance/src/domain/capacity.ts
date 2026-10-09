@@ -1,5 +1,5 @@
 import type { RegimeStatus } from "@rickylabs/harness-contracts";
-import { expiry, instant, mapped, type CapacitySource, type Leg } from "../source.js";
+import { expiry, instant, mapped, type CapacitySource, type Leg } from "./source.js";
 
 function bytes(value: unknown): number {
   if (typeof value !== "string" || !/^\d+\s*$/.test(value)) throw new Error();

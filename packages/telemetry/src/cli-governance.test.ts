@@ -8,11 +8,15 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { EXIT } from "./cli.js";
 import { parseFlags } from "./cli-flags.js";
-import { collectGovernance, readSourceText, runUsageProbe, usageCommand, type SourceServices } from "./governance/collect.js";
-import { parseSource, SPEND_URL, SourceError } from "./source.js";
+import { collectGovernance as collect, readSourceText, runUsageProbe, SourceError, usageCommand, type AdmissionLog, type GovernanceSource,
+  type SourceServices } from "@rickylabs/governance";
+import { governanceWiring, parseGovernanceSource as parseSource, SPEND_URL } from "./governance-wiring.js";
 import { livePath, resolveObservability } from "./observability.js";
 import { admissionEvent, cliProcess, emptyLog, fakeServices, filesBelow, governanceFixture, home, LIVE_NOW, liveDescriptor,
   PRIVATE_CANARY, run, seedLive, SPEND_CANARY, USAGE_CANARY, usagePayload, useTemporaryHome } from "./cli-test-support.js";
+
+const collectGovernance = (source: GovernanceSource, log: AdmissionLog, services: SourceServices, now?: string) =>
+  collect(source, log, services, governanceWiring(), now);
 
 useTemporaryHome();
 
@@ -136,7 +140,7 @@ describe("live governance CLI and services", () => {
     assert.equal(recorded.code, 0);
     const before = await filesBelow(home);
     const cliUrl = new URL("./cli.js", import.meta.url).href;
-    const collectUrl = new URL("./governance/collect.js", import.meta.url).href;
+    const collectUrl = import.meta.resolve("@rickylabs/governance");
     const program = `import {main} from ${JSON.stringify(cliUrl)}; import {defaultSourceServices} from ${JSON.stringify(collectUrl)};
       const services = {...defaultSourceServices(), env: {USAGE_API_KEY: "${USAGE_CANARY}", SPEND_API_KEY: "${SPEND_CANARY}"},
         clock: () => "${LIVE_NOW}", usage: async () => (${JSON.stringify(usagePayload())}),

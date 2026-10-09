@@ -6,9 +6,9 @@ import { afterEach, beforeEach } from "node:test";
 import { spawn as spawnChild } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { main } from "./cli.js";
-import { defaultSourceServices, type SourceServices } from "./governance/collect.js";
-import { SPEND_URL } from "./source.js";
-import { governanceDocument } from "./governance/test-fixture.js";
+import { defaultSourceServices, type SourceServices } from "@rickylabs/governance";
+import { SPEND_URL } from "./governance-wiring.js";
+import { governanceDocument } from "./governance-test-fixture.js";
 
 export let home: string;
 let heldEnvironment: Record<string, string | undefined>;

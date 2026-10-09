@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { parseSource, SPEND_URL, SourceError, instant } from "./source.js";
+import { parseSource as parse } from "../src/application/parse-source.js";
+import { instant, SourceError } from "../src/domain/source.js";
+import { policy, SPEND_URL } from "./fixture.js";
+
+const parseSource = (value: unknown) => parse(value, policy);
 
 const descriptor = () => ({
   accountLabel: "synthetic", admissions: { fromObservabilityLog: true },
