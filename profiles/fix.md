@@ -69,7 +69,8 @@ rationale, **stop and say so**.
 - Commit subject: `fix(<scope>): <summary>`, written in a file and passed with `-F`.
 - The body states the defect, the root cause with its citation, the regression test and its
   failing-then-passing evidence, and the gate result. Link the issue it fixes.
-- Open it as a draft. Leak-scan every added line before pushing to a public repository.
+- Open it as a draft. Run `pnpm run check:leaks` and fix every finding before pushing; this
+  repository is public.
 
 ---
 
