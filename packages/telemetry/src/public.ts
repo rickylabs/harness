@@ -29,7 +29,7 @@ import type {
   RegimeStatus,
 } from "@rickylabs/harness-contracts";
 
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 import type { LivenessVerdict } from "./liveness.js";
 import type {
   AttributedRun,

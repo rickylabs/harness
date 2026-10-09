@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
-import { readOrchidTeardownObservation } from "./orchid-teardown-observation.js";
+import { readOrchidTeardownObservation } from "../../src/adapters/teardown-observation.js";
 
 const issueId = "fixture-issue", repo = "example/inbox", briefDigest = "a".repeat(64);
 const key = createHash("sha256").update(issueId + "\0" + repo + "\0" + briefDigest).digest("hex");

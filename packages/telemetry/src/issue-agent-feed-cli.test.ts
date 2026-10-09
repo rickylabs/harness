@@ -6,7 +6,7 @@ import { appendFile, mkdir, mkdtemp, open, rm, writeFile } from "node:fs/promise
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { collectIssueAgentTree, issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
-import { ORCHID_DISPATCH_ROOT } from "./orchid-dispatch.js";
+import { OPERATOR_ENV } from "./operator-environment.js";
 import { CLAUDE_CHILD_EVENT_ROOT } from "./claude-child-events.js";
 import { chmod } from "node:fs/promises";
 import type { IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
@@ -232,7 +232,7 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     const older = join(home, ".codex", "sessions", "2025", "01", "01");
     await mkdir(older, { recursive: true });
     await writeFile(join(older, `rollout-2025-01-01T00-00-00-${rootId}.jsonl`), "{malformed\n");
-    const frame = await collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20,
+    const frame = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
       now: "2026-09-27T22:00:00.000Z" });
     assert.equal(frame.complete, false);
     assert.equal(frame.issues.length, 2);
@@ -243,7 +243,7 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     assert.equal(frame.issues[1]?.complete, true);
     assert.equal(frame.issues[1]?.dispatches[0]?.agents.length, 2);
     assert.ok(!JSON.stringify(frame).includes(rootId));
-    const canonical = await collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts,
+    const canonical = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts,
       HARNESS_TELEMETRY_WIRE_FAMILY: "harness" }, limit: 20, now: "2026-09-27T22:00:00.000Z" });
     assert.equal(canonical.issues[1]?.complete, true);
     const names = { subscriptionHeadroom: "governance.usage", meteredSpend: "runs", runTokens: "runs", localCapacity: "host-capacity" };
@@ -257,18 +257,18 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     const scoped = new Capture();
     const command = ["--json", "--issue", "example/project#387", "--home", home, "--limit", "20"];
     assert.equal(await issueAgentFeedCommand(command, { output: scoped, now: () => "2026-09-27T22:00:00.000Z",
-      env: { [ORCHID_DISPATCH_ROOT]: receipts } }), 0);
+      env: { [OPERATOR_ENV.dispatchRoot]: receipts } }), 0);
     const scopedFrame = JSON.parse(scoped.lines[0]!);
     assert.equal(scopedFrame.complete, true);
     assert.deepEqual(scopedFrame.issues.map((row: { issueNumber: number }) => row.issueNumber), [387]);
     const canonicalCLI = new Capture();
     assert.equal(await issueAgentFeedCommand(command, { output: canonicalCLI, now: () => "2026-09-27T22:00:00.000Z",
-      env: { [ORCHID_DISPATCH_ROOT]: receipts, HARNESS_TELEMETRY_WIRE_FAMILY: "harness" } }), 0);
+      env: { [OPERATOR_ENV.dispatchRoot]: receipts, HARNESS_TELEMETRY_WIRE_FAMILY: "harness" } }), 0);
     const canonicalFrame = JSON.parse(canonicalCLI.lines[0]!);
     assert.equal(canonicalFrame.issues[0].dispatches[0].agents[0].observation.cost.runTokens.source, "harness-telemetry.runs");
     const missing = new Capture();
     assert.equal(await issueAgentFeedCommand(["--json", "--issue", "example/project#999", "--home", home],
-      { output: missing, now: () => "2026-09-27T22:00:00.000Z", env: { [ORCHID_DISPATCH_ROOT]: receipts } }), 3);
+      { output: missing, now: () => "2026-09-27T22:00:00.000Z", env: { [OPERATOR_ENV.dispatchRoot]: receipts } }), 3);
     assert.equal(JSON.parse(missing.lines[0]!).reason, "source_not_bound");
   } finally {
     await rm(home, { recursive: true, force: true });
@@ -307,7 +307,7 @@ it("binds one Claude root and native child into live steps, tokens and separate 
       NativeSessionID: sessionId }), { mode: 0o600 });
     await writeFile(join(project, sessionId + ".jsonl"), transcript(false, 5, 2));
     await writeFile(childFile, transcript(true, 3, 1));
-    const frame = await collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20,
+    const frame = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
       now: "2026-09-29T00:00:10.000Z", issueKey: "example/project#451" });
     assert.equal(frame.complete, true);
     const agents = frame.issues[0]?.dispatches[0]?.agents ?? [];
@@ -368,7 +368,7 @@ it("RUN-6: records appended after the capture stay out of the frame instead of f
     const eventFile = join(events, `${createHash("sha256").update(sessionId).digest("hex")}.jsonl`);
     await writeFile(eventFile, hook("SubagentStart", "2026-09-30T11:21:00.681Z") + hook("SubagentStop", "2026-09-30T11:21:11.700Z"), { mode: 0o600 });
     await chmod(eventFile, 0o600);
-    const frame = await collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts, [CLAUDE_CHILD_EVENT_ROOT]: events },
+    const frame = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts, [CLAUDE_CHILD_EVENT_ROOT]: events },
       limit: 20, now, issueKey: "example/project#516" });
     assert.equal(frame.complete, true, String(frame.reason));
     const agents = frame.issues[0]?.dispatches[0]?.agents ?? [];
@@ -398,7 +398,7 @@ it("keeps an issue-scoped Orchid refusal when no agent ever launched", async () 
   try {
     await writeFile(path, JSON.stringify(refusal), { mode: 0o600 });
     const now = "2026-01-01T00:00:01.000Z";
-    const options = { home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20, now,
+    const options = { home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now,
       issueKey: "example/inbox#42" };
     const frame = await collectIssueAgentTree(options);
     assert.equal(frame.issues.length, 1);
@@ -427,7 +427,7 @@ it("keeps a scoped post-launch block before any native thread and clears only on
   const block = { schemaVersion: 2, issue: { repo: "example/inbox", number: 42 },
     dispatchId: "assignment_" + "e".repeat(64), state: "blocked", reasonCode: "goal-prompt-unconfirmed", observedAt: at };
   const now = "2026-01-01T00:00:01.000Z";
-  const options = { home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20, now, issueKey: "example/inbox#42" };
+  const options = { home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now, issueKey: "example/inbox#42" };
   const expected = { state: "blocked", reason: "goal-prompt-unconfirmed", at,
     dispatchId: block.dispatchId, source: "orchid" };
   try {
@@ -470,7 +470,7 @@ it("keeps a block through missing native identity, verified root activity, scan 
   const dispatchedAt = "2026-09-27T21:24:00.000Z", blockedAt = "2026-09-27T21:25:00.000Z";
   const now = "2026-09-27T22:00:00.000Z";
   const rootId = "01997e0c-2f4a-7c31-9d61-6b0a1f2b3c4d";
-  const options = { home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20, now, issueKey: "example/project#42" };
+  const options = { home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now, issueKey: "example/project#42" };
   const block = { schemaVersion: 2, issue: { repo, number: 42 }, dispatchId: "assignment_" + key,
     state: "blocked", reasonCode: "goal-prompt-unconfirmed", observedAt: blockedAt };
   const expected = { state: "blocked", reason: "goal-prompt-unconfirmed", at: blockedAt,
@@ -579,7 +579,7 @@ it("keeps a dispatched Codex root and its child whose rollouts outgrew the trans
       assert.ok(Buffer.byteLength(text) > 9 * 1_048_576);
       await writeFile(join(sessions, `rollout-2026-09-27T23-${minute}-00-${id}.jsonl`), text);
     }
-    const frame = await collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20,
+    const frame = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
       now: "2026-09-27T22:00:00.000Z" });
     const issue = frame.issues.find(row => row.issueNumber === 601)!;
     assert.deepEqual([issue.complete, issue.reason], [true, null]);

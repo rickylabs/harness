@@ -6,6 +6,7 @@
     { "path": "packages/coordinator" },
     { "path": "packages/forge" },
     { "path": "packages/governance" },
+    { "path": "packages/hosts/orchid" },
     { "path": "packages/llm-local" },
     { "path": "packages/netscript-bridge" },
     { "path": "packages/provider-acp" },

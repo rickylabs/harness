@@ -5,7 +5,7 @@ import { buildAgentObservations } from "./agent-observations.js";
 import { parseCodexRollout } from "./backfill/codex.js";
 import { childEventKey } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { ClaudeChildCompletion, RunRecord } from "./model.js";
 import type { PublicActionReceipt } from "./action-receipt-cli.js";

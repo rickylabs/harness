@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm, chmod, symlink } from "node:fs/promises"
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
-import { readOrchidStopObservation } from "./orchid-stop-observation.js";
+import { readOrchidStopObservation } from "../../src/adapters/stop-observation.js";
 
 const key = "a".repeat(64), runId = "orchid-" + key;
 const operationId = "123e4567-e89b-42d3-a456-426614174000", requestDigest = "b".repeat(64);

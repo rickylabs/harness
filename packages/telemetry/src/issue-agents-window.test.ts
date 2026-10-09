@@ -12,8 +12,8 @@ import { it } from "node:test";
 
 import { collectIssueAgentTree, dispatchEndMs, dispatchReadWindow, ENDED_RUN_WINDOW_MS,
   RUNNING_DISPATCH_CAP_MS } from "./issue-agent-feed-cli.js";
-import { ORCHID_DISPATCH_ROOT } from "./orchid-dispatch.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import { OPERATOR_ENV } from "./operator-environment.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 
 const HOUR = 3_600_000;
 // Fixture clocks sit in the past: Orchid observations stamped after the real clock are refused.
@@ -94,7 +94,7 @@ async function feedAt(nowMs: number, options: { teardownAt?: number; withRollout
         line(DISPATCHED + 60_000, "session_meta", { id: ROOT, cwd: "/fixture", model_provider: "fixture" }) +
         line(DISPATCHED + 61_000, "event_msg", { type: "task_started" }));
     }
-    return await collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20, now: iso(nowMs) });
+    return await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now: iso(nowMs) });
   } finally {
     await rm(home, { recursive: true, force: true });
   }

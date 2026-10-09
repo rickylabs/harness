@@ -24,6 +24,7 @@ import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { corePackages } from "./core-packages.mjs";
+import { manifestProblems } from "./package-boundary.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -94,6 +95,8 @@ const main = () => {
       continue;
     }
 
+    // A host adapter depends on contracts only, even when a forbidden edge has a matching reference.
+    if (rel.startsWith("packages/hosts/")) problems.push(...manifestProblems(manifest).map((problem) => `${rel}: ${problem}`));
     const declared = { ...manifest.dependencies, ...manifest.devDependencies };
     const expected = new Set();
     for (const [name, range] of Object.entries(declared)) {

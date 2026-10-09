@@ -11,7 +11,7 @@ import { it } from "node:test";
 import { readAgentObservations, readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { buildAgentObservations } from "./agent-observations.js";
 import { collectIssueAgentTree } from "./issue-agent-feed-cli.js";
-import { readOrchidDispatches } from "./orchid-dispatch.js";
+import { readOrchidDispatches, orchidHost } from "@rickylabs/host-orchid";
 
 // All 17 header fields match the measured receipt-isolation field inventory.
 const shapes = [
@@ -59,7 +59,7 @@ it("P0 sanitized #552/#559/#561 receipts remain readable, honest and strictly de
       assert.ok(d); assert.equal(d.source, shape.source); assert.equal(d.dispatchState, shape.state);
       assert.deepEqual(d.location, shape.location); assert.equal(d.external, null);
       const observations = buildAgentObservations({ dispatches: [d], runs: [], observedAt: f.now,
-        sourceBound: true, dispatchComplete: true, nativeComplete: true });
+        sourceBound: true, dispatchComplete: true, nativeComplete: true, host: orchidHost });
       assert.equal(readAgentObservations(observations).ok, true);
       assert.equal(observations.agents[0]?.running.value, null);
       assert.equal(observations.agents[0]?.parentAgentId.state, "unavailable");
