@@ -50,7 +50,7 @@ test("cockpit: @rickylabs/harness-contracts entry points, manifest and runtime v
     ...kinds("number", "MAX_ISSUE_AGENT_TREE_BYTES PROTOCOL_VERSION"),
     ...kinds("function", `compareRouteIdentity emptyFold foldValue snapshotOf publicActivityTarget
       publicActivityText publicOpenCodeModel readAccountUsageDocument readAccountUsageEnvelope
-      readGovernanceSnapshot readIssueAgentTreeSnapshot readProviderBudgetDecisions readProviderLimitSnapshot readProviderUsageSnapshot
+      readAgentActivity readGovernanceSnapshot readIssueAgentTreeSnapshot readProviderBudgetDecisions readProviderLimitSnapshot readProviderUsageSnapshot
       readRepositoryRunObservation encodeWorkflowRevisionBundle readAgentObservations readRoutineRevision
       readRoutineWake readWorkflowRevision readWorkflowRevisionBundle unavailableAgentCost`),
   });

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { AGENT_ACTIVITY_GAPS, readAgentActivity, type AgentActivity } from "./agent-activity.js";
+import { AGENT_ACTIVITY_GAPS, type AgentActivity } from "./agent-activity.js";
+import { readAgentActivity } from "./issue-agent-tree.js";
 
 const at = "2026-10-09T10:00:00.000Z";
 const step = (n: number, over: Record<string, unknown> = {}) => ({ id: `step_${String(n).repeat(64).slice(0, 64)}`, at,

@@ -111,6 +111,8 @@ The epic 701 coordinator assigns the version at merge. Three optional, additive 
   - call lifecycle that cannot be correlated to its result (`call-lifecycle-unproven`);
   - results whose in-progress status is not attributed to current execution
     (`in-progress-unattributed`).
+- `readAgentActivity(value, capturedAt)` is the strict decoder the snapshot reader applies to each
+  agent's activity. It is exported so a consumer can decode one activity on its own.
 - `NativeToolCallDescriptor` and `NativeToolCallRead` are type-only. They form the read seam between a
   provider adapter and the telemetry producer, and are never published in a frame.
 

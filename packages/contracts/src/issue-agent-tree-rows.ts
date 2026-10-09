@@ -1,6 +1,6 @@
 /** Row decoders for one issue-agent tree agent; internal to the snapshot reader. */
 import { publicOpenCodeModel } from "./opencode-identity.js";
-import { readAgentActivity } from "./agent-activity.js";
+import type { AgentActivity } from "./agent-activity.js";
 import { AGENT_ACTION_ACCEPTED_REASONS, AGENT_ACTION_REJECTED_REASONS, AGENT_EFFORTS, AGENT_HISTORY_KINDS,
   MAX_AGENT_HISTORY, MAX_AGENT_RESOURCE_POINTS, MAX_AGENT_TIMELINE_EVENTS } from "./issue-agent-tree-constants.js";
 import { array, bad, label, reason, record, stamp } from "./issue-agent-tree-decode.js";
@@ -148,7 +148,8 @@ function timelineRow(value: unknown, capturedAt: string): AgentTimeline {
   for (let i = 1; i < events.length; i++) if (events[i - 1]!.at > events[i]!.at) return bad();
   return { events, truncated: row.truncated };
 }
-export function agent(value: unknown, capturedAt: string, dispatchId: string): Omit<IssueAgentTreeAgent, "observation"> & { readonly observation: unknown } {
+export function agent(value: unknown, capturedAt: string, dispatchId: string,
+  readAgentActivity: (value: unknown, capturedAt: string) => AgentActivity): Omit<IssueAgentTreeAgent, "observation"> & { readonly observation: unknown } {
   const keys = ["dispatchId", "observation", "harness", "provider", "router", "model", "location", "budget", "quotaRegime", "liveness", "terminalOutcome", "startedAt", "startedAtReason", "endedAt", "endedAtReason", "transcript", "history", "historyTruncated"];
   const row = record(value, [...keys,
     ...(Object.hasOwn(value as object, "routePolicy") ? ["routePolicy"] : []),

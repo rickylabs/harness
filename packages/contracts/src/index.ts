@@ -279,10 +279,7 @@ export * from "./route.js";
 export * from "./agent-observations.js";
 export * from "./issue-agent-tree.js";
 export * from "./issue-agent-tree-constants.js";
-export { AGENT_ACTIVITY_GAPS, AGENT_ACTIVITY_STATES, MAX_AGENT_ACTIVITY_STEPS, publicActivityText,
-  publicActivityTarget } from "./agent-activity.js";
-export type { AgentActivity, AgentActivityCoverage, AgentActivityGap, AgentActivityState, AgentActivityStep,
-  AgentActivityTargetKind } from "./agent-activity.js";
+export * from "./agent-activity.js";
 export type { NativeToolCallDescriptor, NativeToolCallRead } from "./native-tool-calls.js";
 export type { DispatchEvidence, OrchidDispatchRead, OrchidDispatchUnavailableReason, OrchidLaunchState } from "./dispatch-evidence.js";
 export * from "./profiles-workflows.js";

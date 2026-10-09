@@ -2,9 +2,10 @@
 import { readAgentObservations, MAX_AGENT_OBSERVATIONS, type AgentObservation,
   type AgentObservations, type AgentUnavailableReason } from "./agent-observations.js";
 import type { RepoRef } from "./snapshot.js";
-import type { AgentActivity } from "./agent-activity.js";
+import { AGENT_ACTIVITY_GAPS, AGENT_ACTIVITY_STATES, type AgentActivity, type AgentActivityGap, type AgentActivityState,
+  type AgentActivityStep } from "./agent-activity.js";
 import { AGENT_ACTION_ACCEPTED_REASONS, AGENT_ACTION_REJECTED_REASONS, AGENT_EFFORTS, AGENT_HISTORY_KINDS } from "./issue-agent-tree-constants.js";
-import { Invalid, array, bad, record, stamp } from "./issue-agent-tree-decode.js";
+import { Invalid, array, bad, reason, record, stamp } from "./issue-agent-tree-decode.js";
 import { agent } from "./issue-agent-tree-rows.js";
 
 export const ISSUE_AGENT_TREE_SCHEMA = 1 as const;
@@ -20,6 +21,34 @@ export const ISSUE_AGENT_TREE_FRESH_MS = 30_000;
  */
 export const ISSUE_AGENT_TREE_ACCEPTED_FRESH_MS: readonly number[] = [15_000, ISSUE_AGENT_TREE_FRESH_MS];
 export const MAX_ISSUE_AGENT_TREE_BYTES = 2_097_152;
+export const MAX_AGENT_ACTIVITY_STEPS = 20;
+/** One canonical screen for producer prose and its public snapshot decoder. */
+export function publicActivityText(value: unknown): string | null {
+  if (typeof value !== "string" || /[\x00-\x1f\x7f]/.test(value)) return null;
+  const candidate = value.trim();
+  const fixedDottedTool = candidate === "Used functions.exec" || candidate === "Used functions.update_plan";
+  if (candidate.length < 3 || candidate.length > 120 ||
+      !/^[A-Za-z0-9][A-Za-z0-9 .,;:!?()'_-]*$/.test(candidate) ||
+      /(?:secret|password|credential|private|bearer|token|api.?key|github_pat_|gh[pousr]_|\bsk-[A-Za-z0-9]{12,})/i.test(candidate) ||
+      /(?:\b\d{1,3}(?:\.\d{1,3}){3}\b|\b[a-f0-9]{24,}\b|[A-Za-z0-9_-]{32,})/i.test(candidate) ||
+      (!fixedDottedTool && /\b[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+\b/i.test(candidate)) ||
+      /\b(?:recovery|backup|verification|one[- ]time|otp|mfa|2fa|passcode|pin)\b/i.test(candidate) ||
+      /\b(?:code|key)\s+[A-Za-z0-9-]*\d[A-Za-z0-9-]*\b/i.test(candidate) ||
+      /\b\d{6,8}\b|\b\d{3}(?:[ -]\d{3})+\b|\b[A-Z0-9]{4}(?:-[A-Z0-9]{4})+\b/.test(candidate)) return null;
+  return candidate;
+}
+export type AgentActivityTargetKind = "command" | "file" | "search";
+/** Reject the whole target when it does not pass the same public prose screen. */
+export function publicActivityTarget(kind: AgentActivityTargetKind, value: unknown): string | null {
+  if (typeof value !== "string" || value.length > 120 || value !== value.trim()) return null;
+  if (kind === "file") {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{2,63}$/.test(value) || value.includes("..")) return null;
+    return publicActivityText(value.replace(/[._-]+/g, " ")) === null ? null : value;
+  }
+  if (kind === "command" && !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}(?: [A-Za-z0-9][A-Za-z0-9_.-]{0,31})?$/.test(value)) return null;
+  return publicActivityText(value) === value ? value : null;
+}
+
 export type AgentHistoryKind = typeof AGENT_HISTORY_KINDS[number];
 export interface AgentHistoryEvent { readonly dispatchId: string; readonly kind: AgentHistoryKind; readonly at: string }
 export type AgentTreeValueSource = "dispatch" | "native" | "unavailable";
@@ -226,6 +255,70 @@ export type IssueAgentTreeReading =
   | { readonly ok: false; readonly reason: "invalid" | "oversized" | "ambiguous-ancestry" | "unsupported-schema" };
 
 
+/** Strictly decode one agent's activity, as the snapshot reader does for every agent. */
+export function readAgentActivity(value: unknown, capturedAt: string): AgentActivity {
+  const hasCoverage = Object.hasOwn(value as object, "coverage");
+  const row = record(value, ["availability", "reason", "observedAt", "steps", ...(hasCoverage ? ["coverage"] : [])]);
+  const steps = array(row.steps, MAX_AGENT_ACTIVITY_STEPS);
+  if (row.availability === "unavailable" && row.observedAt === null && steps.length === 0 && !hasCoverage) {
+    return { availability: "unavailable", reason: reason(row.reason), observedAt: null, steps: [] };
+  }
+  if (row.availability !== "available" || row.reason !== null) return bad();
+  const observedAt = stamp(row.observedAt);
+  if (observedAt > capturedAt) return bad();
+  const ids = new Set<string>();
+  const decoded = steps.map(value => {
+    const s = record(value, ["id", "at", "kind", "toolName", "commandHead", "filePath", "summary", "source",
+      ...(Object.hasOwn(value as object, "target") ? ["target"] : []),
+      ...(Object.hasOwn(value as object, "state") ? ["state"] : [])]);
+    if (typeof s.id !== "string" || !/^step_[a-f0-9]{64}$/.test(s.id) || ids.has(s.id)) return bad();
+    ids.add(s.id);
+    const at = stamp(s.at);
+    if (at > observedAt || !["tool", "command", "file", "message"].includes(s.kind as string) ||
+        (s.source !== "codex-rollout" && s.source !== "claude-transcript" && s.source !== "agy-transcript" && s.source !== "opencode-transcript")) return bad();
+    if (s.toolName !== null && (typeof s.toolName !== "string" || !/^[A-Za-z][A-Za-z0-9_.-]{0,63}$/.test(s.toolName))) return bad();
+    if (s.commandHead !== null && (typeof s.commandHead !== "string" ||
+        !/^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}(?: [A-Za-z0-9][A-Za-z0-9_.-]{0,31})?$/.test(s.commandHead))) return bad();
+    if (s.filePath !== null && (typeof s.filePath !== "string" || s.filePath.length > 256 ||
+        !/^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/.test(s.filePath) ||
+        s.filePath.split("/").some(part => part === "." || part === ".." ||
+          publicActivityTarget("file", part) === null))) return bad();
+    if (s.summary !== null && publicActivityText(s.summary) !== s.summary) return bad();
+    if (Object.hasOwn(s, "state") && (s.kind === "message" ||
+        !AGENT_ACTIVITY_STATES.includes(s.state as AgentActivityState))) return bad();
+    let target: AgentActivityStep["target"];
+    if (Object.hasOwn(s, "target")) {
+      if (s.target === null) target = null;
+      else {
+        const t = record(s.target, ["kind", "value"]);
+        if (t.kind !== "command" && t.kind !== "file" && t.kind !== "search") return bad();
+        if (publicActivityTarget(t.kind, t.value) !== t.value) return bad();
+        if (t.kind === "command" && (s.kind !== "command" || s.commandHead !== t.value)) return bad();
+        if (t.kind === "file" && (s.kind !== "file" || typeof s.filePath !== "string" ||
+          !["read_file", "write_file", "Read", "Edit", "Write", "NotebookEdit"].includes(s.toolName as string) ||
+          s.filePath.split("/").at(-1) !== t.value)) return bad();
+        if (t.kind === "search" && (s.toolName !== "Grep" && s.toolName !== "Glob")) return bad();
+        target = { kind: t.kind, value: t.value as string };
+      }
+    }
+    return { id: s.id, at, kind: s.kind as AgentActivityStep["kind"], toolName: s.toolName as string | null,
+      commandHead: s.commandHead as string | null, filePath: s.filePath as string | null,
+      summary: s.summary as string | null, source: s.source as AgentActivityStep["source"],
+      ...(Object.hasOwn(s, "target") ? { target: target ?? null } : {}),
+      ...(Object.hasOwn(s, "state") ? { state: s.state as AgentActivityState } : {}) };
+  });
+  for (let i = 1; i < decoded.length; i++) if (decoded[i - 1]!.at < decoded[i]!.at) return bad();
+  if (!hasCoverage) return { availability: "available", reason: null, observedAt, steps: decoded };
+  const coverage = record(row.coverage, ["gaps"]);
+  const gaps = array(coverage.gaps, AGENT_ACTIVITY_GAPS.length).map(gap =>
+    AGENT_ACTIVITY_GAPS.includes(gap as AgentActivityGap) ? gap as AgentActivityGap : bad());
+  // Unique and canonical, so equal coverage always serializes (and revisions) identically.
+  for (let i = 1; i < gaps.length; i++) {
+    if (AGENT_ACTIVITY_GAPS.indexOf(gaps[i - 1]!) >= AGENT_ACTIVITY_GAPS.indexOf(gaps[i]!)) return bad();
+  }
+  return { availability: "available", reason: null, observedAt, steps: decoded, coverage: { gaps } };
+}
+
 /** Strictly decode grouped ancestry before a cockpit stores or renders it. */
 export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReading {
   try {
@@ -290,7 +383,7 @@ export function readIssueAgentTreeSnapshot(input: unknown): IssueAgentTreeReadin
         const dispatch = record(rawDispatch, ["dispatchId", "agents"]);
         if (typeof dispatch.dispatchId !== "string" || !/^assignment_[a-f0-9]{64}$/.test(dispatch.dispatchId) || dispatchIds.has(dispatch.dispatchId)) return bad("ambiguous-ancestry");
         dispatchIds.add(dispatch.dispatchId);
-        const agents = array(dispatch.agents, MAX_AGENT_OBSERVATIONS).map(a => agent(a, observedAt, dispatch.dispatchId as string)) as IssueAgentTreeAgent[];
+        const agents = array(dispatch.agents, MAX_AGENT_OBSERVATIONS).map(a => agent(a, observedAt, dispatch.dispatchId as string, readAgentActivity)) as IssueAgentTreeAgent[];
         if (agents.length === 0) return bad();
         for (const a of agents) {
           const observed = record(a.observation, ["agentId", "repo", "issueNumber", "assignment", "parentAgentId", "workspace", "tab", "pane", "terminal", "running", "route", "cost", "observedAt", "revision"].concat(
