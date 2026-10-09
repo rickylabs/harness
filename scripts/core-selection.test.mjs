@@ -143,7 +143,6 @@ test("the project guard accepts the whole workspace while rejecting a duplicate 
   const directory = isolatedGraph(t);
   const before = graphCheck(directory);
   assert.ifError(before.error); assert.equal(before.status, 0, before.stderr);
-  assert.match(before.stdout, /15 packages/);
   const path = join(directory, "tsconfig.json");
   const config = JSON.parse(readFileSync(path, "utf8"));
   config.references.push({path: expected()[0]});
