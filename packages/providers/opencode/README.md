@@ -136,6 +136,12 @@ start is a cost; starting something nobody can see is the failure. Concurrent di
 in-flight connection attempt — two server-wide streams would fold every event into the same records
 twice.
 
+Opening is bounded and cancellable. The stream counts as open once the server greets the
+subscription, and the wait for that greeting is capped by `readyTimeoutMs` (default
+`DEFAULT_READY_MS`); a dispatch that hits the cap is refused with nothing sent. `shutdown()` aborts
+an open still in flight, so a dispatch waiting on it settles as refused, and a greeting that arrives
+afterwards launches nothing.
+
 The mirror image is `observe`. While the stream is down a record is a photograph: it was true, and
 nothing says it still is. So `observe` reconnects on demand and, if it still cannot, downgrades a
 *live* run to `unknown` with the time the photograph was taken. Terminal states are exempt, and that
