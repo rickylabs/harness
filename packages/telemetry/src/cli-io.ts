@@ -8,7 +8,8 @@ import type { OperatorEnvironment } from "./operator-environment.js";
 import type { TelemetryEvent } from "./sink.js";
 import type { GovernanceReadSnapshot } from "@rickylabs/harness-contracts";
 import type { Flags } from "./cli-flags.js";
-import { governanceAt, invalidGovernance, unconfiguredGovernance } from "./governance/read.js";
+import { governanceAt, invalidGovernance, unconfiguredGovernance } from "@rickylabs/governance";
+import { wireProducer } from "./producer-names.js";
 
 /** The `EXIT` name a command resolved to; `cli.ts` owns the numbers. */
 export type CliExit = "ok" | "usage" | "incomplete";
@@ -51,8 +52,8 @@ export interface LoadedGovernance {
  * allowing its local path or bytes into public notes. No file is the explicit unknown, not a failure.
  */
 export async function loadGovernance(path: string | null, now: string): Promise<LoadedGovernance> {
-  if (path === null) return { governance: unconfiguredGovernance(now), notes: [], ok: true };
-  const refuse = (reason: string): LoadedGovernance => ({ governance: invalidGovernance(now, [reason]), notes: [reason], ok: false });
+  if (path === null) return { governance: unconfiguredGovernance(wireProducer(), now), notes: [], ok: true };
+  const refuse = (reason: string): LoadedGovernance => ({ governance: invalidGovernance(wireProducer(), now, [reason]), notes: [reason], ok: false });
   let text: string;
   try { text = await readFile(path, "utf8"); } catch { return refuse("governance observations could not be read"); }
   let decoded: unknown;

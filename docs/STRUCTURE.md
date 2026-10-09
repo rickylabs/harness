@@ -14,7 +14,7 @@ packages/
   routing/              matrix + model catalog (config + discovery); matrix/ is read by orchid
   subagents/            dispatch + route grammar (src/route.ts, src/dispatch.ts read by atelier-cockpit)
   coordinator/          run lifecycle
-  governance/           admissions, capacity, spend (moved out of telemetry by rearch(7) #655)
+  governance/           admissions, capacity, spend (done, rearch(7) #655)
   telemetry/            observation model, sinks, read models (renamed telemetry-core next night)
   providers/claude|codex|opencode/   vendor adapters (done, rearch(8) #659)
   hosts/orchid/         orchid dispatch + evidence adapter (rearch(9) #660)
@@ -35,7 +35,7 @@ location stays authoritative and the owning issue moves it:
 
 | Today | Target | Moved by |
 | --- | --- | --- |
-| governance code inside `packages/telemetry`, stub `packages/governance` | `packages/governance` | #655 |
+| governance code inside `packages/telemetry`, stub `packages/governance` | `packages/governance` (done) | #655 |
 | flat `src/` in each package | `mod.ts` + `src/{domain,application,ports,adapters}` | each package's issue |
 
 ## Consumer surfaces

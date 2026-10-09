@@ -22,7 +22,8 @@ import {
 } from "./model.js";
 import { compareStrings } from "./order.js";
 import type { GovernanceReadSnapshot } from "@rickylabs/harness-contracts";
-import { unconfiguredGovernance } from "./governance/read.js";
+import { unconfiguredGovernance } from "@rickylabs/governance";
+import { wireProducer } from "./producer-names.js";
 
 /** Runs keyed by parent, so a tree can be built in one pass rather than by repeated scanning. */
 function childrenByParent(runs: readonly RunRecord[]): Map<string, RunRecord[]> {
@@ -236,7 +237,7 @@ export function buildSnapshot(input: SnapshotInput): TelemetrySnapshot {
     epics,
     unattributed,
     quota: latestQuota(input.runs),
-    governance: input.governance ?? unconfiguredGovernance(input.generatedAt),
+    governance: input.governance ?? unconfiguredGovernance(wireProducer(), input.generatedAt),
     notes: notes.sort(compareStrings),
   };
 }

@@ -14,9 +14,7 @@ import { INCONCLUSIVE_EXIT, Inconclusive, inconclusiveRecord } from "./inconclus
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** Packages declared as carrying no tests, each with the condition that removes the entry. */
-export const DECLARED_UNCOVERED = [
-  { name: "governance", reason: "Single source file, no behaviour to cover. docs/STRUCTURE.md assigns this package to its owning rearch issue. Remove this entry when the package gains behaviour." },
-];
+export const DECLARED_UNCOVERED = [];
 
 /** Pure so the test can drive it without a filesystem. */
 export function auditTestScripts(packages, declared) {

@@ -1,5 +1,5 @@
 import type { RegimeStatus } from "@rickylabs/harness-contracts";
-import { expiry, instant, mapped, object, SPEND_WINDOWS, type Leg, type SpendSource } from "../source.js";
+import { expiry, instant, mapped, object, SPEND_WINDOWS, type Leg, type SpendSource } from "./source.js";
 
 export function mapSpend(value: unknown, config: SpendSource, capturedAt: string): Leg<RegimeStatus> {
   return mapped(() => {

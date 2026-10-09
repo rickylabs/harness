@@ -48,9 +48,9 @@ explicit document; missing configuration was a refusal. Its subagent plugin deli
 an empty instrumented registry. An implemented provider is not a composed provider. Issue #653
 deleted that router experiment.
 
-**CURRENT.** The [governance admission package](../../packages/governance/README.md) remains a stub;
-the empty NetScript bridge stub was deleted by #653. Their owning
-epics must establish their contracts before behavior is added. Telemetry governance reads do
+**CURRENT.** The [governance package](../../packages/governance/README.md) holds the governance read
+(#655), not an admission verdict; the empty NetScript bridge stub was deleted by #653. Its owning
+epic must establish the admission contract before that behavior is added. Governance reads do
 not imply that spend admission is wired.
 
 **CURRENT.** The [leaf profile](../../profiles/leaf.md) already specifies the seven-item design

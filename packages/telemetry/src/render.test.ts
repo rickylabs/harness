@@ -16,7 +16,8 @@ import {
 } from "./render.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
-import { unconfiguredGovernance } from "./governance/read.js";
+import { unconfiguredGovernance } from "@rickylabs/governance";
+import { wireProducer } from "./producer-names.js";
 
 const NOW = "2026-09-04T22:00:00.000Z";
 
@@ -40,7 +41,7 @@ const empty: TelemetrySnapshot = {
   epics: [],
   unattributed: [],
   quota: [],
-  governance: unconfiguredGovernance(NOW),
+  governance: unconfiguredGovernance(wireProducer(), NOW),
   notes: [],
 };
 

@@ -1,10 +1,15 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist"
   },
   "include": [
-    "src"
+    "mod.ts",
+    "src",
+    "tests"
+  ],
+  "references": [
+    { "path": "../contracts" }
   ]
 }

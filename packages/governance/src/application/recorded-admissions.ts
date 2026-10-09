@@ -1,30 +1,11 @@
-import { readDispatchRefusal, readRecordedAdmission, type AdmissionDropReason, type RecordedAdmission,
-  type RegimeStatus } from "@rickylabs/harness-contracts";
-import { instant, object, positive } from "../source.js";
-import { compareStrings } from "../order.js";
-
-/** Freshness of one validity interval at an evaluation instant; the contract checks it on decode. */
-export const freshnessAt = (validUntil: string, at: string): RecordedAdmission["freshness"] =>
-  Date.parse(at) > Date.parse(validUntil) ? "stale" : "fresh";
-
-/** Recorded admissions, each decoded by the published contract at collection completion.
- * The contract owns reason semantics: a public-safe code identifier, never prose or a path. */
-export interface RecordedAdmissions {
-  readonly admissions: readonly RecordedAdmission[];
-  readonly ok: boolean;
-  readonly notes: readonly string[];
-  readonly codes: readonly AdmissionDropReason[];
-}
-export function unreadRegimes(note: string): RegimeStatus[] {
-  return [
-    { regime: "subscription", state: "allow", accounts: [], note },
-    { regime: "metered", state: "allow", providers: [], note },
-    { regime: "capacity", state: "allow", hosts: [], note },
-  ];
-}
+/** Recorded admissions from the observability log, each decoded by the published contract at collection completion. */
+import { readDispatchRefusal, readRecordedAdmission, type AdmissionDropReason, type RecordedAdmission } from "@rickylabs/harness-contracts";
+import { freshnessAt, type RecordedAdmissions } from "../domain/admissions.js";
+import { instant, object, positive } from "../domain/source.js";
+import type { StringOrder } from "../ports/source.js";
 
 /** Never derives an item or decision timestamp from the log identity or transport timestamp. */
-export function mapAdmissions(events: readonly unknown[], completion: string, degraded = false): RecordedAdmissions {
+export function mapAdmissions(events: readonly unknown[], completion: string, order: StringOrder, degraded = false): RecordedAdmissions {
   if (degraded) return { admissions: [], ok: false, notes: ["admissions: log-unreadable"], codes: [] };
   type Candidate = { at: number | null; observation: RecordedAdmission | null; identity: string | null };
   const groups = new Map<string, Candidate[]>();
@@ -87,7 +68,7 @@ export function mapAdmissions(events: readonly unknown[], completion: string, de
     }
     admissions.push(observation);
   }
-  admissions.sort((a, b) => a.item - b.item || compareStrings(a.regime, b.regime));
+  admissions.sort((a, b) => a.item - b.item || order(a.regime, b.regime));
   if (admissions.length === 0) notes.push("admissions: no-admissions; no current admission decision recorded");
   return { admissions, ok: notes.length === 0, notes: [...new Set(notes)], codes: [...new Set(codes)] };
 }
