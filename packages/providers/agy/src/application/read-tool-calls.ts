@@ -1,0 +1,56 @@
+/**
+ * One verified conversation's tool-call descriptors and the receipt coverage is computed from. The log
+ * names calls; it never decides their lifecycle, and its status and time fields are not read.
+ */
+import { join } from "node:path";
+import type { NativeToolCallDescriptor, NativeToolCallRead } from "@rickylabs/harness-contracts";
+import { describeCall } from "../domain/tool-vocabulary.js";
+import { decodeTranscriptLine, MAX_LINE_BYTES, type TranscriptLine } from "../domain/transcript-line.js";
+import type { TranscriptTail } from "../ports/transcript-tail.js";
+
+export const MAX_TRANSCRIPT_TAIL_BYTES = 1_048_576;
+const CONVERSATION = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
+const unread = (gap: Exclude<NativeToolCallRead["gap"], null | "tool-names-truncated">, bytesRead = 0): NativeToolCallRead =>
+  ({ calls: [], decodedPlannerSteps: [], vendorTruncatedSteps: [], fromStart: false, fromStepIndex: null, bytesRead, gap });
+
+/** The log path, derived only from a conversation id the caller has verified; null for any other id. */
+export function agyTranscriptPath(storeRoot: string, conversationId: string): string | null {
+  return CONVERSATION.test(conversationId)
+    ? join(storeRoot, "brain", conversationId, ".system_generated", "logs", "transcript.jsonl") : null;
+}
+
+export async function readAgyToolCalls(tail: TranscriptTail, storeRoot: string, conversationId: string,
+  maxBytes: number, stepCount: number): Promise<NativeToolCallRead> {
+  const path = agyTranscriptPath(storeRoot, conversationId);
+  if (path === null || !Number.isSafeInteger(stepCount) || stepCount < 0) return unread("tool-names-source-missing");
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) return unread("tool-names-budget-exhausted");
+  const read = await tail.read(storeRoot, path, Math.min(maxBytes, MAX_TRANSCRIPT_TAIL_BYTES));
+  if (read.bytes === null) return unread("tool-names-source-missing");
+  const bytesRead = read.bytes.length;
+  let body = read.bytes;
+  // A tail starts inside a line, and a writer may be mid-append: only whole lines count.
+  if (!read.fromStart) { const first = body.indexOf(10); body = first < 0 ? body.subarray(body.length) : body.subarray(first + 1); }
+  const last = body.lastIndexOf(10);
+  body = last < 0 ? body.subarray(0, 0) : body.subarray(0, last + 1);
+  let text: string;
+  try { text = new TextDecoder("utf-8", { fatal: true }).decode(body); } catch { return unread("tool-names-source-invalid", bytesRead); }
+  const lines = new Map<number, TranscriptLine>();
+  let fromStepIndex = stepCount;
+  for (const line of text.split("\n")) {
+    if (line === "") continue;
+    const decoded = line.length > MAX_LINE_BYTES ? null : decodeTranscriptLine(line);
+    if (decoded === null) return unread("tool-names-source-invalid", bytesRead);
+    if (decoded.stepIndex >= stepCount) continue;
+    fromStepIndex = Math.min(fromStepIndex, decoded.stepIndex);
+    lines.set(decoded.stepIndex, decoded); // The vendor rewrites a step by appending; the last line wins.
+  }
+  const calls: NativeToolCallDescriptor[] = [], decodedPlannerSteps: number[] = [], vendorTruncatedSteps: number[] = [];
+  for (const line of [...lines.values()].sort((a, b) => a.stepIndex - b.stepIndex)) {
+    if (!line.planner) continue;
+    decodedPlannerSteps.push(line.stepIndex);
+    if (line.vendorTruncated) { vendorTruncatedSteps.push(line.stepIndex); continue; }
+    line.calls.forEach((call, index) => calls.push(describeCall(line.stepIndex, index, call)));
+  }
+  return { calls, decodedPlannerSteps, vendorTruncatedSteps, fromStart: read.fromStart,
+    fromStepIndex: read.fromStart ? 0 : fromStepIndex, bytesRead, gap: null };
+}

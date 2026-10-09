@@ -1,6 +1,6 @@
 # packages/
 
-Fourteen core packages implement Harness mechanisms or define explicit partial/stub boundaries;
+Fifteen core packages implement Harness mechanisms or define explicit partial/stub boundaries;
 `providers/` and `hosts/` group the vendor and host adapters.
 [ADR 0005](../docs/decisions/0005-harness-framework-identity.md) records the current framework
 identity on Orchid and Herdr.
@@ -14,6 +14,7 @@ activation, credentials or a successful native launch on a particular host.
 | `providers/claude` | Claude Agent SDK adapter, injected by a composition root | E3 · #33 |
 | `providers/opencode` | Adapter over `@opencode-ai/sdk` to a configured OpenCode server; it does not own that server | E3 · #33 |
 | `providers/codex` | Partial: app-server route identity and pre-turn protocol prerequisite, not a composed provider | E3 · #33 |
+| `providers/agy` | Bounded, private reader of agy's retained conversation log (`transcriptPath`): tool-call descriptors and a coverage receipt in contract shapes; depends on `contracts` only. Injected into telemetry through its `AgyNativeReads` port | #699 |
 | `llm-local` | API/local adapter configuration, capability and budget tables | E4 · #34 |
 | `routing` | Replaceable routing documents, immutable matrix queries and exact native discovery | E4 · #34, E11 · #271 |
 | `governance` | Tri-regime governance read: source descriptor, usage/spend/capacity readers, recorded admissions, composed and decoded through the contract; depends on `contracts` only. Live launch admission belongs to Orchid's governor | E5 · #35, #655 |
@@ -22,7 +23,7 @@ activation, credentials or a successful native launch on a particular host.
 | `coordinator` | Workflow decisions, replay, independent selection and durable-effect storage boundary | E6 · #36 |
 | `forge` | Explicit GitHub taxonomy/process installation and bridge rules | E7 · #37 |
 | `contracts` | Published mechanism vocabulary and strict decoders under `@rickylabs/harness-contracts` | E8 · #38 |
-| `telemetry` | Native session observations, screened activity, usage and dispatch evidence; composes host adapters through its `OrchidReads` port | E9 · #39 |
+| `telemetry` | Native session observations, screened activity, usage and dispatch evidence; composes host adapters through its `OrchidReads` port and the agy provider through `AgyNativeReads` | E9 · #39 |
 | `hosts/orchid` | `@rickylabs/host-orchid`: reads Orchid's private receipt root (dispatch, launch, binding, stop, teardown, Claude status) into contract shapes; depends on `contracts` only | #660 |
 
 A stub holds a buildable place in the project graph, not a working integration. Its README states
