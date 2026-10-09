@@ -121,21 +121,7 @@ export {
   RENDER_CAPS,
 } from "./render.js";
 
-export {
-  parseGovernanceObservation,
-  parseGovernanceText,
-  unavailableGovernance,
-  type AdmissionItemRef,
-  type AdmissionObservation,
-  type AdmissionView,
-  type AvailableGovernanceView,
-  type GovernanceObservation,
-  type GovernanceView,
-  type ObservationAvailability,
-  type ParsedGovernance,
-  type RefusedDispatch,
-  type UnavailableGovernanceView,
-} from "./observations.js";
+export type { AdmissionItemRef, RefusedDispatch } from "./observations.js";
 
 export {
   generationName,

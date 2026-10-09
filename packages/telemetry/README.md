@@ -118,7 +118,7 @@ harness-telemetry where [options]      where that log is, and the layers below a
 --home <path>          home directory the stores live under (default: this user's)
 --items <path>         board items to join runs to: "harness-board snapshot" output, or a
                        JSON array of {number, title, epic, milestone, phase} refs
---observations <path>  governance observation JSON for tree/status
+--observations <path>  governance read JSON (the "governance" output) for tree/status
 --limit <n>            runs to read per seam, most recent first (default: 500)
 --since <iso>          only runs with activity at or after this time
 --now <iso>            reference time for ages, so output is reproducible
@@ -129,90 +129,44 @@ harness-telemetry where [options]      where that log is, and the layers below a
 
 ### Synthetic governance fixture
 
-The commands below create a synthetic display fixture entirely from the literal values shown. It is
-not telemetry from this host and it is not a production authority. The repository deliberately does
-not commit the generated JSON because `check:snapshots` forbids time-sliding allowance data. Use an
+`--observations` reads one governance read document: the `GovernanceReadSnapshot` that
+`harness-telemetry governance` prints, decoded by `readGovernanceSnapshot` from
+`@rickylabs/harness-contracts` and evaluated again at `--now`. There is no second input format.
+The commands below create a synthetic document entirely from the literal values shown. It is not
+telemetry from this host and it is not a production authority. The repository deliberately does not
+commit the generated JSON because `check:snapshots` forbids time-sliding allowance data. Use an
 isolated temporary home and remove any telemetry location overrides when exercising it:
 
 ```bash
 fixture_home="$(mktemp -d)"
 node - "$fixture_home/governance.json" <<'NODE'
 const fs = require("node:fs");
-const path = process.argv[2];
-const observedAt = "2026-09-07T11:55:00.000Z";
-const observation = {
-  observedAt,
-  validUntil: "2026-09-07T12:05:00.000Z",
-  provenance: "synthetic:test",
-  state: {
-    generatedAt: observedAt,
-    regimes: [
-      { regime: "subscription", state: "throttle", accounts: [{
-        seam: "codex", account: "primary", state: "throttle", observedAt,
-        windows: [{ label: "5h", windowMinutes: 300, usedPercent: 63,
-          resetsAt: "2026-09-07T13:00:00.000Z", binding: true }],
-      }], note: "paced against the binding window" },
-      { regime: "metered", state: "allow", providers: [{
-        provider: "openrouter", spentUsd: 12.5, ceilingUsd: 50,
-        windowLabel: "monthly", observedAt,
-      }], note: null },
-      { regime: "capacity", state: "allow", hosts: [{
-        host: "n5-fixture", vramUsedBytes: 8 * 1024 ** 3, vramTotalBytes: 24 * 1024 ** 3,
-        ramUsedBytes: 32 * 1024 ** 3, ramTotalBytes: 128 * 1024 ** 3, observedAt,
-      }], note: null },
-    ],
-    pending: [],
-    notes: [],
-  },
-  admissions: [{
-    item: { number: 205 }, regime: "subscription", state: "throttle",
+const observedAt = "2026-09-07T11:55:00.000Z", validUntil = "2026-09-07T12:05:00.000Z";
+const read = (provenance) => ({ status: "read", observedAt, validUntil, freshness: "fresh", provenance });
+const document = {
+  schema: 1, protocol: 1, producer: "harness-telemetry", evaluatedAt: "2026-09-07T12:00:00.000Z",
+  sources: { usage: read("synthetic:usage"), spend: read("synthetic:spend"), capacity: read("synthetic:capacity"),
+    admissions: { status: "read", records: 1, empty: false, dropped: [],
+      provenance: "synthetic:admissions", collectedAt: observedAt },
+    approvals: { status: "not-observed" } },
+  notes: [], availability: "fresh", observedAt, validUntil: "2026-09-07T12:01:00.000Z",
+  provenance: "synthetic:test", complete: true, unavailableReason: null,
+  state: { generatedAt: observedAt, pending: [], notes: [], regimes: [
+    { regime: "subscription", state: "throttle", note: "paced against the binding window", accounts: [{
+      seam: "codex", account: "primary", state: "throttle", observedAt,
+      windows: [{ label: "5h", windowMinutes: 300, usedPercent: 63,
+        resetsAt: "2026-09-07T13:00:00.000Z", binding: true }] }] },
+    { regime: "metered", state: "allow", note: null, providers: [{
+      provider: "openrouter", spentUsd: 12.5, ceilingUsd: 50, windowLabel: "monthly", observedAt }] },
+    { regime: "capacity", state: "allow", note: null, hosts: [{
+      host: "n5-fixture", vramUsedBytes: 8 * 1024 ** 3, vramTotalBytes: 24 * 1024 ** 3,
+      ramUsedBytes: 32 * 1024 ** 3, ramTotalBytes: 128 * 1024 ** 3, observedAt }] },
+  ] },
+  admissions: [{ item: 205, regime: "subscription", state: "throttle",
     observedAt: "2026-09-07T11:54:00.000Z", validUntil: "2026-09-07T12:01:00.000Z",
-    provenance: "synthetic:dispatcher",
-    outcome: { accepted: false, reason: "quota-paced",
-      detail: "waiting for the next subscription slot" },
-  }],
+    freshness: "fresh", provenance: "synthetic:dispatcher", reason: "quota-paced", accepted: false }],
 };
-fs.writeFileSync(path, `${JSON.stringify(observation, null, 2)}\n`);
-NODE
-
-env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
-  -u HARNESS_TELEMETRY_MAX_BYTES -u HARNESS_TELEMETRY_GENERATIONS -u HARNESS_TELEMETRY_LOG_NAME \
-  -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
-  -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
-  node packages/telemetry/dist/cli.js status \
-  --home "$fixture_home" \
-  --observations "$fixture_home/governance.json" \
-  --now 2026-09-07T12:00:00.000Z
-
-env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
-  -u HARNESS_TELEMETRY_MAX_BYTES -u HARNESS_TELEMETRY_GENERATIONS -u HARNESS_TELEMETRY_LOG_NAME \
-  -u DSH_TELEMETRY_DIR -u DSH_TELEMETRY_ARCHIVE \
-  -u DSH_TELEMETRY_MAX_BYTES -u DSH_TELEMETRY_GENERATIONS \
-  node packages/telemetry/dist/cli.js tree --json \
-  --home "$fixture_home" \
-  --observations "$fixture_home/governance.json" \
-  --now 2026-09-07T12:00:00.000Z
-```
-
-To exercise a changed decision, copy the fixture into the temporary home, edit the copy, and point
-`--observations` at it. Change `admissions[0].outcome.reason` or `.detail` to see the actual refusal
-beside item `#205`; change `vramUsedBytes`, `vramTotalBytes`, `ramUsedBytes`, or `ramTotalBytes`
-under the capacity entry in `state.regimes`; then run the same command again. The CLI reads the file
-on every invocation, so the next result reflects the edited admission and capacity without a daemon
-or cache.
-
-This continuation changes both the admission and local capacity, then re-reads the fixture:
-
-```bash
-node - "$fixture_home/governance.json" <<'NODE'
-const fs = require("node:fs");
-const path = process.argv[2];
-const observation = JSON.parse(fs.readFileSync(path, "utf8"));
-observation.admissions[0].outcome.reason = "capacity-held";
-observation.admissions[0].outcome.detail = "fixture VRAM headroom reserved";
-const capacity = observation.state.regimes.find((entry) => entry.regime === "capacity");
-capacity.hosts[0].vramUsedBytes = 20 * 1024 ** 3;
-fs.writeFileSync(path, `${JSON.stringify(observation, null, 2)}\n`);
+fs.writeFileSync(process.argv[2], `${JSON.stringify(document, null, 2)}\n`);
 NODE
 
 env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
@@ -225,11 +179,21 @@ env -u HARNESS_TELEMETRY_DIR -u HARNESS_TELEMETRY_ARCHIVE \
   --now 2026-09-07T12:00:00.000Z
 ```
 
-With no `--observations`, governance is `UNKNOWN / UNAVAILABLE`. A requested file that cannot be
-read or validated also renders unavailable, sets `complete: false` in JSON, and exits 3. A valid but
-expired observation remains visible as `STALE`. Producer-authored `reason`, `detail`, pending
-`summary`, and `notes` are intentionally public display text; a future producer must supply text
-safe for that surface. This fixture meets that obligation and contains no credentials or real host
+The same flags with `tree --json` publish the same governance value. To exercise a changed decision,
+edit the copy in the temporary home and run the command again: change `admissions[0].reason` to see
+another refusal code beside item `#205`, or change `vramUsedBytes`, `vramTotalBytes`, `ramUsedBytes`
+or `ramTotalBytes` under the capacity entry in `state.regimes`. The CLI reads the file on every
+invocation, so the next result reflects the edit without a daemon or cache. An edit the published
+decoder refuses (for example a used value above its total) makes the read unavailable, not partial.
+
+With no `--observations`, governance is `UNKNOWN/UNAVAILABLE — not-configured`. A requested file that
+cannot be read or validated renders `UNKNOWN/UNAVAILABLE — envelope-invalid`, sets `complete: false`
+in JSON, and exits 3. A stored document that is itself partial or unavailable (`complete: false`)
+stays incomplete: its notes are carried into the output and the command exits 3. Read at a later `--now`, an expired document remains visible as `STALE`; read at
+a `--now` before its observation, it is unavailable. Refusals carry a public-safe reason code only:
+operator detail and approvals are never part of the read, so `--json` publishes a fixed withheld
+detail. Regime `note` and `state.notes` are public display text; a producer must supply text safe for
+that surface. This fixture meets that obligation and contains no credentials or real host
 measurements.
 
 Both bounds are pushed into the readers rather than applied to the answer: `--since` skips a
@@ -294,7 +258,7 @@ the token is the problem is a day you need status to work.
 board activity as of 2026-09-05T00:45:00.000Z
 
 governance: FRESH · synthetic:test · observed 5m ago
-  subscription [throttle] — paced against the binding window
+  subscription [throttle] — paced against binding window
     codex/primary [throttle] · read 5m ago
       binding 5h: 63% used · resets in 1h 0m
   metered [allow]
@@ -303,8 +267,7 @@ governance: FRESH · synthetic:test · observed 5m ago
     n5-fixture · read 5m ago
       VRAM 8.0 GiB used / 24.0 GiB total · 16.0 GiB headroom
       RAM  32.0 GiB used / 128.0 GiB total · 96.0 GiB headroom
-  #205 throttle [subscription] — quota-paced: waiting for the next subscription slot
-    · synthetic:dispatcher · read 6m ago
+  #205 throttle [subscription] — quota-paced · synthetic:dispatcher · read 6m ago
 
 3 run(s) across 3 epic(s) · 1.1Min/65.2kout · $0.04
 

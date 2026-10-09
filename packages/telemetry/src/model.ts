@@ -11,7 +11,7 @@
  * byte-identical across runs.
  */
 
-import type { GovernanceView } from "./observations.js";
+import type { GovernanceReadSnapshot } from "@rickylabs/harness-contracts";
 import type { TokenSamples } from "./token-samples.js";
 
 /**
@@ -295,8 +295,8 @@ export interface TelemetrySnapshot {
   readonly unattributed: readonly AttributedRun[];
   /** The most recent quota reading per seam, which is the only one worth acting on. */
   readonly quota: readonly QuotaReading[];
-  /** Typed governance observation, or an explicit unavailable value. */
-  readonly governance: GovernanceView;
+  /** The published governance read, or its explicit unavailable form. */
+  readonly governance: GovernanceReadSnapshot;
   /** Sources that could not be read, and why. Never an empty absence. */
   readonly notes: readonly string[];
 }

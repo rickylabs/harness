@@ -7,9 +7,10 @@ this page covers the sources, the collection rules and the commands. Back to the
 ## Live governance sources
 
 `harness-telemetry status --observations-from <absolute-descriptor-path>` (also `tree`) composes
-explicitly configured readers through the shipped governance parser and projection. The flag excludes
-`--observations`. `--observations-from file:<absolute-envelope-path>` is an alias for the existing
-file reader: unchanged freshness and exit behavior, reread on each invocation.
+explicitly configured readers into the published `GovernanceReadSnapshot` and decodes it with
+`readGovernanceSnapshot` from `@rickylabs/harness-contracts`. The flag excludes `--observations`.
+`--observations-from file:<absolute-document-path>` is an alias for the `--observations` file reader:
+the same governance read document, evaluated at `--now`, reread on each invocation.
 
 A descriptor has exactly `accountLabel`, `usage`, `spend`, `capacity`, and `admissions`, and may add
 `transportAvailability` (0.28.0: `null` or `{ "path": "<absolute path>" }`, the dispatcher's private
@@ -93,10 +94,12 @@ digits, dots, underscores, colons or hyphens and start with a letter or digit. T
 to the producer and the published `DispatchOutcome` contract, not a new telemetry taxonomy:
 `quota-paused`, `lane-unknown`, `needs-approval` and future producer codes are accepted. Producers
 must keep credentials and private identifiers out of these public reason codes. Prose and paths
-fail unread; private explanatory detail is withheld. The whole
-observation detail is validated by the existing governance parser before publication. Caller provenance
-is replaced by `reader:recorded-admission`; the reason is retained, while free-form operator detail
-and any approval payload are withheld to prevent private prose or run identity from being published.
+fail unread; private explanatory detail is withheld. Each refusal is validated by the published
+contract before publication: `readDispatchRefusal` decodes the outcome (detail at most 4096
+characters, any approval requested no later than the decision), and `readRecordedAdmission` decodes
+the recorded refusal at collection completion. Caller provenance is replaced by
+`reader:recorded-admission`; the reason is retained, while free-form operator detail and any approval
+payload never enter the read, to prevent private prose or run identity from being published.
 The output explicitly says that admission is not execution evidence. Pending approvals are unobserved.
 
 The newest decision timestamp wins per item/regime, independent of log order. Identical duplicates
@@ -170,9 +173,9 @@ informational and must not be parsed. Admission refusals are not execution outco
 conflicting logs remain distinct; pending approvals are always `not-observed`, never a census.
 `--now` changes the evaluation clock only, not source capture or completion timestamps.
 
-`status`, `tree`, their public displays and the legacy `--observations`/`file:` envelope retain their
-existing behavior. That legacy display input is not a second authority for the published read path.
-No `RemoteSnapshot`, protocol, hub, fold or client change is part of this slice.
+`status` and `tree` show the same decoded document; `--observations` and `file:` read a stored copy
+of it, so there is one governance read model and no second input format. No `RemoteSnapshot`,
+protocol, hub, fold or client change is part of this slice.
 
 ### Installed consumer verification
 
@@ -190,3 +193,4 @@ If the default temp mount is `noexec`, configure `TMPDIR` to an operator-selecte
 location before running the gate/root tests. A failure is reported as failure; there is no network
 install fallback. Scratch trees and child processes are owned and cleaned by the script. No live
 provider access, host-capacity measurement, downstream compatibility or publication is tested.
+
