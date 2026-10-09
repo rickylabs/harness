@@ -119,7 +119,7 @@ export async function runBoardProjectionSmoke(): Promise<void> {
     provenance: null,
     state: null,
     admissions: [],
-    unavailableReason: "no --observations supplied",
+    unavailableReason: "not-configured",
   });
   const task = tree?.milestones[0]?.epics[0]?.tasks.find((node) => node.item.number === 204);
   assert.equal(task?.runs[0]?.run.id, "parent");

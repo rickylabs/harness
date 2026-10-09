@@ -1,15 +1,16 @@
-import type { AdmissionDropReason, RegimeStatus } from "@rickylabs/harness-contracts";
-import { parseGovernanceObservation, type AdmissionObservation } from "../observations.js";
+import { readDispatchRefusal, readRecordedAdmission, type AdmissionDropReason, type RecordedAdmission,
+  type RegimeStatus } from "@rickylabs/harness-contracts";
 import { instant, object, positive } from "../source.js";
 import { compareStrings } from "../order.js";
 
-/** The published contract owns reason semantics; producers own public-safe code identifiers.
- * Reject prose and paths at this live edge, without inventing a governance-reason taxonomy.
- */
-const machineReason = (value: unknown): value is string => typeof value === "string" &&
-  value.length <= 128 && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value);
+/** Freshness of one validity interval at an evaluation instant; the contract checks it on decode. */
+export const freshnessAt = (validUntil: string, at: string): RecordedAdmission["freshness"] =>
+  Date.parse(at) > Date.parse(validUntil) ? "stale" : "fresh";
+
+/** Recorded admissions, each decoded by the published contract at collection completion.
+ * The contract owns reason semantics: a public-safe code identifier, never prose or a path. */
 export interface RecordedAdmissions {
-  readonly admissions: readonly AdmissionObservation[];
+  readonly admissions: readonly RecordedAdmission[];
   readonly ok: boolean;
   readonly notes: readonly string[];
   readonly codes: readonly AdmissionDropReason[];
@@ -25,7 +26,7 @@ export function unreadRegimes(note: string): RegimeStatus[] {
 /** Never derives an item or decision timestamp from the log identity or transport timestamp. */
 export function mapAdmissions(events: readonly unknown[], completion: string, degraded = false): RecordedAdmissions {
   if (degraded) return { admissions: [], ok: false, notes: ["admissions: log-unreadable"], codes: [] };
-  type Candidate = { at: number | null; observation: AdmissionObservation | null; identity: string | null };
+  type Candidate = { at: number | null; observation: RecordedAdmission | null; identity: string | null };
   const groups = new Map<string, Candidate[]>();
   let malformed = false;
   let unscoped = false;
@@ -43,27 +44,21 @@ export function mapAdmissions(events: readonly unknown[], completion: string, de
     } catch { malformed = true; unscoped = true; continue; }
     let at: number | null = null;
     try { at = Date.parse(instant(detail.observedAt)); } catch { /* Unknown ordering blocks this key. */ }
-    let observation: AdmissionObservation | null = null;
+    let observation: RecordedAdmission | null = null;
     let identity: string | null = null;
     try {
       instant(envelope.at);
-      instant(detail.observedAt);
-      instant(detail.validUntil);
       if (typeof envelope.runId !== "string" || envelope.runId.trim().length === 0) throw new Error();
-      const outcome = object(detail.outcome);
-      if (!machineReason(outcome.reason)) throw new Error();
-      const parsed = parseGovernanceObservation({
-        observedAt: completion, validUntil: completion, provenance: "reader:recorded-admission",
-        state: { generatedAt: completion, regimes: unreadRegimes(nullNote), pending: [], notes: [] },
-        admissions: [{ ...detail, provenance: "reader:recorded-admission" }],
-      }, completion);
-      if (parsed.availability === "unavailable" || parsed.admissions[0] === undefined) throw new Error();
-      const a = parsed.admissions[0];
-      // Compare validated operator detail privately, before withholding it from the projection.
-      identity = JSON.stringify([a.state, Date.parse(a.validUntil), a.outcome.reason, a.outcome.detail, a.outcome.approval ?? null]);
-      observation = { item: a.item, regime: a.regime, state: a.state,
-        observedAt: new Date(Date.parse(a.observedAt)).toISOString(), validUntil: new Date(Date.parse(a.validUntil)).toISOString(), provenance: "reader:recorded-admission",
-        outcome: { accepted: false, reason: a.outcome.reason, detail: "Recorded gate refusal; private operator detail withheld. Admission is not execution evidence." } };
+      const outcome = readDispatchRefusal(detail.outcome, instant(detail.observedAt));
+      if (outcome === null) throw new Error();
+      const observedAt = new Date(Date.parse(instant(detail.observedAt))).toISOString();
+      const validUntil = new Date(Date.parse(instant(detail.validUntil))).toISOString();
+      observation = readRecordedAdmission({ item: object(detail.item).number, regime: detail.regime, state: detail.state, observedAt,
+        validUntil, freshness: freshnessAt(validUntil, completion), provenance: "reader:recorded-admission", reason: outcome.reason,
+        accepted: outcome.accepted }, completion);
+      if (observation === null) throw new Error();
+      // Compare validated operator detail privately; the published read carries neither detail nor approval.
+      identity = JSON.stringify([observation.state, Date.parse(observation.validUntil), outcome.reason, outcome.detail, outcome.approval ?? null]);
     } catch { malformed = true; }
     const group = groups.get(key) ?? [];
     group.push({ at, observation, identity });
@@ -73,7 +68,7 @@ export function mapAdmissions(events: readonly unknown[], completion: string, de
   const codes: AdmissionDropReason[] = [];
   if (malformed) { notes.push("admissions: shape-mismatch; malformed records rejected"); codes.push("shape-mismatch"); }
   if (unscoped) return { admissions: [], ok: false, notes, codes };
-  const admissions: AdmissionObservation[] = [];
+  const admissions: RecordedAdmission[] = [];
   for (const group of groups.values()) {
     if (group.some(candidate => candidate.at === null)) continue;
     const newest = group.reduce((at, candidate) => Math.max(at, candidate.at!), -Infinity);
@@ -92,8 +87,7 @@ export function mapAdmissions(events: readonly unknown[], completion: string, de
     }
     admissions.push(observation);
   }
-  admissions.sort((a, b) => a.item.number - b.item.number || compareStrings(a.regime, b.regime));
+  admissions.sort((a, b) => a.item - b.item || compareStrings(a.regime, b.regime));
   if (admissions.length === 0) notes.push("admissions: no-admissions; no current admission decision recorded");
   return { admissions, ok: notes.length === 0, notes: [...new Set(notes)], codes: [...new Set(codes)] };
 }
-const nullNote = "admission validation only";
