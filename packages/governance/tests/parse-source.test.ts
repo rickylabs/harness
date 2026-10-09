@@ -22,7 +22,7 @@ describe("live source descriptor", () => {
   it("refuses missing fields, extra fields, bad paths/labels, env injection and bounds without echoes", () => {
     const cases: unknown[] = [null, {}, { ...descriptor(), secret: "privacy-canary" },
       { ...descriptor(), accountLabel: "private/path" }, { ...descriptor(), usage: undefined }];
-    for (const [field, value] of [["denoBin", "deno"], ["probe", "/tmp/\ncanary"], ["model", "bad model"], ["credentialEnv", "NODE_OPTIONS"], ["credentialEnv", "KEY=secret"], ["allowNet", undefined], ["allowNet", "https://usage.example.invalid"], ["allowNet", "usage.example.invalid:443"], ["allowNet", "usage.example.invalid/v1"], ["allowNet", "*.example.invalid"], ["allowNet", "usage.example.invalid,other.invalid"], ["allowNet", ""], ["timeoutMs", 0], ["timeoutMs", 60001], ["maxBytes", 4194305], ["maxBytes", 0], ["windows", {}]] as const) {
+    for (const [field, value] of [["denoBin", "deno"], ["probe", "/tmp/\ncanary"], ["model", "bad model"], ["credentialEnv", "NODE_OPTIONS"], ["credentialEnv", "KEY=secret"], ["allowNet", undefined], ["allowNet", "https://usage.example.invalid"], ["allowNet", [USAGE_HOST, "8443"].join(":")], ["allowNet", "usage.example.invalid/v1"], ["allowNet", "*.example.invalid"], ["allowNet", "usage.example.invalid,other.invalid"], ["allowNet", ""], ["timeoutMs", 0], ["timeoutMs", 60001], ["maxBytes", 4194305], ["maxBytes", 0], ["windows", {}]] as const) {
       cases.push({ ...descriptor(), usage: { ...descriptor().usage, [field]: value } });
     }
     for (const value of cases) assert.throws(() => parseSource(value), (e: unknown) => e instanceof SourceError && e.message === "invalid-descriptor");
