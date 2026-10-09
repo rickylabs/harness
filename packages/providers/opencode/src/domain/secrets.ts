@@ -17,7 +17,7 @@
  * It never reads a credential from disk or from the environment. It has no code path that opens
  * `auth.json`, resolves the opencode data directory, or looks at an API key. Authentication is the
  * server's, already done, on the other side of a socket — and a header a deployment wants added is
- * handed to `createTransport` by the composition root, never discovered here. A leak needs a source,
+ * handed to `createSdkServer` by the composition root, never discovered here. A leak needs a source,
  * and the design is that this package has none of its own; `scrub` exists for the ones that arrive.
  *
  * The evidence path is the same decision. `provider-claude` reports its config directory, because
