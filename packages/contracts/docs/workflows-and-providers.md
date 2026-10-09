@@ -271,3 +271,18 @@ Only a completed final nonempty stop without continuation tools can succeed;
 native error and cancellation remain distinct, and resumed turns clear old ends.
 Consumers must upgrade this decoder before a reader emits the new activity source
 or route provenance. Release 0.35.0 follows the AGY 0.34.0 release.
+
+## Provider-limit evidence snapshot
+
+`readProviderLimitSnapshot(unknown)` decodes the closed version-one provider-limit source that
+atelier-cockpit's merged schema accepts, and copies it. `ProviderLimitSnapshotV1` holds
+`schemaVersion: 1`, `generatedAt`, `meters` (`ProviderLimitMeterV1`) and `outcomes`
+(`ProviderOutcomeV1`). Subscription windows and named OpenRouter key amounts stay separate meters.
+Percentages, including 100%, are advisory, and so is a `rate_limited` refusal. Only a durable actual
+inference outcome refused with `quota_exhausted` or `payment_required` is refusal evidence, until a
+later verified success; the decoder never invents a refusal. Each collection holds at
+most `MAX_PROVIDER_LIMIT_SOURCE_ROWS` rows, and `MAX_PROVIDER_LIMIT_SOURCE_BYTES` bounds the source
+file. The decoder rejects extra fields, accessors, credentials, private paths and hosts, ambiguous
+route bindings, duplicate meter identities, malformed quantities and rows observed after
+`generatedAt`. The private file reader is `readProviderLimitsFile` in
+[`@rickylabs/governance`](../../governance/README.md#provider-limit-evidence).

@@ -196,3 +196,18 @@ location before running the gate/root tests. A failure is reported as failure; t
 install fallback. Scratch trees and child processes are owned and cleaned by the script. No live
 provider access, host-capacity measurement, downstream compatibility or publication is tested.
 
+## Provider-limit snapshot command
+
+`harness-telemetry provider-limits --source <absolute-snapshot-path>` reads one normalized
+provider-limit snapshot through `readProviderLimitsFile` from
+[`@rickylabs/governance`](../../governance/README.md#provider-limit-evidence) and prints it as one JSON
+object and newline. The shape and decoder are the contracts'
+[provider-limit evidence snapshot](../../contracts/docs/workflows-and-providers.md#provider-limit-evidence-snapshot).
+It calls no provider API and reads no credential.
+
+Exit 0 emits the complete valid document. Exit 2 means an invalid command line: anything other than
+exactly `--source <path>`. Exit 3 means the source is unavailable or unsafe; it prints the fixed
+diagnostic `provider limits unavailable`, no partial JSON and no path or environment name. The
+collector, the durable outcome ledger and admission belong to the producer in Orchid
+([rickylabs/orchid#97](https://github.com/rickylabs/orchid/pull/97)). This command publishes no
+package and activates no host.
