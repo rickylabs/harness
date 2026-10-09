@@ -1,6 +1,5 @@
 /**
- * The read seam between a vendor provider adapter and the telemetry producer (additive in the next
- * contracts minor). Values are private native data: telemetry screens them before any frame, and this
+ * The read seam between a vendor provider adapter and the telemetry producer (additive in 0.43.0). Values are private native data: telemetry screens them before any frame, and this
  * shape is never published in a snapshot.
  */
 import type { AgentActivityGap } from "./agent-activity.js";

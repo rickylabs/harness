@@ -16,11 +16,19 @@ export interface AgentActivityStep {
   readonly target?: { readonly kind: AgentActivityTargetKind; readonly value: string } | null;
   readonly source: "codex-rollout" | "claude-transcript" | "agy-transcript" | "opencode-transcript";
   /**
-   * Additive in the next contracts minor, on tool, command and file steps only: the native step's
+   * Additive in 0.43.0, on tool, command and file steps only: the native step's
    * observed end, or `unknown` where the producer cannot prove one. A step without it makes no claim.
    */
   readonly state?: AgentActivityState;
+  /**
+   * Additive in 0.43.0, on tool, command and file steps only: `requested` when the agent planned the
+   * call (it carries no native end, so its state is `unknown`), `executed` when a native execution
+   * record backs the step. A step without it makes no claim either way.
+   */
+  readonly provenance?: AgentActivityProvenance;
 }
+export const AGENT_ACTIVITY_PROVENANCES = ["requested", "executed"] as const;
+export type AgentActivityProvenance = typeof AGENT_ACTIVITY_PROVENANCES[number];
 /** A native end the producer observed; `unknown` never means running, failed or zero. */
 export const AGENT_ACTIVITY_STATES = ["completed", "failed", "cancelled", "unknown"] as const;
 export type AgentActivityState = typeof AGENT_ACTIVITY_STATES[number];
@@ -29,7 +37,7 @@ export const AGENT_ACTIVITY_GAPS = ["tool-names-source-missing", "tool-names-sou
   "tool-names-budget-exhausted", "tool-names-truncated", "tool-names-lines-missing", "tool-names-vendor-truncated",
   "call-lifecycle-unproven", "in-progress-unattributed"] as const;
 export type AgentActivityGap = typeof AGENT_ACTIVITY_GAPS[number];
-/** Additive in the next contracts minor; empty `gaps` states full coverage of the published window. */
+/** Additive in 0.43.0; empty `gaps` states full coverage of the published window. */
 export interface AgentActivityCoverage { readonly gaps: readonly AgentActivityGap[] }
 export type AgentActivity =
   | { readonly availability: "available"; readonly reason: null; readonly observedAt: string;

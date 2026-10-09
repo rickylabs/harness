@@ -281,6 +281,8 @@ export * from "./issue-agent-tree.js";
 export * from "./issue-agent-tree-constants.js";
 export * from "./agent-activity.js";
 export type { NativeToolCallDescriptor, NativeToolCallRead } from "./native-tool-calls.js";
+export type { AgyConversationSnapshot, AgyStepKind, AgyStepStatus, AgyStopReason, AgyStoreRead, AgySummaryState,
+  AgyTrajectoryStep } from "./agy-store.js";
 export type { DispatchEvidence, OrchidDispatchRead, OrchidDispatchUnavailableReason, OrchidLaunchState } from "./dispatch-evidence.js";
 export * from "./profiles-workflows.js";
 

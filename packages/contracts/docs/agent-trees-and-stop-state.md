@@ -96,14 +96,20 @@ GPU never becomes a zero reading. Version 0.7.0 adds optional per-card VRAM read
 sum must equal the aggregate. The decoder accepts 0.5.x observations without the fourth row
 and normalizes it to unavailable. Version 0.6.0 was published from its tagged merge.
 
-## Activity lifecycle and coverage in the next minor
+## Activity lifecycle, provenance and coverage in 0.43.0
 
-The epic 701 coordinator assigns the version at merge. Three optional, additive fields:
+Version 0.43.0 adds three optional, additive fields, one decoder export and the agy producer seams. Its consumer is
+rickylabs/atelier-cockpit#543.
 
 - `AgentActivityStep.state`, on `tool`, `command` and `file` steps only. Its values are one of
   `AGENT_ACTIVITY_STATES`: `completed`, `failed`, `cancelled` or `unknown`. It is the end the native
   store recorded for that step. `completed` means the native step ended, not that a tool succeeded.
   `unknown` never means running, failed or zero, and a step without the field makes no claim.
+- `AgentActivityStep.provenance`, on the same kinds. Its values are one of `AGENT_ACTIVITY_PROVENANCES`:
+  - `requested`: a call the agent planned. A plan is not an execution, so its `state`, when present, is
+    always `unknown`.
+  - `executed`: a step backed by a native execution record.
+  A step without it makes no claim either way.
 - `AgentActivity.coverage` (`AgentActivityCoverage`), on the `available` branch only. It holds
   `gaps`: unique `AGENT_ACTIVITY_GAPS` codes in canonical order. Empty `gaps` means the published
   window is fully covered. A gap names why activity is narrower than the native run:
@@ -113,12 +119,16 @@ The epic 701 coordinator assigns the version at merge. Three optional, additive 
     (`in-progress-unattributed`).
 - `readAgentActivity(value, capturedAt)` is the strict decoder the snapshot reader applies to each
   agent's activity. It is exported so a consumer can decode one activity on its own.
-- `NativeToolCallDescriptor` and `NativeToolCallRead` are type-only. They form the read seam between a
-  provider adapter and the telemetry producer, and are never published in a frame.
 
-An older reader rejects a whole snapshot holding `state` or `coverage`, because the decoder
-refuses unknown keys. Telemetry therefore emits both, and the unnamed result steps they describe,
-only under `issue-agents --activity-lifecycle`. A consumer bumps this package first and passes the
+The type-only producer seams are never published in a frame:
+
+- `NativeToolCallDescriptor` and `NativeToolCallRead`: provider-named tool calls.
+- `AgyStoreRead`, `AgyConversationSnapshot` and `AgyTrajectoryStep`: one bound agy store decoded into
+  neutral step kinds, statuses and stop reasons.
+
+An older reader rejects a whole snapshot holding `state`, `provenance` or `coverage`, because the
+decoder refuses unknown keys. Telemetry therefore emits them, and the unnamed result steps they
+describe, only under `issue-agents --activity-lifecycle`. A consumer pins 0.43.0 first and passes the
 flag after. Without the flag, frames keep their earlier keys exactly.
 
 ## Bounded issue trees in 0.37.0

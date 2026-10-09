@@ -2,8 +2,8 @@
 import { readAgentObservations, MAX_AGENT_OBSERVATIONS, type AgentObservation,
   type AgentObservations, type AgentUnavailableReason } from "./agent-observations.js";
 import type { RepoRef } from "./snapshot.js";
-import { AGENT_ACTIVITY_GAPS, AGENT_ACTIVITY_STATES, type AgentActivity, type AgentActivityGap, type AgentActivityState,
-  type AgentActivityStep } from "./agent-activity.js";
+import { AGENT_ACTIVITY_GAPS, AGENT_ACTIVITY_PROVENANCES, AGENT_ACTIVITY_STATES, type AgentActivity, type AgentActivityGap,
+  type AgentActivityProvenance, type AgentActivityState, type AgentActivityStep } from "./agent-activity.js";
 import { AGENT_ACTION_ACCEPTED_REASONS, AGENT_ACTION_REJECTED_REASONS, AGENT_EFFORTS, AGENT_HISTORY_KINDS } from "./issue-agent-tree-constants.js";
 import { Invalid, array, bad, reason, record, stamp } from "./issue-agent-tree-decode.js";
 import { agent } from "./issue-agent-tree-rows.js";
@@ -270,7 +270,8 @@ export function readAgentActivity(value: unknown, capturedAt: string): AgentActi
   const decoded = steps.map(value => {
     const s = record(value, ["id", "at", "kind", "toolName", "commandHead", "filePath", "summary", "source",
       ...(Object.hasOwn(value as object, "target") ? ["target"] : []),
-      ...(Object.hasOwn(value as object, "state") ? ["state"] : [])]);
+      ...(Object.hasOwn(value as object, "state") ? ["state"] : []),
+      ...(Object.hasOwn(value as object, "provenance") ? ["provenance"] : [])]);
     if (typeof s.id !== "string" || !/^step_[a-f0-9]{64}$/.test(s.id) || ids.has(s.id)) return bad();
     ids.add(s.id);
     const at = stamp(s.at);
@@ -286,6 +287,10 @@ export function readAgentActivity(value: unknown, capturedAt: string): AgentActi
     if (s.summary !== null && publicActivityText(s.summary) !== s.summary) return bad();
     if (Object.hasOwn(s, "state") && (s.kind === "message" ||
         !AGENT_ACTIVITY_STATES.includes(s.state as AgentActivityState))) return bad();
+    // A requested call is a plan, not an execution: it never carries a native end.
+    if (Object.hasOwn(s, "provenance") && (s.kind === "message" ||
+        !AGENT_ACTIVITY_PROVENANCES.includes(s.provenance as AgentActivityProvenance) ||
+        s.provenance === "requested" && Object.hasOwn(s, "state") && s.state !== "unknown")) return bad();
     let target: AgentActivityStep["target"];
     if (Object.hasOwn(s, "target")) {
       if (s.target === null) target = null;
@@ -305,7 +310,8 @@ export function readAgentActivity(value: unknown, capturedAt: string): AgentActi
       commandHead: s.commandHead as string | null, filePath: s.filePath as string | null,
       summary: s.summary as string | null, source: s.source as AgentActivityStep["source"],
       ...(Object.hasOwn(s, "target") ? { target: target ?? null } : {}),
-      ...(Object.hasOwn(s, "state") ? { state: s.state as AgentActivityState } : {}) };
+      ...(Object.hasOwn(s, "state") ? { state: s.state as AgentActivityState } : {}),
+      ...(Object.hasOwn(s, "provenance") ? { provenance: s.provenance as AgentActivityProvenance } : {}) };
   });
   for (let i = 1; i < decoded.length; i++) if (decoded[i - 1]!.at < decoded[i]!.at) return bad();
   if (!hasCoverage) return { availability: "available", reason: null, observedAt, steps: decoded };

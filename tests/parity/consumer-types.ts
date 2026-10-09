@@ -4,8 +4,12 @@
 import type {
   AccountUsageDocument,
   AccountUsageEnvelope,
+  AgyConversationSnapshot,
+  AgyStoreRead,
+  AgyTrajectoryStep,
   AgentActivityCoverage,
   AgentActivityGap,
+  AgentActivityProvenance,
   AgentActivityState,
   AgentObservation,
   AgentObservations,
@@ -44,6 +48,7 @@ export type CockpitContractTypes = [
   AccountUsageEnvelope,
   AgentActivityCoverage,
   AgentActivityGap,
+  AgentActivityProvenance,
   AgentActivityState,
   AgentObservation,
   AgentObservations,
@@ -70,7 +75,7 @@ export type CockpitContractTypes = [
   WorkflowRevisionBundlePayload,
 ];
 /** In-repo producer seam (a provider adapter → telemetry), exported from the published entry. */
-export type ProducerSeamTypes = [NativeToolCallDescriptor, NativeToolCallRead];
+export type ProducerSeamTypes = [NativeToolCallDescriptor, NativeToolCallRead, AgyStoreRead, AgyConversationSnapshot, AgyTrajectoryStep];
 /** cockpit: `@rickylabs/harness-contracts/server`. */
 export type CockpitServerTypes = [HubStep];
 /** cockpit: raw-URL `packages/subagents/src/dispatch.ts` and `packages/routing/src/discovery.ts`. */

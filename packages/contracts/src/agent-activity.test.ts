@@ -44,3 +44,16 @@ it("rejects coverage on unavailable activity, unknown, duplicate or reordered ga
     assert.throws(() => read(activity([], { coverage: value })), JSON.stringify(value));
   }
 });
+
+it("accepts provenance on tool steps: a requested call is unknown, an executed step may end", () => {
+  const steps = read(activity([step(1, { kind: "command", commandHead: "git", provenance: "requested", state: "unknown" }),
+    step(2, { provenance: "executed", state: "completed" }), step(3, { provenance: "requested" })])).steps;
+  assert.deepEqual(steps.map(s => [s.provenance, s.state]), [["requested", "unknown"], ["executed", "completed"], ["requested", undefined]]);
+});
+
+it("rejects provenance on a message, an unknown provenance, and a requested call with a native end", () => {
+  for (const bad of [step(1, { kind: "message", summary: "Done here", provenance: "executed" }), step(1, { provenance: "planned" }),
+    step(1, { provenance: "requested", state: "completed" }), step(1, { provenance: "requested", state: "failed" }), step(1, { provenance: null })]) {
+    assert.throws(() => read(activity([bad])), JSON.stringify(bad).slice(0, 80));
+  }
+});
