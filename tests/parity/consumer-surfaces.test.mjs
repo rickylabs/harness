@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { rm } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { before, test } from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -177,3 +178,40 @@ for (const name of ["harness-board", "harness-coordinator", "harness-forge", "ha
     assert.equal(run.status, 0, `${ORCHID}: ${name} --help exited ${run.status}`);
   });
 }
+
+// Group 6: cockpit runs `harness-telemetry issue-agents` and decodes its frames with the published
+// reader. The lifecycle flag is opt-in; parsed structure and exit codes only, never rendered text.
+test("cockpit: harness-telemetry issue-agents accepts --activity-lifecycle and publishes agy activity the reader decodes", async () => {
+  const { readIssueAgentTreeSnapshot } = await import("@rickylabs/harness-contracts");
+  const { agyParityStore } = await import("./fixtures/agy-store.mjs");
+  const bin = join(root, "packages/telemetry", JSON.parse(readFileSync(join(root, "packages/telemetry/package.json"), "utf8")).bin["harness-telemetry"]);
+  const cli = (args, env = {}) => spawnSync(process.execPath, [bin, "issue-agents", "--json", ...args],
+    { encoding: "utf8", timeout: 30_000, env: { PATH: process.env.PATH, ...env } });
+  const unbound = cli(["--activity-lifecycle"]);
+  assert.equal(unbound.status, 3, `${COCKPIT}: issue-agents --activity-lifecycle without a binding exited ${unbound.status}`);
+  const empty = readIssueAgentTreeSnapshot(JSON.parse(unbound.stdout));
+  assert.ok(empty.ok && empty.snapshot.reason === "source_not_bound", `${COCKPIT}: the unbound frame no longer decodes as source_not_bound`);
+  assert.equal(cli(["--no-such-flag"]).status, 2, `${COCKPIT}: issue-agents accepted an unknown flag`);
+  const store = await agyParityStore();
+  try {
+    const env = { HARNESS_TELEMETRY_DISPATCH_ROOT: store.receipts };
+    const read = flag => {
+      const run = cli(["--home", store.base, "--issue", store.issue, ...(flag ? ["--activity-lifecycle"] : [])], env);
+      assert.equal(run.status, 0, `${COCKPIT}: the bound agy issue-agents run exited ${run.status}`);
+      assert.ok(!run.stdout.includes("PRIVATE-"), `${COCKPIT}: a private canary reached the frame`);
+      const decoded = readIssueAgentTreeSnapshot(JSON.parse(run.stdout));
+      assert.ok(decoded.ok, `${COCKPIT}: the published reader rejected the frame`);
+      return decoded.snapshot.issues[0].dispatches[0].agents[0].activity;
+    };
+    const lifecycle = read(true);
+    assert.deepEqual(lifecycle.steps.filter(s => s.kind === "command").map(s => [s.commandHead, s.state]), [["git status", "unknown"]],
+      `${COCKPIT}: the named agy call is no longer a command with unknown state`);
+    assert.deepEqual(lifecycle.steps.filter(s => s.kind === "tool" && s.toolName === null).map(s => s.state), ["completed"],
+      `${COCKPIT}: the unnamed agy result no longer carries its native state`);
+    assert.deepEqual(lifecycle.coverage, { gaps: ["call-lifecycle-unproven"] }, `${COCKPIT}: agy coverage changed`);
+    const plain = read(false);
+    assert.equal(Object.hasOwn(plain, "coverage"), false, `${COCKPIT}: coverage leaked into an unflagged frame`);
+    assert.ok(plain.steps.every(s => !Object.hasOwn(s, "state") && !(s.kind === "tool" && s.toolName === null)),
+      `${COCKPIT}: lifecycle fields leaked into an unflagged frame`);
+  } finally { await rm(store.base, { recursive: true, force: true }); }
+});
