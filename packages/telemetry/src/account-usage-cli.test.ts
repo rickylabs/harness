@@ -137,3 +137,45 @@ test("private file reads enforce key mode, ownership, regular files, symlink ref
     await assert.rejects(usageFile(keyFile, 32, true)); t.mock.restoreAll();
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+test("schema3 uses the same CLI/state and emits every CLI capability; an invalid wire family refuses", async () => {
+  const root = await mkdtemp(join(tmpdir(), "inventory-usage-cli-"));
+  try {
+    const keyFile = join(root, "key"), stateFile = join(root, "state"), descriptor = join(root, "descriptor.json"), store = join(root, "store");
+    await mkdir(store); await writeFile(keyFile, Buffer.alloc(32, 7), { mode: 0o600 });
+    await writeFile(descriptor, JSON.stringify({ schemaVersion: 3, capacity: null, providers: { githubCopilot: null, openRouter: null, openCode: null },
+      accountUsage: { schemaVersion: 1, keyFile, stateFile, codex: null, stores: ["codex", "claude"].map(vendor =>
+        ({ vendor, seat: "seat-a", cwdLabel: "project-a", root: store, accountIdentity: null })) } }));
+    const run = await exec(process.execPath, [cli, "account-usage", "--source", descriptor], { timeout: 5000 });
+    assert.equal(run.stderr, "");
+    const read = readAccountUsageDocument(JSON.parse(run.stdout));
+    if (!read.ok || read.document.schemaVersion !== 3) return assert.fail("must emit the v3 reader document");
+    assert.equal(new Set(read.document.capabilities.map(r => r.cli)).size, 4);
+    assert.equal(read.document.localCapacity.reason, "source_not_bound");
+    assert.ok(!run.stdout.includes(root));
+    assert.equal(readAccountUsageDocument(JSON.parse(await readFile(stateFile, "utf8")).snapshot).ok, true);
+    // A configured host whose kernel source is unreadable is incomplete, never a zero reading.
+    const hook = join(root, "no-meminfo.mjs");
+    await writeFile(hook, `import fs from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
+const original = fs.promises.readFile;
+fs.promises.readFile = async function(path, ...args) {
+  if (path === "/proc/meminfo") throw Object.assign(new Error("absent"), { code: "ENOENT" });
+  return original(path, ...args);
+};
+syncBuiltinESMExports();
+`);
+    const bound = JSON.parse(await readFile(descriptor, "utf8"));
+    await writeFile(descriptor, JSON.stringify({ ...bound, capacity: { host: "fixture-node" } }));
+    await assert.rejects(exec(process.execPath, ["--import", hook, cli, "account-usage", "--source", descriptor], { timeout: 5000 }), error => {
+      const e = error as { code: number; stdout: string; stderr: string };
+      const read = readAccountUsageDocument(JSON.parse(e.stdout));
+      return e.code === 3 && e.stderr === "" && read.ok && read.document.schemaVersion === 3 &&
+        read.document.localCapacity.availability === "unavailable" && read.document.localCapacity.reason === "source_unavailable";
+    });
+    await assert.rejects(exec(process.execPath, [cli, "account-usage", "--source", descriptor],
+      { timeout: 5000, env: { ...process.env, HARNESS_TELEMETRY_WIRE_FAMILY: "PRIVATE_CANARY" } }), error => {
+      const e = error as { code: number; stdout: string; stderr: string };
+      return e.code === 1 && e.stdout === "" && e.stderr === "account-usage: descriptor, key, state or collection unavailable\n";
+    });
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

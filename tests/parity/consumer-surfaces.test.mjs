@@ -45,13 +45,15 @@ test("cockpit: @rickylabs/harness-contracts entry points, manifest and runtime v
   assertExports(COCKPIT, pkg, main, {
     ...kinds("object", `PROVIDER_METER_UNITS PROVIDER_USAGE_REASONS AGENT_UNAVAILABLE_REASONS
       AGENT_ACTION_REJECTED_REASONS RUN_OBSERVATION_INCOMPLETE_REASONS RUN_OBSERVATION_UNAVAILABLE_REASONS
-      OPENCODE_OBSERVED_SOURCES ISSUE_LAUNCH_REFUSAL_REASONS`),
+      OPENCODE_OBSERVED_SOURCES ISSUE_LAUNCH_REFUSAL_REASONS USAGE_INVENTORY_CLIS USAGE_DIMENSIONS USAGE_CAPABILITIES
+      USAGE_CAPABILITY_SOURCES USAGE_UNSUPPORTED_REASONS USAGE_UNREADABLE_REASONS USAGE_PARTIAL_REASONS USAGE_SOURCE_SCOPE`),
     ...kinds("number", "MAX_ISSUE_AGENT_TREE_BYTES PROTOCOL_VERSION"),
     ...kinds("function", `compareRouteIdentity emptyFold foldValue snapshotOf publicActivityTarget
       publicActivityText publicOpenCodeModel readAccountUsageDocument readAccountUsageEnvelope
       readGovernanceSnapshot readIssueAgentTreeSnapshot readProviderBudgetDecisions readProviderLimitSnapshot readProviderUsageSnapshot
       readRepositoryRunObservation encodeWorkflowRevisionBundle readAgentObservations readRoutineRevision
-      readRoutineWake readWorkflowRevision readWorkflowRevisionBundle unavailableAgentCost`),
+      readRoutineWake readWorkflowRevision readWorkflowRevisionBundle unavailableAgentCost readUsageCapabilities
+      readUsageInventoryFields readLocalCapacityRow`),
   });
   assert.equal(main.PROTOCOL_VERSION, 1, `${COCKPIT}: ${pkg} PROTOCOL_VERSION is no longer 1`);
   assertExports(COCKPIT, `${pkg}/server`, await import(`${pkg}/server`), kinds("function", "openHub publish subscribe"));
@@ -140,6 +142,14 @@ test("cockpit: raw-URL dispatch, route and discovery modules export what cockpit
     kinds("function", "compareRouteIdentity"));
   assertExports(COCKPIT, "packages/routing/src/discovery.ts", await load("packages/routing/dist/discovery.js"),
     kinds("function", "discoverCliCapabilities validateCliDiscoverySnapshot"));
+});
+
+// Costs lists one usage capability row per CLI Harness discovers; a new launcher must get its row.
+test("cockpit: the usage inventory covers exactly the CLIs routing discovery launches", async () => {
+  const { USAGE_INVENTORY_CLIS } = await import("@rickylabs/harness-contracts");
+  const { DISCOVERY_LAUNCHERS } = await load("packages/routing/dist/discovery.js");
+  assert.deepEqual([...USAGE_INVENTORY_CLIS].sort(), [...DISCOVERY_LAUNCHERS].sort(),
+    `${COCKPIT}: USAGE_INVENTORY_CLIS no longer matches routing DISCOVERY_LAUNCHERS`);
 });
 
 // cockpit reads these files through the GitHub contents API: routing.v1.json from harness main

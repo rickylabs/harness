@@ -13,7 +13,7 @@ type Unsupported = { readonly unsupported: "no-native-source" | "direct-read-uns
 /**
  * The sources this collector owns, per CLI and dimension. `direct-read-unsupported`: Claude exposes no
  * sessionless quota read (packages/telemetry/docs/native-reads.md); Orchid's governor reading is a separate
- * producer. OpenCode Go and AGY publish no usage API, and the measured AGY store carries no token usage.
+ * producer. OpenCode Go and AGY document no usage API, and the measured AGY store carries no token usage.
  */
 const SOURCES: Readonly<Record<UsageInventoryCli, Readonly<Record<UsageDimension, readonly UsageCapabilitySource[] | Unsupported>>>> = {
   claude: { "subscription-quota": { unsupported: "direct-read-unsupported" }, "run-usage": ["claude-session-store"],
