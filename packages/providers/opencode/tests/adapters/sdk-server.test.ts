@@ -22,7 +22,7 @@ import {
   unreachable,
   type Recorded,
   type Reply,
-} from "../support/fake-fetch.js";
+} from "../fixtures/fake-fetch.js";
 
 /** A server port over a `fetch` that answers every request with `reply` and records it. */
 function serverReplying(reply: () => Reply | Response, headers?: Record<string, string>) {

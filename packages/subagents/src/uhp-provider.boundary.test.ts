@@ -34,7 +34,7 @@ import {
   SESSION,
   SUBSTITUTE,
   TOKEN,
-} from "./uhp-provider.fixtures.js";
+} from "./fixtures/uhp-provider.js";
 
 describe("nothing published carries a path, and the diagnostic keeps one", () => {
   it("publishes no path from any verb, on a run whose cwd is an absolute path", async () => {

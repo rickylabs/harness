@@ -32,7 +32,7 @@ import {
   CONFIG_DIR,
   INIT,
   REQUEST,
-} from "./support.js";
+} from "../fixtures/provider.js";
 
 describe("declaring what it can do", () => {
   it("is a conformant provider", () => {

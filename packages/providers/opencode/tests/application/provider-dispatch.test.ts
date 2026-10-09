@@ -9,7 +9,7 @@ import { describe, it } from "node:test";
 import { conformanceProblems } from "@rickylabs/subagents";
 
 import { CAPABILITIES, DEFAULT_ID } from "../../src/application/options.js";
-import { at, ok, request, server, text, unreachable, AUTH_PATH } from "./support.js";
+import { at, ok, request, server, text, unreachable, AUTH_PATH } from "../fixtures/provider.js";
 
 describe("declaration", () => {
   it("declares both opencode harnesses and all three optional calls", () => {

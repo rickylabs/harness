@@ -15,7 +15,7 @@ import {
   MODEL,
   SESSION,
   SUBSTITUTE,
-} from "./uhp-provider.fixtures.js";
+} from "./fixtures/uhp-provider.js";
 
 describe("observe — the #287 mapping, read from the stored response", () => {
   const mapping = [

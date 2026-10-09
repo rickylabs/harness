@@ -30,7 +30,7 @@
  * The suite is in three files so each stays under the size cap: this one (declarations and dispatch),
  * `uhp-provider.boundary.test.ts` (paths, null readers, the credential) and
  * `uhp-provider.verbs.test.ts` (observe, steer, stop). The shared fixtures are in
- * `uhp-provider.fixtures.ts`.
+ * `fixtures/uhp-provider.ts`.
  */
 
 import assert from "node:assert/strict";
@@ -67,7 +67,7 @@ import {
   SESSION,
   SUBSTITUTE,
   TOKEN,
-} from "./uhp-provider.fixtures.js";
+} from "./fixtures/uhp-provider.js";
 
 describe("the provider's own declarations", () => {
   it("advertises exactly what the manifest pins, and the three optional calls it implements", async () => {

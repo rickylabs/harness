@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { DEFAULT_ID } from "../../src/application/options.js";
-import { at, ref, request, server, unreachable } from "./support.js";
+import { at, ref, request, server, unreachable } from "../fixtures/provider.js";
 
 describe("the bus", () => {
   it("promotes a queued run to running, then finishes it when the session goes idle", async () => {

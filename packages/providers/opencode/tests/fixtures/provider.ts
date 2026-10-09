@@ -23,9 +23,9 @@ import {
   type EventChannel,
   type Recorded,
   type Reply,
-} from "../support/fake-fetch.js";
+} from "./fake-fetch.js";
 
-export { BASE_URL, respond, settle, text, unreachable } from "../support/fake-fetch.js";
+export { BASE_URL, respond, settle, text, unreachable } from "./fake-fetch.js";
 
 /** A path that names the credential file, as a server error body might. Synthetic. */
 export const AUTH_PATH = "/fixture/opencode/data/auth.json";

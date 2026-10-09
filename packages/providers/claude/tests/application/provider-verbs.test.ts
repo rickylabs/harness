@@ -22,7 +22,7 @@ import {
   NOW,
   REQUEST,
   RESULT,
-} from "./support.js";
+} from "../fixtures/provider.js";
 
 describe("observing", () => {
   it("reports a running run without going to look", async () => {

@@ -11,7 +11,7 @@ import { conformanceProblems } from "@rickylabs/subagents";
 import { createSdkServer } from "../../src/adapters/sdk-server.js";
 import { DEFAULT_ID } from "../../src/application/options.js";
 import { OpencodeProvider } from "../../src/application/provider.js";
-import { at, ok, ref, request, respond, server, text, unreachable, until, BASE_URL } from "./support.js";
+import { at, ok, ref, request, respond, server, text, unreachable, until, BASE_URL } from "../fixtures/provider.js";
 
 describe("steer", () => {
   it("delivers a second prompt into the same session, on the run's own model", async () => {

@@ -9,13 +9,13 @@
 import assert from "node:assert/strict";
 import { afterEach } from "node:test";
 
-import { createUhpProvider, type UhpDiagnostic, type UhpProvider } from "./uhp-provider.js";
-import { createUhpTransport } from "./uhp-transport.js";
-import { parseHarnessManifest, type HarnessManifest } from "./uhp-harnesses.js";
-import { compareRouteIdentity, type RouteIdentityEvidence } from "./route.js";
-import { observeUhpRoute, uhpRouteNegatives, uhpRouteVerdict } from "./uhp-gate.js";
-import type { DispatchVerdict } from "./provider.js";
-import type { DispatchRequest } from "./dispatch.js";
+import { createUhpProvider, type UhpDiagnostic, type UhpProvider } from "../uhp-provider.js";
+import { createUhpTransport } from "../uhp-transport.js";
+import { parseHarnessManifest, type HarnessManifest } from "../uhp-harnesses.js";
+import { compareRouteIdentity, type RouteIdentityEvidence } from "../route.js";
+import { observeUhpRoute, uhpRouteNegatives, uhpRouteVerdict } from "../uhp-gate.js";
+import type { DispatchVerdict } from "../provider.js";
+import type { DispatchRequest } from "../dispatch.js";
 import {
   startUhpServer,
   type UhpCreateRequest,
@@ -23,7 +23,7 @@ import {
   type UhpMock,
   type UhpReply,
   type UhpResponse,
-} from "./uhp-mock.js";
+} from "../uhp-mock.js";
 
 /* -------------------------------------------------------------------------------------------------
  * The defects, transcribed. Each one is run on the same input as the real thing.
