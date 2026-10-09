@@ -383,7 +383,7 @@ the public decoder before enabling the new emitter.
 ## Opt-in provider meters and catalog prices (contracts 0.33.0)
 
 The existing `account-usage` command/watch accepts a private schema 2 descriptor:
-`{schemaVersion:2,accountUsage:<existing schema 1 descriptor>,providers:<source>}`.
+`{ schemaVersion: 2, accountUsage: <existing schema 1 descriptor>, providers: <source> }`.
 There is one collector and state file. Native Codex/Claude collection and schema 1
 emission are unchanged. A configured provider with incomplete coverage makes a
 one-shot exit 3; the validated JSON still carries its unavailable rows.
