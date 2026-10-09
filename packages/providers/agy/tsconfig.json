@@ -7,7 +7,8 @@
   "include": [
     "mod.ts",
     "src",
-    "tests"
+    "tests",
+    "test-fixtures"
   ],
   "references": [
     { "path": "../../contracts" }

@@ -11,7 +11,7 @@ import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FR
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { scanClaudeIssue } from "./backfill/claude-issue.js";
 import { scanAGYIssue } from "./backfill/agy.js";
-import { attachAgyDescriptors, type AgyConversationRead } from "./backfill/agy-activity.js";
+import { attachAgyDescriptors, type AgyDescriptorTarget } from "./backfill/agy-activity.js";
 import type { AgyNativeReads } from "./agy-reads.js";
 import { agyNativeReads } from "@rickylabs/provider-agy";
 import { scanOpenCodeIssue } from "./backfill/opencode-issue.js";
@@ -209,13 +209,13 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       runs.push(...scan.runs);
     }
     let agyUnavailable = false;
-    const agyConversations: AgyConversationRead[] = [];
+    const agyConversations: AgyDescriptorTarget[] = [];
     // Newest dispatch first, so the descriptor phase spends the remaining budget on the latest run.
     for (const dispatch of group.dispatches.filter(d => d.source === "agy")
       .sort((a, b) => Date.parse(b.observedAt!) - Date.parse(a.observedAt!))) {
       const store = host.agyStoreDirectory(dispatch);
       if (store === null) { agyUnavailable = true; break; }
-      const scan = await scanAGYIssue(store, id => host.matchesNativeRootIdentity(dispatch, id, "agy"),
+      const scan = await scanAGYIssue(options.agy ?? agyReads, store, id => host.matchesNativeRootIdentity(dispatch, id, "agy"),
         issueFileLimit - runs.length, remainingBytes, nowMs);
       remainingBytes -= scan.bytesRead;
       for (const file of scan.files) options.watchFiles?.add(file);

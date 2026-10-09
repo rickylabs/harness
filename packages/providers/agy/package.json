@@ -11,6 +11,10 @@
     ".": {
       "types": "./dist/mod.d.ts",
       "default": "./dist/mod.js"
+    },
+    "./test-fixtures": {
+      "types": "./dist/test-fixtures/agy-store.d.ts",
+      "default": "./dist/test-fixtures/agy-store.js"
     }
   },
   "files": [

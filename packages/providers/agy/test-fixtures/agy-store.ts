@@ -1,4 +1,8 @@
-/** Synthetic agy stores for tests: SQLite/protobuf trajectories, transcripts and Orchid receipts. No real data. */
+/**
+ * The one owner of synthetic agy fixtures: SQLite/protobuf trajectories, transcripts and the Orchid
+ * receipts that bind them. Used by this package's tests, telemetry's tests and the parity test
+ * (`@rickylabs/provider-agy/test-fixtures`). No real data; argument and prompt values are private canaries.
+ */
 import { createHash } from "node:crypto";
 import { rmSync } from "node:fs";
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -49,7 +53,7 @@ export function fixture(o: Options = {}): Conversation {
 
 export type StepSpec =
   | { kind: "user" }
-  | { kind: "planner"; message?: string; status?: number; stop?: number; pad?: number }
+  | { kind: "planner"; message?: string; status?: number; stop?: number; pad?: number; offset?: number }
   | { kind: "result"; status?: number; pad?: number }
   | { kind: "system" } | { kind: "checkpoint" };
 export interface ConversationSpec {
@@ -60,13 +64,14 @@ export interface ConversationSpec {
 const PENDING = [1, 2, 8, 9, 11];
 const TYPES = { user: 14, planner: 15, result: 132, system: 101, checkpoint: 23 } as const;
 
-/** Any step sequence: step i is created at offset i+1 and, unless in progress, completed then too. */
+/** Any step sequence: step i is created at offset i+1 (or its own `offset`) and, unless in progress, completed then too. */
 export function conversation(spec: ConversationSpec): Conversation {
   const id = spec.id ?? rootID;
   const rows: Row[] = spec.steps.map((step, idx) => {
     const type = TYPES[step.kind];
     const status = step.kind === "planner" || step.kind === "result" ? step.status ?? 3 : 3;
-    const metadata = Buffer.concat([time(1, idx + 1), ...(PENDING.includes(status) ? [] : [time(8, idx + 1)])]);
+    const offset = "offset" in step && step.offset !== undefined ? step.offset : idx + 1;
+    const metadata = Buffer.concat([time(1, offset), ...(PENDING.includes(status) ? [] : [time(8, offset)])]);
     const pad = "pad" in step && step.pad ? [bytes(31, Buffer.alloc(step.pad, 0x61))] : [];
     const body = step.kind === "user" ? [bytes(19, bytes(1, "PRIVATE-USER-CANARY"))]
       : step.kind === "planner" ? [bytes(5, metadata), bytes(20, Buffer.concat([bytes(1, step.message ?? ""),
@@ -79,7 +84,7 @@ export function conversation(spec: ConversationSpec): Conversation {
   return { rows, summary: { conversation_id: id, parent_conversation_id: spec.parent ?? "", step_count: rows.length,
     last_user_input_step_index: userIndex, not_fully_idle: spec.notIdle ? 1 : 0, killed: 0, trajectory_id: trajectoryID,
     raw_summary: Buffer.concat([bytes(4, trajectoryID), integer(2, rows.length), integer(5, state), integer(16, userIndex),
-      time(7, 0), time(3, rows.length + 2), integer(18, 0), integer(21, spec.running ? 1 : 0), integer(23, 0), integer(25, 0)]) } };
+      time(7, 0), time(3, Math.max(rows.length, ...spec.steps.map(s => "offset" in s && s.offset !== undefined ? s.offset : 0)) + 2), integer(18, 0), integer(21, spec.running ? 1 : 0), integer(23, 0), integer(25, 0)]) } };
 }
 
 /** Transcript lines in the measured 1.3.2 shape; argument values are private canaries. */

@@ -14,7 +14,7 @@ activation, credentials or a successful native launch on a particular host.
 | `providers/claude` | Claude Agent SDK adapter, injected by a composition root | E3 · #33 |
 | `providers/opencode` | Adapter over `@opencode-ai/sdk` to a configured OpenCode server; it does not own that server | E3 · #33 |
 | `providers/codex` | Partial: app-server route identity and pre-turn protocol prerequisite, not a composed provider | E3 · #33 |
-| `providers/agy` | Bounded, private reader of agy's retained conversation log (`transcriptPath`): tool-call descriptors and a coverage receipt in contract shapes; depends on `contracts` only. Injected into telemetry through its `AgyNativeReads` port | #699 |
+| `providers/agy` | Every read of agy's retained native store: the SQLite trajectory decoded into neutral snapshots, and the conversation log (`transcriptPath`) read for tool-call descriptors and a coverage receipt, all in contract shapes; depends on `contracts` only. Injected into telemetry through its `AgyNativeReads` port | #699 |
 | `llm-local` | API/local adapter configuration, capability and budget tables | E4 · #34 |
 | `routing` | Replaceable routing documents, immutable matrix queries and exact native discovery | E4 · #34, E11 · #271 |
 | `governance` | Tri-regime governance read: source descriptor, usage/spend/capacity readers, recorded admissions, composed and decoded through the contract; depends on `contracts` only. Live launch admission belongs to Orchid's governor | E5 · #35, #655 |

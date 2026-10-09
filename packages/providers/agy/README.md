@@ -1,7 +1,19 @@
 # @rickylabs/provider-agy
 
-A bounded, private reader of agy's (Antigravity CLI) retained conversation log, for the telemetry
-producer's issue-agent tree (#699). It names native tool calls. It never decides their lifecycle.
+Every read of agy's (Antigravity CLI) retained native store, for the telemetry producer's issue-agent
+tree (#699). All of it is bounded and private, and it returns contract shapes only.
+
+- **The SQLite trajectory** (`src/adapters/sqlite-store.ts`, `src/domain/trajectory.ts`). This is the
+  authority for step existence, time, status and completion.
+  - It is read only under the Orchid-certified store root: the owner, mode and symlink checks, read-only
+    WAL transactions, session, step and byte bounds, and a summary re-verify.
+  - It is decoded from protobuf into the neutral `AgyStoreRead`. Every native step type, status, stop
+    reason and summary state is interpreted here and nowhere else.
+  - The summary's `workspace_uris` is selected only up to 4096 bytes, measured as bytes in SQL, and
+    counted in the budget.
+  - Telemetry applies the completion rules to the decoded snapshots.
+- **The conversation log**, described below. It names the calls the agent requested. It never decides
+  their lifecycle.
 
 ## What it reads, and why that surface
 
@@ -53,9 +65,12 @@ Not derivable from the log, and never claimed:
 
 ## Shape
 
-- `mod.ts` exports the frozen `agyNativeReads`, which structurally satisfies telemetry's
-  `AgyNativeReads` port.
-- `src/domain`: the line decoder and the tool vocabulary. It imports only contract types.
-- `src/ports`: the file tail the application needs.
-- `src/adapters`: the filesystem implementation of that port.
-- `src/application`: path derivation, decoding and the receipt.
+- `mod.ts` exports the frozen `agyNativeReads` (`readStore`, `readToolCalls`, `transcriptPath`), which
+  structurally satisfies telemetry's `AgyNativeReads` port.
+- `test-fixtures/` (exported as `@rickylabs/provider-agy/test-fixtures`): the one owner of synthetic
+  agy stores, transcripts and their Orchid receipts. Telemetry's tests and the parity test use it.
+- `src/domain`: the protobuf reader, the trajectory decoder, the transcript line decoder and the tool
+  vocabulary. It imports only contract types.
+- `src/ports`: the store scan and the file tail the application needs.
+- `src/adapters`: the SQLite and filesystem implementations of those ports.
+- `src/application`: the store read, the workspace root, transcript path derivation and the receipt.

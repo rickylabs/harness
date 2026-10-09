@@ -60,3 +60,21 @@ it("reports a missing or refused log as a missing source", async () => {
     assert.equal(read.gap, "tool-names-source-missing");
   }
 });
+
+it("refuses an invalid step count before reading", async () => {
+  for (const stepCount of [-1, 1.5, Number.NaN]) {
+    const fake = tail(jsonl(planner(1, [runCommand()])));
+    assert.equal((await readAgyToolCalls(fake, "/store", ID, 4096, stepCount)).gap, "tool-names-source-missing", String(stepCount));
+    assert.deepEqual(fake.asked, []);
+  }
+});
+
+it("invalidates the read on invalid UTF-8, even inside an otherwise valid JSON line", async () => {
+  const line = new TextEncoder().encode(planner(1, [runCommand()]) + "\n");
+  // Inside the CommandLine string value, so only the strict decoder (not JSON) can refuse it.
+  const at = Buffer.from(line).indexOf("git status") + 3;
+  const broken = new Uint8Array([...line.subarray(0, at), 0xff, ...line.subarray(at)]);
+  assert.equal(JSON.parse(new TextDecoder().decode(broken)).step_index, 1, "fixture: valid JSON when decoded leniently");
+  const read = await readAgyToolCalls({ async read() { return { bytes: broken, fromStart: true }; } }, "/store", ID, 4096, 9);
+  assert.equal(read.gap, "tool-names-source-invalid");
+});

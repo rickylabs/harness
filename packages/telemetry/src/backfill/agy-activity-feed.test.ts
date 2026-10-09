@@ -13,7 +13,7 @@ import { OPERATOR_ENV } from "../operator-environment.js";
 import { scanAGYIssue } from "./agy.js";
 import { attachAgyDescriptors } from "./agy-activity.js";
 import { agyReservation, bindAgyIssue, captured, childID, rootID, seconds, sqliteFixture, transcript as t,
-  type ConversationSpec } from "../fixtures/agy-store.js";
+  type ConversationSpec } from "@rickylabs/provider-agy/test-fixtures";
 
 const MiB = 1_048_576, BIG = 1 << 30, WS = "/workspace/project";
 const B_ID = "00000000-0000-4000-8000-0000000000b0", DECOY = "00000000-0000-4000-8000-0000000000d0";
@@ -25,12 +25,16 @@ const log = (padLines: number, size: number) => t.lines(t.planner(1, [run]), ...
 const now = new Date(captured).toISOString();
 const recording = () => {
   const reads: { allowance: number; bytesRead: number }[] = [];
-  const reads$: AgyNativeReads = { transcriptPath: agyNativeReads.transcriptPath,
+  const reads$: AgyNativeReads = { transcriptPath: agyNativeReads.transcriptPath, readStore: agyNativeReads.readStore,
     async readToolCalls(root, id, max, count) { const r = await agyNativeReads.readToolCalls(root, id, max, count); reads.push({ allowance: max, bytesRead: r.bytesRead }); return r; } };
   return { reads, port: reads$ };
 };
 const agents = (snapshot: Awaited<ReturnType<typeof collectIssueAgentTree>>) => snapshot.issues.flatMap(i => i.dispatches.flatMap(d => d.agents));
-const byMessage = (all: IssueAgentTreeAgent[], text: string) => all.find(a => a.activity?.steps.some(s => s.summary === text))!;
+/** Typed identity only: roots have no parent; a child names its parent's opaque agent id. */
+const roots = (all: IssueAgentTreeAgent[]) => all.filter(a => a.parentAgentId === null);
+const childOf = (all: IssueAgentTreeAgent[], parent: IssueAgentTreeAgent) => all.find(a => a.parentAgentId === parent.observation.agentId);
+const inIssue = (snapshot: Awaited<ReturnType<typeof collectIssueAgentTree>>, issueNumber: number) =>
+  snapshot.issues.find(i => i.issueNumber === issueNumber)!.dispatches.flatMap(d => d.agents);
 const hasNames = (a: IssueAgentTreeAgent) => a.activity!.steps.some(s => s.commandHead !== null || (s.toolName ?? null) !== null);
 const gapsOf = (a: IssueAgentTreeAgent) => a.activity?.availability === "available" ? a.activity.coverage?.gaps ?? [] : [];
 
@@ -47,7 +51,7 @@ async function twoDispatches(sameIssue: boolean) {
   await b.writeTranscript(B_ID, log(1, 60_000));
   await bindAgyIssue(receipts, { number: 42, root: a.root, observedAt: new Date((seconds + 5) * 1000).toISOString() });
   await bindAgyIssue(receipts, { number: bNumber, root: b.root, brief: "c".repeat(64), nativeID: B_ID, observedAt: new Date(seconds * 1000).toISOString() });
-  const authority = async (root: string, id: string) => (await scanAGYIssue(root, match => match === id, 20, BIG, captured)).bytesRead;
+  const authority = async (root: string, id: string) => (await scanAGYIssue(agyNativeReads, root, match => match === id, 20, BIG, captured)).bytesRead;
   return { receipts, a, b, aBytes: await authority(a.root, rootID), bBytes: await authority(b.root, B_ID),
     close: async () => { await a.close(); await b.close(); await rm(receipts, { recursive: true, force: true }); } };
 }
@@ -64,7 +68,10 @@ it("SQLite and transcript bytes share one budget; descriptors follow authority, 
     assert.equal(rec.reads.length, 2, "A root and A child were read; B was skipped");
     assert.equal(rec.reads[1]?.allowance, first - rec.reads[0]!.bytesRead);
     const all = agents(snapshot);
-    const [aRoot, aChild, b] = [byMessage(all, "Root done here."), byMessage(all, "Child done here."), byMessage(all, "Other done here.")];
+    // A is the only dispatch with a child; B is the other root.
+    const aRoot = roots(all).find(a => childOf(all, a) !== undefined)!, aChild = childOf(all, aRoot)!;
+    const b = roots(all).find(a => a !== aRoot)!;
+    assert.equal(roots(all).length, 2);
     assert.ok(hasNames(aRoot) && hasNames(aChild), "A's descriptors were read");
     assert.deepEqual(gapsOf(aRoot), ["call-lifecycle-unproven"]);
     assert.equal(hasNames(b), false, "B's descriptor read did not fit above the reserve");
@@ -81,7 +88,7 @@ it("the composition root deducts one group's transcript bytes before the next gr
     const spent = rec.reads.reduce((sum, r) => sum + r.bytesRead, 0);
     assert.equal(rec.reads.length, 2);
     assert.ok(MiB - f.aBytes - spent - f.bBytes - MiB / 2 < 65_536, "fixture precondition: the later group cannot read");
-    const b = byMessage(agents(snapshot), "Other done here.");
+    const b = roots(inIssue(snapshot, 43))[0]!;
     assert.equal(hasNames(b), false);
     assert.deepEqual(gapsOf(b), ["tool-names-budget-exhausted"]);
   } finally { await f.close(); }
@@ -94,7 +101,7 @@ it("a budget under the reserve plus the minimum skips names without starving aut
     const snapshot = await collectIssueAgentTree({ home: f.base, limit: 20, now, env: { [OPERATOR_ENV.dispatchRoot]: receipts },
       activityLifecycle: true, maxFrameBytes: 120_000 });
     assert.equal(snapshot.issues[0]?.complete, true);
-    assert.equal(agents(snapshot)[0]?.activity?.steps[0]?.summary, "The work is complete.");
+    assert.ok(agents(snapshot)[0]?.activity?.steps.some(s => s.kind === "message"), "the authority read still published its message");
     assert.deepEqual(gapsOf(agents(snapshot)[0]!), ["tool-names-budget-exhausted"]);
   } finally { await f.close(); }
 });
@@ -107,7 +114,7 @@ it("an oversized workspace value is never materialized, and its bytes are counte
     const f = await sqliteFixture("e".repeat(64), { workspaceColumn: true });
     try {
       f.replaceRoot(spec("Viewed it now.", [0, 0]), workspace); await f.writeTranscript(rootID, viewed);
-      const scan = await scanAGYIssue(f.root, id => id === rootID, 20, BIG, captured);
+      const scan = await scanAGYIssue(agyNativeReads, f.root, id => id === rootID, 20, BIG, captured);
       const phase = await attachAgyDescriptors(scan.conversations, agyNativeReads, { lifecycle: true, remainingBytes: BIG, reserveBytes: 0 });
       return { bytes: scan.bytesRead, files: [...phase.runs.values()][0]!.activitySteps!.map(s => s.filePath).filter(p => p !== null) };
     } finally { await f.close(); }
@@ -128,9 +135,9 @@ it("a delegation result never ends the delegated child (S7, G9)", async () => {
     await bindAgyIssue(receipts, { number: 42, root: f.root });
     const snapshot = await collectIssueAgentTree({ home: f.base, limit: 20, now, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, activityLifecycle: true });
     assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
-    const all = agents(snapshot), parent = byMessage(all, "Delegated it now."), child = all.find(a => a !== parent)!;
-    assert.ok(parent.activity!.steps.some(s => s.state === "completed" && s.toolName === null));
-    assert.ok(parent.activity!.steps.some(s => s.toolName === "invoke_subagent" && s.state === "unknown"));
+    const all = agents(snapshot), parent = roots(all)[0]!, child = childOf(all, parent)!;
+    assert.ok(parent.activity!.steps.some(s => s.state === "completed" && s.provenance === "executed"));
+    assert.ok(parent.activity!.steps.some(s => s.toolName === "invoke_subagent" && s.provenance === "requested" && s.state === "unknown"));
     assert.notEqual(child.liveness.state, "ended");
     assert.equal(child.terminalOutcome.value, null);
     assert.ok(!JSON.stringify(snapshot).includes("PRIVATE-"));
@@ -143,7 +150,7 @@ it("a refused transcript and a decoy conversation's transcript name nothing (S12
     f.replaceRoot(spec("Root done here.", [0, 0]));
     f.addConversation(spec("Decoy done here.", [0, 0], { id: DECOY }));
     await f.writeTranscript(DECOY, log(0, 0));
-    const decoyOnly = await scanAGYIssue(f.root, id => id === rootID, 20, BIG, captured);
+    const decoyOnly = await scanAGYIssue(agyNativeReads, f.root, id => id === rootID, 20, BIG, captured);
     const read = await attachAgyDescriptors(decoyOnly.conversations, agyNativeReads, { lifecycle: true, remainingBytes: BIG, reserveBytes: 0 });
     const root = [...read.runs.values()][0]!;
     assert.equal(root.activitySteps!.some(s => s.toolName !== null || s.commandHead !== null), false);
@@ -161,7 +168,7 @@ it("a transcript append wakes the feed through the existing watch (G35)", async 
   try {
     f.replaceRoot(spec("Root done here.", [0, 0]));
     const path = await f.writeTranscript(rootID, log(0, 0));
-    const scan = await scanAGYIssue(f.root, id => id === rootID, 20, BIG, captured);
+    const scan = await scanAGYIssue(agyNativeReads, f.root, id => id === rootID, 20, BIG, captured);
     const watchFiles = new Set(scan.files);
     await attachAgyDescriptors(scan.conversations, agyNativeReads, { lifecycle: false, remainingBytes: BIG, reserveBytes: 0, watchFiles });
     assert.ok(watchFiles.has(path));

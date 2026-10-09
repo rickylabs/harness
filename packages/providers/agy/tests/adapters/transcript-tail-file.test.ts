@@ -65,3 +65,10 @@ it("refuses a path that escapes the root through a symlinked parent, or lies out
   assert.deepEqual(await tail.read(join(root, "store"), join(root, "store", "brain", "log.jsonl"), 4096), { bytes: null, reason: "refused" });
   assert.deepEqual(await tail.read(join(root, "store"), join(root, "elsewhere", "log.jsonl"), 4096), { bytes: null, reason: "refused" });
 }));
+
+it("refuses a zero or negative byte budget without reading", async () => store(async root => {
+  await writeFile(join(root, "log.jsonl"), "a\n");
+  for (const maxBytes of [0, -1, 1.5]) {
+    assert.deepEqual(await tail.read(root, join(root, "log.jsonl"), maxBytes), { bytes: null, reason: "refused" }, String(maxBytes));
+  }
+}));

@@ -1,15 +1,22 @@
 /** Synthetic SQLite/protobuf only; never launch an agent or read native operator data. */
 import assert from "node:assert/strict";
-import { appendFile, chmod, symlink, writeFile } from "node:fs/promises";
+import { appendFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { it } from "node:test";
-import { agyConversation, scanAGYIssue } from "./agy.js";
+import { decodeAgyConversation, agyNativeReads } from "@rickylabs/provider-agy";
+import { agyRun, scanAGYIssue } from "./agy.js";
 import { collectIssueAgentTree } from "../issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "../operator-environment.js";
 import { openIssueFeedChanges } from "../issue-agent-feed-changes.js";
 import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
-import { agyReservation, bindAgyIssue, bytes, captured, childID, encode, fixture, integer, rootID, seconds, sqliteFixture, time,
-  trajectoryID, type Options } from "../fixtures/agy-store.js";
+import { agyReservation, bindAgyIssue, bytes, captured, encode, fixture, integer, rootID, seconds, sqliteFixture, time,
+  trajectoryID, type Options } from "@rickylabs/provider-agy/test-fixtures";
+/** The provider decodes the store rows; telemetry's completion rules map the decoded conversation to a run. */
+const agyConversation = (summary: Parameters<typeof decodeAgyConversation>[0], rows: Parameters<typeof decodeAgyConversation>[1],
+  origin: string, nowMs: number) => {
+  const conversation = decodeAgyConversation(summary, rows, origin, nowMs, null);
+  return conversation === null ? null : agyRun(conversation);
+};
 it("AGY typed response is screened, bounded and ends at the native completion timestamp", () => {
   const f = fixture(), run = agyConversation(f.summary, f.rows, "PRIVATE-ORIGIN-CANARY", captured)!;
   assert.equal(run.source, "agy"); assert.equal(run.outcome, "complete");
@@ -76,21 +83,6 @@ it("AGY a newer user turn clears the prior end and success", () => {
   const run = agyConversation(summary, rows, "private", captured)!;
   assert.equal(run.outcome, "running"); assert.equal(run.terminalAt, undefined);
 });
-it("AGY read-only WAL scan joins one exact root, follows explicit children and drops unrelated sessions", async () => {
-  const f = await sqliteFixture();
-  try {
-    f.add({ id: childID, parent: rootID });
-    f.add({ id: "00000000-0000-4000-8000-000000000003" });
-    const scan = await scanAGYIssue(f.root, id => id === rootID, 20, 4_194_304, captured);
-    assert.equal(scan.reason, null); assert.equal(scan.runs.length, 2);
-    assert.equal(scan.runs.find(r => r.id === childID)?.parentId, rootID);
-    assert.ok(scan.files.includes(f.native.path + "-wal"));
-    assert.ok(!JSON.stringify(scan.runs.map(r => r.activitySteps)).includes("PRIVATE-"));
-    assert.equal((await scanAGYIssue(f.root, () => false, 20, 4_194_304, captured)).reason, "source_unavailable");
-    assert.equal((await scanAGYIssue(f.root, id => id === rootID, 1, 4_194_304, captured)).reason, "scan_limit");
-    assert.equal((await scanAGYIssue(f.root, id => id === rootID, 20, 1, captured)).reason, "scan_limit");
-  } finally { await f.close(); }
-});
 it("AGY feed serves screened live text and exact Done while another issue stays unknown", async () => {
   const f = await sqliteFixture(agyReservation(42));
   try {
@@ -136,7 +128,7 @@ it("AGY feed serves screened live text and exact Done while another issue stays 
 it("AGY bound native WAL changes wake the feed without watching other paths", async () => {
   const f = await sqliteFixture(), changes = openIssueFeedChanges(undefined, join(f.base, "unbound"));
   try {
-    const scan = await scanAGYIssue(f.root, id => id === rootID, 20, 4_194_304, captured);
+    const scan = await scanAGYIssue(agyNativeReads, f.root, id => id === rootID, 20, 4_194_304, captured);
     const unrelated = join(f.base, "unrelated"); await writeFile(unrelated, "a");
     changes.setFiles(new Set([...scan.files, unrelated]), new Set([f.root]));
     await new Promise(resolve => setTimeout(resolve, 30)); changes.consume();
@@ -148,20 +140,4 @@ it("AGY bound native WAL changes wake the feed without watching other paths", as
     for (let i = 0; i < 30 && !changed; i++) { await new Promise(resolve => setTimeout(resolve, 20)); changed = changes.consume(); }
     assert.equal(changed, true);
   } finally { changes.close(); await f.close(); }
-});
-it("AGY wrong native database identity, symlink stores and widened permissions stay unavailable", async () => {
-  const f = await sqliteFixture();
-  try {
-    f.native.db.prepare("UPDATE trajectory_meta SET trajectory_id=?").run(childID);
-    assert.equal((await scanAGYIssue(f.root, id => id === rootID, 20, 4_194_304, captured)).reason, "source_unavailable");
-    f.native.db.prepare("UPDATE trajectory_meta SET trajectory_id=?").run(trajectoryID);
-    f.native.db.prepare("UPDATE trajectory_meta SET cascade_id=?").run(childID);
-    assert.equal((await scanAGYIssue(f.root, id => id === rootID, 20, 4_194_304, captured)).reason, "source_unavailable");
-    f.native.db.prepare("UPDATE trajectory_meta SET cascade_id=?").run(rootID);
-    await chmod(f.root, 0o755);
-    assert.equal((await scanAGYIssue(f.root, id => id === rootID, 20, 4_194_304, captured)).reason, "source_unavailable");
-    await chmod(f.root, 0o700);
-    await symlink(f.root, join(f.base, "linked"));
-    assert.equal((await scanAGYIssue(join(f.base, "linked"), id => id === rootID, 20, 4_194_304, captured)).reason, "source_unavailable");
-  } finally { await f.close(); }
 });
