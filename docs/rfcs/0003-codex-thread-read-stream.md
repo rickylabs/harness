@@ -18,7 +18,7 @@ CURRENT identifies inspected source; CITED identifies a retrieved authority; PLA
 
 **CITED.** [The official app-server protocol](https://developers.openai.com/codex/app-server) documents JSONL stdio and initialization. Installed generated Thread/ThreadGoal/ThreadList/notification schemas are the exact field authority used here. Thread model and effort are current configuration when loaded, otherwise persisted metadata, explicitly not per-turn execution evidence. Git context is captured metadata. The runtime status belongs to the connected app-server instance.
 
-**CURRENT.** [The existing provider protocol](../../packages/provider-codex/src/protocol.ts) is a pure start/turn port, not an initialized stdio client. NetScript MCP guidance and source inspection did not identify a matching read adapter. This implementation introduces no NetScript build dependency and no parked UHP dependency.
+**CURRENT.** [The existing provider protocol](../../packages/providers/codex/src/ports/protocol-port.ts) is a pure start/turn port, not an initialized stdio client. NetScript MCP guidance and source inspection did not identify a matching read adapter. This implementation introduces no NetScript build dependency and no parked UHP dependency.
 
 ## Read contract and absence
 

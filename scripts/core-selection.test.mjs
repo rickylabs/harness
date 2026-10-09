@@ -9,7 +9,7 @@ import { tmpdir } from "node:os";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = () => JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 // Independent of core-packages.mjs on purpose: `packages/<name>`, or `packages/<group>/<name>` when the
-// group has no manifest of its own (`packages/hosts/`).
+// group has no manifest of its own (`packages/providers/`, `packages/hosts/`).
 const expected = () => readdirSync(join(root, "packages")).filter(name => name !== "dsh-app").flatMap(name => {
   if (existsSync(join(root, "packages", name, "package.json"))) return [`packages/${name}`];
   if (!statSync(join(root, "packages", name)).isDirectory()) return [];

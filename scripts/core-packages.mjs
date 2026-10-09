@@ -13,7 +13,7 @@ const pnpm = (args, options = {}) => spawnSync("pnpm", args, {
 
 /**
  * Core package directories: `packages/<name>`, or `packages/<group>/<name>` when `<group>` has no
- * manifest of its own (as `packages/hosts/` does). One group level, no deeper.
+ * manifest of its own (as `packages/providers/` and `packages/hosts/` do). One group level, no deeper.
  */
 function coreDirectories() {
   const manifestIn = (dir) => existsSync(join(ROOT, dir, "package.json"));

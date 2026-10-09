@@ -16,7 +16,7 @@ packages/
   coordinator/          run lifecycle
   governance/           admissions, capacity, spend (moved out of telemetry by rearch(7) #655)
   telemetry/            observation model, sinks, read models (renamed telemetry-core next night)
-  providers/claude|codex|opencode/   vendor adapters (rearch(8) #659)
+  providers/claude|codex|opencode/   vendor adapters (done, rearch(8) #659)
   hosts/orchid/         orchid dispatch + evidence adapter (rearch(9) #660)
   method/               method tools with a bin (rearch(5) #658), replaces method/tools + deno.json
   board/ forge/ llm-local/
@@ -35,8 +35,6 @@ location stays authoritative and the owning issue moves it:
 
 | Today | Target | Moved by |
 | --- | --- | --- |
-| `packages/provider-claude`, `provider-codex`, `provider-opencode` | `packages/providers/*` | #659 |
-| orchid observation files inside `packages/telemetry` | `packages/hosts/orchid` (done) | #660 |
 | governance code inside `packages/telemetry`, stub `packages/governance` | `packages/governance` | #655 |
 | `method/tools`, `run-record/templates`, `deno.json`, `BOARD.md` | `packages/method` (or deleted) | #658 |
 | flat `src/` in each package | `mod.ts` + `src/{domain,application,ports,adapters}` | each package's issue |

@@ -46,9 +46,9 @@ or owner route waives that rule. A model's family is independent of the transpor
 | Package | Source boundary |
 | --- | --- |
 | [`subagents`](../../packages/subagents) | Native request/provider contract, registry and selection |
-| [`provider-claude`](../../packages/provider-claude) | Claude Agent SDK injected by a composition root |
-| [`provider-opencode`](../../packages/provider-opencode) | Configured OpenCode server; does not start or own it |
-| [`provider-codex`](../../packages/provider-codex) | Partial route-identity and pre-turn prerequisite; not a composed provider |
+| [`provider-claude`](../../packages/providers/claude) | Claude Agent SDK injected by a composition root |
+| [`provider-opencode`](../../packages/providers/opencode) | Configured OpenCode server over `@opencode-ai/sdk`; does not start or own it |
+| [`provider-codex`](../../packages/providers/codex) | Partial route-identity and pre-turn prerequisite; not a composed provider |
 | [`provider-acp`](../../packages/provider-acp) | Empty ACP stub |
 | [`llm-local`](../../packages/llm-local) | API/local adapter destinations and capability/budget configuration |
 
