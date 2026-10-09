@@ -32,11 +32,13 @@ it("publishes the typed tool call only: never its output, title, error, or a pat
   let record = run(list)!;
   assert.ok(!JSON.stringify(record).includes("PRIVATE-"));
   assert.equal(record.activitySteps?.find(step => step.toolName === "read")?.filePath, "README.md");
-  read.state.input.filePath = "/elsewhere/README.md";
-  record = run(list)!;
-  const step = record.activitySteps?.find(step => step.toolName === "read");
-  assert.deepEqual([step?.kind, step?.filePath], ["tool", null]);
-  assert.ok(!JSON.stringify(record).includes("/elsewhere"));
+  // Outside the root, including a sibling directory that merely shares the root's prefix.
+  for (const outside of ["/elsewhere/README.md", "/workspace/project-fork/README.md"]) {
+    read.state.input.filePath = outside;
+    record = run(list)!;
+    const step = record.activitySteps?.find(step => step.toolName === "read");
+    assert.deepEqual([step?.kind, step?.filePath], ["tool", null], outside);
+  }
 });
 
 it("provider-executed tools and interrupted orphans need no continuation; any other tool call does", () => {
