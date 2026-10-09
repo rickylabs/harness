@@ -29,7 +29,6 @@
     "check:test-scripts": "node --test scripts/check-test-scripts.test.mjs && node scripts/check-test-scripts.mjs",
     "test": "node scripts/run-stages.mjs --label test check:stages check:core-selection check:test-scripts check:receipts check:cluster test:packages test:parity check:cli-aliases check:installed",
     "skill:install": "pnpm --filter @rickylabs/forge run build && node packages/forge/dist/cli.js skill install --dispatch-label harness",
-    "golden:bless": "pnpm run experiment:dsh:golden:bless",
     "clean": "node scripts/core-packages.mjs clean",
     "check:compiled-policy": "node --test scripts/check-compiled-policy.test.mjs && node scripts/check-compiled-policy.mjs",
     "check:installed": "node --test scripts/inconclusive.test.mjs && node scripts/check-installed-contracts.mjs",
@@ -42,15 +41,7 @@
     "check:receipts": "node --test method/tools/harness/matrix-receipts.test.mjs",
     "check:gate-mutations": "node scripts/mutation-verify-gates.mjs",
     "check:cli-aliases": "node --test scripts/cli-aliases.test.mjs",
-    "check:core-selection": "node --test scripts/core-selection.test.mjs",
-    "experiment:dsh:build": "pnpm --recursive --filter '@rickylabs/harness-router-dsh...' run build",
-    "experiment:dsh:typecheck": "pnpm --recursive --filter '@rickylabs/harness-router-dsh...' run typecheck",
-    "experiment:dsh:unit": "pnpm --filter @rickylabs/harness-router-dsh run test",
-    "check:docs:dsh": "node scripts/cli-reference.mjs --experiment-dsh",
-    "docs:cli:dsh": "pnpm run experiment:dsh:build && node scripts/cli-reference.mjs --experiment-dsh --write",
-    "check:tutorial:dsh": "node scripts/check-tutorial.mjs --experiment-dsh",
-    "experiment:dsh:check": "node scripts/run-stages.mjs --label experimental-dsh --compile-stage experiment:dsh:build check:graph experiment:dsh:build experiment:dsh:unit check:docs:dsh check:tutorial:dsh",
-    "experiment:dsh:golden:bless": "pnpm run experiment:dsh:build && node experiments/routers/dsh/dist/bless.js"
+    "check:core-selection": "node --test scripts/core-selection.test.mjs"
   },
   "devDependencies": {
     "@rickylabs/harness-contracts": "workspace:*",

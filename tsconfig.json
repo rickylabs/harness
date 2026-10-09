@@ -16,8 +16,6 @@
     { "path": "packages/forge" },
     { "path": "packages/governance" },
     { "path": "packages/llm-local" },
-    { "path": "packages/netscript-bridge" },
-    { "path": "packages/provider-acp" },
     { "path": "packages/provider-claude" },
     { "path": "packages/provider-codex" },
     { "path": "packages/provider-opencode" },
