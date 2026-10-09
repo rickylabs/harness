@@ -128,9 +128,10 @@ export async function main(argv: readonly string[], io: Io = {
     if (command === "milestone" && sub === "validate") return await validate(argv.slice(2), io);
     return usage(io, `unknown command: ${[command, sub].filter(Boolean).join(" ")}`);
   } catch (error) {
-    // parseArgs refusals (unknown option, missing option value) are usage errors.
+    // parseArgs refusals (unknown option, missing option value) are usage errors. Only the fixed
+    // parser code is reported: the parser's message quotes the argument, which may be a private path.
     const code = (error as { code?: unknown } | null)?.code;
-    if (typeof code === "string" && code.startsWith("ERR_PARSE_ARGS_")) return usage(io, message(error));
+    if (typeof code === "string" && /^ERR_PARSE_ARGS_[A-Z_]+$/.test(code)) return usage(io, `invalid arguments (${code})`);
     throw error;
   }
 }

@@ -205,3 +205,11 @@ test("hostile values, keys and malformed input are never echoed by the CLI", (t)
     assert.equal(output.stderr, "");
   }
 });
+
+test("a refused receipts argument exits unproven without echoing the argument", () => {
+  const sentinel = "--PRIVATE_ARGUMENT_SENTINEL_NOT_FOR_LOGS.json";
+  const output = run([sentinel]);
+  assert.equal(output.status, 2);
+  assert.equal((output.stdout + output.stderr).includes("PRIVATE_ARGUMENT_SENTINEL"), false);
+  assert.match(output.stderr, /^error: invalid arguments \(ERR_PARSE_ARGS_UNKNOWN_OPTION\)$/m);
+});

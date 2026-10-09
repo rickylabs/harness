@@ -59,6 +59,8 @@ CLI is `harness-method receipts`; the [tests](../../packages/method/tests/matrix
 the real CLI, including a symlinked entry point.
 Use synthetic fixtures only; operational receipts and identifiers stay private.
 
-A reviewer should temporarily bypass the CLI's call to `validateReceiptText`, run
+A reviewer should temporarily bypass the `validateReceiptText` call inside `checkReceipts`
+([check-receipts.ts](../../packages/method/src/application/check-receipts.ts)), which the
+`receipts` subcommand of [main.ts](../../packages/method/src/adapters/cli/main.ts) calls, run
 `pnpm run check:receipts`, confirm the negative CLI fixtures fail, then restore the call. A
 helper-only green suite is insufficient if the actual CLI has stopped reaching the validator.
