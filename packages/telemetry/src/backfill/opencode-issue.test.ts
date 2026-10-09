@@ -8,8 +8,8 @@ import { DatabaseSync } from "node:sqlite";
 import { it } from "node:test";
 import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { collectIssueAgentTree } from "../issue-agent-feed-cli.js";
-import { ORCHID_DISPATCH_ROOT, readOrchidDispatches } from "../orchid-dispatch.js";
-import { verifyOrchidOpenCodeBinding } from "../orchid-native-binding.js";
+import { readOrchidDispatches, verifyOrchidOpenCodeBinding } from "@rickylabs/host-orchid";
+import { OPERATOR_ENV } from "../operator-environment.js";
 import { openCodeConversation, scanOpenCodeIssue } from "./opencode-issue.js";
 
 const rootID = "ses_fixture_root", epoch = Date.parse("2026-01-01T00:00:00.000Z");
@@ -61,7 +61,7 @@ async function fixture(o: FixtureOptions = {}) {
     return record;
   };
   const record = await issue(42);
-  const options = { home: base, limit: 20, now, env: { [ORCHID_DISPATCH_ROOT]: receipts } };
+  const options = { home: base, limit: 20, now, env: { [OPERATOR_ENV.dispatchRoot]: receipts } };
   const collect = () => collectIssueAgentTree(options);
   const close = async () => { db.close(); await rm(base, { recursive: true, force: true }); };
   return { base, path, store, db, message, part, issue, record, options, collect, close };
@@ -221,14 +221,14 @@ it("OpenCode duplicate JSON keys, foreign parts and contradictory/future clocks 
 it("OpenCode private binding and dispatch changes invalidate an in-flight native read", async () => {
   const f = await fixture();
   try {
-    let dispatch = (await readOrchidDispatches(f.options.env[ORCHID_DISPATCH_ROOT])).dispatches[0]!;
+    let dispatch = (await readOrchidDispatches(f.options.env[OPERATOR_ENV.dispatchRoot])).dispatches[0]!;
     assert.equal(await verifyOrchidOpenCodeBinding(dispatch), true);
     const binding = join(f.record, "binding.json");
     const bytes = await import("node:fs/promises").then(fs => fs.readFile(binding));
     await writeFile(binding, JSON.stringify({ ...JSON.parse(bytes.toString()), extra: "changed" }), { mode: 0o600 });
     assert.equal(await verifyOrchidOpenCodeBinding(dispatch), false);
     await writeFile(binding, bytes, { mode: 0o600 });
-    dispatch = (await readOrchidDispatches(f.options.env[ORCHID_DISPATCH_ROOT])).dispatches[0]!;
+    dispatch = (await readOrchidDispatches(f.options.env[OPERATOR_ENV.dispatchRoot])).dispatches[0]!;
     await writeFile(join(f.record, "dispatch.json"), "{}", { mode: 0o600 });
     assert.equal(await verifyOrchidOpenCodeBinding(dispatch), false);
   } finally { await f.close(); }

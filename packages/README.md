@@ -1,33 +1,29 @@
 # packages/
 
-Fourteen flat core packages implement Harness mechanisms or define explicit partial/stub boundaries.
-The fifteenth workspace package, `@rickylabs/harness-router-dsh`, retains the optional DeepSeek Harness router experiment.
-[ADR 0005](../method/doctrine/decisions/0005-harness-framework-identity.md) records the current framework
-identity on Orchid and Herdr. Core modules do not depend on that experimental host.
+Fourteen core packages implement Harness mechanisms or define explicit partial/stub boundaries;
+`providers/` and `hosts/` group the vendor and host adapters.
+[ADR 0005](../docs/decisions/0005-harness-framework-identity.md) records the current framework
+identity on Orchid and Herdr.
 
-The [experiment](../experiments/routers/dsh/README.md) lives outside `packages/` and is excluded
-from default core build, typecheck and tests. Its explicit checks still verify all fourteen
-workspace dependency/reference edges. Workspace install may resolve its locked upstream
-dependencies. This index describes source implementation, not provider configuration,
+This index describes source implementation, not provider configuration,
 activation, credentials or a successful native launch on a particular host.
 
 | Package | Implemented boundary | Owner |
 | --- | --- | --- |
-| `subagents` | Native task requests, provider contract, selection and UHP adapter; UHP dispatch is parked by [ADR 0004](../method/doctrine/decisions/0004-uhp-park-evidence.md) | E3 · #33 |
-| `provider-claude` | Claude Agent SDK adapter, injected by a composition root | E3 · #33 |
-| `provider-opencode` | Adapter to a configured OpenCode server; it does not own that server | E3 · #33 |
-| `provider-codex` | Partial: app-server route identity and pre-turn protocol prerequisite, not a composed provider | E3 · #33 |
-| `provider-acp` | Stub: ACP provider boundary | E3 · #33 |
+| `subagents` | Native task requests, provider contract, selection and UHP adapter; UHP dispatch is parked by [ADR 0004](../docs/decisions/0004-uhp-park-evidence.md) | E3 · #33 |
+| `providers/claude` | Claude Agent SDK adapter, injected by a composition root | E3 · #33 |
+| `providers/opencode` | Adapter over `@opencode-ai/sdk` to a configured OpenCode server; it does not own that server | E3 · #33 |
+| `providers/codex` | Partial: app-server route identity and pre-turn protocol prerequisite, not a composed provider | E3 · #33 |
 | `llm-local` | API/local adapter configuration, capability and budget tables | E4 · #34 |
 | `routing` | Replaceable routing documents, immutable matrix queries and exact native discovery | E4 · #34, E11 · #271 |
-| `governance` | Stub package boundary; live launch admission and meters belong to Orchid's governor | E5 · #35 |
+| `governance` | Tri-regime governance read: source descriptor, usage/spend/capacity readers, recorded admissions, composed and decoded through the contract; depends on `contracts` only. Live launch admission belongs to Orchid's governor | E5 · #35, #655 |
 | `board` | GitHub task graph and board projections | E6 · #36 |
+| `method` | Milestone run records: render and validate, route receipt checks (`harness-method`), run templates | rearch · #658 |
 | `coordinator` | Workflow decisions, replay, independent selection and durable-effect storage boundary | E6 · #36 |
 | `forge` | Explicit GitHub taxonomy/process installation and bridge rules | E7 · #37 |
-| `netscript-bridge` | Stub: external NetScript service adapter | E7 · #37 |
 | `contracts` | Published mechanism vocabulary and strict decoders under `@rickylabs/harness-contracts` | E8 · #38 |
-| `telemetry` | Native session observations, screened activity, usage and dispatch evidence | E9 · #39 |
-| `harness-router-dsh` | Optional experiment: dsh profile, bundle and adapters consuming core modules | E2 · #32 |
+| `telemetry` | Native session observations, screened activity, usage and dispatch evidence; composes host adapters through its `OrchidReads` port | E9 · #39 |
+| `hosts/orchid` | `@rickylabs/host-orchid`: reads Orchid's private receipt root (dispatch, launch, binding, stop, teardown, Claude status) into contract shapes; depends on `contracts` only | #660 |
 
 A stub holds a buildable place in the project graph, not a working integration. Its README states
 what remains unimplemented. Native dispatch in [Orchid](https://github.com/rickylabs/orchid) and
@@ -36,7 +32,7 @@ a working CLI transport does not imply that a partial package provider is comple
 
 Native tasks and API/local calls have different loop and enforcement boundaries; their accounting
 must use actual vendor/provider sources. [Two seams](../docs/concepts/02-the-two-seams.md) describes
-that distinction and the experiment's service-key vocabulary.
+that distinction.
 
 `subagents` is an internal provider boundary. `contracts` is a public mechanism boundary consumed
 by separate product backends and, where required, type-only vocabulary consumers. The product
@@ -48,7 +44,7 @@ and retains physical checks and accounting. No client-supplied model string gran
 
 - **Name** `@rickylabs/<dir>`; `private: true` for everything except `contracts`.
   - **The one exception is `contracts` itself**, published as `@rickylabs/harness-contracts` (#81).
-    The other fourteen names are internal and only ever read inside this repository, where `contracts`
+    The other names are internal and only ever read inside this repository, where `contracts`
     is unambiguous. That one is a public npm name that has to say which project it belongs to when it
     appears in someone else's `package.json`. The directory keeps its short name because the name a
     contributor types is a different audience from the name a consumer installs.
@@ -65,13 +61,12 @@ and retains physical checks and accounting. No client-supplied model string gran
 - **Scripts.** `build` = `tsc -b` (JS + declarations), `typecheck` = `tsc -b --emitDeclarationOnly`
   (full type check; emits only the `.d.ts` files that downstream references need, because
   `--noEmit` is not allowed on a referenced project), `clean` = remove `dist/` and build info.
-- `@deepseek-ai/dsh` is a **dependency** (currently only of `harness-router-dsh` in `experiments/routers/dsh`), never vendored or forked.
-  Its native transitive deps have their build scripts denied in `pnpm-workspace.yaml`; E2 flips
-  on the ones the runtime needs.
+- **The one runtime exception is `method`**, which runs from source under Node 24 type stripping
+  (`rootDir: "."`, `mod.ts` entry, declaration-only build, `erasableSyntaxOnly`). Its bin must exist
+  when `pnpm install` links it, and a `dist/` bin does not exist yet at that point in CI.
 
 Adding a package: copy any stub directory, rename, add it to the root `tsconfig.json`
-`references` list, and declare only its actual consumers. Add it to the optional router only if that experiment
-really composes it.
+`references` list, and declare only its actual consumers.
 
 `coordinator` has a type-only dependency on published `contracts` for its durable state-store port.
 The filesystem reference driver and memory fake live in `coordinator`; neither adds a runtime import

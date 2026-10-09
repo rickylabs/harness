@@ -285,7 +285,7 @@ void protocol; void server; void acceptHub;\n`);
   const cliEnv = { HOME: env.HOME, PATH: env.PATH, SYNTHETIC_USAGE_KEY: secret,
     HARNESS_TELEMETRY_DIR: join(scratch, "log"), HARNESS_TELEMETRY_ARCHIVE: "none" };
   const descriptor = { accountLabel: "synthetic", usage: { denoBin: probe, probe: join(scratch, "probe.ts"), checkout: join(scratch, "checkout"),
-    model: "synthetic/sleeping-model", credentialEnv: "SYNTHETIC_USAGE_KEY", timeoutMs: 500, maxBytes: 4096,
+    model: "synthetic/sleeping-model", credentialEnv: "SYNTHETIC_USAGE_KEY", allowNet: "usage.example.invalid", timeoutMs: 500, maxBytes: 4096,
     windows: { rolling_five_hours: { label: "short", windowMinutes: 300 }, weekly: { label: "week", windowMinutes: 10080 }, monthly: { label: "month", windowMinutes: 43200 } } },
     spend: null, capacity: { cgroupRoot: cgroup, scopeLabel: "synthetic-cgroup", validForMs: 60_000 }, admissions: { fromObservabilityLog: true } };
   const sourceFile = join(scratch, "descriptor.json"); writeFileSync(sourceFile, JSON.stringify(descriptor));

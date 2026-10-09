@@ -1,8 +1,8 @@
 // A third gate state, held apart from pass and from fail.
 //
 // A check that cannot run must say so. Reporting a definite verdict it has not earned is the
-// defect this module exists to remove: PRINCIPLES.md principle 6 states that a gate which cannot
-// execute in the current repository is unproven and is never assumed green, so an inconclusive
+// defect this module exists to remove: docs/DOCTRINE.md (gates report three states) holds that a gate
+// which cannot execute in the current repository is unproven and is never assumed green, so an inconclusive
 // result is deliberately not exit zero. It is distinguishable from both other states by exit code
 // and by a structured status, because a caller that can only see zero or non-zero cannot act on it.
 //

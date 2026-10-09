@@ -22,12 +22,14 @@ import type { AgentObservations } from "@rickylabs/harness-contracts";
  */
 
 import type {
+  GovernanceReadSnapshot,
   GovernanceState,
   PendingApproval,
+  RecordedAdmission,
   RegimeStatus,
 } from "@rickylabs/harness-contracts";
 
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 import type { LivenessVerdict } from "./liveness.js";
 import type {
   AttributedRun,
@@ -43,7 +45,7 @@ import type {
   TelemetrySnapshot,
 } from "./model.js";
 import type { ActivityTree, EpicNode, ItemNode, LinkedRef, MilestoneNode } from "./tree.js";
-import type { AdmissionView, GovernanceView, ObservationAvailability } from "./observations.js";
+import type { AdmissionItemRef, RefusedDispatch } from "./observations.js";
 
 /** A run as published: `RunRecord` minus `origin`. */
 export interface PublicRun {
@@ -105,31 +107,19 @@ export interface PublicSnapshot {
   readonly notes: readonly string[];
 }
 
-export interface PublicAdmission {
-  readonly item: { readonly number: number };
-  readonly regime: AdmissionView["regime"];
-  readonly state: AdmissionView["state"];
-  readonly availability: AdmissionView["availability"];
-  readonly observedAt: string;
-  readonly validUntil: string;
-  readonly provenance: string;
-  readonly outcome: {
-    readonly accepted: false;
-    readonly reason: string;
-    readonly detail: string;
-    readonly approval?: PendingApproval;
-  };
-}
+/** A recorded refusal as `status --json` publishes it, derived from the contract's `RecordedAdmission`. */
+export type PublicAdmission = Pick<RecordedAdmission, "regime" | "state" | "observedAt" | "validUntil" | "provenance"> & {
+  readonly item: AdmissionItemRef;
+  readonly availability: RecordedAdmission["freshness"];
+  readonly outcome: RefusedDispatch;
+};
 
-export interface PublicGovernance {
-  readonly availability: ObservationAvailability;
-  readonly observedAt: string | null;
-  readonly validUntil: string | null;
-  readonly provenance: string | null;
-  readonly state: GovernanceState | null;
-  readonly admissions: readonly PublicAdmission[];
-  readonly unavailableReason: string | null;
-}
+/** The governance block of `status --json` and `tree --json`, derived from the contract's read document. */
+export type PublicGovernance = Pick<GovernanceReadSnapshot, "availability" | "observedAt" | "validUntil" | "provenance" | "state"
+  | "unavailableReason"> & { readonly admissions: readonly PublicAdmission[] };
+
+/** The read document carries no operator detail; the published outcome says so instead of inventing one. */
+const WITHHELD_DETAIL = "Recorded gate refusal; private operator detail withheld. Admission is not execution evidence.";
 
 function publicApproval(approval: PendingApproval): PendingApproval {
   return {
@@ -203,27 +193,21 @@ function publicState(value: GovernanceState): GovernanceState {
   };
 }
 
-function publicAdmission(value: AdmissionView): PublicAdmission {
-  const approval = value.outcome.approval;
+function publicAdmission(value: RecordedAdmission): PublicAdmission {
   return {
-    item: { number: value.item.number },
+    item: { number: value.item },
     regime: value.regime,
     state: value.state,
-    availability: value.availability,
+    availability: value.freshness,
     observedAt: value.observedAt,
     validUntil: value.validUntil,
     provenance: value.provenance,
-    outcome: {
-      accepted: false,
-      reason: value.outcome.reason,
-      detail: value.outcome.detail,
-      ...(approval === undefined ? {} : { approval: publicApproval(approval) }),
-    },
+    outcome: { accepted: false, reason: value.reason, detail: WITHHELD_DETAIL },
   };
 }
 
 /** Project governance field by field; file paths and loader details have no route into this shape. */
-export function publicGovernance(value: GovernanceView): PublicGovernance {
+export function publicGovernance(value: GovernanceReadSnapshot): PublicGovernance {
   if (value.availability === "unavailable") {
     return {
       availability: value.availability,

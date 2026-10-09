@@ -16,13 +16,14 @@ import { buildAgentObservations } from "./agent-observations.js";
 import { readClaudeChildStarts } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import { readActionReceipts } from "./action-receipt-cli.js";
-import { readOrchidDispatches } from "./orchid-dispatch.js";
-import type { OrchidLaunchState } from "./orchid-dispatch.js";
-import { matchesOrchidNativeRootIdentity, orchidAGYStoreDirectory, orchidOpenCodeSessionID, verifyOrchidOpenCodeBinding, resolveOrchidNativeRoot } from "./orchid-native-binding.js";
+import { orchidHost } from "@rickylabs/host-orchid";
+import type { OrchidReads } from "./host-reads.js";
 import { readLocalHostCapacity } from "./host-capacity.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { DispatchEvidence, OrchidLaunchState } from "@rickylabs/harness-contracts";
 import type { RunRecord } from "./model.js";
+/** Composition root: the Orchid host behind the telemetry-owned port. */
+const host: OrchidReads = orchidHost;
 
 export interface IssueAgentFeedOptions {
   readonly home: string;
@@ -94,7 +95,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   try { wireFamily = resolveWireFamily(options.env); bindings = resolveNativeOperatorBindings(options.env); }
   catch { return unavailableSnapshot(options.now, "source_unavailable"); }
   if (bindings.dispatchRoot === undefined) return unavailableSnapshot(options.now, "source_not_bound");
-  const orchid = await readOrchidDispatches(bindings.dispatchRoot);
+  const orchid = await host.readDispatches(bindings.dispatchRoot);
   const nowMs = Date.parse(options.now);
   if (!Number.isFinite(nowMs) || orchid.reason !== null) return unavailableSnapshot(options.now, "source_unavailable");
   const localCapacity = await readLocalHostCapacity(options.now, bindings.placementHost, {}, wireFamily);
@@ -166,7 +167,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       const codexSessions = defaultRoots(options.home).codexSessions;
       const scan = await backfillFromDisk(codexSessions === undefined ? {} : { codexSessions },
         { limit: issueFileLimit, codexWindows: windows,
-          codexRootMatches: id => codexDispatches.some(dispatch => matchesOrchidNativeRootIdentity(dispatch, id, "codex")),
+          codexRootMatches: id => codexDispatches.some(dispatch => host.matchesNativeRootIdentity(dispatch, id, "codex")),
           maxTranscriptBytes: MAX_TRANSCRIPT_BYTES, maxTotalBytes: remainingBytes, notAfterMs: nowMs });
       remainingBytes -= scan.bytesRead;
       if (scan.degraded) {
@@ -181,7 +182,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     }
     if (group.dispatches.some(d => d.source === "claude")) {
       const scan = await scanClaudeIssue(defaultRoots(options.home).claudeProjects!,
-        id => group.dispatches.some(dispatch => matchesOrchidNativeRootIdentity(dispatch, id, "claude")),
+        id => group.dispatches.some(dispatch => host.matchesNativeRootIdentity(dispatch, id, "claude")),
         issueFileLimit - runs.length, MAX_TRANSCRIPT_BYTES, remainingBytes, nowMs);
       remainingBytes -= scan.bytesRead;
       if (scan.reason !== null) { entry.snapshot = unavailableSnapshot(options.now, scan.reason); continue; }
@@ -189,9 +190,9 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     }
     let agyUnavailable = false;
     for (const dispatch of group.dispatches.filter(d => d.source === "agy")) {
-      const store = orchidAGYStoreDirectory(dispatch);
+      const store = host.agyStoreDirectory(dispatch);
       if (store === null) { agyUnavailable = true; break; }
-      const scan = await scanAGYIssue(store, id => matchesOrchidNativeRootIdentity(dispatch, id, "agy"),
+      const scan = await scanAGYIssue(store, id => host.matchesNativeRootIdentity(dispatch, id, "agy"),
         issueFileLimit - runs.length, remainingBytes, nowMs);
       remainingBytes -= scan.bytesRead;
       for (const file of scan.files) options.watchFiles?.add(file);
@@ -202,14 +203,14 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     if (agyUnavailable) continue;
     let openCodeUnavailable = false;
     for (const dispatch of group.dispatches.filter(d => d.source === "opencode")) {
-      const id = orchidOpenCodeSessionID(dispatch);
+      const id = host.openCodeSessionID(dispatch);
       if (id === null) { openCodeUnavailable = true; break; }
       const path = defaultRoots(options.home).opencodeDb!;
       const scan = await scanOpenCodeIssue(path, id, issueFileLimit - runs.length, remainingBytes, nowMs);
       remainingBytes -= scan.bytesRead;
       for (const file of scan.files) options.watchFiles?.add(file);
       options.watchStoreRoots?.add(path.slice(0, path.lastIndexOf("/")));
-      if (scan.reason !== null || !await verifyOrchidOpenCodeBinding(dispatch)) {
+      if (scan.reason !== null || !await host.verifyOpenCodeBinding(dispatch)) {
         entry.snapshot = unavailableSnapshot(options.now, scan.reason ?? "binding_unavailable");
         openCodeUnavailable = true; break;
       }
@@ -220,7 +221,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     const claudeChildStarts = new Map<string, string>();
     for (const dispatch of group.dispatches) {
       if (dispatch.source !== "claude") continue;
-      const root = resolveOrchidNativeRoot(dispatch, runs);
+      const root = host.resolveNativeRoot(dispatch, runs);
       if (root === null) continue;
       const children = runs.filter(run => run.source === "claude" && run.parentId === root.id).map(run => run.id);
       const starts = await readClaudeChildStarts(bindings.claudeChildEventRoot, root.id,
@@ -229,9 +230,9 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     }
     const observations = buildAgentObservations({ wireFamily, dispatches: group.dispatches, runs,
       observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true,
-      claudeChildStarts });
+      claudeChildStarts, host });
     entry.snapshot = buildIssueAgentTreeSnapshot({ wireFamily, observations, dispatches: group.dispatches, runs,
-      localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete, bounded });
+      localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete, bounded, host });
   }
   // A malformed receipt cannot be proven unrelated to a scoped issue.
   const combined = combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,

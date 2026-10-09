@@ -21,7 +21,9 @@ import {
   type TelemetrySnapshot,
 } from "./model.js";
 import { compareStrings } from "./order.js";
-import { unavailableGovernance, type GovernanceView } from "./observations.js";
+import type { GovernanceReadSnapshot } from "@rickylabs/harness-contracts";
+import { unconfiguredGovernance } from "@rickylabs/governance";
+import { wireProducer } from "./producer-names.js";
 
 /** Runs keyed by parent, so a tree can be built in one pass rather than by repeated scanning. */
 function childrenByParent(runs: readonly RunRecord[]): Map<string, RunRecord[]> {
@@ -150,7 +152,7 @@ export interface SnapshotInput {
   /** Notes carried in from backfill, so one snapshot reports every reason it is incomplete. */
   readonly notes?: readonly string[];
   /** Point-in-time governance input. Omission remains explicit in the resulting snapshot. */
-  readonly governance?: GovernanceView;
+  readonly governance?: GovernanceReadSnapshot;
 }
 
 /** Group attributed runs under the epic of the item they joined to. */
@@ -235,7 +237,7 @@ export function buildSnapshot(input: SnapshotInput): TelemetrySnapshot {
     epics,
     unattributed,
     quota: latestQuota(input.runs),
-    governance: input.governance ?? unavailableGovernance("no --observations supplied"),
+    governance: input.governance ?? unconfiguredGovernance(wireProducer(), input.generatedAt),
     notes: notes.sort(compareStrings),
   };
 }

@@ -112,7 +112,7 @@ export type AgentActivity =
       readonly steps: readonly AgentActivityStep[] }
   | { readonly availability: "unavailable"; readonly reason: AgentUnavailableReason; readonly observedAt: null;
       readonly steps: readonly [] };
-/** The native counter a measured used-tokens figure came from, one per vendor that has one (0.38.0 adds OpenCode). */
+/** The native counter a measured used-tokens figure came from, one per vendor that has one (0.40.0 adds OpenCode). */
 export const AGENT_TOKEN_SOURCES = Object.freeze(["codex-token-count", "claude-usage", "opencode-usage"] as const);
 export type AgentTokenSource = typeof AGENT_TOKEN_SOURCES[number];
 const tokenSource = (value: unknown): value is AgentTokenSource =>

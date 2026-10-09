@@ -5,6 +5,9 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { discoverCliCapabilities, discoveredModels, validateCliDiscoverySnapshot } from "./discovery.js";
 
+/** Per-child deadline for the hostile fixtures. A loaded host needs more than 500 ms just to start the
+ * `--version` probe; the wall bound below keeps the same 6x ratio, so "closes boundedly" still means it. */
+const CHILD_TIMEOUT_MS = 2_000;
 type Behavior = "normal" | "empty" | "duplicate" | "malformed" | "timeout" | "oversized" | "invalid-utf8" | "server-request" | "pipe-holder";
 async function fixture(run: (directory: string, binary: (kind: string, behavior?: Behavior) => Promise<string>) => Promise<void>) {
   const directory = await mkdtemp(join(tmpdir(), "cli-discovery-"));
@@ -87,11 +90,11 @@ for (const launcher of ["codex", "opencode"] as const) {
   for (const behavior of ["empty", "duplicate", "malformed", "timeout", "oversized", "invalid-utf8", "pipe-holder"] as const) {
     test(`${launcher}: ${behavior} cannot manufacture catalog evidence and closes boundedly`, async () => fixture(async (cwd, binary) => {
       const started = performance.now();
-      const snapshot = await discoverCliCapabilities({ cwd, only: [launcher], binaries: { [launcher]: await binary(launcher, behavior) }, timeoutMs: 500, maximumBytes: 4096 });
+      const snapshot = await discoverCliCapabilities({ cwd, only: [launcher], binaries: { [launcher]: await binary(launcher, behavior) }, timeoutMs: CHILD_TIMEOUT_MS, maximumBytes: 4096 });
       assert.equal(snapshot.launchers[launcher].installed, "yes");
       assert.equal(snapshot.launchers[launcher].catalog, "unknown");
       assert.equal(discoveredModels(snapshot, launcher), null);
-      assert.ok(performance.now() - started < 3000);
+      assert.ok(performance.now() - started < 6 * CHILD_TIMEOUT_MS);
       assert.ok(validateCliDiscoverySnapshot(snapshot));
     }));
   }

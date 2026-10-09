@@ -7,9 +7,9 @@ import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_ACCEPTE
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
   type AgentResourceHistory, type AgentTimelineEvent, type AgentTimelineReason, type AgentTokenSource,
   type IssueLaunchBlock, type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
-import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
+import type { NativeRootResolver } from "./host-reads.js";
 import type { HostCapacityReading } from "./host-capacity.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 import { processedInputTokens, processedOutputTokens, type ClaudeChildCompletion, type RunRecord, type RunSource } from "./model.js";
 import type { PublicActionReceipt } from "./action-receipt-cli.js";
 
@@ -376,6 +376,8 @@ export function buildIssueAgentTreeSnapshot(input: {
    * `scan_limit` and keep the agents read, never a complete claim. Contract 0.37 and later.
    */
   readonly bounded?: boolean;
+  /** The dispatch host's private native-root join; without one, only an explicit dispatch reference binds. */
+  readonly host?: NativeRootResolver;
 }): IssueAgentTreeSnapshot {
   const wireFamily = validateWireFamily(input.wireFamily);
   const { dispatches, runs } = input;
@@ -411,10 +413,10 @@ export function buildIssueAgentTreeSnapshot(input: {
     let agents = issue.dispatches.get(observation.assignment.id);
     if (!agents) { agents = []; issue.dispatches.set(observation.assignment.id, agents); }
     const rootRun = observation.parentAgentId.state === "known-parent" ? undefined :
-      resolveOrchidNativeRoot(dispatch, runs) ?? runs.find(r => r.source === dispatch.source && r.id === dispatch.external && r.parentId === null);
+      input.host?.resolveNativeRoot(dispatch, runs) ?? runs.find(r => r.source === dispatch.source && r.id === dispatch.external && r.parentId === null);
     const run = observation.parentAgentId.state === "known-parent" ? nativeById.get(observation.agentId) : rootRun;
     const boundRoot = observation.parentAgentId.state === "known-parent"
-      ? resolveOrchidNativeRoot(dispatch, runs) ?? runs.find(r => r.source === dispatch.source && r.id === dispatch.external && r.parentId === null)
+      ? input.host?.resolveNativeRoot(dispatch, runs) ?? runs.find(r => r.source === dispatch.source && r.id === dispatch.external && r.parentId === null)
       : rootRun;
     const verifiedClaudeChild = verifiedClaudeSidechain(observation, dispatch, run, boundRoot, runs, observations.agents);
     // The notification lands in the child's direct parent session; ids are unique among Claude runs here.

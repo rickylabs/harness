@@ -8,7 +8,7 @@ can observe progress and intervene without interrupting an agent to ask for stat
 
 The product combines a work graph, configurable routing, resource admission,
 durable execution records, independent evaluation and telemetry. This page
-explains those responsibilities. The [board](../../BOARD.md) and
+explains those responsibilities. The board (GitHub issues, read with `harness-board status`) and
 [package guides](../../packages/README.md) track their implementation.
 
 ## Coordinate the agents
@@ -60,23 +60,19 @@ authorization, commands and application projections, and captures its OpenAPI ar
 and generated client. The native client consumes that generated product boundary for
 observation, decisions and steering. No consumer uses cross-repository workspace imports.
 
-## Framework and optional router
+## Framework
 
 [Orchid](https://github.com/rickylabs/orchid) owns dispatch and physical launch admission;
 [Herdr](https://github.com/herdrdev/herdr) owns terminal control. Harness owns the portable mechanisms
-and method around them. [ADR 0005](../../method/doctrine/decisions/0005-harness-framework-identity.md)
+and method around them. [ADR 0005](../decisions/0005-harness-framework-identity.md)
 supersedes the former dsh-only premise while retaining the earlier decisions as historical evidence.
 
 The [package guide](../../packages/README.md) maps implemented, partial and stub boundaries.
 [`forge`](../../packages/forge) installs the board process into another repository.
-[`harness-router-dsh`](../../experiments/routers/dsh) retains DeepSeek Harness as an optional additional-router
-experiment with genuine upstream dependencies. It lives outside the fourteen core packages and has explicit
-checks; default lifecycle stages do not execute it. Integration testing waits until
-after the next APK.
 
 ## Carry the method between projects
 
-The method lives in [`method/doctrine/`](../../method/doctrine/): portable markdown describing
+The method lives in [`DOCTRINE.md`](../DOCTRINE.md): one markdown page describing
 how work is staged, reviewed and gated. The packages encode the parts a machine
 can enforce. Domain knowledge belongs to each project.
 

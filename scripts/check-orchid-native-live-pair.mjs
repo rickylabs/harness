@@ -10,7 +10,7 @@ import { createHash } from "node:crypto";
 import { resolveOperatorSetting } from "../packages/telemetry/dist/operator-environment.js";
 import { defaultRoots } from "../packages/telemetry/dist/backfill/index.js";
 import { parseCodexRollout } from "../packages/telemetry/dist/backfill/codex.js";
-import { readOrchidDispatches } from "../packages/telemetry/dist/orchid-dispatch.js";
+import { orchidHost, readOrchidDispatches } from "../packages/hosts/orchid/dist/mod.js";
 import { buildAgentObservations } from "../packages/telemetry/dist/agent-observations.js";
 import { readAgentObservations } from "../packages/contracts/dist/index.js";
 const emit = value => console.log(JSON.stringify(value));
@@ -68,7 +68,7 @@ try {
     const project = async () => {
       const read = await readOrchidDispatches(scratch);
       return buildAgentObservations({ dispatches: read.dispatches, runs: pair, observedAt: new Date().toISOString(),
-        sourceBound: true, dispatchComplete: !read.degraded, nativeComplete: true });
+        sourceBound: true, dispatchComplete: !read.degraded, nativeComplete: true, host: orchidHost });
     };
     const positive = await project();
     const decoded = readAgentObservations(positive);
@@ -90,7 +90,7 @@ try {
       liveIssueAssignmentProven: false, dataset: "selected-pair-only", decoded: true, complete: true, rows: 2, depth: 1, controls });
     const live = await readOrchidDispatches(resolveOperatorSetting(process.env, "dispatchRoot"));
     const observations = buildAgentObservations({ dispatches: live.dispatches, runs: pair, observedAt: new Date().toISOString(),
-      sourceBound: live.root !== undefined, dispatchComplete: !live.degraded, nativeComplete: false });
+      sourceBound: live.root !== undefined, dispatchComplete: !live.degraded, nativeComplete: false, host: orchidHost });
     emit({ verdict: "INCONCLUSIVE", scope: "live-issue-ancestry", reason: observations.reason,
       receiptScanComplete: !live.degraded, dispatches: live.dispatches.length, rows: observations.agents.length,
       complete: observations.complete, decoded: readAgentObservations(observations).ok });
