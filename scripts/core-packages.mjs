@@ -1,22 +1,34 @@
 /** Default lifecycle selection: fifteen core packages; optional routers require explicit commands. */
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const CORE_SELECTOR = "--filter=./packages/*";
+const CORE_SELECTOR = "--filter=./packages/**";
 const ACTIONS = new Set(["build", "typecheck", "test", "clean", "list"]);
 const pnpm = (args, options = {}) => spawnSync("pnpm", args, {
   cwd: ROOT, shell: process.platform === "win32", ...options,
 });
 
+/**
+ * Core package directories: `packages/<name>`, or `packages/<group>/<name>` when `<group>` has no
+ * manifest of its own (as `packages/providers/` does). One group level, no deeper.
+ */
+function coreDirectories() {
+  const manifestIn = (dir) => existsSync(join(ROOT, dir, "package.json"));
+  return readdirSync(join(ROOT, "packages")).map(name => `packages/${name}`).flatMap(dir => {
+    if (manifestIn(dir)) return [dir];
+    if (!statSync(join(ROOT, dir)).isDirectory()) return [];
+    return readdirSync(join(ROOT, dir)).map(name => `${dir}/${name}`).filter(manifestIn);
+  });
+}
+
 export function corePackages() {
-  const core = readdirSync(join(ROOT, "packages")).filter(dir =>
-    existsSync(join(ROOT, "packages", dir, "package.json"))).map(dir => ({
-      dir: `packages/${dir}`,
-      manifest: JSON.parse(readFileSync(join(ROOT, "packages", dir, "package.json"), "utf8")),
-    }));
+  const core = coreDirectories().map(dir => ({
+    dir,
+    manifest: JSON.parse(readFileSync(join(ROOT, dir, "package.json"), "utf8")),
+  }));
   if (core.length !== 15) throw new Error("expected fifteen core packages; review the core inventory");
   const names = new Set(core.map(row => row.manifest.name));
   if (names.size !== core.length) throw new Error("duplicate core package identity");

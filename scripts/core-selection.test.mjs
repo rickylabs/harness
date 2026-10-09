@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
@@ -8,8 +8,15 @@ import { tmpdir } from "node:os";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = () => JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-const expected = () => readdirSync(join(root, "packages")).filter(name =>
-  name !== "dsh-app" && existsSync(join(root, "packages", name, "package.json"))).map(name => `packages/${name}`).sort();
+// Independent of core-packages.mjs on purpose: `packages/<name>`, or `packages/<group>/<name>` when the
+// group has no manifest of its own (`packages/providers/`).
+const expected = () => readdirSync(join(root, "packages")).filter(name => name !== "dsh-app").flatMap(name => {
+  if (existsSync(join(root, "packages", name, "package.json"))) return [`packages/${name}`];
+  if (!statSync(join(root, "packages", name)).isDirectory()) return [];
+  return readdirSync(join(root, "packages", name))
+    .filter(child => existsSync(join(root, "packages", name, child, "package.json")))
+    .map(child => `packages/${name}/${child}`);
+}).sort();
 
 // Ask pnpm itself about the selector used by each configured execution stage. The old recursive
 // stages are deliberately understood: broadening a stage back to them must go RED, not bypass
