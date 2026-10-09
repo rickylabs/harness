@@ -56,8 +56,8 @@ A milestone being worked by several agents at once, with the shape written down 
 improvised: a baseline commit, one coordinator, one orchestrator per lane, and explicit limits —
 how many implementation slices may be active per lane, how many evaluators, how many expensive gates
 globally, how many writers a release may have. The templates are in
-[`run-record/templates/`](../run-record/templates) and the validator in
-[`method/tools/harness/`](../method/tools/harness).
+[`packages/method/templates/`](../packages/method/templates) and the validator is
+`harness-method milestone validate`, in [`packages/method`](../packages/method).
 
 ### owner fork
 
@@ -85,7 +85,7 @@ connection synchronization remain separate responsibilities. See [03 — The boa
 ### receipt
 
 Durable evidence that a **gate** ran, and what happened. A `GateReceipt`
-([`method/tools/gates/contract.ts`](../method/tools/gates/contract.ts)) carries the request it answers,
+([`packages/method/src/domain/gates/contract.ts`](../packages/method/src/domain/gates/contract.ts)) carries the request it answers,
 the commit it ran against, the runner's identity, the attempt number, timings, the exit code, and
 hashed stdout and stderr — under a versioned schema, so a receipt written last month is still
 readable.

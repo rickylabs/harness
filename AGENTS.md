@@ -79,8 +79,8 @@ differ. Together they settle these decisions. Do not re-derive them in a run, a 
 1. Harness is our framework on Orchid and Herdr.
 2. pnpm and Node form the only toolchain. NetScript is an external service behind an adapter, never a
    build-time dependency.
-3. GitHub owns the board. [BOARD.md](BOARD.md) is a generated projection; where it and an issue
-   disagree, the issue wins.
+3. GitHub owns the board. `harness-board status` and `harness-board check` read it; no board page is
+   committed.
 4. Cockpit and mobile are separate products. The `@rickylabs/harness-contracts` name stays stable, and
    contracts change only additively.
 5. The routing matrix is the default route authority. An owner-native override records its own
@@ -105,3 +105,58 @@ Then run `pnpm run check:leaks` (golden rule 11), and fill the PR template's **G
 one line per owner rule O1-O4, and the doctrine rules the change cites. Never touch `.llm/runs/**`. Work only inside the mutation
 surface your brief authorizes. When the answer depends on what the owner wants, raise an owner fork
 instead of picking.
+
+## Repository checks
+
+`build` is more than a compile: the root `build` script runs the repository-wide `check:*` stages
+around the per-package builds, the tree-only checks before the compile and the ones that read built
+packages after it. Each exists because the failure it catches is silent, and running
+`pnpm -r run build` directly skips all of them. Tests run against what was built,
+so on an unbuilt tree `pnpm test` tests the previous build; when in doubt, run the four.
+
+On a pull request CI also runs `pnpm run check:leaks`, which reads only the lines your branch adds
+and fails on a home or data path, a private address, a host:port pair, a token shape, a private-key
+header or a session id. It prints `file:line reason`, never the text. Run it locally after committing.
+
+`pnpm run check:metadata` is a command, not a gate: it compares GitHub's repository description with
+the root `package.json` and prints the `gh repo edit` that fixes a difference. Exit 3 means it found no
+GitHub transport and compared nothing.
+
+## Generated files
+
+A generated file changes only through its command; the checks refuse a hand edit.
+
+| File | Changed by |
+| --- | --- |
+| `docs/reference/cli/*.md` | `pnpm run docs:cli` |
+| `.claude/skills/board-process/SKILL.md` | `pnpm run skill:install` |
+| `.github/labels.yml` | `node packages/forge/dist/cli.js labels eject` |
+| `pnpm-lock.yaml` | `pnpm install` |
+| a milestone run's `milestone-status.md` | `pnpm exec harness-method milestone render <run-dir>` |
+
+## Branches, commits and merging
+
+Branch names are `<type>/<issue>-<slug>`, lowercase kebab-case, with the `type:` label's word
+(`feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`). Open the pull request against `main`
+with the [template](.github/pull_request_template.md) and keep its Verification honest: real output,
+real exit codes. A closing keyword (`Closes #N`) closes the issue on merge; a bare `#N` does not, and
+an epic never carries one. Nothing auto-merges: a human merges every pull request after CI is green.
+
+## Owner, releases and conduct
+
+The repository has one owner, Eric Chautems ([@rickylabs](https://github.com/rickylabs)), who decides
+the roadmap, the architecture, what merges and what is released. A decision is one of three kinds:
+**ratified** (a numbered record in [`docs/decisions/`](docs/decisions/), changed only by a new one),
+**taken and reversible** (decided on the board, expected to be revisited), or an **owner fork** (open;
+only the owner answers it, never the author or a reviewer). Labels are retired, never deleted, and a
+closed item keeps saying how it ended.
+
+`@rickylabs/harness-contracts` is the only package that leaves this repository. It is published by
+[`release-contracts.yml`](.github/workflows/release-contracts.yml) on a `harness-contracts-v*` tag that
+only the owner pushes; every other package is private, `main` is the supported version, and interfaces
+can change without a deprecation cycle until 1.0.
+
+Conduct follows the [Contributor Covenant 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
+by reference; report privately to the owner. An agent's output is its operator's responsibility:
+dispatching a run does not launder what the run says. Security reports go through
+[`SECURITY.md`](SECURITY.md), never a public issue. The licence is MIT ([`LICENSE`](LICENSE)).

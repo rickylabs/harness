@@ -8,7 +8,7 @@ can observe progress and intervene without interrupting an agent to ask for stat
 
 The product combines a work graph, configurable routing, resource admission,
 durable execution records, independent evaluation and telemetry. This page
-explains those responsibilities. The [board](../../BOARD.md) and
+explains those responsibilities. The board (GitHub issues, read with `harness-board status`) and
 [package guides](../../packages/README.md) track their implementation.
 
 ## Coordinate the agents

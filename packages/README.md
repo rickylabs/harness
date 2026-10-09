@@ -1,6 +1,6 @@
 # packages/
 
-Twelve core packages implement Harness mechanisms or define explicit partial/stub boundaries.
+Thirteen core packages implement Harness mechanisms or define explicit partial/stub boundaries.
 [ADR 0005](../docs/decisions/0005-harness-framework-identity.md) records the current framework
 identity on Orchid and Herdr.
 
@@ -17,6 +17,7 @@ activation, credentials or a successful native launch on a particular host.
 | `routing` | Replaceable routing documents, immutable matrix queries and exact native discovery | E4 · #34, E11 · #271 |
 | `governance` | Stub package boundary; live launch admission and meters belong to Orchid's governor | E5 · #35 |
 | `board` | GitHub task graph and board projections | E6 · #36 |
+| `method` | Milestone run records: render and validate, route receipt checks (`harness-method`), run templates | rearch · #658 |
 | `coordinator` | Workflow decisions, replay, independent selection and durable-effect storage boundary | E6 · #36 |
 | `forge` | Explicit GitHub taxonomy/process installation and bridge rules | E7 · #37 |
 | `contracts` | Published mechanism vocabulary and strict decoders under `@rickylabs/harness-contracts` | E8 · #38 |
@@ -41,7 +42,7 @@ and retains physical checks and accounting. No client-supplied model string gran
 
 - **Name** `@rickylabs/<dir>`; `private: true` for everything except `contracts`.
   - **The one exception is `contracts` itself**, published as `@rickylabs/harness-contracts` (#81).
-    The other eleven names are internal and only ever read inside this repository, where `contracts`
+    The other names are internal and only ever read inside this repository, where `contracts`
     is unambiguous. That one is a public npm name that has to say which project it belongs to when it
     appears in someone else's `package.json`. The directory keeps its short name because the name a
     contributor types is a different audience from the name a consumer installs.
@@ -58,6 +59,9 @@ and retains physical checks and accounting. No client-supplied model string gran
 - **Scripts.** `build` = `tsc -b` (JS + declarations), `typecheck` = `tsc -b --emitDeclarationOnly`
   (full type check; emits only the `.d.ts` files that downstream references need, because
   `--noEmit` is not allowed on a referenced project), `clean` = remove `dist/` and build info.
+- **The one runtime exception is `method`**, which runs from source under Node 24 type stripping
+  (`rootDir: "."`, `mod.ts` entry, declaration-only build, `erasableSyntaxOnly`). Its bin must exist
+  when `pnpm install` links it, and a `dist/` bin does not exist yet at that point in CI.
 
 Adding a package: copy any stub directory, rename, add it to the root `tsconfig.json`
 `references` list, and declare only its actual consumers.

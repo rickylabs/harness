@@ -42,16 +42,16 @@ function selection(script) {
     .filter(dir => dir !== "").sort();
 }
 for (const [script, action] of [["build:packages", "build"], ["typecheck:packages", "typecheck"], ["test:packages", "test"], ["clean", "clean"]]) {
-  test(`default ${action} selects exactly the twelve core packages`, () => {
+  test(`default ${action} selects exactly the thirteen core packages`, () => {
     const core = expected();
-    assert.equal(core.length, 12, "the core package count changed");
+    assert.equal(core.length, 13, "the core package count changed");
     assert.deepEqual(selection(manifest().scripts[script]), core);
   });
 }
 
 test("the root TS graph contains every core project", () => {
   const config = JSON.parse(readFileSync(join(root, "tsconfig.json"), "utf8"));
-  assert.equal(expected().length, 12);
+  assert.equal(expected().length, 13);
   assert.deepEqual(config.references.map(row => row.path).sort(), expected());
 });
 
@@ -94,7 +94,7 @@ for (const [label, result, reason] of [
 });
 
 for (const [label, edit, reason] of [
-  ["missing core package", (directory) => rmSync(join(directory, expected()[0]), {recursive: true}), /expected twelve core packages/],
+  ["missing core package", (directory) => rmSync(join(directory, expected()[0]), {recursive: true}), /expected thirteen core packages/],
   ["duplicate core identity", (directory) => {
     const first = JSON.parse(readFileSync(join(directory, expected()[0], "package.json"), "utf8"));
     const path = join(directory, expected()[1], "package.json");
@@ -142,7 +142,7 @@ test("the project guard accepts the whole workspace while rejecting a duplicate 
   const directory = isolatedGraph(t);
   const before = graphCheck(directory);
   assert.ifError(before.error); assert.equal(before.status, 0, before.stderr);
-  assert.match(before.stdout, /12 packages/);
+  assert.match(before.stdout, /13 packages/);
   const path = join(directory, "tsconfig.json");
   const config = JSON.parse(readFileSync(path, "utf8"));
   config.references.push({path: expected()[0]});

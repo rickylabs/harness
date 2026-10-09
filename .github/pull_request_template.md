@@ -1,5 +1,5 @@
 <!--
-Conventions, in full: CONTRIBUTING.md. The three that get forgotten:
+Conventions, in full: AGENTS.md. The three that get forgotten:
 
 - Exactly ONE `status:` label, plus the `type:`, `area:`, `epic:` and `priority:` that apply.
   `harness-board check` exits non-zero when an item carries two or none.

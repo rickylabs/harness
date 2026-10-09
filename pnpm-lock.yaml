@@ -11,6 +11,9 @@ importers:
       '@rickylabs/harness-contracts':
         specifier: workspace:*
         version: link:packages/contracts
+      '@rickylabs/method':
+        specifier: workspace:*
+        version: link:packages/method
       '@types/node':
         specifier: ^26.4.1
         version: 26.4.1
@@ -51,6 +54,16 @@ importers:
       '@rickylabs/routing':
         specifier: workspace:*
         version: link:../routing
+
+  packages/method:
+    dependencies:
+      js-yaml:
+        specifier: ^4.3.2
+        version: 4.3.2
+    devDependencies:
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
 
   packages/providers/claude:
     dependencies:
@@ -105,6 +118,9 @@ packages:
   '@opencode-ai/sdk@1.18.35':
     resolution: {integrity: sha512-cp3IFKwnqgeUbflrrwz/WmG/dALVyM2k0LA1aqCvWe58Tu4utNTNw+BwZzQEML1HxDaLrIB+Fc4Ztb8S16Ijcw==}
 
+  '@types/js-yaml@4.0.9':
+    resolution: {integrity: sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==}
+
   '@types/node@26.4.1':
     resolution: {integrity: sha512-k97ENvZWtvA6yqz5/FS6a7duDgOPEeOQOc2iKS/nY6mX6qJUKtLnWzQS+Xj6tXweyj6ZcTAK2Qecetnvi9nCLA==}
 
@@ -157,6 +173,8 @@ snapshots:
   '@opencode-ai/sdk@1.18.35':
     dependencies:
       cross-spawn: 7.0.6
+
+  '@types/js-yaml@4.0.9': {}
 
   '@types/node@26.4.1':
     dependencies:

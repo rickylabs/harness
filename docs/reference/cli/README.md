@@ -12,6 +12,7 @@ them.
 | [`harness-board`](harness-board.md) | project a GitHub repository as a board | `0` `1` `2` `3` `4` |
 | [`harness-coordinator`](harness-coordinator.md) | the deterministic gate between authoring and review | `0` `1` `2` `3` `4` |
 | [`harness-telemetry`](harness-telemetry.md) | board activity, read from disk, with no agent awake | `0` `1` `2` `3` `4` |
+| [`harness-method`](harness-method.md) | render and validate milestone run records, and check route receipts | `0` `1` `2` |
 
 `2` is a usage error in every command. `3` is a missing GitHub transport for
 `harness-board` and `harness-forge`, an unreadable input for `harness-coordinator`, and an incomplete
