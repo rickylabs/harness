@@ -10,15 +10,10 @@ import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_ACCEPTE
 import type { NativeRootResolver } from "./host-reads.js";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { DispatchEvidence } from "@rickylabs/harness-contracts";
-import { processedInputTokens, processedOutputTokens, type ClaudeChildCompletion, type RunRecord, type RunSource } from "./model.js";
+import type { ClaudeChildCompletion, RunRecord } from "./model.js";
+import { issueTokenUsage } from "./issue-token-usage.js";
 import type { PublicActionReceipt } from "./action-receipt-cli.js";
 
-/**
- * The issue-tree token source per vendor: which native counter a used-tokens figure is read from.
- * A vendor with no entry (AGY has no token reading) is always unavailable, never another vendor's label.
- */
-export const ISSUE_TOKEN_SOURCES: Readonly<Partial<Record<RunSource, AgentTokenSource>>> = Object.freeze({
-  codex: "codex-token-count", claude: "claude-usage", opencode: "opencode-usage" });
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 const opaque = (kind: "agent" | "assignment", value: string) => `${kind}_${digest(kind + "\0" + value)}`;
 const unavailable: AgentTreeValue = { value: null, source: "unavailable", reason: "source_not_bound" };
@@ -275,16 +270,8 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const activity: NonNullable<IssueAgentTreeAgent["activity"]> = run !== undefined && time(run.updatedAt, now) !== null
     ? { availability: "available", reason: null, observedAt: run.updatedAt, steps }
     : { availability: "unavailable", reason: "source_not_bound", observedAt: null, steps: [] };
-  const input = run === undefined ? undefined : processedInputTokens(run.source, run.usage);
-  const output = run === undefined ? undefined : processedOutputTokens(run.source, run.usage);
-  const tokenSource = run === undefined ? undefined : ISSUE_TOKEN_SOURCES[run.source];
-  const measured = tokenSource !== undefined && input !== undefined && output !== undefined && Number.isSafeInteger(input) && Number.isSafeInteger(output) &&
-    input >= 0 && output >= 0 && Number.isSafeInteger(input + output) && time(run?.updatedAt, now) !== null;
-  const tokenUsage: NonNullable<IssueAgentTreeAgent["tokenUsage"]> = measured
-    ? { usedTokens: input! + output!, budgetTokens: budget.tokenLimit, observedAt: run!.updatedAt,
-        source: tokenSource, reason: null }
-    : { usedTokens: null, budgetTokens: budget.tokenLimit, observedAt: null, source: "unavailable",
-        reason: run === undefined ? "source_not_bound" : "measurement_missing" };
+  const tokenUsage = issueTokenUsage(run, budget.tokenLimit,
+    run !== undefined && time(run.updatedAt, now) !== null ? run.updatedAt : null);
   const nativeSamples = run?.tokenSamples;
   const tokenPoints = nativeSamples?.points.map(point => ({ at: time(point.at, now), usedTokens: point.usedTokens }));
   const validTokenPoints = tokenUsage.usedTokens !== null && nativeSamples !== undefined && !nativeSamples.invalid &&
