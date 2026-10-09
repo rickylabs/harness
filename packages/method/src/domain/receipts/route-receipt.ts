@@ -1,23 +1,34 @@
-import { readFileSync, realpathSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { load, JSON_SCHEMA } from "js-yaml";
-
+/** Route receipts: requested and observed routing must agree, and an unobserved field stays unproven. */
 export const SCOPE = "receipt structure and requested/observed agreement only";
-export const ROUTE_FIELDS = ["model", "effort", "transport", "role", "tier"];
+export const ROUTE_FIELDS = ["model", "effort", "transport", "role", "tier"] as const;
 export const REASON_CODES = [
   "not-observed", "prose-only", "not-externally-observable", "observer-unavailable",
-];
-const EXIT = { pass: 0, fail: 1, unproven: 2 };
-const record = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
-const text = (value) => typeof value === "string" && value.trim().length > 0 &&
+] as const;
+
+export type ReceiptVerdict = "pass" | "fail" | "unproven";
+export interface ReceiptFinding {
+  readonly field: string;
+  readonly code: string;
+  readonly verdict: ReceiptVerdict;
+}
+export interface ReceiptResult {
+  readonly verdict: ReceiptVerdict;
+  readonly findings: readonly ReceiptFinding[];
+}
+
+type JsonObject = Record<string, unknown>;
+const record = (value: unknown): value is JsonObject =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0 &&
   !/[\p{Cc}\u2028\u2029]/u.test(value);
-const same = (left, right) => text(left) && text(right) && left.trim() === right.trim();
+const same = (left: unknown, right: unknown) => text(left) && text(right) && left.trim() === right.trim();
+const member = (value: unknown, key: string): unknown => (record(value) ? value[key] : undefined);
 
 /** Validate shape and agreement; evidence references and mapping assertions are not verified. */
-export function validateReceipt(receipt) {
-  const findings = [];
-  const fail = (field, code) => findings.push({ field, code, verdict: "fail" });
-  const object = (value, keys, field) => {
+export function validateReceipt(receipt: unknown): ReceiptResult {
+  const findings: ReceiptFinding[] = [];
+  const fail = (field: string, code: string) => findings.push({ field, code, verdict: "fail" });
+  const object = (value: unknown, keys: readonly string[], field: string): value is JsonObject => {
     if (!record(value)) { fail(field, "expected-object"); return false; }
     if (Object.keys(value).some((key) => !keys.includes(key))) fail(field, "unexpected-field");
     for (const key of keys) {
@@ -25,7 +36,7 @@ export function validateReceipt(receipt) {
     }
     return true;
   };
-  const string = (value, field) => {
+  const string = (value: unknown, field: string) => {
     if (!text(value)) fail(field, "expected-nonblank-text-without-controls");
   };
   if (object(receipt, ["schemaVersion", "resolution", "requested", "observed"], "$")) {
@@ -51,30 +62,34 @@ export function validateReceipt(receipt) {
         string(resolution.selected.physicalModel, "$.resolution.selected.physicalModel");
       }
     }
-    if (object(receipt.requested, ROUTE_FIELDS, "$.requested")) {
-      for (const field of ROUTE_FIELDS) string(receipt.requested[field], `$.requested.${field}`);
-      if (text(resolution?.selected?.physicalModel) && text(receipt.requested.model) &&
-          !same(receipt.requested.model, resolution.selected.physicalModel)) {
+    const requested = receipt.requested;
+    if (object(requested, ROUTE_FIELDS, "$.requested")) {
+      for (const field of ROUTE_FIELDS) string(requested[field], `$.requested.${field}`);
+      const physicalModel = member(member(resolution, "selected"), "physicalModel");
+      if (text(physicalModel) && text(requested.model) && !same(requested.model, physicalModel)) {
         fail("$.requested.model", "selected-model-mismatch");
       }
     }
-    if (object(receipt.observed, ROUTE_FIELDS, "$.observed")) {
+    const observed = receipt.observed;
+    if (object(observed, ROUTE_FIELDS, "$.observed")) {
       for (const field of ROUTE_FIELDS) {
         const path = `$.observed.${field}`;
-        const observation = receipt.observed[field];
+        const observation = observed[field];
         if (!record(observation)) { fail(path, "expected-object"); continue; }
         if (observation.status === "known") {
           object(observation, ["status", "value", "source", "evidenceRef"], path);
           string(observation.value, `${path}.value`);
           string(observation.evidenceRef, `${path}.evidenceRef`);
-          const sources = field === "role" || field === "tier" ? ["control-plane"] : ["launcher", "control-plane"];
+          const sources: readonly unknown[] = field === "role" || field === "tier" ? ["control-plane"] : ["launcher", "control-plane"];
           if (!sources.includes(observation.source)) fail(`${path}.source`, "unsupported-observer");
-          if (text(observation.value) && text(receipt.requested?.[field]) &&
-              !same(observation.value, receipt.requested[field])) fail(path, "routing-mismatch");
+          const wanted = member(requested, field);
+          if (text(observation.value) && text(wanted) && !same(observation.value, wanted)) fail(path, "routing-mismatch");
         } else if (observation.status === "unknown") {
           object(observation, ["status", "reasonCode", "reason"], path);
           string(observation.reason, `${path}.reason`);
-          if (!REASON_CODES.includes(observation.reasonCode)) fail(`${path}.reasonCode`, "unsupported-reason");
+          if (!(REASON_CODES as readonly unknown[]).includes(observation.reasonCode)) {
+            fail(`${path}.reasonCode`, "unsupported-reason");
+          }
           findings.push({ field: path, code: "observation-unknown", verdict: "unproven" });
         } else fail(`${path}.status`, "unsupported-observation-status");
       }
@@ -83,47 +98,12 @@ export function validateReceipt(receipt) {
   return { verdict: verdictOf(findings), findings };
 }
 
-function verdictOf(results) {
+/** Any fail wins, then any unproven; only an all-pass set passes. */
+export function verdictOf(results: readonly { readonly verdict: ReceiptVerdict }[]): ReceiptVerdict {
   return results.some((result) => result.verdict === "fail") ? "fail"
     : results.some((result) => result.verdict === "unproven") ? "unproven" : "pass";
 }
 
-const problem = (verdict, code) => ({ verdict, findings: [{ field: "$", code, verdict }] });
-
-/** JSON syntax first; the existing YAML reader supplies semantic duplicate-key detection only. */
-export function validateReceiptText(input) {
-  let receipt;
-  try { receipt = JSON.parse(input); }
-  catch { return problem("fail", "invalid-json"); }
-  try { load(input, { schema: JSON_SCHEMA, json: false }); }
-  catch (error) {
-    return problem("fail", error?.reason === "duplicated mapping key" ? "duplicate-key" : "unsupported-json");
-  }
-  return validateReceipt(receipt);
-}
-
-/** Explicit files only; diagnostics expose an input index, never paths, values or parser errors. */
-export function checkFiles(files) {
-  const results = files.map((file, index) => {
-    let result;
-    try { result = validateReceiptText(readFileSync(file, "utf8")); }
-    catch { result = problem("unproven", "unreadable"); }
-    return { index, ...result };
-  });
-  const verdict = results.length === 0 ? "unproven" : verdictOf(results);
-  return { scope: SCOPE, verdict, results, ...(files.length ? {} : { reason: "no-inputs" }) };
-}
-
-// Resolve entry-point symlinks; an alias must not silently skip the CLI and exit zero.
-export function isMain(moduleUrl = import.meta.url) {
-  try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(moduleUrl)); }
-  catch { return false; } // Imported modules can have no file entry point (for example node -e).
-}
-
-export function main(args = process.argv.slice(2)) {
-  const result = checkFiles(args);
-  console.log(JSON.stringify(result));
-  process.exitCode = EXIT[result.verdict];
-}
-
-if (isMain()) main();
+/** A whole-input refusal at the root field, used for parse and read failures. */
+export const problem = (verdict: ReceiptVerdict, code: string): ReceiptResult =>
+  ({ verdict, findings: [{ field: "$", code, verdict }] });

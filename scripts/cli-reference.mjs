@@ -37,6 +37,7 @@ const CORE_CLIS = [
   { bin: "harness-board", pkg: "board" },
   { bin: "harness-coordinator", pkg: "coordinator" },
   { bin: "harness-telemetry", pkg: "telemetry" },
+  { bin: "harness-method", pkg: "method" },
   { bin: "dsh-forge", pkg: "forge", aliasOf: "harness-forge" },
   { bin: "dsh-board", pkg: "board", aliasOf: "harness-board" },
   { bin: "dsh-coordinator", pkg: "coordinator", aliasOf: "harness-coordinator" },
@@ -96,6 +97,18 @@ function assertEveryBinIsCovered() {
   }
 }
 
+/** The bin's entry file, relative to its package, read from the manifest that declares it. */
+function entryOf(cli) {
+  const manifest = JSON.parse(readFileSync(join(ROOT, cli.dir, "package.json"), "utf8"));
+  return manifest.bin[cli.bin].replace(/^\.\//, "");
+}
+
+/** The source the entry runs: itself when it is TypeScript, else the `src/` file tsc emitted it from. */
+function sourceOf(cli) {
+  const entry = entryOf(cli);
+  return entry.endsWith(".ts") ? entry : entry.replace(/^dist\//, "src/").replace(/\.js$/, ".ts");
+}
+
 /**
  * `--help` as the binary prints it, with CRLF flattened.
  *
@@ -103,7 +116,7 @@ function assertEveryBinIsCovered() {
  * matches on the machine it was generated on is a check that fails for everybody else.
  */
 function helpTextOf(cli) {
-  const entry = join(ROOT, cli.dir, "dist", "cli.js");
+  const entry = join(ROOT, cli.dir, entryOf(cli));
   let text;
   try {
     text = execFileSync(process.execPath, [entry, "--help"], { encoding: "utf8" });
@@ -117,11 +130,11 @@ function helpTextOf(cli) {
 
 /** The exit map and its meanings, from the module the binary is compiled from. */
 async function exitsOf(cli) {
-  const entry = join(ROOT, cli.dir, "dist", "cli.js");
+  const entry = join(ROOT, cli.dir, entryOf(cli));
   const mod = await import(pathToFileURL(entry).href);
   if (mod.EXIT === undefined || mod.EXIT_MEANINGS === undefined) {
     throw new Error(
-      `${cli.dir}/src/cli.ts must export EXIT and EXIT_MEANINGS for this page to exist.`,
+      `${cli.dir}/${sourceOf(cli)} must export EXIT and EXIT_MEANINGS for this page to exist.`,
     );
   }
   return Object.entries(mod.EXIT).map(([name, code]) => ({
@@ -142,7 +155,7 @@ function renderPage(cli, help, exits) {
   const firstLine = help.split("\n")[0] ?? "";
   const summary = firstLine.includes(" — ") ? firstLine.split(" — ").slice(1).join(" — ") : "";
   const bar = fence(help);
-  const source = `${cli.dir}/src/cli.ts`;
+  const source = `${cli.dir}/${sourceOf(cli)}`;
 
   const lines = [
     `<!-- Generated from ${source} by scripts/cli-reference.mjs. Do not edit; run "pnpm run ${REGENERATE}". -->`,
