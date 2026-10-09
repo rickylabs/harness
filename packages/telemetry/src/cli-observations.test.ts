@@ -95,13 +95,33 @@ describe("harness-telemetry governance observations", () => {
 
   it("evaluates a stored document at --now: expired stays visible as STALE, a future one is unavailable", async () => {
     const path = await seedGovernance("evaluated-governance.json");
-    const later = await runIsolated(["status", "--home", home, "--observations", path, "--now", "2026-09-07T12:10:00.000Z"]);
+    const later = await runIsolated(["status", "--home", home, "--observations", path, "--now", "2026-09-07T12:10:00.000Z", "--json"]);
     assert.equal(later.code, EXIT.ok);
-    assert.match(later.out, /governance: STALE/);
-    assert.match(later.out, /#205 STALE throttle/);
+    const { governance } = JSON.parse(later.out) as { governance: { availability: string; admissions: { availability: string }[] } };
+    assert.equal(governance.availability, "stale");
+    assert.ok(governance.admissions.length > 0);
+    for (const admission of governance.admissions) assert.equal(admission.availability, "stale");
     const earlier = await runIsolated(["status", "--home", home, "--observations", path, "--now", "2026-09-07T11:50:00.000Z", "--json"]);
     assert.equal(earlier.code, EXIT.incomplete);
     assert.equal(JSON.parse(earlier.out).governance.availability, "unavailable");
+  });
+
+  it("keeps a stored partial or unavailable document incomplete, with its diagnostic notes", async () => {
+    for (const fixture of ["mixed-timeout", "unavailable-not-configured"]) {
+      const text = await readFile(new URL(`../../contracts/test-fixtures/governance-read/${fixture}.json`, import.meta.url), "utf8");
+      const stored = JSON.parse(text) as { readonly notes: readonly string[] };
+      const path = await seedGovernance(`${fixture}.json`, stored);
+      for (const command of ["status", "tree"]) {
+        for (const input of [["--observations", path], ["--observations-from", `file:${path}`]]) {
+          const { code, out } = await run([command, "--home", home, ...input, "--now", "2026-09-07T12:00:00.000Z", "--json"]);
+          const parsed = JSON.parse(out) as { readonly complete: boolean; readonly notes: readonly string[] };
+          const label = `${fixture} ${command} ${input[0]}`;
+          assert.equal(code, EXIT.incomplete, label);
+          assert.equal(parsed.complete, false, label);
+          for (const note of stored.notes) assert.ok(parsed.notes.includes(note), `${label}: ${note}`);
+        }
+      }
+    }
   });
 });
 
