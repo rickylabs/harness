@@ -287,3 +287,4 @@ export * from "./provider-usage.js";
 export * from "./paid-account-usage.js";
 export { openCodeProvider, openCodeModelSyntax, publicOpenCodeModel } from "./opencode-identity.js";
 export * from "./provider-limits.js";
+export * from "./provider-limit-admission.js";
