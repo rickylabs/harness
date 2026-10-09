@@ -90,7 +90,13 @@ const SYNTHETIC_CONTRACT_FIXTURES = {
   "packages/contracts/test-fixtures/governance-read/mixed-timeout.json": "458ab0f127467fb4ecbcebfd353350fd87e9cc369362a16ff33849d3ee57b341",
   "packages/contracts/test-fixtures/governance-read/stale.json": "42be209b2ae8bbb4b27764b0cfabcc36acc305d67c0b02acbb845f3234c51d8d",
   "packages/contracts/test-fixtures/governance-read/transport-availability.json": "ef302bd910dd043de80a654a6f5e302f1b71ec1065cd382b3c052da568ef35f2",
-  "packages/contracts/test-fixtures/governance-read/unavailable-not-configured.json": "fccae4390e0e2b50d2e1c83dbb2a41560c0fff2d3a2c68d0020c5dc208e94e5f"
+  "packages/contracts/test-fixtures/governance-read/unavailable-not-configured.json": "fccae4390e0e2b50d2e1c83dbb2a41560c0fff2d3a2c68d0020c5dc208e94e5f",
+  // Bytes Orchid's provider-limit producer wrote under its own tests (rickylabs/orchid#97, rickylabs/harness#650).
+  "packages/contracts/test-fixtures/provider-limits-produced/binding-after.json": "d8d2e79fb738b0bd7d342aab5387bd6cd019bdcc12820569151147e2bb064808",
+  "packages/contracts/test-fixtures/provider-limits-produced/binding-before.json": "44c93dc2f6ed9d8101032f9630d4ec3d1738358eb52a90f92d6ca13b4d8304ee",
+  "packages/contracts/test-fixtures/provider-limits-produced/native-keys-global-refusal.json": "76fb0b1529f406b22044a8c3cb75630db2f90995d596c5145f5319538c504263",
+  "packages/contracts/test-fixtures/provider-limits-produced/refusal-cleared.json": "b488825044bb897cb73eacb6178dda34aabf9c31a1756a08249549f17d760c6e",
+  "packages/contracts/test-fixtures/provider-limits-produced/thresholds-hard-then-rate.json": "11bb8a2c83bb7d013faa0a8427e105447ca70d6d04670c503d4eedc4cd9ba794"
 };
 
 let tracked;

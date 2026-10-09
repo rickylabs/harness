@@ -109,9 +109,12 @@ test("scope: an unbound key or account refusal never blocks another credential's
   const snapshot: ProviderLimitSnapshotV1 = { schemaVersion: 1, generatedAt: at, meters: [], outcomes: [
     { provider: "openrouter", keyName: "a", accountRef: null, model: null, outcome: "refused", reason: "quota_exhausted", source: "provider-run", observedAt: at, resetsAt: null },
     { provider: "codex", keyName: null, accountRef: ref, model: null, outcome: "refused", reason: "quota_exhausted", source: "provider-run", observedAt: at, resetsAt: null },
-    { provider: "opencode-go", keyName: null, accountRef: null, model: "m", outcome: "refused", reason: "quota_exhausted", source: "provider-run", observedAt: at, resetsAt: null } ] };
+    { provider: "opencode-go", keyName: null, accountRef: null, model: "m", outcome: "refused", reason: "quota_exhausted", source: "provider-run", observedAt: at, resetsAt: null },
+    // A provider whose name prefixes another's covers only its own `provider/` routes.
+    { provider: "opencode", keyName: null, accountRef: null, model: null, outcome: "refused", reason: "payment_required", source: "provider-run", observedAt: at, resetsAt: null } ] };
   const a = assessProviderLimits(snapshot, Date.parse(at));
-  assert.equal(a.refusals.length, 3);
+  assert.equal(a.refusals.length, 4);
+  assert.equal(admitProviderRoute(a, "opencode/any").admitted, false);
   for (const route of ["openrouter/vendor/model", "codex/fixture", "opencode-go/other", "opencode-go-m/x"]) assert.equal(admitProviderRoute(a, route).admitted, true, route);
   assert.equal(admitProviderRoute(a, "opencode-go/m").admitted, false);
 });

@@ -11,6 +11,8 @@ const directory = "packages/contracts/test-fixtures/governance-read";
 const runFixture = "packages/contracts/test-fixtures/repository-run-observation/read.json";
 const names = ["admissions-only", "complete-without-admissions", "conflicting-admissions",
   "degraded-log", "mixed-timeout", "stale", "transport-availability", "unavailable-not-configured"];
+const limitDirectory = "packages/contracts/test-fixtures/provider-limits-produced";
+const limitNames = ["binding-after", "binding-before", "native-keys-global-refusal", "refusal-cleared", "thresholds-hard-then-rate"];
 function probe(change, expected, diagnostic) {
   const scratch = mkdtempSync(join(tmpdir(), "snapshot-guard-"));
   // Exclude ambient Git index/worktree settings. Every git mutation is scratch-owned.
@@ -20,6 +22,8 @@ function probe(change, expected, diagnostic) {
     mkdirSync(join(scratch, directory), { recursive: true });
     copyFileSync(join(root, "scripts/check-snapshots.mjs"), join(scratch, "scripts/check-snapshots.mjs"));
     for (const name of names) copyFileSync(join(root, directory, `${name}.json`), join(scratch, directory, `${name}.json`));
+    mkdirSync(join(scratch, limitDirectory), { recursive: true });
+    for (const name of limitNames) copyFileSync(join(root, limitDirectory, `${name}.json`), join(scratch, limitDirectory, `${name}.json`));
     mkdirSync(dirname(join(scratch, runFixture)), { recursive: true });
     copyFileSync(join(root, runFixture), join(scratch, runFixture));
     execFileSync("git", ["init", "--quiet"], { cwd: scratch, env });
@@ -41,7 +45,11 @@ function track(scratch, file, body) {
     PATH: process.env.PATH, HOME: scratch, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null",
   } });
 }
-test("exact nine tracked fixtures pass", () => probe(() => {}, 0, /9 exact synthetic fixtures verified/));
+test("exact fourteen tracked fixtures pass", () => probe(() => {}, 0, /14 exact synthetic fixtures verified/));
+test("a changed produced provider-limit fixture fails", () => probe(scratch => {
+  const file = join(scratch, limitDirectory, "thresholds-hard-then-rate.json");
+  writeFileSync(file, readFileSync(file, "utf8").replace('"usedPercent":90,', '"usedPercent":91,'));
+}, 1, /provider-limits-produced\/thresholds-hard-then-rate\.json: inventoried synthetic fixture/));
 test("changed bytes fail even with identical JSON meaning", () => probe(scratch => {
   writeFileSync(target(scratch), readFileSync(target(scratch), "utf8") + "\n");
 }, 1, /exact SHA-256 match required/));
