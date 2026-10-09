@@ -50,7 +50,7 @@ How a pull request cites them (the template has the section):
 8. SOLID + composition: each package has `mod.ts` as its only entry and
    `src/{domain,application,ports,adapters}`; `domain` imports nothing outward; vendors and hosts are
    adapters behind ports; compose, do not inherit.
-9. One toolchain: pnpm workspace + Node 24. No second `deno.json`.
+9. One toolchain: pnpm workspace + Node 24. No Deno config or lockfile.
 10. No empty packages; nothing tracked that is generated output. `.llm/runs/**` is owner-controlled
     and is never deleted or rewritten by an agent.
 11. Public repo: `pnpm run check:leaks` before every PR; no hosts, IPs, ports, home or data paths,
@@ -138,7 +138,7 @@ A run has one slug (`<topic>--<qualifier>`), one branch and one pull request. It
 
 `context-pack.md` (resumes the run cold), `worklog.md` (append-only) and `drift.md` (every deviation
 with a disposition) are kept current through every stage. Once locked, a plan changes through
-`drift.md`, not in place. Templates live in [`run-record/templates/`](../run-record/templates/).
+`drift.md`, not in place. Templates live in [`packages/method/templates/`](../packages/method/templates/).
 
 Verdicts, used identically at F and G and at implementation review:
 

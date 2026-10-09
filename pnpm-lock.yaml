@@ -11,6 +11,9 @@ importers:
       '@rickylabs/harness-contracts':
         specifier: workspace:*
         version: link:packages/contracts
+      '@rickylabs/method':
+        specifier: workspace:*
+        version: link:packages/method
       '@types/node':
         specifier: ^26.4.1
         version: 26.4.1
@@ -127,6 +130,16 @@ importers:
       '@rickylabs/routing':
         specifier: workspace:*
         version: link:../routing
+
+  packages/method:
+    dependencies:
+      js-yaml:
+        specifier: ^4.3.2
+        version: 4.3.2
+    devDependencies:
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
 
   packages/netscript-bridge: {}
 
@@ -2713,6 +2726,9 @@ packages:
 
   '@tanstack/virtual-core@3.17.8':
     resolution: {integrity: sha512-BfEvehNpOT75r5Ksc5xW6NZuXujTfb7nlSEyVu4XHG3gdxNg1KqXruWbDewXOUaUYIo4oRbSfkjIajz4MAT8tA==}
+
+  '@types/js-yaml@4.0.9':
+    resolution: {integrity: sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==}
 
   '@types/node@24.13.3':
     resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
@@ -6649,6 +6665,8 @@ snapshots:
       react-dom: 19.2.8(react@18.3.1)
 
   '@tanstack/virtual-core@3.17.8': {}
+
+  '@types/js-yaml@4.0.9': {}
 
   '@types/node@24.13.3':
     dependencies:

@@ -12,6 +12,7 @@ them.
 | [`harness-board`](harness-board.md) | project a GitHub repository as a board | `0` `1` `2` `3` `4` |
 | [`harness-coordinator`](harness-coordinator.md) | the deterministic gate between authoring and review | `0` `1` `2` `3` `4` |
 | [`harness-telemetry`](harness-telemetry.md) | board activity, read from disk, with no agent awake | `0` `1` `2` `3` `4` |
+| [`harness-method`](harness-method.md) | render and validate milestone run records, and check route receipts | `0` `1` `2` |
 | [`dsh-forge`](dsh-forge.md) | board taxonomy and process skill, installable into any repository | `0` `1` `2` `3` |
 | [`dsh-board`](dsh-board.md) | project a GitHub repository as a board | `0` `1` `2` `3` `4` |
 | [`dsh-coordinator`](dsh-coordinator.md) | the deterministic gate between authoring and review | `0` `1` `2` `3` `4` |

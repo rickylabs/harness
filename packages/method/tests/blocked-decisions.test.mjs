@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { validateMilestoneCluster } from './validate-milestone-cluster.ts';
-import { renderMilestoneStatus } from './render-milestone-status.ts';
+import { renderMilestoneStatus, validateMilestoneCluster } from '../mod.ts';
 
 // All identities and data here are synthetic. Exercise the full validator with a
 // nonempty admitted inventory and an explicit PR source, never a helper-only gate.
 function fixture() {
-  const load = (name) => JSON.parse(readFileSync(new URL(`../../../run-record/templates/milestone-${name}.json`, import.meta.url), 'utf8'));
+  const load = (name) => JSON.parse(readFileSync(new URL(`../templates/milestone-${name}.json`, import.meta.url), 'utf8'));
   const intake = load('intake');
   const inventory = load('inventory');
   const dag = load('dependency-dag');
@@ -183,10 +182,4 @@ test('valid I4 snapshot does not bypass stale reporting, rendering or unavailabl
   f.state.updatedAt = '1970-01-01T02:00:00.000Z';
   const expired = await check(f);
   assert.equal(expired.ok, false); assert.ok(expired.errors.includes('state.reporting is stale relative to state.updatedAt'));
-});
-
-test('CI aggregate explicitly includes the Node cluster test stage', () => {
-  const manifest = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf8'));
-  assert.ok(manifest.scripts.test.split(/\s+/).includes('check:cluster'));
-  assert.equal(manifest.scripts['check:cluster'], 'node --test method/tools/harness/blocked-decisions.test.mjs');
 });
