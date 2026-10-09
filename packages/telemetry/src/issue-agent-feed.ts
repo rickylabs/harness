@@ -5,12 +5,13 @@ import { readAgentObservations, readIssueAgentTreeSnapshot, AGENT_ACTION_ACCEPTE
   MAX_ISSUE_AGENT_TREE_BYTES, MAX_AGENT_RESOURCE_POINTS, ISSUE_AGENT_TREE_FRESH_MS, AGENT_EFFORTS,
   projectRouteIdentity, publicOpenCodeModel,
   type AgentHistoryEvent, type AgentObservation, type AgentObservations, type AgentTreeValue, type AgentRoutePolicy,
-  type AgentResourceHistory, type AgentTimelineEvent, type AgentTimelineReason,
+  type AgentResourceHistory, type AgentTimelineEvent, type AgentTimelineReason, type AgentTokenSource,
   type IssueLaunchBlock, type IssueAgentTree, type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import type { NativeRootResolver } from "./host-reads.js";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { DispatchEvidence } from "@rickylabs/harness-contracts";
-import { processedInputTokens, type ClaudeChildCompletion, type RunRecord } from "./model.js";
+import type { ClaudeChildCompletion, RunRecord } from "./model.js";
+import { issueTokenUsage } from "./issue-token-usage.js";
 import type { PublicActionReceipt } from "./action-receipt-cli.js";
 
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -269,14 +270,8 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
   const activity: NonNullable<IssueAgentTreeAgent["activity"]> = run !== undefined && time(run.updatedAt, now) !== null
     ? { availability: "available", reason: null, observedAt: run.updatedAt, steps }
     : { availability: "unavailable", reason: "source_not_bound", observedAt: null, steps: [] };
-  const input = run === undefined ? undefined : processedInputTokens(run.source, run.usage), output = run?.usage.outputTokens;
-  const measured = (run?.source === "codex" || run?.source === "claude") && input !== undefined && output !== undefined && Number.isSafeInteger(input) && Number.isSafeInteger(output) &&
-    input >= 0 && output >= 0 && Number.isSafeInteger(input + output) && time(run?.updatedAt, now) !== null;
-  const tokenUsage: NonNullable<IssueAgentTreeAgent["tokenUsage"]> = measured
-    ? { usedTokens: input! + output!, budgetTokens: budget.tokenLimit, observedAt: run!.updatedAt,
-        source: run!.source === "codex" ? "codex-token-count" : "claude-usage", reason: null }
-    : { usedTokens: null, budgetTokens: budget.tokenLimit, observedAt: null, source: "unavailable",
-        reason: run === undefined ? "source_not_bound" : "measurement_missing" };
+  const tokenUsage = issueTokenUsage(run, budget.tokenLimit,
+    run !== undefined && time(run.updatedAt, now) !== null ? run.updatedAt : null);
   const nativeSamples = run?.tokenSamples;
   const tokenPoints = nativeSamples?.points.map(point => ({ at: time(point.at, now), usedTokens: point.usedTokens }));
   const validTokenPoints = tokenUsage.usedTokens !== null && nativeSamples !== undefined && !nativeSamples.invalid &&
@@ -288,7 +283,7 @@ function node(observation: AgentObservation, dispatch: DispatchEvidence, run: Ru
     tokenPoints.at(-1)!.usedTokens === tokenUsage.usedTokens;
   const tokens: AgentResourceHistory["tokens"] = validTokenPoints
     ? { points: tokenPoints.map(point => ({ at: point.at!, usedTokens: point.usedTokens })),
-        truncated: nativeSamples.truncated, source: tokenUsage.source as "codex-token-count" | "claude-usage", reason: null }
+        truncated: nativeSamples.truncated, source: tokenUsage.source as AgentTokenSource, reason: null }
     : { points: [], truncated: false, source: "unavailable",
         // A history read only at its head and tail is served as incomplete, never as a full series.
         reason: nativeSamples?.invalid || nativeSamples?.partial === true ? "source_incomplete"
