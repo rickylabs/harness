@@ -4,7 +4,7 @@
 
 `[###############-----]` **513/657 done · 63 running · 26 queued · 16 abandoned · 39 invisible**
 
-_Latest board activity: 2026-10-09T05:37:04Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-09T05:41:26Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
 ## Moving now (63)
 
@@ -72,9 +72,9 @@ Something could be acting on these right now.
 | [#664 [rickylabs/atelier-mobile#343] Epic: production-grade Expo app (one api layer, one route tree, gates)](https://github.com/rickylabs/harness/issues/664) | `plan` | — |
 | [#665 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)](https://github.com/rickylabs/harness/issues/665) | `plan` | — |
 | [#667 [rickylabs/atelier-cockpit#541] Mobile Agents native feed join, unified counts and live-device acceptance](https://github.com/rickylabs/harness/issues/667) | `augment-review` | — |
-| [PR673 refactor(method): packages/method replaces method/, run-record/, deno.json and BOARD.md](https://github.com/rickylabs/harness/pull/673) | `impl-eval` | — |
+| [PR673 refactor(method): packages/method replaces method/, run-record/, deno.json and BOARD.md](https://github.com/rickylabs/harness/pull/673) | `impl` | — |
 | [PR674 refactor(hosts): move orchid observations out of telemetry into packages/hosts/orchid](https://github.com/rickylabs/harness/pull/674) | `impl` | — |
-| [PR675 chore(prune): delete stub packages, the dsh experiment, dsh-* aliases and unreferenced scripts](https://github.com/rickylabs/harness/pull/675) | `impl-eval` | — |
+| [PR675 chore(prune): delete stub packages, the dsh experiment, dsh-* aliases and unreferenced scripts](https://github.com/rickylabs/harness/pull/675) | `impl` | — |
 
 ## Not on the board (23)
 
@@ -570,9 +570,9 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              PR670 test(parity): pin the atelier-cockpit and orchid consumer surfaces
     shipped              PR671 refactor(providers): move provider packages to packages/providers/* with the doctrine layout
     shipped              PR672 refactor(contracts): one governance read model, telemetry imports it
-    impl-eval            PR673 refactor(method): packages/method replaces method/, run-record/, deno.json and BOARD.md
+    impl                 PR673 refactor(method): packages/method replaces method/, run-record/, deno.json and BOARD.md
     impl                 PR674 refactor(hosts): move orchid observations out of telemetry into packages/hosts/orchid (draft)
-    impl-eval            PR675 chore(prune): delete stub packages, the dsh experiment, dsh-* aliases and unreferenced scripts (draft)
+    impl                 PR675 chore(prune): delete stub packages, the dsh experiment, dsh-* aliases and unreferenced scripts (draft)
 
 ## (no milestone)  [###############-----]  302/390 done · 44 running · 3 queued · 10 abandoned · 31 invisible
 
