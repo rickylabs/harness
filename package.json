@@ -24,10 +24,10 @@
     "check:metadata": "node scripts/check-metadata.mjs",
     "docs:cli": "pnpm run build:packages && node scripts/cli-reference.mjs --write",
     "build": "node scripts/run-stages.mjs --label build --compile-stage build:packages check:stages check:core-selection check:graph check:lifecycle check:links check:forms check:profiles check:snapshots check:compiled-policy build:packages check:publish check:label-registry check:docs check:skill check:tutorial",
-    "typecheck": "node scripts/run-stages.mjs --label typecheck --compile-stage typecheck:packages check:stages check:core-selection check:graph check:lifecycle typecheck:packages",
+    "typecheck": "node scripts/run-stages.mjs --label typecheck --compile-stage typecheck:compile check:stages check:core-selection check:graph check:lifecycle typecheck:compile",
     "check:cluster": "node --test method/tools/harness/blocked-decisions.test.mjs",
     "check:test-scripts": "node --test scripts/check-test-scripts.test.mjs && node scripts/check-test-scripts.mjs",
-    "test": "node scripts/run-stages.mjs --label test check:stages check:core-selection check:test-scripts check:domain-imports check:receipts check:cluster test:packages check:cli-aliases check:installed",
+    "test": "node scripts/run-stages.mjs --label test check:stages check:core-selection check:test-scripts check:domain-imports check:receipts check:cluster test:packages test:parity check:cli-aliases check:installed",
     "skill:install": "pnpm --filter @rickylabs/forge run build && node packages/forge/dist/cli.js skill install --dispatch-label harness",
     "golden:bless": "pnpm run experiment:dsh:golden:bless",
     "clean": "node scripts/core-packages.mjs clean",
@@ -36,7 +36,9 @@
     "check:stages": "node --test scripts/run-stages.test.mjs scripts/gates-regressions.test.mjs",
     "build:packages": "node scripts/core-packages.mjs build",
     "test:packages": "node scripts/core-packages.mjs test",
+    "test:parity": "node --test tests/parity/consumer-surfaces.test.mjs",
     "typecheck:packages": "node scripts/core-packages.mjs typecheck",
+    "typecheck:compile": "pnpm run typecheck:packages && tsc -p tsconfig.json",
     "check:receipts": "node --test method/tools/harness/matrix-receipts.test.mjs",
     "check:gate-mutations": "node scripts/mutation-verify-gates.mjs",
     "check:cli-aliases": "node --test scripts/cli-aliases.test.mjs",
@@ -52,6 +54,7 @@
     "experiment:dsh:golden:bless": "pnpm run experiment:dsh:build && node experiments/routers/dsh/dist/bless.js"
   },
   "devDependencies": {
+    "@rickylabs/harness-contracts": "workspace:*",
     "@types/node": "^26.4.1",
     "js-yaml": "^4.3.2",
     "typescript": "~5.9.3"

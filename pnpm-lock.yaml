@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@rickylabs/harness-contracts':
+        specifier: workspace:*
+        version: link:packages/contracts
       '@types/node':
         specifier: ^26.4.1
         version: 26.4.1

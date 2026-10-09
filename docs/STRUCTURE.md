@@ -38,7 +38,6 @@ location stays authoritative and the owning issue moves it:
 | orchid observation files inside `packages/telemetry` | `packages/hosts/orchid` | #660 |
 | governance code inside `packages/telemetry`, stub `packages/governance` | `packages/governance` | #655 |
 | `method/tools`, `run-record/templates`, `deno.json`, `BOARD.md` | `packages/method` (or deleted) | #658 |
-| no cross-package consumer test | `tests/parity/` | #657 |
 | flat `src/` in each package | `mod.ts` + `src/{domain,application,ports,adapters}` | each package's issue |
 
 ## Consumer surfaces
@@ -50,12 +49,14 @@ same change and names the consumer that must follow.
 | Surface | Path | Read by |
 | --- | --- | --- |
 | contracts package exports `.`, `./server`, `./route` | `packages/contracts/package.json` | atelier-cockpit |
-| delegation matrix | `packages/routing/matrix/delegation-matrix.ts` | orchid |
-| routing policy | `packages/routing/matrix/routing-policy.ts` | orchid |
+| delegation matrix | `packages/routing/matrix/delegation-matrix.ts` | orchid, atelier-cockpit |
+| routing policy | `packages/routing/matrix/routing-policy.ts` | orchid, atelier-cockpit |
 | matrix contract | `packages/routing/matrix/contract.ts` | orchid |
 | opencode preflight | `packages/routing/matrix/opencode-preflight.ts` | orchid |
 | launchability | `packages/routing/matrix/launchability.ts` | orchid |
 | matrix table CLI | `packages/routing/matrix/cli/delegation-matrix-table.ts` | orchid |
+| routing configuration, read from `main` without a pin | `packages/routing/config/routing.v1.json` | atelier-cockpit |
+| routing-proposal source (exists) | `packages/routing/matrix/matrix.test.mjs` | atelier-cockpit |
 | CLI discovery | `packages/routing/src/discovery.ts` | atelier-cockpit |
 | route grammar, dispatch, go grammar | `packages/subagents/src/{route,dispatch,go-grammar}.ts` | atelier-cockpit |
 | governance read model | `packages/contracts/src/governance-read.ts` | atelier-cockpit |
