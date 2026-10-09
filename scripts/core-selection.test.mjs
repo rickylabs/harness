@@ -142,7 +142,7 @@ test("the project guard accepts the whole workspace while rejecting a duplicate 
   writeFileSync(path, JSON.stringify(config));
   const refused = graphCheck(directory);
   assert.ifError(refused.error); assert.equal(refused.status, 1);
-  assert.match(refused.stderr, /root references must contain every core project exactly once/);
+  assert.match(refused.stderr, /tsconfig\.json: root references must contain every core project exactly once/);
 });
 test("an omitted project reference fails even with the root intact", t => {
   const directory = isolatedGraph(t);
