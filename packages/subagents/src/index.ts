@@ -93,33 +93,21 @@ export type { GoKeyValue } from "./go-grammar.js";
 export {
   CONTEXT_KEY,
   capabilityProblem,
-  conformanceProblems,
   instrumentedBy,
   isInstrumented,
   isRouteVerified,
   isSafeToRetry,
   markInstrumented,
-  registryProblems,
   retryGuidance,
-  selectProvider,
 } from "./provider.js";
 export type {
-  BlockRule,
-  BlockedSelection,
-  ConformanceProblem,
-  ConformanceRule,
   DispatchResult,
   DispatchVerdict,
   Observation,
   OptionalCall,
   ProviderCapabilities,
-  Rejection,
-  RejectionRule,
   RunLiveness,
   RunRef,
-  SelectedProvider,
-  Selection,
-  SelectionOptions,
   SteerResult,
   SteerVerdict,
   StopResult,
@@ -127,6 +115,18 @@ export type {
   SubagentProvider,
   SubagentRegistry,
 } from "./provider.js";
+export { selectProvider } from "./provider-selection.js";
+export type {
+  BlockRule,
+  BlockedSelection,
+  Rejection,
+  RejectionRule,
+  SelectedProvider,
+  Selection,
+  SelectionOptions,
+} from "./provider-selection.js";
+export { conformanceProblems, registryProblems } from "./provider-conformance.js";
+export type { ConformanceProblem, ConformanceRule } from "./provider-conformance.js";
 
 export {
   ROUTE_FIELDS,
