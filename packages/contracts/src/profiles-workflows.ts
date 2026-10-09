@@ -1,6 +1,6 @@
 /** Public references and run facts for repo profiles and Cockpit-owned workflow revisions.
  * Markdown, prompts, trigger filters, writer paths and native IDs remain private. */
-import { publicActivityText } from "./issue-agent-tree.js";
+import { publicActivityText } from "./agent-activity.js";
 
 export const PROFILE_KINDS = ["leaf", "rfc", "milestone-coordinator"] as const;
 export const PROFILE_ROLES = ["implementation", "ui_ux", "plan", "plan_evaluation",
