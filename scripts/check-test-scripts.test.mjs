@@ -66,3 +66,16 @@ test("the executable gate exits non-zero on a package it was not told about", ()
     assert.match(run.stderr, /surprise/, "the failure must name the package");
   } finally { rmSync(scratch, { recursive: true, force: true }); }
 });
+test("a package inside a group directory is audited too, so a move cannot hide it", () => {
+  const scratch = mkdtempSync(join(tmpdir(), "test-scripts-group-"));
+  try {
+    mkdirSync(join(scratch, "scripts"));
+    mkdirSync(join(scratch, "packages/group/nested-surprise"), { recursive: true });
+    copyFileSync(join(root, "scripts/check-test-scripts.mjs"), join(scratch, "scripts/check-test-scripts.mjs"));
+    copyFileSync(join(root, "scripts/inconclusive.mjs"), join(scratch, "scripts/inconclusive.mjs"));
+    writeFileSync(join(scratch, "packages/group/nested-surprise/package.json"), JSON.stringify({ name: "nested-surprise", scripts: {} }));
+    const run = spawnSync(process.execPath, ["scripts/check-test-scripts.mjs"], { cwd: scratch, encoding: "utf8" });
+    assert.equal(run.status, 1, "an undeclared uncovered package in a group must fail the gate");
+    assert.match(run.stderr, /group\/nested-surprise/, "the failure must name the package by its group path");
+  } finally { rmSync(scratch, { recursive: true, force: true }); }
+});

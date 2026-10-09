@@ -33,13 +33,13 @@
       "path": "../../../packages/provider-acp"
     },
     {
-      "path": "../../../packages/provider-claude"
+      "path": "../../../packages/providers/claude"
     },
     {
-      "path": "../../../packages/provider-codex"
+      "path": "../../../packages/providers/codex"
     },
     {
-      "path": "../../../packages/provider-opencode"
+      "path": "../../../packages/providers/opencode"
     },
     {
       "path": "../../../packages/routing"
