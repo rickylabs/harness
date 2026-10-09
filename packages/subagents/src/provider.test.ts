@@ -2,18 +2,17 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { parseSwarm, renderSwarm, toDispatchRequest, type DispatchRequest, type Harness } from "./dispatch.js";
+import { conformanceProblems, registryProblems } from "./provider-conformance.js";
+import { selectProvider } from "./provider-selection.js";
 import {
   CONTEXT_KEY,
   capabilityProblem,
-  conformanceProblems,
   instrumentedBy,
   isInstrumented,
   isRouteVerified,
   isSafeToRetry,
   markInstrumented,
-  registryProblems,
   retryGuidance,
-  selectProvider,
   type DispatchResult,
   type Observation,
   type ProviderCapabilities,

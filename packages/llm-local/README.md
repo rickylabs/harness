@@ -165,8 +165,8 @@ for on purpose.
 Native tasks and API/local calls have different loop and lifecycle boundaries. Billing follows
 the actual vendor/provider source: not every native transport has a quota window and a local
 call need not have a per-token bill. This package owns API/local adapter configuration and
-credential-profile binding. The optional dsh composition names the services `ctx.llm` and
-`ctx.subagents`; those names do not infer accounting — see
+credential-profile binding. The service names `ctx.llm` and `ctx.subagents` do not infer
+accounting — see
 [`docs/concepts/02`](../../docs/concepts/02-the-two-seams.md).
 
 The local endpoints sit here too, and they are the case that makes the split obvious: a model running

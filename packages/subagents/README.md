@@ -79,7 +79,7 @@ journal (#71) and checked in CI against a table of declarations with nothing ins
   passed it over.
 
 `conformanceProblems` and `registryProblems` check what a provider claims about itself before it is
-asked to do anything — composition-time validation for the optional router. Blind and unstoppable are reported
+asked to do anything — composition-time validation for a composition root. Blind and unstoppable are reported
 without being failed, because divybot is genuinely both and saying so is the contract working. The
 two checks that live on the *registry* are the two a provider cannot answer about itself: whether
 another provider took its id, and whether the composition root remembered to wrap it.
@@ -309,10 +309,9 @@ split between what the mock proved and what only a live router could.
 - **Model selection.** The routing matrix answers that; #61 validates model ids at the boundary.
 - **Storing the ledger.** `lease.ts` decides; nothing here writes. The compare-and-set that makes
   the decision binding belongs to whatever holds the file, and no such store exists yet.
-- **Any provider over a vendor CLI.** Those four implementations are `provider-claude`,
-  `provider-codex`, `provider-acp`, `provider-opencode` (the first two and the last under
-  `packages/providers/`). `provider-uhp` is the exception and it lives
-  here by the ownership boundary confirmed on #286: there is exactly one `SubagentProvider` for UHP and
+- **Any provider over a vendor CLI.** Those three implementations are `provider-claude`,
+  `provider-codex` and `provider-opencode`, under `packages/providers/`. `provider-uhp` is the
+  exception and it lives here by the ownership boundary confirmed on #286: there is exactly one `SubagentProvider` for UHP and
   exactly one harness object registry, and both are in this package.
 - **Any I/O, with three named exceptions.** The UHP stream reader takes its clock as a parameter and
   falls back to `new Date()` only when a caller supplies none, so a test never sleeps. `uhp-mock.ts`

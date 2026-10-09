@@ -39,12 +39,9 @@ import { describe, it } from "node:test";
 import { createUhpProvider } from "./uhp-provider.js";
 import { createUhpTransport } from "./uhp-transport.js";
 import { isRouteEvidenceVerified } from "./route.js";
-import {
-  conformanceProblems,
-  isSafeToRetry,
-  markInstrumented,
-  selectProvider,
-} from "./provider.js";
+import { isSafeToRetry, markInstrumented } from "./provider.js";
+import { conformanceProblems } from "./provider-conformance.js";
+import { selectProvider } from "./provider-selection.js";
 import type { DispatchRequest } from "./dispatch.js";
 import { startUhpServer, type UhpJsonReply } from "./uhp-mock.js";
 import {

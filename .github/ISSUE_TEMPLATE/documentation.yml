@@ -65,6 +65,6 @@ body:
     id: detail
     attributes:
       label: What it says, and what would be true instead
-      description: Quote the line. If it is a generated page, name the command that regenerates it rather than proposing an edit — `pnpm run docs:cli`, `pnpm run skill:install`, `pnpm run golden:bless`.
+      description: Quote the line. If it is a generated page, name the command that regenerates it rather than proposing an edit — `pnpm run docs:cli`, `pnpm run skill:install`.
     validations:
       required: true

@@ -60,7 +60,7 @@ authorization, commands and application projections, and captures its OpenAPI ar
 and generated client. The native client consumes that generated product boundary for
 observation, decisions and steering. No consumer uses cross-repository workspace imports.
 
-## Framework and optional router
+## Framework
 
 [Orchid](https://github.com/rickylabs/orchid) owns dispatch and physical launch admission;
 [Herdr](https://github.com/herdrdev/herdr) owns terminal control. Harness owns the portable mechanisms
@@ -69,10 +69,6 @@ supersedes the former dsh-only premise while retaining the earlier decisions as 
 
 The [package guide](../../packages/README.md) maps implemented, partial and stub boundaries.
 [`forge`](../../packages/forge) installs the board process into another repository.
-[`harness-router-dsh`](../../experiments/routers/dsh) retains DeepSeek Harness as an optional additional-router
-experiment with genuine upstream dependencies. It lives outside the fourteen core packages and has explicit
-checks; default lifecycle stages do not execute it. Integration testing waits until
-after the next APK.
 
 ## Carry the method between projects
 

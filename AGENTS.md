@@ -76,8 +76,7 @@ your first board mutation, not after.
 [ADR 0006](docs/decisions/0006-rearch-2026-10-08.md) supersedes ADR 0003 and ADR 0005 where they
 differ. Together they settle these decisions. Do not re-derive them in a run, a PR or a prompt:
 
-1. Harness is our framework on Orchid and Herdr. The dsh router under `experiments/routers/dsh` is an
-   optional experiment, not the host.
+1. Harness is our framework on Orchid and Herdr.
 2. pnpm and Node form the only toolchain. NetScript is an external service behind an adapter, never a
    build-time dependency.
 3. GitHub owns the board. `harness-board status` and `harness-board check` read it; no board page is
@@ -131,14 +130,9 @@ A generated file changes only through its command; the checks refuse a hand edit
 | --- | --- |
 | `docs/reference/cli/*.md` | `pnpm run docs:cli` |
 | `.claude/skills/board-process/SKILL.md` | `pnpm run skill:install` |
-| `experiments/routers/dsh/dump-config.golden.yml` | `pnpm run experiment:dsh:golden:bless -- "the reason it changed"` |
-| `experiments/routers/dsh/cordis.patch.yml` | editing `experiments/routers/dsh/src/bundle.ts`, never the file |
 | `.github/labels.yml` | `node packages/forge/dist/cli.js labels eject` |
 | `pnpm-lock.yaml` | `pnpm install` |
 | a milestone run's `milestone-status.md` | `pnpm exec harness-method milestone render <run-dir>` |
-
-The golden snapshot takes a required reason and writes it into its own header; put the same reason in
-the pull request.
 
 ## Branches, commits and merging
 
