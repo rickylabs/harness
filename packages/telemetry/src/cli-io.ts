@@ -58,7 +58,9 @@ export async function loadGovernance(path: string | null, now: string): Promise<
   let decoded: unknown;
   try { decoded = JSON.parse(text) as unknown; } catch { return refuse("invalid governance observations: input is not JSON"); }
   const read = governanceAt(decoded, now);
-  return read.ok ? { governance: read.snapshot, notes: [], ok: true } : refuse(`invalid governance observations: ${read.detail}`);
+  // A decoded document keeps its own completeness and diagnostics: a partial or unavailable reading stays incomplete.
+  return read.ok ? { governance: read.snapshot, notes: [...read.snapshot.notes], ok: read.snapshot.complete }
+    : refuse(`invalid governance observations: ${read.detail}`);
 }
 
 /** Print the notes under a heading. Used when a command's own output would otherwise be silent. */

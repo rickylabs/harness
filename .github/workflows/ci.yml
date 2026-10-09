@@ -54,10 +54,19 @@ jobs:
 
       - run: pnpm run typecheck
 
-      # `typecheck` is `tsc -b --emitDeclarationOnly`, so it leaves .tsbuildinfo behind claiming the
-      # projects are built. TypeScript compares the recorded options and re-emits anyway — verified,
-      # not assumed: from a clean tree, typecheck emits 74 .d.ts and 0 .js, and this step then emits
-      # all 74 .js. If that ever stopped holding, `test` below would find no files to run and pass.
+      # `typecheck` emits declarations only: its `typecheck:compile` stage runs `typecheck:packages`
+      # (`tsc -b --emitDeclarationOnly` per core package), then the root `tsc -p tsconfig.json`,
+      # a no-emit compile of the parity types in tests/parity. JavaScript is emitted here, by
+      # `build:packages` (`tsc -b` per core package). The declaration-only pass leaves .tsbuildinfo
+      # behind claiming the projects are built; TypeScript compares the recorded options and
+      # re-emits anyway — verified, not assumed: from a clean tree, typecheck emits 74 .d.ts and
+      # 0 .js, and this step then emits all 74 .js. If that ever stopped holding, `test` below
+      # would find no files to run and pass.
       - run: pnpm run build
+
+      # orchid runs packages/routing/matrix/cli/delegation-matrix-table.ts under Deno; test:parity runs it the same way.
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
 
       - run: pnpm test
