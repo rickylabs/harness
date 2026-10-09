@@ -115,6 +115,10 @@ packages after it. Each exists because the failure it catches is silent, and run
 `pnpm -r run build` directly skips all of them. Tests run against what was built,
 so on an unbuilt tree `pnpm test` tests the previous build; when in doubt, run the four.
 
+On a pull request CI also runs `pnpm run check:leaks`, which reads only the lines your branch adds
+and fails on a home or data path, a private address, a host:port pair, a token shape, a private-key
+header or a session id. It prints `file:line reason`, never the text. Run it locally after committing.
+
 `pnpm run check:metadata` is a command, not a gate: it compares GitHub's repository description with
 the root `package.json` and prints the `gh repo edit` that fixes a difference. Exit 3 means it found no
 GitHub transport and compared nothing.
