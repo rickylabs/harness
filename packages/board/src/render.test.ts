@@ -195,8 +195,8 @@ describe("renderHierarchy", () => {
   });
 
   it("omits the stamp when the caller's output is committed", () => {
-    // The digest embeds this tree in a file rewritten every half hour. A stamp that moves on every
-    // render would make every scheduled run a commit and bury the runs where the board moved.
+    // The digest embeds this tree in a page that is re-rendered and stored. A stamp that moves on
+    // every render would make every re-render a change and bury the renders where the board moved.
     const hierarchy = buildHierarchy(snapshotOf([issue({ number: 1, labels: ["status:plan"] })]));
     const text = renderHierarchy(hierarchy, { stamp: false });
     assert.ok(!text.includes("generated "), text.split("\n").slice(0, 2).join(" / "));
