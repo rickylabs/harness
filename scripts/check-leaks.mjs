@@ -21,12 +21,15 @@ import { INCONCLUSIVE_EXIT } from "./inconclusive.mjs";
  * One row per detector, one row per line. The reason is a closed code; it is all that is printed.
  * Every leading repetition starts behind a lookbehind, so a match can only begin at a token
  * boundary and a long line is scanned in linear time instead of once per suffix.
+ * host-port's bare `name:port` form skips one shape only: a camelCase key inside object syntax
+ * (after `{` or `,`, value then `,` or `}`), as in `{schemaVersion:2,...}`. Bare hosts in any
+ * case, and lowercase keys, are still reported.
  */
 export const DETECTORS = [
   ["home-path", /(?<![\w.])(?:(?:\/home\/[a-z_][\w.-]*|\/Users\/[\w.-]+|\/(?:root))(?=[\s"'`)\]},;:/]|$)|[A-Za-z]:[\\/]{1,2}(?i:users)[\\/])/],
   ["data-path", /(?<![\w.])\/(?:ephemeral|mnt|data|srv|var\/lib|opt\/data|tank|pool-[\w-]+)(?=[\s"'`)\]},;:/]|$)/],
   ["private-ipv4", /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3})\b/],
-  ["host-port", /(?<![a-z0-9+.-])[0-9+.-]*[a-z][a-z0-9+.-]*:\/\/(?:[^\s/@]+@)?(?:\[[0-9a-f:.]+\]|[a-z0-9-]+(?:\.[a-z0-9-]+)*):\d{1,5}\b|\b(?:localhost|\d{1,3}(?:\.\d{1,3}){3}):\d{1,5}\b|(?<![a-z0-9-]|[a-z0-9-]\.)[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:local|lan|internal|home|ts\.net):\d{1,5}\b|(?<![\w/.-])[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?!(?:md|mdx|mjs|cjs|js|jsx|ts|tsx|mts|cts|json|jsonl|yml|yaml|toml|py|sh|txt|lock|html|css|rs|go|java|kt|swift|c|h|cpp):)[a-z][a-z0-9-]*:\d{1,5}\b|(?<![\w./@:-])[a-z][a-z0-9-]*:\d{1,5}\b/i],
+  ["host-port", /(?<![a-z0-9+.-])[0-9+.-]*[a-z][a-z0-9+.-]*:\/\/(?:[^\s/@]+@)?(?:\[[0-9a-f:.]+\]|[a-z0-9-]+(?:\.[a-z0-9-]+)*):\d{1,5}\b|\b(?:localhost|\d{1,3}(?:\.\d{1,3}){3}):\d{1,5}\b|(?<![a-z0-9-]|[a-z0-9-]\.)[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:local|lan|internal|home|ts\.net):\d{1,5}\b|(?<![\w/.-])[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?!(?:md|mdx|mjs|cjs|js|jsx|ts|tsx|mts|cts|json|jsonl|yml|yaml|toml|py|sh|txt|lock|html|css|rs|go|java|kt|swift|c|h|cpp):)[a-z][a-z0-9-]*:\d{1,5}\b|(?<![\w./@:-])(?!(?<=[{,]\s*)(?-i:[a-z][a-z0-9]*[A-Z][A-Za-z0-9]*):\s*\d{1,5}\s*[,}])[a-z][a-z0-9-]*:\d{1,5}\b/i],
   ["tailnet-host", /(?<![\w-])[\w-]+\.[\w-]+\.ts\.net\b|\btail[0-9a-f]{4,}\b/i],
   ["token-shape", /\b(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]{10,}|\bsk-[A-Za-z0-9_-]{16,}|\bBearer\s+[A-Za-z0-9._~+/-]{16,}/],
   ["private-key", /-{5}BEGIN [A-Z ]*PRIVATE KEY-{5}/],

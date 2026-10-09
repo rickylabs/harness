@@ -24,7 +24,8 @@ const FAMILIES = [
   ["private-ipv4", [[10, 1, 2, 3], [192, 168, 0, 9], [172, 16, 0, 1], [100, 64, 0, 1]].map(ip => ip.join("."))],
   ["host-port", [["localhost", 8080].join(":"), ["localhost", 9].join(":"), url(["example", "com"].join("."), 443),
     url("worker", 8080), "-" + url("worker", 8081), "endpoint " + ["api", "example", "com"].join(".") + ":" + 8443,
-    "proxy " + ["worker", 8080].join(":"), "jump " + ["bastion", 22].join(":")]],
+    "proxy " + ["worker", 8080].join(":"), "jump " + ["bastion", 22].join(":"),
+    "share on " + ["NAS", 5000].join(":") + " tonight", "ran on " + ["buildBox", 8080].join(":") + " again"]],
   ["tailnet-host", ["node." + "tail" + "1a2b" + ".ts.net"]],
   ["token-shape", ["gh" + "p_" + "a".repeat(36), "github" + "_pat_" + "b".repeat(30), "sk" + "-" + "c".repeat(24),
     "Bear" + "er " + "d".repeat(24)]],
@@ -67,7 +68,10 @@ for (const [reason, lines] of FAMILIES) {
 test("a clean diff exits 0 with both streams empty, near-misses included", t => {
   const benign = ["see src/data/x, ./mnt/ and lib/home/x for details", "scripts/x.mjs:42 and README.md:12 and src/a.test.ts:1234",
     "key: 1 with a space, version 10.2, at 21:20, stamped 2026-10-08T21:43:00Z", "https://example.com/path without a port",
-    "the session ended", "sk-x"];
+    "the session ended", "sk-x",
+    // A camelCase key in object syntax is not a host (#654's governance doc wrote this exact form).
+    "{" + ["schemaVersion", "2,timeoutMs", "300}"].join(":"),
+    "`{" + ["schemaVersion", "2,accountUsage"].join(":") + ":<existing schema 1 descriptor>,providers:<source>}`."];
   const result = scan(repo(t, { "clean.txt": benign.join("\n") + "\n" }));
   assert.deepEqual([result.status, result.out, result.err], [0, "", ""]);
 });
