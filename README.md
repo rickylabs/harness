@@ -297,7 +297,7 @@ owns the complete package-to-epic table and implementation status.
 - **Connect:** [`forge`](packages/forge) installs the board process, and
   [`netscript-bridge`](packages/netscript-bridge) owns the outbound service adapter.
 - **Experiment:** [`harness-router-dsh`](experiments/routers/dsh) retains the optional dsh profile
-  and composition outside the fourteen-package core. Run `pnpm run experiment:dsh:check`
+  and composition outside the fifteen-package core. Run `pnpm run experiment:dsh:check`
   explicitly; default lifecycle stages do not execute the experiment.
 - **Publish the boundary:** [`contracts`](packages/contracts) defines portable
   mechanism data and readers for the product backend. The native client consumes
@@ -306,7 +306,7 @@ owns the complete package-to-epic table and implementation status.
 ### Repository map
 
 ```
-packages/             fourteen flat core packages
+packages/             fifteen core packages (hosts/ groups the host adapters)
 docs/                 DOCTRINE, STRUCTURE, decisions, concepts, tutorials, how-to, reference, glossary
 method/tools/         method validators and gates
 run-record/templates/ the artifact templates a run fills in

@@ -70,7 +70,7 @@ supersedes the former dsh-only premise while retaining the earlier decisions as 
 The [package guide](../../packages/README.md) maps implemented, partial and stub boundaries.
 [`forge`](../../packages/forge) installs the board process into another repository.
 [`harness-router-dsh`](../../experiments/routers/dsh) retains DeepSeek Harness as an optional additional-router
-experiment with genuine upstream dependencies. It lives outside the fourteen core packages and has explicit
+experiment with genuine upstream dependencies. It lives outside the fifteen core packages and has explicit
 checks; default lifecycle stages do not execute it. Integration testing waits until
 after the next APK.
 

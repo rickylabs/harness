@@ -3,6 +3,9 @@
 `SessionTelemetrySink` and `harness-telemetry` — the "status ?" killer.
 
 Owned by epic E9 · #39. See [`packages/README.md`](../README.md) for workspace conventions.
+Orchid's private receipt root is read by [`@rickylabs/host-orchid`](../hosts/orchid/README.md); telemetry
+owns the `OrchidReads` port (`src/host-reads.ts`) and its two composition roots, `cli.ts` and
+`issue-agent-feed-cli.ts`, pass the host to the read models.
 
 ## Why this exists
 

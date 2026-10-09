@@ -36,7 +36,7 @@ location stays authoritative and the owning issue moves it:
 | Today | Target | Moved by |
 | --- | --- | --- |
 | `packages/provider-claude`, `provider-codex`, `provider-opencode` | `packages/providers/*` | #659 |
-| orchid observation files inside `packages/telemetry` | `packages/hosts/orchid` | #660 |
+| orchid observation files inside `packages/telemetry` | `packages/hosts/orchid` (done) | #660 |
 | governance code inside `packages/telemetry`, stub `packages/governance` | `packages/governance` | #655 |
 | `method/tools`, `run-record/templates`, `deno.json`, `BOARD.md` | `packages/method` (or deleted) | #658 |
 | no cross-package consumer test | `tests/parity/` | #657 |

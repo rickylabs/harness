@@ -1,13 +1,13 @@
 # packages/
 
-Fourteen flat core packages implement Harness mechanisms or define explicit partial/stub boundaries.
-The fifteenth workspace package, `@rickylabs/harness-router-dsh`, retains the optional DeepSeek Harness router experiment.
+Fifteen core packages implement Harness mechanisms or define explicit partial/stub boundaries;
+`hosts/` groups the host adapters. The sixteenth workspace package, `@rickylabs/harness-router-dsh`, retains the optional DeepSeek Harness router experiment.
 [ADR 0005](../docs/decisions/0005-harness-framework-identity.md) records the current framework
 identity on Orchid and Herdr. Core modules do not depend on that experimental host.
 
 The [experiment](../experiments/routers/dsh/README.md) lives outside `packages/` and is excluded
-from default core build, typecheck and tests. Its explicit checks still verify all fourteen
-workspace dependency/reference edges. Workspace install may resolve its locked upstream
+from default core build, typecheck and tests. Its explicit checks still verify every
+workspace dependency/reference edge. Workspace install may resolve its locked upstream
 dependencies. This index describes source implementation, not provider configuration,
 activation, credentials or a successful native launch on a particular host.
 
@@ -26,7 +26,8 @@ activation, credentials or a successful native launch on a particular host.
 | `forge` | Explicit GitHub taxonomy/process installation and bridge rules | E7 · #37 |
 | `netscript-bridge` | Stub: external NetScript service adapter | E7 · #37 |
 | `contracts` | Published mechanism vocabulary and strict decoders under `@rickylabs/harness-contracts` | E8 · #38 |
-| `telemetry` | Native session observations, screened activity, usage and dispatch evidence | E9 · #39 |
+| `telemetry` | Native session observations, screened activity, usage and dispatch evidence; composes host adapters through its `OrchidReads` port | E9 · #39 |
+| `hosts/orchid` | `@rickylabs/host-orchid`: reads Orchid's private receipt root (dispatch, launch, binding, stop, teardown, Claude status) into contract shapes; depends on `contracts` only | #660 |
 | `harness-router-dsh` | Optional experiment: dsh profile, bundle and adapters consuming core modules | E2 · #32 |
 
 A stub holds a buildable place in the project graph, not a working integration. Its README states
@@ -48,7 +49,7 @@ and retains physical checks and accounting. No client-supplied model string gran
 
 - **Name** `@rickylabs/<dir>`; `private: true` for everything except `contracts`.
   - **The one exception is `contracts` itself**, published as `@rickylabs/harness-contracts` (#81).
-    The other fourteen names are internal and only ever read inside this repository, where `contracts`
+    The other fifteen names are internal and only ever read inside this repository, where `contracts`
     is unambiguous. That one is a public npm name that has to say which project it belongs to when it
     appears in someone else's `package.json`. The directory keeps its short name because the name a
     contributor types is a different audience from the name a consumer installs.

@@ -14,7 +14,7 @@ deprecate. The remaining method and CLI cleanup belongs to
 | --- | --- | --- |
 | 1 | Owner decision, charter and current framework documentation | Coordinator-owned issue text updates and board regeneration |
 | 2 | Canonical core CLI names and callable compatibility aliases | Superseded by ADR 0006: the aliases are to be deleted, with no census gate; the remaining CLI cleanup belongs to #658 |
-| 3 | Optional router isolated under experiments; default checks select fourteen core packages | Router acceptance remains separately authorized after the next APK |
+| 3 | Optional router isolated under experiments; default checks select the core packages (fifteen since #660) | Router acceptance remains separately authorized after the next APK |
 | 4 | Canonical method and run-record homes; the compatibility copies were later deleted by ADR 0006 | Vault refresh uses this truthful structure; storage/checkpoint work is separate |
 | 5 | Canonical operator settings, conflict refusal and fenced log-family selection | Paired reader forwarding and operator file/settings migration |
 | 6 | Exact canonical/legacy cost reader unions in released contracts 0.36.0 | Cockpit schema/client regeneration and supported mobile captures |
