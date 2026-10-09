@@ -1,7 +1,7 @@
 /** Telemetry read models over Orchid receipts read by @rickylabs/host-orchid. All values are synthetic. */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod, utimes } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
@@ -14,12 +14,18 @@ const fixture = { schemaVersion: 1, runId: "orchid-" + key,
   issue: { repo: "example/inbox", number: 42 }, parentRunId: null, source: "codex",
   provider: "fixture-router", model: "fixture-model", effort: "high", profile: "leaf", state: "dispatched",
   location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" } };
+const written = new Date("2026-01-01T00:00:00.000Z");
 async function setup(reservation = key) {
   const root = await mkdtemp(join(tmpdir(), "orchid-read-"));
   const dir = join(root, reservation, "record");
   await mkdir(dir, { recursive: true, mode: 0o700 });
   const file = join(dir, "dispatch.json");
-  return { root, file, record: dir, write: (value: unknown) => writeFile(file, JSON.stringify(value), { mode: 0o600 }) };
+  // A receipt without observedAt is dated by its mtime. Pin it before any capture time, so a capture taken
+  // in the same millisecond can never precede the dispatch it observes.
+  return { root, file, record: dir, write: async (value: unknown) => {
+    await writeFile(file, JSON.stringify(value), { mode: 0o600 });
+    await utimes(file, written, written);
+  } };
 }
 
 it("binds a fresh Claude working status to the exact native root and never to a child", async () => {

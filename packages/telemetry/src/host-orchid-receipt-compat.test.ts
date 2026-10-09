@@ -3,7 +3,7 @@
  */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -19,6 +19,9 @@ const shapes = [
   { number: 559, source: "opencode", state: "dispatched", location: { paneId: "fixture-pane-a", workspaceId: "fixture-workspace-a" } },
   { number: 561, source: "opencode", state: "dispatched", location: { paneId: "fixture-pane-b", workspaceId: "fixture-workspace-b" } },
 ] as const;
+// The writer omits observedAt, so the reader uses the record's mtime. Pin it, and capture after it, so the
+// strict decoder never sees a dispatch observed after the capture time.
+const written = new Date("2026-01-01T00:00:00.000Z"), captured = "2026-01-01T00:00:01.000Z";
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "receipt-compat-"));
   const files: string[] = [];
@@ -34,8 +37,9 @@ async function fixture() {
       matrixSource: "rickylabs/harness", tokenBudget: 1000, budgetSource: "route" };
     assert.equal(Object.keys(value).length, 17); values.push(value);
     await writeFile(file, JSON.stringify(value), { mode: 0o600 });
+    await utimes(file, written, written);
   }
-  const now = new Date().toISOString();
+  const now = captured;
   await writeFile(join(root, "launch-" + "d".repeat(64) + ".json"), JSON.stringify({ schemaVersion: 1,
     issue: { repo: "example/inbox", number: 545 }, dispatchId: "assignment_" + "c".repeat(64),
     state: "refused", reasonCode: "routing-invalid", observedAt: now }), { mode: 0o600 });
