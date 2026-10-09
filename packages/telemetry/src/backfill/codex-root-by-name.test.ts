@@ -35,7 +35,7 @@ const open = fsp.open;
 syncBuiltinESMExports();
 const { backfillFromDisk } = await import("./index.js");
 const { collectIssueAgentTree } = await import("../issue-agent-feed-cli.js");
-const { ORCHID_DISPATCH_ROOT } = await import("../orchid-dispatch.js");
+const { OPERATOR_ENV } = await import("../operator-environment.js");
 
 const HEADS = 128, HEAD_BYTES = 65_536, MAX = 8_388_608, FRAME = 33_554_432;
 const ROOT_AT = Date.parse("2026-10-05T12:00:00.000Z");
@@ -84,7 +84,7 @@ async function fixture(fn: (f: {
       },
       feed: (partialTrees = false) => {
         reads = 0; opened.length = 0;
-        return collectIssueAgentTree({ home, env: { [ORCHID_DISPATCH_ROOT]: receipts }, limit: 20, now: iso(now),
+        return collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now: iso(now),
           ...(partialTrees ? { partialTrees } : {}) });
       },
     });

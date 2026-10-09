@@ -8,7 +8,7 @@ import { chmod, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { childEventKey, readClaudeChildStarts } from "./claude-child-events.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 import type { RunRecord } from "./model.js";
 const at = "2026-01-01T00:00:00.000Z";
 const dispatch: DispatchEvidence = { runId: "PRIVATE-DISPATCH-CANARY", external: "PRIVATE-NATIVE-ROOT", source: "codex",

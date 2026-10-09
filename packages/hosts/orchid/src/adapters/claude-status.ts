@@ -3,23 +3,10 @@ import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import { join } from "node:path";
-import { matchesOrchidNativeRootIdentity } from "./orchid-native-binding.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
-
-const object = (value: unknown): Record<string, unknown> | null =>
-  value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
-const exact = (row: Record<string, unknown>, fields: readonly string[]) =>
-  Object.keys(row).sort().join(",") === [...fields].sort().join(",");
-async function privateJSON(path: string, limit: number): Promise<Record<string, unknown> | null> {
-  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
-  try {
-    const stat = await file.stat();
-    if (!stat.isFile() || (stat.mode & 0o7777) !== 0o600 || stat.size < 2 || stat.size > limit) return null;
-    const bytes = Buffer.alloc(limit + 1);
-    const { bytesRead } = await file.read(bytes, 0, bytes.length, 0);
-    return bytesRead === stat.size ? object(JSON.parse(bytes.subarray(0, bytesRead).toString("utf8"))) : null;
-  } finally { await file.close(); }
-}
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
+import { matchesOrchidNativeRootIdentity } from "../application/native-binding-registry.js";
+import { exact } from "../domain/receipt-shape.js";
+import { readPrivateJSON } from "./private-json.js";
 
 export async function readOrchidClaudeStatus(record: string, dispatch: DispatchEvidence):
   Promise<{ readonly state: "working" | "idle"; readonly at: string } | null> {
@@ -27,8 +14,8 @@ export async function readOrchidClaudeStatus(record: string, dispatch: DispatchE
       dispatch.location === null || dispatch.location === undefined || dispatch.host === null || dispatch.host === undefined) return null;
   try {
     const [row, binding] = await Promise.all([
-      privateJSON(join(record, "claude-status.json"), 4096),
-      privateJSON(join(record, "binding.json"), 262_144),
+      readPrivateJSON(join(record, "claude-status.json"), 4096),
+      readPrivateJSON(join(record, "binding.json"), 262_144),
     ]);
     if (row === null || binding === null || !exact(row, ["schemaVersion", "runId", "nativeSessionId",
       "host", "paneId", "workspaceId", "status", "observedAt"]) || row.schemaVersion !== 1 ||

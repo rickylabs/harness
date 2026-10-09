@@ -6,8 +6,8 @@ import { ISSUE_AGENT_TREE_FRESH_MS, MAX_AGENT_OBSERVATIONS, projectRouteIdentity
 import { producerAgentCost, validateWireFamily, type TelemetryWireFamily } from "./producer-names.js";
 import { projectAgentCost } from "./agent-cost.js";
 import { CLAUDE_CHILD_START_FRESH_MS, childEventKey } from "./claude-child-events.js";
-import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { NativeRootResolver } from "./host-reads.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 import type { RunRecord } from "./model.js";
 const digest = (value: string) => createHash("sha256").update(value).digest("hex");
 const opaque = (kind: "agent" | "assignment", value: string) => `${kind}_${digest(kind + "\0" + value)}`;
@@ -76,6 +76,8 @@ export function buildAgentObservations(input: {
   readonly nativeComplete: boolean;
   /** Private, already screened latest Start events keyed by exact parent session and child ID. */
   readonly claudeChildStarts?: ReadonlyMap<string, string>;
+  /** The dispatch host's private native-root join; without one, only an explicit dispatch reference binds. */
+  readonly host?: NativeRootResolver;
 }): AgentObservations {
   const wireFamily = validateWireFamily(input.wireFamily);
   const agents: AgentObservation[] = [];
@@ -106,7 +108,7 @@ export function buildAgentObservations(input: {
     const [owner, name] = d.issue.repo.split("/");
     if (!owner || !name) { reason = "binding_unavailable"; break; }
     const observedAt = d.observedAt;
-    const external = resolveOrchidNativeRoot(d, input.runs)?.id ?? d.external;
+    const external = input.host?.resolveNativeRoot(d, input.runs)?.id ?? d.external;
     const routeObservedReasons = d.routeObservedReasons ?? unavailableOrchidRouteReasons();
     const revision = digest(JSON.stringify({ dispatch: d.revision, binding: external === null ? null : digest(external), routeObservedReasons,
       ...(wireFamily === "harness" ? { wireFamily } : {}) }));

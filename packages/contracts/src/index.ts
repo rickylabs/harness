@@ -278,6 +278,7 @@ export {
 export * from "./route.js";
 export * from "./agent-observations.js";
 export * from "./issue-agent-tree.js";
+export type { DispatchEvidence, OrchidDispatchRead, OrchidDispatchUnavailableReason, OrchidLaunchState } from "./dispatch-evidence.js";
 export * from "./profiles-workflows.js";
 
 export type { CodexReadReason, CodexField, CodexGoalStatus, CodexGoalObservation, CodexThreadObservation, CodexThreadSnapshot, CodexGoalEvent } from "./codex-thread-observations.js";

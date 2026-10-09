@@ -20,7 +20,7 @@ import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { composeGovernance } from "./governance/compose.js";
 import type { RunRecord } from "./model.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 import type { GovernanceSource } from "./source.js";
 
 const at = "2026-01-01T00:00:00.000Z", capturedAt = "2026-01-01T00:01:00.000Z";

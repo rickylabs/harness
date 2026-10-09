@@ -49,6 +49,12 @@ importers:
 
   packages/governance: {}
 
+  packages/hosts/orchid:
+    dependencies:
+      '@rickylabs/harness-contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+
   packages/llm-local:
     dependencies:
       '@rickylabs/routing':
@@ -106,6 +112,9 @@ importers:
       '@rickylabs/harness-contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@rickylabs/host-orchid':
+        specifier: workspace:*
+        version: link:../hosts/orchid
       '@rickylabs/subagents':
         specifier: workspace:*
         version: link:../subagents
