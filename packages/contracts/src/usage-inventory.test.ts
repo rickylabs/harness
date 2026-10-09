@@ -67,8 +67,8 @@ test("unsupported carries no source; a source is never unsupported and a pair is
   refused(document({ capabilities: swap(r => r.cli === "agy" && r.dimension === "run-usage", { source: "codex-session-store" }) }));
   refused(document({ capabilities: swap(r => r.source === "codex-app-server", { capability: "unsupported", observedAt: null, reason: "no-native-source" }) }));
   refused(document({ capabilities: swap(r => r.source === "codex-app-server", { source: null }) }));
-  refused(document({ capabilities: [...rows(), { cli: "claude", dimension: "subscription-quota", capability: "unreadable",
-    source: "claude-session-store", observedAt: null, reason: "not-configured" }] }));
+  // An in-scope source beside an unsupported row for the same pair: only exclusivity refuses this.
+  refused(document({ capabilities: [...rows(), unsupported("codex", "run-usage")] }));
 });
 
 test("a reading time and a reason agree with the capability, and nothing is from the future", () => {
