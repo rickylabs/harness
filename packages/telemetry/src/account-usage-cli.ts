@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { readAccountUsageDocument, type AccountUsageEnvelope } from "@rickylabs/harness-contracts";
 import { usageFile, usageScopeHash } from "./account-usage.js";
 import { collectAccountUsageDocument, readAccountUsageDocumentSource } from "./paid-account-usage.js";
+import { resolveWireFamily } from "./producer-names.js";
 
 export const ACCOUNT_USAGE_HELP = `harness-telemetry account-usage --source <descriptor> [--watch]
 
@@ -19,6 +20,8 @@ Descriptor schema 2 wraps accountUsage plus configured provider adapters. It emi
 the 0.33 reader document with independent billing, local-history and price rows.
 GitHub needs GITHUB_COPILOT_PLAN_READ_TOKEN in githubCopilot.credentialFile;
 without that owner-only Plan-read credential its billing state is unknown.
+Descriptor schema 3 adds capacity ({host} alias or null) and emits the 0.40 document:
+schema 2 plus a source capability row for every CLI and dimension, and the host capacity.
 `;
 /** CLI diagnostics are fixed strings: local paths, native ids, auth and stderr never leave. */
 export async function accountUsageCommand(argv: readonly string[]): Promise<number> {
@@ -28,6 +31,7 @@ export async function accountUsageCommand(argv: readonly string[]): Promise<numb
     process.stderr.write("account-usage: invalid command line\n"); return 2;
   }
   try {
+    const wireFamily = resolveWireFamily(process.env);
     const source = readAccountUsageDocumentSource(JSON.parse((await usageFile(argv[1], 65536)).toString("utf8")));
     const native = source.schemaVersion === 1 ? source : source.accountUsage;
     const key = await usageFile(native.keyFile, 4096, true);
@@ -40,7 +44,7 @@ export async function accountUsageCommand(argv: readonly string[]): Promise<numb
       if (state.sourceHash === sourceHash && read.ok) previous = read.document.schemaVersion === 1 ? read.document : read.document.account;
     } catch { /* Missing, corrupt or changed state means no inference baseline, never empty history. */ }
     do {
-      const snapshot = await collectAccountUsageDocument(source, key, previous === undefined ? {} : { previous });
+      const snapshot = await collectAccountUsageDocument(source, key, previous === undefined ? { wireFamily } : { previous, wireFamily });
       const state = await open(native.stateFile, constants.O_WRONLY | constants.O_CREAT | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600);
       try {
         const info = await state.stat();
@@ -53,7 +57,8 @@ export async function accountUsageCommand(argv: readonly string[]): Promise<numb
       previous = snapshot.schemaVersion === 1 ? snapshot : snapshot.account;
       if (argv[2] !== "--watch") {
         const complete = previous.coverage.every(c => c.state === "complete") && (snapshot.schemaVersion === 1 ||
-          Object.values(snapshot.providers.coverage).every(c => c === "not-configured" || c === "known" || c === "complete"));
+          Object.values(snapshot.providers.coverage).every(c => c === "not-configured" || c === "known" || c === "complete")) &&
+          (snapshot.schemaVersion !== 3 || snapshot.localCapacity.availability === "available" || snapshot.localCapacity.reason === "source_not_bound");
         return complete ? 0 : 3;
       }
       await pause(180000);

@@ -221,73 +221,77 @@ function routeObservedReasons(value: unknown): OrchidRouteObservedReasons {
 function cost(value: unknown, at: string): AgentCost {
   // Read older 0.5.x frames while new producers always emit the fourth row.
   const r = record(value, ["subscriptionHeadroom", "meteredSpend", "runTokens"], ["localCapacity"]);
-  const expected = unavailableAgentCost();
   const result = {} as AgentCost;
   for (const key of ["subscriptionHeadroom", "meteredSpend", "runTokens", "localCapacity"] as const) {
-    if (key === "localCapacity" && r[key] === undefined) {
-      Object.assign(result, { localCapacity: expected.localCapacity });
-      continue;
-    }
-    const row = record(r[key], ["kind", "unit", "source", "scope", "availability", "measurement", "reason", "observedAt", "validUntil", "revision"]);
-    for (const f of ["kind", "unit", "scope"] as const) if (row[f] !== expected[key][f]) return bad();
-    const source = choice(row.source, AGENT_COST_SOURCE_NAMES[key]);
-    const available = row.availability === "available";
-    const m = metadata(row, at, available);
-    let decoded: unknown;
-    if (!available) {
-      if (row.availability !== "unavailable" || row.measurement !== null) return bad();
-      decoded = { ...expected[key], source, ...m, reason: choice(row.reason, AGENT_UNAVAILABLE_REASONS) };
-    } else {
-      if (row.reason !== null || ((key === "subscriptionHeadroom" || key === "localCapacity") && m.validUntil === null)) return bad();
-      let measurement: unknown;
-      if (key === "subscriptionHeadroom") {
-        const x = record(row.measurement, ["remainingPercent", "windowMinutes", "resetsAt"]);
-        const minutes = number(x.windowMinutes);
-        if (minutes === 0) return bad();
-        measurement = { remainingPercent: number(x.remainingPercent, 100, false), windowMinutes: minutes, resetsAt: x.resetsAt === null ? null : time(x.resetsAt) };
-      } else if (key === "meteredSpend") {
-        const x = record(row.measurement, ["amount", "currency", "accounting"]);
-        if (x.currency !== "USD" || x.accounting !== "reported") return bad();
-        measurement = { amount: number(x.amount, Number.MAX_VALUE, false), currency: "USD", accounting: "reported" };
-      } else if (key === "localCapacity") {
-        const x = record(row.measurement, ["host", "ramUsedBytes", "ramTotalBytes", "vramUsedBytes", "vramTotalBytes"], ["cards"]);
-        const host = text(x.host, /^[A-Za-z][A-Za-z0-9_-]{0,62}$/, 63);
-        const ramUsedBytes = number(x.ramUsedBytes);
-        const ramTotalBytes = x.ramTotalBytes === null ? null : number(x.ramTotalBytes);
-        const vramUsedBytes = x.vramUsedBytes === null ? null : number(x.vramUsedBytes);
-        const vramTotalBytes = x.vramTotalBytes === null ? null : number(x.vramTotalBytes);
-        if ((ramTotalBytes !== null && ramUsedBytes > ramTotalBytes) ||
-          (vramUsedBytes !== null && vramTotalBytes !== null && vramUsedBytes > vramTotalBytes)) return bad();
-        let cards: { card: string; vramUsedBytes: number; vramTotalBytes: number }[] | undefined;
-        if (x.cards !== undefined) {
-          const cardRows = array(x.cards, 16);
-          if (cardRows.length === 0) return bad();
-          cards = cardRows.map((raw: unknown) => {
-            const card = record(raw, ["card", "vramUsedBytes", "vramTotalBytes"]);
-            const name = text(card.card, /^card\d+$/, 16);
-            const used = number(card.vramUsedBytes);
-            const total = number(card.vramTotalBytes);
-            if (total === 0 || used > total) return bad();
-            return { card: name, vramUsedBytes: used, vramTotalBytes: total };
-          });
-          if (cards.some((card, index) => index > 0 && cards![index - 1]!.card >= card.card) ||
-            vramUsedBytes === null || vramTotalBytes === null ||
-            cards.reduce((sum, card) => sum + card.vramUsedBytes, 0) !== vramUsedBytes ||
-            cards.reduce((sum, card) => sum + card.vramTotalBytes, 0) !== vramTotalBytes) return bad();
-        }
-        measurement = { host, ramUsedBytes, ramTotalBytes, vramUsedBytes, vramTotalBytes,
-          ...(cards === undefined ? {} : { cards }) };
-      } else {
-        const keys = ["inputTokens", "outputTokens", "reasoningTokens", "cacheReadTokens", "cacheWriteTokens"];
-        const x = record(row.measurement, [], keys);
-        if (Object.keys(x).length === 0) return bad();
-        measurement = Object.fromEntries(Object.entries(x).map(([k, v]) => [k, number(v)]));
-      }
-      decoded = { ...expected[key], source, ...m, availability: "available", measurement, reason: null };
-    }
-    Object.assign(result, { [key]: decoded });
+    Object.assign(result, { [key]: key === "localCapacity" && r[key] === undefined
+      ? unavailableAgentCost().localCapacity : costRow(key, r[key], at) });
   }
   return result;
+}
+/** The published host-capacity row on its own, for a producer that reports it outside an agent tree. */
+export function readLocalCapacityRow(value: unknown, capturedAt: string): AgentCost["localCapacity"] | null {
+  try { return costRow("localCapacity", value, capturedAt); } catch { return null; }
+}
+function costRow<K extends keyof AgentCost>(key: K, value: unknown, at: string): AgentCost[K] {
+  const expected = unavailableAgentCost();
+  const row = record(value, ["kind", "unit", "source", "scope", "availability", "measurement", "reason", "observedAt", "validUntil", "revision"]);
+  for (const f of ["kind", "unit", "scope"] as const) if (row[f] !== expected[key][f]) return bad();
+  const source = choice(row.source, AGENT_COST_SOURCE_NAMES[key]);
+  const available = row.availability === "available";
+  const m = metadata(row, at, available);
+  let decoded: unknown;
+  if (!available) {
+    if (row.availability !== "unavailable" || row.measurement !== null) return bad();
+    decoded = { ...expected[key], source, ...m, reason: choice(row.reason, AGENT_UNAVAILABLE_REASONS) };
+  } else {
+    if (row.reason !== null || ((key === "subscriptionHeadroom" || key === "localCapacity") && m.validUntil === null)) return bad();
+    let measurement: unknown;
+    if (key === "subscriptionHeadroom") {
+      const x = record(row.measurement, ["remainingPercent", "windowMinutes", "resetsAt"]);
+      const minutes = number(x.windowMinutes);
+      if (minutes === 0) return bad();
+      measurement = { remainingPercent: number(x.remainingPercent, 100, false), windowMinutes: minutes, resetsAt: x.resetsAt === null ? null : time(x.resetsAt) };
+    } else if (key === "meteredSpend") {
+      const x = record(row.measurement, ["amount", "currency", "accounting"]);
+      if (x.currency !== "USD" || x.accounting !== "reported") return bad();
+      measurement = { amount: number(x.amount, Number.MAX_VALUE, false), currency: "USD", accounting: "reported" };
+    } else if (key === "localCapacity") {
+      const x = record(row.measurement, ["host", "ramUsedBytes", "ramTotalBytes", "vramUsedBytes", "vramTotalBytes"], ["cards"]);
+      const host = text(x.host, /^[A-Za-z][A-Za-z0-9_-]{0,62}$/, 63);
+      const ramUsedBytes = number(x.ramUsedBytes);
+      const ramTotalBytes = x.ramTotalBytes === null ? null : number(x.ramTotalBytes);
+      const vramUsedBytes = x.vramUsedBytes === null ? null : number(x.vramUsedBytes);
+      const vramTotalBytes = x.vramTotalBytes === null ? null : number(x.vramTotalBytes);
+      if ((ramTotalBytes !== null && ramUsedBytes > ramTotalBytes) ||
+        (vramUsedBytes !== null && vramTotalBytes !== null && vramUsedBytes > vramTotalBytes)) return bad();
+      let cards: { card: string; vramUsedBytes: number; vramTotalBytes: number }[] | undefined;
+      if (x.cards !== undefined) {
+        const cardRows = array(x.cards, 16);
+        if (cardRows.length === 0) return bad();
+        cards = cardRows.map((raw: unknown) => {
+          const card = record(raw, ["card", "vramUsedBytes", "vramTotalBytes"]);
+          const name = text(card.card, /^card\d+$/, 16);
+          const used = number(card.vramUsedBytes);
+          const total = number(card.vramTotalBytes);
+          if (total === 0 || used > total) return bad();
+          return { card: name, vramUsedBytes: used, vramTotalBytes: total };
+        });
+        if (cards.some((card, index) => index > 0 && cards![index - 1]!.card >= card.card) ||
+          vramUsedBytes === null || vramTotalBytes === null ||
+          cards.reduce((sum, card) => sum + card.vramUsedBytes, 0) !== vramUsedBytes ||
+          cards.reduce((sum, card) => sum + card.vramTotalBytes, 0) !== vramTotalBytes) return bad();
+      }
+      measurement = { host, ramUsedBytes, ramTotalBytes, vramUsedBytes, vramTotalBytes,
+        ...(cards === undefined ? {} : { cards }) };
+    } else {
+      const keys = ["inputTokens", "outputTokens", "reasoningTokens", "cacheReadTokens", "cacheWriteTokens"];
+      const x = record(row.measurement, [], keys);
+      if (Object.keys(x).length === 0) return bad();
+      measurement = Object.fromEntries(Object.entries(x).map(([k, v]) => [k, number(v)]));
+    }
+    decoded = { ...expected[key], source, ...m, availability: "available", measurement, reason: null };
+  }
+  return decoded as AgentCost[K];
 }
 function agent(value: unknown, capturedAt: string): AgentObservation {
   const r = record(value, ["agentId", "repo", "issueNumber", "assignment", "parentAgentId", "workspace", "tab", "pane", "terminal", "running", "route", "cost", "observedAt", "revision"], ["routeObservedReasons"]);
