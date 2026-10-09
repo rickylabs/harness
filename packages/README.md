@@ -22,7 +22,7 @@ activation, credentials or a successful native launch on a particular host.
 | `routing` | Replaceable routing documents, immutable matrix queries and exact native discovery | E4 · #34, E11 · #271 |
 | `governance` | Stub package boundary; live launch admission and meters belong to Orchid's governor | E5 · #35 |
 | `board` | GitHub task graph and board projections | E6 · #36 |
-| `method` | Milestone run-record render and validate, route receipt checks (`harness-method`), run templates | rearch · #658 |
+| `method` | Milestone run records: render and validate, route receipt checks (`harness-method`), run templates | rearch · #658 |
 | `coordinator` | Workflow decisions, replay, independent selection and durable-effect storage boundary | E6 · #36 |
 | `forge` | Explicit GitHub taxonomy/process installation and bridge rules | E7 · #37 |
 | `netscript-bridge` | Stub: external NetScript service adapter | E7 · #37 |

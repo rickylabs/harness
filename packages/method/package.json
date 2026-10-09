@@ -1,7 +1,7 @@
 {
   "name": "@rickylabs/method",
   "version": "0.0.0",
-  "description": "Method tools: milestone run-record render and validate, route receipt checks, run templates",
+  "description": "Method tools: render and validate milestone run records, route receipt checks, run templates",
   "license": "MIT",
   "private": true,
   "type": "module",
