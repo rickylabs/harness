@@ -1,7 +1,7 @@
 /** Private, read-only tail read of one vendor log under a store root already certified by the binding. */
 import { constants } from "node:fs";
 import { open, realpath } from "node:fs/promises";
-import { isAbsolute, relative, sep } from "node:path";
+import { dirname, isAbsolute, relative, sep } from "node:path";
 import type { TranscriptTail, TranscriptTailRead } from "../ports/transcript-tail.js";
 
 const refused: TranscriptTailRead = { bytes: null, reason: "refused" };
@@ -19,8 +19,8 @@ export function transcriptTailFile(expectedUid: number | undefined = process.get
       try {
         const stat = await handle.stat();
         if (!stat.isFile() || stat.uid !== expectedUid || stat.nlink !== 1) return refused;
-        // A symlinked parent directory resolves elsewhere; only the exact path under the root is read.
-        if (await realpath(path) !== path) return refused;
+        // O_NOFOLLOW refuses a symlinked log; a symlinked parent directory is refused here.
+        if (await realpath(dirname(path)) !== dirname(path)) return refused;
         const start = Math.max(0, stat.size - maxBytes), length = stat.size - start;
         const bytes = new Uint8Array(length);
         let offset = 0;

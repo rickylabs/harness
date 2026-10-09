@@ -46,9 +46,10 @@ Not derivable from the log, and never claimed:
 - **Fields:** at most 64 calls per line; names of at most 128 characters; argument values of at most
   4096 characters (longer becomes null); at most 16 `truncated_fields` entries of at most 64
   characters each.
-- **The file:** opened with `O_NOFOLLOW`. It must be a regular file with one link, owned by this
-  process's uid, whose real path is the expected path beneath the certified store root. The path is
-  derived only from a verified conversation id.
+- **The file:** opened with `O_NOFOLLOW`, so a symlinked log is refused. It must be a regular file
+  with one link, owned by this process's uid. Its directory's real path must be the expected one
+  beneath the certified store root, so a symlinked parent is refused too. The path is derived only
+  from a verified conversation id.
 
 ## Shape
 

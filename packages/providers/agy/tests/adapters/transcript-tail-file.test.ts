@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { link, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -49,9 +50,11 @@ it("refuses a hard-linked file", async () => store(async root => {
   assert.deepEqual(await tail.read(root, join(root, "log.jsonl"), 4096), { bytes: null, reason: "refused" });
 }));
 
-it("refuses a directory", async () => store(async root => {
+it("refuses anything but a regular file: a directory and a FIFO", async () => store(async root => {
   await mkdir(join(root, "log.jsonl"));
   assert.deepEqual(await tail.read(root, join(root, "log.jsonl"), 4096), { bytes: null, reason: "refused" });
+  execFileSync("mkfifo", [join(root, "pipe.jsonl")]);
+  assert.deepEqual(await tail.read(root, join(root, "pipe.jsonl"), 4096), { bytes: null, reason: "refused" });
 }));
 
 it("refuses a path that escapes the root through a symlinked parent, or lies outside it", async () => store(async root => {
