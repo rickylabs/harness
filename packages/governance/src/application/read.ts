@@ -1,6 +1,5 @@
 import { readGovernanceSnapshot, type GovernanceReadSnapshot, type MeterCoverage } from "@rickylabs/harness-contracts";
-import { wireProducer } from "../producer-names.js";
-import { freshnessAt } from "./admissions.js";
+import { freshnessAt } from "../domain/admissions.js";
 
 /** Decode a composed document through the published contract before anyone reads it.
  * Fixed failure diagnostic; no source input, path or unvalidated producer detail is reflected. */
@@ -12,8 +11,8 @@ export function governanceRead(document: GovernanceReadSnapshot): GovernanceRead
   return decoded.snapshot;
 }
 
-function unread(unavailableReason: "not-configured" | "envelope-invalid", evaluatedAt: string, notes: readonly string[]): GovernanceReadSnapshot {
-  return { schema: 1, protocol: 1, producer: wireProducer(), evaluatedAt, complete: false,
+function unread(unavailableReason: "not-configured" | "envelope-invalid", producer: string, evaluatedAt: string, notes: readonly string[]): GovernanceReadSnapshot {
+  return { schema: 1, protocol: 1, producer, evaluatedAt, complete: false,
     sources: { usage: { status: "not-configured" }, spend: { status: "not-configured" }, capacity: { status: "not-configured" },
       admissions: { status: "not-configured" }, approvals: { status: "not-observed" } },
     notes: [...notes], availability: "unavailable", observedAt: null, validUntil: null, provenance: null,
@@ -21,11 +20,11 @@ function unread(unavailableReason: "not-configured" | "envelope-invalid", evalua
 }
 
 /** The explicit unknown: nothing configured, nothing read, nothing implied. */
-export const unconfiguredGovernance = (evaluatedAt: string): GovernanceReadSnapshot => unread("not-configured", evaluatedAt, []);
+export const unconfiguredGovernance = (producer: string, evaluatedAt: string): GovernanceReadSnapshot => unread("not-configured", producer, evaluatedAt, []);
 
 /** A requested document that could not be read or validated: unavailable, with the fixed reason as its note. */
-export const invalidGovernance = (evaluatedAt: string, notes: readonly string[]): GovernanceReadSnapshot =>
-  unread("envelope-invalid", evaluatedAt, notes);
+export const invalidGovernance = (producer: string, evaluatedAt: string, notes: readonly string[]): GovernanceReadSnapshot =>
+  unread("envelope-invalid", producer, evaluatedAt, notes);
 
 export type GovernanceAt =
   | { readonly ok: true; readonly snapshot: GovernanceReadSnapshot }

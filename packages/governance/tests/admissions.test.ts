@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { mapAdmissions } from "./admissions.js";
+import { mapAdmissions as map } from "../src/application/recorded-admissions.js";
+import { wiring } from "./fixture.js";
+
+const mapAdmissions = (events: readonly unknown[], completion: string, degraded = false) => map(events, completion, wiring.order, degraded);
 const now = "2026-09-07T12:00:00Z";
 const event = (at = "2026-09-07T11:59:00Z", detail: Record<string, unknown> = {}) => ({ at: now, runId: "private-session-canary", kind: "governance.admission", detail: {
   item: { number: 205 }, regime: "subscription", state: "throttle", observedAt: at, validUntil: "2026-09-07T12:05:00Z",

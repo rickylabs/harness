@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { mapSpend } from "./spend.js";
-import { SPEND_URL, type SpendSource } from "../source.js";
+import { mapSpend } from "../src/domain/spend.js";
+import type { SpendSource } from "../src/domain/source.js";
+import { SPEND_URL } from "./fixture.js";
 const config: SpendSource = { url: SPEND_URL, credentialEnv: "FIXTURE_API_KEY", window: "total", validForMs: 1000, timeoutMs: 100, maxBytes: 4096 };
 const now = "2026-09-07T12:00:00Z";
 it("spend maps only the selected field, with fixed provider/label, null ceiling, no BYOK sums or metadata", () => {

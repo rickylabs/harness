@@ -203,8 +203,6 @@ export {
   type TreeInput,
 } from "./tree.js";
 
-export { parseSource, type GovernanceSource, type SourceRefusal } from "./source.js";
-
 export { readDispatchEvidence } from "./dispatch-evidence.js";
 
 export { buildAgentObservations } from "./agent-observations.js";

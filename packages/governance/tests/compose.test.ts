@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { composeGovernance, type CollectedSources } from "./compose.js";
-import { mapSpend } from "./spend.js";
-import { mapCapacity } from "./capacity.js";
-import { SPEND_URL, type GovernanceSource } from "../source.js";
+import { composeGovernance as compose, type CollectedSources } from "../src/application/compose.js";
+import { mapSpend } from "../src/domain/spend.js";
+import { mapCapacity } from "../src/domain/capacity.js";
+import type { GovernanceSource } from "../src/domain/source.js";
+import { SPEND_URL, wiring } from "./fixture.js";
+
+const composeGovernance = (source: GovernanceSource, collected: CollectedSources, completion: string, now?: string) =>
+  compose(source, collected, wiring, completion, now);
 const now = "2026-09-07T12:00:00Z";
 const source: GovernanceSource = { accountLabel: "synthetic", usage: null, admissions: null,
   spend: { url: SPEND_URL, credentialEnv: "FIXTURE_API_KEY", window: "total", validForMs: 60000, timeoutMs: 100, maxBytes: 4096 },

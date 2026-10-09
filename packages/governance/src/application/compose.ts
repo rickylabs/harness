@@ -1,8 +1,9 @@
 import { SOURCE_FAILURE_REASONS, type SourceFailureReason, type SourceDiscardReason, type MeterCoverage, type GovernanceSourceCoverage, type RegimeStatus,
   type TransportAvailability, type GovernanceReadSnapshot, type UnavailableReason } from "@rickylabs/harness-contracts";
-import { wireProducer, type TelemetryWireFamily } from "../producer-names.js";
-import { instant, type GovernanceSource, type Leg } from "../source.js";
-import { freshnessAt, mapAdmissions, unreadRegimes } from "./admissions.js";
+import { freshnessAt, unreadRegimes } from "../domain/admissions.js";
+import { instant, type GovernanceSource, type Leg } from "../domain/source.js";
+import type { GovernanceWiring } from "../ports/source.js";
+import { mapAdmissions } from "./recorded-admissions.js";
 
 export interface CollectedSources {
   readonly usage: Leg<RegimeStatus>;
@@ -44,8 +45,8 @@ const PROVENANCE = { usage: "reader:opencode-usage", spend: "reader:openrouter-k
 
 /** Completion and evaluation clocks are separate. Successful leaves retain their source stamps.
  * Returns the published read document, not yet decoded: `governanceRead` decodes it before it is used. */
-export function composeGovernance(source: GovernanceSource, collected: CollectedSources, completion: string, now = completion,
-  wireFamily: TelemetryWireFamily = "legacy"): GovernanceReadSnapshot {
+export function composeGovernance(source: GovernanceSource, collected: CollectedSources, wiring: GovernanceWiring, completion: string,
+  now = completion): GovernanceReadSnapshot {
   const meters: Record<"usage" | "spend" | "capacity", MeterCoverage> = {
     usage: source.usage === null ? { status: "not-configured" } : { status: "failed", reason: "shape-mismatch" },
     spend: source.spend === null ? { status: "not-configured" } : { status: "failed", reason: "shape-mismatch" },
@@ -56,7 +57,7 @@ export function composeGovernance(source: GovernanceSource, collected: Collected
   const configured = availability.coverage === null ? {} : { transportAvailability: availability.coverage };
   const transportAvailability = availability.coverage === null ? {} : { transportAvailability: availability.value };
   const unavailable = (reason: UnavailableReason, notes: readonly string[], sources: GovernanceSourceCoverage): GovernanceReadSnapshot => ({
-    schema: 1, protocol: 1, producer: wireProducer(wireFamily), evaluatedAt: now, complete: false, sources, notes: [...notes],
+    schema: 1, protocol: 1, producer: wiring.producer, evaluatedAt: now, complete: false, sources, notes: [...notes],
     ...transportAvailability, availability: "unavailable", observedAt: null, validUntil: null, provenance: null,
     unavailableReason: reason, state: null, admissions: [] });
   let coverage: GovernanceSourceCoverage = { ...meters, admissions: source.admissions === null ? { status: "not-configured" } : { status: "failed", reason: "shape-mismatch" }, approvals: { status: "not-observed" },
@@ -89,7 +90,7 @@ export function composeGovernance(source: GovernanceSource, collected: Collected
   }
   const recorded = source.admissions === null
     ? { admissions: [], ok: true, notes: ["admissions: not-configured"], codes: [] }
-    : mapAdmissions(collected.events, completion, collected.logDegraded);
+    : mapAdmissions(collected.events, completion, wiring.order, collected.logDegraded);
   if (availability.note !== null) { notes.push(availability.note); ok = false; }
   coverage = { ...meters, approvals: { status: "not-observed" }, ...configured, admissions: source.admissions === null
     ? { status: "not-configured" }
@@ -106,7 +107,7 @@ export function composeGovernance(source: GovernanceSource, collected: Collected
   // Retained evidence observed at completion cannot be read at an earlier evaluation clock.
   if (Date.parse(now) < Date.parse(completion)) return unavailable("envelope-invalid", [...notes, "envelope-invalid"], coverage);
   const validUntil = new Date(expiries.reduce((minimum, until) => Math.min(minimum, until), Infinity)).toISOString();
-  return { schema: 1, protocol: 1, producer: wireProducer(wireFamily), evaluatedAt: now, complete: ok, sources: coverage, notes: [...notes],
+  return { schema: 1, protocol: 1, producer: wiring.producer, evaluatedAt: now, complete: ok, sources: coverage, notes: [...notes],
     ...transportAvailability, availability: freshnessAt(validUntil, now), observedAt: completion, validUntil, provenance: "reader:composed",
     unavailableReason: null, state: { generatedAt: completion, regimes, pending: [], notes: [...notes] },
     // Filtering happened at completion; freshness is the evaluation clock's, as the contract requires.

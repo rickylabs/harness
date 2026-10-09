@@ -1,5 +1,5 @@
 import type { RegimeStatus } from "@rickylabs/harness-contracts";
-import { expiry, instant, mapped, object, USAGE_WINDOWS, type Leg, type UsageSource } from "../source.js";
+import { expiry, instant, mapped, object, USAGE_WINDOWS, type Leg, type UsageSource } from "./source.js";
 
 /** Source snapshot only; no expense evaluator, binding policy or inferred duration. */
 export function mapUsage(value: unknown, config: UsageSource, account: string): Leg<RegimeStatus> {

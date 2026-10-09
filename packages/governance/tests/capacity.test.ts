@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { mapCapacity } from "./capacity.js";
+import { mapCapacity } from "../src/domain/capacity.js";
 const config = { cgroupRoot: "/fixture/cgroup", scopeLabel: "configured-cgroup", validForMs: 1000 };
 const now = "2026-09-07T12:00:00Z";
 it("configured cgroup v2 retains used when unlimited; never substitutes host/GPU memory", () => {

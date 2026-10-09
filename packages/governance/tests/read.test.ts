@@ -2,18 +2,22 @@ import assert from "node:assert/strict";
 import { it } from "node:test";
 import { readFileSync } from "node:fs";
 import { readGovernanceSnapshot, SOURCE_FAILURE_REASONS } from "@rickylabs/harness-contracts";
-import { composeGovernance, type CollectedSources } from "./compose.js";
-import { governanceRead } from "./read.js";
-import { mapUsage } from "./usage.js";
-import { mapSpend } from "./spend.js";
-import { mapCapacity } from "./capacity.js";
-import { SPEND_URL, type GovernanceSource } from "../source.js";
+import { composeGovernance as compose, type CollectedSources } from "../src/application/compose.js";
+import { governanceRead } from "../src/application/read.js";
+import { mapUsage } from "../src/domain/usage.js";
+import { mapSpend } from "../src/domain/spend.js";
+import { mapCapacity } from "../src/domain/capacity.js";
+import type { GovernanceSource } from "../src/domain/source.js";
+import { SPEND_URL, USAGE_HOST, wiring } from "./fixture.js";
+
+const composeGovernance = (source: GovernanceSource, collected: CollectedSources, completion: string, now?: string) =>
+  compose(source, collected, wiring, completion, now);
 
 const now = "2026-09-07T12:00:00.000Z";
 const later = "2026-09-07T12:10:00.000Z";
 const source: GovernanceSource = {
   accountLabel: "synthetic", usage: { denoBin: "/synthetic/private-deno", probe: "/synthetic/probe", checkout: "/synthetic/checkout",
-    model: "synthetic/private-model", credentialEnv: "SYNTHETIC_PRIVATE_KEY", timeoutMs: 100, maxBytes: 4096,
+    model: "synthetic/private-model", credentialEnv: "SYNTHETIC_PRIVATE_KEY", allowNet: USAGE_HOST, timeoutMs: 100, maxBytes: 4096,
     windows: { rolling_five_hours: { label: "short", windowMinutes: 300 }, weekly: { label: "week", windowMinutes: 10080 }, monthly: { label: "month", windowMinutes: 43200 } } },
   spend: { url: SPEND_URL, credentialEnv: "SYNTHETIC_PRIVATE_KEY", window: "total", validForMs: 60000, timeoutMs: 100, maxBytes: 4096 },
   capacity: { cgroupRoot: "/synthetic/private-cgroup", scopeLabel: "synthetic-cgroup", validForMs: 60000 },

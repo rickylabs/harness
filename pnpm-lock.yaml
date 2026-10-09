@@ -47,7 +47,11 @@ importers:
         specifier: workspace:*
         version: link:../subagents
 
-  packages/governance: {}
+  packages/governance:
+    dependencies:
+      '@rickylabs/harness-contracts':
+        specifier: workspace:*
+        version: link:../contracts
 
   packages/hosts/orchid:
     dependencies:
@@ -109,6 +113,9 @@ importers:
 
   packages/telemetry:
     dependencies:
+      '@rickylabs/governance':
+        specifier: workspace:*
+        version: link:../governance
       '@rickylabs/harness-contracts':
         specifier: workspace:*
         version: link:../contracts
