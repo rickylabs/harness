@@ -2,7 +2,9 @@
 
 How `harness-telemetry` reads live governance sources and publishes the governance read document.
 The document's shape and decoder belong to [`@rickylabs/harness-contracts`](../../contracts/README.md#governance-read-document-020);
-this page covers the sources, the collection rules and the commands. Back to the [package README](../README.md).
+the readers themselves live in [`@rickylabs/governance`](../../governance/README.md), which `harness-telemetry`
+wires with its producer name and spend endpoint. This page covers the sources, the collection rules and
+the commands. Back to the [package README](../README.md).
 
 ## Live governance sources
 
@@ -23,7 +25,7 @@ model IDs, credential names and provider response metadata are never copied into
 | --- | --- |
 | `usage` | `denoBin`, `probe`, `checkout`: absolute paths; `model`: bounded provider/model routing string; `credentialEnv`: environment-variable name; `timeoutMs`; `maxBytes`; `windows` |
 | `usage.windows` | Exactly `rolling_five_hours`, `weekly`, `monthly`, each with a distinct safe `label` and positive integer `windowMinutes`. Durations are configuration, including monthly duration; the reader never guesses them. |
-| `spend` | `url`: exactly `https://openrouter.ai/api/v1/key`; `credentialEnv`; `window`: `total`, `daily`, `weekly`, or `monthly`; `validForMs`; `timeoutMs`; `maxBytes` |
+| `spend` | `url`: exactly `https://openrouter.ai/api/v1/key`, the one endpoint `harness-telemetry` wires in; `credentialEnv`; `window`: `total`, `daily`, `weekly`, or `monthly`; `validForMs`; `timeoutMs`; `maxBytes` |
 | `capacity` | `cgroupRoot`: absolute configured cgroup-v2 directory; `scopeLabel`: safe public label; `validForMs` |
 | `admissions` | Exactly `{ "fromObservabilityLog": true }` |
 

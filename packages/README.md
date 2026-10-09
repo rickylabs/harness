@@ -16,7 +16,7 @@ activation, credentials or a successful native launch on a particular host.
 | `providers/codex` | Partial: app-server route identity and pre-turn protocol prerequisite, not a composed provider | E3 · #33 |
 | `llm-local` | API/local adapter configuration, capability and budget tables | E4 · #34 |
 | `routing` | Replaceable routing documents, immutable matrix queries and exact native discovery | E4 · #34, E11 · #271 |
-| `governance` | Stub package boundary; live launch admission and meters belong to Orchid's governor | E5 · #35 |
+| `governance` | Tri-regime governance read: source descriptor, usage/spend/capacity readers, recorded admissions, composed and decoded through the contract; depends on `contracts` only. Live launch admission belongs to Orchid's governor | E5 · #35, #655 |
 | `board` | GitHub task graph and board projections | E6 · #36 |
 | `method` | Milestone run records: render and validate, route receipt checks (`harness-method`), run templates | rearch · #658 |
 | `coordinator` | Workflow decisions, replay, independent selection and durable-effect storage boundary | E6 · #36 |

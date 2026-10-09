@@ -1,55 +1,50 @@
 # @rickylabs/governance
 
-Tri-regime admission control: whether the system may spend, right now, on this.
+The tri-regime governance read: whether the system may spend, right now, as far as the configured
+sources can tell. It reads the subscription, metered and capacity sources plus the recorded admissions,
+composes them, and decodes the result through the published `GovernanceReadSnapshot` contract.
 
-**Status: stub.** Owned by **E5 · [#35](https://github.com/rickylabs/harness/issues/35)**. The only
-export is `PACKAGE_NAME`. Nothing here reads a budget or refuses anything. Orchid owns live physical launch admission
-and accounting; this package is not its governor.
+It reads; it does not refuse anything. Orchid owns live physical launch admission and accounting, and this
+package is not its governor. Owned by **E5 · [#35](https://github.com/rickylabs/harness/issues/35)**;
+moved out of `telemetry` by rearch(7) [#655](https://github.com/rickylabs/harness/issues/655).
 
-## What it will own
+## Layout
 
-Reading the three regimes and turning them into a verdict. Not the vocabulary — that is already
-published — but the part that costs: getting a real reading, and deciding.
+`mod.ts` is the only entry. The package depends on [`contracts`](../contracts/README.md) and nothing
+else in the workspace; `tests/architecture/boundary.test.mjs` fails if it imports `@rickylabs/telemetry`
+or any other workspace package, or if `src/domain` imports anything outward.
 
-There are two gates in this system and they are not the same gate.
-[`coordinator`](../coordinator/README.md) decides *who may evaluate* — a rule about independence,
-answerable offline from a roster. This package reserves an unimplemented boundary for *whether the system may spend* — a rule about
-capacity, answerable only by looking at the world. That is why they are separate packages: one is
-pure and the other is not.
+| Layer | Holds |
+| --- | --- |
+| `src/domain/` | The source descriptor types and value checks, and the pure usage, spend and capacity mappers |
+| `src/application/` | `parseSource`, recorded admissions, transport availability, `composeGovernance`, `collectGovernance`, `governanceRead`, `governanceAt` |
+| `src/ports/` | `SourceServices`, `AdmissionLog`, `GovernanceWiring`, `SourcePolicy`: what a caller passes in |
+| `src/adapters/` | The Node source services: bounded file reads, the usage-probe subprocess, the owner-only transport availability file |
 
-## Why there are three of them
+## What the caller wires in
 
-Quota windows, paid spend and physical capacity have incomparable units. Native transport labels
-do not determine billing; an explicitly unmetered transport uses a configured static cap and
-never consumes another vendor's meter. Missing source observations remain unknown. [`docs/concepts/02`](../../docs/concepts/02-the-two-seams.md) is where that split is
-argued; this package is where it gets read.
+The composition root (today `harness-telemetry`) supplies everything that is not governance's own:
 
-## What already constrains it
+- `GovernanceWiring`: the `producer` stamped on every document and the string `order` admissions sort by.
+- `SourcePolicy`: the one spend endpoint a descriptor's `spend.url` may name. A descriptor that names any
+  other URL is refused, so a spend credential is never sent elsewhere. No endpoint is named in this package.
+- `SourceServices`: environment, clock, usage probe, `fetch` and file readers. `defaultSourceServices()`
+  is the Node implementation; tests pass fakes.
 
-[`contracts`](../contracts/README.md) ships the shape, because the cockpits render it:
+## Why there are three regimes
 
-- `REGIMES` is `subscription | metered | capacity` — a quota window, a token balance, a GPU.
-  `RegimeStatus` is a discriminated union rather than three numbers, because those three have
-  different units and fail in different ways; a client that only knows how to draw a percentage
-  draws the one that has one and says so, instead of inventing a percentage for a GPU.
-- `REGIME_STATES` is `allow | throttle | pause`.
-- Every regime carries `observedAt`, an unread regime reports `allow` with `observedAt: null` and a
-  note, and **no regime is ever omitted**. A green bar with no reading behind it is the most
-  expensive kind of wrong, and a missing regime is indistinguishable from one that does not exist.
+Quota windows, paid spend and physical capacity have incomparable units. Native transport labels do not
+determine billing; an explicitly unmetered transport uses a configured static cap and never consumes
+another vendor's meter. Missing source observations remain unknown. [`docs/concepts/02`](../../docs/concepts/02-the-two-seams.md)
+is where that split is argued.
 
-So the honest half of this package's job is already specified: whatever it cannot read, it must say
-it could not read, rather than passing.
+[`contracts`](../contracts/README.md) ships the shape, because the cockpits render it: `REGIMES` is
+`subscription | metered | capacity`, `RegimeStatus` is a discriminated union, every regime carries
+`observedAt`, an unread regime reports `allow` with `observedAt: null` and a note, and no regime is ever
+omitted. Whatever this package cannot read, it says it could not read, rather than passing.
 
-## Why it is empty
-
-The decision E5 waited on is answered: the sandboxctl sidecar was ratified on
-**[#257](https://github.com/rickylabs/harness/issues/257)**, and defines the permitted channel authority. That decision does not prove deployed sidecar
-activation or a live admission read. The published
-governance *read* boundary already ships through `telemetry` and `contracts`
-(see the [telemetry governance page](../telemetry/docs/governance.md#published-governance-read-command));
-this package — the unimplemented admission boundary — remains a
-stub until E5 implements it. Building it before the epic that owns it defines
-the contract would mean building the readings twice.
+The commands, descriptor fields and failure behaviour are documented with the CLI that publishes them:
+[telemetry governance reads](../telemetry/docs/governance.md).
 
 ---
 
