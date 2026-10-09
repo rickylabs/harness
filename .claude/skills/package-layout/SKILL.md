@@ -43,9 +43,10 @@ Change all of these in the same PR:
 
 1. `git mv` the directory, so history follows it.
 2. `pnpm-workspace.yaml`: make sure a glob covers the new location (for example `packages/providers/*`).
-3. [`scripts/core-packages.mjs`](../../../scripts/core-packages.mjs): it scans `packages/*` one level
-   deep, asserts the core count, and uses the `--filter=./packages/*` selector. Teach it the nested
-   location, update the count, and keep `scripts/core-selection.test.mjs` passing.
+3. [`scripts/core-packages.mjs`](../../../scripts/core-packages.mjs): it scans `packages/<name>` and
+   one group level, `packages/<group>/<name>` (as `packages/providers/*`), asserts the core count, and
+   uses the `--filter=./packages/**` selector. A deeper location needs teaching; update the count, and
+   keep `scripts/core-selection.test.mjs` passing.
 4. The root `tsconfig.json` `references`, and the `references` of every package that depends on the
    moved one.
 5. The package's own `package.json`, if its name or bin changes, and every dependent's dependency

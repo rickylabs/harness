@@ -25,7 +25,7 @@
  *
  * ## C — do not copy the codex refusal ladder
  *
- * `packages/provider-codex/src/protocol.ts` checks `evidence.status === "unknown"` and returns
+ * `packages/providers/codex/src/application/start-turn.ts` checks `evidence.status === "unknown"` and returns
  * `unknown`, then checks `evidence.status === "mismatch"` and returns `refused`. In the codex dialect
  * all four fields are observable, so both branches are reachable and the ordering is correct there.
  *

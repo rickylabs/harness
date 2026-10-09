@@ -27,7 +27,7 @@
     "typecheck": "node scripts/run-stages.mjs --label typecheck --compile-stage typecheck:compile check:stages check:core-selection check:graph check:lifecycle typecheck:compile",
     "check:cluster": "node --test method/tools/harness/blocked-decisions.test.mjs",
     "check:test-scripts": "node --test scripts/check-test-scripts.test.mjs && node scripts/check-test-scripts.mjs",
-    "test": "node scripts/run-stages.mjs --label test check:stages check:core-selection check:test-scripts check:receipts check:cluster test:packages test:parity check:cli-aliases check:installed",
+    "test": "node scripts/run-stages.mjs --label test check:stages check:core-selection check:test-scripts check:domain-imports check:receipts check:cluster test:packages test:parity check:cli-aliases check:installed",
     "skill:install": "pnpm --filter @rickylabs/forge run build && node packages/forge/dist/cli.js skill install --dispatch-label harness",
     "clean": "node scripts/core-packages.mjs clean",
     "check:compiled-policy": "node --test scripts/check-compiled-policy.test.mjs && node scripts/check-compiled-policy.mjs",
@@ -42,7 +42,8 @@
     "check:receipts": "node --test method/tools/harness/matrix-receipts.test.mjs",
     "check:gate-mutations": "node scripts/mutation-verify-gates.mjs",
     "check:cli-aliases": "node --test scripts/cli-aliases.test.mjs",
-    "check:core-selection": "node --test scripts/core-selection.test.mjs"
+    "check:core-selection": "node --test scripts/core-selection.test.mjs",
+    "check:domain-imports": "node --test scripts/domain-imports.test.mjs"
   },
   "devDependencies": {
     "@rickylabs/harness-contracts": "workspace:*",

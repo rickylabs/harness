@@ -30,7 +30,7 @@ import {
  * ---------------------------------------------------------------------------------------------- */
 
 /**
- * DEFECT: the codex refusal ladder (`packages/provider-codex/src/protocol.ts`), transplanted.
+ * DEFECT: the codex refusal ladder (`packages/providers/codex/src/application/start-turn.ts`), transplanted.
  *
  * Correct where all four route fields are observable. Over UHP the first branch always wins, so a
  * substituted model is reported as "we could not tell" instead of "the server contradicted the request".

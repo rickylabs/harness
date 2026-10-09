@@ -310,8 +310,8 @@ split between what the mock proved and what only a live router could.
 - **Storing the ledger.** `lease.ts` decides; nothing here writes. The compare-and-set that makes
   the decision binding belongs to whatever holds the file, and no such store exists yet.
 - **Any provider over a vendor CLI.** Those three implementations are `provider-claude`,
-  `provider-codex`, `provider-opencode`. `provider-uhp` is the exception and it lives
-  here by the ownership boundary confirmed on #286: there is exactly one `SubagentProvider` for UHP and
+  `provider-codex` and `provider-opencode`, under `packages/providers/`. `provider-uhp` is the
+  exception and it lives here by the ownership boundary confirmed on #286: there is exactly one `SubagentProvider` for UHP and
   exactly one harness object registry, and both are in this package.
 - **Any I/O, with three named exceptions.** The UHP stream reader takes its clock as a parameter and
   falls back to `new Date()` only when a caller supplies none, so a test never sleeps. `uhp-mock.ts`

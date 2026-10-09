@@ -1,6 +1,6 @@
 # packages/
 
-Twelve flat core packages implement Harness mechanisms or define explicit partial/stub boundaries.
+Twelve core packages implement Harness mechanisms or define explicit partial/stub boundaries.
 [ADR 0005](../docs/decisions/0005-harness-framework-identity.md) records the current framework
 identity on Orchid and Herdr.
 
@@ -10,9 +10,9 @@ activation, credentials or a successful native launch on a particular host.
 | Package | Implemented boundary | Owner |
 | --- | --- | --- |
 | `subagents` | Native task requests, provider contract, selection and UHP adapter; UHP dispatch is parked by [ADR 0004](../docs/decisions/0004-uhp-park-evidence.md) | E3 · #33 |
-| `provider-claude` | Claude Agent SDK adapter, injected by a composition root | E3 · #33 |
-| `provider-opencode` | Adapter to a configured OpenCode server; it does not own that server | E3 · #33 |
-| `provider-codex` | Partial: app-server route identity and pre-turn protocol prerequisite, not a composed provider | E3 · #33 |
+| `providers/claude` | Claude Agent SDK adapter, injected by a composition root | E3 · #33 |
+| `providers/opencode` | Adapter over `@opencode-ai/sdk` to a configured OpenCode server; it does not own that server | E3 · #33 |
+| `providers/codex` | Partial: app-server route identity and pre-turn protocol prerequisite, not a composed provider | E3 · #33 |
 | `llm-local` | API/local adapter configuration, capability and budget tables | E4 · #34 |
 | `routing` | Replaceable routing documents, immutable matrix queries and exact native discovery | E4 · #34, E11 · #271 |
 | `governance` | Stub package boundary; live launch admission and meters belong to Orchid's governor | E5 · #35 |
