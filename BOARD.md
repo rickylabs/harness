@@ -2,11 +2,11 @@
 
 # rickylabs/harness
 
-`[###############-----]` **505/651 done · 60 running · 27 queued · 16 abandoned · 43 invisible**
+`[###############-----]` **505/652 done · 62 running · 26 queued · 16 abandoned · 43 invisible**
 
-_Latest board activity: 2026-10-08T22:39:33Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
+_Latest board activity: 2026-10-09T03:25:23Z._ Projected from GitHub, which is the truth — where this page and an issue disagree, the issue wins.
 
-## Moving now (60)
+## Moving now (62)
 
 Something could be acting on these right now.
 
@@ -71,7 +71,9 @@ Something could be acting on these right now.
 | [#663 [rickylabs/atelier-cockpit#541] Agents screen: one row per run, running count matches, dispatched runs never shown as stale operator sessions](https://github.com/rickylabs/harness/issues/663) | `plan` | — |
 | [#664 [rickylabs/atelier-mobile#343] Epic: production-grade Expo app (one api layer, one route tree, gates)](https://github.com/rickylabs/harness/issues/664) | `plan` | — |
 | [#665 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)](https://github.com/rickylabs/harness/issues/665) | `plan` | — |
+| [#667 [rickylabs/atelier-cockpit#541] Mobile Agents native feed join, unified counts and live-device acceptance](https://github.com/rickylabs/harness/issues/667) | `augment-review` | — |
 | [PR668 chore(scripts): add check:leaks scan of added lines for every PR](https://github.com/rickylabs/harness/pull/668) | `impl` | — |
+| [PR670 test(parity): pin the atelier-cockpit and orchid consumer surfaces](https://github.com/rickylabs/harness/pull/670) | `impl` | — |
 
 ## Not on the board (27)
 
@@ -215,7 +217,7 @@ Open, and carrying no `status:` label — real work no column can see.
 
 ### (no milestone)
 
-`[#########---]` 302/390 done · 43 running · 4 queued · 10 abandoned · 31 invisible
+`[#########---]` 302/390 done · 44 running · 3 queued · 10 abandoned · 31 invisible
 
 | epic | progress | column |
 | --- | --- | --- |
@@ -225,12 +227,12 @@ Open, and carrying no `status:` label — real work no column can see.
 | [E11 — Configuration-driven routing: consume the fleet matrix as data](https://github.com/rickylabs/harness/issues/270) | `[#########---]` 8/10 done · 1 running · 1 invisible | `triage` |
 | [E6 — Coordinator: workflows, task DAG, board projection](https://github.com/rickylabs/harness/issues/36) | `[############]` 1/1 done | `impl` |
 | [E9 — Telemetry: the "status ?" killer](https://github.com/rickylabs/harness/issues/39) | `[##########--]` 17/19 done · 1 queued · 1 invisible | `impl` |
-| _(no epic)_ | `[#########---]` 265/349 done · 42 running · 3 queued · 10 abandoned · 29 invisible | — |
+| _(no epic)_ | `[#########---]` 265/349 done · 43 running · 2 queued · 10 abandoned · 29 invisible | — |
 
 ## Waiting to start
 
 <details>
-<summary>27 filed, nothing started</summary>
+<summary>26 filed, nothing started</summary>
 
 | item | column | epic |
 | --- | --- | --- |
@@ -260,7 +262,6 @@ Open, and carrying no `status:` label — real work no column can see.
 | [#66 E5.5 — Wire the gate at the sandbox boundary](https://github.com/rickylabs/harness/issues/66) | `triage` | `e5` |
 | [#67 E5.6 — Boot-parameter verification after every kernel update](https://github.com/rickylabs/harness/issues/67) | `triage` | `e5` |
 | [#181 fix(routing): resolve complex evaluators across both implementer families](https://github.com/rickylabs/harness/issues/181) | `triage` | `e4` |
-| [#667 [rickylabs/atelier-cockpit#541] Mobile Agents native feed join, unified counts and live-device acceptance](https://github.com/rickylabs/harness/issues/667) | `triage` | — |
 
 </details>
 
@@ -270,7 +271,7 @@ Open, and carrying no `status:` label — real work no column can see.
 <summary>milestone → epic → task</summary>
 
 ```
-# rickylabs/harness  [###############-----]  505/651 done · 60 running · 27 queued · 16 abandoned · 43 invisible
+# rickylabs/harness  [###############-----]  505/652 done · 62 running · 26 queued · 16 abandoned · 43 invisible
 
 ## M1 — dsh coordinator foundation  [################----]  201/249 done · 16 running · 23 queued · 6 abandoned · 3 invisible
 
@@ -558,7 +559,7 @@ Open, and carrying no `status:` label — real work no column can see.
     shipped              #536 Tour (long): read-only walk of tool step names and end times
     shipped              #537 Tour (final): read-only walk of tool step names, status and end times
 
-## rearch-2026-10-08  [###-----------------]  2/12 done · 1 running · 9 invisible
+## rearch-2026-10-08  [###-----------------]  2/13 done · 2 running · 9 invisible
 
   (no epic)
     no status            #651 rearch(2): leak-scan script for every PR (public repo) - descoped to scripts/check-leaks.mjs
@@ -573,8 +574,9 @@ Open, and carrying no `status:` label — real work no column can see.
     no status            #660 rearch(9): move orchid observations out of telemetry into packages/hosts/orchid
     impl                 PR668 chore(scripts): add check:leaks scan of added lines for every PR (draft)
     shipped              PR669 docs(doctrine): one doctrine page, target structure, ADR 0006 and starter skills
+    impl                 PR670 test(parity): pin the atelier-cockpit and orchid consumer surfaces (draft)
 
-## (no milestone)  [###############-----]  302/390 done · 43 running · 4 queued · 10 abandoned · 31 invisible
+## (no milestone)  [###############-----]  302/390 done · 44 running · 3 queued · 10 abandoned · 31 invisible
 
   E0 — Roadmap: harness as the deterministic coordinator layer #30  [no status]
     [################] 6/6 done
@@ -984,7 +986,7 @@ Open, and carrying no `status:` label — real work no column can see.
     plan                 #664 [rickylabs/atelier-mobile#343] Epic: production-grade Expo app (one api layer, one route tree, gates)
     plan                 #665 [rickylabs/atelier-cockpit#515] Epic: production-grade NetScript workspace (contexts, plugins, sagas, streams, gates)
     no status            #666 orchid retires a waiting coordinator as failed and kills its lanes
-    triage               #667 [rickylabs/atelier-cockpit#541] Mobile Agents native feed join, unified counts and live-device acceptance
+    augment-review       #667 [rickylabs/atelier-cockpit#541] Mobile Agents native feed join, unified counts and live-device acceptance
 ```
 
 </details>
