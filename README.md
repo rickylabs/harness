@@ -306,7 +306,7 @@ owns the complete package-to-epic table and implementation status.
 ### Repository map
 
 ```
-packages/             fifteen core packages (hosts/ groups the host adapters)
+packages/             fifteen core packages (providers/ and hosts/ group the adapters)
 docs/                 DOCTRINE, STRUCTURE, decisions, concepts, tutorials, how-to, reference, glossary
 method/tools/         method validators and gates
 run-record/templates/ the artifact templates a run fills in
