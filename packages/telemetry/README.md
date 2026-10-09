@@ -188,7 +188,8 @@ decoder refuses (for example a used value above its total) makes the read unavai
 
 With no `--observations`, governance is `UNKNOWN/UNAVAILABLE — not-configured`. A requested file that
 cannot be read or validated renders `UNKNOWN/UNAVAILABLE — envelope-invalid`, sets `complete: false`
-in JSON, and exits 3. Read at a later `--now`, an expired document remains visible as `STALE`; read at
+in JSON, and exits 3. A stored document that is itself partial or unavailable (`complete: false`)
+stays incomplete: its notes are carried into the output and the command exits 3. Read at a later `--now`, an expired document remains visible as `STALE`; read at
 a `--now` before its observation, it is unavailable. Refusals carry a public-safe reason code only:
 operator detail and approvals are never part of the read, so `--json` publishes a fixed withheld
 detail. Regime `note` and `state.notes` are public display text; a producer must supply text safe for
@@ -257,7 +258,7 @@ the token is the problem is a day you need status to work.
 board activity as of 2026-09-05T00:45:00.000Z
 
 governance: FRESH · synthetic:test · observed 5m ago
-  subscription [throttle] — paced against the binding window
+  subscription [throttle] — paced against binding window
     codex/primary [throttle] · read 5m ago
       binding 5h: 63% used · resets in 1h 0m
   metered [allow]
@@ -266,8 +267,7 @@ governance: FRESH · synthetic:test · observed 5m ago
     n5-fixture · read 5m ago
       VRAM 8.0 GiB used / 24.0 GiB total · 16.0 GiB headroom
       RAM  32.0 GiB used / 128.0 GiB total · 96.0 GiB headroom
-  #205 throttle [subscription] — quota-paced: waiting for the next subscription slot
-    · synthetic:dispatcher · read 6m ago
+  #205 throttle [subscription] — quota-paced · synthetic:dispatcher · read 6m ago
 
 3 run(s) across 3 epic(s) · 1.1Min/65.2kout · $0.04
 
