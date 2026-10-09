@@ -136,7 +136,7 @@ async function* resumed(
  * on it: `opencode serve` greets every subscriber with `server.connected`, a native signal that the
  * subscription is live rather than an inference from a status line.
  */
-async function openEvents(client: OpencodeClient, signal: AbortSignal): Promise<StreamOutcome> {
+export async function openEvents(client: OpencodeClient, signal: AbortSignal): Promise<StreamOutcome> {
   let failure: unknown = null;
   let stream: AsyncGenerator<unknown>;
   try {

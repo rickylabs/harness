@@ -13,7 +13,9 @@ const stamp = (value: unknown): string | null => {
 };
 const knownTools = new Set(["functions.exec", "exec_command", "apply_patch", "read_file", "write_file",
   "Bash", "Read", "Edit", "Write", "Glob", "Grep", "Task", "NotebookEdit", "update_plan",
-  "functions.update_plan", "TodoWrite"]);
+  "functions.update_plan", "TodoWrite",
+  // OpenCode's own tool ids. Never in fileTools: the contract ties a file target to the tools it names.
+  "bash", "read", "edit", "write", "glob", "grep", "list", "task", "todowrite", "webfetch", "patch", "multiedit"]);
 const fileTools = new Set(["read_file", "write_file", "Read", "Edit", "Write", "NotebookEdit"]);
 const tool = (value: unknown): string | null => typeof value === "string" && knownTools.has(value) ? value : null;
 const relativeFile = (value: unknown): string | null => typeof value === "string" && value.length <= 256 &&
@@ -82,11 +84,12 @@ function fromTool(source: Source, origin: string, line: number, part: number, at
   name: unknown, input: unknown): AgentActivityStep | null {
   const toolName = tool(name);
   const parsed = args(input);
+  const todos = name === "TodoWrite" || name === "todowrite";
   const plan = name === "update_plan" || name === "functions.update_plan" ? parsed?.["plan"]
-    : name === "TodoWrite" ? parsed?.["todos"] : null;
+    : todos ? parsed?.["todos"] : null;
   if (Array.isArray(plan) && plan.length <= 32) {
     const current = plan.filter(item => object(item)?.["status"] === "in_progress");
-    const text = current.length === 1 ? publicActivityText(object(current[0])?.[name === "TodoWrite" ? "content" : "step"]) : null;
+    const text = current.length === 1 ? publicActivityText(object(current[0])?.[todos ? "content" : "step"]) : null;
     if (text !== null) return step(source, origin, line, part, at, "message", toolName, null, null, text);
   }
   const command = commandHead(parsed?.["cmd"] ?? parsed?.["command"]);
@@ -162,6 +165,11 @@ export function claudeActivity(raw: unknown, origin: string, line: number): read
       firstSentence(content["text"]) ?? "Agent message");
     return found === null ? [] : [found];
   });
+}
+
+/** One OpenCode tool part (SDK `ToolPart`): its tool id and typed input only, never its output or title. */
+export function openCodeToolActivity(origin: string, at: string, name: unknown, input: unknown): AgentActivityStep | null {
+  return fromTool("opencode-transcript", origin, 0, 0, at, name, input);
 }
 
 /** Keep only the latest bounded records, newest first, with stable IDs across rescans. */

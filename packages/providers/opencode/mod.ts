@@ -17,12 +17,15 @@
  * - **`router:` and `model:` are the wire's two fields, and a doubled prefix is refused** —
  *   `src/application/model.ts`. Neither stripping it nor sending it twice is knowledge; both are
  *   guesses that run the wrong model.
+ * - **An observer reads through its own port** — `src/ports/session-reader.ts`, over the same SDK in
+ *   `src/adapters/sdk-session-reader.ts`: session, children, messages and the session each event
+ *   names, every reply byte-capped. Telemetry's issue reader composes it.
  * - **Nothing this package emits can carry a credential** — `src/domain/secrets.ts`. It never reads
  *   one, and everything it says goes through one scrubbing boundary, because the strings that leak
  *   are the ones the server wrote.
  *
- * Nothing here has been run against a real `opencode serve`; verifying it against the running server
- * is #49. Every reply is read through a checked reader, so a shape that is not what was assumed
+ * The launch verbs have not been run against a real `opencode serve`; verifying them is #49. The read
+ * side is checked against a recorded 1.18.35 session. Every reply is read through a checked reader, so a shape that is not what was assumed
  * becomes an `unknown` the contract has a meaning for rather than a `TypeError` in a background loop.
  *
  * This file is the package's only entry and re-exports its public API, nothing else.
@@ -46,6 +49,7 @@ export {
   refutes,
   EXCERPT_LIMIT,
   type HttpOutcome,
+  type ReadOutcome,
   type StreamOutcome,
 } from "./src/domain/outcome.js";
 
@@ -53,7 +57,11 @@ export { basename, leaks, pathIsCredentialFile, scrub, CREDENTIAL_FILES } from "
 
 export type { OpencodeServer } from "./src/ports/server.js";
 
+export type { OpencodeSessionReader, ReadBounds, SessionEvents } from "./src/ports/session-reader.js";
+
 export { baseUrlProblems, createSdkServer, type SdkServerOptions } from "./src/adapters/sdk-server.js";
+
+export { createSdkSessionReader } from "./src/adapters/sdk-session-reader.js";
 
 export { translateModel, untranslated, type Translation } from "./src/application/model.js";
 

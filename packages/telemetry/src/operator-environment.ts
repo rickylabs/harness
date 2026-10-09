@@ -8,8 +8,12 @@ export const OPERATOR_ENV = {
   claudeChildEventRoot: "HARNESS_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT",
   placementHost: "HARNESS_TELEMETRY_PLACEMENT_HOST",
   nativeHome: "HARNESS_TELEMETRY_NATIVE_HOME",
+  /** The `opencode serve` base url the OpenCode issue reader asks; new, so it has no legacy alias. */
+  openCodeServer: "HARNESS_TELEMETRY_OPENCODE_SERVER",
 } as const;
-export const LEGACY_OPERATOR_ENV = {
+export type OperatorSetting = keyof typeof OPERATOR_ENV;
+/** Legacy aliases for the settings that predate the rename; a setting added after it has none. */
+export const LEGACY_OPERATOR_ENV: Readonly<Partial<Record<OperatorSetting, string>>> = {
   directory: "DSH_TELEMETRY_DIR",
   archive: "DSH_TELEMETRY_ARCHIVE",
   maxBytes: "DSH_TELEMETRY_MAX_BYTES",
@@ -18,8 +22,7 @@ export const LEGACY_OPERATOR_ENV = {
   claudeChildEventRoot: "DSH_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT",
   placementHost: "DSH_TELEMETRY_PLACEMENT_HOST",
   nativeHome: "DSH_TELEMETRY_NATIVE_HOME",
-} as const;
-export type OperatorSetting = keyof typeof OPERATOR_ENV;
+};
 export type OperatorEnvironment = Readonly<Record<string, string | undefined>>;
 const trimmedSettings = new Set<OperatorSetting>(["directory", "archive", "maxBytes", "generations"]);
 
@@ -29,9 +32,10 @@ export class OperatorConfigurationError extends Error {}
 export function resolveOperatorSetting(env: OperatorEnvironment, setting: OperatorSetting): string | undefined {
   const normalize = (value: string | undefined) => trimmedSettings.has(setting) ? value?.trim() || undefined : value;
   const current = normalize(env[OPERATOR_ENV[setting]]);
-  const legacy = normalize(env[LEGACY_OPERATOR_ENV[setting]]);
+  const alias = LEGACY_OPERATOR_ENV[setting];
+  const legacy = alias === undefined ? undefined : normalize(env[alias]);
   if (current !== undefined && legacy !== undefined && current !== legacy) {
-    throw new OperatorConfigurationError(`conflicting ${OPERATOR_ENV[setting]} and ${LEGACY_OPERATOR_ENV[setting]}`);
+    throw new OperatorConfigurationError(`conflicting ${OPERATOR_ENV[setting]} and ${alias}`);
   }
   return current ?? legacy;
 }
@@ -42,5 +46,6 @@ export function resolveNativeOperatorBindings(env: OperatorEnvironment) {
     dispatchRoot: resolveOperatorSetting(env, "dispatchRoot"),
     claudeChildEventRoot: resolveOperatorSetting(env, "claudeChildEventRoot"),
     placementHost: resolveOperatorSetting(env, "placementHost"),
+    openCodeServer: resolveOperatorSetting(env, "openCodeServer"),
   };
 }

@@ -179,26 +179,63 @@ reader before enabling the Orchid writer. Bound database/WAL watches are hints
 for a fresh read, with the periodic safety scan retained.
 
 OpenCode issue collection joins the dispatched reservation's private
-`NativeSessionID` to one root in the explicitly configured native database.
-The legacy adapter decides the store family from its structure, never from the
-OpenCode CLI version: the session/message/part tables must carry every column it
-reads (checked before any row is read), no next-family row may be bound to the
-session, and every row and part must pass the strict validation. The version
-label is only checked to be bounded and non-empty. It reads those fixed columns
-read-only with WAL visibility and per-issue/session/row/byte limits. It excludes unbound history, titles, paths,
-user text, reasoning and tool output. Unknown or mixed next-schema rows affect
-only their bound issue. Native database/WAL watches trigger rereads; they never
-prove a message or terminal state.
+`NativeSessionID` to one root session on the OpenCode server named by
+`HARNESS_TELEMETRY_OPENCODE_SERVER` (an `opencode serve` base url; no setting is
+`source_not_bound`, an unusable url is `source_unavailable`). It reads through
+the official `@opencode-ai/sdk`, behind the telemetry-owned port
+`src/opencode-reads.ts`, which `createSdkSessionReader` in
+`@rickylabs/provider-opencode` implements. No store file is opened.
 
-Only persisted assistant text parts reach the existing screening function.
-Native token deltas are live-only, so this SQLite reader does not promise
-per-token updates. Stable step IDs replace the same persisted part on a reread.
-Success requires the latest user turn's final nonempty assistant stop, an exact
-native completion clock and no continuation tool. Resumed turns and pending
-children clear the root's prior end. Known native error/cancellation retain
-their own clock; unknown/empty/tool finishes and contradictory clocks cannot
-become Done. Typed provider/model/variant observations stay separate from the
-requested route; usage, quota and spend are not fabricated.
+The read (`src/opencode-issue.ts`) asks for the root (`session.get`), its
+explicit children (`session.children`, up to 20 sessions) and each session's
+latest 100 messages (`session.messages`, `limit=101`), every reply byte-capped
+against one 8 MiB issue budget and cancelled after 5 seconds. A root the server
+answers `404` for is `binding_unavailable`, an unreadable server or a reply that
+is not an SDK shape is `source_unavailable`, and a passed bound is `scan_limit`.
+Each of those is no runs at all, never a partial or invented timeline, and only
+its own issue is affected. The binding and dispatch receipts are re-verified
+after the read, so a binding that changed mid-read invalidates the issue.
+
+The projection (`src/opencode-session.ts`) checks every field it reads, because
+the SDK's types describe the server's replies without checking them: exact
+session, message and part ids, parts that belong to their message and session,
+known part types and tool states, and native clocks that are monotonic and not
+in the future. Assistant text parts go to the existing screening function. Tool
+parts publish only their tool id and typed input through the same screen: a
+`bash` command head becomes a `command` step, a file inside the session's own
+root becomes a repository-relative `file` step, and anything else is a `tool`
+step. User text, reasoning, tool output, tool titles and errors, ids and paths
+never enter the feed. Stable step IDs replace the same part on a reread.
+
+Success requires the latest user turn's final nonempty assistant `stop`, an
+exact native completion clock and no continuation tool. When a turn is longer
+than the message window its prompt is no longer read; the first assistant in
+the window then names it, which is still the latest prompt because nothing newer
+lies outside the window. Resumed turns and pending children clear the root's
+prior end. Known native error/cancellation retain their own clock;
+unknown/empty/tool finishes and contradictory clocks cannot become Done. Typed
+provider/model/variant observations stay separate from the requested route.
+
+Token usage is the server's own session aggregate, `Session.tokens`, which is
+the sum of the session's `AssistantMessage.tokens` (the recorded 1.18.35
+session in `packages/providers/opencode/tests/fixtures/` shows the equality),
+so the reading does not depend on the message window. The issue tree labels it
+`opencode-usage` and counts input + cache read + cache write + output +
+reasoning, because OpenCode's input excludes both cache kinds and its output
+excludes reasoning. An absent or malformed aggregate leaves usage unavailable,
+never zero. The label is per vendor (`ISSUE_TOKEN_SOURCES` in
+`src/issue-token-usage.ts`): Codex `codex-token-count`, Claude `claude-usage`,
+OpenCode `opencode-usage`; AGY has no token reading and stays unavailable.
+Contracts 0.40.0 adds `opencode-usage`; a consumer upgrades its decoder first.
+Quota and spend are not fabricated.
+
+In `--watch`, the server's own event stream (`GET /event`) is the change hint:
+one subscription, opened only while a scan read an OpenCode session and never
+retried in the background, marks the feed dirty when an event names a session
+the last scan read. Events are never evidence and are not buffered; the
+existing 12-second safety rescan stays the only timer. A session running in a
+different OpenCode process than the configured server publishes its events on
+that process's bus, so for it the safety rescan bounds the delay.
 
 Contracts 0.35.0 adds `opencode-transcript`, direct OpenCode route decoding and
 bounded model-specific syntax for exact qualified identifiers. Model observation

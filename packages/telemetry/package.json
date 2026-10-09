@@ -34,6 +34,7 @@
     "@rickylabs/governance": "workspace:*",
     "@rickylabs/harness-contracts": "workspace:*",
     "@rickylabs/host-orchid": "workspace:*",
+    "@rickylabs/provider-opencode": "workspace:*",
     "@rickylabs/subagents": "workspace:*",
     "acorn": "8.15.0"
   }

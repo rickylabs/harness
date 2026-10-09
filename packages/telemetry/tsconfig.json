@@ -19,6 +19,9 @@
     },
     {
       "path": "../hosts/orchid"
+    },
+    {
+      "path": "../providers/opencode"
     }
   ]
 }

@@ -93,3 +93,18 @@ export function excerpt(text: string): string {
   if (line === "") return "(empty body)";
   return line.length <= EXCERPT_LIMIT ? line : `${line.slice(0, EXCERPT_LIMIT)}…`;
 }
+
+/**
+ * One bounded read of a session, its children or its messages.
+ *
+ * A read never licenses anything, so it does not need `refutes()`'s split. It needs a different one:
+ * `missing` is the server's own `404` for that id, which is the only reply that says the session is
+ * not there; `oversized` is a reply that passed the caller's byte cap and was cut off unread, which
+ * is a bound, not a fault; `unavailable` is everything else, including a `5xx` and no answer at all.
+ * `bytes` is what was read off the wire either way, so a caller can account for its budget.
+ */
+export type ReadOutcome =
+  | { readonly kind: "ok"; readonly body: unknown; readonly bytes: number }
+  | { readonly kind: "missing"; readonly bytes: number }
+  | { readonly kind: "oversized"; readonly bytes: number }
+  | { readonly kind: "unavailable"; readonly bytes: number };

@@ -203,24 +203,45 @@ SDK has no opinion about, in `src/adapters/sdk-server.ts`:
   server has greeted the subscription with `server.connected`, because a reconnect is this
   provider's decision and a dispatch that cannot be watched is refused.
 
-The honesty that costs is unchanged: **nothing here has been run against a real `opencode serve`.**
+The honesty that costs is unchanged for the launch verbs: **they have not been run against a real
+`opencode serve`** (the read side has; see below).
 The SDK's types describe the server's replies; they do not check them. So the response *shapes* are
 still never read by property access. Every one goes through a checked reader that returns `null`
 when the reply is not what was assumed — which the verbs turn into `unknown`, a state the contract
 has a meaning for, rather than a `TypeError` in a background loop that leaves a run reported as
 running forever.
 
+## The read side, for an observer
+
+`createSdkSessionReader` is a second port over the same SDK, for something that did not start the
+session and must not touch it: telemetry's OpenCode issue reader. It reads one session
+(`session.get`), its children (`session.children`), its latest messages (`session.messages` with
+`limit`) and the server's event stream reduced to the session each event names. Nothing on it can
+create, prompt, abort or delete.
+
+Every read carries a byte cap and a signal. `session.messages` returns each part whole, tool output
+included, so a reply's size is the agent's business; each call gets its own metered `fetch`, the SDK
+reads the body through it, and past the cap the stream errors before the rest is buffered. That reply
+is `oversized`, never a prefix parsed as if it were the whole. The server's own `404` is `missing`,
+the one reply that says the session is not there; everything else that is not `ok` is `unavailable`.
+Shapes are not read here: the caller's checked readers decide whether a body is a session.
+
+`tests/fixtures/recorded-session.json` is a real 1.18.35 recording (its `provenance` field says how
+it was taken and what was scrubbed), so the read side is checked against replies the server actually
+sent rather than against the SDK's types alone.
+
 ## Still open
 
 Deferred deliberately, each with an owner:
 
-- Every reply shape is a structural guess until there is a real server to check it against —
-  [#49](https://github.com/rickylabs/harness/issues/49). The readers are written so that a correction
+- The launch replies (create, `prompt_async`, abort, delete) are a structural guess until there is
+  a real server to check them against — [#49](https://github.com/rickylabs/harness/issues/49). The
+  read replies are pinned by the recorded session. The readers are written so that a correction
   is a one-line diff.
 - `translateModel` refuses a `router`-prefixed model id, which costs the two `n5air/` local evaluator
   seats until `GET /provider` can be read live. Same issue.
 - Nothing composes `createSdkServer` in production yet — this native adapter has no verified
-  composition binding here. A health preflight, if one is wanted, belongs with that composition root
+  composition binding here. `createSdkSessionReader` is composed by telemetry's issue feed. A health preflight, if one is wanted, belongs with that composition root
   and the SDK's `global.health()`.
 - A deadline past `TIMER_CEILING_MS` is clamped rather than honoured, and says so through
   `untranslated()`.

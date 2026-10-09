@@ -103,18 +103,21 @@ it("compiled record honors canonical directory, bound and basename", async () =>
   });
 });
 it("all operator aliases keep equal values, legacy fallback and private raw values", () => {
-  for (const key of Object.keys(OPERATOR_ENV) as (keyof typeof OPERATOR_ENV)[]) {
-    assert.equal(resolveOperatorSetting({ [OPERATOR_ENV[key]]: "fixture", [LEGACY_OPERATOR_ENV[key]]: "fixture" }, key), "fixture");
-    assert.equal(resolveOperatorSetting({ [LEGACY_OPERATOR_ENV[key]]: "fixture" }, key), "fixture");
-    assert.throws(() => resolveOperatorSetting({ [OPERATOR_ENV[key]]: "a", [LEGACY_OPERATOR_ENV[key]]: "b" }, key));
+  for (const [key, alias] of Object.entries(LEGACY_OPERATOR_ENV) as [keyof typeof OPERATOR_ENV, string][]) {
+    assert.equal(resolveOperatorSetting({ [OPERATOR_ENV[key]]: "fixture", [alias]: "fixture" }, key), "fixture");
+    assert.equal(resolveOperatorSetting({ [alias]: "fixture" }, key), "fixture");
+    assert.throws(() => resolveOperatorSetting({ [OPERATOR_ENV[key]]: "a", [alias]: "b" }, key));
   }
+  // Every setting but the one added after the rename keeps its alias; that one has none to fall back to.
+  assert.deepEqual(Object.keys(OPERATOR_ENV).filter(key => !Object.hasOwn(LEGACY_OPERATOR_ENV, key)), ["openCodeServer"]);
+  assert.equal(resolveOperatorSetting({ DSH_TELEMETRY_OPENCODE_SERVER: "fixture" }, "openCodeServer"), undefined);
   for (const key of ["directory", "archive", "maxBytes", "generations"] as const) {
     assert.equal(resolveOperatorSetting({ [OPERATOR_ENV[key]]: "   " }, key), undefined);
-    assert.equal(resolveOperatorSetting({ [OPERATOR_ENV[key]]: "  a  ", [LEGACY_OPERATOR_ENV[key]]: "a" }, key), "a");
+    assert.equal(resolveOperatorSetting({ [OPERATOR_ENV[key]]: "  a  ", [LEGACY_OPERATOR_ENV[key]!]: "a" }, key), "a");
   }
   for (const key of ["dispatchRoot", "claudeChildEventRoot", "placementHost", "nativeHome"] as const) {
     assert.equal(resolveOperatorSetting({ [OPERATOR_ENV[key]]: " " }, key), " ");
-    assert.throws(() => resolveOperatorSetting({ [OPERATOR_ENV[key]]: "", [LEGACY_OPERATOR_ENV[key]]: "a" }, key));
+    assert.throws(() => resolveOperatorSetting({ [OPERATOR_ENV[key]]: "", [LEGACY_OPERATOR_ENV[key]!]: "a" }, key));
   }
 });
 it("a source conflict emits a valid watch frame without collecting or extending evidence", async () => {

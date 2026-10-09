@@ -122,6 +122,9 @@ importers:
       '@rickylabs/host-orchid':
         specifier: workspace:*
         version: link:../hosts/orchid
+      '@rickylabs/provider-opencode':
+        specifier: workspace:*
+        version: link:../providers/opencode
       '@rickylabs/subagents':
         specifier: workspace:*
         version: link:../subagents

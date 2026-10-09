@@ -11,7 +11,10 @@ import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FR
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { scanClaudeIssue } from "./backfill/claude-issue.js";
 import { scanAGYIssue } from "./backfill/agy.js";
-import { scanOpenCodeIssue } from "./backfill/opencode-issue.js";
+import { readOpenCodeIssue } from "./opencode-issue.js";
+import type { OpenCodeSessionReads } from "./opencode-reads.js";
+import { openOpenCodeChanges, type OpenCodeChanges } from "./opencode-feed-changes.js";
+import { baseUrlProblems, createSdkSessionReader } from "@rickylabs/provider-opencode";
 import { buildAgentObservations } from "./agent-observations.js";
 import { readClaudeChildStarts } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
@@ -24,6 +27,19 @@ import type { DispatchEvidence, OrchidLaunchState } from "@rickylabs/harness-con
 import type { RunRecord } from "./model.js";
 /** Composition root: the Orchid host behind the telemetry-owned port. */
 const host: OrchidReads = orchidHost;
+
+/** The OpenCode server behind its port, or why there is none: no url is not bound, a bad url is unavailable. */
+export type OpenCodeServerBinding =
+  | { readonly reads: OpenCodeSessionReads }
+  | { readonly reason: "source_not_bound" | "source_unavailable" };
+/** Composition root: `createSdkSessionReader` (`@opencode-ai/sdk`) behind the telemetry-owned port. */
+export function openCodeServerBinding(baseUrl: string | undefined): OpenCodeServerBinding {
+  if (baseUrl === undefined) return { reason: "source_not_bound" };
+  if (baseUrlProblems(baseUrl).length > 0) return { reason: "source_unavailable" };
+  return { reads: createSdkSessionReader({ baseUrl }) };
+}
+/** One issue's OpenCode reads finish within this, well inside the safety rescan, or the issue is unavailable. */
+const OPENCODE_READ_MS = 5_000;
 
 export interface IssueAgentFeedOptions {
   readonly home: string;
@@ -42,6 +58,12 @@ export interface IssueAgentFeedOptions {
    * reader accepts: a reader on 0.36 or older rejects a whole snapshot holding a bounded row.
    */
   readonly partialTrees?: boolean;
+  /** The OpenCode server; resolved from the environment when omitted. */
+  readonly openCode?: OpenCodeServerBinding;
+  /** Private OpenCode session ids the scan read, for the watch loop's event-stream hint; never published. */
+  readonly watchOpenCodeSessions?: Set<string>;
+  /** Cancels in-flight server reads when the feed stops. */
+  readonly signal?: AbortSignal;
 }
 
 const PRE_DISPATCH_MS = 600_000;
@@ -95,6 +117,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   try { wireFamily = resolveWireFamily(options.env); bindings = resolveNativeOperatorBindings(options.env); }
   catch { return unavailableSnapshot(options.now, "source_unavailable"); }
   if (bindings.dispatchRoot === undefined) return unavailableSnapshot(options.now, "source_not_bound");
+  const openCode = options.openCode ?? openCodeServerBinding(bindings.openCodeServer);
   const orchid = await host.readDispatches(bindings.dispatchRoot);
   const nowMs = Date.parse(options.now);
   if (!Number.isFinite(nowMs) || orchid.reason !== null) return unavailableSnapshot(options.now, "source_unavailable");
@@ -205,11 +228,12 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     for (const dispatch of group.dispatches.filter(d => d.source === "opencode")) {
       const id = host.openCodeSessionID(dispatch);
       if (id === null) { openCodeUnavailable = true; break; }
-      const path = defaultRoots(options.home).opencodeDb!;
-      const scan = await scanOpenCodeIssue(path, id, issueFileLimit - runs.length, remainingBytes, nowMs);
+      if (!("reads" in openCode)) { entry.snapshot = unavailableSnapshot(options.now, openCode.reason); openCodeUnavailable = true; break; }
+      const timeout = AbortSignal.timeout(OPENCODE_READ_MS);
+      const scan = await readOpenCodeIssue(openCode.reads, id, { limit: issueFileLimit - runs.length,
+        maxBytes: remainingBytes, nowMs, signal: options.signal === undefined ? timeout : AbortSignal.any([options.signal, timeout]) });
       remainingBytes -= scan.bytesRead;
-      for (const file of scan.files) options.watchFiles?.add(file);
-      options.watchStoreRoots?.add(path.slice(0, path.lastIndexOf("/")));
+      for (const session of scan.sessions) options.watchOpenCodeSessions?.add(session);
       if (scan.reason !== null || !await host.verifyOpenCodeBinding(dispatch)) {
         entry.snapshot = unavailableSnapshot(options.now, scan.reason ?? "binding_unavailable");
         openCodeUnavailable = true; break;
@@ -263,6 +287,7 @@ export interface IssueAgentFeedDependencies {
   readonly wait?: (ms: number, signal: AbortSignal) => Promise<void>;
   readonly elapsed?: () => number;
   readonly changes?: IssueFeedChanges;
+  readonly openCodeChanges?: OpenCodeChanges;
   readonly env?: Readonly<Record<string, string | undefined>>;
 }
 
@@ -304,11 +329,14 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
   try { resolveWireFamily(env); bindings = resolveNativeOperatorBindings(env); }
   catch {
     configurationUnavailable = true;
-    bindings = { dispatchRoot: undefined, claudeChildEventRoot: undefined, placementHost: undefined };
+    bindings = { dispatchRoot: undefined, claudeChildEventRoot: undefined, placementHost: undefined, openCodeServer: undefined };
   }
+  const openCode = openCodeServerBinding(bindings.openCodeServer);
   const changes = watch && !configurationUnavailable ? deps.changes ?? (deps.collect === undefined
     ? openIssueFeedChanges(bindings.dispatchRoot, defaultRoots(home).codexSessions!,
       defaultRoots(home).claudeProjects, bindings.claudeChildEventRoot) : undefined) : undefined;
+  const openCodeChanges = watch && !configurationUnavailable ? deps.openCodeChanges ??
+    (deps.collect === undefined && "reads" in openCode ? openOpenCodeChanges(openCode.reads) : undefined) : undefined;
   const generation = deps.generation?.() ?? randomUUID();
   const abort = new AbortController();
   let stopped = false, seq = 0;
@@ -328,18 +356,21 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
   try {
     do {
       if (stopped) break;
-      const changed = changes?.consume() ?? false;
+      // Both are drained every pass, so a hint never outlives the scan it caused.
+      const changed = [changes?.consume() ?? false, openCodeChanges?.consume() ?? false].includes(true);
       const scan = cached === undefined || changed || elapsed() - scannedAt >= SAFETY_RESCAN_MS;
       let snapshot = cached;
       if (scan) {
         const at = clock(), files = new Set<string>();
-        const storeRoots = new Set<string>();
+        const storeRoots = new Set<string>(), openCodeSessions = new Set<string>();
         try {
           if (configurationUnavailable) throw Error();
           snapshot = await collect({ home, limit, env, now: at, watchFiles: files, watchStoreRoots: storeRoots,
+          openCode, watchOpenCodeSessions: openCodeSessions, signal: abort.signal,
           ...(partialTrees ? { partialTrees } : {}), ...(issueKey === undefined ? {} : { issueKey }) }); }
         catch { snapshot = unavailableSnapshot(at); }
         changes?.setFiles(files, storeRoots);
+        openCodeChanges?.watch(openCodeSessions);
         scannedAt = elapsed();
       }
       if (stopped) break;
@@ -363,7 +394,7 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
     return 0;
   } catch { process.stderr.write("issue-agents: output unavailable\n"); return 3; }
   finally {
-    changes?.close();
+    changes?.close(); openCodeChanges?.close();
     process.removeListener("SIGINT", stop); process.removeListener("SIGTERM", stop);
     output.removeListener("error", stop); output.removeListener("close", stop);
   }
