@@ -28,6 +28,10 @@ pnpm run build
 pnpm test
 ```
 
+On a pull request CI also runs `pnpm run check:leaks`, which reads only the lines your branch adds
+and fails on a home or data path, a private address, a host:port pair, a token shape, a private-key
+header or a session id. It prints `file:line reason`, never the text. Run it locally after committing.
+
 Node 24 or newer and [pnpm](https://pnpm.io) 11. The pnpm version is pinned by `packageManager` in
 the root `package.json`, and CI reads that same line rather than pinning a second one — so upgrading
 pnpm is a one-line change, not a two-file dance.
