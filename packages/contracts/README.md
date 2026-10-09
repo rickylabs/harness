@@ -274,7 +274,7 @@ implement reconnect freshness (#265).
 
 The producer half — the CLI that collects configured sources and emits the
 document — is built from this repository's source and documented in the
-[telemetry README](../telemetry/README.md#published-governance-read-command).
+[telemetry governance page](../telemetry/docs/governance.md#published-governance-read-command).
 The consumer half decodes with the decoder published to npm, so a consumer
 pins a released decoder version instead of rebuilding one from source.
 Source merge, tests and `npm pack` are not publication; publication is the
