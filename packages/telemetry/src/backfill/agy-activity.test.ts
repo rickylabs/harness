@@ -5,7 +5,7 @@ import { readAgyToolCalls, type TranscriptTail } from "@rickylabs/provider-agy";
 import type { AgentActivityStep, NativeToolCallRead } from "@rickylabs/harness-contracts";
 import { agyConversation } from "./agy.js";
 import { agyActivity, agyWorkspaceRoot, type AgyStepFact } from "./agy-activity.js";
-import { captured, conversation, rootID, transcript as t, type ConversationSpec } from "./agy-test-fixture.js";
+import { captured, conversation, rootID, transcript as t, type ConversationSpec } from "../fixtures/agy-store.js";
 import { nativeMessageActivity } from "../native-activity.js";
 import type { RunRecord } from "../model.js";
 

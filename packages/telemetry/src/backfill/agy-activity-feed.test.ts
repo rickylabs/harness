@@ -13,7 +13,7 @@ import { OPERATOR_ENV } from "../operator-environment.js";
 import { scanAGYIssue } from "./agy.js";
 import { attachAgyDescriptors } from "./agy-activity.js";
 import { agyReservation, bindAgyIssue, captured, childID, rootID, seconds, sqliteFixture, transcript as t,
-  type ConversationSpec } from "./agy-test-fixture.js";
+  type ConversationSpec } from "../fixtures/agy-store.js";
 
 const MiB = 1_048_576, BIG = 1 << 30, WS = "/workspace/project";
 const B_ID = "00000000-0000-4000-8000-0000000000b0", DECOY = "00000000-0000-4000-8000-0000000000d0";

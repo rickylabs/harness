@@ -9,7 +9,7 @@ import { OPERATOR_ENV } from "../operator-environment.js";
 import { openIssueFeedChanges } from "../issue-agent-feed-changes.js";
 import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { agyReservation, bindAgyIssue, bytes, captured, childID, encode, fixture, integer, rootID, seconds, sqliteFixture, time,
-  trajectoryID, type Options } from "./agy-test-fixture.js";
+  trajectoryID, type Options } from "../fixtures/agy-store.js";
 it("AGY typed response is screened, bounded and ends at the native completion timestamp", () => {
   const f = fixture(), run = agyConversation(f.summary, f.rows, "PRIVATE-ORIGIN-CANARY", captured)!;
   assert.equal(run.source, "agy"); assert.equal(run.outcome, "complete");
