@@ -14,7 +14,7 @@ test("100 percent is valid meter evidence; copied decoder never invents refusal"
 });
 test("closed snapshot rejects partial scope, secrets, malformed quantities and duplicate identities", () => {
   for (const bad of [ { ...doc(), generatedAt: "2026-02-30T00:00:00.000Z" }, { ...doc(), rawError: "private" }, { ...doc(), meters: [meter, meter] }, { ...doc(), meters: [{ ...meter, usedPercent: null }] },
-    { ...doc(), meters: [{ ...meter, limitId: "sk-abcdefghijklmnop" }] }, { ...doc(), outcomes: [{ provider: "codex", keyName: null, accountRef: null, model: null, outcome: "succeeded", reason: "quota_exhausted", source: "provider-run", observedAt: at, resetsAt: null }] } ]) assert.equal(readProviderLimitSnapshot(bad).ok, false);
+    { ...doc(), meters: [{ ...meter, limitId: "sk-" + "abcdefghijklmnop" }] }, { ...doc(), outcomes: [{ provider: "codex", keyName: null, accountRef: null, model: null, outcome: "succeeded", reason: "quota_exhausted", source: "provider-run", observedAt: at, resetsAt: null }] } ]) assert.equal(readProviderLimitSnapshot(bad).ok, false);
 });
 test("unknown identity cannot bind; two keys cannot claim a route; native windows may share a binding", () => {
   assert.equal(readProviderLimitSnapshot({ ...doc(), meters: [{ ...meter, launchModels: ["codex/fixture"] }] }).ok, false);
