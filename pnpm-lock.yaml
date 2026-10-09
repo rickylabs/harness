@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@rickylabs/harness-contracts':
+        specifier: workspace:*
+        version: link:packages/contracts
       '@rickylabs/method':
         specifier: workspace:*
         version: link:packages/method
