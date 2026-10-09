@@ -55,14 +55,20 @@ export interface EventChannel {
   close(): void;
   /** Break the connection mid-stream. */
   fail(error: Error): void;
+  /** Whether the reader let go of the body: the SDK cancels it when the subscription is aborted. */
+  readonly cancelled: boolean;
 }
 
 export function eventChannel(greet = true): EventChannel {
   const encoder = new TextEncoder();
   let controller: ReadableStreamDefaultController<Uint8Array> | null = null;
+  let cancelled = false;
   const body = new ReadableStream<Uint8Array>({
     start(started): void {
       controller = started;
+    },
+    cancel(): void {
+      cancelled = true;
     },
   });
   const live = (): ReadableStreamDefaultController<Uint8Array> => {
@@ -75,6 +81,9 @@ export function eventChannel(greet = true): EventChannel {
     raw: (chunk) => live().enqueue(typeof chunk === "string" ? encoder.encode(chunk) : chunk),
     close: () => live().close(),
     fail: (error) => live().error(error),
+    get cancelled(): boolean {
+      return cancelled;
+    },
   };
   // `opencode serve` greets every subscriber; the adapter treats that first event as "open".
   if (greet) channel.send({ type: "server.connected", properties: {} });

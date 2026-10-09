@@ -75,6 +75,11 @@ export {
   type RunRecord,
 } from "./src/application/run.js";
 
-export { CAPABILITIES, DEFAULT_ID, type OpencodeProviderOptions } from "./src/application/options.js";
+export {
+  CAPABILITIES,
+  DEFAULT_ID,
+  DEFAULT_READY_MS,
+  type OpencodeProviderOptions,
+} from "./src/application/options.js";
 
 export { OpencodeProvider, createProvider } from "./src/application/provider.js";

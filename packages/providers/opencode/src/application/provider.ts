@@ -60,7 +60,7 @@ import { pathIsCredentialFile, scrub } from "../domain/secrets.js";
 import type { OpencodeServer } from "../ports/server.js";
 import { EventBus } from "./event-bus.js";
 import { translateModel, untranslated } from "./model.js";
-import { CAPABILITIES, DEFAULT_ID, type OpencodeProviderOptions } from "./options.js";
+import { CAPABILITIES, DEFAULT_ID, DEFAULT_READY_MS, type OpencodeProviderOptions } from "./options.js";
 import {
   type RunRecord,
   applySignal,
@@ -92,7 +92,11 @@ export class OpencodeProvider implements SubagentProvider {
   constructor(options: OpencodeProviderOptions) {
     this.id = options.id ?? DEFAULT_ID;
     this.#server = options.server;
-    this.#bus = new EventBus(options.server, (item) => this.#route(item));
+    this.#bus = new EventBus(
+      options.server,
+      (item) => this.#route(item),
+      options.readyTimeoutMs ?? DEFAULT_READY_MS,
+    );
     this.#logDir = options.logDir ?? null;
     this.#agent = options.agent ?? null;
     this.#titlePrefix = options.titlePrefix ?? "harness";

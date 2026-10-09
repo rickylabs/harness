@@ -10,6 +10,16 @@ import type { OpencodeServer } from "../ports/server.js";
 export const DEFAULT_ID = "opencode-http";
 
 /**
+ * How long opening the event stream waits for the server's first event before answering without it.
+ *
+ * The same bound, and the same reasoning, as `provider-claude`'s `DEFAULT_READY_MS`: long enough
+ * that a cold server is not mistaken for a dead one, short enough that a coordinator dispatching a
+ * wave is not blocked behind one wedged connection. A dispatch that hits it is refused with nothing
+ * sent, because a run nobody can watch is not launched.
+ */
+export const DEFAULT_READY_MS = 60_000;
+
+/**
  * What this provider can do.
  *
  * Both opencode harnesses, because the difference between `opencode` and `opencode-run` is how a
@@ -41,6 +51,8 @@ export interface OpencodeProviderOptions {
   readonly agent?: string;
   /** Prefix for the session title a run is created with. Never carries the prompt. */
   readonly titlePrefix?: string;
+  /** Milliseconds opening the event stream waits for its first event. Defaults to `DEFAULT_READY_MS`. */
+  readonly readyTimeoutMs?: number;
   /** Clock, injected so the suite can assert on timestamps. */
   readonly now?: () => Date;
 }

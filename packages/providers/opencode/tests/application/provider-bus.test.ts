@@ -147,4 +147,3 @@ describe("observe", () => {
     assert.equal(fake.streamCalls.length, 1);
   });
 });
-

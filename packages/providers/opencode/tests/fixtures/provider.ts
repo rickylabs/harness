@@ -55,6 +55,10 @@ export interface Server {
   readonly calls: Recorded[];
   /** Every `GET /event`. */
   readonly streamCalls: Recorded[];
+  /** The `GET /event` requests themselves, so a test can see whether they were aborted. */
+  readonly streamRequests: Request[];
+  /** The current event connection, once one has been opened. */
+  channel(): EventChannel | null;
   /** `null` mints an incrementing session id; a reply overrides every session creation. */
   session: Reply | null;
   prompt: Reply;
@@ -78,9 +82,18 @@ export interface Server {
   paths(): string[];
 }
 
-export function server(options: { readonly logDir?: string; readonly agent?: string } = {}): Server {
+export interface ServerOptions {
+  readonly logDir?: string;
+  readonly agent?: string;
+  /** `false` opens connections without the server's greeting, so the test decides when it is sent. */
+  readonly greet?: boolean;
+  readonly readyTimeoutMs?: number;
+}
+
+export function server(options: ServerOptions = {}): Server {
   const calls: Recorded[] = [];
   const streamCalls: Recorded[] = [];
+  const streamRequests: Request[] = [];
   // A fresh one per connection, as a reconnect really gets. Reusing a closed channel would make the
   // second connection end the instant it opened, which is a fake artefact and not a server.
   let bus: EventChannel | null = null;
@@ -89,6 +102,8 @@ export function server(options: { readonly logDir?: string; readonly agent?: str
   const state = {
     calls,
     streamCalls,
+    streamRequests,
+    channel: (): EventChannel | null => bus,
     session: null as Reply | null,
     prompt: ok(204),
     onPrompt: null as (() => Promise<void>) | null,
@@ -111,8 +126,9 @@ export function server(options: { readonly logDir?: string; readonly agent?: str
     const seen = await record(request);
     if (seen.path === "/event") {
       streamCalls.push(seen);
+      streamRequests.push(request);
       if (state.stream !== null) return respond(state.stream);
-      bus = eventChannel();
+      bus = eventChannel(options.greet ?? true);
       return bus.response;
     }
     calls.push(seen);
@@ -132,6 +148,7 @@ export function server(options: { readonly logDir?: string; readonly agent?: str
     now: (): Date => new Date("2026-01-01T00:00:00.000Z"),
     ...(options.logDir === undefined ? {} : { logDir: options.logDir }),
     ...(options.agent === undefined ? {} : { agent: options.agent }),
+    ...(options.readyTimeoutMs === undefined ? {} : { readyTimeoutMs: options.readyTimeoutMs }),
   });
   state.provider = provider;
   return state;

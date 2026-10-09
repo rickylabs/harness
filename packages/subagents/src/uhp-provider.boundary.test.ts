@@ -245,4 +245,3 @@ describe("the transport owns the credential and the provider never sees it", () 
     assert.ok(result.detail.includes("observe before dispatching again"));
   });
 });
-
