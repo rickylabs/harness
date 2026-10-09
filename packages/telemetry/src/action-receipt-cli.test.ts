@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { readActionReceipt, readActionReceipts } from "./action-receipt-cli.js";
-import { ORCHID_DISPATCH_ROOT } from "./orchid-dispatch.js";
+import { OPERATOR_ENV } from "./operator-environment.js";
 
 const operationId = "123e4567-e89b-42d3-a456-426614174000";
 const digest = "a".repeat(64), conflictDigest = "b".repeat(64);
@@ -32,7 +32,7 @@ it("projects only bounded public delivery fields from one private operation", as
   assert.equal(result.agentId, agentId); assert.equal(result.dispatchId, dispatchId);
   assert.ok(!JSON.stringify(result).includes("PRIVATE-"));
   const cli = spawnSync(process.execPath, [join(import.meta.dirname, "cli.js"), "action-receipt", "--json", "--operation", operationId, "--digest", digest],
-    { env: { ...process.env, [ORCHID_DISPATCH_ROOT]: root }, encoding: "utf8" });
+    { env: { ...process.env, [OPERATOR_ENV.dispatchRoot]: root }, encoding: "utf8" });
   assert.equal(cli.status, 0); assert.equal(JSON.parse(cli.stdout).outcome, "accepted");
   assert.ok(!cli.stdout.includes("PRIVATE-")); assert.ok(!cli.stdout.includes(root));
 });
@@ -95,7 +95,7 @@ it("withholds missing, malformed and symlinked evidence as unknown without leaki
   const result = await readActionReceipt(linked, operationId);
   assert.equal(result.outcome, "unknown"); assert.ok(!JSON.stringify(result).includes(root));
   const cli = spawnSync(process.execPath, [join(import.meta.dirname, "cli.js"), "action-receipt", "--json", "--operation", operationId],
-    { env: { ...process.env, [ORCHID_DISPATCH_ROOT]: root }, encoding: "utf8" });
+    { env: { ...process.env, [OPERATOR_ENV.dispatchRoot]: root }, encoding: "utf8" });
   assert.equal(cli.status, 3); assert.equal(JSON.parse(cli.stdout).reason, "receipt_invalid");
   assert.ok(!cli.stdout.includes("PRIVATE-") && !cli.stderr.includes(root));
   assert.ok((await readFile(other, "utf8")).includes("PRIVATE-"));

@@ -50,7 +50,7 @@ pnpm run build
 ```
 
 `build` is not just compilation. It checks the project graph, checks the package lifecycle scripts,
-compiles the twelve core packages, checks what is publishable, and regenerates the CLI reference pages to
+compiles the fourteen core packages, checks what is publishable, and regenerates the CLI reference pages to
 confirm they still match the CLIs. If any of those disagree with the code, the build fails here
 rather than shipping a document that lies.
 
@@ -370,7 +370,7 @@ read as unknown, which is why the run in your first attempt may have come back a
 
 Four things, none of which needed a server:
 
-1. Built the twelve core packages, with its own consistency checks running as part of the build.
+1. Built the fourteen core packages, with its own consistency checks running as part of the build.
 2. Installed a board taxonomy and an agent-readable process into a repository, additively.
 3. Moved an item through a column and saw the projection change, with nothing running in between.
 4. Recorded a run and read back both its state and the ordered list of places to look when one fails.

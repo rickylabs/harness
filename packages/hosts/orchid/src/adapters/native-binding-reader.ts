@@ -1,14 +1,9 @@
-/** Private Orchid join state. Neither credentials nor join keys are enumerable/public fields. */
-import { createHash } from "node:crypto";
+/** Reads Orchid's private launch and native binding files into the private join state. */
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, normalize } from "node:path";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
-import type { RunRecord } from "./model.js";
-const digest = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
-const keyFor = (source: string, identity: string) => digest(source + "\0" + identity);
-const bindings = new WeakMap<DispatchEvidence, { key: string | null; agyDirectory?: string;
-  opencodeID?: string; record?: string; bindingRevision?: string }>();
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
+import { digest, keyFor, nativeBinding, setNativeBinding } from "../application/native-binding-registry.js";
 // Same bound for the private binding (which includes the profile) and snapshot reread.
 const MAX_BYTES = 262_144;
 const placementName = (value: unknown): value is string => typeof value === "string" &&
@@ -47,7 +42,7 @@ export async function readOrchidLaunchBinding(record: string, reservation: strin
  * Invalid/missing evidence leaves a dispatch-only row; no native value or exception is returned.
  */
 export async function readOrchidNativeBinding(record: string, reservation: string, dispatch: DispatchEvidence): Promise<void> {
-  bindings.set(dispatch, { key: null });
+  setNativeBinding(dispatch, { key: null });
   try {
     if (dispatch.dispatchState !== "dispatched" || (dispatch.source !== "codex" && dispatch.source !== "claude" && dispatch.source !== "agy" && dispatch.source !== "opencode")) return;
     const raw = await readPrivate(join(record, "binding.json"));
@@ -75,37 +70,13 @@ export async function readOrchidNativeBinding(record: string, reservation: strin
       agyDirectory = store.directory;
     }
     if (dispatch.source === "opencode" && !/^ses_[A-Za-z0-9_-]{1,252}$/.test(id)) return;
-    bindings.set(dispatch, { key: keyFor(dispatch.source, id), ...(agyDirectory === undefined ? {} : { agyDirectory }),
+    setNativeBinding(dispatch, { key: keyFor(dispatch.source, id), ...(agyDirectory === undefined ? {} : { agyDirectory }),
       ...(dispatch.source === "opencode" ? { opencodeID: id, record, bindingRevision: digest(raw) } : {}) });
   } catch { /* Private failures are represented by unavailable ancestry, never exception text. */ }
 }
-/** Resolve only one same-source native root. Existing telemetry owns parent-chain traversal. */
-export function resolveOrchidNativeRoot(dispatch: DispatchEvidence, runs: readonly RunRecord[]): RunRecord | null {
-  const key = bindings.get(dispatch)?.key;
-  const matches = runs.filter(run => keyFor(run.source, run.id) === key);
-  return matches.length === 1 && matches[0]!.parentId === null ? matches[0]! : null;
-}
-/** Match a head identity to Orchid's private root without revealing either identity or key. */
-export function matchesOrchidNativeRootIdentity(dispatch: DispatchEvidence, id: string,
-  source: "codex" | "claude" | "agy" | "opencode"): boolean {
-  const key = bindings.get(dispatch)?.key;
-  return key !== null && key !== undefined && dispatch.source === source && keyFor(source, id) === key;
-}
-/** Private store hint only after the full receipt and exact native ID guard. Never serialize it. */
-export function orchidAGYStoreDirectory(dispatch: DispatchEvidence): string | null {
-  return dispatch.source === "agy" ? bindings.get(dispatch)?.agyDirectory ?? null : null;
-}
-/** Private reader rows cannot acquire credentials from the legacy exported DispatchResult surface. */
-export function hasOrchidNativeBindingBoundary(dispatch: DispatchEvidence): boolean {
-  return bindings.has(dispatch);
-}
-/** Exact query parameter remains private; never add it to a dispatch/public projection. */
-export function orchidOpenCodeSessionID(dispatch: DispatchEvidence): string | null {
-  return dispatch.source === "opencode" ? bindings.get(dispatch)?.opencodeID ?? null : null;
-}
 /** A changed binding/dispatch during a database read invalidates this issue's scan. */
 export async function verifyOrchidOpenCodeBinding(dispatch: DispatchEvidence): Promise<boolean> {
-  const b = bindings.get(dispatch);
+  const b = nativeBinding(dispatch);
   if (dispatch.source !== "opencode" || !b?.record || !b.opencodeID || !b.bindingRevision) return false;
   try {
     return digest(await readPrivate(join(b.record, "binding.json"))) === b.bindingRevision &&

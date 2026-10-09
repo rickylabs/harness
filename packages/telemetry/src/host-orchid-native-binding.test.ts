@@ -6,11 +6,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it, mock } from "node:test";
 import { readAgentObservations } from "@rickylabs/harness-contracts";
-import { readOrchidDispatches, bindOrchidDispatchEvidence } from "./orchid-dispatch.js";
-import { readOrchidNativeBinding } from "./orchid-native-binding.js";
+import { readOrchidDispatches, bindOrchidDispatchEvidence, readOrchidNativeBinding, orchidHost } from "@rickylabs/host-orchid";
 import { buildAgentObservations } from "./agent-observations.js";
 import { publicRuns } from "./public.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 import type { RunRecord } from "./model.js";
 const at = "2026-01-01T00:00:00.000Z";
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -26,7 +25,7 @@ const run = (id: string, parentId: string | null, source: RunRecord["source"] = 
   usage: {}, outcome: "unknown", linkedIssues: [], origin: "PRIVATE-ORIGIN-CANARY", quota: [] });
 const pair = [run(rootIdentity, null), run(childIdentity, rootIdentity)];
 const project = (dispatches: readonly DispatchEvidence[], runs = pair, nativeComplete = true) => buildAgentObservations({
-  dispatches, runs, nativeComplete, observedAt: at, sourceBound: true, dispatchComplete: true });
+  dispatches, runs, nativeComplete, observedAt: at, sourceBound: true, dispatchComplete: true, host: orchidHost });
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), "orchid-native-"));
   const record = join(root, key, "record");

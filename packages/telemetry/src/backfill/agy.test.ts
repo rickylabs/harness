@@ -8,7 +8,7 @@ import { DatabaseSync } from "node:sqlite";
 import { it } from "node:test";
 import { agyConversation, scanAGYIssue } from "./agy.js";
 import { collectIssueAgentTree } from "../issue-agent-feed-cli.js";
-import { ORCHID_DISPATCH_ROOT } from "../orchid-dispatch.js";
+import { OPERATOR_ENV } from "../operator-environment.js";
 import { openIssueFeedChanges } from "../issue-agent-feed-changes.js";
 import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 const rootID = "00000000-0000-4000-8000-000000000001", childID = "00000000-0000-4000-8000-000000000002";
@@ -171,7 +171,7 @@ it("AGY feed serves screened live text and exact Done while another issue stays 
         ...(bound ? { NativeSessionID: rootID, NativeStore: { source: "agy", directory: f.root } } : {}) }), { mode: 0o600 });
     };
     await issue(42, true); await issue(43, false);
-    const options = { home: f.base, limit: 20, now: new Date(captured).toISOString(), env: { [ORCHID_DISPATCH_ROOT]: receipts } };
+    const options = { home: f.base, limit: 20, now: new Date(captured).toISOString(), env: { [OPERATOR_ENV.dispatchRoot]: receipts } };
     const snapshot = await collectIssueAgentTree(options);
     assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
     const good = snapshot.issues.find(i => i.issueNumber === 42)!;

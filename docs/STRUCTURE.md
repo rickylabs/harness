@@ -35,7 +35,6 @@ location stays authoritative and the owning issue moves it:
 
 | Today | Target | Moved by |
 | --- | --- | --- |
-| orchid observation files inside `packages/telemetry` | `packages/hosts/orchid` | #660 |
 | governance code inside `packages/telemetry`, stub `packages/governance` | `packages/governance` | #655 |
 | flat `src/` in each package | `mod.ts` + `src/{domain,application,ports,adapters}` | each package's issue |
 

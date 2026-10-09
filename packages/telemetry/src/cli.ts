@@ -30,7 +30,8 @@ import { backfillFromDisk, defaultRoots, type BackfillRoots } from "./backfill/i
 import { diagnosticsFor } from "./diagnostics.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { readDispatchEvidence } from "./dispatch-evidence.js";
-import { readOrchidDispatches, bindOrchidDispatchEvidence } from "./orchid-dispatch.js";
+import { orchidHost } from "@rickylabs/host-orchid";
+import type { OrchidReads } from "./host-reads.js";
 import { foldLiveEvents, mergeLiveRuns } from "./live.js";
 import { resolveObservability } from "./observability.js";
 import { publicRuns, publicSnapshot, publicTree } from "./public.js";
@@ -43,6 +44,8 @@ import { invalidGovernance } from "./governance/read.js";
 import { collectGovernance, defaultSourceServices, type SourceServices } from "./governance/collect.js";
 import { parseFlags, type Flags } from "./cli-flags.js";
 import { loadGovernance, loadItems, recordEvents, whereItWrites, writeNotes } from "./cli-io.js";
+/** Composition root: the Orchid host behind the telemetry-owned port. */
+const host: OrchidReads = orchidHost;
 
 /**
  * What the command exited with, and what a caller should do about it.
@@ -276,7 +279,7 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
   }));
   const merged = mergeLiveRuns(scan.runs, foldLiveEvents(runFiles));
   const orchid = command === "runs" && flags.json
-    ? await readOrchidDispatches(resolveOperatorSetting(services.env, "dispatchRoot"))
+    ? await host.readDispatches(resolveOperatorSetting(services.env, "dispatchRoot"))
     : { root: undefined, reason: null, dispatches: [], notes: [], degraded: false };
   const view = {
     notes: [...scan.notes, ...log.notes, ...merged.notes, ...orchid.notes],
@@ -327,13 +330,13 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
   if (command === "runs") {
     if (flags.json) {
       const evidence = readDispatchEvidence(runFiles);
-      const bound = bindOrchidDispatchEvidence(orchid.dispatches, evidence);
+      const bound = host.bindDispatchEvidence(orchid.dispatches, evidence);
       const orchidIds = new Set(orchid.dispatches.map(d => d.runId));
       const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded && !bound.degraded,
         [...evidence.filter(d => !orchidIds.has(d.runId)), ...bound.dispatches]);
       const agentObservations = buildAgentObservations({ wireFamily, dispatches: bound.dispatches, runs: merged.runs,
         observedAt: flags.now, sourceBound: resolveOperatorSetting(services.env, "dispatchRoot") !== undefined,
-        dispatchComplete: !orchid.degraded && !bound.degraded, nativeComplete: !scan.degraded && !merged.degraded });
+        dispatchComplete: !orchid.degraded && !bound.degraded, nativeComplete: !scan.degraded && !merged.degraded, host });
       process.stdout.write(`${JSON.stringify({ ...envelope, agentObservations }, null, 2)}\n`);
       return view.degraded ? EXIT.incomplete : EXIT.ok;
     }

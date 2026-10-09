@@ -149,6 +149,9 @@
 - name: "area:opencode"
   color: "bfdadc"
   description: "packages/providers/opencode"
+- name: "area:orchid"
+  color: "bfdadc"
+  description: "packages/hosts/orchid"
 
 # ── epic: derived from this repository ──
 - name: "epic:e9"

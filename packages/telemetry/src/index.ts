@@ -205,7 +205,7 @@ export {
 
 export { parseSource, type GovernanceSource, type SourceRefusal } from "./source.js";
 
-export { readDispatchEvidence, type DispatchEvidence } from "./dispatch-evidence.js";
+export { readDispatchEvidence } from "./dispatch-evidence.js";
 
 export { buildAgentObservations } from "./agent-observations.js";
 

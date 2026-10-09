@@ -1,32 +1,22 @@
-import { OPERATOR_ENV } from "./operator-environment.js";
 /** Read the dispatcher's existing private matrix reservations; no collection or native-session guesses. */
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { lstat, open, readdir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import { compareRouteIdentity, projectRouteIdentity } from "@rickylabs/subagents";
-import { openCodeModelSyntax, openCodeProvider, ISSUE_LAUNCH_BLOCK_REASONS, ISSUE_LAUNCH_REFUSAL_REASONS, ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
-  type OrchidRouteObservedReasons, type AgentBudget, type AgentRoutePolicy, type AgentLaunchRevision } from "@rickylabs/harness-contracts";
-import { readOrchidNativeBinding, readOrchidLaunchBinding, hasOrchidNativeBindingBoundary } from "./orchid-native-binding.js";
-import { readOrchidStopObservation } from "./orchid-stop-observation.js";
-import { readOrchidTeardownObservation } from "./orchid-teardown-observation.js";
-import { readOrchidClaudeStatus } from "./orchid-claude-status.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import { compareRouteIdentity, projectRouteIdentity, openCodeModelSyntax, openCodeProvider, ISSUE_LAUNCH_BLOCK_REASONS,
+  ISSUE_LAUNCH_REFUSAL_REASONS, ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
+  type OrchidRouteObservedReasons, type AgentBudget, type AgentRoutePolicy, type AgentLaunchRevision, type DispatchEvidence,
+  type OrchidDispatchRead, type OrchidDispatchUnavailableReason, type OrchidLaunchState } from "@rickylabs/harness-contracts";
+import { object } from "../domain/receipt-shape.js";
+import { readOrchidNativeBinding, readOrchidLaunchBinding } from "./native-binding-reader.js";
+import { readOrchidStopObservation } from "./stop-observation.js";
+import { readOrchidTeardownObservation } from "./teardown-observation.js";
+import { readOrchidClaudeStatus } from "./claude-status.js";
 
-export const ORCHID_DISPATCH_ROOT = OPERATOR_ENV.dispatchRoot;
-export type OrchidDispatchUnavailableReason =
-  | "missing"
-  | "not_directory"
-  | "wrong_mode"
-  | "relative_path"
-  | "symlink"
-  | "git_ancestor";
 const hash = /^[a-f0-9]{64}$/;
 const commit = /^[a-f0-9]{40}$/;
 const label = (value: unknown): value is string => typeof value === "string" &&
   value.length <= 256 && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value);
-const object = (value: unknown): Record<string, unknown> | null =>
-  value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
 /** Receipt reasons are public only after exact source, route and fixed-text validation. */
 async function readRouteObservedReasons(record: string, source: string, model: string, dispatchMatrixSource: unknown): Promise<{
   readonly reasons: OrchidRouteObservedReasons; readonly policy: AgentRoutePolicy; readonly matrixRevision: string | null;
@@ -77,23 +67,6 @@ async function readRouteObservedReasons(record: string, source: string, model: s
         ? resolution.sourceRevision : null };
   } catch { return unavailable; }
 }
-export interface OrchidDispatchRead {
-  readonly root: string | undefined;
-  readonly reason: OrchidDispatchUnavailableReason | null;
-  readonly dispatches: readonly DispatchEvidence[];
-  readonly launchStates: readonly OrchidLaunchState[];
-  readonly notes: readonly string[];
-  readonly degraded: boolean;
-}
-export type OrchidLaunchState = {
-  readonly issue: { readonly repo: string; readonly number: number };
-  readonly dispatchId: string;
-  readonly observedAt: string;
-} & (
-  | { readonly state: "refused"; readonly reasonCode: typeof ISSUE_LAUNCH_REFUSAL_REASONS[number] }
-  | { readonly state: "blocked"; readonly reasonCode: typeof ISSUE_LAUNCH_BLOCK_REASONS[number] }
-  | { readonly state: "launching" | "launched"; readonly reasonCode: null }
-);
 const launchFile = /^launch-[a-f0-9]{64}\.json$/;
 const assignment = /^assignment_[a-f0-9]{64}$/;
 const stamp = (value: unknown): value is string => typeof value === "string" &&
@@ -285,25 +258,4 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
     }
   } catch { notes.add("orchid-dispatch: source_unavailable"); }
   return { root, reason, dispatches, launchStates, notes: [...notes], degraded: notes.size > 0 };
-}
-
-/** Associate only an existing explicit DispatchResult reference, never cwd, title or issue prose. */
-export function bindOrchidDispatchEvidence(
-  dispatches: readonly DispatchEvidence[], evidence: readonly DispatchEvidence[],
-): { readonly dispatches: readonly DispatchEvidence[]; readonly degraded: boolean } {
-  let degraded = false;
-  const rows = dispatches.map(dispatch => {
-    // Orchid owns this binding now; legacy log rows cannot replace or revive it.
-    if (hasOrchidNativeBindingBoundary(dispatch)) return dispatch;
-    const matches = evidence.filter(row => row.runId === dispatch.runId && row.external !== null);
-    if (matches.length === 0) return dispatch;
-    const match = matches[0];
-    if (matches.length !== 1 || !match || match.source === null || match.source !== dispatch.source) {
-      degraded = true;
-      return dispatch;
-    }
-    return { ...dispatch, external: match.external,
-      route: projectRouteIdentity({ requested: dispatch.route.requested, observed: match.route.observed }) };
-  });
-  return { dispatches: rows, degraded };
 }
