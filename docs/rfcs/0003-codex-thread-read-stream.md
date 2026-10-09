@@ -12,7 +12,7 @@ CURRENT identifies inspected source; CITED identifies a retrieved authority; PLA
 
 ## Summary
 
-**CURRENT.** Telemetry exports `openCodexThreadReader`, `reader.read()` and `reader.events()`. The CLI exposes `dsh-telemetry codex-threads --limit 500 --json`, with `--watch` for the initial snapshot followed by goal notification JSONL. `--private` opts into sensitive context for an authenticated consumer. [Published types](../../packages/contracts/src/codex-thread-observations.ts) describe schema 1; existing AgentObservations and cost contracts are unchanged. Cockpit must explicitly bind this additive source; this PR does not change its deployed intake.
+**CURRENT.** Telemetry exports `openCodexThreadReader`, `reader.read()` and `reader.events()`. The CLI exposes `harness-telemetry codex-threads --limit 500 --json`, with `--watch` for the initial snapshot followed by goal notification JSONL. `--private` opts into sensitive context for an authenticated consumer. [Published types](../../packages/contracts/src/codex-thread-observations.ts) describe schema 1; existing AgentObservations and cost contracts are unchanged. Cockpit must explicitly bind this additive source; this PR does not change its deployed intake.
 
 ## Context and current state
 

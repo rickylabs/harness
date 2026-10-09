@@ -6,13 +6,13 @@ Six pages, meant to be read in order. They are the only pages here no generator 
 reference is rendered from the code, but the reasoning behind a decision exists nowhere except in
 someone's head until it is written down, and then it is the most durable thing in the repository.
 
-1. [**What this is**](01-what-this-is.md) — our framework on Orchid and Herdr, with implemented boundaries and
-   the optional router experiment. Read first; most misunderstandings of this project are answered here.
+1. [**What this is**](01-what-this-is.md) — our framework on Orchid and Herdr, with implemented
+   boundaries. Read first; most misunderstandings of this project are answered here.
 2. [**Two seams, not one**](02-the-two-seams.md) — the central architectural finding. If you read
    one page, read this one.
 3. [**The board**](03-the-board.md) — why GitHub holds board truth and Harness projects it.
 4. [**What "run" means**](04-the-run.md) — the word names two different things. Both are correct.
-5. [**Determinism**](05-determinism.md) — generated files, golden snapshots, replay, and why drift
+5. [**Determinism**](05-determinism.md) — generated files, replay, and why drift
    is a bug rather than untidiness.
 6. [**The three layers**](06-the-three-layers.md) — the owner-locked responsibility model across
    coordination, the product backend and the client, and the mechanism/captured-product boundaries between them.

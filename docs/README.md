@@ -27,7 +27,7 @@ explain them.
 - Proposing a design → [numbered RFCs](rfcs/README.md), with pinned evidence and claim labels.
 - Want the details of one subsystem → its package README under [`packages/`](../packages/). Those
   are the deepest documents in the repository and they are where design rationale lives.
-- Want to change something here → [`CONTRIBUTING.md`](../CONTRIBUTING.md), and
+- Want to change something here → [`AGENTS.md`](../AGENTS.md), and
   [`SECURITY.md`](../SECURITY.md) before you touch an issue.
 
 [ADR 0005](decisions/0005-harness-framework-identity.md) records the current framework
@@ -60,8 +60,8 @@ that run. Output must not imply live execution where live forge, GitHub, or fail
 | Page | What it settles |
 | --- | --- |
 | [01 — What this is](concepts/01-what-this-is.md) | The coordination product and the responsibilities it owns |
-| [02 — Two seams, not one](concepts/02-the-two-seams.md) | Native tasks vs API/local calls, with experimental service vocabulary |
+| [02 — Two seams, not one](concepts/02-the-two-seams.md) | Native tasks vs API/local calls |
 | [03 — The board](concepts/03-the-board.md) | Why GitHub holds board truth and Harness projects it |
 | [04 — What "run" means](concepts/04-the-run.md) | The word means two different things here. Both are correct. |
-| [05 — Determinism](concepts/05-determinism.md) | Generated files, golden snapshots, and why drift is a bug |
+| [05 — Determinism](concepts/05-determinism.md) | Generated files and why drift is a bug |
 | [06 — The three layers](concepts/06-the-three-layers.md) | The locked responsibility model across coordination, the product backend and the client |

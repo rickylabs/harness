@@ -42,8 +42,7 @@ values without the appropriate review.
 
 The full provider will own the app-server session, the `RunRef.external` thread-id join, subsequent
 turns and the optional observe/steer/stop calls. Until #53 supplies and composes that implementation,
-the dsh profile's provider registry remains empty and this prerequisite cannot dispatch production
-work.
+this prerequisite cannot dispatch production work.
 
 ---
 

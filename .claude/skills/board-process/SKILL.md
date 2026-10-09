@@ -83,7 +83,7 @@ silence one level up. The board reports one left behind as `stale-owner-decision
 
 - `type:` — `feat`, `fix`, `docs`, `chore`, `refactor`, `perf`, `test`, `umbrella`, `sub-pr`. Every open issue and PR carries exactly one.
 - `priority:` — `p0`, `p1`, `p2`, `p3`. `p0` is a release blocker.
-- `area:` — `board`, `contracts`, `coordinator`, `dsh-app`, `forge`, `governance`, `llm-local`, `netscript-bridge`, `provider-acp`, `routing`, `telemetry`, `subagents`, `claude`, `codex`, `opencode`, `orchid`, `dsh`. Derived from this repository's packages; additive.
+- `area:` — `board`, `contracts`, `coordinator`, `forge`, `governance`, `llm-local`, `routing`, `telemetry`, `subagents`, `claude`, `codex`, `opencode`, `orchid`, `method`. Derived from this repository's packages; additive.
 - `topic:` — `docs`, `internals`, `fixes`, `features`. Which lane owns the item.
 - `gate:` — `release-contracts`. Opt in to an expensive CI gate on this PR.
 - `ci:` — `full`, `skip-release-contracts`. `ci:full` wins over every skip label.
