@@ -1,13 +1,29 @@
 # CLAUDE.md
 
-> **Read [`ARCHITECTURE.md`](ARCHITECTURE.md) before anything else.** It is the locked charter
-> of this repository (owner-amended through ADR 0005, 2026-10-03) and it supersedes
-> [#30](https://github.com/rickylabs/harness/issues/30). It states what is built, what is
-> parked, and the four invariants every run is held to. Amendments require a recorded owner
-> decision; an agent may not silently build against another architecture.
+See [`AGENTS.md`](AGENTS.md), then [`docs/DOCTRINE.md`](docs/DOCTRINE.md). The protocol is identical in
+standard mode; the only difference is that you are expected to ask before mutating anything outside
+the active run directory.
 
-See [`AGENTS.md`](AGENTS.md). The protocol is identical in standard mode; the only difference
-is that you are expected to ask before mutating anything outside the active run directory.
+## Owner rules, first
+
+Lower number wins (O1 > O2 > O3 > O4); the full text is in
+[`docs/DOCTRINE.md`](docs/DOCTRINE.md#golden-rules).
+
+- **O1.** What is the idiomatic way in NetScript to ship this feature? Ask the NetScript MCP or docs
+  first and use the seam it gives. Never hand-roll what a primitive provides.
+- **O2.** Are we following SOLID?
+- **O3.** Is it performant?
+- **O4.** Does it respect the doctrine?
+
+## Where to read
+
+- **Rules:** [`docs/DOCTRINE.md`](docs/DOCTRINE.md). Every pull request answers O1-O4 and cites
+  the doctrine rules by number.
+- **Tree and consumer surfaces:** [`docs/STRUCTURE.md`](docs/STRUCTURE.md).
+- **Ratified decisions:** [`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) and
+  [`docs/decisions/`](docs/decisions/).
+- **Skills:** listed in [`AGENTS.md`](AGENTS.md#skills): `doctrine`, `prune`, `parity-tests`,
+  `package-layout` and the generated `board-process`.
 
 ## Before you touch the board
 
@@ -19,20 +35,4 @@ parser that stops at a fence runs the truncated brief without reporting that it 
 
 The generated rulebook is [`.claude/skills/board-process/SKILL.md`](.claude/skills/board-process/SKILL.md);
 the hazard is stated in full in [`AGENTS.md`](AGENTS.md#operational-hazard-this-repository-is-a-live-inbox).
-
-Quick orientation:
-
-- Ratified decisions: [`AGENTS.md`](AGENTS.md#ratified-decisions-you-inherit) — owner-amended through
-  [ADR 0005](method/doctrine/decisions/0005-harness-framework-identity.md), superseding the former
-  dsh-only premise — this repository is **our framework on Orchid and Herdr**;
-  netscript is a service behind an adapter, not a build-time dependency.
-- Workspace layout and **the two seams** — native tasks and API/local-model calls: [`AGENTS.md`](AGENTS.md#workspace-layout-and-the-two-seams), with the
-  package-by-package table in [`packages/README.md`](packages/README.md).
-- Doctrine lives in [`method/doctrine/`](method/doctrine/) — portable, plain markdown, zero runtime:
-  [`WORKFLOW.md`](method/doctrine/WORKFLOW.md), [`PRINCIPLES.md`](method/doctrine/PRINCIPLES.md),
-  [`GATES.md`](method/doctrine/GATES.md), [`TOOLCHAIN.md`](method/doctrine/TOOLCHAIN.md)
-- The board, without asking an agent: `harness-board status`, `harness-board check`.
-- The founding [architecture run](.llm/runs/architecture-foundation--seed/) is historical.
-  Resume the active brief and its declared context/evidence surface.
-- Existing `dsh-*` core CLI names are compatibility aliases of the canonical `harness-*` commands;
-  the optional dsh composition is not the framework host.
+The board, without asking an agent: `harness-board status`, `harness-board check`.

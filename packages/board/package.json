@@ -8,8 +8,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "harness-board": "./dist/cli.js",
-    "dsh-board": "./dist/cli.js"
+    "harness-board": "./dist/cli.js"
   },
   "exports": {
     ".": {

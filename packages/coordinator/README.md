@@ -37,8 +37,8 @@ which is precisely the set of situations where skipping the gate is most temptin
 The obvious first thing to build in a coordinator is the workflow engine. This package built the
 **refusal** first.
 
-`method/doctrine/WORKFLOW.md` says an independent evaluation stage must "use a model that did not author the
-artifact under review". As a sentence, that is addressed to whoever is reading it — and whoever is
+[`docs/DOCTRINE.md`](../../docs/DOCTRINE.md#run-invariants) says a generator never certifies itself: the
+evaluator is a separate session from a different vendor family. As a sentence, that is addressed to whoever is reading it — and whoever is
 reading it is usually the author. An author deciding under time pressure whether they may review
 their own work, with the only other candidate rate-limited, is not a gate. It is a temptation with a
 paragraph attached.
@@ -238,7 +238,6 @@ order through `settle` and admits the reconstructed state again. Pending downstr
 permitted; non-pending future states are refused. This uses the existing citation rules, including
 read-step evidence, without fetching or attesting any cited reference.
 
-The helper is pure. The [offline driver in the optional router](../../experiments/routers/dsh/README.md#offline-durable-dispatch)
-owns composition with routing and the store; coordinator gains no routing/provider dependency and
-no execution channel. Forked and blocked prerequisites stop at the first admission pass, so they
+The helper is pure. Its caller owns composition with routing and the store; coordinator gains no
+routing/provider dependency and no execution channel. Forked and blocked prerequisites stop at the first admission pass, so they
 are never replayed as new outcomes.

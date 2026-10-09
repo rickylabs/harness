@@ -15,10 +15,10 @@
 
 **CURRENT.** [The projector](../../packages/telemetry/src/agent-cost.ts) binds existing native usage and
 quota observations to three permanently separate rows. It collects no data and assigns no prices.
-The existing `dsh-telemetry runs --json` / `agentObservations` surface and exported decoder retain
+The existing `harness-telemetry runs --json` / `agentObservations` surface and exported decoder retain
 schema 1, protocol 1. No matching cockpit contract change is needed.
 
-**CITED.** [Charter section 9](../../ARCHITECTURE.md#9-cost) requires subscription headroom, metered
+**CITED.** [The doctrine's cost rule](../DOCTRINE.md#cost) requires subscription headroom, metered
 spend and run tokens as separate truths. [The task](https://github.com/rickylabs/harness/issues/377)
 requires unknown and zero to remain distinct.
 
@@ -69,9 +69,8 @@ produce currency. Invalid currency data does not discard a valid token or headro
 selected; older windows are never carried forward into a newer batch, and different runs are never
 pooled. The source field identifies this quota evidence class. Contract 0.36.0 readers accept
 `harness-telemetry.governance.usage` and the retained `dsh-telemetry.governance.usage`, preserving
-the received name. Producers still emit the legacy name until paired consumers are ready; the
-[wire migration guide](../how-to/telemetry-wire-migration.md) records the sequence. This implementation
-binds the account readings already carried by native telemetry rather than a new governance collector.
+the received name. Producers still emit the legacy name until paired consumers are ready. This
+implementation binds the account readings already carried by native telemetry rather than a new governance collector.
 
 **CURRENT.** The latest batch must have same-source readings, known percentages within 0–100,
 positive integer window lengths, and valid reset times after the observation. Conflicting readings

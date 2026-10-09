@@ -1,8 +1,8 @@
 /**
  * Evaluator independence, as a decision rather than a convention.
  *
- * `method/doctrine/WORKFLOW.md` says independent evaluation stages "use a model that did not author the
- * artifact under review". That sentence is advisory: it is addressed to whoever is reading, and
+ * `docs/DOCTRINE.md` (run invariant I2) says a generator never certifies itself: the evaluator is a
+ * separate session from a different vendor family. That sentence is advisory: it is addressed to whoever is reading, and
  * whoever is reading is usually the author. An author checking whether they are allowed to review
  * their own work, under time pressure, with the only other candidate rate-limited, is not a gate —
  * it is a temptation with a paragraph attached.
@@ -226,7 +226,7 @@ function before(a: readonly [number, string, string, string], b: readonly [numbe
  *
  * Pure, and total: every roster produces a decision, and **every** candidate that was not chosen
  * appears in `rejected` — the ones a rule excluded, and the ones that were legal but ranked lower.
- * That list is the citation, and principle 3 says a claim without a citation is not one.
+ * That list is the citation, and the citation rule says a claim without a citation is not one.
  *
  * `rejected` is sorted by candidate rather than left in roster order, which makes the whole decision
  * a function of the roster as a *set*. Two callers that assembled the same fleet in a different

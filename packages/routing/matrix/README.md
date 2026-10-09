@@ -15,8 +15,12 @@ Harness has newer native Sol and Luna model IDs than the pinned NetScript source
 Codex default is `gpt-6.1-sol` at `xhigh`, including coordinator scopes. Former Luna cells for simple tasks
 and Codex research fallbacks use `gpt-6.1-sol` at `low`. Complex and architecture implementation keep Astra and their
 existing efforts. Luna and older Sol capabilities remain in the catalog for compatibility,
-so no previously known physical model ID disappears. The `matrix.test.mjs` gate checks
-every source cell against the frozen pinned export plus the 2026-09-30 owner decision, every source capability against the ported
+so no previously known physical model ID disappears. The owner's 2026-10-08 decision then puts
+`claude-opus-5-5` at `high` first for simple, straightforward, feature and complex implementation,
+`gpt-6.1-sol` at `high` first for their plan and implementation evaluation, and `claude-opus-5-5`
+at `xhigh` first for the milestone coordinator; the earlier routes stay as each cell's fallback
+chain, and architecture and the other coordinator scopes are unchanged. The `matrix.test.mjs` gate checks
+every source cell against the frozen pinned export plus the 2026-09-30 and 2026-10-08 owner decisions, every source capability against the ported
 catalog, the preferred native IDs, owner and privileged gates, fallback, role transport, and
 cross-vendor evaluator independence. It runs on the supported Node 24 floor. The frozen fixtures
 are source evidence, not runtime inputs.

@@ -1,7 +1,7 @@
 # Blocked decisions in a cluster snapshot
 
 A blocked report row or leaf must reference one complete, open decision for its lane.
-The cluster validator enforces charter [I4](../../ARCHITECTURE.md#7-invariants).
+The cluster validator enforces run invariant [I4](../DOCTRINE.md#run-invariants).
 A successful check establishes consistency of the supplied snapshot. It does not establish
 that a decision is still open in cockpit, was durably appended, or was read by the owner.
 
@@ -29,16 +29,16 @@ Schema-1 blocked leaves fail closed because they have no schema-2 decision snaps
 Nonblocked schema-1 inputs remain compatible. Existing freshness, rendering and GitHub PR
 reconciliation checks still apply; unavailable reconciliation is never a pass.
 
-Run the existing cluster validation command documented in the
-[milestone coordinator profile](../../profiles/milestone-coordinator.md).
-CI runs `pnpm run check:cluster` as an explicit stage of `pnpm test`. The Node suite imports
-the full validator and renderer, uses a nonempty synthetic inventory and an explicit controlled
-PR source, and attacks decision references, completeness, inheritance and historical inputs.
-The `.llm` TypeScript files are outside root TypeScript references; the Node test provides their
-import and behavior coverage. No Deno or NetScript build dependency is introduced.
+Validate a run with `pnpm exec harness-method milestone validate <run-dir> --github-prs <export.json>`
+(the [milestone coordinator profile](../../profiles/milestone-coordinator.md) gates dispatch on it).
+CI runs the suite as part of `pnpm test` through the `@rickylabs/method` package tests;
+`pnpm run check:cluster` runs it alone. The Node suite imports the full validator and renderer,
+uses a nonempty synthetic inventory and an explicit controlled PR source, and attacks decision
+references, completeness, inheritance and historical inputs. The package is in the root TypeScript
+references, so `pnpm run typecheck` covers it. No Deno or NetScript build dependency is introduced.
 
 The negative reachability control is to temporarily remove the call to `validateBlockedDecisions`
-inside `validateState`, run `pnpm run check:cluster`, confirm the negative cases fail, and restore
+inside `validateState` ([`state.ts`](../../packages/method/src/domain/milestone/state.ts)), run `pnpm run check:cluster`, confirm the negative cases fail, and restore
 it. Passing synthetic tests prove neither deployed invocation nor live decision authority.
 New I4 diagnostics report fixed defects and a topic lane, never decision identities or text;
 raw operational snapshots should stay in private storage.

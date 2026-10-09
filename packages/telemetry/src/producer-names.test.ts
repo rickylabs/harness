@@ -9,18 +9,17 @@ import { projectAgentCost } from "./agent-cost.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { buildIssueAgentTreeSnapshot } from "./issue-agent-feed.js";
 import { readLocalHostCapacity } from "./host-capacity.js";
-import { governanceRead } from "./governance/read.js";
+import { composeGovernance, governanceRead, type GovernanceSource, type SourceServices } from "@rickylabs/governance";
+import { governanceWiring } from "./governance-wiring.js";
 import { validateWireFamily, resolveWireFamily, producerAgentCost, wireProducer } from "./producer-names.js";
-import { main, type SourceServices } from "./cli.js";
+import { main } from "./cli.js";
 import { collectIssueAgentTree, issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
 import { Writable } from "node:stream";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { composeGovernance } from "./governance/compose.js";
 import type { RunRecord } from "./model.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
-import type { GovernanceSource } from "./source.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 
 const at = "2026-01-01T00:00:00.000Z", capturedAt = "2026-01-01T00:01:00.000Z";
 const run: RunRecord = { id: "PRIVATE-ROOT-CANARY", source: "codex", parentId: null, startedAt: at, updatedAt: at,
@@ -43,7 +42,8 @@ const observe = (native: readonly RunRecord[], wireFamily?: "harness" | "legacy"
   runs: native, dispatches: [d], observedAt: capturedAt, sourceBound: true, dispatchComplete: true, nativeComplete,
   ...(wireFamily === undefined ? {} : { wireFamily }) });
 const source: GovernanceSource = { accountLabel: "fixture", usage: null, spend: null, capacity: null, admissions: null };
-const governance = composeGovernance(source, { usage: { ok: false, code: "timeout" }, spend: { ok: false, code: "timeout" }, capacity: { ok: false, code: "timeout" }, events: [], logDegraded: false }, capturedAt, capturedAt);
+const legs = { usage: { ok: false, code: "timeout" }, spend: { ok: false, code: "timeout" }, capacity: { ok: false, code: "timeout" }, events: [], logDegraded: false } as const;
+const governance = (wireFamily?: "harness" | "legacy") => composeGovernance(source, legs, governanceWiring(wireFamily), capturedAt, capturedAt);
 it("explicit canonical run producers preserve measurements and stamps while the default remains legacy", () => {
   for (const native of [run, { ...run, usage: {}, quota: [] }, { ...run, updatedAt: "invalid" },
     { ...run, usage: { inputTokens: -1, costUsd: -1 } }, { ...run, quota: [{ ...run.quota[0]!, usedPercent: 101 }] }]) {
@@ -109,8 +109,7 @@ it("canonical host measurements and unplaced tree fallbacks retain strict placem
   } finally { await rm(home, { recursive: true, force: true }); }
 });
 it("canonical governance producer keeps independent source provenance and legacy byte compatibility", () => {
-  const read = governanceRead;
-  const old = read(governance, capturedAt), current = read(governance, capturedAt, "harness");
+  const old = governanceRead(governance()), current = governanceRead(governance("harness"));
   assert.equal(old.producer, "dsh-telemetry"); assert.equal(current.producer, "harness-telemetry");
   assert.deepEqual({ ...current, producer: old.producer }, old); assert.ok(readGovernanceSnapshot(current).ok);
 });
@@ -124,7 +123,7 @@ it("family resolution retains absence and refuses invalid selections without ref
       () => Reflect.apply(producerAgentCost, undefined, ["source_not_bound", value]),
       () => Reflect.apply(wireProducer, undefined, [value]),
       () => Reflect.apply(projectAgentCost, undefined, [run, "invalid", value]),
-      () => Reflect.apply(governanceRead, undefined, [governance, capturedAt, value]),
+      () => Reflect.apply(governanceWiring, undefined, [value]),
       () => buildAgentObservations({ runs: [], dispatches: [], observedAt: capturedAt,
         sourceBound: false, dispatchComplete: false, nativeComplete: false, ...({ wireFamily: value } as object) }),
       () => buildIssueAgentTreeSnapshot({ observations: observe([]), dispatches: [], runs: [], ...({ wireFamily: value } as object) }),
@@ -200,7 +199,7 @@ it("CLI producer preflight refuses invalid family before observable descriptor o
   try {
     const effect = async (): Promise<never> => { probes++; throw Error("PRIVATE-EFFECT-CANARY"); };
     const services: SourceServices = { env: { HARNESS_TELEMETRY_WIRE_FAMILY: "harness" }, clock: () => capturedAt,
-      usage: effect, fetch: effect, readText: async () => { reads++; return JSON.stringify(source); } };
+      usage: effect, fetch: effect, readText: async () => { reads++; return JSON.stringify(source); }, readPrivateText: effect };
     const args = ["governance", "--observations-from", "/fixture/descriptor", "--now", capturedAt];
     assert.equal(await main(args, services), 3); assert.equal(reads, 1); assert.equal(probes, 0);
     assert.equal(JSON.parse(out).producer, "harness-telemetry");

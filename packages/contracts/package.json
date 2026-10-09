@@ -1,6 +1,6 @@
 {
   "name": "@rickylabs/harness-contracts",
-  "version": "0.37.0",
+  "version": "0.39.0",
   "description": "Published Harness mechanism contracts, strict decoders and compatibility vocabulary",
   "keywords": [
     "harness",
@@ -43,6 +43,7 @@
   },
   "files": [
     "dist",
+    "docs",
     "src",
     "!**/*.test.*",
     "!**/*.tsbuildinfo"

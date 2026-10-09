@@ -73,8 +73,8 @@ describe("renderDigest", () => {
   });
 
   it("carries no timestamp of its own, only the board's latest activity", () => {
-    // `generatedAt` is the clock; `updatedAt` is the work. Only the second belongs on a file that
-    // is rewritten every half hour.
+    // `generatedAt` is the clock; `updatedAt` is the work. Only the second belongs on a page that
+    // is re-rendered on a schedule.
     const text = digestOf([issue({ number: 1, updatedAt: "2026-08-08T12:00:00.000Z" })]);
     assert.match(text, /Latest board activity: 2026-08-08T12:00:00\.000Z/);
     assert.ok(!text.includes(AT), "the generation stamp must not reach the page");

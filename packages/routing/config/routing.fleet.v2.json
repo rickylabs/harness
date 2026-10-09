@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "name": "interim-fleet-routing",
   "provenance": {
-    "description": "INTERIM fleet data for #270, https://github.com/rickylabs/harness/issues/270#issuecomment-5919524771. #271 whole-document loader is the replacement boundary. #321 IDs measured and pinged 2026-09-30. Standard Muse Spark differs from contributor. Requesting an effort is not support attestation; all imported launch support remains unknown."
+    "description": "INTERIM fleet data for #270, https://github.com/rickylabs/harness/issues/270#issuecomment-5919524771. #271 whole-document loader is the replacement boundary. #321 IDs measured and pinged 2026-09-30. Standard Muse Spark differs from contributor. Requesting an effort is not support attestation; all imported launch support remains unknown. Eric's 2026-10-08 decision prepends Opus 5.5 high to simple, straightforward, feature and complex implementation, Sol high to their plan and implementation evaluation, and Opus 5.5 xhigh to the milestone coordinator; earlier routes remain the fallback chain."
   },
   "families": [
     "openai",
@@ -857,6 +857,10 @@
       "cells": {
         "implementation": [
           {
+            "model": "opus_5_5",
+            "effort": "high"
+          },
+          {
             "model": "sol",
             "effort": "low"
           },
@@ -878,6 +882,10 @@
         "plan": [],
         "plan_evaluation": [],
         "implementation_evaluation": [
+          {
+            "model": "sol",
+            "effort": "high"
+          },
           {
             "model": "minimax_m3",
             "effort": "provider_default"
@@ -939,6 +947,10 @@
       "cells": {
         "implementation": [
           {
+            "model": "opus_5_5",
+            "effort": "high"
+          },
+          {
             "model": "sol",
             "effort": "xhigh"
           },
@@ -969,6 +981,10 @@
         ],
         "plan_evaluation": [
           {
+            "model": "sol",
+            "effort": "high"
+          },
+          {
             "model": "opus_5",
             "effort": "medium"
           },
@@ -978,6 +994,10 @@
           }
         ],
         "implementation_evaluation": [
+          {
+            "model": "sol",
+            "effort": "high"
+          },
           {
             "model": "glm_5_3_flash",
             "effort": "provider_default"
@@ -1042,6 +1062,10 @@
       "cells": {
         "implementation": [
           {
+            "model": "opus_5_5",
+            "effort": "high"
+          },
+          {
             "model": "sol",
             "effort": "xhigh"
           },
@@ -1072,6 +1096,10 @@
         ],
         "plan_evaluation": [
           {
+            "model": "sol",
+            "effort": "high"
+          },
+          {
             "model": "glm_5_3",
             "effort": "provider_default"
           },
@@ -1081,6 +1109,10 @@
           }
         ],
         "implementation_evaluation": [
+          {
+            "model": "sol",
+            "effort": "high"
+          },
           {
             "model": "muse_spark_1_3",
             "effort": "xhigh"
@@ -1145,6 +1177,10 @@
       "cells": {
         "implementation": [
           {
+            "model": "opus_5_5",
+            "effort": "high"
+          },
+          {
             "model": "astra",
             "effort": "medium"
           },
@@ -1175,6 +1211,10 @@
         ],
         "plan_evaluation": [
           {
+            "model": "sol",
+            "effort": "high"
+          },
+          {
             "model": "muse_spark_1_3",
             "effort": "max"
           },
@@ -1184,6 +1224,10 @@
           }
         ],
         "implementation_evaluation": [
+          {
+            "model": "sol",
+            "effort": "high"
+          },
           {
             "model": "muse_spark_1_3",
             "effort": "max"
@@ -1390,6 +1434,10 @@
       }
     ],
     "milestone": [
+      {
+        "model": "opus_5_5",
+        "effort": "xhigh"
+      },
       {
         "model": "sol",
         "effort": "xhigh"

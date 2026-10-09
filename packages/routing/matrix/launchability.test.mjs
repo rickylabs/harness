@@ -21,10 +21,10 @@ test('feature, complex and architecture evaluators select the exact standard var
   assert.deepEqual([grok.agent, grok.model, grok.family], ['opencode', 'opencode-go/grok-4.7', 'xai']);
   const fallback = resolveWorkloadRoute({ ...request('architecture'), unavailableTransports: ['opencode_go'] });
   assert.equal(fallback.model, 'openrouter/x-ai/grok-4.7');
-  const opposite = resolveWorkloadRoute(request('complex', 'plan_evaluation', 'muse_spark_1_3'));
+  const opposite = resolveWorkloadRoute({ ...request('complex', 'plan_evaluation', 'muse_spark_1_3'), unavailableModels: ['sol'] });
   assert.equal(opposite.logicalModel, 'grok_4_7');
   assert.notEqual(opposite.family, 'meta');
-  assert.throws(() => resolveWorkloadRoute(request('complex', 'implementation_evaluation', 'muse_spark_1_3')),
+  assert.throws(() => resolveWorkloadRoute({ ...request('complex', 'implementation_evaluation', 'muse_spark_1_3'), unavailableModels: ['sol'] }),
     /no available opposite meta route/);
 });
 

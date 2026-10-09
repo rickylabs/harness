@@ -5,8 +5,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
-import { readOrchidDispatches } from "./orchid-dispatch.js";
-import { resolveOrchidNativeRoot } from "./orchid-native-binding.js";
+import { readOrchidDispatches, resolveOrchidNativeRoot } from "@rickylabs/host-orchid";
 import type { RunRecord } from "./model.js";
 
 it("AGY exact native binding resolves without exposing the private store or session", async () => {

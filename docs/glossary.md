@@ -9,14 +9,6 @@ for — an unfamiliar word gets looked up, a familiar one gets assumed.
 
 ---
 
-### bundle
-
-An optional dsh-router artefact listing the rows that go onto a service entry list. This project ships one, rendered
-from typed data in `src/bundle.ts` into
-[`experiments/routers/dsh/cordis.patch.yml`](../experiments/routers/dsh/cordis.patch.yml) and byte-compared in the
-test suite. A bundle here *adds* services and never reconfigures dsh's own — a patch that reaches
-into the base rows is a fork wearing a config file.
-
 ### dispatch
 
 Handing a task to an autonomous agent. In `rickylabs/harness` specifically, labelling an issue
@@ -25,10 +17,9 @@ tag, and it is applied deliberately.
 
 ### doctrine
 
-The portable half of this project: how work is staged, reviewed and gated, written as markdown with
-no runtime, in [`method/doctrine/`](../method/doctrine/). It works in any repository in any language, which is why
-it is not in `docs/` and not in a package. Compare **mechanics** — the parts a machine can enforce,
-which are the packages.
+The rules this project is held to: the golden rules, the run invariants and how work is staged,
+reviewed and gated, written as one markdown page with no runtime, [`DOCTRINE.md`](DOCTRINE.md).
+Compare **mechanics** — the parts a machine can enforce, which are the packages.
 
 ### drift
 
@@ -65,8 +56,8 @@ A milestone being worked by several agents at once, with the shape written down 
 improvised: a baseline commit, one coordinator, one orchestrator per lane, and explicit limits —
 how many implementation slices may be active per lane, how many evaluators, how many expensive gates
 globally, how many writers a release may have. The templates are in
-[`run-record/templates/`](../run-record/templates) and the validator in
-[`method/tools/harness/`](../method/tools/harness).
+[`packages/method/templates/`](../packages/method/templates) and the validator is
+`harness-method milestone validate`, in [`packages/method`](../packages/method).
 
 ### owner fork
 
@@ -85,10 +76,6 @@ as work in progress. See [03 — The board](concepts/03-the-board.md).
 A native process profile under [`profiles/`](../profiles/README.md) specifies a matrix role,
 working process and requested policy. A profile is not an authority grant or a provider availability proof.
 
-In the optional dsh experiment, a profile is a named set of bundles and patches.
-`dsh-profile` writes and checks this repository's. Layering is declarative — bundle, then profile,
-then home, then `--patch`.
-
 ### projection
 
 Rendering a view from a source of truth without owning any state. `harness-board` projects GitHub into
@@ -98,7 +85,7 @@ connection synchronization remain separate responsibilities. See [03 — The boa
 ### receipt
 
 Durable evidence that a **gate** ran, and what happened. A `GateReceipt`
-([`method/tools/gates/contract.ts`](../method/tools/gates/contract.ts)) carries the request it answers,
+([`packages/method/src/domain/gates/contract.ts`](../packages/method/src/domain/gates/contract.ts)) carries the request it answers,
 the commit it ran against, the runner's identity, the attempt number, timings, the exit code, and
 hashed stdout and stderr — under a versioned schema, so a receipt written last month is still
 readable.
@@ -112,12 +99,6 @@ A set of receipts covering a declared surface is an **evidence set**, which is e
 or `INSUFFICIENT` with reasons — never a bare boolean. Separately, a run's `receipts/` directory
 holds the same idea in prose: a dated record of something that happened outside the repository, kept
 so the claim is checkable a month later.
-
-### row
-
-One entry on a dsh service entry list — a plugin, plus the configuration it is constructed with.
-Bundles are lists of rows in the optional router experiment; adding one is that integration
-mechanism, not the core framework deployment.
 
 ### run
 
@@ -137,7 +118,7 @@ composition uses `ctx.subagents`/`ctx.llm`; its coordinator vocabulary is `subsc
 
 The **mutation surface**: the exact set of paths a run declares, up front, that it may write.
 Anything found outside it afterwards is **drift**, not scope. Declared in a run's `supervisor.md`
-([`method/doctrine/WORKFLOW.md`](../method/doctrine/WORKFLOW.md)). An **evidence set** carries a `surface` field in
+([run lifecycle](DOCTRINE.md#run-lifecycle)). An **evidence set** carries a `surface` field in
 the same sense — the scope the gates it collects are claimed to cover.
 
 ---

@@ -1,17 +1,26 @@
 {
-  "files": [],
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["tests/parity"],
   "references": [
     { "path": "packages/board" },
     { "path": "packages/contracts" },
     { "path": "packages/coordinator" },
     { "path": "packages/forge" },
     { "path": "packages/governance" },
+    { "path": "packages/hosts/orchid" },
     { "path": "packages/llm-local" },
-    { "path": "packages/netscript-bridge" },
-    { "path": "packages/provider-acp" },
-    { "path": "packages/provider-claude" },
-    { "path": "packages/provider-codex" },
-    { "path": "packages/provider-opencode" },
+    { "path": "packages/method" },
+    { "path": "packages/providers/claude" },
+    { "path": "packages/providers/codex" },
+    { "path": "packages/providers/opencode" },
     { "path": "packages/routing" },
     { "path": "packages/subagents" },
     { "path": "packages/telemetry" }

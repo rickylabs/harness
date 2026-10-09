@@ -8,8 +8,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "harness-telemetry": "./dist/cli.js",
-    "dsh-telemetry": "./dist/cli.js"
+    "harness-telemetry": "./dist/cli.js"
   },
   "exports": {
     ".": {
@@ -32,7 +31,9 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
+    "@rickylabs/governance": "workspace:*",
     "@rickylabs/harness-contracts": "workspace:*",
+    "@rickylabs/host-orchid": "workspace:*",
     "@rickylabs/subagents": "workspace:*",
     "acorn": "8.15.0"
   }

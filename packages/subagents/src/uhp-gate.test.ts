@@ -10,7 +10,7 @@
  * outranks `mismatch` in `compareRouteIdentity` and three of the four route fields are never reported.
  * It reads correctly and never fires. The signal survives in `evidence.mismatches`.
  *
- * **C.** The refusal ladder in `packages/provider-codex/src/protocol.ts` checks `unknown` before
+ * **C.** The refusal ladder in `packages/providers/codex/src/application/start-turn.ts` checks `unknown` before
  * `mismatch`. In the codex dialect all four fields are observable, both branches are reachable, and the
  * ordering is right. Transplanted to UHP the first branch always wins, the second is dead code, and a
  * substituted model is reported as "we could not tell" instead of "the server contradicted the request".

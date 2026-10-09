@@ -21,7 +21,7 @@
  * would violate: a gate that fails for a reason unrelated to the change under review teaches people
  * to skip the gate. A red CI that everyone has learned to ignore is worse than this script.
  *
- * So it is a command, not a gate: `pnpm run check:metadata`. It is listed in CONTRIBUTING with the
+ * So it is a command, not a gate: `pnpm run check:metadata`. It is listed in AGENTS.md with the
  * other checks, and it prints the exact command that fixes what it found.
  *
  * `package.json` is the source of truth on purpose. It is in the tree, it is reviewed like anything

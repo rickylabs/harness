@@ -12,7 +12,13 @@
       "path": "../contracts"
     },
     {
+      "path": "../governance"
+    },
+    {
       "path": "../subagents"
+    },
+    {
+      "path": "../hosts/orchid"
     }
   ]
 }

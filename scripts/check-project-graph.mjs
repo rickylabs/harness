@@ -3,7 +3,7 @@
  * Assert that every package's TypeScript project references mirror its workspace dependencies.
  *
  * Why this exists as a script rather than as a property of the build: it is not one. The
- * adversarial review of PR #91 removed `dsh-app`'s `../board` reference, cleaned every output and
+ * adversarial review of PR #91 removed a package's `../board` reference, cleaned every output and
  * reran `pnpm -r run build` — which exited 0, because pnpm had already built `board` from the
  * manifest dependency graph and TypeScript resolved its declaration through the package export.
  * A reference graph that is merely *correct* is not a reference graph that is *enforced*, and the
@@ -14,8 +14,8 @@
  * builds today and breaks incremental builds later; a reference with no dependency is a stale edge
  * that outlives whatever justified it.
  *
- * External dependencies are ignored — `@deepseek-ai/dsh` is a real package with no project to
- * reference. Only the `workspace:` protocol implies an edge in this graph.
+ * External dependencies are ignored — a registry package has no project to reference. Only the
+ * `workspace:` protocol implies an edge in this graph.
  *
  * Exit codes: 0 the graph agrees, 1 it does not, 2 the workspace could not be read.
  */
@@ -24,6 +24,7 @@ import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { corePackages } from "./core-packages.mjs";
+import { manifestProblems } from "./package-boundary.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -76,14 +77,13 @@ const main = () => {
   // name -> directory, so a reference path can be named in errors the way humans refer to it.
   const dirOf = new Map(packages.map((p) => [p.manifest.name, p.dir]));
   const problems = [];
-  // The root solution is deliberately core-only; all optional workspace dependency/reference
-  // edges are still checked below, including the relocated router's fourteen prerequisites.
+  // The root solution references every core project exactly once.
   const core = corePackages();
   const rootReferences = readJson(join(repoRoot, "tsconfig.json")).references ?? [];
   const expectedRoot = new Set(core.map(row => resolve(repoRoot, row.dir)));
   const actualRoot = rootReferences.map(row => typeof row?.path === "string" ? resolve(repoRoot, row.path) : null);
   if (actualRoot.length !== expectedRoot.size || actualRoot.some(path => !expectedRoot.has(path)) || new Set(actualRoot).size !== expectedRoot.size) {
-    problems.push("tsconfig.json: root references must contain every core project exactly once and no experiment");
+    problems.push("tsconfig.json: root references must contain every core project exactly once");
   }
 
   for (const { dir, manifest } of packages) {
@@ -94,6 +94,8 @@ const main = () => {
       continue;
     }
 
+    // A host adapter depends on contracts only, even when a forbidden edge has a matching reference.
+    if (rel.startsWith("packages/hosts/")) problems.push(...manifestProblems(manifest).map((problem) => `${rel}: ${problem}`));
     const declared = { ...manifest.dependencies, ...manifest.devDependencies };
     const expected = new Set();
     for (const [name, range] of Object.entries(declared)) {

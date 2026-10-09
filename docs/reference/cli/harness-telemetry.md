@@ -45,7 +45,7 @@ options:
   --home <path>          home directory the stores live under (default: this user's)
   --items <path>         board items to join runs to: "harness-board snapshot" output, or a
                          JSON array of {number, title, epic, milestone, phase} refs
-  --observations <path>  governance observation JSON for tree/status
+  --observations <path>  governance read JSON (the "governance" output) for tree/status
   --observations-from <spec>  live source descriptor JSON path, or file:<absolute-path>
   --limit <n>            runs to read per seam, most recent first (default: 500)
   --since <iso>          only runs with activity at or after this time
@@ -55,11 +55,11 @@ options:
   --kind <name>          with "record": write that one event instead of reading stdin
   --help
 
-"--observations" is optional and applies to "tree" and "status". It reads one typed governance
-snapshot: account subscription windows, provider spend, host RAM/VRAM, and item-scoped refused
-admissions. The file is read again on every invocation. No flag is explicit UNKNOWN/UNAVAILABLE;
-a requested unreadable or invalid file is incomplete (exit 3). Stale values stay visible as STALE,
-and missing measurements stay unknown rather than becoming zero.
+"--observations" is optional and applies to "tree" and "status". It reads one governance read
+document, the JSON "governance" prints: subscription windows, provider spend, host RAM/VRAM and
+item-scoped refused admissions, evaluated again at --now. The file is reread on every invocation.
+No flag is explicit UNKNOWN/UNAVAILABLE; a requested unreadable or invalid file is incomplete
+(exit 3). Stale values stay visible as STALE, and missing measurements stay unknown, never zero.
 
 "--observations-from" applies to governance/tree/status and excludes "--observations". A descriptor
 configures independent usage, spend, configured-cgroup-v2 and recorded-admission readers.

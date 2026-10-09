@@ -265,10 +265,6 @@ Both are fixable with `gh issue edit`. The rule the taxonomy owns: on a complete
 phase label with `status:shipped`; on a not-planned close, remove the `status:` label entirely,
 because it did not ship.
 
-## Optional router experiment
-
-Core board and telemetry commands run directly. The [optional dsh router profile tutorial](../../experiments/routers/dsh/docs/tutorials/install-profile.md) has separate build, composition and reference checks; it is excluded from the default core tutorial checker. Actual router acceptance remains after the next APK.
-
 ## Step 4 — Record a run and read it back
 
 Telemetry answers one question: *what has been running, and where do I look when one of them went

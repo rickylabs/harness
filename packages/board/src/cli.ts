@@ -61,7 +61,7 @@ usage:
   harness-board status [--repo <owner/name>]     the hierarchy: milestone -> epic -> task
   harness-board columns [--repo <owner/name>]    the kanban view, one section per column
   harness-board check [--repo <owner/name>]      exit 1 if the board contradicts itself
-  harness-board digest [--repo <owner/name>]     the board as a markdown page, for committing
+  harness-board digest [--repo <owner/name>]     the board as a markdown page
   harness-board snapshot [--repo <owner/name>]   the projection as JSON
   harness-board doctor                           report transport and detected repository
   harness-board checks --pr <n> [--repo <owner/name>] [--pretty]

@@ -5,7 +5,7 @@ import { projectRouteIdentity, readAgentObservations } from "@rickylabs/harness-
 import { projectAgentCost } from "./agent-cost.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import type { RunRecord, QuotaReading } from "./model.js";
-import type { DispatchEvidence } from "./dispatch-evidence.js";
+import type { DispatchEvidence } from "@rickylabs/harness-contracts";
 const at = "2026-01-01T12:00:00.000Z", now = "2026-01-01T12:01:00.000Z", reset = "2026-01-01T13:00:00.000Z";
 const quota = (patch: Partial<QuotaReading> = {}): QuotaReading => ({ source: "codex", observedAt: at,
   usedPercent: 25, windowMinutes: 60, resetsAt: reset, limitId: "fixture-window", planType: null, creditBalance: null, ...patch });

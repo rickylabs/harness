@@ -2,9 +2,13 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { isDeepStrictEqual } from "node:util";
 import { DELEGATION_ROLES, LOGICAL_MODEL_IDS, WORKLOAD_TIERS } from "./delegation-matrix.ts";
 import { matrixTable } from "./cli/delegation-matrix-table.ts";
 import { fallbackMatches, runMatrixView } from "./cli/matrix-view.ts";
+import {
+  OWNER_ROUTING_2026_10_08, ownerCoordinatorRoutes, ownerWorkloadHead, ownerWorkloadRoutes,
+} from "../test-fixtures/owner-routing.2026-10-08.mjs";
 
 // Recorded once from NetScript's viewer at the recorded SHA (it read this matrix pinned at
 // harnessMatrixRevision). CI replays frozen data and never installs, imports or reads NetScript.
@@ -46,32 +50,80 @@ function currentMarkdown(output) {
     .replace(/SOL (high|medium)/g, "SOL xhigh").replaceAll("Grok 4.6", "Grok 4.7")
     .replace(/Opus 5(?!\.)/g, "Opus 5.5 (legacy logical alias)");
 }
-const recordedFallbacks = model => JSON.parse(reference.cases.find(recorded =>
-  recorded.args.join(" ") === `--fallback ${model} --json`).stdout).matches;
-const currentSolFallbacks = ownerPolicy([...recordedFallbacks("luna"), ...recordedFallbacks("sol")]);
+// The 2026-10-08 decision prepends a route to some cells; apply it to the recorded views.
+function ownerRouting(view) {
+  if (!view || typeof view !== "object" || !Array.isArray(view.tiers)) return view;
+  const tiers = view.tiers.map(row => view.mode === "role"
+    ? { ...row, routes: ownerWorkloadRoutes(row.tier, view.role, row.routes) }
+    : Object.fromEntries(Object.entries(row).map(([key, routes]) =>
+      [key, DELEGATION_ROLES.includes(key) ? ownerWorkloadRoutes(row.tier, key, routes) : routes])));
+  const coordinators = view.coordinators && Object.fromEntries(Object.entries(view.coordinators)
+    .map(([scope, routes]) => [scope, ownerCoordinatorRoutes(scope, routes)]));
+  return { ...view, tiers, ...(coordinators ? { coordinators } : {}) };
+}
+const ownerLabel = route => `${route.model === "sol" ? "SOL" : "Opus 5.5"} ${route.effort}`;
+const fullColumns = { "Implementer (default)": "implementation", "Plan eval (default)": "plan_evaluation", "Impl eval (default)": "implementation_evaluation" };
+const roleTitles = { "# Implementation routes": "implementation", "# PLAN-EVAL routes": "plan_evaluation", "# IMPL-EVAL routes": "implementation_evaluation" };
+function shiftCell(cells, index, head) {
+  if (!head || cells[index] === "—") return;
+  cells.splice(index, 2, ownerLabel(head), [cells[index], ...(cells[index + 1] === "—" ? [] : [cells[index + 1]])].join(" → "));
+}
+function ownerMarkdown(content) {
+  const lines = content.split("\n");
+  const role = roleTitles[lines[0]];
+  let header = [];
+  return lines.map(line => {
+    if (!line.startsWith("|")) { header = []; return line; }
+    const cells = line.split("|");
+    if (!header.length) { header = cells; return line; }
+    const name = cells[1].split("<br>")[0];
+    if (header[1] === "Scope") shiftCell(cells, 2, OWNER_ROUTING_2026_10_08.coordinators[name]);
+    else if (header[1] === "Tier / complexity") {
+      for (const [column, cellRole] of Object.entries(fullColumns)) shiftCell(cells, header.indexOf(column), ownerWorkloadHead(name, cellRole));
+    } else if (header[1] === "Tier" && role) shiftCell(cells, 2, ownerWorkloadHead(name, role));
+    return cells.join("|");
+  }).join("\n");
+}
 
-function assertChangedFallback(args, actual) {
+// Every fallback view is derived from the recorded full table under the current owner policy.
+const currentTable = ownerRouting(ownerPolicy(JSON.parse(reference.cases.find(recorded => recorded.args.join(" ") === "--json").stdout)));
+function currentFallbacks(model, tier, role) {
+  const matches = [];
+  for (const row of currentTable.tiers) for (const cellRole of DELEGATION_ROLES) {
+    if ((tier && row.tier !== tier) || (role && cellRole !== role)) continue;
+    const [primary, ...fallbacks] = row[cellRole];
+    if (primary?.model === model && fallbacks.length) matches.push({ scope: "workload", tier: row.tier, role: cellRole, primary, fallbacks });
+  }
+  if (!tier && !role) for (const [scope, [primary, ...fallbacks]] of Object.entries(currentTable.coordinators)) {
+    if (primary?.model === model && fallbacks.length) matches.push({ scope: "coordinator", tier: scope, role: "coordinator", primary, fallbacks });
+  }
+  return matches;
+}
+
+function assertFallback(args, actual, recorded) {
   const flag = Math.max(args.lastIndexOf("--fallback"), args.lastIndexOf("--fallback-of"));
-  const model = args[flag + 1];
-  if (!["sol", "luna", "grok_4_6"].includes(model)) return false;
+  if (flag < 0) return false;
   const tier = args.includes("--tier") ? args[args.indexOf("--tier") + 1] : undefined;
   const role = args.includes("--role") ? args[args.indexOf("--role") + 1] : undefined;
-  const matches = model !== "sol" ? [] : currentSolFallbacks.filter(match =>
-    (!tier || match.tier === tier) && (!role || match.role === role) &&
-    (!(tier || role) || match.scope === "workload"));
-  assert.deepEqual(JSON.parse(runMatrixView([...args, "--json"]).stdout),
-    { schemaVersion: 1, mode: "fallback", model, matches }, JSON.stringify(args));
-  if (!args.includes("--json")) {
-    assert.ok(actual.stdout.startsWith(`# Declared fallbacks for ${model === "sol" ? "SOL" : model === "luna" ? "Luna" : "Grok 4.6"}\n`));
+  const view = JSON.parse(runMatrixView([...args, "--json"]).stdout);
+  if (args.includes("--json")) assert.equal(view.model, JSON.parse(recorded.stdout).model, JSON.stringify(args));
+  const matches = currentFallbacks(view.model, tier, role);
+  assert.deepEqual(view, { schemaVersion: 1, mode: "fallback", model: view.model, matches }, JSON.stringify(args));
+  const recordedJson = reference.cases.find(other => other.args.join(" ") === [...args, "--json"].join(" "));
+  if (!args.includes("--json") && recordedJson && isDeepStrictEqual(ownerPolicy(JSON.parse(recordedJson.stdout).matches), matches)) {
+    assert.equal(markdownContent(actual.stdout), markdownContent(currentMarkdown(recorded.stdout)), JSON.stringify(args));
+  } else if (!args.includes("--json")) {
+    const title = recorded.stdout.split("\n")[0];
+    assert.ok([title, currentMarkdown(title)].includes(actual.stdout.split("\n")[0]), JSON.stringify(args));
     if (!matches.length) {
-      assert.equal(actual.stdout.trimEnd(), `# Declared fallbacks for ${model === "luna" ? "Luna" : "Grok 4.6"}\n\nNo selected context declares this model as its primary with a fallback.`);
+      assert.ok(actual.stdout.trimEnd().endsWith("\n\nNo selected context declares this model as its primary with a fallback."));
     } else {
       const rows = markdownContent(actual.stdout).split("\n").filter(line => line.startsWith("|")).slice(1);
       assert.equal(rows.length, matches.length);
       for (const [index, match] of matches.entries()) {
         const cells = rows[index].split("|");
         assert.deepEqual(cells.slice(1, 3), [match.scope, match.tier]);
-        assert.equal(cells[4], `SOL ${match.primary.effort}`);
+        if (view.model === "sol") assert.equal(cells[4], `SOL ${match.primary.effort}`);
       }
     }
   }
@@ -87,11 +139,11 @@ test("every recorded query preserves refusals and unrelated routes under the own
     if (!isHelp(expected)) {
       if (expected.status !== 0) {
         assert.equal(actual.stdout, expected.stdout, label);
-      } else if (!assertChangedFallback(expected.args, actual)) {
+      } else if (!assertFallback(expected.args, actual, expected)) {
         if (expected.args.includes("--json")) {
-          assert.deepEqual(JSON.parse(actual.stdout), ownerPolicy(JSON.parse(expected.stdout)), label);
+          assert.deepEqual(JSON.parse(actual.stdout), ownerRouting(ownerPolicy(JSON.parse(expected.stdout))), label);
         } else {
-          assert.equal(markdownContent(actual.stdout), markdownContent(currentMarkdown(expected.stdout)), label);
+          assert.equal(markdownContent(actual.stdout), ownerMarkdown(markdownContent(currentMarkdown(expected.stdout))), label);
         }
       }
       continue;
@@ -129,7 +181,11 @@ test("fallback lookup lists every primary context, workload and coordinator", ()
     assert.ok(workload.every(match => match.scope === "workload" && match.primary.model === model && match.fallbacks.length > 0), model);
   }
   const sol = fallbackMatches("sol");
-  assert.ok(sol.some(match => match.scope === "coordinator" && match.tier === "milestone"));
-  assert.ok(sol.some(match => match.scope === "workload" && match.tier === "feature" && match.role === "implementation"));
-  assert.deepEqual(fallbackMatches("sol", { tier: "feature" }).map(match => `${match.scope}/${match.role}`), ["workload/implementation"]);
+  assert.ok(sol.some(match => match.scope === "coordinator" && match.tier === "project"));
+  assert.ok(sol.some(match => match.scope === "workload" && match.tier === "feature" && match.role === "implementation_evaluation"));
+  assert.deepEqual(fallbackMatches("sol", { tier: "feature" }).map(match => `${match.scope}/${match.role}`),
+    ["workload/plan_evaluation", "workload/implementation_evaluation"]);
+  const opus = fallbackMatches("opus_5_5");
+  assert.ok(opus.some(match => match.scope === "coordinator" && match.tier === "milestone"));
+  assert.ok(opus.some(match => match.scope === "workload" && match.tier === "feature" && match.role === "implementation"));
 });

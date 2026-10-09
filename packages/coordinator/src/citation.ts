@@ -1,10 +1,10 @@
 /**
  * What a citation has to look like to count as one.
  *
- * Principle 3 says citations or it is not a claim, and `plan.ts` enforced the letter of that: it
- * checked a citation was present and non-blank. `{ source: "x" }` satisfied it, and so did "see the
- * PR", "obviously", and "TODO". A gate that admits any non-empty string is a gate against typos, not
- * against unevidenced claims (#203).
+ * The doctrine's citation rule says citations or it is not a claim, and `plan.ts` enforced the
+ * letter of that: it checked a citation was present and non-blank. `{ source: "x" }` satisfied it,
+ * and so did "see the PR", "obviously", and "TODO". A gate that admits any non-empty string is a
+ * gate against typos, not against unevidenced claims (#203).
  *
  * So this module answers the narrower question the gate should have been asking: does this string
  * *refer* to something? A reference is checkable by a later reader — a human, a replay, an auditor —

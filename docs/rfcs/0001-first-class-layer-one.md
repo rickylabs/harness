@@ -1,6 +1,6 @@
 # RFC 0001: First-class Layer 1 adoption
 
-- Status: proposed; no charter amendment or runtime acceptance
+- Status: proposed; no decision record or runtime acceptance
 - Date: 2026-09-14
 - Scope: Harness board, matrix, admission, telemetry, two seams, sandbox boundary and forge
 - Evidence snapshot: Harness `eb33b3aa149f475e85d53c2fcf2e5dba7718679e`;
@@ -28,9 +28,10 @@ composition point, an explicit source binding and a reproducible refusal/accepta
 Adopt supported NetScript implementations through their existing service boundary where needed.
 Do not translate the Deno framework into a second Node runtime.
 
-**CURRENT.** The [locked family charter](../../ARCHITECTURE.md) owns the portable runtime,
-keeps divybot as dispatcher, parks UHP dispatch and puts profiles plus matrix-before-spawn first.
-[Cockpit's Layer 1 description](https://github.com/rickylabs/atelier-cockpit/blob/041e620e4fbaf68828fa44f49a63b55a0eec16cd/doctrine/ARCHITECTURE.md#layer-1--coordination)
+**CURRENT.** The [doctrine](../DOCTRINE.md) and [decisions](../decisions/) own the portable runtime,
+keep divybot as dispatcher, park UHP dispatch and put profiles plus matrix-before-spawn first.
+Cockpit's Layer 1 description (the Layer 1 coordination section of the ARCHITECTURE page in its
+[pinned doctrine directory](https://github.com/rickylabs/atelier-cockpit/tree/041e620e4fbaf68828fa44f49a63b55a0eec16cd/doctrine))
 names the same coordination responsibilities. Its Layer 2 owns product event-log/worker/saga
 composition. Adoption does not transfer those product responsibilities into Harness.
 
@@ -42,15 +43,14 @@ This document adopts that shape without treating a proposed RFC as a ratified de
 
 **CURRENT.** Harness already uses explicit contracts and thin Cordis composition. Its
 [package map](../../packages/README.md) separates board, routing, coordinator, telemetry,
-providers and the published contracts package. The
-[routing plugin](../../experiments/routers/dsh/src/plugins/routing.ts) loads an explicit document;
-missing configuration is a refusal. The
-[subagent plugin](../../experiments/routers/dsh/src/plugins/subagents.ts) deliberately registers an
-empty instrumented registry. An implemented provider is not a composed provider.
+providers and the published contracts package. The former dsh router's routing plugin loaded an
+explicit document; missing configuration was a refusal. Its subagent plugin deliberately registered
+an empty instrumented registry. An implemented provider is not a composed provider. Issue #653
+deleted that router experiment.
 
-**CURRENT.** The [NetScript bridge](../../packages/netscript-bridge/README.md) and
-[governance admission package](../../packages/governance/README.md) remain stubs. Their owning
-epics must establish their contracts before behavior is added. Telemetry governance reads do
+**CURRENT.** The [governance package](../../packages/governance/README.md) holds the governance read
+(#655), not an admission verdict; the empty NetScript bridge stub was deleted by #653. Its owning
+epic must establish the admission contract before that behavior is added. Governance reads do
 not imply that spend admission is wired.
 
 **CURRENT.** The [leaf profile](../../profiles/leaf.md) already specifies the seven-item design
@@ -80,13 +80,13 @@ they are not asserted byte-identical to the pinned repository snapshot.
 
 | Capability | Existing source and owner | Next proof; no replacement runtime |
 | --- | --- | --- |
-| Board and forge | **CURRENT:** [board](../../packages/board/README.md) projects GitHub; [forge](../reference/cli/dsh-forge.md) owns taxonomy and dispatch admission helpers. | **PLANNED:** preserve issue identity from the labeled inbox through the dispatch receipt and consumer read. Keep label application a deliberate execution act. |
+| Board and forge | **CURRENT:** [board](../../packages/board/README.md) projects GitHub; [forge](../reference/cli/harness-forge.md) owns taxonomy and dispatch admission helpers. | **PLANNED:** preserve issue identity from the labeled inbox through the dispatch receipt and consumer read. Keep label application a deliberate execution act. |
 | Profiles and matrix | **CURRENT:** [profiles](../../profiles/README.md), [routing](../../packages/routing/README.md), and the [Orchid matrix hook](https://github.com/rickylabs/orchid/pull/2). | **PLANNED:** installed dispatcher resolves the authority before each effect. Explicit configurable pins require the trusted owner-override record; a pin alone is not authority. |
 | Registration and supervision | **CURRENT:** [Orchid #3](https://github.com/rickylabs/orchid/pull/3) is the source fix for [#352](https://github.com/rickylabs/harness/issues/352), stacked on the matrix hook. | **PLANNED:** coordinator-owned issue 316 / leaf dispatch reaches registered, goal-delivered and working. A ready PR or a busy-pane negative control is not that live proof. |
 | Coordinator admission | **CURRENT:** [coordinator](../../packages/coordinator/README.md) owns deterministic admission and durable state/effect boundaries; its README distinguishes shipped decisions from wiring. | **PLANNED:** preserve admission versus execution. Reuse existing state-store contracts and receipts; do not create a second product effect ledger. |
 | Telemetry and public reads | **CURRENT:** [telemetry](../../packages/telemetry/README.md) supplies run and governance observations. [PR #353](https://github.com/rickylabs/harness/pull/353) adds the bounded collection/decoder under [#354](https://github.com/rickylabs/harness/issues/354). | **PLANNED:** bind explicit dispatcher/native ancestry and each cost source, then verify the installed published package through cockpit. An unavailable row remains unavailable until its own source is enrolled. |
 | Two seams and sandbox | **CURRENT:** [the two-seam contract](../concepts/02-the-two-seams.md) separates autonomous seats from token calls and places the seat gate at the sandbox boundary. | **PLANNED:** any new binding proves the appropriate seam and refusal behavior. Keep sandbox/governance implementation under [#35](https://github.com/rickylabs/harness/issues/35); do not infer interception inside vendor CLIs. |
-| NetScript service adoption | **CURRENT:** [netscript-bridge](../../packages/netscript-bridge/README.md) is a runtime adapter placeholder under [#37](https://github.com/rickylabs/harness/issues/37). | **PLANNED:** identify a concrete caller, discover the served operation and schema, then implement only its adapter. Cockpit retains its product runtime composition. |
+| NetScript service adoption | **CURRENT:** no NetScript adapter package exists; the empty placeholder under [#37](https://github.com/rickylabs/harness/issues/37) was deleted by #653. | **PLANNED:** identify a concrete caller, discover the served operation and schema, then implement only its adapter. Cockpit retains its product runtime composition. |
 
 ## Contract-first boundaries
 
@@ -100,7 +100,7 @@ installation, live source binding and product acceptance. It names the exact com
 version, bounds and completeness/refusal semantics. Incomplete trees are rejected as a whole;
 a prefix must not appear to be complete ancestry. Native session identities stay private.
 
-**CURRENT.** The charter's three cost rows have distinct sources and units. The per-issue
+**CURRENT.** The doctrine's [three cost truths](../DOCTRINE.md#cost) have distinct sources and units. The per-issue
 candidate keeps all three explicitly unavailable until bound. Provider-wide subscription
 headroom does not become one run's metered spend. The current task does not authorize another
 collector or a native model/session observer.
@@ -145,10 +145,10 @@ verifiable behavior. It does not mean importing every framework subsystem into t
 The main cost is retaining explicit incomplete/unavailable states while integration evidence
 is missing; that prevents the phone from presenting invented operational truth.
 
-**CURRENT.** The family charter takes precedence over older repository descriptions. The
+**CURRENT.** The doctrine and decisions take precedence over older repository descriptions. The
 cockpit document's historical fixed trigger vocabulary does not override Harness's current
 configuration-driven routing source. No runtime constants are introduced to imitate an older
-matrix snapshot. Any actual change of ownership or charter requires a numbered owner decision.
+matrix snapshot. Any actual change of ownership or doctrine requires a numbered owner decision.
 
 ## Revisit triggers
 

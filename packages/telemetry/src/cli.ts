@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { resolveWireFamily } from "./producer-names.js";
+import { resolveWireFamily, wireProducer } from "./producer-names.js";
 /**
  * `harness-telemetry` — status without an agent in the loop.
  *
@@ -21,50 +21,31 @@ import { codexThreadsCommand } from "./codex-threads-cli.js";
 import { issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
 import { providerLimitsCommand } from "./provider-limits-cli.js";
 import { actionReceiptCommand } from "./action-receipt-cli.js";
-import { OperatorConfigurationError, resolveOperatorSetting, type OperatorEnvironment } from "./operator-environment.js";
-import { OperatorLogError, readObservabilityLog, assertObservabilityWriteTarget } from "./log-source.js";
-import { open, readFile } from "node:fs/promises";
+import { OperatorConfigurationError, resolveOperatorSetting } from "./operator-environment.js";
+import { OperatorLogError, readObservabilityLog } from "./log-source.js";
 import { realpathSync } from "node:fs";
-import { spawn } from "node:child_process";
-import { isAbsolute, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { homedir } from "node:os";
+import { isAbsolute } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { backfillFromDisk, defaultRoots, type BackfillRoots } from "./backfill/index.js";
-import { diagnosticsFor, ALL_POINTERS } from "./diagnostics.js";
-import { parseItems, type LoadedItems } from "./items.js";
+import { diagnosticsFor } from "./diagnostics.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { readDispatchEvidence } from "./dispatch-evidence.js";
-import { readOrchidDispatches, bindOrchidDispatchEvidence } from "./orchid-dispatch.js";
+import { orchidHost } from "@rickylabs/host-orchid";
+import type { OrchidReads } from "./host-reads.js";
 import { foldLiveEvents, mergeLiveRuns } from "./live.js";
-import {
-  humanBytes,
-  livePath,
-  logPaths,
-  openObservabilitySink,
-  parseEvents,
-  resolveObservability,
-} from "./observability.js";
-import {
-  parseGovernanceText,
-  unavailableGovernance,
-  type ParsedGovernance,
-} from "./observations.js";
+import { resolveObservability } from "./observability.js";
 import { publicRuns, publicSnapshot, publicTree } from "./public.js";
 import { renderSnapshot, renderTree } from "./render.js";
-import type { TelemetryEvent } from "./sink.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
-import { instant, parseSource, SourceError, type GovernanceSource, type UsageSource, type Leg } from "./source.js";
-import type { RegimeStatus } from "@rickylabs/harness-contracts";
-import type { LiveLog } from "./live.js";
-import { mapUsage } from "./governance/usage.js";
-import { mapSpend } from "./governance/spend.js";
-import { mapCapacity } from "./governance/capacity.js";
-import { composeGovernance, type ComposedGovernance } from "./governance/compose.js";
+import { collectGovernance, defaultSourceServices, instant, invalidGovernance, parseSource, type GovernanceSource, type SourceServices } from "@rickylabs/governance";
+import { governanceWiring } from "./governance-wiring.js";
 import { collectRepositoryRunObservation, type RepositoryRunReadOptions } from "./repository-run-observation.js";
-import { governanceRead } from "./governance/read.js";
-import { mapTransportAvailability, readTransportAvailabilityFile } from "./governance/transport-availability.js";
+import { parseFlags, type Flags } from "./cli-flags.js";
+import { loadGovernance, loadItems, recordEvents, whereItWrites, writeNotes } from "./cli-io.js";
+/** Composition root: the Orchid host behind the telemetry-owned port. */
+const host: OrchidReads = orchidHost;
 
 /**
  * What the command exited with, and what a caller should do about it.
@@ -122,7 +103,7 @@ options:
   --home <path>          home directory the stores live under (default: this user's)
   --items <path>         board items to join runs to: "harness-board snapshot" output, or a
                          JSON array of {number, title, epic, milestone, phase} refs
-  --observations <path>  governance observation JSON for tree/status
+  --observations <path>  governance read JSON (the "governance" output) for tree/status
   --observations-from <spec>  live source descriptor JSON path, or file:<absolute-path>
   --limit <n>            runs to read per seam, most recent first (default: 500)
   --since <iso>          only runs with activity at or after this time
@@ -132,11 +113,11 @@ options:
   --kind <name>          with "record": write that one event instead of reading stdin
   --help
 
-"--observations" is optional and applies to "tree" and "status". It reads one typed governance
-snapshot: account subscription windows, provider spend, host RAM/VRAM, and item-scoped refused
-admissions. The file is read again on every invocation. No flag is explicit UNKNOWN/UNAVAILABLE;
-a requested unreadable or invalid file is incomplete (exit 3). Stale values stay visible as STALE,
-and missing measurements stay unknown rather than becoming zero.
+"--observations" is optional and applies to "tree" and "status". It reads one governance read
+document, the JSON "governance" prints: subscription windows, provider spend, host RAM/VRAM and
+item-scoped refused admissions, evaluated again at --now. The file is reread on every invocation.
+No flag is explicit UNKNOWN/UNAVAILABLE; a requested unreadable or invalid file is incomplete
+(exit 3). Stale values stay visible as STALE, and missing measurements stay unknown, never zero.
 
 "--observations-from" applies to governance/tree/status and excludes "--observations". A descriptor
 configures independent usage, spend, configured-cgroup-v2 and recorded-admission readers.
@@ -201,305 +182,6 @@ exit codes:
 ${EXIT_BLOCK}
 `;
 
-interface Flags {
-  readonly home: string;
-  readonly items: string | null;
-  readonly observations: string | null;
-  readonly observationsFrom: string | null;
-  readonly nowExplicit: boolean;
-  readonly limit: number;
-  readonly since: string | null;
-  /** `--since` as an epoch millisecond, which is what actually bounds the readers. */
-  readonly sinceMs: number | null;
-  readonly now: string;
-  readonly json: boolean;
-  readonly help: boolean;
-  /** `record` only: the run one event belongs to. */
-  readonly run: string | null;
-  /** `record` only: the kind of that one event. Present means "do not read stdin". */
-  readonly kind: string | null;
-  readonly rest: readonly string[];
-}
-
-/**
- * Parse a timestamp flag, or refuse.
- *
- * `--since not-a-date` used to be accepted and compared as a string, which silently returned zero
- * runs: an operator asking a reasonable question got "nothing is happening" and exit 0.
- */
-function timeFlag(raw: string, flag: string): number {
-  const ms = Date.parse(raw);
-  if (!Number.isFinite(ms)) throw new Error(`${flag} needs a time, like 2026-09-05T00:00:00Z`);
-  return ms;
-}
-
-export function parseFlags(argv: readonly string[]): Flags {
-  let home = homedir();
-  let items: string | null = null;
-  let observations: string | null = null;
-  let observationsFrom: string | null = null;
-  let nowExplicit = false;
-  let limit = 500;
-  let since: string | null = null;
-  let sinceMs: number | null = null;
-  let now = new Date().toISOString();
-  let json = false;
-  let help = false;
-  let run: string | null = null;
-  let kind: string | null = null;
-  const rest: string[] = [];
-
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
-    const next = (): string => {
-      const value = argv[i + 1];
-      if (value === undefined) throw new Error(`${String(arg)} needs a value`);
-      i += 1;
-      return value;
-    };
-    switch (arg) {
-      case "--home":
-        home = next();
-        break;
-      case "--items":
-        items = next();
-        break;
-      case "--observations":
-        observations = next();
-        break;
-      case "--observations-from":
-        observationsFrom = next();
-        break;
-      case "--limit": {
-        // Parsed strictly rather than leniently: `--limit 1.5` under parseInt becomes 1, which is a
-        // scan the operator did not ask for and would have no reason to suspect.
-        const raw = next();
-        const value = Number.parseInt(raw, 10);
-        if (!/^\d+$/.test(raw) || !Number.isSafeInteger(value) || value <= 0) {
-          throw new Error("--limit needs a positive integer");
-        }
-        limit = value;
-        break;
-      }
-      case "--since": {
-        const raw = next();
-        sinceMs = timeFlag(raw, "--since");
-        since = raw;
-        break;
-      }
-      case "--now": {
-        const raw = next();
-        timeFlag(raw, "--now");
-        now = raw;
-        nowExplicit = true;
-        break;
-      }
-      case "--json":
-        json = true;
-        break;
-      case "--run":
-        run = next();
-        break;
-      case "--kind":
-        kind = next();
-        break;
-      case "--help":
-      case "-h":
-        help = true;
-        break;
-      default:
-        if (arg !== undefined) rest.push(arg);
-    }
-  }
-  if (observations !== null && observationsFrom !== null) throw new Error("observation source flags are mutually exclusive");
-  if (observationsFrom !== null) {
-    const path = observationsFrom.startsWith("file:") ? observationsFrom.slice(5) : observationsFrom;
-    if (!isAbsolute(path) || /[\x00-\x1f\x7f]/.test(path)) throw new Error("observation source requires an absolute path");
-    if (rest[0] !== "status" && rest[0] !== "tree" && rest[0] !== "governance" && !help) throw new Error("--observations-from requires governance, tree or status");
-  }
-  return { home, items, observations, observationsFrom, nowExplicit, limit, since, sinceMs, now, json, help, run, kind, rest };
-}
-
-/**
- * Read the board items to attribute against. An absent flag is not an error, only a poorer view.
- *
- * The shape check and the adapting both live in `items.ts`, which is where the data actually stops
- * being `unknown`. This function's only remaining job is the file, and the one case the parser
- * cannot see: not asking is not a gap.
- */
-async function loadItems(path: string | null): Promise<LoadedItems> {
-  if (path === null) {
-    return {
-      items: [],
-      // Said explicitly: without items every run is unattributed, and that would otherwise look
-      // like a board with no work on it rather than a command that was not told where the board is.
-      notes: ["no --items given: runs are listed but not attributed to epics"],
-      ok: true,
-    };
-  }
-  let text: string;
-  try {
-    text = await readFile(path, "utf8");
-  } catch (error) {
-    return { items: [], notes: [`${path} could not be read: ${String(error)}`], ok: false };
-  }
-  return parseItems(text, path);
-}
-
-/** Read typed governance input without allowing its local path into public notes. */
-async function loadGovernance(path: string | null, now: string): Promise<ParsedGovernance> {
-  if (path === null) {
-    return {
-      governance: unavailableGovernance("no --observations supplied"),
-      notes: [],
-      ok: true,
-    };
-  }
-  try {
-    return parseGovernanceText(await readFile(path, "utf8"), now);
-  } catch {
-    const reason = "governance observations could not be read";
-    return { governance: unavailableGovernance(reason), notes: [reason], ok: false };
-  }
-}
-
-/** Print the notes under a heading. Used when a command's own output would otherwise be silent. */
-function writeNotes(notes: readonly string[]): void {
-  process.stdout.write("\nthis scan was incomplete:\n");
-  for (const note of notes) process.stdout.write(`  ${note}\n`);
-}
-
-/** Everything on stdin, as text. Read only when `record` was not given a whole event in flags. */
-async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) {
-    chunks.push(typeof chunk === "string" ? Buffer.from(chunk, "utf8") : Buffer.from(chunk));
-  }
-  return Buffer.concat(chunks).toString("utf8");
-}
-
-/**
- * Append events to the observability log.
- *
- * This is the command that makes `~/observability` real. Everything under it already existed — the
- * bounded file sink, the rotation policy, the cold tier, the default paths — and nothing opened any
- * of it, so the package could write a rotated log and never had.
- *
- * JSONL on stdin rather than an import, because the callers are a Go dispatcher, shell hooks and
- * tmux wrappers. A caller that can emit one line of JSON can now write into the same log an agent
- * writes into, which is the only way the configured observability log ends up holding the whole
- * story rather than the part that happened to be in Node.
- */
-async function recordEvents(flags: Flags, env: OperatorEnvironment): Promise<number> {
-  const target = resolveObservability(flags.home, env);
-  await assertObservabilityWriteTarget(target);
-  const notes = [...target.notes];
-  const live = livePath(target);
-
-  let events: readonly TelemetryEvent[];
-  if (flags.kind !== null) {
-    if (flags.run === null) {
-      process.stdout.write("harness-telemetry record --kind <name> also needs --run <id>\n");
-      return EXIT.usage;
-    }
-    events = [{ at: flags.now, runId: flags.run, kind: flags.kind }];
-  } else {
-    // Refused rather than blocked: a `record` with no pipe and no flags would otherwise sit on a
-    // terminal waiting for an EOF the operator has no reason to expect it wants.
-    if (process.stdin.isTTY === true) {
-      process.stdout.write(
-        'harness-telemetry record reads JSONL on stdin, or takes --run <id> --kind <name>\n\n  echo \'{"runId":"r1","kind":"turn"}\' | harness-telemetry record\n',
-      );
-      return EXIT.usage;
-    }
-    const parsed = parseEvents(await readStdin(), flags.now);
-    events = parsed.events;
-    notes.push(...parsed.notes);
-  }
-
-  if (events.length > 0) {
-    const sink = openObservabilitySink(target);
-    // Sequential on purpose. The sink serializes internally anyway, and awaiting each one keeps the
-    // ordering in the file the ordering on the wire, which is what makes the log readable by eye.
-    for (const event of events) await sink.write(event);
-    notes.push(...sink.notes);
-  } else if (notes.length === 0) {
-    // Not an error, and not silent either: a producer that has stopped emitting looks exactly like a
-    // pipeline that legitimately had nothing in it, and only this sentence tells them apart.
-    process.stdout.write(`no events to record — ${live} unchanged\n`);
-    return EXIT.ok;
-  }
-
-  if (flags.json) {
-    process.stdout.write(
-      `${JSON.stringify(
-        {
-          recorded: events.length,
-          live,
-          archive: target.archiveDirectory,
-          notes,
-          complete: notes.length === 0,
-        },
-        null,
-        2,
-      )}\n`,
-    );
-  } else {
-    process.stdout.write(`recorded ${events.length} event(s) to ${live}\n`);
-    for (const note of notes) process.stdout.write(`  ${note}\n`);
-  }
-  // A note here means a line was dropped, a bound was defaulted, or a write did not land. The
-  // records that did land are real, which is exactly what 3 means everywhere else in this command.
-  return notes.length === 0 ? EXIT.ok : EXIT.incomplete;
-}
-
-/**
- * Say where the log is, and what sits below a run that failed.
- *
- * Two questions with one answer, because they are asked in the same minute. An operator who has just
- * been handed "something is wrong" needs the file to tail and the layer to look at next, and the
- * second half of this output is the same table `why` uses — printed without a run id, for the case
- * where there is not one yet.
- */
-function whereItWrites(flags: Flags, env: OperatorEnvironment): number {
-  const target = resolveObservability(flags.home, env);
-  const paths = logPaths(target);
-  const complete = target.notes.length === 0;
-
-  if (flags.json) {
-    process.stdout.write(
-      `${JSON.stringify(
-        {
-          directory: target.directory,
-          archive: target.archiveDirectory,
-          policy: target.policy,
-          files: paths,
-          pointers: ALL_POINTERS,
-          notes: target.notes,
-          complete,
-        },
-        null,
-        2,
-      )}\n`,
-    );
-    return complete ? EXIT.ok : EXIT.incomplete;
-  }
-
-  process.stdout.write("telemetry is written here:\n\n");
-  process.stdout.write(`  live       ${livePath(target)}\n`);
-  process.stdout.write(
-    `  rotated    ${target.policy.maxGenerations} generation(s) behind it, ${humanBytes(target.policy.maxBytes)} each\n`,
-  );
-  process.stdout.write(
-    `  cold tier  ${target.archiveDirectory ?? "none — an evicted generation is deleted"}\n\n`,
-  );
-  process.stdout.write("a failing run is usually a layer below itself — look here, in this order:\n\n");
-  for (const p of ALL_POINTERS) {
-    process.stdout.write(`  ${p.what}\n    ${p.where}\n    grep: ${p.grep}\n\n`);
-  }
-  for (const note of target.notes) process.stdout.write(`  ${note}\n`);
-  return complete ? EXIT.ok : EXIT.incomplete;
-}
 
 export async function main(argv: readonly string[], services: SourceServices = defaultSourceServices(), observationOptions: RepositoryRunReadOptions = {}): Promise<number> {
   try { return await mainConfigured(argv, services, observationOptions); }
@@ -564,14 +246,13 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
     try {
       const log = configured.admissions === null ? { files: [], notes: [], degraded: false }
         : await readObservabilityLog(resolveObservability(flags.home, services.env), flags.now);
-      const { observed, completion } = await collectGovernance(configured, log, services, flags.nowExplicit ? flags.now : undefined);
-      const document = governanceRead(observed, flags.nowExplicit ? flags.now : completion, wireFamily);
+      const { observed: document } = await collectGovernance(configured, log, services, governanceWiring(wireFamily), flags.nowExplicit ? flags.now : undefined);
       process.stdout.write(`${JSON.stringify(document, null, 2)}\n`);
       return document.complete ? EXIT.ok : EXIT.incomplete;
     } catch { process.stderr.write("governance: document unavailable\n"); return EXIT.failed; }
   }
-  if (command === "record") return await recordEvents(flags, services.env);
-  if (command === "where") return whereItWrites(flags, services.env);
+  if (command === "record") return EXIT[await recordEvents(flags, services.env)];
+  if (command === "where") return EXIT[whereItWrites(flags, services.env)];
 
   const wireFamily = command === "runs" && flags.json ? resolveWireFamily(services.env) : "legacy";
   let source: GovernanceSource | null = null;
@@ -600,7 +281,7 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
   }));
   const merged = mergeLiveRuns(scan.runs, foldLiveEvents(runFiles));
   const orchid = command === "runs" && flags.json
-    ? await readOrchidDispatches(resolveOperatorSetting(services.env, "dispatchRoot"))
+    ? await host.readDispatches(resolveOperatorSetting(services.env, "dispatchRoot"))
     : { root: undefined, reason: null, dispatches: [], notes: [], degraded: false };
   const view = {
     notes: [...scan.notes, ...log.notes, ...merged.notes, ...orchid.notes],
@@ -651,13 +332,13 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
   if (command === "runs") {
     if (flags.json) {
       const evidence = readDispatchEvidence(runFiles);
-      const bound = bindOrchidDispatchEvidence(orchid.dispatches, evidence);
+      const bound = host.bindDispatchEvidence(orchid.dispatches, evidence);
       const orchidIds = new Set(orchid.dispatches.map(d => d.runId));
       const envelope = publicRuns(flags.now, runs, view.notes, !view.degraded && !bound.degraded,
         [...evidence.filter(d => !orchidIds.has(d.runId)), ...bound.dispatches]);
       const agentObservations = buildAgentObservations({ wireFamily, dispatches: bound.dispatches, runs: merged.runs,
         observedAt: flags.now, sourceBound: resolveOperatorSetting(services.env, "dispatchRoot") !== undefined,
-        dispatchComplete: !orchid.degraded && !bound.degraded, nativeComplete: !scan.degraded && !merged.degraded });
+        dispatchComplete: !orchid.degraded && !bound.degraded, nativeComplete: !scan.degraded && !merged.degraded, host });
       process.stdout.write(`${JSON.stringify({ ...envelope, agentObservations }, null, 2)}\n`);
       return view.degraded ? EXIT.incomplete : EXIT.ok;
     }
@@ -681,7 +362,14 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
       loadItems(flags.items),
       source === null
         ? loadGovernance(observationPath, flags.now).then(observed => ({ observed, completion: flags.now }))
-        : collectGovernance(source, log, services, flags.nowExplicit ? flags.now : undefined),
+        : collectGovernance(source, log, services, governanceWiring(), flags.nowExplicit ? flags.now : undefined).then(
+          ({ observed, completion }) => ({ observed: { governance: observed, notes: observed.notes, ok: observed.complete }, completion }),
+          (error: unknown) => {
+            // Only a document the contract refused becomes visible unavailability; anything else is a bug.
+            const reason = "governance document unavailable";
+            if (!(error instanceof Error) || error.message !== reason) throw error;
+            return { observed: { governance: invalidGovernance(wireProducer(), flags.now, [reason]), notes: [reason], ok: false }, completion: flags.now };
+          }),
     ]);
     const { observed } = collected;
     const now = source !== null && !flags.nowExplicit ? collected.completion : flags.now;
@@ -739,146 +427,4 @@ if (invokedDirectly()) {
     });
 }
 
-/** Service injection keeps offline tests independent of Deno, credentials and networking. */
-export interface UsageCommand {
-  readonly bin: string;
-  readonly args: readonly string[];
-  readonly env: Readonly<Record<string, string>>;
-  readonly timeoutMs: number;
-  readonly maxBytes: number;
-}
-export interface SourceServices {
-  readonly env: Readonly<Record<string, string | undefined>>;
-  readonly clock: () => string;
-  readonly usage: (command: UsageCommand) => Promise<unknown>;
-  readonly fetch: typeof fetch;
-  readonly readText: (path: string, maxBytes: number) => Promise<string>;
-  /** The private transport availability snapshot; defaults to the owner-only file reader. */
-  readonly readPrivateText?: (path: string) => Promise<string>;
-}
-export function usageCommand(source: UsageSource, credential: string): UsageCommand {
-  const imports = {
-    "harness:usage": pathToFileURL(join(source.checkout, ".llm/tools/agentic/runtime/provider-usage.ts")).href,
-    "harness:usage-validity": pathToFileURL(join(source.checkout, ".llm/tools/agentic/config/subscriptions.ts")).href,
-  };
-  return { bin: source.denoBin, args: ["run", "--no-config", "--no-lock", "--no-prompt", "--no-remote", "--no-code-cache",
-    `--import-map=data:application/json,${encodeURIComponent(JSON.stringify({ imports }))}`,
-    `--allow-env=${source.credentialEnv}`, "--allow-net=opencode.ai", source.probe,
-    source.model, source.credentialEnv, String(source.maxBytes), String(source.timeoutMs)],
-    env: { [source.credentialEnv]: credential, DENO_NO_UPDATE_CHECK: "1", DENO_DIR: "/dev/null" },
-    timeoutMs: source.timeoutMs, maxBytes: source.maxBytes };
-}
-
-/** Bounded regular-file reads; no symlink traversal restrictions are implied by operator config. */
-export async function readSourceText(path: string, maxBytes: number): Promise<string> {
-  const file = await open(path, "r");
-  try {
-    if (!(await file.stat()).isFile()) throw new SourceError("shape-mismatch");
-    const chunks: Buffer[] = [];
-    let size = 0;
-    for (;;) {
-      const buffer = Buffer.alloc(Math.min(65_536, maxBytes + 1 - size));
-      const { bytesRead } = await file.read(buffer);
-      if (bytesRead === 0) break;
-      size += bytesRead;
-      if (size > maxBytes) throw new SourceError("oversize");
-      chunks.push(buffer.subarray(0, bytesRead));
-    }
-    return Buffer.concat(chunks).toString("utf8");
-  } finally { await file.close(); }
-}
-export async function runUsageProbe(command: UsageCommand): Promise<unknown> {
-  return await new Promise((resolve, reject) => {
-    const child = spawn(command.bin, [...command.args], { env: { ...command.env }, stdio: ["ignore", "pipe", "ignore"], shell: false });
-    const chunks: Buffer[] = [];
-    let size = 0;
-    let failure: SourceError | null = null;
-    const fail = (code: "timeout" | "oversize"): void => {
-      failure ??= new SourceError(code);
-      child.kill("SIGKILL");
-    };
-    const timer = setTimeout(() => fail("timeout"), command.timeoutMs);
-    child.stdout.on("data", (chunk: Buffer) => {
-      size += chunk.byteLength;
-      if (size > command.maxBytes) fail("oversize");
-      else if (failure === null) chunks.push(chunk);
-    });
-    child.on("error", () => { clearTimeout(timer); reject(new SourceError("spawn-failed")); });
-    child.on("close", code => {
-      clearTimeout(timer);
-      if (failure !== null) { reject(failure); return; }
-      if (code !== 0) { reject(new SourceError("spawn-failed")); return; }
-      try { resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown); }
-      catch { reject(new SourceError("non-json")); }
-    });
-  });
-}
-export function defaultSourceServices(): SourceServices {
-  return { env: process.env, clock: () => new Date().toISOString(), usage: runUsageProbe, fetch: globalThis.fetch, readText: readSourceText };
-}
-async function readResponse(response: Response, maxBytes: number): Promise<unknown> {
-  if (!response.ok || response.body === null) throw new SourceError("request-failed");
-  const reader = response.body.getReader();
-  const chunks: Buffer[] = [];
-  let size = 0;
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      size += value.byteLength;
-      if (size > maxBytes) throw new SourceError("oversize");
-      chunks.push(Buffer.from(value));
-    }
-  } finally { await reader.cancel().catch(() => {}); }
-  try { return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown; }
-  catch { throw new SourceError("non-json"); }
-}
-async function isolatedLeg<T = RegimeStatus>(read: () => Promise<Leg<T>>, fallback: "request-failed" | "cgroup-unreadable" | "file-unreadable"): Promise<Leg<T>> {
-  try { return await read(); }
-  catch (error) { return { ok: false, code: error instanceof SourceError ? error.code : fallback }; }
-}
-export async function collectGovernance(source: GovernanceSource, log: LiveLog, services: SourceServices, now?: string): Promise<{ observed: ComposedGovernance; completion: string }> {
-  const missing: Leg<RegimeStatus> = { ok: false, code: "not-configured" };
-  const [usage, spend, capacity] = await Promise.all([
-    isolatedLeg(async () => {
-      if (source.usage === null) return missing;
-      const credential = services.env[source.usage.credentialEnv]?.trim();
-      if (!credential) return { ok: false, code: "credential-unbound" };
-      return mapUsage(await services.usage(usageCommand(source.usage, credential)), source.usage, source.accountLabel);
-    }, "request-failed"),
-    isolatedLeg(async () => {
-      if (source.spend === null) return missing;
-      const config = source.spend;
-      const credential = services.env[config.credentialEnv]?.trim();
-      if (!credential) return { ok: false, code: "credential-unbound" };
-      const controller = new AbortController();
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const timeout = new Promise<never>((_, reject) => {
-        timer = setTimeout(() => { controller.abort(); reject(new SourceError("timeout")); }, config.timeoutMs);
-      });
-      try {
-        const read = async (): Promise<unknown> => readResponse(await services.fetch(config.url, {
-          headers: { accept: "application/json", authorization: `Bearer ${credential}` }, redirect: "error", signal: controller.signal,
-        }), config.maxBytes);
-        const payload = await Promise.race([read(), timeout]);
-        return mapSpend(payload, config, services.clock());
-      } finally { clearTimeout(timer); controller.abort(); }
-    }, "request-failed"),
-    isolatedLeg(async () => {
-      if (source.capacity === null) return missing;
-      const config = source.capacity;
-      const [current, max] = await Promise.all([
-        services.readText(join(config.cgroupRoot, "memory.current"), 128),
-        services.readText(join(config.cgroupRoot, "memory.max"), 128),
-      ]);
-      return mapCapacity(current, max, config, services.clock());
-    }, "cgroup-unreadable"),
-  ]);
-  const transportAvailability = source.transportAvailability
-    ? await isolatedLeg(async () => mapTransportAvailability(await (services.readPrivateText ?? readTransportAvailabilityFile)(source.transportAvailability!.path)), "file-unreadable")
-    : undefined;
-  const completion = services.clock();
-  return { observed: composeGovernance(source, { usage, spend, capacity, events: log.files.flatMap(file => file.events), logDegraded: log.degraded,
-    ...(transportAvailability === undefined ? {} : { transportAvailability }) }, completion, now ?? completion), completion };
-}
 import { accountUsageCommand } from "./account-usage-cli.js";
