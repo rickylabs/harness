@@ -45,7 +45,7 @@ test("cockpit: @rickylabs/harness-contracts entry points, manifest and runtime v
   assertExports(COCKPIT, pkg, main, {
     ...kinds("object", `PROVIDER_METER_UNITS PROVIDER_USAGE_REASONS AGENT_UNAVAILABLE_REASONS
       AGENT_ACTION_REJECTED_REASONS RUN_OBSERVATION_INCOMPLETE_REASONS RUN_OBSERVATION_UNAVAILABLE_REASONS
-      OPENCODE_OBSERVED_SOURCES ISSUE_LAUNCH_REFUSAL_REASONS`),
+      OPENCODE_OBSERVED_SOURCES ISSUE_LAUNCH_REFUSAL_REASONS AGENT_ACTIVITY_STATES AGENT_ACTIVITY_GAPS`),
     ...kinds("number", "MAX_ISSUE_AGENT_TREE_BYTES PROTOCOL_VERSION"),
     ...kinds("function", `compareRouteIdentity emptyFold foldValue snapshotOf publicActivityTarget
       publicActivityText publicOpenCodeModel readAccountUsageDocument readAccountUsageEnvelope

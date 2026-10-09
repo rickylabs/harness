@@ -96,6 +96,29 @@ GPU never becomes a zero reading. Version 0.7.0 adds optional per-card VRAM read
 sum must equal the aggregate. The decoder accepts 0.5.x observations without the fourth row
 and normalizes it to unavailable. Version 0.6.0 was published from its tagged merge.
 
+## Activity lifecycle and coverage in the next minor
+
+The epic 701 coordinator assigns the version at merge. Three optional, additive fields:
+
+- `AgentActivityStep.state`, on `tool`, `command` and `file` steps only. Its values are one of
+  `AGENT_ACTIVITY_STATES`: `completed`, `failed`, `cancelled` or `unknown`. It is the end the native
+  store recorded for that step. `completed` means the native step ended, not that a tool succeeded.
+  `unknown` never means running, failed or zero, and a step without the field makes no claim.
+- `AgentActivity.coverage` (`AgentActivityCoverage`), on the `available` branch only. It holds
+  `gaps`: unique `AGENT_ACTIVITY_GAPS` codes in canonical order. Empty `gaps` means the published
+  window is fully covered. A gap names why activity is narrower than the native run:
+  - a missing, invalid, budget-skipped, truncated, holed or vendor-truncated descriptor source;
+  - call lifecycle that cannot be correlated to its result (`call-lifecycle-unproven`);
+  - results whose in-progress status is not attributed to current execution
+    (`in-progress-unattributed`).
+- `NativeToolCallDescriptor` and `NativeToolCallRead` are type-only. They form the read seam between a
+  provider adapter and the telemetry producer, and are never published in a frame.
+
+An older reader rejects a whole snapshot holding `state` or `coverage`, because the decoder
+refuses unknown keys. Telemetry therefore emits both, and the unnamed result steps they describe,
+only under `issue-agents --activity-lifecycle`. A consumer bumps this package first and passes the
+flag after. Without the flag, frames keep their earlier keys exactly.
+
 ## Bounded issue trees in 0.37.0
 
 An issue row may now be `complete: false` with reason `scan_limit` and still carry dispatches: the

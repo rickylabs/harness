@@ -43,18 +43,34 @@ export interface AgentActivityStep {
   /** Additive in the next contracts minor; a screened, tool-specific display target. */
   readonly target?: { readonly kind: AgentActivityTargetKind; readonly value: string } | null;
   readonly source: "codex-rollout" | "claude-transcript" | "agy-transcript" | "opencode-transcript";
+  /**
+   * Additive in the next contracts minor, on tool, command and file steps only: the native step's
+   * observed end, or `unknown` where the producer cannot prove one. A step without it makes no claim.
+   */
+  readonly state?: AgentActivityState;
 }
+/** A native end the producer observed; `unknown` never means running, failed or zero. */
+export const AGENT_ACTIVITY_STATES = ["completed", "failed", "cancelled", "unknown"] as const;
+export type AgentActivityState = typeof AGENT_ACTIVITY_STATES[number];
+/** Closed, canonically ordered reasons the published activity is narrower than the native run. */
+export const AGENT_ACTIVITY_GAPS = ["tool-names-source-missing", "tool-names-source-invalid",
+  "tool-names-budget-exhausted", "tool-names-truncated", "tool-names-lines-missing", "tool-names-vendor-truncated",
+  "call-lifecycle-unproven", "in-progress-unattributed"] as const;
+export type AgentActivityGap = typeof AGENT_ACTIVITY_GAPS[number];
+/** Additive in the next contracts minor; empty `gaps` states full coverage of the published window. */
+export interface AgentActivityCoverage { readonly gaps: readonly AgentActivityGap[] }
 export type AgentActivity =
   | { readonly availability: "available"; readonly reason: null; readonly observedAt: string;
-      readonly steps: readonly AgentActivityStep[] }
+      readonly steps: readonly AgentActivityStep[]; readonly coverage?: AgentActivityCoverage }
   | { readonly availability: "unavailable"; readonly reason: AgentUnavailableReason; readonly observedAt: null;
       readonly steps: readonly [] };
 
 /** Decode one agent's activity; used by the issue-agent tree reader. */
 export function readAgentActivity(value: unknown, capturedAt: string): AgentActivity {
-  const row = record(value, ["availability", "reason", "observedAt", "steps"]);
+  const hasCoverage = Object.hasOwn(value as object, "coverage");
+  const row = record(value, ["availability", "reason", "observedAt", "steps", ...(hasCoverage ? ["coverage"] : [])]);
   const steps = array(row.steps, MAX_AGENT_ACTIVITY_STEPS);
-  if (row.availability === "unavailable" && row.observedAt === null && steps.length === 0) {
+  if (row.availability === "unavailable" && row.observedAt === null && steps.length === 0 && !hasCoverage) {
     return { availability: "unavailable", reason: reason(row.reason), observedAt: null, steps: [] };
   }
   if (row.availability !== "available" || row.reason !== null) return bad();
@@ -63,7 +79,8 @@ export function readAgentActivity(value: unknown, capturedAt: string): AgentActi
   const ids = new Set<string>();
   const decoded = steps.map(value => {
     const s = record(value, ["id", "at", "kind", "toolName", "commandHead", "filePath", "summary", "source",
-      ...(Object.hasOwn(value as object, "target") ? ["target"] : [])]);
+      ...(Object.hasOwn(value as object, "target") ? ["target"] : []),
+      ...(Object.hasOwn(value as object, "state") ? ["state"] : [])]);
     if (typeof s.id !== "string" || !/^step_[a-f0-9]{64}$/.test(s.id) || ids.has(s.id)) return bad();
     ids.add(s.id);
     const at = stamp(s.at);
@@ -77,6 +94,8 @@ export function readAgentActivity(value: unknown, capturedAt: string): AgentActi
         s.filePath.split("/").some(part => part === "." || part === ".." ||
           publicActivityTarget("file", part) === null))) return bad();
     if (s.summary !== null && publicActivityText(s.summary) !== s.summary) return bad();
+    if (Object.hasOwn(s, "state") && (s.kind === "message" ||
+        !AGENT_ACTIVITY_STATES.includes(s.state as AgentActivityState))) return bad();
     let target: AgentActivityStep["target"];
     if (Object.hasOwn(s, "target")) {
       if (s.target === null) target = null;
@@ -95,8 +114,17 @@ export function readAgentActivity(value: unknown, capturedAt: string): AgentActi
     return { id: s.id, at, kind: s.kind as AgentActivityStep["kind"], toolName: s.toolName as string | null,
       commandHead: s.commandHead as string | null, filePath: s.filePath as string | null,
       summary: s.summary as string | null, source: s.source as AgentActivityStep["source"],
-      ...(Object.hasOwn(s, "target") ? { target: target ?? null } : {}) };
+      ...(Object.hasOwn(s, "target") ? { target: target ?? null } : {}),
+      ...(Object.hasOwn(s, "state") ? { state: s.state as AgentActivityState } : {}) };
   });
   for (let i = 1; i < decoded.length; i++) if (decoded[i - 1]!.at < decoded[i]!.at) return bad();
-  return { availability: "available", reason: null, observedAt, steps: decoded };
+  if (!hasCoverage) return { availability: "available", reason: null, observedAt, steps: decoded };
+  const coverage = record(row.coverage, ["gaps"]);
+  const gaps = array(coverage.gaps, AGENT_ACTIVITY_GAPS.length).map(gap =>
+    AGENT_ACTIVITY_GAPS.includes(gap as AgentActivityGap) ? gap as AgentActivityGap : bad());
+  // Unique and canonical, so equal coverage always serializes (and revisions) identically.
+  for (let i = 1; i < gaps.length; i++) {
+    if (AGENT_ACTIVITY_GAPS.indexOf(gaps[i - 1]!) >= AGENT_ACTIVITY_GAPS.indexOf(gaps[i]!)) return bad();
+  }
+  return { availability: "available", reason: null, observedAt, steps: decoded, coverage: { gaps } };
 }
