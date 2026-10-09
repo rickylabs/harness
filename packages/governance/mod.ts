@@ -4,11 +4,11 @@
  * `GovernanceReadSnapshot` contract.
  *
  * This file is the package's only entry and re-exports its public API, nothing else. The caller is the
- * composition root: it wires in the producer name, the string order and the one spend endpoint a descriptor
- * may name (`GovernanceWiring`, `SourcePolicy`), and passes the source services (`SourceServices`).
+ * composition root: it wires in the producer name and the string order (`GovernanceWiring`) and passes the
+ * source services (`SourceServices`). Every endpoint and host comes from the operator's source descriptor.
  */
 export { instant, SourceError, type GovernanceSource, type SourceRefusal } from "./src/domain/source.js";
-export type { AdmissionLog, GovernanceWiring, SourcePolicy, SourceServices, StringOrder, UsageCommand } from "./src/ports/source.js";
+export type { AdmissionLog, GovernanceWiring, SourceServices, StringOrder, UsageCommand } from "./src/ports/source.js";
 export { parseSource } from "./src/application/parse-source.js";
 export { usageCommand } from "./src/application/usage-command.js";
 export { composeGovernance, type CollectedSources } from "./src/application/compose.js";

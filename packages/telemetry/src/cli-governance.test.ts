@@ -8,12 +8,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { EXIT } from "./cli.js";
 import { parseFlags } from "./cli-flags.js";
-import { collectGovernance as collect, readSourceText, runUsageProbe, SourceError, usageCommand, type AdmissionLog, type GovernanceSource,
-  type SourceServices } from "@rickylabs/governance";
-import { governanceWiring, parseGovernanceSource as parseSource, SPEND_URL } from "./governance-wiring.js";
+import { collectGovernance as collect, parseSource, readSourceText, runUsageProbe, SourceError, usageCommand, type AdmissionLog,
+  type GovernanceSource, type SourceServices } from "@rickylabs/governance";
+import { governanceWiring } from "./governance-wiring.js";
 import { livePath, resolveObservability } from "./observability.js";
 import { admissionEvent, cliProcess, emptyLog, fakeServices, filesBelow, governanceFixture, home, LIVE_NOW, liveDescriptor,
-  PRIVATE_CANARY, run, seedLive, SPEND_CANARY, USAGE_CANARY, usagePayload, useTemporaryHome } from "./cli-test-support.js";
+  PRIVATE_CANARY, run, seedLive, SPEND_CANARY, SPEND_URL, USAGE_CANARY, USAGE_HOST, usagePayload, useTemporaryHome } from "./cli-test-support.js";
 
 const collectGovernance = (source: GovernanceSource, log: AdmissionLog, services: SourceServices, now?: string) =>
   collect(source, log, services, governanceWiring(), now);
@@ -34,7 +34,7 @@ describe("live governance CLI and services", () => {
     const config = parseSource(liveDescriptor()).usage!;
     const command = usageCommand(config, USAGE_CANARY);
     assert.deepEqual(command.args.slice(0, 6), ["run", "--no-config", "--no-lock", "--no-prompt", "--no-remote", "--no-code-cache"]);
-    assert.deepEqual(command.args.filter(a => a.startsWith("--allow-")), ["--allow-env=USAGE_API_KEY", "--allow-net=opencode.ai"]);
+    assert.deepEqual(command.args.filter(a => a.startsWith("--allow-")), ["--allow-env=USAGE_API_KEY", `--allow-net=${USAGE_HOST}`]);
     assert.deepEqual(Object.keys(command.env).sort(), ["DENO_DIR", "DENO_NO_UPDATE_CHECK", "USAGE_API_KEY"]);
     assert.equal(command.env.DENO_DIR, "/dev/null");
     assert.equal(command.env.USAGE_API_KEY, USAGE_CANARY);
@@ -190,7 +190,7 @@ describe("live governance CLI and services", () => {
     assert.match(refreshed.out, /"ramUsedBytes": 2048/);
     assert.ok(Date.parse(JSON.parse(refreshed.out).generatedAt) > Date.parse(JSON.parse(result.out).generatedAt));
     assert.deepEqual(await filesBelow(home), refreshedBefore);
-    await writeFile(path, JSON.stringify({ ...liveDescriptor(), spend: { ...liveDescriptor().spend, url: "https://private-canary.invalid" } }));
+    await writeFile(path, JSON.stringify({ ...liveDescriptor(), spend: { ...liveDescriptor().spend, url: "http://private-canary.invalid/key" } }));
     const invalid = await cliProcess(["status", "--home", home, "--observations-from", path]);
     assert.equal(invalid.code, 2);
     assert.equal(invalid.out, "governance source: invalid-descriptor\n");

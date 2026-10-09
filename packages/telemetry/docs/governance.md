@@ -3,7 +3,7 @@
 How `harness-telemetry` reads live governance sources and publishes the governance read document.
 The document's shape and decoder belong to [`@rickylabs/harness-contracts`](../../contracts/README.md#governance-read-document-020);
 the readers themselves live in [`@rickylabs/governance`](../../governance/README.md), which `harness-telemetry`
-wires with its producer name and spend endpoint. This page covers the sources, the collection rules and
+wires with its producer name. This page covers the sources, the collection rules and
 the commands. Back to the [package README](../README.md).
 
 ## Live governance sources
@@ -23,9 +23,9 @@ model IDs, credential names and provider response metadata are never copied into
 
 | Leg | Required fields |
 | --- | --- |
-| `usage` | `denoBin`, `probe`, `checkout`: absolute paths; `model`: bounded provider/model routing string; `credentialEnv`: environment-variable name; `timeoutMs`; `maxBytes`; `windows` |
+| `usage` | `denoBin`, `probe`, `checkout`: absolute paths; `model`: bounded provider/model routing string; `credentialEnv`: environment-variable name; `allowNet`: the one bare hostname the usage probe may reach (no scheme, port, path or wildcard), for example `usage.example.invalid`; `timeoutMs`; `maxBytes`; `windows` |
 | `usage.windows` | Exactly `rolling_five_hours`, `weekly`, `monthly`, each with a distinct safe `label` and positive integer `windowMinutes`. Durations are configuration, including monthly duration; the reader never guesses them. |
-| `spend` | `url`: exactly `https://openrouter.ai/api/v1/key`, the one endpoint `harness-telemetry` wires in; `credentialEnv`; `window`: `total`, `daily`, `weekly`, or `monthly`; `validForMs`; `timeoutMs`; `maxBytes` |
+| `spend` | `url`: the operator's spend endpoint, an exact canonical `https` URL with no userinfo, query or fragment (for example `https://spend.example.invalid/api/v1/key`); the credential is sent to that URL only; `credentialEnv`; `window`: `total`, `daily`, `weekly`, or `monthly`; `validForMs`; `timeoutMs`; `maxBytes` |
 | `capacity` | `cgroupRoot`: absolute configured cgroup-v2 directory; `scopeLabel`: safe public label; `validForMs` |
 | `admissions` | Exactly `{ "fromObservabilityLog": true }` |
 
@@ -43,7 +43,7 @@ service outside the Node TypeScript project**. The configured external checkout 
 root. It is an operational service dependency, never a package or build dependency. An in-memory
 import map resolves two static aliases to those files. The launcher uses `--no-config`, `--no-lock`,
 `--no-prompt`, `--no-remote`, `--no-code-cache`, `--allow-env=<credentialEnv>` and
-`--allow-net=opencode.ai`; no read, write, subprocess, or broad environment permission is granted.
+`--allow-net=<allowNet>`; no read, write, subprocess, or broad environment permission is granted.
 The minimized child environment contains only that binding and fixed Deno runtime controls;
 `DENO_DIR=/dev/null` prevents disk caching. The probe remaps the named binding to the upstream
 library's `OPENCODE_API_KEY`, injects rejected file readers, and never loads an auth file or `.env`.

@@ -9,12 +9,14 @@ export interface UsageSource {
   readonly checkout: string;
   readonly model: string;
   readonly credentialEnv: string;
+  /** The one host the usage probe may reach (Deno `--allow-net`): a bare hostname, operator-chosen. */
+  readonly allowNet: string;
   readonly timeoutMs: number;
   readonly maxBytes: number;
   readonly windows: Readonly<Record<UsageWindow, { readonly label: string; readonly windowMinutes: number }>>;
 }
 export interface SpendSource {
-  /** The metered spend endpoint; `parseSource` accepts only the one its caller wires in. */
+  /** The metered spend endpoint, operator-chosen; the spend credential is sent to this exact URL and nowhere else. */
   readonly url: string;
   readonly credentialEnv: string;
   readonly window: keyof typeof SPEND_WINDOWS;

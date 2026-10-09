@@ -18,16 +18,17 @@ or any other workspace package, or if `src/domain` imports anything outward.
 | --- | --- |
 | `src/domain/` | The source descriptor types and value checks, and the pure usage, spend and capacity mappers |
 | `src/application/` | `parseSource`, recorded admissions, transport availability, `composeGovernance`, `collectGovernance`, `governanceRead`, `governanceAt` |
-| `src/ports/` | `SourceServices`, `AdmissionLog`, `GovernanceWiring`, `SourcePolicy`: what a caller passes in |
+| `src/ports/` | `SourceServices`, `AdmissionLog`, `GovernanceWiring`: what a caller passes in |
 | `src/adapters/` | The Node source services: bounded file reads, the usage-probe subprocess, the owner-only transport availability file |
 
 ## What the caller wires in
 
-The composition root (today `harness-telemetry`) supplies everything that is not governance's own:
+The composition root (today `harness-telemetry`) supplies everything that is not governance's own. No
+endpoint or host is named in this package: the operator's source descriptor names the spend endpoint
+(`spend.url`, an exact `https` URL with no userinfo, query or fragment; the spend credential is sent there
+and nowhere else) and the one host the usage probe may reach (`usage.allowNet`, a bare hostname).
 
 - `GovernanceWiring`: the `producer` stamped on every document and the string `order` admissions sort by.
-- `SourcePolicy`: the one spend endpoint a descriptor's `spend.url` may name. A descriptor that names any
-  other URL is refused, so a spend credential is never sent elsewhere. No endpoint is named in this package.
 - `SourceServices`: environment, clock, usage probe, `fetch` and file readers. `defaultSourceServices()`
   is the Node implementation; tests pass fakes.
 

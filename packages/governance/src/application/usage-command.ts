@@ -11,7 +11,7 @@ export function usageCommand(source: UsageSource, credential: string): UsageComm
   };
   return { bin: source.denoBin, args: ["run", "--no-config", "--no-lock", "--no-prompt", "--no-remote", "--no-code-cache",
     `--import-map=data:application/json,${encodeURIComponent(JSON.stringify({ imports }))}`,
-    `--allow-env=${source.credentialEnv}`, "--allow-net=opencode.ai", source.probe,
+    `--allow-env=${source.credentialEnv}`, `--allow-net=${source.allowNet}`, source.probe,
     source.model, source.credentialEnv, String(source.maxBytes), String(source.timeoutMs)],
     env: { [source.credentialEnv]: credential, DENO_NO_UPDATE_CHECK: "1", DENO_DIR: "/dev/null" },
     timeoutMs: source.timeoutMs, maxBytes: source.maxBytes };

@@ -7,7 +7,6 @@ import { spawn as spawnChild } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { main } from "./cli.js";
 import { defaultSourceServices, type SourceServices } from "@rickylabs/governance";
-import { SPEND_URL } from "./governance-wiring.js";
 import { governanceDocument } from "./governance-test-fixture.js";
 
 export let home: string;
@@ -98,6 +97,9 @@ export async function seedFlatItems(): Promise<string> {
   return items;
 }
 
+/** Synthetic operator-chosen endpoints: the usage probe host and the spend URL. */
+export const USAGE_HOST = "usage.example.invalid";
+export const SPEND_URL = "https://spend.example.invalid/api/v1/key";
 export const LIVE_NOW = "2026-09-07T12:00:00.000Z";
 export const USAGE_CANARY = "synthetic-usage-secret-canary";
 export const SPEND_CANARY = "synthetic-spend-secret-canary";
@@ -105,7 +107,7 @@ export const PRIVATE_CANARY = "synthetic-private-project-session-path-host-canar
 export function liveDescriptor() {
   return {
     accountLabel: "synthetic", usage: { denoBin: "/fixture/deno", probe: "/fixture/probe.ts", checkout: join(home, "upstream"), model: "fixture/model",
-      credentialEnv: "USAGE_API_KEY", timeoutMs: 100, maxBytes: 4096,
+      credentialEnv: "USAGE_API_KEY", allowNet: USAGE_HOST, timeoutMs: 100, maxBytes: 4096,
       windows: { rolling_five_hours: { label: "short", windowMinutes: 3 }, weekly: { label: "week", windowMinutes: 5 }, monthly: { label: "month", windowMinutes: 7 } } },
     spend: { url: SPEND_URL, credentialEnv: "SPEND_API_KEY", window: "monthly", validForMs: 60000, timeoutMs: 100, maxBytes: 4096 },
     capacity: { cgroupRoot: join(home, "cgroup"), scopeLabel: "configured-cgroup", validForMs: 60000 },

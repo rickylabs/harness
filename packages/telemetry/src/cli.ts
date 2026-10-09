@@ -38,8 +38,8 @@ import { publicRuns, publicSnapshot, publicTree } from "./public.js";
 import { renderSnapshot, renderTree } from "./render.js";
 import { buildSnapshot } from "./snapshot.js";
 import { buildTree } from "./tree.js";
-import { collectGovernance, defaultSourceServices, instant, invalidGovernance, type GovernanceSource, type SourceServices } from "@rickylabs/governance";
-import { governanceWiring, parseGovernanceSource } from "./governance-wiring.js";
+import { collectGovernance, defaultSourceServices, instant, invalidGovernance, parseSource, type GovernanceSource, type SourceServices } from "@rickylabs/governance";
+import { governanceWiring } from "./governance-wiring.js";
 import { collectRepositoryRunObservation, type RepositoryRunReadOptions } from "./repository-run-observation.js";
 import { parseFlags, type Flags } from "./cli-flags.js";
 import { loadGovernance, loadItems, recordEvents, whereItWrites, writeNotes } from "./cli-io.js";
@@ -238,7 +238,7 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
     try { wireFamily = resolveWireFamily(services.env); }
     catch { process.stderr.write("governance: invalid HARNESS_TELEMETRY_WIRE_FAMILY\n"); return EXIT.usage; }
     let configured: GovernanceSource;
-    try { configured = parseGovernanceSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
+    try { configured = parseSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
     catch { process.stderr.write("governance: invalid descriptor\n"); return EXIT.usage; }
     try {
       const log = configured.admissions === null ? { files: [], notes: [], degraded: false }
@@ -257,7 +257,7 @@ async function mainConfigured(argv: readonly string[], services: SourceServices,
   if (flags.observationsFrom !== null) {
     if (flags.observationsFrom.startsWith("file:")) observationPath = flags.observationsFrom.slice(5);
     else {
-      try { source = parseGovernanceSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
+      try { source = parseSource(JSON.parse(await services.readText(flags.observationsFrom, 4_194_304)) as unknown); }
       catch { process.stdout.write("governance source: invalid-descriptor\n"); return EXIT.usage; }
     }
   }

@@ -34,8 +34,3 @@ export interface GovernanceWiring {
   readonly producer: string;
   readonly order: StringOrder;
 }
-
-/** The one spend endpoint a descriptor may name, wired in by the composition root, so a credential is never sent elsewhere. */
-export interface SourcePolicy {
-  readonly spendUrl: string;
-}
