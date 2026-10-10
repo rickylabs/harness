@@ -287,3 +287,29 @@ a leading `~` included, as in Cockpit's schema. The decoder rejects extra fields
 credentials, private paths and hosts, ambiguous route bindings, duplicate meter identities, malformed
 quantities and rows observed after `generatedAt`. The private file reader is `readProviderLimitsFile` in
 [`@rickylabs/governance`](../../governance/README.md#provider-limit-evidence).
+
+### Warnings and route admission (0.42.0, rickylabs/atelier-cockpit#451)
+
+`assessProviderLimits(snapshot, now)` turns a decoded snapshot into `ProviderLimitAssessmentV1`
+at `now` (epoch milliseconds), with no I/O. Each meter becomes a `ProviderLimitAdvisoryV1` with
+`usedPercent`, `stale` and `warning`. For a named key, `usedPercent` is
+`(limit - remaining) / limit` of that key's own cap, and a zero cap counts as 100%. A reading is
+stale once it is `PROVIDER_LIMIT_VALIDITY_MS` old (two 180-second polls, as in Cockpit) or past its
+`resetsAt`. A reading observed after `now` has `stale: null`. `warning` is true only for a known,
+fresh reading at or above `PROVIDER_LIMIT_WARNING_PERCENT` (90). Unknown and partial readings never
+warn. `refusals` holds the active `quota_exhausted` and `payment_required` outcomes, and `rateLimits`
+the active `rate_limited` ones. A refusal stays active until a success in the same provider, key
+and account scope is observed strictly later. For a provider-wide refusal (null `model`) that
+success can be on any model; otherwise it must be on the same model. An equal instant keeps the
+refusal.
+
+`admitProviderRoute(assessment, route)` answers for one provider-qualified launch ID
+(`opencode-go/fixture`, `openrouter/vendor/model`) with `ProviderRouteAdmissionV1`. The route is
+refused only by an active quota or payment refusal that covers it. A refusal with no key and no
+account covers every route of its provider, or only `provider/model` when it names a model. A key
+or account refusal covers only routes that a meter of that key or account binds in `launchModels`.
+Warnings, rate limits, unknown and stale readings never refuse a route; the verdict still carries
+the route's bound warnings and covering rate limits. The integration fixtures in
+`test-fixtures/provider-limits-produced/` are byte-for-byte snapshots written by Orchid's producer
+([rickylabs/orchid#97](https://github.com/rickylabs/orchid/pull/97)). `pnpm run check:installed`
+reads them through the actual `harness-telemetry provider-limits` command and the installed tarball.

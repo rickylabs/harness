@@ -52,6 +52,9 @@ test("cockpit: @rickylabs/harness-contracts entry points, manifest and runtime v
       readGovernanceSnapshot readIssueAgentTreeSnapshot readProviderBudgetDecisions readProviderLimitSnapshot readProviderUsageSnapshot
       readRepositoryRunObservation encodeWorkflowRevisionBundle readAgentObservations readRoutineRevision
       readRoutineWake readWorkflowRevision readWorkflowRevisionBundle unavailableAgentCost`),
+    // Provider-limit warnings and route admission (rickylabs/atelier-cockpit#451).
+    ...kinds("number", "PROVIDER_LIMIT_WARNING_PERCENT PROVIDER_LIMIT_VALIDITY_MS"),
+    ...kinds("function", "assessProviderLimits admitProviderRoute"),
   });
   assert.equal(main.PROTOCOL_VERSION, 1, `${COCKPIT}: ${pkg} PROTOCOL_VERSION is no longer 1`);
   assertExports(COCKPIT, `${pkg}/server`, await import(`${pkg}/server`), kinds("function", "openHub publish subscribe"));

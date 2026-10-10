@@ -26,7 +26,8 @@
  * A file whose *name* says allowance or quota is refused on that alone. Nobody names a stable table
  * that.
  *
- * Exit codes: 0 nothing committed, 1 at least one snapshot, 2 the check could not run.
+ * Exit codes: 0 nothing committed, 1 at least one snapshot, 2 the check could not run. `--json`
+ * prints one structured result on stdout instead of the text report; the exit codes are the same.
  */
 
 import { execFileSync } from "node:child_process";
@@ -36,6 +37,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const JSON_OUTPUT = process.argv.includes("--json");
 
 // Keys that name a moment. Matched as a JSON key (`"x":`) or a YAML key (`x:`), so a word appearing
 // in a *value* — a description, a URL, an enum member — does not trip the check.
@@ -90,7 +92,13 @@ const SYNTHETIC_CONTRACT_FIXTURES = {
   "packages/contracts/test-fixtures/governance-read/mixed-timeout.json": "458ab0f127467fb4ecbcebfd353350fd87e9cc369362a16ff33849d3ee57b341",
   "packages/contracts/test-fixtures/governance-read/stale.json": "42be209b2ae8bbb4b27764b0cfabcc36acc305d67c0b02acbb845f3234c51d8d",
   "packages/contracts/test-fixtures/governance-read/transport-availability.json": "ef302bd910dd043de80a654a6f5e302f1b71ec1065cd382b3c052da568ef35f2",
-  "packages/contracts/test-fixtures/governance-read/unavailable-not-configured.json": "fccae4390e0e2b50d2e1c83dbb2a41560c0fff2d3a2c68d0020c5dc208e94e5f"
+  "packages/contracts/test-fixtures/governance-read/unavailable-not-configured.json": "fccae4390e0e2b50d2e1c83dbb2a41560c0fff2d3a2c68d0020c5dc208e94e5f",
+  // Bytes Orchid's provider-limit producer wrote under its own tests (rickylabs/orchid#97, rickylabs/harness#650).
+  "packages/contracts/test-fixtures/provider-limits-produced/binding-after.json": "d8d2e79fb738b0bd7d342aab5387bd6cd019bdcc12820569151147e2bb064808",
+  "packages/contracts/test-fixtures/provider-limits-produced/binding-before.json": "44c93dc2f6ed9d8101032f9630d4ec3d1738358eb52a90f92d6ca13b4d8304ee",
+  "packages/contracts/test-fixtures/provider-limits-produced/native-keys-global-refusal.json": "76fb0b1529f406b22044a8c3cb75630db2f90995d596c5145f5319538c504263",
+  "packages/contracts/test-fixtures/provider-limits-produced/refusal-cleared.json": "b488825044bb897cb73eacb6178dda34aabf9c31a1756a08249549f17d760c6e",
+  "packages/contracts/test-fixtures/provider-limits-produced/thresholds-hard-then-rate.json": "11bb8a2c83bb7d013faa0a8427e105447ca70d6d04670c503d4eedc4cd9ba794"
 };
 
 let tracked;
@@ -122,7 +130,7 @@ for (const [path, expected] of Object.entries(SYNTHETIC_CONTRACT_FIXTURES)) {
     approvedFixtures.add(path);
   } catch {
     // Fail even if changed bytes no longer contain snapshot keys. Never echo file contents.
-    problems.push(`${path}: inventoried synthetic fixture is missing, unreadable or changed; exact SHA-256 match required`);
+    problems.push({ path, rule: "inventory" });
   }
 }
 
@@ -139,7 +147,7 @@ for (const path of files) {
 
   const base = path.slice(path.lastIndexOf("/") + 1);
   if (NAME_PATTERN.test(base)) {
-    problems.push(`${path}: a data file named for an allowance or a quota is a snapshot by its name`);
+    problems.push({ path, rule: "name" });
     continue;
   }
 
@@ -156,11 +164,23 @@ for (const path of files) {
     const line = text.slice(0, match.index).split("\n").length;
     // The key is named; the value never is. A committed spend figure is still a number nobody
     // outside this repository needs to read in a CI log.
-    problems.push(`${path}:${line}: carries \`${match[2]}\`, which is only ever true as of a moment`);
+    problems.push({ path, line, rule: "key", key: match[2] });
   }
 }
 
-for (const problem of problems) console.error(problem);
+if (JSON_OUTPUT) {
+  console.log(JSON.stringify({ check: "snapshots", status: problems.length > 0 ? "FAIL" : "PASS", files: files.length,
+    verifiedFixtures: approvedFixtures.size, problems }));
+  process.exit(problems.length > 0 ? 1 : 0);
+}
+
+for (const problem of problems) {
+  console.error(problem.rule === "inventory"
+    ? `${problem.path}: inventoried synthetic fixture is missing, unreadable or changed; exact SHA-256 match required`
+    : problem.rule === "name"
+      ? `${problem.path}: a data file named for an allowance or a quota is a snapshot by its name`
+      : `${problem.path}:${problem.line}: carries \`${problem.key}\`, which is only ever true as of a moment`);
+}
 
 if (problems.length > 0) {
   console.error(

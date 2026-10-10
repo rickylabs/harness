@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, chmodSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync, chmodSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -195,6 +195,61 @@ assert.deepEqual([...new Set(read.document.providers.meters.map(r=>r.period))],[
 `);
   const paidRoundtrip = await run(process.execPath,[join(consumer,"paid-cli-roundtrip.mjs"),paidOutput],{cwd:consumer,env});
   assert.equal(paidRoundtrip.code,0); assert.equal(paidRoundtrip.stderr,"");
+  stage = "actual provider-limits CLI on Orchid-produced snapshots -> installed admission";
+  // Bytes Orchid's producer wrote (rickylabs/orchid#97); a 0600 copy is what the strict reader accepts.
+  const limitDirectory = join(contracts, "test-fixtures/provider-limits-produced");
+  const limitFixtures = readdirSync(limitDirectory).filter(file => file.endsWith(".json")).map(file => file.slice(0, -".json".length));
+  for (const name of limitFixtures) {
+    const source = join(realpathSync(scratch), `${name}.json`);
+    writeFileSync(source, readFileSync(join(limitDirectory, `${name}.json`)), { mode: 0o600 });
+    const limits = await run(process.execPath, [cli, "provider-limits", "--source", source], { env });
+    assert.equal(limits.code, 0); assert.equal(limits.stderr, "");
+    writeFileSync(join(consumer, `${name}.json`), limits.stdout);
+    chmodSync(source, 0o644);
+    const unsafe = await run(process.execPath, [cli, "provider-limits", "--source", source], { env });
+    assert.equal(unsafe.code, 3); assert.equal(unsafe.stdout, "");
+  }
+  writeFileSync(join(consumer, "provider-limits.mjs"), `import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {readProviderLimitSnapshot,assessProviderLimits,admitProviderRoute,PROVIDER_LIMIT_VALIDITY_MS,PROVIDER_LIMIT_WARNING_PERCENT} from '@rickylabs/harness-contracts';
+assert.deepEqual([PROVIDER_LIMIT_WARNING_PERCENT,PROVIDER_LIMIT_VALIDITY_MS],[90,360000]);
+const routes={'native-keys-global-refusal':['codex/fixture','openrouter/vendor/model','openrouter/vendor/other'],
+ 'thresholds-hard-then-rate':['codex/fixture','openrouter/vendor/model','openrouter/vendor/other','opencode-go/fixture','opencode-go/rate-only'],
+ 'refusal-cleared':['opencode-go/fixture'],'binding-before':['codex/fixture'],'binding-after':['codex/fixture']};
+const out={};
+for(const [name,list] of Object.entries(routes)){
+ const read=readProviderLimitSnapshot(JSON.parse(readFileSync(name+'.json','utf8'))); assert.equal(read.ok,true);
+ const verdicts=at=>Object.fromEntries(list.map(route=>{const v=admitProviderRoute(assessProviderLimits(read.snapshot,at),route);
+  return [route,[v.admitted,v.refusal===null?null:v.refusal.reason,v.warnings.length,v.rateLimits.length]];}));
+ out[name]=verdicts(Date.parse(read.snapshot.generatedAt)+1000);
+ // Negative control: once every reading has aged out, nothing warns and the refusals are unchanged.
+ const aged=verdicts(Date.parse(read.snapshot.generatedAt)+PROVIDER_LIMIT_VALIDITY_MS+1000);
+ for(const route of list){assert.equal(aged[route][2],0);assert.deepEqual([aged[route][0],aged[route][1],aged[route][3]],[out[name][route][0],out[name][route][1],out[name][route][3]]);}
+}
+console.log(JSON.stringify(out));
+`);
+  const limitAdmission = await run(process.execPath, [join(consumer, "provider-limits.mjs")], { cwd: consumer, env });
+  assert.equal(limitAdmission.code, 0); assert.equal(limitAdmission.stderr, "");
+  const limitVerdicts = JSON.parse(limitAdmission.stdout);
+  // [admitted, refusal reason, route warnings, route rate limits]: warnings never refuse; only quota/payment does.
+  assert.deepEqual(limitVerdicts, {
+    "native-keys-global-refusal": { "codex/fixture": [false, "quota_exhausted", 2, 0], "openrouter/vendor/model": [true, null, 1, 0], "openrouter/vendor/other": [true, null, 0, 0] },
+    "thresholds-hard-then-rate": { "codex/fixture": [true, null, 1, 0], "openrouter/vendor/model": [true, null, 1, 0], "openrouter/vendor/other": [true, null, 0, 0],
+      "opencode-go/fixture": [false, "quota_exhausted", 0, 1], "opencode-go/rate-only": [true, null, 0, 1] },
+    "refusal-cleared": { "opencode-go/fixture": [true, null, 0, 0] },
+    "binding-before": { "codex/fixture": [false, "quota_exhausted", 0, 0] },
+    "binding-after": { "codex/fixture": [true, null, 0, 0] },
+  });
+  writeFileSync(join(consumer, "provider-limits-consumer.ts"), `import { readProviderLimitSnapshot, assessProviderLimits, admitProviderRoute, type ProviderLimitAssessmentV1, type ProviderRouteAdmissionV1, type ProviderOutcomeV1 } from '@rickylabs/harness-contracts';
+const read = readProviderLimitSnapshot({});
+if (read.ok) {
+  const assessment: ProviderLimitAssessmentV1 = assessProviderLimits(read.snapshot, 0);
+  const verdict: ProviderRouteAdmissionV1 = admitProviderRoute(assessment, 'codex/fixture');
+  if (!verdict.admitted) { const refusal: ProviderOutcomeV1 = verdict.refusal; void refusal; }
+  // @ts-expect-error an admitted route carries no refusal
+  if (verdict.admitted) void verdict.refusal.reason;
+}
+`);
   stage = "installed root/server declaration compilation";
   writeFileSync(join(consumer, "consumer.ts"), `import { readRepositoryRunObservation, type RepositoryRunObservation, type RepositoryRunObservationReading, readGovernanceSnapshot, PROTOCOL_VERSION, type GovernanceReadSnapshot, type GovernanceReading } from '@rickylabs/harness-contracts';
 import { openHub, type Hub, type Delivery } from '@rickylabs/harness-contracts/server';
@@ -270,7 +325,7 @@ void protocol; void server; void acceptHub;\n`);
   writeFileSync(join(consumer, "tsconfig.json"), JSON.stringify({ compilerOptions: {
     target: "ES2023", module: "NodeNext", moduleResolution: "NodeNext", strict: true,
     noEmit: true, skipLibCheck: false, types: [], lib: ["ES2023", "DOM"],
-  }, files: ["consumer.ts"] }));
+  }, files: ["consumer.ts", "provider-limits-consumer.ts"] }));
   const compiled = await run(process.execPath, [require.resolve("typescript/bin/tsc"), "-p", join(consumer, "tsconfig.json")], { cwd: consumer, env });
   assert.equal(compiled.code, 0);
   stage = "synthetic fixture setup";
@@ -376,6 +431,10 @@ if(invoked !== 1) throw new Error('checkpoint not reached');`);
     fixtures: ["mixed-timeout", "all-unconfigured"], timeout: { actualSleepingProbe: true, terminatedAndReaped: true, grandchildren: 0 },
     assertions: "version/protocol, root/server runtime and compiled declarations, source coverage, admission refusal and original stamps, memory readings, privacy, unavailable",
     limitations: ["synthetic only; no live acceptance or downstream compatibility claim", "sleeping executable fixture requires POSIX shebang support and executable TMPDIR", "candidate only; no publication"] }));
+  console.log(JSON.stringify({ check: "installed-provider-limits", status: "PASS", version: pkg.version, tarball: metadata.filename, sha256: digest,
+    command: "node packages/telemetry/dist/cli.js provider-limits --source <0600 copy>", fixtures: limitFixtures, verdicts: limitVerdicts,
+    assertions: "Orchid-produced bytes -> actual CLI -> installed decoder, assessment and route admission; 0644 copy refused; aged readings stop warning, refusals unchanged; compiled declarations",
+    limitations: ["producer-test fixtures at orchid#97 head, not a live host", "candidate only; no publication"] }));
 } catch (error) {
   // Never reflect npm/compiler/probe output, arbitrary errors or credential-bearing input.
   // The preflight reports only its owned scratch location and a closed execution code.
