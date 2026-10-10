@@ -130,13 +130,22 @@ export interface UsageCollectOptions {
   /** Only pass a prior envelope after validating the private descriptor/key scope hash. */
   readonly previous?: AccountUsageEnvelope;
 }
+/** This collection's own direct Codex read; a carried-over earlier reading never stands in for it. */
+export interface CodexPollRead {
+  readonly attemptedAt: string;
+  readonly reason: "no-reading" | "request-failed" | "timeout" | "oversize" | "shape-mismatch" | null;
+}
 export async function collectAccountUsage(source: AccountUsageSource, key: Uint8Array, options: UsageCollectOptions = {}): Promise<AccountUsageEnvelope> {
+  return (await collectAccountUsageReads(source, key, options)).envelope;
+}
+export async function collectAccountUsageReads(source: AccountUsageSource, key: Uint8Array, options: UsageCollectOptions = {}):
+  Promise<{ readonly envelope: AccountUsageEnvelope; readonly codexPoll: CodexPollRead | null }> {
   const now = options.now ?? (() => new Date().toISOString());
   const direct = source.codex === null ? null : await (options.poll?.() ?? pollCodexAccountQuota({ bin: source.codex.bin,
     ...(source.codex.home === null ? {} : { codexHome: source.codex.home }) }));
   const capturedAt = now();
-  const quota: AccountQuotaSnapshot[] = [...(options.previous?.quota.filter(q => q.source !== "unavailable") ?? []),
-    ...(direct === null ? [] : direct.ok ? codexAccountQuota(direct.result, capturedAt, key) : unavailableQuota("codex", direct.reason))];
+  const polled = direct === null ? null : direct.ok ? codexAccountQuota(direct.result, capturedAt, key) : unavailableQuota("codex", direct.reason);
+  const quota: AccountQuotaSnapshot[] = [...(options.previous?.quota.filter(q => q.source !== "unavailable") ?? []), ...(polled ?? [])];
   const sessions: SessionUsage[] = [], coverage: UsageCoverage[] = [];
   for (const vendor of ["codex", "claude"] as const) {
     const stores = source.stores.filter(s => s.vendor === vendor);
@@ -193,5 +202,9 @@ export async function collectAccountUsage(source: AccountUsageSource, key: Uint8
   const inferred = options.previous === undefined ? [] : inferUnattributedUsage(options.previous, envelope);
   const result = readAccountUsageEnvelope({ ...envelope, unattributed: [...(options.previous?.unattributed ?? []), ...inferred].slice(-1000) });
   if (!result.ok) throw new Error("usage document unavailable");
-  return result.envelope;
+  // A poll that answered but measured no percentage is a failed read: keep the parser's reason.
+  const measured = polled?.some(q => q.source === "account-poll" && q.usedPercent !== null) ?? false;
+  const codexPoll = polled === null ? null : { attemptedAt: capturedAt,
+    reason: measured ? null : (polled.find(q => q.reason !== null)?.reason ?? "no-reading") as CodexPollRead["reason"] };
+  return { envelope: result.envelope, codexPoll };
 }

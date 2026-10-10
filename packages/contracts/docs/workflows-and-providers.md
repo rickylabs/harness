@@ -287,3 +287,32 @@ a leading `~` included, as in Cockpit's schema. The decoder rejects extra fields
 credentials, private paths and hosts, ambiguous route bindings, duplicate meter identities, malformed
 quantities and rows observed after `generatedAt`. The private file reader is `readProviderLimitsFile` in
 [`@rickylabs/governance`](../../governance/README.md#provider-limit-evidence).
+
+## Usage source capabilities and host capacity (0.40.0)
+
+`readAccountUsageDocument` also accepts an opt-in schema 3 document. Schema 3 is schema 2 (`generatedAt`,
+`account`, `providers`, unchanged) plus `capabilities` and `localCapacity`. Older readers refuse schema 3,
+so a producer emits it only after its consumer pins 0.40.0. Schemas 1 and 2 decode exactly as before.
+
+`capabilities` holds one `UsageCapabilityRow` per CLI, usage dimension and source:
+`{cli, dimension, capability, source, observedAt, reason}`. `cli` is one of `USAGE_INVENTORY_CLIS`
+(`claude`, `codex`, `opencode`, `agy`, kept equal to routing's discovered launchers by the parity test).
+`dimension` is `subscription-quota`, `run-usage` or `metered-spend`. A capability is a fact about a source,
+never a reading; the readings stay in `account` and `providers`.
+
+| `capability` | `source` | `observedAt` | `reason` |
+| --- | --- | --- | --- |
+| `supported` | a source | the read time | null, or `partial-scan` / `partial-history` when the read returned rows with a gap |
+| `unreadable` | a source | null only for `not-configured` | `not-configured`, `no-reading`, `partial-scan`, `partial-history`, `request-failed`, `timeout`, `oversize`, `shape-mismatch` |
+| `unsupported` | null | null | `no-native-source` or `direct-read-unsupported` |
+
+`readUsageCapabilities` refuses a document that leaves any CLI and dimension pair without a row, so an
+unread source cannot disappear. An `unsupported` pair has exactly one row. `USAGE_SOURCE_SCOPE` fixes which
+CLI and dimensions each source may speak for: `codex-app-server` (codex quota), `codex-session-store` (codex
+quota and run usage), `claude-session-store` (claude run usage), `opencode-history` (opencode run usage and
+locally reported spend). A source is never another vendor's meter. Extra fields, duplicate rows, unknown
+vocabulary and times after `generatedAt` are refused.
+
+`localCapacity` is the published `AgentCost["localCapacity"]` row for the collector's host, decoded by
+`readLocalCapacityRow`. It is independent of quota and spend: unbound is `source_not_bound`, an unreadable
+kernel source is unavailable with its reason, and a measurement is never zero by default.

@@ -8,6 +8,9 @@ import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { readAccountUsageEnvelope, readAccountUsageDocument } from "@rickylabs/harness-contracts";
 import { usageFile } from "./account-usage.js";
+import { accountUsageCommand } from "./account-usage-cli.js";
+import { EXIT } from "./cli.js";
+import { OperatorConfigurationError } from "./operator-environment.js";
 const exec = promisify(execFile), cli = fileURLToPath(new URL("./cli.js", import.meta.url));
 test("CLI state write refuses foreign owner and special mode before truncation", async () => {
   const root = await mkdtemp(join(tmpdir(), "usage-state-write-fixture-"));
@@ -135,5 +138,52 @@ test("private file reads enforce key mode, ownership, regular files, symlink ref
     const uidProcess = process as { getuid: () => number }, uid = uidProcess.getuid();
     t.mock.method(uidProcess, "getuid", () => uid + 1);
     await assert.rejects(usageFile(keyFile, 32, true)); t.mock.restoreAll();
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+test("schema3 uses the same CLI/state and emits every CLI capability; an invalid wire family refuses", async () => {
+  const root = await mkdtemp(join(tmpdir(), "inventory-usage-cli-"));
+  try {
+    const keyFile = join(root, "key"), stateFile = join(root, "state"), descriptor = join(root, "descriptor.json"), store = join(root, "store");
+    await mkdir(store); await writeFile(keyFile, Buffer.alloc(32, 7), { mode: 0o600 });
+    await writeFile(descriptor, JSON.stringify({ schemaVersion: 3, capacity: null, providers: { githubCopilot: null, openRouter: null, openCode: null },
+      accountUsage: { schemaVersion: 1, keyFile, stateFile, codex: null, stores: ["codex", "claude"].map(vendor =>
+        ({ vendor, seat: "seat-a", cwdLabel: "project-a", root: store, accountIdentity: null })) } }));
+    const run = await exec(process.execPath, [cli, "account-usage", "--source", descriptor], { timeout: 5000 });
+    const emitted: unknown = JSON.parse(run.stdout), read = readAccountUsageDocument(emitted);
+    if (!read.ok || read.document.schemaVersion !== 3) return assert.fail("must emit the v3 reader document");
+    // The closed decoder copies only contract fields, so equality proves nothing private was emitted.
+    assert.deepEqual(read.document, emitted);
+    assert.equal(new Set(read.document.capabilities.map(r => r.cli)).size, 4);
+    assert.equal(read.document.localCapacity.reason, "source_not_bound");
+    assert.equal(readAccountUsageDocument(JSON.parse(await readFile(stateFile, "utf8")).snapshot).ok, true);
+    // A configured host whose kernel source is unreadable is incomplete, never a zero reading.
+    const hook = join(root, "no-meminfo.mjs");
+    await writeFile(hook, `import fs from "node:fs";
+import { syncBuiltinESMExports } from "node:module";
+const original = fs.promises.readFile;
+fs.promises.readFile = async function(path, ...args) {
+  if (path === "/proc/meminfo") throw Object.assign(new Error("absent"), { code: "ENOENT" });
+  return original(path, ...args);
+};
+syncBuiltinESMExports();
+`);
+    const bound = JSON.parse(await readFile(descriptor, "utf8"));
+    await writeFile(descriptor, JSON.stringify({ ...bound, capacity: { host: "fixture-node" } }));
+    await assert.rejects(exec(process.execPath, ["--import", hook, cli, "account-usage", "--source", descriptor], { timeout: 5000 }), error => {
+      const e = error as { code: number; stdout: string; stderr: string };
+      const read = readAccountUsageDocument(JSON.parse(e.stdout));
+      return e.code === EXIT.incomplete && read.ok && read.document.schemaVersion === 3 &&
+        read.document.localCapacity.availability === "unavailable" && read.document.localCapacity.reason === "source_unavailable";
+    });
+    // An invalid wire family is the typed operator refusal, raised before any read or state write.
+    const state = await readFile(stateFile);
+    const badFamily = { HARNESS_TELEMETRY_WIRE_FAMILY: "PRIVATE_CANARY" };
+    await assert.rejects(accountUsageCommand(["--source", descriptor], badFamily), OperatorConfigurationError);
+    await assert.rejects(exec(process.execPath, [cli, "account-usage", "--source", descriptor],
+      { timeout: 5000, env: { ...process.env, ...badFamily } }), error => {
+      const e = error as { code: number; stdout: string };
+      return e.code === EXIT.incomplete && e.stdout.length === 0;
+    });
+    assert.deepEqual(await readFile(stateFile), state, "a refused run writes no document");
   } finally { await rm(root, { recursive: true, force: true }); }
 });

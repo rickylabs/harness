@@ -1,4 +1,6 @@
 /** Provider billing, local accounting and current prices remain independent measurements. */
+import { count, fail, instant, list, record } from "./decode.js";
+
 export const PROVIDER_METER_UNITS = ["premium_requests", "ai_credits", "usd", "unknown"] as const;
 export const PROVIDER_USAGE_REASONS = ["no-plan-read-credential", "request-failed", "timeout", "oversize",
   "shape-mismatch", "account-source-unavailable", "partial-history", "unsupported-token-schema",
@@ -74,33 +76,7 @@ export function paidQuantityFromNano(value: bigint): PaidQuantity | null {
 const providerId = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9][a-z0-9._-]{0,63}$/.test(v);
 const modelId = (v: unknown): v is string => typeof v === "string" && v.length <= 256 && /^~?[A-Za-z0-9][A-Za-z0-9._:/-]*$/.test(v);
 const account = (v: unknown): v is string => typeof v === "string" && /^paccount_[a-f0-9]{64}$/.test(v);
-const instant = (v: unknown): v is string => typeof v === "string" &&
-  /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString() === v;
-const count = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
 const nullable = (v: unknown, check: (x: unknown) => boolean): boolean => v === null || check(v);
-function fail(): never { throw new Error("invalid provider usage"); }
-function record(value: unknown, names: string): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) fail();
-  const keys = names.split(" ");
-  if (Reflect.ownKeys(value).length !== keys.length) fail();
-  const out: Record<string, unknown> = {};
-  for (const key of keys) {
-    const d = Object.getOwnPropertyDescriptor(value, key);
-    if (!d || !("value" in d) || !d.enumerable) fail();
-    out[key] = d.value;
-  }
-  return out;
-}
-function list(value: unknown, cap: number): unknown[] {
-  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) fail();
-  const length = Object.getOwnPropertyDescriptor(value, "length");
-  if (!length || !count(length.value) || length.value > cap || Reflect.ownKeys(value).length !== length.value + 1) fail();
-  return Array.from({ length: length.value }, (_, i) => {
-    const d = Object.getOwnPropertyDescriptor(value, String(i));
-    if (!d || !("value" in d) || !d.enumerable) fail();
-    return d.value as unknown;
-  });
-}
 function unique<T>(rows: readonly T[], key: (row: T) => string): void {
   if (new Set(rows.map(key)).size !== rows.length) fail();
 }

@@ -431,6 +431,36 @@ Schema 2 opt-in and optional provider budget decisions require both the 0.33
 public decoder and telemetry reader in the consumer first. Keep disabled paid
 provider pools disabled; this reader PR does not change routing or live config.
 
+## Per-CLI source capabilities and host capacity (contracts 0.40.0)
+
+A private schema 3 descriptor, `{ schemaVersion: 3, accountUsage, providers, capacity }`, is schema 2
+plus `capacity`: `{ "host": "<alias>" }` or null. The alias must match the placement host the
+issue-agent feed uses, so both report the same scope. There is still one collector, one state file
+and one 180-second cadence. The command emits the schema 3 document: schema 2 unchanged, a
+capability row for every CLI and dimension, and the host's `localCapacity`.
+
+Capabilities come from this collection's own reads; no vendor, file or network read is added.
+A failed Codex poll is `unreadable` with its reason, even while an earlier reading is carried
+forward with its own `observedAt`; so is a poll that answered without a usable percentage (the
+parser's reason, such as `shape-mismatch`). An incomplete read of a configured store or OpenCode
+history that returned no rows is `unreadable`; an incomplete read that returned rows is `supported`
+with `partial-scan` or `partial-history`, and a complete read is `supported` even when it found
+nothing. An unbound source is `unreadable` with `not-configured`.
+
+| CLI | Subscription quota | Run usage | Metered spend |
+| --- | --- | --- | --- |
+| claude | unsupported: `direct-read-unsupported` (measured above; Orchid's governor reading is a separate producer) | `claude-session-store` | unsupported: `no-native-source` |
+| codex | `codex-app-server`, `codex-session-store` | `codex-session-store` | unsupported: `no-native-source` |
+| opencode | unsupported: `no-native-source` (OpenCode Go documents no usage API, per [atelier-cockpit#451](https://github.com/rickylabs/atelier-cockpit/issues/451); the governance usage leg's operator-configured probe is a separate producer) | `opencode-history` | `opencode-history` (locally reported USD) |
+| agy | unsupported: `no-native-source` | unsupported: `no-native-source` (the measured native store carries no token usage) | unsupported: `no-native-source` |
+
+`capacity` reads `/proc/meminfo` and AMD card VRAM through the same reader as the issue-agent feed.
+It runs last in each collection, so its short validity covers the document's generation time.
+`HARNESS_TELEMETRY_WIRE_FAMILY` selects its source name as elsewhere. An invalid value is the CLI's typed
+operator-configuration refusal (exit 3, no document), raised before any descriptor, key or state is read.
+A configured host whose capacity is unavailable makes a one-shot exit 3. Pin contracts 0.40.0 in the
+consumer before switching a descriptor to schema 3: older readers refuse the document.
+
 ### Operator naming migration
 
 Canonical `HARNESS_TELEMETRY_*` settings retain the corresponding legacy

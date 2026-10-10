@@ -20,6 +20,8 @@ export interface HostCapacitySource {
 
 export const HOST_CAPACITY_PLACEMENT_HOST = OPERATOR_ENV.placementHost;
 const shortName = /^[A-Za-z][A-Za-z0-9_-]{0,62}$/;
+/** The placement alias a capacity reading may carry; the published measurement accepts nothing else. */
+export const hostAlias = (value: unknown): value is string => typeof value === "string" && shortName.test(value);
 const integer = (raw: string): number | null => {
   if (!/^\d+\s*$/.test(raw)) return null;
   const value = Number(raw.trim());

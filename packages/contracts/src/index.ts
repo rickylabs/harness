@@ -285,5 +285,6 @@ export type { CodexReadReason, CodexField, CodexGoalStatus, CodexGoalObservation
 export * from "./account-usage.js";
 export * from "./provider-usage.js";
 export * from "./paid-account-usage.js";
+export * from "./usage-inventory.js";
 export { openCodeProvider, openCodeModelSyntax, publicOpenCodeModel } from "./opencode-identity.js";
 export * from "./provider-limits.js";
