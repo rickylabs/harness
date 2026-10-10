@@ -12,6 +12,31 @@ const row = (transport: string, available: boolean, reason: string | null) => ({
 const snapshot = (over: Record<string, unknown> = {}) => JSON.stringify({ schemaVersion: 1,
   observedAt: "2026-09-30T12:00:00.123Z", validUntil: "2026-09-30T12:01:00.123Z",
   transports: [row("claude", false, "5h-ceiling"), row("codex", true, null), row("agy", false, "meter-stale")], ...over });
+const orchidCapacity = (): any => JSON.parse(readFileSync(new URL("../../../contracts/test-fixtures/transport-capacity/orchid-104.json", import.meta.url), "utf8"));
+it("maps the recorded Orchid #104 capacity publication without inventing missing counts", () => {
+  const source = orchidCapacity(), leg = mapTransportAvailability(JSON.stringify(source));
+  assert.ok(leg.ok);
+  assert.deepEqual(leg.value.transportCapacity, source.transportCapacity);
+  assert.equal(leg.value.transportCapacity![0]!.admissionCap, null);
+  assert.equal(leg.value.transportCapacity![2]!.admissionCap, 0);
+  delete source.transportCapacity;
+  const absent = mapTransportAvailability(JSON.stringify(source));
+  assert.ok(absent.ok);
+  assert.equal(Object.hasOwn(absent.value, "transportCapacity"), false);
+});
+it("refuses inconsistent capacity, unknown values, null arrays and omitted nullable fields", () => {
+  for (const modify of [
+    (s: any) => { Object.assign(s.transports[1], { available: true, reason: null }); },
+    (s: any) => { s.transportCapacity[1].capacity = "PRIVATE_CANARY"; },
+    (s: any) => { s.transportCapacity = null; },
+    (s: any) => { delete s.transportCapacity[1].admissionCap; },
+    (s: any) => { s.transportCapacity[0].admissionCap = 0; },
+    (s: any) => { s.transportCapacity[1].pacingReason = "PRIVATE_CANARY"; },
+  ]) {
+    const source = orchidCapacity(); modify(source);
+    assert.deepEqual(mapTransportAvailability(JSON.stringify(source)), { ok: false, code: "shape-mismatch" });
+  }
+});
 it("maps optional provider budget decisions and refuses mismatched clocks/private fields", () => {
   const base = JSON.parse(snapshot()), decision = { provider: "fixture-provider", model: "fixture-model", observedAt: base.observedAt, validUntil: base.validUntil,
     available: false, reason: "budget-unavailable" };

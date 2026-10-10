@@ -259,6 +259,8 @@ export {
   GOVERNANCE_READ_SCHEMA, GOVERNANCE_SOURCE_NAMES, SOURCE_FAILURE_REASONS, SOURCE_DISCARD_REASONS,
   ADMISSION_DROP_REASONS, UNAVAILABLE_REASONS, MATRIX_TRANSPORTS, SUBSCRIPTION_MATRIX_TRANSPORTS, TRANSPORT_UNAVAILABLE_REASONS, readGovernanceSnapshot, readOpenCodeProviderPools,
   readRecordedAdmission,
+  readTransportCapacity, TRANSPORT_CAPACITY_STATES, TRANSPORT_CAPACITY_REASONS, TRANSPORT_PACING_STATES,
+  TRANSPORT_PACING_LIMITED_REASONS, TRANSPORT_PACING_UNKNOWN_REASONS, type TransportCapacityRow,
   type MatrixTransport, type TransportUnavailableReason, type TransportAvailabilityRow, type TransportAvailability, type OpenCodeProviderPool,
   type GovernanceSourceName, type SourceFailureReason, type SourceDiscardReason, type AdmissionDropReason,
   type UnavailableReason, type MeterCoverage, type AdmissionCoverage, type GovernanceSourceCoverage,

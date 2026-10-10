@@ -1,5 +1,5 @@
 /** The dispatcher's per-transport availability snapshot text, mapped through the published contract decoders. */
-import { MATRIX_TRANSPORTS, SUBSCRIPTION_MATRIX_TRANSPORTS, TRANSPORT_UNAVAILABLE_REASONS, readOpenCodeProviderPools, readProviderBudgetDecisions, type TransportAvailability,
+import { MATRIX_TRANSPORTS, SUBSCRIPTION_MATRIX_TRANSPORTS, TRANSPORT_UNAVAILABLE_REASONS, readOpenCodeProviderPools, readProviderBudgetDecisions, readTransportCapacity, type TransportAvailability,
   type TransportAvailabilityRow, type TransportUnavailableReason } from "@rickylabs/harness-contracts";
 import { instant, object, SourceError, type Leg } from "../domain/source.js";
 
@@ -16,7 +16,8 @@ export function mapTransportAvailability(text: string): Leg<TransportAvailabilit
     const input = object(payload);
     const hasPools = Object.hasOwn(input, "openCodeProviderPools");
     const hasBudgets = Object.hasOwn(input, "providerBudgets");
-    exactly(input, ["schemaVersion", "observedAt", "validUntil", "transports", ...(hasPools ? ["openCodeProviderPools"] : []), ...(hasBudgets ? ["providerBudgets"] : [])]);
+    const hasCapacity = Object.hasOwn(input, "transportCapacity");
+    exactly(input, ["schemaVersion", "observedAt", "validUntil", "transports", ...(hasPools ? ["openCodeProviderPools"] : []), ...(hasBudgets ? ["providerBudgets"] : []), ...(hasCapacity ? ["transportCapacity"] : [])]);
     if (input.schemaVersion !== 1 || !Array.isArray(input.transports) || (input.transports.length !== SUBSCRIPTION_MATRIX_TRANSPORTS.length && input.transports.length !== MATRIX_TRANSPORTS.length))
       throw new SourceError("shape-mismatch");
     const observedAt = iso(input.observedAt), validUntil = iso(input.validUntil);
@@ -41,7 +42,9 @@ export function mapTransportAvailability(text: string): Leg<TransportAvailabilit
         transports.at(-1)!.available !== pools.some(pool => pool.maxActive > pool.active)))) throw new SourceError("shape-mismatch");
     const budgets = hasBudgets ? readProviderBudgetDecisions(input.providerBudgets) : undefined;
     if (budgets === null || budgets?.some(r => r.observedAt !== observedAt || r.validUntil !== validUntil)) throw new SourceError("shape-mismatch");
+    const capacity = hasCapacity ? readTransportCapacity(input.transportCapacity, transports) : undefined;
+    if (capacity === null) throw new SourceError("shape-mismatch");
     return { ok: true, value: { observedAt, validUntil, transports, ...(pools === undefined ? {} : { openCodeProviderPools: pools }),
-      ...(budgets === undefined ? {} : { providerBudgets: budgets }) }, observedAt, validUntil };
+      ...(budgets === undefined ? {} : { providerBudgets: budgets }), ...(capacity === undefined ? {} : { transportCapacity: capacity }) }, observedAt, validUntil };
   } catch { return { ok: false, code: "shape-mismatch" }; }
 }

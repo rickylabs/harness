@@ -316,3 +316,37 @@ vocabulary and times after `generatedAt` are refused.
 `localCapacity` is the published `AgentCost["localCapacity"]` row for the collector's host, decoded by
 `readLocalCapacityRow`. It is independent of quota and spend: unbound is `source_not_bound`, an unreadable
 kernel source is unavailable with its reason, and a measurement is never zero by default.
+
+## Physical transport capacity and pacing (0.41.0)
+
+`TransportAvailability.transportCapacity` is optional. Absence is unknown, never
+free seats. When present, it lists all four `MATRIX_TRANSPORTS` in availability
+order. `readTransportCapacity(value, transports)` is the shared strict decoder
+used by the published governance decoder and the private governance reader.
+Its rows copy exactly Orchid's [capacity contract](https://github.com/rickylabs/orchid/blob/5e91ce5/docs/transport-capacity.md):
+
+| Field | Closed values and null rules |
+| --- | --- |
+| `transport` | `claude`, `codex`, `agy`, `opencode`, in that order |
+| `capacity` | `free`, `full`, `disabled`, `unknown` |
+| `capacityReason` | `null` for free/full; `seats-not-configured` for disabled; `seat-budget-missing` for unknown subscription/AGY, `seats-config-invalid` for unknown OpenCode |
+| `maxActive` | Nonnegative whole configured seats; `0` for disabled; `null` for unknown or OpenCode |
+| `active` | Nonnegative whole occupied seats; `null` for OpenCode only |
+| `admissionCap` | Nonnegative whole computed budget, including `0`; `null` when no budget was computed, and for OpenCode |
+| `pacing` | `clear`, `limited`, `unknown`, `unmetered`; AGY/OpenCode are unmetered |
+| `pacingReason` | `null` for clear/unmetered; `governor-pacing`, `5h-ceiling`, `weekly-ceiling` for limited; `meter-unread`, `meter-stale`, `window-expired`, `ceiling-misconfigured` for unknown |
+
+All eight keys are required; nullable fields use explicit nulls. A null cap never
+means zero. Free/full subscription and AGY rows require configured seats and a
+computed budget; full means `active >= maxActive`. Disabled rows may have a
+computed cap of zero or no computed cap (`null`). OpenCode aggregate counts
+remain null: its seats belong to `openCodeProviderPools`. A non-free capacity
+requires `available === false`; free seats may still be unavailable due to pacing.
+Pacing and quotas are independent of physical seats and authenticated owner policy.
+The existing source coverage, clocks and freshness remain authoritative.
+
+Install the published contracts and accepting Harness reader before enabling
+Orchid's `matrix.transport_capacity`. The owner releases from merged `main` with
+`harness-contracts-v0.41.0` through `.github/workflows/release-contracts.yml`; the
+tag version must match the manifest. If another additive contracts PR releases
+first, rebase and use the next unpublished minor version with its matching tag.

@@ -34,6 +34,22 @@ export interface OpenCodeProviderPool {
   readonly maxActive: number;
   readonly active: number;
 }
+export const TRANSPORT_CAPACITY_STATES = ["free", "full", "disabled", "unknown"] as const;
+export const TRANSPORT_CAPACITY_REASONS = ["seats-not-configured", "seat-budget-missing", "seats-config-invalid"] as const;
+export const TRANSPORT_PACING_STATES = ["clear", "limited", "unknown", "unmetered"] as const;
+export const TRANSPORT_PACING_LIMITED_REASONS = ["governor-pacing", "5h-ceiling", "weekly-ceiling"] as const;
+export const TRANSPORT_PACING_UNKNOWN_REASONS = ["meter-unread", "meter-stale", "window-expired", "ceiling-misconfigured"] as const;
+/** Orchid's physical seats and independent pacing, from the same admission tick (0.41.0). */
+export interface TransportCapacityRow {
+  readonly transport: MatrixTransport;
+  readonly capacity: (typeof TRANSPORT_CAPACITY_STATES)[number];
+  readonly capacityReason: (typeof TRANSPORT_CAPACITY_REASONS)[number] | null;
+  readonly maxActive: number | null;
+  readonly active: number | null;
+  readonly admissionCap: number | null;
+  readonly pacing: (typeof TRANSPORT_PACING_STATES)[number];
+  readonly pacingReason: (typeof TRANSPORT_PACING_LIMITED_REASONS)[number] | (typeof TRANSPORT_PACING_UNKNOWN_REASONS)[number] | null;
+}
 export interface TransportAvailability {
   readonly observedAt: string; readonly validUntil: string;
   /** Exact subscription prefix (legacy), or every MATRIX_TRANSPORTS member in order.
@@ -43,6 +59,52 @@ export interface TransportAvailability {
   readonly openCodeProviderPools?: readonly OpenCodeProviderPool[];
   /** Optional model budget decisions (0.33); independent of provider seat capacity. */
   readonly providerBudgets?: readonly ProviderBudgetDecision[];
+  /** Optional physical seats and pacing. Missing means unknown; null counts never mean zero. */
+  readonly transportCapacity?: readonly TransportCapacityRow[];
+}
+
+/** One strict capacity boundary for the private mapper and the published governance decoder. */
+export function readTransportCapacity(value: unknown, transports: readonly TransportAvailabilityRow[]): readonly TransportCapacityRow[] | null {
+  try {
+    const rows = array(value, "transportCapacity", MATRIX_TRANSPORTS.length);
+    if (rows.length !== MATRIX_TRANSPORTS.length || transports.length !== rows.length) invalid("transportCapacity", "requires every matrix transport");
+    return rows.map((value, i): TransportCapacityRow => {
+      const field = `transportCapacity[${i}]`;
+      const row = record(value, field, ["transport", "capacity", "capacityReason", "maxActive", "active", "admissionCap", "pacing", "pacingReason"]);
+      const transport = MATRIX_TRANSPORTS[i]!;
+      if (row.transport !== transport || transports[i]!.transport !== transport) invalid(field, "requires matrix order");
+      const capacity = choice(row.capacity, TRANSPORT_CAPACITY_STATES, `${field}.capacity`);
+      if (capacity !== "free" && transports[i]!.available !== false) invalid(field, "non-free seats cannot be available");
+      const expectedReason = capacity === "disabled" ? "seats-not-configured"
+        : capacity === "unknown" ? (transport === "opencode" ? "seats-config-invalid" : "seat-budget-missing") : null;
+      if (row.capacityReason !== expectedReason) invalid(field, "has inconsistent capacity reason");
+      const count = (value: unknown): number | null => {
+        if (value === null) return null;
+        if (!Number.isSafeInteger(value) || (value as number) < 0) invalid(field, "requires nonnegative whole seat counts");
+        return value as number;
+      };
+      const maxActive = count(row.maxActive), active = count(row.active), admissionCap = count(row.admissionCap);
+      if (transport === "opencode") {
+        if (maxActive !== null || active !== null || admissionCap !== null) invalid(field, "OpenCode counts belong to provider pools");
+      } else {
+        if (active === null) invalid(field, "requires the dispatcher's occupied count");
+        if (capacity === "unknown") {
+          if (maxActive !== null || admissionCap !== null) invalid(field, "unknown budget cannot invent counts");
+        } else if (capacity === "disabled") {
+          if (maxActive !== 0) invalid(field, "disabled seats require zero configured seats");
+        } else {
+          if (maxActive === null || maxActive === 0 || admissionCap === null) invalid(field, "known seats require their computed budget");
+          if ((capacity === "full") !== (active >= maxActive)) invalid(field, "capacity contradicts occupied seats");
+        }
+      }
+      const pacing = choice(row.pacing, TRANSPORT_PACING_STATES, `${field}.pacing`);
+      if ((pacing === "unmetered") !== (transport === "agy" || transport === "opencode")) invalid(field, "pacing must follow the transport's meter regime");
+      const pacingReason = pacing === "limited" ? choice(row.pacingReason, TRANSPORT_PACING_LIMITED_REASONS, `${field}.pacingReason`)
+        : pacing === "unknown" ? choice(row.pacingReason, TRANSPORT_PACING_UNKNOWN_REASONS, `${field}.pacingReason`) : null;
+      if (pacingReason === null && row.pacingReason !== null) invalid(field, "clear and unmetered pacing require a null reason");
+      return { transport, capacity, capacityReason: expectedReason, maxActive, active, admissionCap, pacing, pacingReason };
+    });
+  } catch { return null; }
 }
 
 /** Shared strict boundary for the private mapper and the published decoder. */
@@ -150,7 +212,8 @@ function transportAvailability(value: unknown, coverage: MeterCoverage, evaluate
   }
   const hasPools = typeof value === "object" && value !== null && Object.hasOwn(value, "openCodeProviderPools");
   const hasBudgets = typeof value === "object" && value !== null && Object.hasOwn(value, "providerBudgets");
-  const input = record(value, field, ["observedAt", "validUntil", "transports", ...(hasPools ? ["openCodeProviderPools"] : []), ...(hasBudgets ? ["providerBudgets"] : [])]);
+  const hasCapacity = typeof value === "object" && value !== null && Object.hasOwn(value, "transportCapacity");
+  const input = record(value, field, ["observedAt", "validUntil", "transports", ...(hasPools ? ["openCodeProviderPools"] : []), ...(hasBudgets ? ["providerBudgets"] : []), ...(hasCapacity ? ["transportCapacity"] : [])]);
   const observed = timestamp(input.observedAt, `${field}.observedAt`), until = timestamp(input.validUntil, `${field}.validUntil`);
   if (observed.raw !== coverage.observedAt || until.raw !== coverage.validUntil || observed.ms > evaluated)
     invalid(field, "contradicts its coverage");
@@ -177,8 +240,10 @@ function transportAvailability(value: unknown, coverage: MeterCoverage, evaluate
       transports.at(-1)!.available !== pools.some(pool => pool.maxActive > pool.active))) invalid(field, "provider pools contradict aggregate capacity");
   const budgets = hasBudgets ? readProviderBudgetDecisions(input.providerBudgets) : undefined;
   if (budgets === null || budgets?.some(r => r.observedAt !== observed.raw || r.validUntil !== until.raw)) invalid(field, "has invalid provider budget decisions");
+  const capacity = hasCapacity ? readTransportCapacity(input.transportCapacity, transports) : undefined;
+  if (capacity === null) invalid(field, "has invalid transport capacity");
   return { observedAt: observed.raw, validUntil: until.raw, transports, ...(pools === undefined ? {} : { openCodeProviderPools: pools }),
-    ...(budgets === undefined ? {} : { providerBudgets: budgets }) };
+    ...(budgets === undefined ? {} : { providerBudgets: budgets }), ...(capacity === undefined ? {} : { transportCapacity: capacity }) };
 }
 function admissionCoverage(value: unknown): AdmissionCoverage {
   const field = "sources.admissions";
