@@ -115,17 +115,17 @@ async function capped(maxEventFrameBytes: number, write: (channel: EventChannel)
 const idle = (sessionID: string, pad = "") => ({ type: "session.idle", properties: { sessionID, pad } });
 
 describe("the event frame cap", () => {
-  it("is per frame, not per stream: any number of frames under it arrive whole, LF or CRLF delimited", async () => {
-    const ids = Array.from({ length: 24 }, (_, i) => `ses_frame${i}`);
-    const result = await capped(256, channel => {
-      ids.forEach((id, i) => {
-        if (i % 2 === 0) channel.send(idle(id));
-        else channel.raw(`data: ${JSON.stringify(idle(id))}\r\n\r\n`);
+  // Each run of frames together passes the cap, so a reader that missed any one delimiter would refuse it.
+  for (const [name, end] of [["LF", "\n\n"], ["CRLF", "\r\n\r\n"], ["CR", "\r\r"]]) {
+    it(`is per frame, not per stream: any number of ${name}-delimited frames under it arrive whole`, async () => {
+      const ids = Array.from({ length: 12 }, (_, i) => `ses_frame${i}`);
+      const result = await capped(256, channel => {
+        for (const id of ids) channel.raw(`data: ${JSON.stringify(idle(id))}${end}`);
+        channel.close();
       });
-      channel.close();
+      assert.deepEqual(result, { seen: ids, failed: false, cancelled: false });
     });
-    assert.deepEqual(result, { seen: ids, failed: false, cancelled: false });
-  });
+  }
 
   it("refuses a complete frame over the cap before it is delivered, and cancels the connection", async () => {
     const result = await capped(256, channel => {
