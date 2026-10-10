@@ -9,7 +9,7 @@ import { messagesOf, nowMs, recording, sessionOf, type Entry } from "./fixtures/
 
 const head = (id = recording.rootID) => readOpenCodeSession(sessionOf(structuredClone(recording.replies), id), nowMs)!;
 const entries = (id = recording.rootID): Entry[] => structuredClone(messagesOf(recording.replies, id));
-const run = (list: unknown, windowed = false, id = recording.rootID) => openCodeRun(head(id), list, windowed, "origin", nowMs);
+const run = (list: readonly unknown[], windowed = false, id = recording.rootID) => openCodeRun(head(id), list, windowed, "origin", nowMs);
 
 it("reads the session head and its token aggregate; a malformed aggregate is no reading, never zero", () => {
   const root = head();
@@ -22,10 +22,11 @@ it("reads the session head and its token aggregate; a malformed aggregate is no 
   const { cache: _cache, ...noCache } = tokens;
   for (const bad of [undefined, null, "5", [], {}, noCache, { ...tokens, input: -1 }, { ...tokens, output: 1.5 },
     { ...tokens, reasoning: "3" }, { ...tokens, cache: { read: 4 } }, { ...tokens, cache: { ...tokens.cache, extra: 1 } },
-    { ...tokens, extra: 1 }, { ...tokens, total: -1 }, { ...tokens, input: Number.MAX_SAFE_INTEGER + 1 }]) {
+    { ...tokens, extra: 1 }, { ...tokens, total: -1 }, { ...tokens, input: Number.MAX_SAFE_INTEGER + 1 }, { ...tokens, cache: null }]) {
     assert.deepEqual(sessionTokens(bad), {}, JSON.stringify(bad));
   }
-  for (const bad of [{ id: "not-a-session" }, { parentID: recording.rootID }, { version: "" }, { time: { created: nowMs + 1 } }]) {
+  for (const bad of [{ id: "not-a-session" }, { parentID: recording.rootID }, { parentID: "not-a-session" }, { version: "" },
+    { time: { created: nowMs + 1 } }]) {
     assert.equal(readOpenCodeSession({ ...sessionOf(recording.replies, recording.rootID), ...bad }, nowMs), null, JSON.stringify(bad));
   }
 });
@@ -136,14 +137,118 @@ it("refuses a message older than its session", () => {
 });
 
 it("refuses an assistant's provider, model or effort outside the native id grammar", () => {
-  for (const [field, value] of [["providerID", "Open Code"], ["modelID", "big pickle"], ["variant", "High Effort"]] as const) {
+  for (const [field, value] of [["providerID", "Open Code"], ["modelID", "big pickle"], ["modelID", 7], ["variant", "High Effort"]] as const) {
     const list = entries(); list.at(-1)!.info[field] = value;
-    assert.equal(run(list), null, field);
+    assert.equal(run(list), null, `${field} ${value}`);
   }
+});
+
+it("keeps a nested model id whole under its provider", () => {
+  const list = entries(); list.at(-1)!.info.modelID = "vendor/family-model";
+  assert.equal(run(list)!.identity.model, "opencode/vendor/family-model");
 });
 
 it("an answer to an earlier prompt does not end the latest turn", () => {
   const list = entries(), firstPrompt = list[0]!.info.id;
   list.at(-1)!.info.parentID = firstPrompt;
   assert.equal(run(list)!.outcome, "unknown");
+});
+
+const userSummary = { title: "PRIVATE-TITLE", body: "PRIVATE-BODY",
+  diffs: [{ file: "src/a.ts", patch: "PRIVATE-PATCH", additions: 1, deletions: 0, status: "modified" }] };
+const diff = userSummary.diffs[0]!;
+const withSummary = (summary: unknown) => { const list = entries(); list[0]!.info.summary = summary; return run(list); };
+
+it("reads a prompt's full diff summary and publishes none of it", () => {
+  const record = withSummary(userSummary);
+  assert.ok(record !== null && !JSON.stringify(record).includes("PRIVATE-"));
+});
+it("refuses a prompt summary with a field it does not define", () => assert.equal(withSummary({ ...userSummary, extra: 1 }), null));
+it("refuses a prompt summary title that is not text", () => assert.equal(withSummary({ ...userSummary, title: 1 }), null));
+it("refuses a prompt summary body that is not text", () => assert.equal(withSummary({ ...userSummary, body: 1 }), null));
+it("refuses prompt summary diffs that are not a list", () => assert.equal(withSummary({ ...userSummary, diffs: {} }), null));
+it("refuses a diff with a field it does not define", () =>
+  assert.equal(withSummary({ ...userSummary, diffs: [{ ...diff, extra: 1 }] }), null));
+it("refuses diff deletions that are not a number", () =>
+  assert.equal(withSummary({ ...userSummary, diffs: [{ ...diff, deletions: "0" }] }), null));
+it("refuses a diff file that is not text", () => assert.equal(withSummary({ ...userSummary, diffs: [{ ...diff, file: 1 }] }), null));
+it("refuses a diff patch that is not text", () => assert.equal(withSummary({ ...userSummary, diffs: [{ ...diff, patch: 1 }] }), null));
+it("refuses a diff status outside the native vocabulary", () =>
+  assert.equal(withSummary({ ...userSummary, diffs: [{ ...diff, status: "renamed" }] }), null));
+
+/** Message 1 under another id, its parts following it; or one of its parts under another id. */
+const messageNamed = (id: string) => {
+  const list = entries(); list[1]!.info.id = id;
+  for (const part of list[1]!.parts) part.messageID = id;
+  return run(list);
+};
+const partNamed = (id: string) => { const list = entries(); list[1]!.parts[1]!.id = id; return run(list); };
+it("reads message and part ids of the native shape under any name", () => {
+  assert.notEqual(messageNamed("msg_0renamedMessage01"), null); assert.notEqual(partNamed("prt_0renamedPart0001"), null);
+});
+it("refuses a message or part id without its native prefix", () => {
+  assert.equal(messageNamed("prt_0renamedMessage01"), null); assert.equal(partNamed("msg_0renamedPart0001"), null);
+});
+it("refuses a message or part id outside the native id grammar", () => {
+  assert.equal(messageNamed("msg_0renamed.Message"), null); assert.equal(partNamed("prt_0renamed.Part"), null);
+});
+
+it("refuses a native clock that is not a whole millisecond", () => {
+  const list = entries(); list[1]!.info.time.created += 0.5;
+  assert.equal(run(list), null);
+});
+
+it("refuses message parts that are not a list", () => {
+  const list = entries(); list[1]!.parts = { 0: list[1]!.parts[0] } as unknown as Entry["parts"];
+  assert.equal(run(list), null);
+});
+
+it("refuses an object field that is a list, text or null", () => {
+  const bash = (change: (part: Record<string, any>) => void) => { const list = entries(); change(list[1]!.parts[1]!); return run(list); };
+  assert.notEqual(bash(part => { part.metadata = {}; }), null);
+  assert.equal(bash(part => { part.metadata = []; }), null);
+  assert.equal(bash(part => { part.state.input = "git status"; }), null);
+  const text = entries(); text.at(-1)!.parts.find(part => part.type === "text")!.time = null;
+  assert.equal(run(text), null);
+});
+
+it("refuses prompt text that is not text", () => {
+  const list = entries(); list[0]!.parts[0]!.text = 5;
+  assert.equal(run(list), null);
+});
+
+it("an answer still streaming (a start, no end) reads as a running turn", () => {
+  const list = entries(), last = list.at(-1)!;
+  delete last.parts.find(part => part.type === "text")!.time.end; delete last.info.time.completed; delete last.info.finish;
+  assert.equal(run(list)!.outcome, "running");
+});
+
+it("a native error of null is no error", () => {
+  const list = entries(); list.at(-1)!.info.error = null;
+  assert.equal(run(list)!.outcome, "complete");
+});
+
+it("publishes neither a compaction summary's text nor a tool call carried by a prompt", () => {
+  const messages = (list: Entry[]) => run(list)!.activitySteps!.filter(step => step.kind === "message").length;
+  const compaction = entries(); compaction.at(-1)!.info.summary = true;
+  assert.deepEqual([messages(entries()), messages(compaction)], [2, 1]);
+  const prompted = entries(), bash = structuredClone(prompted[1]!.parts[1]!);
+  prompted[0]!.parts.push({ ...bash, id: "prt_0promptToolPart01", messageID: prompted[0]!.info.id });
+  assert.equal(run(prompted)!.activitySteps!.filter(step => step.toolName === "bash").length, 1);
+});
+
+it("refuses a step stamped after the end of the turn that ends the run", () => {
+  const list = entries(), end = list.at(-1)!.info.time.completed, bashTurn = list[1]!;
+  delete bashTurn.info.time.completed;
+  bashTurn.parts[1]!.state.time = { start: end + 1, end: end + 2 };
+  assert.equal(run(list), null);
+});
+
+it("an OpenCode todo list publishes its one in-progress item as a plan step", () => {
+  const list = entries(), part = list[1]!.parts[1]!;
+  part.tool = "todowrite";
+  part.state.input = { todos: [{ id: "1", content: "Run the tests", status: "in_progress", priority: "high" },
+    { id: "2", content: "Open the pull request", status: "pending", priority: "low" }] };
+  const step = run(list)!.activitySteps!.find(entry => entry.toolName === "todowrite")!;
+  assert.deepEqual([step.kind, step.summary !== null], ["message", true]);
 });

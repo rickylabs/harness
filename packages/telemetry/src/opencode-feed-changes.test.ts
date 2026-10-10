@@ -95,3 +95,13 @@ it("the watch loop hands the scanned sessions to the hint and rescans when it fi
   assert.equal(collects, 2, "the hint caused the second scan before the safety rescan");
   assert.deepEqual(watched[0], ["ses_fixture"]);
 });
+
+it("a stream that ends after the scan replaced it never orphans its successor", async () => {
+  const e = events(), changes = openOpenCodeChanges(e.reads);
+  changes.watch(new Set(["ses_a"])); await settle();
+  // Closed and replaced in one pass: the first stream's own ending lands after its successor opened.
+  changes.watch(new Set()); changes.watch(new Set(["ses_a"])); await settle();
+  changes.watch(new Set(["ses_a"])); await settle();
+  assert.deepEqual(e.opened.map(stream => stream.signal.aborted), [true, false]);
+  changes.close();
+});

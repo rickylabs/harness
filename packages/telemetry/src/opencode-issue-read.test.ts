@@ -8,8 +8,9 @@ import { MAX_OPENCODE_ISSUE_BYTES, readOpenCodeIssue } from "./opencode-issue.js
 import { messagesOf, nowMs, recording, server, sessionOf } from "./fixtures/opencode-issue.js";
 
 const { rootID, childID } = recording;
-const read = (s: ReturnType<typeof server>, bounds: { maxBytes?: number; clock?: () => number } = {}) =>
-  readOpenCodeIssue(s.reads, rootID, { limit: 20, maxBytes: bounds.maxBytes ?? MAX_OPENCODE_ISSUE_BYTES,
+const read = (s: ReturnType<typeof server>,
+  bounds: { maxBytes?: number; clock?: () => number; root?: string; limit?: number } = {}) =>
+  readOpenCodeIssue(s.reads, bounds.root ?? rootID, { limit: bounds.limit ?? 20, maxBytes: bounds.maxBytes ?? MAX_OPENCODE_ISSUE_BYTES,
     clock: bounds.clock ?? (() => nowMs), signal: new AbortController().signal });
 const outcome = (scan: Awaited<ReturnType<typeof read>>) => [scan.reason, scan.runs.length];
 
@@ -58,4 +59,28 @@ it("reads the observation clock once, after the last reply", async () => {
   const scan = await read(s, { clock: () => { order.push("clock"); return nowMs; } });
   assert.equal(scan.reason, null);
   assert.deepEqual([order.filter(entry => entry === "clock").length, order.at(-1)], [1, "clock"]);
+});
+
+it("refuses a bound root id outside the native grammar without asking the server", async () => {
+  const s = server(), scan = await read(s, { root: "not-a-session" });
+  assert.deepEqual([scan.reason, s.calls.length], ["source_unavailable", 0]);
+});
+
+it("a spent session bound is scan_limit, without asking the server", async () => {
+  const s = server(), scan = await read(s, { limit: 0 });
+  assert.deepEqual([scan.reason, s.calls.length], ["scan_limit", 0]);
+});
+
+it("a root that failed natively keeps its end, even with a descendant observed running", async () => {
+  const s = server();
+  messagesOf(s.replies, rootID).at(-1)!.info.error = { name: "APIError", data: {} };
+  delete messagesOf(s.replies, childID).at(-1)!.info.time.completed;
+  assert.deepEqual((await read(s)).runs.map(run => run.outcome), ["failed", "running"]);
+});
+
+it("judges a child's own header at the clock read after the reads", async () => {
+  const s = server(), child = (s.replies[`/session/${rootID}/children`]!.body as Record<string, any>[])[0]!;
+  s.replies[`/session/${childID}/message`]!.body = [];
+  child.time.created = nowMs + 1;
+  assert.deepEqual(outcome(await read(s)), ["source_unavailable", 0]);
 });

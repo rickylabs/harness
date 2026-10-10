@@ -53,11 +53,8 @@ class Missing extends Error {}
 function heldOpen(runs: RunRecord[]): void {
   const parentOf = new Map(runs.map(run => [run.id, run.parentId]));
   const descends = (run: RunRecord, ancestor: string): boolean => {
-    let parent = run.parentId;
-    for (let depth = 0; parent !== null && depth < MAX_SESSIONS; depth++) {
-      if (parent === ancestor) return true;
-      parent = parentOf.get(parent) ?? null;
-    }
+    // The tree is acyclic by construction: every child names a parent read before it.
+    for (let parent = run.parentId; parent !== null; parent = parentOf.get(parent) ?? null) if (parent === ancestor) return true;
     return false;
   };
   for (let i = 0; i < runs.length; i++) {
@@ -84,7 +81,8 @@ export async function readOpenCodeIssue(reads: OpenCodeSessionReads, root: strin
     throw read.kind === "oversized" ? new RangeError() : read.kind === "missing" ? new Missing() : new Error();
   };
   try {
-    if (!sessionID(root) || bounds.limit < 1) return fail("source_unavailable");
+    if (!sessionID(root)) return fail("source_unavailable");
+    if (bounds.limit < 1) return fail("scan_limit");
     let rootReply: unknown;
     try { rootReply = await body(each => reads.session(root, each)); }
     catch (error) { if (error instanceof Missing) return fail("binding_unavailable"); throw error; }
@@ -115,7 +113,7 @@ export async function readOpenCodeIssue(reads: OpenCodeSessionReads, root: strin
       const head = readOpenCodeSession(reply, observedMs);
       if (head === null) return fail("source_unavailable");
       const windowed = messages!.length > MAX_OPENCODE_MESSAGES;
-      const run = openCodeRun(head, windowed ? messages!.slice(-MAX_OPENCODE_MESSAGES) : messages, windowed,
+      const run = openCodeRun(head, windowed ? messages!.slice(-MAX_OPENCODE_MESSAGES) : messages!, windowed,
         `opencode-session:${head.id}`, observedMs);
       if (run === null) return fail("source_unavailable");
       runs.push(run);

@@ -40,4 +40,6 @@ it("publishes a used-tokens figure only for a safe, non-negative total at a vali
   assert.deepEqual(issueTokenUsage(codex({ inputTokens: Number.MAX_SAFE_INTEGER, outputTokens: 1 }), null, later), unavailable);
   // A run whose clock the caller could not validate has no reading, however good its counters.
   assert.deepEqual(issueTokenUsage(codex({ inputTokens: 10, outputTokens: 5 }), null, null), unavailable);
+  // No run at all is not bound, not a missing measurement.
+  assert.deepEqual(issueTokenUsage(undefined, null, later), { ...unavailable, reason: "source_not_bound" });
 });

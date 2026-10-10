@@ -11,15 +11,13 @@
  * tool titles are never read into a record. Tokens are the server's own session aggregate.
  */
 import { createHash } from "node:crypto";
-import type { AgentToolLifecycle } from "@rickylabs/harness-contracts";
+import { openCodeModelSyntax, type AgentToolLifecycle } from "@rickylabs/harness-contracts";
 import { nativeMessageActivity, openCodeToolActivity, recentActivity } from "./native-activity.js";
 import type { RunRecord, RunUsage } from "./model.js";
 
 export const sessionID = (v: unknown): v is string => typeof v === "string" && /^ses_[A-Za-z0-9_-]{1,252}$/.test(v);
 const nativeID = (v: unknown, prefix: string): v is string => typeof v === "string" &&
   v.startsWith(prefix) && /^[A-Za-z0-9_-]{1,256}$/.test(v);
-const providerID = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9][a-z0-9._-]{0,63}$/.test(v);
-const modelID = (v: unknown): v is string => typeof v === "string" && /^~?[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(v);
 /** Bounded and non-empty only: the label is never a family or compatibility decision. */
 const versionLabel = (v: unknown): boolean => typeof v === "string" && v.length > 0 && v.length <= 64;
 const object = (v: unknown): Record<string, unknown> => {
@@ -28,8 +26,7 @@ const object = (v: unknown): Record<string, unknown> => {
 };
 const boolean = (v: unknown): boolean => { if (v !== undefined && typeof v !== "boolean") throw Error(); return v === true; };
 function millis(value: unknown, start: number, now: number): number {
-  if (!Number.isSafeInteger(value) || (value as number) < start || (value as number) > now ||
-      !Number.isFinite(new Date(value as number).getTime())) throw Error();
+  if (!Number.isSafeInteger(value) || (value as number) < start || (value as number) > now) throw Error();
   return value as number;
 }
 const knownErrors = new Set(["ProviderAuthError", "UnknownError", "MessageOutputLengthError", "MessageAbortedError",
@@ -65,10 +62,10 @@ const tokenCount = (v: unknown): v is number => Number.isSafeInteger(v) && (v as
  * Absent or malformed is no reading (`{}`), never zero.
  */
 export function sessionTokens(value: unknown): RunUsage {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) return {};
+  if (value === null || typeof value !== "object") return {};
   const tokens = value as Record<string, unknown>, cache = tokens.cache as Record<string, unknown> | null | undefined;
   if (Object.keys(tokens).some(key => !["total", "input", "output", "reasoning", "cache"].includes(key)) ||
-      cache === null || typeof cache !== "object" || Array.isArray(cache) ||
+      cache === null || typeof cache !== "object" ||
       Object.keys(cache).some(key => key !== "read" && key !== "write") ||
       ![tokens.input, tokens.output, tokens.reasoning, cache.read, cache.write].every(tokenCount) ||
       (tokens.total !== undefined && !tokenCount(tokens.total))) return {};
@@ -106,11 +103,10 @@ function rootRelative(input: Record<string, unknown>, root: unknown): Record<str
  * prompt because nothing newer is outside the window. Done needs a native `stop` with text, no
  * pending tool continuation and the latest prompt as parent; a known native error keeps its clock.
  */
-export function openCodeRun(head: OpenCodeSessionHead, value: unknown, windowed: boolean, origin: string,
+export function openCodeRun(head: OpenCodeSessionHead, value: readonly unknown[], windowed: boolean, origin: string,
   nowMs: number): RunRecord | null {
   try {
     const { id, createdMs: start } = head;
-    if (!Array.isArray(value)) return null;
     const rows = value.map(entry => {
       const { info, parts } = object(entry);
       const data = object(info), time = object(data.time), created = millis(time.created, start, nowMs);
@@ -172,9 +168,11 @@ export function openCodeRun(head: OpenCodeSessionHead, value: unknown, windowed:
       }
       outcome = "running"; terminalAt = undefined; terminalCause = undefined;
       if (!assistant) { latestUser = message; continue; }
-      if (!providerID(data.providerID) || !modelID(data.modelID) || (data.variant !== undefined &&
+      // The qualified id goes through the contracts grammar, which keeps a nested model id whole.
+      const model = typeof data.modelID === "string" ? `${data.providerID}/${data.modelID}` : null;
+      if (!openCodeModelSyntax(model, data.providerID) || (data.variant !== undefined &&
           (typeof data.variant !== "string" || !/^[a-z][a-z0-9_-]{0,63}$/.test(data.variant)))) return null;
-      identity = { provider: data.providerID, model: data.providerID + "/" + data.modelID,
+      identity = { provider: data.providerID as string, model,
         effort: typeof data.variant === "string" ? data.variant : null, profile: null };
       if (windowed && latestUser === null && nativeID(data.parentID, "msg_")) latestUser = data.parentID;
       if (latestUser === null || data.parentID !== latestUser || summary) { outcome = "unknown"; continue; }
