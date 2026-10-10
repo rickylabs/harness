@@ -150,3 +150,39 @@ test("an unbound session store is not-configured with no read time, never an emp
     assert.equal(row(doc.capabilities, "codex", "subscription-quota", "codex-app-server").capability, "supported");
   } finally { await f.close(); }
 });
+
+test("a poll that answers with malformed quota fields is unreadable, with or without an earlier good reading", async () => {
+  const f = await fixture();
+  try {
+    const earlier = "2026-01-02T11:57:00.000Z";
+    const malformed = { accountId: "fixture-account", rateLimits: { limitId: "codex",
+      primary: { usedPercent: "12", windowDurationMins: 300, resetsAt: "soon" }, secondary: { usedPercent: null, windowDurationMins: 10080, resetsAt: null } } };
+    const collect = async (now: string, result: unknown, previous?: AccountUsageDocument) => v3(await collectAccountUsageDocument(f.source(), key,
+      { now: () => now, poll: async () => ({ ok: true, result }), capacitySource: f.capacitySource,
+        ...(previous === undefined ? {} : { previous: v3(previous).account }) }));
+    const failed = { cli: "codex", dimension: "subscription-quota", capability: "unreadable", source: "codex-app-server", observedAt: at, reason: "shape-mismatch" };
+
+    const alone = await collect(at, malformed);
+    assert.ok(alone.account.quota.some(q => q.source === "account-poll" && q.availability === "partial" && q.usedPercent === null),
+      "the RPC answered, so the malformed reading is present");
+    assert.deepEqual(row(alone.capabilities, "codex", "subscription-quota", "codex-app-server"), failed);
+
+    const good = await collect(earlier, codexLimits);
+    assert.deepEqual(row(good.capabilities, "codex", "subscription-quota", "codex-app-server"),
+      { ...failed, capability: "supported", observedAt: earlier, reason: null });
+    const after = await collect(at, malformed, good);
+    assert.deepEqual(row(after.capabilities, "codex", "subscription-quota", "codex-app-server"), failed);
+  } finally { await f.close(); }
+});
+
+test("descriptor capacity must be a plain object whose host is a string alias", async () => {
+  const f = await fixture();
+  try {
+    const raw = JSON.parse(JSON.stringify(f.source())) as Record<string, unknown>;
+    assert.deepEqual((readAccountUsageDocumentSource({ ...raw, capacity: { host: "fixture-node" } }) as InventoriedAccountUsageSource).capacity,
+      { host: "fixture-node" });
+    assert.throws(() => readAccountUsageDocumentSource({ ...raw, capacity: Object.assign(() => undefined, { host: "fixture-node" }) }));
+    assert.throws(() => readAccountUsageDocumentSource({ ...raw, capacity: Object.assign([], { host: "fixture-node" }) }));
+    assert.throws(() => readAccountUsageDocumentSource({ ...raw, capacity: { host: ["fixture-node"] } }));
+  } finally { await f.close(); }
+});

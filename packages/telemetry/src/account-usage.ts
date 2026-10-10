@@ -202,7 +202,9 @@ export async function collectAccountUsageReads(source: AccountUsageSource, key: 
   const inferred = options.previous === undefined ? [] : inferUnattributedUsage(options.previous, envelope);
   const result = readAccountUsageEnvelope({ ...envelope, unattributed: [...(options.previous?.unattributed ?? []), ...inferred].slice(-1000) });
   if (!result.ok) throw new Error("usage document unavailable");
+  // A poll that answered but measured no percentage is a failed read: keep the parser's reason.
+  const measured = polled?.some(q => q.source === "account-poll" && q.usedPercent !== null) ?? false;
   const codexPoll = polled === null ? null : { attemptedAt: capturedAt,
-    reason: polled.some(q => q.source === "account-poll") ? null : polled[0]!.reason as CodexPollRead["reason"] };
+    reason: measured ? null : (polled.find(q => q.reason !== null)?.reason ?? "no-reading") as CodexPollRead["reason"] };
   return { envelope: result.envelope, codexPoll };
 }

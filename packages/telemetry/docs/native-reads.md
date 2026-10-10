@@ -441,9 +441,11 @@ capability row for every CLI and dimension, and the host's `localCapacity`.
 
 Capabilities come from this collection's own reads; no vendor, file or network read is added.
 A failed Codex poll is `unreadable` with its reason, even while an earlier reading is carried
-forward with its own `observedAt`. A configured store or OpenCode history that returned nothing is
-`unreadable`; one that returned rows with a gap is `supported` with `partial-scan` or
-`partial-history`. An unbound source is `unreadable` with `not-configured`.
+forward with its own `observedAt`; so is a poll that answered without a usable percentage (the
+parser's reason, such as `shape-mismatch`). An incomplete read of a configured store or OpenCode
+history that returned no rows is `unreadable`; an incomplete read that returned rows is `supported`
+with `partial-scan` or `partial-history`, and a complete read is `supported` even when it found
+nothing. An unbound source is `unreadable` with `not-configured`.
 
 | CLI | Subscription quota | Run usage | Metered spend |
 | --- | --- | --- | --- |
