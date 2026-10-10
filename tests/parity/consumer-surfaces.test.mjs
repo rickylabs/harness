@@ -46,11 +46,13 @@ test("cockpit: @rickylabs/harness-contracts entry points, manifest and runtime v
     ...kinds("object", `PROVIDER_METER_UNITS PROVIDER_USAGE_REASONS AGENT_UNAVAILABLE_REASONS
       AGENT_ACTION_REJECTED_REASONS RUN_OBSERVATION_INCOMPLETE_REASONS RUN_OBSERVATION_UNAVAILABLE_REASONS
       OPENCODE_OBSERVED_SOURCES ISSUE_LAUNCH_REFUSAL_REASONS USAGE_INVENTORY_CLIS USAGE_DIMENSIONS USAGE_CAPABILITIES
-      USAGE_CAPABILITY_SOURCES USAGE_UNSUPPORTED_REASONS USAGE_UNREADABLE_REASONS USAGE_PARTIAL_REASONS USAGE_SOURCE_SCOPE`),
+      USAGE_CAPABILITY_SOURCES USAGE_UNSUPPORTED_REASONS USAGE_UNREADABLE_REASONS USAGE_PARTIAL_REASONS USAGE_SOURCE_SCOPE
+      TRANSPORT_CAPACITY_STATES TRANSPORT_CAPACITY_REASONS TRANSPORT_PACING_STATES
+      TRANSPORT_PACING_LIMITED_REASONS TRANSPORT_PACING_UNKNOWN_REASONS`),
     ...kinds("number", "MAX_ISSUE_AGENT_TREE_BYTES PROTOCOL_VERSION"),
     ...kinds("function", `compareRouteIdentity emptyFold foldValue snapshotOf publicActivityTarget
       publicActivityText publicOpenCodeModel readAccountUsageDocument readAccountUsageEnvelope
-      readGovernanceSnapshot readIssueAgentTreeSnapshot readProviderBudgetDecisions readProviderLimitSnapshot readProviderUsageSnapshot
+      readGovernanceSnapshot readTransportCapacity readIssueAgentTreeSnapshot readProviderBudgetDecisions readProviderLimitSnapshot readProviderUsageSnapshot
       readRepositoryRunObservation encodeWorkflowRevisionBundle readAgentObservations readRoutineRevision
       readRoutineWake readWorkflowRevision readWorkflowRevisionBundle unavailableAgentCost readUsageCapabilities
       readUsageInventoryFields readLocalCapacityRow`),

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-07T11:59:50.000Z",
+  "validUntil": "2026-09-07T12:00:50.000Z",
+  "transports": [
+    {
+      "transport": "claude",
+      "available": false,
+      "reason": "meter-unread"
+    },
+    {
+      "transport": "codex",
+      "available": false,
+      "reason": "no-capacity"
+    },
+    {
+      "transport": "agy",
+      "available": false,
+      "reason": "no-capacity"
+    },
+    {
+      "transport": "opencode",
+      "available": false,
+      "reason": "no-capacity"
+    }
+  ],
+  "openCodeProviderPools": [],
+  "transportCapacity": [
+    {
+      "transport": "claude",
+      "capacity": "unknown",
+      "capacityReason": "seat-budget-missing",
+      "maxActive": null,
+      "active": 0,
+      "admissionCap": null,
+      "pacing": "unknown",
+      "pacingReason": "meter-unread"
+    },
+    {
+      "transport": "codex",
+      "capacity": "full",
+      "capacityReason": null,
+      "maxActive": 1,
+      "active": 1,
+      "admissionCap": 1,
+      "pacing": "clear",
+      "pacingReason": null
+    },
+    {
+      "transport": "agy",
+      "capacity": "disabled",
+      "capacityReason": "seats-not-configured",
+      "maxActive": 0,
+      "active": 0,
+      "admissionCap": 0,
+      "pacing": "unmetered",
+      "pacingReason": null
+    },
+    {
+      "transport": "opencode",
+      "capacity": "disabled",
+      "capacityReason": "seats-not-configured",
+      "maxActive": null,
+      "active": null,
+      "admissionCap": null,
+      "pacing": "unmetered",
+      "pacingReason": null
+    }
+  ]
+}
