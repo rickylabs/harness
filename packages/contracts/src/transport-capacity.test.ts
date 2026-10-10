@@ -54,6 +54,7 @@ const controls: readonly [string, (source: any) => void][] = [
   ["unknown transport", s => { s.transportCapacity[1].transport = "PRIVATE_CANARY"; }],
   ["misaligned availability transport", s => { s.transports[1].transport = "agy"; }],
   ["unknown capacity", s => { s.transportCapacity[1].capacity = "PRIVATE_CANARY"; }],
+  ["unknown capacity with spare seats", s => { Object.assign(s.transportCapacity[1], { capacity: "PRIVATE_CANARY", active: 0 }); }],
   ["non-free available", s => { Object.assign(s.transports[1], { available: true, reason: null }); }],
   ["disabled available", s => { Object.assign(s.transports[2], { available: true, reason: null }); }],
   ["unknown available", s => { Object.assign(s.transports[0], { available: true, reason: null }); }],
