@@ -29,7 +29,7 @@ export async function readAgyToolCalls(tail: TranscriptTail, storeRoot: string, 
   const bytesRead = read.bytes.length;
   let body = read.bytes;
   // A tail starts inside a line, and a writer may be mid-append: only whole lines count.
-  if (!read.fromStart) { const first = body.indexOf(10); body = first < 0 ? body.subarray(body.length) : body.subarray(first + 1); }
+  if (!read.fromStart) body = body.subarray(body.indexOf(10) + 1);
   const last = body.lastIndexOf(10);
   body = body.subarray(0, last + 1);
   let text: string;

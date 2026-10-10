@@ -1,5 +1,5 @@
 /** agy's retained SQLite store, read-only. Each bound store is an independent read; WAL is observed, never checkpointed. */
-import { lstat, realpath } from "node:fs/promises";
+import { lstat as fsLstat, realpath } from "node:fs/promises";
 import { join } from "node:path";
 import { AGY_CONVERSATION_ID, MAX_BLOB, MAX_STEPS, type StoreRow } from "../domain/trajectory.js";
 import type { StoreScan, StoreSource } from "../ports/store-source.js";
@@ -9,25 +9,38 @@ const MAX_SESSIONS = 20;
 export const MAX_WORKSPACE_URIS_BYTES = 4096;
 const blob = (value: unknown): Uint8Array | null => value instanceof Uint8Array ? value : null;
 
-export function sqliteStore(): StoreSource {
-  return { scan };
+/**
+ * Every directory and database must belong to `directoryOwner` and `fileOwner` (this process by
+ * default). `lstat` is the filesystem's own; a caller may observe it to exercise the swap check.
+ */
+export interface SqliteStoreOptions {
+  readonly directoryOwner?: number | undefined;
+  readonly fileOwner?: number | undefined;
+  readonly lstat?: typeof fsLstat;
+}
+
+export function sqliteStore(options: SqliteStoreOptions = {}): StoreSource {
+  const directoryOwner = options.directoryOwner ?? process.getuid?.(), fileOwner = options.fileOwner ?? process.getuid?.();
+  const lstat = options.lstat ?? fsLstat;
+  return { scan: (root, matches, limit, maxBytes, decode) => scan(root, matches, limit, maxBytes, decode, directoryOwner, fileOwner, lstat) };
 }
 
 async function scan<T>(root: string, matches: (id: string) => boolean, limit: number, maxBytes: number,
-  decode: (summary: StoreRow, rows: readonly StoreRow[], origin: string) => T | null): Promise<StoreScan<T>> {
+  decode: (summary: StoreRow, rows: readonly StoreRow[], origin: string) => T | null,
+  directoryOwner: number | undefined, fileOwner: number | undefined, lstat: typeof fsLstat): Promise<StoreScan<T>> {
   let bytesRead = 0;
   const files: string[] = [];
   const fail = (reason: "scan_limit" | "source_unavailable"): StoreScan<T> => ({ conversations: [], bytesRead, reason, files });
   try {
     for (const path of [root, join(root, ".."), join(root, "../.."), join(root, "conversations")].map(path => join(path))) {
       const s = await lstat(path);
-      if (s.uid !== process.getuid?.() || path !== join(root, "conversations") && (s.mode & 0o7777) !== 0o700 ||
-          await realpath(path) !== path) return fail("source_unavailable");
+      // Symlinked ancestry is refused by each database's own real-path check below.
+      if (s.uid !== directoryOwner || path !== join(root, "conversations") && (s.mode & 0o7777) !== 0o700) return fail("source_unavailable");
     }
     const { DatabaseSync } = await import("node:sqlite");
     const open = async (path: string) => {
       const before = await lstat(path);
-      if (!before.isFile() || before.uid !== process.getuid?.() || await realpath(path) !== path) throw new Error();
+      if (!before.isFile() || before.uid !== fileOwner || await realpath(path) !== path) throw new Error();
       const db = new DatabaseSync(path, { readOnly: true, timeout: 200 });
       const after = await lstat(path);
       if (before.dev !== after.dev || before.ino !== after.ino) { db.close(); throw new Error(); }

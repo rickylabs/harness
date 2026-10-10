@@ -22,19 +22,20 @@ export interface AGYScan {
 export function agyRun(conversation: AgyConversationSnapshot): RunRecord {
   const { conversationId: id, steps: trajectory, startedAt, updatedAt } = conversation;
   const steps: NonNullable<RunRecord["activitySteps"]>[number][] = [];
-  let latestUser = -1, pending = false;
+  let pending = false;
   let final: { at: string; step: AgyConversationSnapshot["steps"][number] } | null = null;
   for (const step of trajectory) {
-    if (step.kind === "user") { latestUser = step.index; pending = false; final = null; }
-    if (latestUser >= 0 && step.status === "pending") pending = true;
+    // The decoder guarantees a user turn; each one starts a new turn, so only its own steps can be pending.
+    if (step.kind === "user") pending = false;
+    if (step.status === "pending") pending = true;
     if (step.hasResponse) {
       const activity = nativeMessageActivity("agy-transcript", id, step.index, step.createdAt, step.responseText);
       if (activity !== null) steps.push(activity);
     }
-    if (latestUser >= 0) final = step.completedAt === null ? null : { at: step.completedAt, step };
+    final = step.completedAt === null ? null : { at: step.completedAt, step };
   }
-  const idle = conversation.summaryState === "idle" && !conversation.summaryRunning && !conversation.childActive &&
-    !conversation.notFullyIdle && !conversation.killedColumn;
+  // Running, child and not-fully-idle flags make the conversation active, and the killed column makes it killed.
+  const idle = conversation.summaryState === "idle";
   const killed = conversation.killedNative || conversation.killedColumn;
   // The summary can publish a resumed turn before its trajectory is updated.
   // Current native activity invalidates every prior end, including error/cancel.
@@ -48,9 +49,9 @@ export function agyRun(conversation: AgyConversationSnapshot): RunRecord {
       outcome = "failed"; terminalCause = "cancelled"; terminalAt = final.at;
     } else if (step.status === "error" || step.hasError || step.stopReason === "error") {
       outcome = "failed"; terminalCause = "error"; terminalAt = final.at;
-    // Only the native explicit stop on a non-empty, done planner response is success; an unknown,
-    // function-call, length, filtered, partial or empty response never is.
-    } else if (idle && !killed && step.kind === "planner" && step.status === "done" && nonempty && step.stopReason === "explicit-stop") {
+    // Only the native explicit stop (planner responses alone carry a stop reason) on a non-empty, done
+    // response is success; an unknown, function-call, length, filtered, partial or empty response never is.
+    } else if (idle && !killed && step.status === "done" && nonempty && step.stopReason === "explicit-stop") {
       outcome = "complete"; terminalAt = final.at;
     }
   }

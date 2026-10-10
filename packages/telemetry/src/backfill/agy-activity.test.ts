@@ -36,6 +36,7 @@ it("publishes named calls as unknown, results with their SQLite state, and the u
   const run = await join(S1, S1_LOG);
   const byKind = (kind: AgentActivityStep["kind"]) => run.activitySteps!.filter(s => s.kind === kind);
   assert.deepEqual(byKind("command").map(s => [s.commandHead, s.state]), [["git status", "unknown"]]);
+  assert.deepEqual(byKind("command").map(s => s.target), [{ kind: "command", value: "git status" }]);
   assert.deepEqual(byKind("file").map(s => [s.filePath, s.toolName, s.state]), [["src/app.ts", "view_file", "unknown"]]);
   assert.deepEqual(results(run).map(s => s.state).sort(), ["completed", "failed"]);
   assert.equal(byKind("message").length, 2, "both planner responses");
