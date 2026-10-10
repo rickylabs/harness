@@ -246,8 +246,8 @@ if (read.ok) {
   const assessment: ProviderLimitAssessmentV1 = assessProviderLimits(read.snapshot, 0);
   const verdict: ProviderRouteAdmissionV1 = admitProviderRoute(assessment, 'codex/fixture');
   if (!verdict.admitted) { const refusal: ProviderOutcomeV1 = verdict.refusal; void refusal; }
-  // @ts-expect-error an admitted route carries no refusal
-  if (verdict.admitted) void verdict.refusal.reason;
+  // An admitted route carries no refusal: its type is exactly null.
+  if (verdict.admitted) { const none: null = verdict.refusal; void none; }
 }
 `);
   stage = "installed root/server declaration compilation";
