@@ -3,19 +3,37 @@
 // publishProviderLimits driven by its own tests, plus one fixture driver named in rickylabs/harness#650).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { readProviderLimitSnapshot, type ProviderLimitSnapshotV1, type ProviderOutcomeV1 } from "./provider-limits.js";
+import { readdirSync, readFileSync } from "node:fs";
+import { readProviderLimitSnapshot, type ProviderLimitMeterV1, type ProviderLimitSnapshotV1, type ProviderOutcomeV1 } from "./provider-limits.js";
 import { admitProviderRoute, assessProviderLimits, PROVIDER_LIMIT_VALIDITY_MS } from "./provider-limit-admission.js";
 
-function produced(name: string): ProviderLimitSnapshotV1 {
-  const read = readProviderLimitSnapshot(JSON.parse(readFileSync(new URL(`../test-fixtures/provider-limits-produced/${name}.json`, import.meta.url), "utf8")));
-  assert.equal(read.ok, true, `${name} decodes`);
-  if (!read.ok) throw new Error(name);
+const fixtures = new URL("../test-fixtures/provider-limits-produced/", import.meta.url);
+function decode(raw: unknown, label: string): ProviderLimitSnapshotV1 {
+  const read = readProviderLimitSnapshot(raw);
+  assert.equal(read.ok, true, `${label} decodes`);
+  if (!read.ok) throw new Error(label);
   return read.snapshot;
 }
+const produced = (name: string) => decode(JSON.parse(readFileSync(new URL(`${name}.json`, fixtures), "utf8")), name);
 const after = (snapshot: ProviderLimitSnapshotV1, ms = 1000) => Date.parse(snapshot.generatedAt) + ms;
 const meter = (a: ReturnType<typeof assessProviderLimits>, provider: string, window: string, keyName: string | null = null) =>
   a.meters.find(m => m.meter.provider === provider && m.meter.window === window && m.meter.keyName === keyName && m.meter.state !== "unknown")!;
+
+// Synthetic cases start from rows Orchid's producer wrote and change only the field under test, then decode
+// again: each is valid evidence that breaks exactly one rule. Times are offsets from one synthetic instant.
+const base = produced("native-keys-global-refusal");
+const nativeRow = base.meters.find(m => m.scope === "subscription" && m.state === "known")!;
+const keyRow = base.meters.find(m => m.scope === "key" && m.state === "known")!;
+const refusalRow = base.outcomes.find(o => o.outcome === "refused" && o.keyName === null && o.accountRef === null && o.model === null)!;
+const T0 = Date.parse("2026-01-01T00:00:00.000Z");
+const at = (seconds: number) => new Date(T0 + seconds * 1000).toISOString();
+const native = (o: Partial<ProviderLimitMeterV1> = {}): ProviderLimitMeterV1 => ({ ...nativeRow, observedAt: at(0), resetsAt: null, ...o });
+const key = (o: Partial<ProviderLimitMeterV1> = {}): ProviderLimitMeterV1 => ({ ...keyRow, observedAt: at(0), resetsAt: null, ...o });
+const refused = (o: Partial<ProviderOutcomeV1> = {}): ProviderOutcomeV1 => ({ ...refusalRow, observedAt: at(0), resetsAt: null, ...o });
+const succeeded = (o: Partial<ProviderOutcomeV1> = {}) => refused({ outcome: "succeeded", reason: null, ...o });
+const synthetic = (meters: ProviderLimitMeterV1[], outcomes: ProviderOutcomeV1[]) =>
+  decode({ schemaVersion: 1, generatedAt: at(600), meters, outcomes }, "synthetic");
+const assess = (meters: ProviderLimitMeterV1[], outcomes: ProviderOutcomeV1[], now = T0 + 1000) => assessProviderLimits(synthetic(meters, outcomes), now);
 
 test("produced thresholds: 89.9% is quiet, 90% warns on native windows and key caps, and a warning never refuses", () => {
   const s = produced("thresholds-hard-then-rate"), a = assessProviderLimits(s, after(s));
@@ -26,8 +44,8 @@ test("produced thresholds: 89.9% is quiet, 90% warns on native windows and key c
   const codex = admitProviderRoute(a, "codex/fixture");
   assert.equal(codex.admitted, true);
   assert.deepEqual(codex.warnings.map(w => w.meter.window), ["weekly"]);
-  const key = admitProviderRoute(a, "openrouter/vendor/model");
-  assert.deepEqual([key.admitted, key.warnings.map(w => w.meter.keyName)], [true, ["near-cap"]]);
+  const routed = admitProviderRoute(a, "openrouter/vendor/model");
+  assert.deepEqual([routed.admitted, routed.warnings.map(w => w.meter.keyName)], [true, ["near-cap"]]);
   assert.deepEqual(admitProviderRoute(a, "openrouter/vendor/other").warnings, []);
 });
 
@@ -45,7 +63,9 @@ test("produced 100% meters and an exhausted key cap warn; only the provider-wide
 });
 
 test("produced unknown meters stay unknown: no percentage, no warning, no refusal", () => {
-  for (const name of ["native-keys-global-refusal", "refusal-cleared", "binding-before", "binding-after", "thresholds-hard-then-rate"]) {
+  const names = readdirSync(fixtures).filter(name => name.endsWith(".json")).map(name => name.slice(0, -".json".length));
+  assert.notEqual(names.length, 0);
+  for (const name of names) {
     const s = produced(name), a = assessProviderLimits(s, after(s));
     for (const m of a.meters.filter(m => m.meter.state === "unknown")) {
       assert.deepEqual([m.usedPercent, m.stale, m.warning], [null, null, false], `${name} ${m.meter.provider} ${m.meter.window}`);
@@ -79,40 +99,80 @@ test("produced binding retirement: an account refusal blocks only routes its acc
   assert.equal(admitProviderRoute(now, "codex/fixture").admitted, true);
 });
 
-test("freshness: an aged, reset or future reading neither warns nor refuses", () => {
+test("freshness: an aged or future reading neither warns nor refuses", () => {
   const s = produced("native-keys-global-refusal"), weekly = (now: number) => meter(assessProviderLimits(s, now), "codex", "weekly");
   const observed = Date.parse(weekly(after(s)).meter.observedAt!);
   assert.deepEqual([weekly(observed + PROVIDER_LIMIT_VALIDITY_MS - 1).stale, weekly(observed + PROVIDER_LIMIT_VALIDITY_MS - 1).warning], [false, true]);
   assert.deepEqual([weekly(observed + PROVIDER_LIMIT_VALIDITY_MS).stale, weekly(observed + PROVIDER_LIMIT_VALIDITY_MS).warning], [true, false]);
   assert.deepEqual([weekly(observed - 1).stale, weekly(observed - 1).warning], [null, false]);
-  const five = meter(assessProviderLimits(s, Date.parse(meter(assessProviderLimits(s, after(s)), "codex", "5h").meter.resetsAt!)), "codex", "5h");
-  assert.deepEqual([five.stale, five.warning], [true, false]);
 });
 
-test("clearance is scoped and strict: equal instants, another model, account or key keep the refusal", () => {
-  const at = "2026-01-01T00:00:00.000Z", later = "2026-01-01T00:00:01.000Z", ref = "aref:v1:codex:" + "a".repeat(43);
-  const outcome = (o: Partial<ProviderOutcomeV1>): ProviderOutcomeV1 => ({ provider: "codex", keyName: null, accountRef: null, model: "m", outcome: "refused",
-    reason: "payment_required", source: "provider-run", observedAt: at, resetsAt: null, ...o });
-  const success = (o: Partial<ProviderOutcomeV1>) => outcome({ outcome: "succeeded", reason: null, observedAt: later, ...o });
-  const active = (...outcomes: ProviderOutcomeV1[]) => assessProviderLimits({ schemaVersion: 1, generatedAt: later, meters: [], outcomes }, Date.parse(later)).refusals.length;
-  assert.equal(active(outcome({}), success({ observedAt: at })), 1);
-  assert.equal(active(outcome({}), success({ model: "other" })), 1);
-  assert.equal(active(outcome({}), success({ model: null })), 1);
-  assert.equal(active(outcome({}), success({ accountRef: ref })), 1);
-  assert.equal(active(outcome({ provider: "openrouter", keyName: "a" }), success({ provider: "openrouter", keyName: "b" })), 1);
-  assert.equal(active(outcome({}), success({})), 0);
-  assert.equal(active(outcome({ model: null }), success({ model: "any" })), 0);
+test("reset expiry: a reading past its resetsAt is stale while still younger than the validity window", () => {
+  const reset = 60_000, s = synthetic([native({ usedPercent: 95, resetsAt: at(reset / 1000) })], []);
+  assert.ok(reset < PROVIDER_LIMIT_VALIDITY_MS, "only the reset can make this reading stale");
+  const reading = (now: number) => { const m = assessProviderLimits(s, now).meters[0]!; return [m.stale, m.warning]; };
+  assert.deepEqual(reading(T0 + reset - 1), [false, true]);
+  assert.deepEqual(reading(T0 + reset), [true, false]);
+});
+
+test("completeness and caps: a partial reading never warns, an unmeasured cap is unknown, a zero cap is fully used", () => {
+  const advice = (m: ProviderLimitMeterV1) => { const a = assess([m], []).meters[0]!; return [a.usedPercent, a.stale, a.warning]; };
+  assert.deepEqual(advice(native({ usedPercent: 95 })), [95, false, true]);
+  assert.deepEqual(advice(native({ usedPercent: 95, state: "partial", reason: "source_partial" })), [95, false, false]);
+  assert.deepEqual(advice(key({ used: 10, limit: null, remaining: null })), [null, false, false]);
+  const zero = assess([key({ used: 0, limit: 0, remaining: 0 })], []);
+  assert.deepEqual([zero.meters[0]!.usedPercent, zero.meters[0]!.warning], [100, true]);
+  const route = admitProviderRoute(zero, keyRow.launchModels[0]!);
+  assert.deepEqual([route.admitted, route.warnings.length], [true, 1]);
+});
+
+test("clearance is scoped and strict: equal instants, another model, account, key or provider keep the refusal", () => {
+  const ref = "aref:v1:codex:" + "b".repeat(43);
+  const active = (...outcomes: ProviderOutcomeV1[]) => assess([], outcomes).refusals.length;
+  const modelRefusal = refused({ model: "m", reason: "payment_required" }), later = at(1);
+  assert.equal(active(modelRefusal, succeeded({ model: "m" })), 1);
+  assert.equal(active(modelRefusal, succeeded({ model: "other", observedAt: later })), 1);
+  assert.equal(active(modelRefusal, succeeded({ model: null, observedAt: later })), 1);
+  assert.equal(active(modelRefusal, succeeded({ model: "m", accountRef: ref, observedAt: later })), 1);
+  assert.equal(active(refused({ provider: "openrouter", keyName: "a" }), succeeded({ provider: "openrouter", keyName: "b", observedAt: later })), 1);
+  assert.equal(active(refused(), succeeded({ provider: "claude", observedAt: later })), 1);
+  assert.equal(active(modelRefusal, succeeded({ model: "m", observedAt: later })), 0);
+  assert.equal(active(refused(), succeeded({ model: "any", observedAt: later })), 0);
+});
+
+test("clearance is order-independent: successes straddling a refusal clear it in either order", () => {
+  const refusal = refused({ observedAt: at(10) }), early = succeeded({ observedAt: at(5) }), late = succeeded({ observedAt: at(20) });
+  for (const outcomes of [[refusal, early, late], [refusal, late, early], [late, refusal, early]]) {
+    assert.deepEqual(assess([], outcomes).refusals, []);
+  }
+  assert.equal(assess([], [refusal, early]).refusals.length, 1, "an earlier success alone keeps it");
+});
+
+test("admission reports the latest covering refusal whatever the order", () => {
+  const quota = refused({ reason: "quota_exhausted", observedAt: at(10), resetsAt: at(3600) });
+  const payment = refused({ reason: "payment_required", observedAt: at(20), resetsAt: null });
+  for (const outcomes of [[quota, payment], [payment, quota]]) {
+    const verdict = admitProviderRoute(assess([], outcomes), "codex/fixture");
+    assert.deepEqual([verdict.admitted, verdict.refusal?.reason, verdict.refusal?.observedAt, verdict.refusal?.resetsAt], [false, "payment_required", at(20), null]);
+  }
+});
+
+test("bound credentials: another key's or account's refusal never blocks; a key refusal covers the key on any account", () => {
+  const keyRoute = keyRow.launchModels[0]!, nativeRoute = nativeRow.launchModels[0]!;
+  const admitted = (m: ProviderLimitMeterV1, o: ProviderOutcomeV1, route: string) => admitProviderRoute(assess([m], [o]), route).admitted;
+  const keyRefusal = (o: Partial<ProviderOutcomeV1> = {}) => refused({ provider: "openrouter", keyName: keyRow.keyName, ...o });
+  assert.equal(admitted(key(), keyRefusal(), keyRoute), false);
+  assert.equal(admitted(key(), keyRefusal({ keyName: "other-key" }), keyRoute), true);
+  assert.equal(admitted(native(), refused({ accountRef: nativeRow.accountRef }), nativeRoute), false);
+  assert.equal(admitted(native(), refused({ accountRef: "aref:v1:codex:" + "b".repeat(43) }), nativeRoute), true);
+  assert.equal(admitted(key({ accountRef: "paccount_" + "0".repeat(64) }), keyRefusal({ accountRef: null }), keyRoute), false);
 });
 
 test("scope: an unbound key or account refusal never blocks another credential's route", () => {
-  const at = "2026-01-01T00:00:00.000Z", ref = "aref:v1:codex:" + "a".repeat(43);
-  const snapshot: ProviderLimitSnapshotV1 = { schemaVersion: 1, generatedAt: at, meters: [], outcomes: [
-    { provider: "openrouter", keyName: "a", accountRef: null, model: null, outcome: "refused", reason: "quota_exhausted", source: "provider-run", observedAt: at, resetsAt: null },
-    { provider: "codex", keyName: null, accountRef: ref, model: null, outcome: "refused", reason: "quota_exhausted", source: "provider-run", observedAt: at, resetsAt: null },
-    { provider: "opencode-go", keyName: null, accountRef: null, model: "m", outcome: "refused", reason: "quota_exhausted", source: "provider-run", observedAt: at, resetsAt: null },
+  const a = assess([], [refused({ provider: "openrouter", keyName: "a" }), refused({ accountRef: "aref:v1:codex:" + "a".repeat(43) }),
+    refused({ provider: "opencode-go", model: "m" }),
     // A provider whose name prefixes another's covers only its own `provider/` routes.
-    { provider: "opencode", keyName: null, accountRef: null, model: null, outcome: "refused", reason: "payment_required", source: "provider-run", observedAt: at, resetsAt: null } ] };
-  const a = assessProviderLimits(snapshot, Date.parse(at));
+    refused({ provider: "opencode", reason: "payment_required" })]);
   assert.equal(a.refusals.length, 4);
   assert.equal(admitProviderRoute(a, "opencode/any").admitted, false);
   for (const route of ["openrouter/vendor/model", "codex/fixture", "opencode-go/other", "opencode-go-m/x"]) assert.equal(admitProviderRoute(a, route).admitted, true, route);
