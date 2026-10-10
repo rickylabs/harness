@@ -122,6 +122,13 @@ it("reports a missing transcript as reduced coverage and keeps results and messa
   assert.deepEqual(gaps(run), ["tool-names-source-missing"]);
 });
 
+it("narrows nothing when the trajectory has no planner step to name, whatever the descriptor source says", async () => {
+  const userOnly: ConversationSpec = { steps: [{ kind: "user" }] };
+  assert.deepEqual(gaps(await join(userOnly, null)), [], "a missing log with no planner window is full coverage");
+  assert.deepEqual(gaps(await join(userOnly, t.lines(t.step(0, "GENERIC")))), [], "a read with no planner window is full coverage");
+  assert.deepEqual(gaps(await join(S1, null)), ["tool-names-source-missing"], "with a planner window the same source is a gap");
+});
+
 const THREE: ConversationSpec = { steps: [{ kind: "user" }, { kind: "planner" }, { kind: "result" }, { kind: "planner" }, { kind: "result" },
   { kind: "planner" }, { kind: "result" }, { kind: "planner", message: "Done now." }] };
 it("classifies a missing prefix, a missing middle and a missing newest planner line (S16, S19, S20)", async () => {

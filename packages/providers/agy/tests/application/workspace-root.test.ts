@@ -10,3 +10,15 @@ it("relativizes only against exactly one local root (S25-S27, G42)", () => {
     assert.equal(agyWorkspaceRoot(value), null, String(value));
   }
 });
+
+it("refuses a root with repeated separators: the stored path must already be normalized", () => {
+  for (const value of ["file:///workspace//project", "file:///workspace/project//src", "file:////workspace"]) {
+    assert.equal(agyWorkspaceRoot(JSON.stringify([value])), null, value);
+  }
+});
+
+it("refuses a root with an encoded control character", () => {
+  for (const code of ["%00", "%01", "%0A", "%1F", "%7F"]) {
+    assert.equal(agyWorkspaceRoot(JSON.stringify([`file:///workspace/pro${code}ject`])), null, code);
+  }
+});

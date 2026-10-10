@@ -5,17 +5,17 @@
 import { join } from "node:path";
 import type { NativeToolCallDescriptor, NativeToolCallRead } from "@rickylabs/harness-contracts";
 import { describeCall } from "../domain/tool-vocabulary.js";
+import { AGY_CONVERSATION_ID } from "../domain/trajectory.js";
 import { decodeTranscriptLine, MAX_LINE_BYTES, type TranscriptLine } from "../domain/transcript-line.js";
 import type { TranscriptTail } from "../ports/transcript-tail.js";
 
 export const MAX_TRANSCRIPT_TAIL_BYTES = 1_048_576;
-const CONVERSATION = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
 const unread = (gap: Exclude<NativeToolCallRead["gap"], null | "tool-names-truncated">, bytesRead = 0): NativeToolCallRead =>
   ({ calls: [], decodedPlannerSteps: [], vendorTruncatedSteps: [], fromStart: false, fromStepIndex: null, bytesRead, gap });
 
 /** The log path, derived only from a conversation id the caller has verified; null for any other id. */
 export function agyTranscriptPath(storeRoot: string, conversationId: string): string | null {
-  return CONVERSATION.test(conversationId)
+  return AGY_CONVERSATION_ID.test(conversationId)
     ? join(storeRoot, "brain", conversationId, ".system_generated", "logs", "transcript.jsonl") : null;
 }
 
