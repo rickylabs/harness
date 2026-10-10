@@ -30,12 +30,15 @@ function probe(change) {
     execFileSync("git", ["init", "--quiet"], { cwd: scratch, env });
     execFileSync("git", ["add", "--", "."], { cwd: scratch, env });
     change(scratch);
-    const result = spawnSync(process.execPath, [join(scratch, "scripts/check-snapshots.mjs"), "--json"], {
+    const run = (...flags) => spawnSync(process.execPath, [join(scratch, "scripts/check-snapshots.mjs"), ...flags], {
       cwd: scratch, env, encoding: "utf8", timeout: 10_000,
     });
-    assert.equal(result.error, undefined);
+    const result = run("--json"), text = run();
+    assert.deepEqual([result.error, text.error], [undefined, undefined]);
+    // The gate runs the text report: it must exit exactly as the structured one does.
+    assert.equal(text.status, result.status);
     // A leak check on the raw bytes: no fixture or operator value is ever echoed.
-    assert.doesNotMatch(result.stdout + result.stderr, /synthetic-private-value/);
+    for (const out of [result, text]) assert.doesNotMatch(out.stdout + out.stderr, /synthetic-private-value/);
     const report = JSON.parse(result.stdout);
     assert.equal(report.status, result.status === 0 ? "PASS" : "FAIL");
     return { status: result.status, verified: report.verifiedFixtures, found: report.problems.map(p => [p.path, p.rule, p.key ?? null]) };
@@ -83,6 +86,10 @@ test("identical fixture bytes at another path get ordinary detection", () => {
 test("operator snapshot outside fixture inventory still fails", () => {
   const { status, found } = probe(scratch => track(scratch, "operator.json", '{"balance_usd":"synthetic-private-value"}\n'));
   assert.deepEqual([status, found], [1, [["operator.json", "key", "balance_usd"]]]);
+});
+test("a data file named for a quota fails on its name alone", () => {
+  const { status, found } = probe(scratch => track(scratch, "quota.json", "{}\n"));
+  assert.deepEqual([status, found], [1, [["quota.json", "name", null]]]);
 });
 
 test("missing repository-run fixture fails loudly", () => {
