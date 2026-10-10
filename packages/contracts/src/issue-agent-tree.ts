@@ -103,14 +103,24 @@ export interface AgentActivityStep {
   readonly summary: string | null;
   /** Additive in the next contracts minor; a screened, tool-specific display target. */
   readonly target?: { readonly kind: AgentActivityTargetKind; readonly value: string } | null;
+  /** Additive in 0.41.0: a tool call's native lifecycle, when the vendor reports one; absent elsewhere. */
+  readonly lifecycle?: AgentToolLifecycle | null;
   readonly source: "codex-rollout" | "claude-transcript" | "agy-transcript" | "opencode-transcript";
 }
+/**
+ * A tool call's native lifecycle and the clocks the vendor reports for that state (0.41.0). A requested
+ * call is `pending` with no clock: it has not run, so it carries no start and never an end.
+ */
+export type AgentToolLifecycle =
+  | { readonly state: "pending"; readonly startedAt: null; readonly endedAt: null }
+  | { readonly state: "running"; readonly startedAt: string; readonly endedAt: null }
+  | { readonly state: "completed" | "error"; readonly startedAt: string; readonly endedAt: string };
 export type AgentActivity =
   | { readonly availability: "available"; readonly reason: null; readonly observedAt: string;
       readonly steps: readonly AgentActivityStep[] }
   | { readonly availability: "unavailable"; readonly reason: AgentUnavailableReason; readonly observedAt: null;
       readonly steps: readonly [] };
-/** The native counter a measured used-tokens figure came from, one per vendor that has one (0.40.0 adds OpenCode). */
+/** The native counter a measured used-tokens figure came from, one per vendor that has one (0.41.0 adds OpenCode). */
 export const AGENT_TOKEN_SOURCES = Object.freeze(["codex-token-count", "claude-usage", "opencode-usage"] as const);
 export type AgentTokenSource = typeof AGENT_TOKEN_SOURCES[number];
 /**

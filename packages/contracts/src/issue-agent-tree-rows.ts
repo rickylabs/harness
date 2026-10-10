@@ -7,7 +7,7 @@ import { AGENT_ACTION_ACCEPTED_REASONS, AGENT_ACTION_REJECTED_REASONS, AGENT_EFF
   type AgentActionKind, type AgentActionState, type AgentActivity, type AgentActivityStep, type AgentBudget,
   type AgentBudgetHistory, type AgentBudgetPoint, type AgentHistoryKind, type AgentLaunchRevision, type AgentNativeDepth,
   type AgentPlacementValue, type AgentQuotaRegime, type AgentResourceHistory, type AgentRoutePolicy,
-  type AgentTerminalOutcome, type AgentTimeline, type AgentTimelineEvent, type AgentTimelineReason, type AgentTokenHistory,
+  type AgentTerminalOutcome, type AgentTimeline, type AgentTimelineEvent, type AgentTimelineReason, type AgentTokenHistory, type AgentToolLifecycle,
   type AgentTokenSource, type AgentTokenUsage, type AgentTreeLiveness, type AgentTreeLocation, type AgentTreeValue,
   type IssueAgentTreeAgent, type IssueAgentTreeReading } from "./issue-agent-tree.js";
 
@@ -104,7 +104,7 @@ function activityRow(value: unknown, capturedAt: string): AgentActivity {
   const ids = new Set<string>();
   const decoded = steps.map(value => {
     const s = record(value, ["id", "at", "kind", "toolName", "commandHead", "filePath", "summary", "source",
-      ...(Object.hasOwn(value as object, "target") ? ["target"] : [])]);
+      ...["target", "lifecycle"].filter(key => Object.hasOwn(value as object, key))]);
     if (typeof s.id !== "string" || !/^step_[a-f0-9]{64}$/.test(s.id) || ids.has(s.id)) return bad();
     ids.add(s.id);
     const at = stamp(s.at);
@@ -136,10 +136,27 @@ function activityRow(value: unknown, capturedAt: string): AgentActivity {
     return { id: s.id, at, kind: s.kind as AgentActivityStep["kind"], toolName: s.toolName as string | null,
       commandHead: s.commandHead as string | null, filePath: s.filePath as string | null,
       summary: s.summary as string | null, source: s.source as AgentActivityStep["source"],
-      ...(Object.hasOwn(s, "target") ? { target: target ?? null } : {}) };
+      ...(Object.hasOwn(s, "target") ? { target: target ?? null } : {}),
+      ...(Object.hasOwn(s, "lifecycle") ? { lifecycle: lifecycleRow(s.lifecycle, observedAt) } : {}) };
   });
   for (let i = 1; i < decoded.length; i++) if (decoded[i - 1]!.at < decoded[i]!.at) return bad();
   return { availability: "available", reason: null, observedAt, steps: decoded };
+}
+/** A tool call's lifecycle: a pending call has no clock; a running one a start; a finished one both, in order. */
+function lifecycleRow(value: unknown, observedAt: string): AgentToolLifecycle | null {
+  if (value === null) return null;
+  const row = record(value, ["state", "startedAt", "endedAt"]);
+  if (row.state === "pending") {
+    if (row.startedAt !== null || row.endedAt !== null) return bad();
+    return { state: "pending", startedAt: null, endedAt: null };
+  }
+  if (row.state !== "running" && row.state !== "completed" && row.state !== "error") return bad();
+  const startedAt = stamp(row.startedAt);
+  if (startedAt > observedAt) return bad();
+  if (row.state === "running") return row.endedAt === null ? { state: "running", startedAt, endedAt: null } : bad();
+  const endedAt = stamp(row.endedAt);
+  if (endedAt < startedAt || endedAt > observedAt) return bad();
+  return { state: row.state === "error" ? "error" : "completed", startedAt, endedAt };
 }
 const tokenSource = (value: unknown): value is AgentTokenSource =>
   typeof value === "string" && (AGENT_TOKEN_SOURCES as readonly string[]).includes(value);

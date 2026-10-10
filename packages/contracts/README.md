@@ -55,7 +55,7 @@ cap:
   snapshot, legacy dispatch lanes, deltas, connection recovery, frame verdicts, the three regimes,
   closed and open vocabularies.
 - [Agent trees, placement and stop state](docs/agent-trees-and-stop-state.md): 0.5.3 to 0.12.0,
-  and the issue-tree changes of 0.36.0, 0.37.0 and 0.40.0.
+  and the issue-tree changes of 0.36.0, 0.37.0 and 0.41.0.
 - [Workflows, receipts and providers](docs/workflows-and-providers.md): 0.15.0 to 0.35.0, except
   the account usage projection below, and the provider-limit evidence snapshot.
 

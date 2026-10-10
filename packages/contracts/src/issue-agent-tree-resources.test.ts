@@ -51,7 +51,7 @@ it("decodes bounded source-backed resource history and rejects invented child bu
     source: "unavailable", reason: "source_not_bound" }, budgets: { points: [], truncated: false,
     reason: "source_not_bound" } } }])).ok, true);
 });
-it("0.40.0: decodes OpenCode token usage and history per vendor, and refuses an unknown token source", () => {
+it("0.41.0: decodes OpenCode token usage and history per vendor, and refuses an unknown token source", () => {
   assert.deepEqual([...AGENT_TOKEN_SOURCES], ["codex-token-count", "claude-usage", "opencode-usage"]);
   assert.ok(Object.isFrozen(AGENT_TOKEN_SOURCES));
   const s = snapshot();

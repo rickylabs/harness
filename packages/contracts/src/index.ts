@@ -279,6 +279,7 @@ export * from "./route.js";
 export * from "./agent-observations.js";
 export * from "./issue-agent-tree.js";
 export * from "./issue-agent-tree-read.js";
+export type { NativeReadBounds, NativeReadOutcome, NativeSessionEvents } from "./native-session-reads.js";
 export type { DispatchEvidence, OrchidDispatchRead, OrchidDispatchUnavailableReason, OrchidLaunchState } from "./dispatch-evidence.js";
 export * from "./profiles-workflows.js";
 
