@@ -306,8 +306,11 @@ refusal.
 `admitProviderRoute(assessment, route)` answers for one provider-qualified launch ID
 (`opencode-go/fixture`, `openrouter/vendor/model`) with `ProviderRouteAdmissionV1`. The route is
 refused only by an active quota or payment refusal that covers it. A refusal with no key and no
-account covers every route of its provider, or only `provider/model` when it names a model. A key
-or account refusal covers only routes that a meter of that key or account binds in `launchModels`.
+account covers every route of its provider, or only `provider/model` when it names a model. Any
+other refusal covers only routes bound in `launchModels` by a meter that matches every credential
+the refusal names: an account-only refusal reaches every bound key of that account, a key-only
+refusal that key on any account, and a refusal naming both needs both. Of several covering
+refusals, the verdict reports the latest, and the first listed on an equal instant.
 Warnings, rate limits, unknown and stale readings never refuse a route; the verdict still carries
 the route's bound warnings and covering rate limits. The integration fixtures in
 `test-fixtures/provider-limits-produced/` are byte-for-byte snapshots written by Orchid's producer

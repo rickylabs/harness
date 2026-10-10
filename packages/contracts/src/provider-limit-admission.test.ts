@@ -115,7 +115,7 @@ test("reset expiry: a reading past its resetsAt is stale while still younger tha
   assert.deepEqual(reading(T0 + reset), [true, false]);
 });
 
-test("completeness and caps: a partial reading never warns, an unmeasured cap is unknown, a zero cap is fully used", () => {
+test("completeness and caps: a partial reading never warns, an unmeasured cap is unknown, a zero or overspent cap is fully used", () => {
   const advice = (m: ProviderLimitMeterV1) => { const a = assess([m], []).meters[0]!; return [a.usedPercent, a.stale, a.warning]; };
   assert.deepEqual(advice(native({ usedPercent: 95 })), [95, false, true]);
   assert.deepEqual(advice(native({ usedPercent: 95, state: "partial", reason: "source_partial" })), [95, false, false]);
@@ -124,6 +124,10 @@ test("completeness and caps: a partial reading never warns, an unmeasured cap is
   assert.deepEqual([zero.meters[0]!.usedPercent, zero.meters[0]!.warning], [100, true]);
   const route = admitProviderRoute(zero, keyRow.launchModels[0]!);
   assert.deepEqual([route.admitted, route.warnings.length], [true, 1]);
+  const overspent = assess([key({ used: 11, limit: 10, remaining: -1 })], []);
+  assert.deepEqual(advice(overspent.meters[0]!.meter), [100, false, true]);
+  const spent = admitProviderRoute(overspent, keyRow.launchModels[0]!);
+  assert.deepEqual([spent.admitted, spent.refusal, spent.warnings.length], [true, null, 1]);
 });
 
 test("clearance is scoped and strict: equal instants, another model, account, key or provider keep the refusal", () => {
@@ -148,24 +152,39 @@ test("clearance is order-independent: successes straddling a refusal clear it in
   assert.equal(assess([], [refusal, early]).refusals.length, 1, "an earlier success alone keeps it");
 });
 
-test("admission reports the latest covering refusal whatever the order", () => {
+test("admission reports the latest covering refusal whatever the order, the first listed on an equal instant", () => {
   const quota = refused({ reason: "quota_exhausted", observedAt: at(10), resetsAt: at(3600) });
   const payment = refused({ reason: "payment_required", observedAt: at(20), resetsAt: null });
-  for (const outcomes of [[quota, payment], [payment, quota]]) {
+  const reported = (...outcomes: ProviderOutcomeV1[]) => {
     const verdict = admitProviderRoute(assess([], outcomes), "codex/fixture");
-    assert.deepEqual([verdict.admitted, verdict.refusal?.reason, verdict.refusal?.observedAt, verdict.refusal?.resetsAt], [false, "payment_required", at(20), null]);
-  }
+    return [verdict.admitted, verdict.refusal?.reason, verdict.refusal?.observedAt, verdict.refusal?.resetsAt];
+  };
+  assert.deepEqual(reported(quota, payment), [false, "payment_required", at(20), null]);
+  assert.deepEqual(reported(payment, quota), [false, "payment_required", at(20), null]);
+  const tied = refused({ reason: "quota_exhausted", observedAt: at(20), resetsAt: at(3600) });
+  assert.deepEqual(reported(payment, tied), [false, "payment_required", at(20), null]);
+  assert.deepEqual(reported(tied, payment), [false, "quota_exhausted", at(20), at(3600)]);
 });
 
-test("bound credentials: another key's or account's refusal never blocks; a key refusal covers the key on any account", () => {
+test("bound credentials: a refusal blocks only routes whose meter matches every credential it names", () => {
   const keyRoute = keyRow.launchModels[0]!, nativeRoute = nativeRow.launchModels[0]!;
+  const account = "paccount_" + "0".repeat(64), otherAccount = "paccount_" + "1".repeat(64);
   const admitted = (m: ProviderLimitMeterV1, o: ProviderOutcomeV1, route: string) => admitProviderRoute(assess([m], [o]), route).admitted;
   const keyRefusal = (o: Partial<ProviderOutcomeV1> = {}) => refused({ provider: "openrouter", keyName: keyRow.keyName, ...o });
+  const accountRefusal = (accountRef: string) => refused({ provider: "openrouter", accountRef, reason: "payment_required" });
+  // Key only: that key, on any account.
   assert.equal(admitted(key(), keyRefusal(), keyRoute), false);
   assert.equal(admitted(key(), keyRefusal({ keyName: "other-key" }), keyRoute), true);
+  assert.equal(admitted(key({ accountRef: account }), keyRefusal(), keyRoute), false);
+  // Account only: every bound meter of that account, a named key included.
   assert.equal(admitted(native(), refused({ accountRef: nativeRow.accountRef }), nativeRoute), false);
   assert.equal(admitted(native(), refused({ accountRef: "aref:v1:codex:" + "b".repeat(43) }), nativeRoute), true);
-  assert.equal(admitted(key({ accountRef: "paccount_" + "0".repeat(64) }), keyRefusal({ accountRef: null }), keyRoute), false);
+  assert.equal(admitted(key({ accountRef: account }), accountRefusal(account), keyRoute), false);
+  assert.equal(admitted(key({ accountRef: account }), accountRefusal(otherAccount), keyRoute), true);
+  // Key and account: both must match.
+  assert.equal(admitted(key({ accountRef: account }), keyRefusal({ accountRef: account }), keyRoute), false);
+  assert.equal(admitted(key({ accountRef: account }), keyRefusal({ accountRef: otherAccount }), keyRoute), true);
+  assert.equal(admitted(key({ accountRef: account }), keyRefusal({ keyName: "other-key", accountRef: account }), keyRoute), true);
 });
 
 test("scope: an unbound key or account refusal never blocks another credential's route", () => {
