@@ -2,16 +2,19 @@ import assert from "node:assert/strict";
 import { it } from "node:test";
 import { describeCall } from "../../src/domain/tool-vocabulary.js";
 import { decodeTranscriptLine, MAX_ARGUMENT_CHARS, MAX_LINE_BYTES } from "../../src/domain/transcript-line.js";
-import { CANARY, mcpTool, planner, result, runCommand, viewFile } from "../fixtures/transcript.js";
+import { ARGUMENT_CANARY, transcript as t } from "../../test-fixtures/agy-store.js";
+
+const { planner, runCommand, viewFile } = t;
+const result = (stepIndex: number) => t.step(stepIndex, "GENERIC");
 
 it("decodes a planner line and keeps only the vocabulary's argument per kind (T1)", () => {
-  const line = decodeTranscriptLine(planner(4, [runCommand(), viewFile("/w/src/a.ts"), mcpTool]));
+  const line = decodeTranscriptLine(planner(4, [runCommand(), viewFile("/w/src/a.ts"), t.mcpTool()]));
   assert.ok(line?.planner);
   const described = line.calls.map((call, i) => describeCall(4, i, call));
   assert.deepEqual(described.map(d => [d.kind, d.toolName]), [["command", "run_command"], ["file", "view_file"], ["tool", null]]);
   assert.equal(described[0]!.path, null);
   assert.equal(described[1]!.commandLine, null);
-  assert.equal(JSON.stringify(described[2]).includes(CANARY), false);
+  assert.equal(JSON.stringify(described[2]).includes(ARGUMENT_CANARY), false);
 });
 
 it("counts a planner line with zero calls as decoded, and a non-planner line as not a planner (T13)", () => {
@@ -37,7 +40,7 @@ it("rejects a non-array tool_calls and more than 64 calls (T7)", () => {
 });
 
 it("rejects a non-string or oversized name; an unknown well-formed name stays unnamed (T8)", () => {
-  assert.equal(decodeTranscriptLine(planner(1, [{ name: 7 as unknown as string }])), null);
+  assert.equal(decodeTranscriptLine(planner(1, [{ name: 7 }])), null);
   assert.equal(decodeTranscriptLine(planner(1, [{ name: "a".repeat(129) }])), null);
   const odd = decodeTranscriptLine(planner(1, [{ name: "Run-Command" }, { name: "invoke_subagent" }]));
   assert.ok(odd?.planner);
@@ -62,5 +65,15 @@ it("classifies vendor truncation: prose fields never, tool_calls and unknown fie
 it("rejects malformed truncated_fields (T15)", () => {
   for (const fields of ["tool_calls", Array.from({ length: 17 }, () => "content"), [7], ["x".repeat(65)]]) {
     assert.equal(decodeTranscriptLine(planner(1, [], { truncated_fields: fields })), null, JSON.stringify(fields).slice(0, 40));
+  }
+});
+
+it("rejects a row that is not a JSON object", () => {
+  for (const row of ["null", "[1]", "[]", "5", "true", JSON.stringify("PLANNER_RESPONSE")]) assert.equal(decodeTranscriptLine(row), null, row);
+});
+
+it("rejects a tool call that is not an object, without throwing", () => {
+  for (const call of [null, 7, "run_command", [], true]) {
+    assert.equal(decodeTranscriptLine(planner(1, [], { tool_calls: [call] })), null, JSON.stringify(call));
   }
 });

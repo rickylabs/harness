@@ -9,6 +9,7 @@ import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import type { TranscriptTail } from "../src/ports/transcript-tail.js";
 
 export const rootID = "00000000-0000-4000-8000-000000000001", childID = "00000000-0000-4000-8000-000000000002";
 export const trajectoryID = "10000000-0000-4000-8000-000000000001";
@@ -87,15 +88,33 @@ export function conversation(spec: ConversationSpec): Conversation {
       time(7, 0), time(3, Math.max(rows.length, ...spec.steps.map(s => "offset" in s && s.offset !== undefined ? s.offset : 0)) + 2), integer(18, 0), integer(21, spec.running ? 1 : 0), integer(23, 0), integer(25, 0)]) } };
 }
 
-/** Transcript lines in the measured 1.3.2 shape; argument values are private canaries. */
+/** The canary every synthetic tool-call argument carries; it must never reach a published step. */
+export const ARGUMENT_CANARY = "PRIVATE-ARGUMENT-CANARY";
+/** One tool call as a transcript line names it; `args` may be any JSON value, to exercise the decoder. */
+export interface CallSpec { readonly name: unknown; readonly args?: unknown }
+
+/** The one transcript encoder: lines in the measured agy 1.3.2 shape, and the calls they name. */
 export const transcript = {
-  planner: (stepIndex: number, calls: readonly { name: string; args?: Record<string, unknown> }[] = [], extra: Record<string, unknown> = {}) =>
+  /** A planner response naming `calls`; `extra` overrides or adds any field (timestamps, `truncated_fields`, raw `tool_calls`). */
+  planner: (stepIndex: number, calls: readonly CallSpec[] = [], extra: Record<string, unknown> = {}) =>
     JSON.stringify({ step_index: stepIndex, source: "MODEL", type: "PLANNER_RESPONSE", status: "DONE", created_at: "2026-01-01T00:00:00Z",
       tool_calls: calls.map(call => ({ name: call.name, args: call.args ?? {} })), ...extra }),
-  step: (stepIndex: number, type: string, status = "DONE") => JSON.stringify({ step_index: stepIndex, source: "MODEL", type, status,
-    created_at: "2026-01-01T00:00:00Z", content: "PRIVATE-OUTPUT-CANARY" }),
+  /** Any other step line (`GENERIC`, `USER_INPUT`, …); `content` defaults to an output canary. */
+  step: (stepIndex: number, type: string, status = "DONE", content = "PRIVATE-OUTPUT-CANARY") =>
+    JSON.stringify({ step_index: stepIndex, source: "MODEL", type, status, created_at: "2026-01-01T00:00:00Z", content }),
+  /** Lines joined as JSONL, each newline-terminated. */
   lines: (...lines: string[]) => lines.map(line => line + "\n").join(""),
+  runCommand: (commandLine = `git status ${ARGUMENT_CANARY}`): CallSpec =>
+    ({ name: "run_command", args: { CommandLine: commandLine, Cwd: ARGUMENT_CANARY } }),
+  viewFile: (path: string): CallSpec => ({ name: "view_file", args: { AbsolutePath: path } }),
+  mcpTool: (): CallSpec => ({ name: "github_create_issue", args: { title: ARGUMENT_CANARY } }),
 };
+
+/** An in-memory transcript tail serving `text`; `asked` records every byte budget it was read with. */
+export function memoryTail(text: string, fromStart = true): TranscriptTail & { readonly asked: number[] } {
+  const asked: number[] = [];
+  return { asked, async read(_root, _path, maxBytes) { asked.push(maxBytes); return { bytes: new TextEncoder().encode(text), fromStart }; } };
+}
 
 /** A private `.divybot-native/<key>/agy` store with WAL databases, as Orchid binds it. */
 export async function sqliteFixture(key = "b".repeat(64), options: { workspaceColumn?: boolean } = {}) {

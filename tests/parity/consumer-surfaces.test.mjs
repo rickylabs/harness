@@ -196,7 +196,7 @@ test("cockpit: harness-telemetry issue-agents accepts --activity-lifecycle and p
   try {
     store.replaceRoot({ steps: [{ kind: "user" }, { kind: "planner" }, { kind: "result", status: 3 }, { kind: "planner", message: "The parity work is done." }] });
     await store.writeTranscript(fx.rootID, fx.transcript.lines(
-      fx.transcript.planner(1, [{ name: "run_command", args: { CommandLine: "git status PRIVATE-ARG-CANARY" } }]), fx.transcript.planner(3)));
+      fx.transcript.planner(1, [fx.transcript.runCommand()]), fx.transcript.planner(3)));
     const receipts = join(store.base, "receipts");
     await fx.bindAgyIssue(receipts, { number: 42, root: store.root, observedAt: new Date(Date.now() - 600_000).toISOString() });
     const read = flag => {

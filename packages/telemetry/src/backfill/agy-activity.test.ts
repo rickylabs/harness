@@ -1,27 +1,25 @@
 /** The agy descriptor join and its coverage, on synthetic trajectories and transcripts (no native data). */
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { decodeAgyConversation, readAgyToolCalls, type TranscriptTail } from "@rickylabs/provider-agy";
+import { decodeAgyConversation, readAgyToolCalls } from "@rickylabs/provider-agy";
 import type { AgentActivityStep, NativeToolCallRead } from "@rickylabs/harness-contracts";
 import { agyRun } from "./agy.js";
 import { agyActivity } from "./agy-activity.js";
-import { captured, conversation, rootID, transcript as t, type ConversationSpec } from "@rickylabs/provider-agy/test-fixtures";
+import { captured, conversation, memoryTail, rootID, transcript as t, type ConversationSpec } from "@rickylabs/provider-agy/test-fixtures";
 import { nativeMessageActivity } from "../native-activity.js";
 import type { RunRecord } from "../model.js";
 
 const WS = "/workspace/project";
-const memory = (text: string, fromStart = true): TranscriptTail => ({
-  async read() { return { bytes: new TextEncoder().encode(text), fromStart }; } });
 const missing: NativeToolCallRead = { calls: [], decodedPlannerSteps: [], vendorTruncatedSteps: [], fromStart: false,
   fromStepIndex: null, bytesRead: 0, gap: "tool-names-source-missing" };
-const runCommand = { name: "run_command", args: { CommandLine: "git status PRIVATE-ARG-CANARY", Cwd: "PRIVATE-CWD-CANARY" } };
-const viewFile = (path = `${WS}/src/app.ts`) => ({ name: "view_file", args: { AbsolutePath: path } });
+const runCommand = t.runCommand();
+const viewFile = (path = `${WS}/src/app.ts`) => t.viewFile(path);
 
 async function join(spec: ConversationSpec, log: string | null | { text: string; fromStart: boolean }, lifecycle = true,
   workspaceRoot: string | null = WS) {
   const c = conversation(spec), decoded = decodeAgyConversation(c.summary, c.rows, "private-origin", captured, workspaceRoot);
   assert.ok(decoded, "the synthetic trajectory is accepted by the provider's decoder");
-  const read = log === null ? missing : await readAgyToolCalls(typeof log === "string" ? memory(log) : memory(log.text, log.fromStart),
+  const read = log === null ? missing : await readAgyToolCalls(typeof log === "string" ? memoryTail(log) : memoryTail(log.text, log.fromStart),
     "/store", rootID, 1_048_576, c.rows.length);
   return agyActivity({ run: agyRun(decoded), storeRoot: "/store", conversation: decoded }, read, lifecycle);
 }
@@ -159,7 +157,7 @@ it("gives messages, calls and results disjoint, stable ids, keeping the message 
 });
 
 it("screens names, commands and paths: no canary, no outside path, no MCP name (G34)", async () => {
-  const run = await join(S1, t.lines(t.planner(1, [{ name: "run_command", args: { CommandLine: "curl PRIVATE-URL-CANARY" } },
+  const run = await join(S1, t.lines(t.planner(1, [t.runCommand("curl PRIVATE-URL-CANARY"),
     viewFile("/elsewhere/PRIVATE-PATH-CANARY.ts"), { name: "github_create_issue", args: { title: "PRIVATE-MCP-CANARY" } }]), t.planner(4)));
   assert.deepEqual(named(run).map(s => [s.kind, s.toolName, s.commandHead, s.filePath]).sort(),
     [["tool", "run_command", null, null], ["tool", "view_file", null, null]]);

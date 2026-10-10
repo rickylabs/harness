@@ -17,8 +17,8 @@ import { agyReservation, bindAgyIssue, captured, childID, rootID, seconds, sqlit
 
 const MiB = 1_048_576, BIG = 1 << 30, WS = "/workspace/project";
 const B_ID = "00000000-0000-4000-8000-0000000000b0", DECOY = "00000000-0000-4000-8000-0000000000d0";
-const run = { name: "run_command", args: { CommandLine: "git status PRIVATE-ARG-CANARY" } };
-const pad = (idx: number, size: number) => JSON.stringify({ step_index: idx, type: "GENERIC", content: "x".repeat(size) });
+const run = t.runCommand();
+const pad = (idx: number, size: number) => t.step(idx, "GENERIC", "DONE", "x".repeat(size));
 const spec = (message: string, pads: [number, number], extra: Partial<ConversationSpec> = {}): ConversationSpec => ({ ...extra,
   steps: [{ kind: "user" }, { kind: "planner", pad: pads[0] }, { kind: "result", pad: pads[1] }, { kind: "planner", message }] });
 const log = (padLines: number, size: number) => t.lines(t.planner(1, [run]), ...Array.from({ length: padLines }, () => pad(2, size)), t.planner(3));
@@ -109,7 +109,7 @@ it("a budget under the reserve plus the minimum skips names without starving aut
 it("an oversized workspace value is never materialized, and its bytes are counted when read (S24, S28, G40, G41)", async () => {
   const valid = JSON.stringify([`file://${WS}`]), padded = JSON.stringify([`file://${WS}`], null, 4000).padEnd(5000, " ");
   assert.ok(Buffer.byteLength(padded) > 4096 && JSON.parse(padded)[0] === `file://${WS}`, "fixture: a valid single root over the cap");
-  const viewed = t.lines(t.planner(1, [{ name: "view_file", args: { AbsolutePath: `${WS}/src/app.ts` } }]), t.planner(3));
+  const viewed = t.lines(t.planner(1, [t.viewFile(`${WS}/src/app.ts`)]), t.planner(3));
   const paths = async (workspace: string) => {
     const f = await sqliteFixture("e".repeat(64), { workspaceColumn: true });
     try {

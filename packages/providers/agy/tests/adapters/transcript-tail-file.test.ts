@@ -72,3 +72,10 @@ it("refuses a zero or negative byte budget without reading", async () => store(a
     assert.deepEqual(await tail.read(root, join(root, "log.jsonl"), maxBytes), { bytes: null, reason: "refused" }, String(maxBytes));
   }
 }));
+
+it("refuses a non-finite or unsafe byte budget without reading", async () => store(async root => {
+  await writeFile(join(root, "log.jsonl"), "a\n");
+  for (const maxBytes of [Infinity, Number.NaN, Number.MAX_SAFE_INTEGER + 1, 2 ** 60]) {
+    assert.deepEqual(await tail.read(root, join(root, "log.jsonl"), maxBytes), { bytes: null, reason: "refused" }, String(maxBytes));
+  }
+}));
