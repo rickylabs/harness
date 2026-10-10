@@ -66,17 +66,16 @@ export const nested = (fields: Fields, key: number): Fields | null => {
 export const text = (fields: Fields, key: number): string | null => {
   const value = fields.get(key);
   if (value === undefined) return null;
-  if (!(value instanceof Uint8Array)) throw new Error();
-  return new TextDecoder("utf-8", { fatal: true }).decode(value);
+  // A non-bytes value (a varint, or NaN for a repeated field) makes the decoder throw.
+  return new TextDecoder("utf-8", { fatal: true }).decode(value as Uint8Array);
 };
 export function timestamp(fields: Fields | null, key: number, nowMs: number): string | null {
   const value = fields === null ? null : nested(fields, key);
   if (value === null) return null;
   const seconds = numeric(value, 1) ?? 0, nanos = numeric(value, 2) ?? 0;
-  if (value.has(2) && numeric(value, 2) === null) return null;
   const ms = seconds * 1000 + Math.floor(nanos / 1_000_000);
-  if (seconds <= 0 || nanos < 0 || nanos > 999_999_999 || !Number.isSafeInteger(ms) || ms > nowMs ||
-      !Number.isFinite(new Date(ms).getTime())) throw new Error();
+  // Varints are non-negative safe integers; any time past `nowMs` (including an unsafe one) is refused.
+  if (seconds <= 0 || nanos > 999_999_999 || ms > nowMs) throw new Error();
   return new Date(ms).toISOString();
 }
 export const sameBytes = (a: Uint8Array, b: Uint8Array): boolean => a.length === b.length && a.every((byte, i) => byte === b[i]);

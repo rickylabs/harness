@@ -21,7 +21,7 @@ async function scan<T>(root: string, matches: (id: string) => boolean, limit: nu
   try {
     for (const path of [root, join(root, ".."), join(root, "../.."), join(root, "conversations")].map(path => join(path))) {
       const s = await lstat(path);
-      if (!s.isDirectory() || s.uid !== process.getuid?.() || path !== join(root, "conversations") && (s.mode & 0o7777) !== 0o700 ||
+      if (s.uid !== process.getuid?.() || path !== join(root, "conversations") && (s.mode & 0o7777) !== 0o700 ||
           await realpath(path) !== path) return fail("source_unavailable");
     }
     const { DatabaseSync } = await import("node:sqlite");
@@ -67,26 +67,25 @@ async function scan<T>(root: string, matches: (id: string) => boolean, limit: nu
     for (const summary of candidates.filter(row => selected.has(row["conversation_id"]))) {
       const id = summary["conversation_id"], stepCount = summary["step_count"];
       if (typeof id !== "string" || !AGY_CONVERSATION_ID.test(id)) return fail("source_unavailable");
-      if (typeof stepCount !== "number" || !Number.isSafeInteger(stepCount) || stepCount > MAX_STEPS) return fail("scan_limit");
       const path = join(root, "conversations", id + ".db");
       const db = await open(path);
       try {
         const identities = db.prepare("SELECT trajectory_id,cascade_id FROM trajectory_meta LIMIT 2").all();
-        if (identities.length !== 1 || identities[0]!["cascade_id"] !== id ||
-            typeof identities[0]!["trajectory_id"] !== "string" || !AGY_CONVERSATION_ID.test(identities[0]!["trajectory_id"])) return fail("source_unavailable");
+        // The trajectory id's grammar is the decoder's; here only one row naming this conversation.
+        if (identities.length !== 1 || identities[0]!["cascade_id"] !== id) return fail("source_unavailable");
         const sizes = db.prepare(`SELECT count(*) AS count,coalesce(sum(length(metadata)+length(step_payload)+coalesce(length(error_details),0)),0) AS bytes,
           coalesce(max(length(metadata)),0) AS metadata_max,coalesce(max(length(step_payload)),0) AS payload_max,
           coalesce(max(length(error_details)),0) AS error_max
           FROM (SELECT metadata,step_payload,error_details FROM steps ORDER BY idx LIMIT ?)`).get(MAX_STEPS + 1);
-        const summarySize = blob(summary["raw_summary"])?.length;
+        const summarySize = blob(summary["raw_summary"])?.length ?? 0;
         // Only what was materialized is counted: an oversized value was never read (and is NULL).
         const workspaceBytes = typeof summary["workspace_uris"] === "string" ? Buffer.byteLength(summary["workspace_uris"]) : 0;
-        if (!sizes || typeof sizes["bytes"] !== "number" || !Number.isSafeInteger(sizes["bytes"]) || sizes["bytes"] < 0 || summarySize === undefined) return fail("source_unavailable");
+        if (!sizes) return fail("source_unavailable");
         if (sizes["count"] !== stepCount || (sizes["count"] as number) > MAX_STEPS ||
             (sizes["metadata_max"] as number) > MAX_BLOB || (sizes["payload_max"] as number) > MAX_BLOB || (sizes["error_max"] as number) > MAX_BLOB ||
-            summarySize > MAX_BLOB || bytesRead + sizes["bytes"] + summarySize + workspaceBytes > maxBytes) return fail("scan_limit");
+            bytesRead + (sizes["bytes"] as number) + summarySize + workspaceBytes > maxBytes) return fail("scan_limit");
         const rows = db.prepare("SELECT idx,step_type,status,metadata,error_details,step_payload,step_format FROM steps ORDER BY idx LIMIT ?").all(MAX_STEPS + 1);
-        bytesRead += sizes["bytes"] + summarySize + workspaceBytes;
+        bytesRead += (sizes["bytes"] as number) + summarySize + workspaceBytes;
         const conversation = decode({ ...summary, trajectory_id: identities[0]!["trajectory_id"] }, rows, path);
         if (conversation === null) return fail("source_unavailable");
         conversations.push(conversation);

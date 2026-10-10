@@ -6,7 +6,7 @@ import { join } from "node:path";
 import type { NativeToolCallDescriptor, NativeToolCallRead } from "@rickylabs/harness-contracts";
 import { describeCall } from "../domain/tool-vocabulary.js";
 import { AGY_CONVERSATION_ID } from "../domain/trajectory.js";
-import { decodeTranscriptLine, MAX_LINE_BYTES, type TranscriptLine } from "../domain/transcript-line.js";
+import { decodeTranscriptLine, type TranscriptLine } from "../domain/transcript-line.js";
 import type { TranscriptTail } from "../ports/transcript-tail.js";
 
 export const MAX_TRANSCRIPT_TAIL_BYTES = 1_048_576;
@@ -31,14 +31,14 @@ export async function readAgyToolCalls(tail: TranscriptTail, storeRoot: string, 
   // A tail starts inside a line, and a writer may be mid-append: only whole lines count.
   if (!read.fromStart) { const first = body.indexOf(10); body = first < 0 ? body.subarray(body.length) : body.subarray(first + 1); }
   const last = body.lastIndexOf(10);
-  body = last < 0 ? body.subarray(0, 0) : body.subarray(0, last + 1);
+  body = body.subarray(0, last + 1);
   let text: string;
   try { text = new TextDecoder("utf-8", { fatal: true }).decode(body); } catch { return unread("tool-names-source-invalid", bytesRead); }
   const lines = new Map<number, TranscriptLine>();
   let fromStepIndex = stepCount;
   for (const line of text.split("\n")) {
     if (line === "") continue;
-    const decoded = line.length > MAX_LINE_BYTES ? null : decodeTranscriptLine(line);
+    const decoded = decodeTranscriptLine(line);
     if (decoded === null) return unread("tool-names-source-invalid", bytesRead);
     if (decoded.stepIndex >= stepCount) continue;
     fromStepIndex = Math.min(fromStepIndex, decoded.stepIndex);
@@ -52,5 +52,5 @@ export async function readAgyToolCalls(tail: TranscriptTail, storeRoot: string, 
     line.calls.forEach((call, index) => calls.push(describeCall(line.stepIndex, index, call)));
   }
   return { calls, decodedPlannerSteps, vendorTruncatedSteps, fromStart: read.fromStart,
-    fromStepIndex: read.fromStart ? 0 : fromStepIndex, bytesRead, gap: null };
+    fromStepIndex, bytesRead, gap: null };
 }

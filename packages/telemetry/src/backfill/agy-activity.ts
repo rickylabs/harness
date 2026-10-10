@@ -48,7 +48,7 @@ export function agyActivity(target: AgyDescriptorTarget, read: NativeToolCallRea
   const relative = (path: string | null) => path !== null && workspaceRoot !== null && path.startsWith(workspaceRoot + "/")
     ? path.slice(workspaceRoot.length + 1) : null;
   const named = (gap === null ? read.calls : []).flatMap(call => {
-    if (!inWindow.has(call.stepIndex) || call.callIndex >= 64) return [];
+    if (!inWindow.has(call.stepIndex)) return [];
     const step = nativeToolActivity("agy-transcript", conversationId, call.stepIndex, agyActivitySlot.call(call.callIndex),
       plannerAt.get(call.stepIndex)!, { kind: call.kind, toolName: call.toolName, commandLine: call.commandLine,
         relativePath: relative(call.path) }, "requested", lifecycle ? "unknown" : undefined);

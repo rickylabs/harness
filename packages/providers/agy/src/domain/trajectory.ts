@@ -38,9 +38,9 @@ export function decodeAgyConversation(summary: StoreRow, rows: readonly StoreRow
   try {
     const id = summary["conversation_id"], parent = summary["parent_conversation_id"], stepCount = summary["step_count"];
     if (typeof id !== "string" || !AGY_CONVERSATION_ID.test(id) || (parent !== null && parent !== "" &&
-        (typeof parent !== "string" || !AGY_CONVERSATION_ID.test(parent) || parent === id))) return null;
+        (!AGY_CONVERSATION_ID.test(parent as string) || parent === id))) return null;
     const raw = blob(summary["raw_summary"]);
-    if (!Number.isSafeInteger(stepCount) || stepCount !== rows.length || rows.length === 0 || rows.length > MAX_STEPS || raw === null) return null;
+    if (stepCount !== rows.length || rows.length === 0 || rows.length > MAX_STEPS || raw === null) return null;
     const native = protobuf(raw), trajectory = summary["trajectory_id"];
     if (typeof trajectory !== "string" || !AGY_CONVERSATION_ID.test(trajectory) ||
         text(native, 4) !== trajectory || numeric(native, 2) !== stepCount) return null;
@@ -53,7 +53,7 @@ export function decodeAgyConversation(summary: StoreRow, rows: readonly StoreRow
     let updatedAt = startedAt, latestUser = -1;
     for (let index = 0; index < rows.length; index++) {
       const row = rows[index]!, type = row["step_type"], status = row["status"];
-      if (row["idx"] !== index || row["step_format"] !== 0 || typeof type !== "number" || !Number.isSafeInteger(type) ||
+      if (row["idx"] !== index || row["step_format"] !== 0 || typeof type !== "number" ||
           typeof status !== "number" || !STATUSES.includes(status)) return null;
       const payload = blob(row["step_payload"]), metadata = blob(row["metadata"]);
       if (payload === null || metadata === null) return null;

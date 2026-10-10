@@ -74,12 +74,11 @@ export function nativeToolActivity(source: Source, origin: string, line: number,
     readonly relativePath: string | null } | null, provenance: AgentActivityProvenance, state?: AgentActivityState): AgentActivityStep | null {
   const command = call?.kind === "command" ? commandHead(call.commandLine) : null;
   const filePath = call?.kind === "file" ? relativeFile(call.relativePath) : null;
-  const toolName = typeof call?.toolName === "string" && /^[a-z][a-z0-9_]{0,63}$/.test(call.toolName) ? call.toolName : null;
+  const toolName = call?.toolName ?? null;
   const kind = command !== null ? "command" : filePath !== null ? "file" : "tool";
   const summary = call === null ? null : command !== null ? `Requested ${command}` : filePath !== null ? "Requested a repository file"
     : toolName !== null ? `Requested ${toolName}` : "Requested a tool";
-  const target: AgentActivityStep["target"] = command !== null && publicActivityTarget("command", command) !== null
-    ? { kind: "command", value: command } : null;
+  const target: AgentActivityStep["target"] = command === null ? null : { kind: "command", value: command };
   const found = step(source, origin, line, part, at, kind, toolName, command, filePath, summary, target);
   return found === null || state === undefined ? found : { ...found, state, provenance };
 }
