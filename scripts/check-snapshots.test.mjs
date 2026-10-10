@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, unlinkSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,8 +12,9 @@ const runFixture = "packages/contracts/test-fixtures/repository-run-observation/
 const names = ["admissions-only", "complete-without-admissions", "conflicting-admissions",
   "degraded-log", "mixed-timeout", "stale", "transport-availability", "unavailable-not-configured"];
 const limitDirectory = "packages/contracts/test-fixtures/provider-limits-produced";
-const limitNames = ["binding-after", "binding-before", "native-keys-global-refusal", "refusal-cleared", "thresholds-hard-then-rate"];
-function probe(change, expected, diagnostic) {
+const limitNames = readdirSync(join(root, limitDirectory)).filter(name => name.endsWith(".json"));
+/** Runs the guard on a scratch copy and returns its exit status with its parsed `--json` result. */
+function probe(change) {
   const scratch = mkdtempSync(join(tmpdir(), "snapshot-guard-"));
   // Exclude ambient Git index/worktree settings. Every git mutation is scratch-owned.
   const env = { PATH: process.env.PATH, HOME: scratch, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null" };
@@ -23,53 +24,72 @@ function probe(change, expected, diagnostic) {
     copyFileSync(join(root, "scripts/check-snapshots.mjs"), join(scratch, "scripts/check-snapshots.mjs"));
     for (const name of names) copyFileSync(join(root, directory, `${name}.json`), join(scratch, directory, `${name}.json`));
     mkdirSync(join(scratch, limitDirectory), { recursive: true });
-    for (const name of limitNames) copyFileSync(join(root, limitDirectory, `${name}.json`), join(scratch, limitDirectory, `${name}.json`));
+    for (const name of limitNames) copyFileSync(join(root, limitDirectory, name), join(scratch, limitDirectory, name));
     mkdirSync(dirname(join(scratch, runFixture)), { recursive: true });
     copyFileSync(join(root, runFixture), join(scratch, runFixture));
     execFileSync("git", ["init", "--quiet"], { cwd: scratch, env });
     execFileSync("git", ["add", "--", "."], { cwd: scratch, env });
     change(scratch);
-    const result = spawnSync(process.execPath, [join(scratch, "scripts/check-snapshots.mjs")], {
+    const result = spawnSync(process.execPath, [join(scratch, "scripts/check-snapshots.mjs"), "--json"], {
       cwd: scratch, env, encoding: "utf8", timeout: 10_000,
     });
     assert.equal(result.error, undefined);
-    assert.equal(result.status, expected, "isolated snapshot guard exit");
-    assert.match(result.stdout + result.stderr, diagnostic);
+    // A leak check on the raw bytes: no fixture or operator value is ever echoed.
     assert.doesNotMatch(result.stdout + result.stderr, /synthetic-private-value/);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.status, result.status === 0 ? "PASS" : "FAIL");
+    return { status: result.status, verified: report.verifiedFixtures, found: report.problems.map(p => [p.path, p.rule, p.key ?? null]) };
   } finally { rmSync(scratch, { recursive: true, force: true }); }
 }
-const target = scratch => join(scratch, directory, "mixed-timeout.json");
 function track(scratch, file, body) {
   writeFileSync(join(scratch, file), body);
   execFileSync("git", ["add", "--", file], { cwd: scratch, env: {
     PATH: process.env.PATH, HOME: scratch, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null",
   } });
 }
-test("exact fourteen tracked fixtures pass", () => probe(() => {}, 0, /14 exact synthetic fixtures verified/));
-test("a changed produced provider-limit fixture fails", () => probe(scratch => {
-  const file = join(scratch, limitDirectory, "thresholds-hard-then-rate.json");
-  writeFileSync(file, readFileSync(file, "utf8").replace('"usedPercent":90,', '"usedPercent":91,'));
-}, 1, /provider-limits-produced\/thresholds-hard-then-rate\.json: inventoried synthetic fixture/));
-test("changed bytes fail even with identical JSON meaning", () => probe(scratch => {
-  writeFileSync(target(scratch), readFileSync(target(scratch), "utf8") + "\n");
-}, 1, /exact SHA-256 match required/));
-test("changed fixture fails even after removing all snapshot keys", () => probe(scratch => {
-  writeFileSync(target(scratch), '{}\n');
-}, 1, /exact SHA-256 match required/));
-test("missing inventoried fixture fails loudly", () => probe(scratch => unlinkSync(target(scratch)), 1, /exact SHA-256 match required/));
-test("new file in fixture directory gets ordinary detection", () => probe(scratch => {
-  track(scratch, `${directory}/new.json`, readFileSync(target(scratch), "utf8"));
-}, 1, /new.json:.*carries `observedAt`/));
-test("identical fixture bytes at another path get ordinary detection", () => probe(scratch => {
-  track(scratch, "copied.json", readFileSync(target(scratch), "utf8"));
-}, 1, /copied.json:.*carries `observedAt`/));
-test("operator snapshot outside fixture inventory still fails", () => probe(scratch => {
-  track(scratch, "operator.json", '{"balance_usd":"synthetic-private-value"}\n');
-}, 1, /operator.json:.*carries `balance_usd`/));
+const inventoried = names.length + limitNames.length + 1;
+const mixed = `${directory}/mixed-timeout.json`;
+const produced = `${limitDirectory}/thresholds-hard-then-rate.json`;
+test("every inventoried fixture, produced provider-limit snapshots included, passes", () => {
+  assert.deepEqual(probe(() => {}), { status: 0, verified: inventoried, found: [] });
+});
+test("a changed produced provider-limit fixture fails the exact inventory", () => {
+  const { status, found } = probe(scratch => {
+    writeFileSync(join(scratch, produced), readFileSync(join(scratch, produced), "utf8").replace('"usedPercent":90,', '"usedPercent":91,'));
+  });
+  // Unapproved bytes are then scanned like any data file; the inventory refusal must still be its own record.
+  assert.deepEqual([status, found], [1, [[produced, "inventory", null], [produced, "key", "observedAt"]]]);
+});
+test("changed bytes fail even with identical JSON meaning", () => {
+  const { status, found } = probe(scratch => writeFileSync(join(scratch, mixed), readFileSync(join(scratch, mixed), "utf8") + "\n"));
+  assert.deepEqual([status, found], [1, [[mixed, "inventory", null], [mixed, "key", "observedAt"]]]);
+});
+test("changed fixture fails even after removing all snapshot keys", () => {
+  const { status, found } = probe(scratch => writeFileSync(join(scratch, mixed), "{}\n"));
+  assert.deepEqual([status, found], [1, [[mixed, "inventory", null]]]);
+});
+test("missing inventoried fixture fails loudly", () => {
+  const { status, found } = probe(scratch => unlinkSync(join(scratch, mixed)));
+  assert.deepEqual([status, found], [1, [[mixed, "inventory", null]]]);
+});
+test("new file in fixture directory gets ordinary detection", () => {
+  const { status, found } = probe(scratch => track(scratch, `${directory}/new.json`, readFileSync(join(scratch, mixed), "utf8")));
+  assert.deepEqual([status, found], [1, [[`${directory}/new.json`, "key", "observedAt"]]]);
+});
+test("identical fixture bytes at another path get ordinary detection", () => {
+  const { status, found } = probe(scratch => track(scratch, "copied.json", readFileSync(join(scratch, mixed), "utf8")));
+  assert.deepEqual([status, found], [1, [["copied.json", "key", "observedAt"]]]);
+});
+test("operator snapshot outside fixture inventory still fails", () => {
+  const { status, found } = probe(scratch => track(scratch, "operator.json", '{"balance_usd":"synthetic-private-value"}\n'));
+  assert.deepEqual([status, found], [1, [["operator.json", "key", "balance_usd"]]]);
+});
 
-test("missing repository-run fixture fails loudly", () => probe(scratch => {
-  unlinkSync(join(scratch, runFixture));
-}, 1, /exact SHA-256 match required/));
-test("changed repository-run fixture fails even without snapshot keys", () => probe(scratch => {
-  writeFileSync(join(scratch, runFixture), '{}\n');
-}, 1, /exact SHA-256 match required/));
+test("missing repository-run fixture fails loudly", () => {
+  const { status, found } = probe(scratch => unlinkSync(join(scratch, runFixture)));
+  assert.deepEqual([status, found], [1, [[runFixture, "inventory", null]]]);
+});
+test("changed repository-run fixture fails even without snapshot keys", () => {
+  const { status, found } = probe(scratch => writeFileSync(join(scratch, runFixture), "{}\n"));
+  assert.deepEqual([status, found], [1, [[runFixture, "inventory", null]]]);
+});

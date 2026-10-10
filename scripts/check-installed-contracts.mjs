@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, writeFileSync, chmodSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync, chmodSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -197,10 +197,11 @@ assert.deepEqual([...new Set(read.document.providers.meters.map(r=>r.period))],[
   assert.equal(paidRoundtrip.code,0); assert.equal(paidRoundtrip.stderr,"");
   stage = "actual provider-limits CLI on Orchid-produced snapshots -> installed admission";
   // Bytes Orchid's producer wrote (rickylabs/orchid#97); a 0600 copy is what the strict reader accepts.
-  const limitFixtures = ["native-keys-global-refusal", "thresholds-hard-then-rate", "refusal-cleared", "binding-before", "binding-after"];
+  const limitDirectory = join(contracts, "test-fixtures/provider-limits-produced");
+  const limitFixtures = readdirSync(limitDirectory).filter(file => file.endsWith(".json")).map(file => file.slice(0, -".json".length));
   for (const name of limitFixtures) {
     const source = join(realpathSync(scratch), `${name}.json`);
-    writeFileSync(source, readFileSync(join(contracts, "test-fixtures/provider-limits-produced", `${name}.json`)), { mode: 0o600 });
+    writeFileSync(source, readFileSync(join(limitDirectory, `${name}.json`)), { mode: 0o600 });
     const limits = await run(process.execPath, [cli, "provider-limits", "--source", source], { env });
     assert.equal(limits.code, 0); assert.equal(limits.stderr, "");
     writeFileSync(join(consumer, `${name}.json`), limits.stdout);

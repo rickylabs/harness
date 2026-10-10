@@ -26,7 +26,8 @@
  * A file whose *name* says allowance or quota is refused on that alone. Nobody names a stable table
  * that.
  *
- * Exit codes: 0 nothing committed, 1 at least one snapshot, 2 the check could not run.
+ * Exit codes: 0 nothing committed, 1 at least one snapshot, 2 the check could not run. `--json`
+ * prints one structured result on stdout instead of the text report; the exit codes are the same.
  */
 
 import { execFileSync } from "node:child_process";
@@ -36,6 +37,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const JSON_OUTPUT = process.argv.includes("--json");
 
 // Keys that name a moment. Matched as a JSON key (`"x":`) or a YAML key (`x:`), so a word appearing
 // in a *value* — a description, a URL, an enum member — does not trip the check.
@@ -128,7 +130,7 @@ for (const [path, expected] of Object.entries(SYNTHETIC_CONTRACT_FIXTURES)) {
     approvedFixtures.add(path);
   } catch {
     // Fail even if changed bytes no longer contain snapshot keys. Never echo file contents.
-    problems.push(`${path}: inventoried synthetic fixture is missing, unreadable or changed; exact SHA-256 match required`);
+    problems.push({ path, rule: "inventory" });
   }
 }
 
@@ -145,7 +147,7 @@ for (const path of files) {
 
   const base = path.slice(path.lastIndexOf("/") + 1);
   if (NAME_PATTERN.test(base)) {
-    problems.push(`${path}: a data file named for an allowance or a quota is a snapshot by its name`);
+    problems.push({ path, rule: "name" });
     continue;
   }
 
@@ -162,11 +164,23 @@ for (const path of files) {
     const line = text.slice(0, match.index).split("\n").length;
     // The key is named; the value never is. A committed spend figure is still a number nobody
     // outside this repository needs to read in a CI log.
-    problems.push(`${path}:${line}: carries \`${match[2]}\`, which is only ever true as of a moment`);
+    problems.push({ path, line, rule: "key", key: match[2] });
   }
 }
 
-for (const problem of problems) console.error(problem);
+if (JSON_OUTPUT) {
+  console.log(JSON.stringify({ check: "snapshots", status: problems.length > 0 ? "FAIL" : "PASS", files: files.length,
+    verifiedFixtures: approvedFixtures.size, problems }));
+  process.exit(problems.length > 0 ? 1 : 0);
+}
+
+for (const problem of problems) {
+  console.error(problem.rule === "inventory"
+    ? `${problem.path}: inventoried synthetic fixture is missing, unreadable or changed; exact SHA-256 match required`
+    : problem.rule === "name"
+      ? `${problem.path}: a data file named for an allowance or a quota is a snapshot by its name`
+      : `${problem.path}:${problem.line}: carries \`${problem.key}\`, which is only ever true as of a moment`);
+}
 
 if (problems.length > 0) {
   console.error(
