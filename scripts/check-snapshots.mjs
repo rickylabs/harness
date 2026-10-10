@@ -169,8 +169,7 @@ for (const path of files) {
 }
 
 if (JSON_OUTPUT) {
-  console.log(JSON.stringify({ check: "snapshots", status: problems.length > 0 ? "FAIL" : "PASS", files: files.length,
-    verifiedFixtures: approvedFixtures.size, problems }));
+  console.log(JSON.stringify({ status: problems.length > 0 ? "FAIL" : "PASS", verifiedFixtures: approvedFixtures.size, problems }));
   process.exit(problems.length > 0 ? 1 : 0);
 }
 

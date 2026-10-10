@@ -41,7 +41,7 @@ function probe(change) {
     for (const out of [result, text]) assert.doesNotMatch(out.stdout + out.stderr, /synthetic-private-value/);
     const report = JSON.parse(result.stdout);
     assert.equal(report.status, result.status === 0 ? "PASS" : "FAIL");
-    return { status: result.status, verified: report.verifiedFixtures, found: report.problems.map(p => [p.path, p.rule, p.key ?? null]) };
+    return { status: result.status, verified: report.verifiedFixtures, found: report.problems.map(p => [p.path, p.rule, p.line ?? null, p.key ?? null]) };
   } finally { rmSync(scratch, { recursive: true, force: true }); }
 }
 function track(scratch, file, body) {
@@ -61,42 +61,42 @@ test("a changed produced provider-limit fixture fails the exact inventory", () =
     writeFileSync(join(scratch, produced), readFileSync(join(scratch, produced), "utf8").replace('"usedPercent":90,', '"usedPercent":91,'));
   });
   // Unapproved bytes are then scanned like any data file; the inventory refusal must still be its own record.
-  assert.deepEqual([status, found], [1, [[produced, "inventory", null], [produced, "key", "observedAt"]]]);
+  assert.deepEqual([status, found], [1, [[produced, "inventory", null, null], [produced, "key", 1, "observedAt"]]]);
 });
 test("changed bytes fail even with identical JSON meaning", () => {
   const { status, found } = probe(scratch => writeFileSync(join(scratch, mixed), readFileSync(join(scratch, mixed), "utf8") + "\n"));
-  assert.deepEqual([status, found], [1, [[mixed, "inventory", null], [mixed, "key", "observedAt"]]]);
+  assert.deepEqual([status, found], [1, [[mixed, "inventory", null, null], [mixed, "key", 16, "observedAt"]]]);
 });
 test("changed fixture fails even after removing all snapshot keys", () => {
   const { status, found } = probe(scratch => writeFileSync(join(scratch, mixed), "{}\n"));
-  assert.deepEqual([status, found], [1, [[mixed, "inventory", null]]]);
+  assert.deepEqual([status, found], [1, [[mixed, "inventory", null, null]]]);
 });
 test("missing inventoried fixture fails loudly", () => {
   const { status, found } = probe(scratch => unlinkSync(join(scratch, mixed)));
-  assert.deepEqual([status, found], [1, [[mixed, "inventory", null]]]);
+  assert.deepEqual([status, found], [1, [[mixed, "inventory", null, null]]]);
 });
 test("new file in fixture directory gets ordinary detection", () => {
   const { status, found } = probe(scratch => track(scratch, `${directory}/new.json`, readFileSync(join(scratch, mixed), "utf8")));
-  assert.deepEqual([status, found], [1, [[`${directory}/new.json`, "key", "observedAt"]]]);
+  assert.deepEqual([status, found], [1, [[`${directory}/new.json`, "key", 16, "observedAt"]]]);
 });
 test("identical fixture bytes at another path get ordinary detection", () => {
   const { status, found } = probe(scratch => track(scratch, "copied.json", readFileSync(join(scratch, mixed), "utf8")));
-  assert.deepEqual([status, found], [1, [["copied.json", "key", "observedAt"]]]);
+  assert.deepEqual([status, found], [1, [["copied.json", "key", 16, "observedAt"]]]);
 });
 test("operator snapshot outside fixture inventory still fails", () => {
   const { status, found } = probe(scratch => track(scratch, "operator.json", '{"balance_usd":"synthetic-private-value"}\n'));
-  assert.deepEqual([status, found], [1, [["operator.json", "key", "balance_usd"]]]);
+  assert.deepEqual([status, found], [1, [["operator.json", "key", 1, "balance_usd"]]]);
 });
 test("a data file named for a quota fails on its name alone", () => {
   const { status, found } = probe(scratch => track(scratch, "quota.json", "{}\n"));
-  assert.deepEqual([status, found], [1, [["quota.json", "name", null]]]);
+  assert.deepEqual([status, found], [1, [["quota.json", "name", null, null]]]);
 });
 
 test("missing repository-run fixture fails loudly", () => {
   const { status, found } = probe(scratch => unlinkSync(join(scratch, runFixture)));
-  assert.deepEqual([status, found], [1, [[runFixture, "inventory", null]]]);
+  assert.deepEqual([status, found], [1, [[runFixture, "inventory", null, null]]]);
 });
 test("changed repository-run fixture fails even without snapshot keys", () => {
   const { status, found } = probe(scratch => writeFileSync(join(scratch, runFixture), "{}\n"));
-  assert.deepEqual([status, found], [1, [[runFixture, "inventory", null]]]);
+  assert.deepEqual([status, found], [1, [[runFixture, "inventory", null, null]]]);
 });
