@@ -12,7 +12,7 @@ function events() {
   let refuse = false;
   const reads = {
     async sessionEvents(signal: AbortSignal) {
-      if (refuse) return { kind: "closed" as const };
+      if (refuse) return { kind: "closed" as const, detail: "refused" };
       const queue: string[] = [];
       let wake = () => {}, ended = false;
       const stream = { signal, push(id: string) { queue.push(id); wake(); }, end() { ended = true; wake(); } };
@@ -57,7 +57,23 @@ it("no session closes the stream; a refused open is not retried until the next s
   assert.equal(e.opened.length, 1);
   e.opened[0]!.end(); await settle();
   assert.equal(changes.consume(), true, "events may have been missed while it was down");
-  changes.watch(new Set()); changes.close();
+  changes.close();
+});
+
+it("a scan that watches nothing closes the open stream", async () => {
+  const e = events(), changes = openOpenCodeChanges(e.reads);
+  changes.watch(new Set(["ses_a"])); await settle();
+  assert.deepEqual(e.opened.map(stream => stream.signal.aborted), [false]);
+  changes.watch(new Set()); await settle();
+  assert.deepEqual(e.opened.map(stream => stream.signal.aborted), [true]);
+  changes.close();
+});
+
+it("close is permanent: a later watch opens nothing", async () => {
+  const e = events(), changes = openOpenCodeChanges(e.reads);
+  changes.close();
+  changes.watch(new Set(["ses_a"])); await settle();
+  assert.equal(e.opened.length, 0);
 });
 
 it("the watch loop hands the scanned sessions to the hint and rescans when it fires", async () => {

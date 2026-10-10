@@ -1,4 +1,7 @@
-/** The pure OpenCode projection over the recorded SDK replies; every case changes one recorded field. */
+/**
+ * The pure OpenCode projection over the recorded SDK replies (synthetic token counters). Every refused
+ * case changes one recorded field and is otherwise valid, so the one rule it breaks is the one tested.
+ */
 import assert from "node:assert/strict";
 import { it } from "node:test";
 import { openCodeRun, readOpenCodeSession, sessionTokens } from "./opencode-session.js";
@@ -11,7 +14,9 @@ const run = (list: unknown, windowed = false, id = recording.rootID) => openCode
 it("reads the session head and its token aggregate; a malformed aggregate is no reading, never zero", () => {
   const root = head();
   assert.deepEqual([root.id, root.parentID], [recording.rootID, null]);
-  assert.deepEqual(root.usage, { inputTokens: 6800, outputTokens: 133, reasoningTokens: 572, cacheReadTokens: 34064, cacheWriteTokens: 0 });
+  const aggregate = sessionOf(recording.replies, recording.rootID).tokens;
+  assert.deepEqual(root.usage, { inputTokens: aggregate.input, outputTokens: aggregate.output, reasoningTokens: aggregate.reasoning,
+    cacheReadTokens: aggregate.cache.read, cacheWriteTokens: aggregate.cache.write });
   assert.equal(head(recording.childID).parentID, recording.rootID);
   const tokens = { input: 1, output: 2, reasoning: 3, cache: { read: 4, write: 5 } };
   const { cache: _cache, ...noCache } = tokens;
@@ -79,4 +84,66 @@ it("a window that starts mid-turn takes its first assistant's prompt as the late
   // A newer prompt inside the window still wins: the earlier answer is no longer the latest turn's.
   const resumed = [...entries().slice(1, 4), entries()[4]!];
   assert.equal(run(resumed, true)!.outcome, "running");
+});
+
+it("carries a tool call's native lifecycle under one step identity; only a completed call says it ran", () => {
+  const recorded = entries()[1]!, part = recorded.parts.find(p => p.type === "tool")!;
+  const { input, time } = part.state, created = recorded.info.time.created;
+  const iso = (ms: number) => new Date(ms).toISOString();
+  const stepFor = (state: Record<string, unknown>) => {
+    const list = entries(); list[1]!.parts.find(p => p.type === "tool")!.state = state;
+    const record = run(list)!;
+    assert.deepEqual(run(list), record, "a replay reads the same steps");
+    return record.activitySteps!.find(step => step.toolName === "bash")!;
+  };
+  const pending = stepFor({ status: "pending", input, raw: "" });
+  const running = stepFor({ status: "running", input, time: { start: time.start } });
+  const completed = stepFor(part.state);
+  const failed = stepFor({ status: "error", input, error: "PRIVATE-ERROR", time });
+  assert.deepEqual([pending, running, completed, failed].map(step => [step.id, step.kind, step.commandHead, step.at,
+    step.lifecycle, step.summary !== null]), [
+    [completed.id, "command", "git status", iso(created), { state: "pending", startedAt: null, endedAt: null }, false],
+    [completed.id, "command", "git status", iso(time.start), { state: "running", startedAt: iso(time.start), endedAt: null }, false],
+    [completed.id, "command", "git status", iso(time.start), { state: "completed", startedAt: iso(time.start), endedAt: iso(time.end) }, true],
+    [completed.id, "command", "git status", iso(time.start), { state: "error", startedAt: iso(time.start), endedAt: iso(time.end) }, false],
+  ]);
+});
+
+it("refuses a started tool state without the clocks it defines", () => {
+  const { input, time } = entries()[1]!.parts.find(p => p.type === "tool")!.state;
+  for (const state of [{ status: "running", input }, { status: "completed", input, output: "", title: "", metadata: {},
+    time: { start: time.start } }]) {
+    const list = entries(); list[1]!.parts.find(p => p.type === "tool")!.state = state;
+    assert.equal(run(list), null, JSON.stringify(state));
+  }
+});
+
+it("refuses a message of another session, even when its parts name this one", () => {
+  const list = entries(); list[1]!.info.sessionID = recording.childID;
+  assert.equal(run(list), null);
+});
+
+it("refuses a message listed twice, even with fresh part ids", () => {
+  const list = entries(), copy = structuredClone(list[0]!);
+  copy.parts = copy.parts.map(part => ({ ...part, id: part.id + "copy" }));
+  assert.equal(run([...list, copy]), null);
+});
+
+it("refuses a message older than its session", () => {
+  const list = entries(), session = sessionOf(recording.replies, recording.rootID);
+  list[0]!.info.time.created = session.time.created - 1;
+  assert.equal(run(list), null);
+});
+
+it("refuses an assistant's provider, model or effort outside the native id grammar", () => {
+  for (const [field, value] of [["providerID", "Open Code"], ["modelID", "big pickle"], ["variant", "High Effort"]] as const) {
+    const list = entries(); list.at(-1)!.info[field] = value;
+    assert.equal(run(list), null, field);
+  }
+});
+
+it("an answer to an earlier prompt does not end the latest turn", () => {
+  const list = entries(), firstPrompt = list[0]!.info.id;
+  list.at(-1)!.info.parentID = firstPrompt;
+  assert.equal(run(list)!.outcome, "unknown");
 });

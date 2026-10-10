@@ -191,51 +191,61 @@ explicit children (`session.children`, up to 20 sessions) and each session's
 latest 100 messages (`session.messages`, `limit=101`), every reply byte-capped
 against one 8 MiB issue budget and cancelled after 5 seconds. A root the server
 answers `404` for is `binding_unavailable`, an unreadable server or a reply that
-is not an SDK shape is `source_unavailable`, and a passed bound is `scan_limit`.
-Each of those is no runs at all, never a partial or invented timeline, and only
-its own issue is affected. The binding and dispatch receipts are re-verified
-after the read, so a binding that changed mid-read invalidates the issue.
+is not an SDK shape is `source_unavailable`, and a passed bound is `scan_limit`:
+each is no runs at all, and only its own issue is affected. The receipts are
+re-verified after the read, so a binding that changed mid-read invalidates it.
+Native clocks are judged against a clock read once the last reply is in: a
+message completed while it was being read is in the past, one later than that
+clock is refused, and the snapshot is stamped no earlier than that clock.
 
 The projection (`src/opencode-session.ts`) checks every field it reads, because
 the SDK's types describe the server's replies without checking them: exact
 session, message and part ids, parts that belong to their message and session,
 known part types and tool states, and native clocks that are monotonic and not
-in the future. Assistant text parts go to the existing screening function. Tool
-parts publish only their tool id and typed input through the same screen: a
-`bash` command head becomes a `command` step, a file inside the session's own
-root becomes a repository-relative `file` step, and anything else is a `tool`
-step. User text, reasoning, tool output, tool titles and errors, ids and paths
-never enter the feed. Stable step IDs replace the same part on a reread.
+in the future. Assistant text goes to the existing screening function. A tool
+part publishes only its tool id and typed input through the same screen (a
+`bash` command head is a `command` step, a file inside the session's root a
+repository-relative `file` step, anything else a `tool` step), with the call's
+native `lifecycle` (contracts 0.41.0): `pending` with no clock, `running` with
+its start, `completed` or `error` with start and end, from the part's own
+`state.time`. A requested call stays `pending` and only a `completed` step keeps
+the summary that says it ran. User text, reasoning, tool output, titles, errors,
+ids and paths never enter the feed. A stable step ID per part replaces the step
+on a reread, so a call moving from `pending` to `completed` is one step.
 
 Success requires the latest user turn's final nonempty assistant `stop`, an
 exact native completion clock and no continuation tool. When a turn is longer
 than the message window its prompt is no longer read; the first assistant in
 the window then names it, which is still the latest prompt because nothing newer
-lies outside the window. Resumed turns and pending children clear the root's
-prior end. Known native error/cancellation retain their own clock;
-unknown/empty/tool finishes and contradictory clocks cannot become Done. Typed
-provider/model/variant observations stay separate from the requested route.
+lies outside the window. A resumed turn clears the root's prior end, and so does
+a descendant observed running; a descendant only registered (no messages) or
+ended in a way this reader does not know stays `unknown` on its own row and
+never reopens its parent. Known native error/cancellation retain their own
+clock; unknown/empty/tool finishes and contradictory clocks cannot become Done.
+Typed provider/model/variant observations stay separate from the requested route.
 
-Token usage is the server's own session aggregate, `Session.tokens`, which is
-the sum of the session's `AssistantMessage.tokens` (the recorded 1.18.35
-session in `packages/providers/opencode/tests/fixtures/` shows the equality),
-so the reading does not depend on the message window. The issue tree labels it
-`opencode-usage` and counts input + cache read + cache write + output +
-reasoning, because OpenCode's input excludes both cache kinds and its output
-excludes reasoning. An absent or malformed aggregate leaves usage unavailable,
-never zero. The label is per vendor (`ISSUE_TOKEN_SOURCES` in
-`src/issue-token-usage.ts`): Codex `codex-token-count`, Claude `claude-usage`,
-OpenCode `opencode-usage`; AGY has no token reading and stays unavailable.
-Contracts 0.40.0 adds `opencode-usage`; a consumer upgrades its decoder first.
-Quota and spend are not fabricated.
+Token usage is the server's own session aggregate, `Session.tokens`, the sum of
+the session's `AssistantMessage.tokens` (shown by the recorded 1.18.35 session;
+the provider's fixture keeps it with synthetic counters), so the reading does
+not depend on the message window. The issue tree labels it `opencode-usage` and
+counts input + cache read + cache write + output + reasoning, because OpenCode's
+input excludes both cache kinds and its output excludes reasoning. An absent or
+malformed aggregate leaves usage unavailable, never zero. The label is per
+vendor (`ISSUE_TOKEN_SOURCES` in `src/issue-token-usage.ts`); AGY has no token
+reading and stays unavailable. Contracts 0.41.0 adds `opencode-usage`; a
+consumer upgrades its decoder first. Quota and spend are not fabricated.
 
 In `--watch`, the server's own event stream (`GET /event`) is the change hint:
 one subscription, opened only while a scan read an OpenCode session and never
 retried in the background, marks the feed dirty when an event names a session
-the last scan read. Events are never evidence and are not buffered; the
-existing 12-second safety rescan stays the only timer. A session running in a
-different OpenCode process than the configured server publishes its events on
-that process's bus, so for it the safety rescan bounds the delay.
+the last scan read. Events are never evidence and are never kept: each is
+reduced to the session id it names. What the stream holds in memory is bounded
+per frame: the adapter counts each server-sent frame as it arrives and, past
+1 MiB, cancels the connection before the SDK has buffered the excess, which
+reads as a dropped stream (one rescan). The existing 12-second safety rescan
+stays the only timer. A session running in a different OpenCode process than
+the configured server publishes its events on that process's bus, so for it the
+safety rescan bounds the delay.
 
 Contracts 0.35.0 adds `opencode-transcript`, direct OpenCode route decoding and
 bounded model-specific syntax for exact qualified identifiers. Model observation

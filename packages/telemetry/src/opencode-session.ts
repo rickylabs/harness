@@ -4,11 +4,14 @@
  * reads. The SDK's types describe the server's replies and do not check them, so every field read
  * here is checked, and a reply that is not what was assumed is no run at all (`null`), never a guess.
  *
- * Native header and part clocks are authoritative. Assistant text and typed tool calls become public
- * activity through the shared screen (`native-activity.ts`); user text, reasoning, tool output and
+ * Native header and part clocks are authoritative, checked against the caller's observation clock.
+ * Assistant text and typed tool calls become public activity through the shared screen
+ * (`native-activity.ts`), each tool call with its native lifecycle (`pending` | `running` |
+ * `completed` | `error`) and the clocks that state defines; user text, reasoning, tool output and
  * tool titles are never read into a record. Tokens are the server's own session aggregate.
  */
 import { createHash } from "node:crypto";
+import type { AgentToolLifecycle } from "@rickylabs/harness-contracts";
 import { nativeMessageActivity, openCodeToolActivity, recentActivity } from "./native-activity.js";
 import type { RunRecord, RunUsage } from "./model.js";
 
@@ -33,7 +36,6 @@ const knownErrors = new Set(["ProviderAuthError", "UnknownError", "MessageOutput
   "StructuredOutputError", "ContextOverflowError", "ContentFilterError", "APIError"]);
 const knownParts = new Set(["text", "reasoning", "tool", "step-start", "step-finish", "patch", "snapshot", "file",
   "agent", "retry", "compaction", "subtask"]);
-const toolStates = new Set(["pending", "running", "completed", "error"]);
 
 /** SDK `UserMessage.summary` has descriptive diff metadata; only `AssistantMessage.summary` is a
  * boolean (compaction). Validate the metadata, then discard it rather than publishing its text.
@@ -146,14 +148,20 @@ export function openCodeRun(head: OpenCodeSessionHead, value: unknown, windowed:
           }
         } else if (part.type === "tool") {
           const state = object(part.state), metadata = part.metadata === undefined ? {} : object(part.metadata);
-          if (!toolStates.has(state.status as string)) return null;
-          const clock = state.time === undefined ? null : object(state.time);
+          const status = state.status;
+          if (status !== "pending" && status !== "running" && status !== "completed" && status !== "error") return null;
+          // A requested call has not run: no clock. Every later state carries the native ones it defines.
+          const clock = status === "pending" ? null : object(state.time);
           const at = clock === null ? created : millis(clock.start, created, nowMs);
-          const end = clock?.end === undefined ? at : millis(clock.end, at, nowMs);
+          const end = clock === null || status === "running" ? at : millis(clock.end, at, nowMs);
           lastPart = Math.max(lastPart, end); updated = Math.max(updated, end);
           if (assistant) {
             const input = state.input === undefined ? {} : object(state.input);
-            const step = openCodeToolActivity(stable, new Date(at).toISOString(), part.tool, rootRelative(input, root));
+            const iso = (ms: number) => new Date(ms).toISOString();
+            const lifecycle: AgentToolLifecycle = status === "pending" ? { state: status, startedAt: null, endedAt: null }
+              : status === "running" ? { state: status, startedAt: iso(at), endedAt: null }
+                : { state: status, startedAt: iso(at), endedAt: iso(end) };
+            const step = openCodeToolActivity(stable, iso(at), part.tool, rootRelative(input, root), lifecycle);
             if (step !== null) steps.push(step);
           }
           // Even completed tool calls normally need a subsequent model turn.

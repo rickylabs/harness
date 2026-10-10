@@ -1,6 +1,6 @@
 /** Small public-safe native activity facts; raw tool input and prose never leave this reader. */
 import { createHash } from "node:crypto";
-import { publicActivityTarget, publicActivityText, type AgentActivityStep } from "@rickylabs/harness-contracts";
+import { publicActivityTarget, publicActivityText, type AgentActivityStep, type AgentToolLifecycle } from "@rickylabs/harness-contracts";
 
 import { codeModeToolCalls, codeModePatchPaths, type CodeModeToolCall } from "./code-mode-tools.js";
 
@@ -167,9 +167,16 @@ export function claudeActivity(raw: unknown, origin: string, line: number): read
   });
 }
 
-/** One OpenCode tool part (SDK `ToolPart`): its tool id and typed input only, never its output or title. */
-export function openCodeToolActivity(origin: string, at: string, name: unknown, input: unknown): AgentActivityStep | null {
-  return fromTool("opencode-transcript", origin, 0, 0, at, name, input);
+/**
+ * One OpenCode tool part (SDK `ToolPart`): its tool id, typed input and native lifecycle, never its
+ * output or title. Only a completed call keeps the summary, which says the call ran: a requested,
+ * running or failed call is described by its lifecycle, never as done.
+ */
+export function openCodeToolActivity(origin: string, at: string, name: unknown, input: unknown,
+  lifecycle: AgentToolLifecycle): AgentActivityStep | null {
+  const found = fromTool("opencode-transcript", origin, 0, 0, at, name, input);
+  return found === null ? null
+    : { ...found, summary: lifecycle.state === "completed" ? found.summary : null, lifecycle };
 }
 
 /** Keep only the latest bounded records, newest first, with stable IDs across rescans. */

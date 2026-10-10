@@ -5,8 +5,9 @@
  *
  * No polling: one stream, open only while there is a session to watch, never retried in the
  * background. A stream that could not open stays closed until the next scan asks again; one that
- * ended after opening may have dropped events, so it marks the feed dirty once. Nothing is buffered:
- * memory is the watched id set (bounded by the scan) and one flag.
+ * ended after opening may have dropped events, so it marks the feed dirty once. No event is kept:
+ * memory here is the watched id set (bounded by the scan) and one flag; the adapter under the port
+ * bounds each frame it reads.
  */
 import type { OpenCodeSessionReads } from "./opencode-reads.js";
 

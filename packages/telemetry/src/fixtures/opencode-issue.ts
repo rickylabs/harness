@@ -1,26 +1,21 @@
 /**
- * Test support for the OpenCode issue reader: the recorded `opencode serve` 1.18.35 session
- * (`packages/providers/opencode/tests/fixtures/recorded-session.json`, provenance inside) served through
- * the real `createSdkSessionReader` over a fake `fetch`, and synthetic Orchid receipts that bind it.
- * Not a test file. No socket is opened and no native store is read.
+ * Test support for the OpenCode issue reader: the provider's recorded `opencode serve` 1.18.35 session
+ * (`@rickylabs/provider-opencode/test-fixtures`, provenance inside; its token counters are synthetic)
+ * served through a fake of telemetry's own server port, and synthetic Orchid receipts that bind it.
+ * Not a test file. No SDK client, no socket and no native store: the adapter is the provider's to
+ * test, and the composition through it is `tests/parity`'s.
  */
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createSdkSessionReader } from "@rickylabs/provider-opencode";
+import type { NativeReadBounds, NativeReadOutcome } from "@rickylabs/harness-contracts";
+import { recording } from "@rickylabs/provider-opencode/test-fixtures";
 import { collectIssueAgentTree, type IssueAgentFeedOptions, type OpenCodeServerBinding } from "../issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "../operator-environment.js";
 
+export { recording };
 type Reply = { status: number; body: unknown };
-export interface Recording {
-  readonly rootID: string; readonly childID: string; readonly unknownID: string;
-  readonly replies: Record<string, Reply>; readonly events: readonly unknown[];
-}
-// From dist/fixtures/ to the provider's source tree: the provider owns the wire recording.
-export const recording = JSON.parse(readFileSync(new URL("../../../providers/opencode/tests/fixtures/recorded-session.json",
-  import.meta.url), "utf8")) as Recording;
 export type Entry = { info: Record<string, any>; parts: Record<string, any>[] };
 export const messagesOf = (replies: Record<string, Reply>, id: string) => replies[`/session/${id}/message`]!.body as Entry[];
 export const sessionOf = (replies: Record<string, Reply>, id: string) => replies[`/session/${id}`]!.body as Record<string, any>;
@@ -32,20 +27,35 @@ export const now = new Date(nowMs).toISOString();
 export const dispatchedAt = new Date(root.time.created - 1_000).toISOString();
 export const provider = "opencode", qualified = "opencode/big-pickle";
 
-/** A server answering from a private copy of the recording; `hook` runs before each reply. */
-export function server(hook: (path: string) => void | Promise<void> = () => undefined) {
-  const replies = structuredClone(recording.replies);
-  const requests: string[] = [];
-  const fetch = (async (request: Request): Promise<Response> => {
-    if (request.signal.aborted) throw request.signal.reason;
-    const url = new URL(request.url);
-    requests.push(url.pathname + url.search);
-    await hook(url.pathname);
-    const reply = replies[url.pathname] ?? { status: 404, body: { name: "NotFoundError", data: { message: "Session not found" } } };
-    return new Response(JSON.stringify(reply.body), { status: reply.status, headers: { "content-type": "application/json" } });
-  }) as typeof globalThis.fetch;
-  const binding: OpenCodeServerBinding = { reads: createSdkSessionReader({ baseUrl: "http://opencode.example.invalid", fetch }) };
-  return { replies, requests, binding };
+/**
+ * Telemetry's server port answering from a private copy of the recording, with the outcome words and
+ * byte accounting the port defines: the server's `404` is `missing`, a reply over the caller's bound is
+ * `oversized`, any other failure `unavailable`, and `messages` returns the latest `limit`, as the
+ * server does. `hook` runs before each reply with the read's own signal.
+ */
+export function server(hook: (path: string, signal: AbortSignal) => void | Promise<void> = () => undefined) {
+  const replies = structuredClone(recording.replies) as Record<string, Reply>;
+  const calls: { path: string; maxBytes: number }[] = [];
+  const answer = async (path: string, bounds: NativeReadBounds, limit = Infinity): Promise<NativeReadOutcome> => {
+    calls.push({ path, maxBytes: bounds.maxBytes });
+    await hook(path, bounds.signal);
+    if (bounds.signal.aborted) return { kind: "unavailable", bytes: 0 };
+    const reply = replies[path];
+    if (reply === undefined) return { kind: "missing", bytes: 0 };
+    const body = Array.isArray(reply.body) && Number.isFinite(limit) ? reply.body.slice(-limit) : reply.body;
+    const bytes = Buffer.byteLength(JSON.stringify(body));
+    if (bytes > bounds.maxBytes) return { kind: "oversized", bytes: bounds.maxBytes + 1 };
+    if (reply.status === 404) return { kind: "missing", bytes };
+    if (reply.status !== 200) return { kind: "unavailable", bytes };
+    return { kind: "ok", body: structuredClone(body), bytes };
+  };
+  const binding: OpenCodeServerBinding = { reads: {
+    session: (id, bounds) => answer(`/session/${id}`, bounds),
+    children: (id, bounds) => answer(`/session/${id}/children`, bounds),
+    messages: (id, limit, bounds) => answer(`/session/${id}/message`, bounds, limit),
+    sessionEvents: async () => ({ kind: "closed", detail: "this fixture serves no events" }),
+  } };
+  return { replies, calls, binding, reads: binding.reads };
 }
 
 /** Orchid receipts binding issue #42 to the recorded root; `issue` binds more. */
