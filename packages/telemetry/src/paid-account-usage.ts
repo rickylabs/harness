@@ -1,7 +1,7 @@
 /** Provider adapters extend the existing descriptor/collector; they do not own another watch loop. */
 import { readAccountUsageDocument, type AccountUsageDocument } from "@rickylabs/harness-contracts";
 import { collectAccountUsage, collectAccountUsageReads, readAccountUsageSource, type AccountUsageSource, type UsageCollectOptions } from "./account-usage.js";
-import { readLocalHostCapacity, type HostCapacitySource } from "./host-capacity.js";
+import { hostAlias, readLocalHostCapacity, type HostCapacitySource } from "./host-capacity.js";
 import { producerAgentCost, type TelemetryWireFamily } from "./producer-names.js";
 import { collectProviderUsage, readProviderUsageSource, type ProviderUsageSource } from "./provider-usage.js";
 import { usageCapabilities } from "./usage-inventory.js";
@@ -26,7 +26,7 @@ export function readAccountUsageDocumentSource(value: unknown): AccountUsageDocu
   if (r["schemaVersion"] !== 3 || keys !== "accountUsage capacity providers schemaVersion") throw new Error("invalid usage descriptor");
   const c = r["capacity"] as Record<string, unknown> | null;
   if (c !== null && (typeof c !== "object" || Array.isArray(c) || Object.keys(c).join(" ") !== "host" ||
-      typeof c["host"] !== "string" || !/^[A-Za-z][A-Za-z0-9_-]{0,62}$/.test(c["host"]))) throw new Error("invalid usage descriptor");
+      !hostAlias(c["host"]))) throw new Error("invalid usage descriptor");
   return { schemaVersion: 3, accountUsage: readAccountUsageSource(r["accountUsage"]), providers: readProviderUsageSource(r["providers"]),
     capacity: c === null ? null : { host: c["host"] as string } };
 }

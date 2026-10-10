@@ -1,5 +1,6 @@
 /** Usage-source capability per supported CLI. A capability is a fact about a source, never a reading. */
 import { readLocalCapacityRow, type AgentCost } from "./agent-observations.js";
+import { fail, instant, list, record } from "./decode.js";
 
 /** Every launcher Harness discovers; a parity test keeps this equal to routing's launcher list. */
 export const USAGE_INVENTORY_CLIS = ["claude", "codex", "opencode", "agy"] as const;
@@ -38,32 +39,7 @@ export interface UsageCapabilityRow {
   readonly reason: UsageCapabilityReason | null;
 }
 
-const instant = (v: unknown): v is string => typeof v === "string" &&
-  /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString() === v;
 const among = (v: unknown, choices: readonly string[]): boolean => typeof v === "string" && choices.includes(v);
-function fail(): never { throw new Error("invalid usage inventory"); }
-function record(value: unknown, names: string): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) fail();
-  const keys = names.split(" ");
-  if (Reflect.ownKeys(value).length !== keys.length) fail();
-  const out: Record<string, unknown> = {};
-  for (const key of keys) {
-    const d = Object.getOwnPropertyDescriptor(value, key);
-    if (!d || !("value" in d) || !d.enumerable) fail();
-    out[key] = d.value;
-  }
-  return out;
-}
-function list(value: unknown, cap: number): unknown[] {
-  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) fail();
-  const length = Object.getOwnPropertyDescriptor(value, "length");
-  if (!length || typeof length.value !== "number" || length.value > cap || Reflect.ownKeys(value).length !== length.value + 1) fail();
-  return Array.from({ length: length.value }, (_, i) => {
-    const d = Object.getOwnPropertyDescriptor(value, String(i));
-    if (!d || !("value" in d) || !d.enumerable) fail();
-    return d.value as unknown;
-  });
-}
 function row(value: unknown, generatedAt: string): UsageCapabilityRow {
   const r = record(value, "cli dimension capability source observedAt reason");
   if (!among(r["cli"], USAGE_INVENTORY_CLIS) || !among(r["dimension"], USAGE_DIMENSIONS) || !among(r["capability"], USAGE_CAPABILITIES) ||

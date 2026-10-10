@@ -454,7 +454,8 @@ forward with its own `observedAt`. A configured store or OpenCode history that r
 
 `capacity` reads `/proc/meminfo` and AMD card VRAM through the same reader as the issue-agent feed.
 It runs last in each collection, so its short validity covers the document's generation time.
-`HARNESS_TELEMETRY_WIRE_FAMILY` selects its source name as elsewhere; an invalid value exits 1.
+`HARNESS_TELEMETRY_WIRE_FAMILY` selects its source name as elsewhere. An invalid value is the CLI's typed
+operator-configuration refusal (exit 3, no document), raised before any descriptor, key or state is read.
 A configured host whose capacity is unavailable makes a one-shot exit 3. Pin contracts 0.40.0 in the
 consumer before switching a descriptor to schema 3: older readers refuse the document.
 

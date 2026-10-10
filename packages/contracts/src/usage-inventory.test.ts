@@ -93,3 +93,52 @@ test("closed shape: extra fields, duplicates, unknown vocabulary and invalid cap
   refused(document({ localCapacity: { ...capacity, validUntil: "2026-01-02T11:59:59.000Z" } }));
   refused(document({ localCapacity: { ...capacity, measurement: { ...capacity.measurement, host: "fixture.invalid" } } }));
 });
+
+// Each fixture below breaks exactly one rule and is otherwise valid, so no other check can mask its guard.
+const accepted = (value: unknown, generatedAt = at) => assert.notEqual(readUsageCapabilities(value, generatedAt), null);
+const isolated = (value: unknown, generatedAt = at) => assert.equal(readUsageCapabilities(value, generatedAt), null);
+const extra = (row: Record<string, unknown>) => [...rows(), row];
+
+test("vocabulary: an unknown CLI, dimension or capability is refused even when every known pair is present", () => {
+  accepted(rows());
+  isolated(extra({ ...unsupported("agy", "run-usage"), cli: "gemini" }));
+  isolated(extra({ ...unsupported("agy", "run-usage"), dimension: "battery" }));
+  isolated(swap(r => r.source === "codex-session-store" && r.dimension === "run-usage", { capability: "pending" as "unreadable" }));
+  accepted(swap(r => r.source === "codex-session-store" && r.dimension === "run-usage", { capability: "unreadable" }));
+});
+
+test("clocks: canonical instants only, for the generation time and every observation", () => {
+  const noMillis = "2026-01-02T11:59:00Z";
+  isolated(rows(), "2026-01-02T12:00:00Z");
+  isolated(swap(r => r.source === "codex-app-server", { observedAt: noMillis }));
+  isolated(swap(r => r.cli === "agy" && r.dimension === "run-usage", { observedAt: earlier }));
+});
+
+test("record shape: only plain objects with enumerable data fields", () => {
+  const first = rows()[0]!;
+  isolated([Object.assign(Object.create(null) as object, first), ...rows().slice(1)]);
+  const hidden: Record<string, unknown> = { ...first };
+  Object.defineProperty(hidden, "reason", { value: first.reason, enumerable: false, writable: true, configurable: true });
+  isolated([hidden, ...rows().slice(1)]);
+  accepted([{ ...first }, ...rows().slice(1)]);
+});
+
+test("list shape: a plain, closed array of enumerable elements", () => {
+  class Rows extends Array<UsageCapabilityRow> {}
+  isolated(Rows.from(rows()));
+  isolated(Object.assign(rows(), { note: "PRIVATE_CANARY" }));
+  const hidden = rows();
+  Object.defineProperty(hidden, "0", { value: hidden[0], enumerable: false, writable: true, configurable: true });
+  isolated(hidden);
+  accepted([...rows()]);
+});
+
+test("the row bound refuses before any row is read", () => {
+  let reads = 0;
+  const counted = (row: UsageCapabilityRow) => new Proxy(row, { ownKeys: target => { reads++; return Reflect.ownKeys(target); } });
+  accepted(rows().map(counted));
+  assert.ok(reads > 0, "counted rows are decodable, so a refusal below is the bound alone");
+  reads = 0;
+  isolated(Array.from({ length: 65 }, (_, i) => counted(rows()[i % rows().length]!)));
+  assert.equal(reads, 0);
+});

@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { readAccountUsageDocument, type AccountUsageEnvelope } from "@rickylabs/harness-contracts";
 import { usageFile, usageScopeHash } from "./account-usage.js";
 import { collectAccountUsageDocument, readAccountUsageDocumentSource } from "./paid-account-usage.js";
+import type { OperatorEnvironment } from "./operator-environment.js";
 import { resolveWireFamily } from "./producer-names.js";
 
 export const ACCOUNT_USAGE_HELP = `harness-telemetry account-usage --source <descriptor> [--watch]
@@ -24,14 +25,15 @@ Descriptor schema 3 adds capacity ({host} alias or null) and emits the 0.40 docu
 schema 2 plus a source capability row for every CLI and dimension, and the host capacity.
 `;
 /** CLI diagnostics are fixed strings: local paths, native ids, auth and stderr never leave. */
-export async function accountUsageCommand(argv: readonly string[]): Promise<number> {
+/** An invalid operator setting throws the typed `OperatorConfigurationError` to `main`, before any read or write. */
+export async function accountUsageCommand(argv: readonly string[], env: OperatorEnvironment = process.env): Promise<number> {
   if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) { process.stdout.write(ACCOUNT_USAGE_HELP); return 0; }
   if ((argv.length !== 2 && argv.length !== 3) || argv[0] !== "--source" || !argv[1] || !isAbsolute(argv[1]) ||
       /[\x00-\x1f\x7f]/.test(argv[1]) || (argv.length === 3 && argv[2] !== "--watch")) {
     process.stderr.write("account-usage: invalid command line\n"); return 2;
   }
+  const wireFamily = resolveWireFamily(env);
   try {
-    const wireFamily = resolveWireFamily(process.env);
     const source = readAccountUsageDocumentSource(JSON.parse((await usageFile(argv[1], 65536)).toString("utf8")));
     const native = source.schemaVersion === 1 ? source : source.accountUsage;
     const key = await usageFile(native.keyFile, 4096, true);

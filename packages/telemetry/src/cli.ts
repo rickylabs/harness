@@ -194,7 +194,7 @@ export async function main(argv: readonly string[], services: SourceServices = d
 
 async function mainConfigured(argv: readonly string[], services: SourceServices, observationOptions: RepositoryRunReadOptions): Promise<number> {
   if (argv[0] === "provider-limits") return providerLimitsCommand(argv.slice(1), { out: text => process.stdout.write(text), err: text => process.stderr.write(text) });
-  if (argv[0] === "account-usage") return accountUsageCommand(argv.slice(1));
+  if (argv[0] === "account-usage") return accountUsageCommand(argv.slice(1), services.env);
   if (argv[0] === "codex-threads") return codexThreadsCommand(argv.slice(1));
   if (argv[0] === "issue-agents") return issueAgentFeedCommand(argv.slice(1), { env: services.env });
   if (argv[0] === "action-receipt") return actionReceiptCommand(argv.slice(1), services.env);

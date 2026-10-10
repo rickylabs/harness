@@ -1,6 +1,7 @@
 /** Synthetic stores, polls and kernel files only. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { DatabaseSync } from "node:sqlite";
 import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -101,5 +102,51 @@ test("schema 3 adds no vendor call to schema 2 and its descriptor is closed", as
     assert.equal(readAccountUsageDocumentSource({ ...raw, capacity: null }).schemaVersion, 3);
     for (const bad of [{ ...raw, capacity: undefined }, { ...raw, capacity: { host: "fixture.node" } }, { ...raw, capacity: { host: "fixture-node", path: "x" } },
       { ...raw, schemaVersion: 2 }, { ...raw, extra: true }]) assert.throws(() => readAccountUsageDocumentSource(JSON.parse(JSON.stringify(bad))));
+  } finally { await f.close(); }
+});
+
+test("configured OpenCode history: a complete read is supported, an unread one unreadable, a gapped one partial", async () => {
+  const f = await fixture();
+  const database = new DatabaseSync(join(f.root, "opencode.db"));
+  try {
+    database.exec("CREATE TABLE session(id TEXT PRIMARY KEY, version TEXT); CREATE TABLE message(id TEXT PRIMARY KEY, session_id TEXT, time_created INTEGER, data TEXT);");
+    const from = "2026-01-01T00:00:00.000Z";
+    const openCode = (databaseFile: string) => ({ databaseFile, from, versions: ["fixture-version"],
+      providers: [{ provider: "fixture-provider", accountIdentity: "fixture-account" }] });
+    const collect = async (databaseFile: string) => v3(await collectAccountUsageDocument(f.source({ providers: { githubCopilot: null, openRouter: null,
+      openCode: openCode(databaseFile) } }), key, { now: () => at, poll: async () => ({ ok: false, reason: "timeout" }), capacitySource: f.capacitySource }));
+    const history = (doc: Awaited<ReturnType<typeof collect>>) =>
+      (["run-usage", "metered-spend"] as const).map(dimension => row(doc.capabilities, "opencode", dimension, "opencode-history"));
+    const expect = (capability: string, reason: string | null) => (["run-usage", "metered-spend"] as const).map(dimension =>
+      ({ cli: "opencode", dimension, capability, source: "opencode-history", observedAt: at, reason }));
+
+    const empty = await collect(join(f.root, "opencode.db"));
+    assert.equal(empty.providers.coverage.openCode, "complete");
+    assert.deepEqual(history(empty), expect("supported", null));
+
+    const missing = await collect(join(f.root, "absent.db"));
+    assert.deepEqual([missing.providers.coverage.openCode, missing.providers.history.length], ["partial", 0]);
+    assert.deepEqual(history(missing), expect("unreadable", "partial-history"));
+
+    database.prepare("INSERT INTO session VALUES(?, ?)").run("fixture-session", "unvetted-version");
+    database.prepare("INSERT INTO message VALUES(?, ?, ?, ?)").run("fixture-message", "fixture-session", Date.parse(from) + 1,
+      JSON.stringify({ role: "assistant", providerID: "fixture-provider", modelID: "fixture-model", cost: 0.1,
+        tokens: { input: 1, output: 1, reasoning: 0, cache: { read: 0, write: 0 } } }));
+    const partial = await collect(join(f.root, "opencode.db"));
+    assert.deepEqual([partial.providers.coverage.openCode, partial.providers.history.length], ["partial", 1]);
+    assert.deepEqual(history(partial), expect("supported", "partial-history"));
+  } finally { database.close(); await f.close(); }
+});
+
+test("an unbound session store is not-configured with no read time, never an empty or partial scan", async () => {
+  const f = await fixture();
+  try {
+    const doc = v3(await collectAccountUsageDocument(f.source({}, []), key,
+      { now: () => at, poll: async () => ({ ok: true, result: codexLimits }), capacitySource: f.capacitySource }));
+    const unbound = (cli: string, dimension: string, source: string) => ({ cli, dimension, capability: "unreadable", source, observedAt: null, reason: "not-configured" });
+    assert.deepEqual(row(doc.capabilities, "claude", "run-usage", "claude-session-store"), unbound("claude", "run-usage", "claude-session-store"));
+    assert.deepEqual(row(doc.capabilities, "codex", "run-usage", "codex-session-store"), unbound("codex", "run-usage", "codex-session-store"));
+    assert.deepEqual(row(doc.capabilities, "codex", "subscription-quota", "codex-session-store"), unbound("codex", "subscription-quota", "codex-session-store"));
+    assert.equal(row(doc.capabilities, "codex", "subscription-quota", "codex-app-server").capability, "supported");
   } finally { await f.close(); }
 });
