@@ -177,3 +177,32 @@ for (const name of ["harness-board", "harness-coordinator", "harness-forge", "ha
     assert.equal(run.status, 0, `${ORCHID}: ${name} --help exited ${run.status}`);
   });
 }
+
+// Group 6: the issue tree an OpenCode run produces, as cockpit decodes it (atelier-cockpit#540). The one
+// composition of the three packages: the provider's SDK adapter over its recorded `opencode serve`
+// wire (synthetic token counters), telemetry's issue feed, and the published decoder. Parsed fields only.
+test("cockpit: an OpenCode run read through the SDK adapter decodes as a published issue tree", async () => {
+  const { createSdkSessionReader } = await load("packages/providers/opencode/dist/mod.js");
+  const { recording, recordedFetch } = await load("packages/providers/opencode/dist/tests/fixtures/recorded-server.js");
+  const { bound } = await load("packages/telemetry/dist/fixtures/opencode-issue.js");
+  const { readIssueAgentTreeSnapshot } = await import("@rickylabs/harness-contracts");
+  const f = await bound();
+  try {
+    await f.issue(43, recording.unknownID);
+    const served = recordedFetch();
+    const reads = createSdkSessionReader({ baseUrl: "http://opencode.example.invalid", fetch: served.fetch });
+    const decoded = readIssueAgentTreeSnapshot(await f.collect({ reads }));
+    assert.equal(decoded.ok, true, `${COCKPIT}: the OpenCode issue tree no longer decodes`);
+    const issue = number => decoded.snapshot.issues.find(row => row.issueNumber === number);
+    const [root, child] = issue(42)?.dispatches[0]?.agents ?? [];
+    assert.deepEqual([root?.harness.value, root?.liveness.state, root?.terminalOutcome.value, root?.tokenUsage?.source,
+      child?.parentAgentId === root?.observation.agentId, child?.terminalOutcome.value],
+    ["opencode", "ended", "succeeded", "opencode-usage", true, "succeeded"], `${COCKPIT}: the recorded OpenCode tree changed shape`);
+    assert.ok(root.activity.steps.some(step => step.lifecycle?.state === "completed" && step.commandHead === "git status"),
+      `${COCKPIT}: a tool step no longer carries its native lifecycle`);
+    // The adapter's own 404 for an unbound session reaches the tree as an explicit unknown, never as an empty run.
+    assert.deepEqual([issue(43)?.complete, issue(43)?.reason, issue(43)?.dispatches], [false, "binding_unavailable", []],
+      `${COCKPIT}: an unknown OpenCode session no longer reads as binding_unavailable`);
+    assert.ok(served.calls.every(call => call.method === "GET"), `${COCKPIT}: the issue read is no longer read-only`);
+  } finally { await f.close(); }
+});
