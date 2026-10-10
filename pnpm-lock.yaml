@@ -75,6 +75,12 @@ importers:
         specifier: ^4.0.9
         version: 4.0.9
 
+  packages/providers/agy:
+    dependencies:
+      '@rickylabs/harness-contracts':
+        specifier: workspace:*
+        version: link:../../contracts
+
   packages/providers/claude:
     dependencies:
       '@rickylabs/subagents':
@@ -122,6 +128,9 @@ importers:
       '@rickylabs/host-orchid':
         specifier: workspace:*
         version: link:../hosts/orchid
+      '@rickylabs/provider-agy':
+        specifier: workspace:*
+        version: link:../providers/agy
       '@rickylabs/subagents':
         specifier: workspace:*
         version: link:../subagents

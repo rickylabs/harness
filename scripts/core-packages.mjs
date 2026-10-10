@@ -29,7 +29,7 @@ export function corePackages() {
     dir,
     manifest: JSON.parse(readFileSync(join(ROOT, dir, "package.json"), "utf8")),
   }));
-  if (core.length !== 14) throw new Error("expected fourteen core packages; review the core inventory");
+  if (core.length !== 15) throw new Error("expected fifteen core packages; review the core inventory");
   const names = new Set(core.map(row => row.manifest.name));
   if (names.size !== core.length) throw new Error("duplicate core package identity");
   return core;

@@ -18,6 +18,7 @@
     { "path": "packages/hosts/orchid" },
     { "path": "packages/llm-local" },
     { "path": "packages/method" },
+    { "path": "packages/providers/agy" },
     { "path": "packages/providers/claude" },
     { "path": "packages/providers/codex" },
     { "path": "packages/providers/opencode" },

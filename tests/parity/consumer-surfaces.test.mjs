@@ -45,11 +45,11 @@ test("cockpit: @rickylabs/harness-contracts entry points, manifest and runtime v
   assertExports(COCKPIT, pkg, main, {
     ...kinds("object", `PROVIDER_METER_UNITS PROVIDER_USAGE_REASONS AGENT_UNAVAILABLE_REASONS
       AGENT_ACTION_REJECTED_REASONS RUN_OBSERVATION_INCOMPLETE_REASONS RUN_OBSERVATION_UNAVAILABLE_REASONS
-      OPENCODE_OBSERVED_SOURCES ISSUE_LAUNCH_REFUSAL_REASONS`),
+      OPENCODE_OBSERVED_SOURCES ISSUE_LAUNCH_REFUSAL_REASONS AGENT_ACTIVITY_STATES AGENT_ACTIVITY_GAPS AGENT_ACTIVITY_PROVENANCES`),
     ...kinds("number", "MAX_ISSUE_AGENT_TREE_BYTES PROTOCOL_VERSION"),
     ...kinds("function", `compareRouteIdentity emptyFold foldValue snapshotOf publicActivityTarget
       publicActivityText publicOpenCodeModel readAccountUsageDocument readAccountUsageEnvelope
-      readGovernanceSnapshot readIssueAgentTreeSnapshot readProviderBudgetDecisions readProviderLimitSnapshot readProviderUsageSnapshot
+      readAgentActivity readGovernanceSnapshot readIssueAgentTreeSnapshot readProviderBudgetDecisions readProviderLimitSnapshot readProviderUsageSnapshot
       readRepositoryRunObservation encodeWorkflowRevisionBundle readAgentObservations readRoutineRevision
       readRoutineWake readWorkflowRevision readWorkflowRevisionBundle unavailableAgentCost`),
   });
@@ -177,3 +177,47 @@ for (const name of ["harness-board", "harness-coordinator", "harness-forge", "ha
     assert.equal(run.status, 0, `${ORCHID}: ${name} --help exited ${run.status}`);
   });
 }
+
+// Group 6: cockpit runs `harness-telemetry issue-agents` and decodes its frames with the published
+// reader. The lifecycle flag is opt-in; exit codes and parsed structure only, never rendered or stdout text.
+// The synthetic agy store comes from its one fixture owner, the agy provider's built test-fixtures.
+test("cockpit: harness-telemetry issue-agents accepts --activity-lifecycle and publishes agy activity the reader decodes", async () => {
+  const { readIssueAgentTreeSnapshot } = await import("@rickylabs/harness-contracts");
+  const fx = await load("packages/providers/agy/dist/test-fixtures/agy-store.js");
+  const bin = join(root, "packages/telemetry", JSON.parse(readFileSync(join(root, "packages/telemetry/package.json"), "utf8")).bin["harness-telemetry"]);
+  const cli = (args, env = {}) => spawnSync(process.execPath, [bin, "issue-agents", "--json", ...args],
+    { encoding: "utf8", timeout: 30_000, env: { PATH: process.env.PATH, ...env } });
+  const unbound = cli(["--activity-lifecycle"]);
+  assert.equal(unbound.status, 3, `${COCKPIT}: issue-agents --activity-lifecycle without a binding exited ${unbound.status}`);
+  const empty = readIssueAgentTreeSnapshot(JSON.parse(unbound.stdout));
+  assert.ok(empty.ok && empty.snapshot.reason === "source_not_bound", `${COCKPIT}: the unbound frame no longer decodes as source_not_bound`);
+  assert.equal(cli(["--no-such-flag"]).status, 2, `${COCKPIT}: issue-agents accepted an unknown flag`);
+  const store = await fx.sqliteFixture(fx.agyReservation(42));
+  try {
+    store.replaceRoot({ steps: [{ kind: "user" }, { kind: "planner" }, { kind: "result", status: 3 }, { kind: "planner", message: "The parity work is done." }] });
+    await store.writeTranscript(fx.rootID, fx.transcript.lines(
+      fx.transcript.planner(1, [fx.transcript.runCommand()]), fx.transcript.planner(3)));
+    const receipts = join(store.base, "receipts");
+    await fx.bindAgyIssue(receipts, { number: 42, root: store.root, observedAt: new Date(Date.now() - 600_000).toISOString() });
+    const read = flag => {
+      const run = cli(["--home", store.base, "--issue", "example/project#42", ...(flag ? ["--activity-lifecycle"] : [])],
+        { HARNESS_TELEMETRY_DISPATCH_ROOT: receipts });
+      assert.equal(run.status, 0, `${COCKPIT}: the bound agy issue-agents run exited ${run.status}`);
+      const decoded = readIssueAgentTreeSnapshot(JSON.parse(run.stdout));
+      assert.ok(decoded.ok, `${COCKPIT}: the published reader rejected the frame`);
+      assert.ok(!JSON.stringify(decoded.snapshot).includes("PRIVATE-"), `${COCKPIT}: a private canary reached the decoded frame`);
+      return decoded.snapshot.issues[0].dispatches[0].agents[0].activity;
+    };
+    const lifecycle = read(true);
+    assert.deepEqual(lifecycle.steps.filter(s => s.kind === "command").map(s => [s.commandHead, s.provenance, s.state]),
+      [["git status", "requested", "unknown"]], `${COCKPIT}: the named agy call is no longer a requested command with unknown state`);
+    assert.deepEqual(lifecycle.steps.filter(s => s.provenance === "executed").map(s => [s.kind, s.toolName, s.state]),
+      [["tool", null, "completed"]], `${COCKPIT}: the unnamed agy result no longer carries its native state`);
+    assert.deepEqual(lifecycle.coverage, { gaps: ["call-lifecycle-unproven"] }, `${COCKPIT}: agy coverage changed`);
+    const plain = read(false);
+    assert.equal(Object.hasOwn(plain, "coverage"), false, `${COCKPIT}: coverage leaked into an unflagged frame`);
+    assert.ok(plain.steps.every(s => !Object.hasOwn(s, "state") && !Object.hasOwn(s, "provenance")),
+      `${COCKPIT}: lifecycle fields leaked into an unflagged frame`);
+    assert.equal(plain.steps.filter(s => s.kind === "tool" && s.toolName === null).length, 0, `${COCKPIT}: an unnamed result leaked into an unflagged frame`);
+  } finally { await store.close(); }
+});

@@ -162,9 +162,12 @@ for shared-run refusal, repeated-dispatch handling, source timestamps and limits
 
 AGY live issue collection uses the private `NativeSessionID` conversation ID and
 `NativeStore` from the same dispatched reservation. It reads only that retained
-store, never the global AGY history or a directory/title/time match. The installed
-1.2.14 adapter opens fixed SQLite tables read-only with WAL visibility and byte,
-session and step bounds. The conversation's `cascade_id` must match its bound ID;
+store, never the global AGY history or a directory/title/time match. Every read of
+that store is `@rickylabs/provider-agy`'s (since #699): its adapter opens the fixed
+SQLite tables read-only with WAL visibility and byte, session and step bounds, and
+its decoder turns the rows into the neutral `AgyStoreRead` that contracts owns.
+Telemetry reads it through its `AgyNativeReads` port and applies the completion
+rules below (`src/backfill/agy.ts`); no agy file, SQL or native code is read here. The conversation's `cascade_id` must match its bound ID;
 the separate trajectory ID must match the native protobuf summary. Only typed
 planner response text reaches the existing screening function. User prompts,
 thinking, tool output, titles, native IDs and store paths never enter the feed.
@@ -177,6 +180,45 @@ AGY token/quota measurements remain unavailable. Contracts 0.34.0 adds `agy` and
 `agy-transcript` plus AGY direct-route decoding; upgrade the consumer decoder and
 reader before enabling the Orchid writer. Bound database/WAL watches are hints
 for a fresh read, with the periodic safety scan retained.
+
+AGY tool activity (#699) comes from the vendor's retained conversation log. Its hooks publish the
+log's path as `transcriptPath`, and `@rickylabs/provider-agy` reads it through the same port.
+
+What the log is used for, and what it is not:
+
+- It names tool calls only. The SQLite trajectory above stays the only authority for which steps
+  exist, when they happened, how they ended and whether the run is live.
+- A named call is a plan, not an execution. It is published as `provenance: "requested"`, its summary
+  says "Requested …", and its `state` is `unknown`. It is never paired with a result, because that
+  correlation is unproven, and coverage says `call-lifecycle-unproven`.
+- Only a native result row is `provenance: "executed"`. It carries the trajectory's own end as decoded
+  by the provider: done is `completed`, error is `failed`, cancelled is `cancelled`. Anything else is
+  `unknown`, and an in-progress status adds `in-progress-unattributed`. No state is inferred from the
+  latest user turn, the summary or liveness.
+
+Coverage compares the decoded planner lines with the newest 20 trajectory planner rows:
+
+- a missing prefix adds `tool-names-truncated`;
+- a missing middle or newest line adds `tool-names-lines-missing`;
+- a vendor `truncated_fields` entry other than prose drops that line's calls and adds
+  `tool-names-vendor-truncated`;
+- a missing, refused or incoherent log adds `tool-names-source-missing` or
+  `tool-names-source-invalid`.
+
+Messages and results are always kept.
+
+Bounds and ordering:
+
+- Descriptor reads are the lowest-priority bytes. They run after every authority read of the issue
+  group, newest dispatch first, from the same frame budget.
+- Each read is a tail of at most `min(1 MiB, remaining - half the frame)`. Below 64 KiB it is skipped,
+  with `tool-names-budget-exhausted`.
+- The summary's `workspace_uris` relativizes file paths. It is selected only up to 4096 bytes (measured
+  in bytes, not characters), counted
+  in the budget, and must hold exactly one local root; otherwise no path is published.
+
+`state`, `provenance`, unnamed result steps and coverage appear only under `issue-agents --activity-lifecycle`. The
+transcript path joins the watched files.
 
 OpenCode issue collection joins the dispatched reservation's private
 `NativeSessionID` to one root in the explicitly configured native database.

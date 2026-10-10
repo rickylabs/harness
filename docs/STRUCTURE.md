@@ -16,7 +16,7 @@ packages/
   coordinator/          run lifecycle
   governance/           admissions, capacity, spend (done, rearch(7) #655)
   telemetry/            observation model, sinks, read models (renamed telemetry-core next night)
-  providers/claude|codex|opencode/   vendor adapters (done, rearch(8) #659)
+  providers/claude|codex|opencode|agy/   vendor adapters (done, rearch(8) #659; agy #699)
   hosts/orchid/         orchid dispatch + evidence adapter (rearch(9) #660)
   method/               milestone render/validate, route receipts (bin harness-method), run templates
   board/ forge/ llm-local/

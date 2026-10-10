@@ -11,6 +11,9 @@ import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FR
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { scanClaudeIssue } from "./backfill/claude-issue.js";
 import { scanAGYIssue } from "./backfill/agy.js";
+import { attachAgyDescriptors, type AgyDescriptorTarget } from "./backfill/agy-activity.js";
+import type { AgyNativeReads } from "./agy-reads.js";
+import { agyNativeReads } from "@rickylabs/provider-agy";
 import { scanOpenCodeIssue } from "./backfill/opencode-issue.js";
 import { buildAgentObservations } from "./agent-observations.js";
 import { readClaudeChildStarts } from "./claude-child-events.js";
@@ -22,8 +25,9 @@ import { readLocalHostCapacity } from "./host-capacity.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 import type { DispatchEvidence, OrchidLaunchState } from "@rickylabs/harness-contracts";
 import type { RunRecord } from "./model.js";
-/** Composition root: the Orchid host behind the telemetry-owned port. */
+/** Composition root: the Orchid host and the agy provider behind telemetry-owned ports. */
 const host: OrchidReads = orchidHost;
+const agyReads: AgyNativeReads = agyNativeReads;
 
 export interface IssueAgentFeedOptions {
   readonly home: string;
@@ -42,6 +46,15 @@ export interface IssueAgentFeedOptions {
    * reader accepts: a reader on 0.36 or older rejects a whole snapshot holding a bounded row.
    */
   readonly partialTrees?: boolean;
+  /**
+   * Publish activity `state`, unnamed native result steps and `coverage` (the next contracts minor).
+   * Without it frames keep their earlier keys exactly: an older reader rejects a snapshot with them.
+   */
+  readonly activityLifecycle?: boolean;
+  /** Lower the frame's native byte budget (tests, constrained hosts); it can never be raised. */
+  readonly maxFrameBytes?: number;
+  /** The agy native reads; the provider by default. */
+  readonly agy?: AgyNativeReads;
 }
 
 const PRE_DISPATCH_MS = 600_000;
@@ -55,6 +68,12 @@ const MAX_ISSUE_DISPATCHES = 8;
 const MAX_ISSUE_FILES = 20;
 const MAX_TRANSCRIPT_BYTES = 8 * 1_048_576;
 const MAX_FRAME_TRANSCRIPT_BYTES = 32 * 1_048_576;
+
+/** A safe positive integer lowers the frame budget; anything larger is clamped, anything else ignored. */
+export function frameByteLimit(requested: unknown): number {
+  return typeof requested === "number" && Number.isSafeInteger(requested) && requested >= 1
+    ? Math.min(requested, MAX_FRAME_TRANSCRIPT_BYTES) : MAX_FRAME_TRANSCRIPT_BYTES;
+}
 
 /**
  * When Orchid saw the root end: the later of a paired seat and process absence, for a stop or an
@@ -132,7 +151,8 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   }
   const entries: { repo: IssueAgentTree["repo"]; issueNumber: number; snapshot: IssueAgentTreeSnapshot;
     launchBlock?: IssueLaunchBlock }[] = [];
-  let remainingBytes = MAX_FRAME_TRANSCRIPT_BYTES;
+  const frameBytes = frameByteLimit(options.maxFrameBytes), reserveBytes = Math.floor(frameBytes / 2);
+  let remainingBytes = frameBytes;
   for (const group of ordered.slice(0, MAX_AGENT_OBSERVATIONS)) {
     const entry = { repo: group.repo, issueNumber: group.issueNumber,
       snapshot: unavailableSnapshot(options.now, "binding_unavailable"),
@@ -189,16 +209,20 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       runs.push(...scan.runs);
     }
     let agyUnavailable = false;
-    for (const dispatch of group.dispatches.filter(d => d.source === "agy")) {
+    const agyConversations: AgyDescriptorTarget[] = [];
+    // Newest dispatch first, so the descriptor phase spends the remaining budget on the latest run.
+    for (const dispatch of group.dispatches.filter(d => d.source === "agy")
+      .sort((a, b) => Date.parse(b.observedAt!) - Date.parse(a.observedAt!))) {
       const store = host.agyStoreDirectory(dispatch);
       if (store === null) { agyUnavailable = true; break; }
-      const scan = await scanAGYIssue(store, id => host.matchesNativeRootIdentity(dispatch, id, "agy"),
+      const scan = await scanAGYIssue(options.agy ?? agyReads, store, id => host.matchesNativeRootIdentity(dispatch, id, "agy"),
         issueFileLimit - runs.length, remainingBytes, nowMs);
       remainingBytes -= scan.bytesRead;
       for (const file of scan.files) options.watchFiles?.add(file);
       options.watchStoreRoots?.add(store);
       if (scan.reason !== null) { entry.snapshot = unavailableSnapshot(options.now, scan.reason); agyUnavailable = true; break; }
       runs.push(...scan.runs);
+      agyConversations.push(...scan.conversations);
     }
     if (agyUnavailable) continue;
     let openCodeUnavailable = false;
@@ -217,6 +241,13 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       runs.push(...scan.runs);
     }
     if (openCodeUnavailable) continue;
+    // Descriptors are the lowest-priority bytes: read after every authority read of this group.
+    if (agyConversations.length > 0) {
+      const phase = await attachAgyDescriptors(agyConversations, options.agy ?? agyReads, { lifecycle: options.activityLifecycle === true,
+        remainingBytes, reserveBytes, ...(options.watchFiles === undefined ? {} : { watchFiles: options.watchFiles }) });
+      remainingBytes -= phase.bytesRead;
+      for (let i = 0; i < runs.length; i++) runs[i] = phase.runs.get(runs[i]!) ?? runs[i]!;
+    }
     for (const run of runs) options.watchFiles?.add(run.origin);
     const claudeChildStarts = new Map<string, string>();
     for (const dispatch of group.dispatches) {
@@ -271,7 +302,8 @@ const SAFETY_RESCAN_MS = 12_000;
 
 /** `--watch` writes full snapshots and heartbeats; every new process starts seq 0. */
 export async function issueAgentFeedCommand(args: readonly string[], deps: IssueAgentFeedDependencies = {}): Promise<number> {
-  let home = homedir(), limit = 500, intervalMs = 5000, watch = false, json = false, partialTrees = false, issueKey: string | undefined;
+  let home = homedir(), limit = 500, intervalMs = 5000, watch = false, json = false, partialTrees = false, activityLifecycle = false;
+  let issueKey: string | undefined;
   const seen = new Set<string>();
   try {
     for (let i = 0; i < args.length; i++) {
@@ -281,6 +313,7 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
       if (flag === "--watch") watch = true;
       else if (flag === "--json") json = true;
       else if (flag === "--partial-trees") partialTrees = true;
+      else if (flag === "--activity-lifecycle") activityLifecycle = true;
       else if (flag === "--home" && args[i + 1]?.startsWith("/")) home = args[++i]!;
       else if (flag === "--limit" && /^[1-9]\d*$/.test(args[i + 1] ?? "")) limit = Number(args[++i]);
       else if (flag === "--issue") {
@@ -337,7 +370,8 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
         try {
           if (configurationUnavailable) throw Error();
           snapshot = await collect({ home, limit, env, now: at, watchFiles: files, watchStoreRoots: storeRoots,
-          ...(partialTrees ? { partialTrees } : {}), ...(issueKey === undefined ? {} : { issueKey }) }); }
+          ...(partialTrees ? { partialTrees } : {}), ...(activityLifecycle ? { activityLifecycle } : {}),
+          ...(issueKey === undefined ? {} : { issueKey }) }); }
         catch { snapshot = unavailableSnapshot(at); }
         changes?.setFiles(files, storeRoots);
         scannedAt = elapsed();
