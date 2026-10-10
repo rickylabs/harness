@@ -18,7 +18,7 @@ import { sqliteStore } from "./src/adapters/sqlite-store.js";
 import { readAgyStore } from "./src/application/read-store.js";
 
 export { transcriptTailFile } from "./src/adapters/transcript-tail-file.js";
-export { agyTranscriptPath, MAX_TRANSCRIPT_TAIL_BYTES, readAgyToolCalls } from "./src/application/read-tool-calls.js";
+export { agyTranscriptPath, MAX_TRANSCRIPT_TAIL_BYTES, readAgyToolCalls, unreadToolCalls } from "./src/application/read-tool-calls.js";
 export type { TranscriptTail, TranscriptTailRead } from "./src/ports/transcript-tail.js";
 export { MAX_WORKSPACE_URIS_BYTES, sqliteStore } from "./src/adapters/sqlite-store.js";
 export { readAgyStore } from "./src/application/read-store.js";

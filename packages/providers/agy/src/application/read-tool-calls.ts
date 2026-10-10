@@ -10,7 +10,8 @@ import { decodeTranscriptLine, type TranscriptLine } from "../domain/transcript-
 import type { TranscriptTail } from "../ports/transcript-tail.js";
 
 export const MAX_TRANSCRIPT_TAIL_BYTES = 1_048_576;
-const unread = (gap: Exclude<NativeToolCallRead["gap"], null | "tool-names-truncated">, bytesRead = 0): NativeToolCallRead =>
+/** The one not-read variant: no descriptor was decoded, for the given reason. */
+export const unreadToolCalls = (gap: Exclude<NativeToolCallRead["gap"], null | "tool-names-truncated">, bytesRead = 0): NativeToolCallRead =>
   ({ calls: [], decodedPlannerSteps: [], vendorTruncatedSteps: [], fromStart: false, fromStepIndex: null, bytesRead, gap });
 
 /** The log path, derived only from a conversation id the caller has verified; null for any other id. */
@@ -22,10 +23,10 @@ export function agyTranscriptPath(storeRoot: string, conversationId: string): st
 export async function readAgyToolCalls(tail: TranscriptTail, storeRoot: string, conversationId: string,
   maxBytes: number, stepCount: number): Promise<NativeToolCallRead> {
   const path = agyTranscriptPath(storeRoot, conversationId);
-  if (path === null || !Number.isSafeInteger(stepCount) || stepCount < 0) return unread("tool-names-source-missing");
-  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) return unread("tool-names-budget-exhausted");
+  if (path === null || !Number.isSafeInteger(stepCount) || stepCount < 0) return unreadToolCalls("tool-names-source-missing");
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) return unreadToolCalls("tool-names-budget-exhausted");
   const read = await tail.read(storeRoot, path, Math.min(maxBytes, MAX_TRANSCRIPT_TAIL_BYTES));
-  if (read.bytes === null) return unread("tool-names-source-missing");
+  if (read.bytes === null) return unreadToolCalls("tool-names-source-missing");
   const bytesRead = read.bytes.length;
   let body = read.bytes;
   // A tail starts inside a line, and a writer may be mid-append: only whole lines count.
@@ -33,13 +34,13 @@ export async function readAgyToolCalls(tail: TranscriptTail, storeRoot: string, 
   const last = body.lastIndexOf(10);
   body = body.subarray(0, last + 1);
   let text: string;
-  try { text = new TextDecoder("utf-8", { fatal: true }).decode(body); } catch { return unread("tool-names-source-invalid", bytesRead); }
+  try { text = new TextDecoder("utf-8", { fatal: true }).decode(body); } catch { return unreadToolCalls("tool-names-source-invalid", bytesRead); }
   const lines = new Map<number, TranscriptLine>();
   let fromStepIndex = stepCount;
   for (const line of text.split("\n")) {
     if (line === "") continue;
     const decoded = decodeTranscriptLine(line);
-    if (decoded === null) return unread("tool-names-source-invalid", bytesRead);
+    if (decoded === null) return unreadToolCalls("tool-names-source-invalid", bytesRead);
     if (decoded.stepIndex >= stepCount) continue;
     fromStepIndex = Math.min(fromStepIndex, decoded.stepIndex);
     lines.set(decoded.stepIndex, decoded); // The vendor rewrites a step by appending; the last line wins.

@@ -1,7 +1,8 @@
 /** agy's retained SQLite store, read-only. Each bound store is an independent read; WAL is observed, never checkpointed. */
 import { lstat as fsLstat, realpath } from "node:fs/promises";
 import { join } from "node:path";
-import { AGY_CONVERSATION_ID, MAX_BLOB, MAX_STEPS, type StoreRow } from "../domain/trajectory.js";
+import { MAX_BLOB } from "../domain/protobuf.js";
+import { AGY_CONVERSATION_ID, MAX_STEPS, type StoreRow } from "../domain/trajectory.js";
 import type { StoreScan, StoreSource } from "../ports/store-source.js";
 
 const MAX_SESSIONS = 20;

@@ -1,8 +1,8 @@
 /** The agy completion rules over neutral snapshots: each condition of an end on its own. */
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import type { AgyConversationSnapshot, AgyStoreRead, AgyTrajectoryStep, NativeToolCallRead } from "@rickylabs/harness-contracts";
-import { agyNativeReads } from "@rickylabs/provider-agy";
+import type { AgyConversationSnapshot, AgyStoreRead, AgyTrajectoryStep } from "@rickylabs/harness-contracts";
+import { agyNativeReads, unreadToolCalls } from "@rickylabs/provider-agy";
 import { rootID, seconds } from "@rickylabs/provider-agy/test-fixtures";
 import type { AgyNativeReads } from "../agy-reads.js";
 import { agyRun, scanAGYIssue } from "./agy.js";
@@ -56,8 +56,7 @@ it("carries a store refusal and its bytes, with no runs", async () => {
   assert.deepEqual([scan.reason, scan.bytesRead, scan.runs.length, scan.files], ["scan_limit", 7, 0, ["f"]]);
 });
 
-const unread = (gap: "tool-names-source-missing" | "tool-names-budget-exhausted"): NativeToolCallRead =>
-  ({ calls: [], decodedPlannerSteps: [], vendorTruncatedSteps: [], fromStart: false, fromStepIndex: null, bytesRead: 0, gap });
+const unread = unreadToolCalls;
 it("returns the run itself when nothing is named and lifecycle is off", () => {
   const conversation = snapshot(turn()), run = agyRun(conversation);
   assert.equal(agyActivity({ run, storeRoot: "/store", conversation }, unread("tool-names-source-missing"), false), run);

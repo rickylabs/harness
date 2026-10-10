@@ -7,7 +7,7 @@
  */
 import { AGENT_ACTIVITY_GAPS, MAX_AGENT_ACTIVITY_STEPS, type AgentActivityGap, type AgyConversationSnapshot,
   type NativeToolCallRead } from "@rickylabs/harness-contracts";
-import { MAX_TRANSCRIPT_TAIL_BYTES } from "@rickylabs/provider-agy";
+import { MAX_TRANSCRIPT_TAIL_BYTES, unreadToolCalls } from "@rickylabs/provider-agy";
 import type { AgyNativeReads } from "../agy-reads.js";
 import type { RunRecord } from "../model.js";
 import { nativeToolActivity, recentActivity } from "../native-activity.js";
@@ -24,9 +24,6 @@ export interface AgyDescriptorTarget {
 export const agyActivitySlot = { message: 0, call: (index: number) => 1 + index, result: 1000 } as const;
 /** A descriptor read smaller than this is skipped as budget-exhausted rather than taken partially. */
 export const MIN_DESCRIPTOR_READ_BYTES = 65_536;
-
-const budgetExhausted: NativeToolCallRead = { calls: [], decodedPlannerSteps: [], vendorTruncatedSteps: [], fromStart: false,
-  fromStepIndex: null, bytesRead: 0, gap: "tool-names-budget-exhausted" };
 
 /** Join one conversation's descriptor read to its authority facts. */
 export function agyActivity(target: AgyDescriptorTarget, read: NativeToolCallRead, lifecycle: boolean): RunRecord {
@@ -89,7 +86,7 @@ export async function attachAgyDescriptors(conversations: readonly AgyDescriptor
   let remaining = options.remainingBytes, bytesRead = 0;
   for (const conversation of conversations) {
     const allowance = Math.min(MAX_TRANSCRIPT_TAIL_BYTES, remaining - options.reserveBytes);
-    const read = allowance < MIN_DESCRIPTOR_READ_BYTES ? budgetExhausted
+    const read = allowance < MIN_DESCRIPTOR_READ_BYTES ? unreadToolCalls("tool-names-budget-exhausted")
       : await reads.readToolCalls(conversation.storeRoot, conversation.conversation.conversationId, allowance, conversation.conversation.steps.length);
     remaining -= read.bytesRead; bytesRead += read.bytesRead;
     const path = reads.transcriptPath(conversation.storeRoot, conversation.conversation.conversationId);

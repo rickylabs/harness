@@ -1,8 +1,8 @@
 /** The agy descriptor join and its coverage, on synthetic trajectories and transcripts (no native data). */
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { decodeAgyConversation, readAgyToolCalls } from "@rickylabs/provider-agy";
-import type { AgentActivityStep, NativeToolCallRead } from "@rickylabs/harness-contracts";
+import { decodeAgyConversation, readAgyToolCalls, unreadToolCalls } from "@rickylabs/provider-agy";
+import type { AgentActivityStep } from "@rickylabs/harness-contracts";
 import { agyRun } from "./agy.js";
 import { agyActivity } from "./agy-activity.js";
 import { captured, conversation, memoryTail, rootID, transcript as t, type ConversationSpec } from "@rickylabs/provider-agy/test-fixtures";
@@ -10,8 +10,7 @@ import { nativeMessageActivity } from "../native-activity.js";
 import type { RunRecord } from "../model.js";
 
 const WS = "/workspace/project";
-const missing: NativeToolCallRead = { calls: [], decodedPlannerSteps: [], vendorTruncatedSteps: [], fromStart: false,
-  fromStepIndex: null, bytesRead: 0, gap: "tool-names-source-missing" };
+const missing = unreadToolCalls("tool-names-source-missing");
 const runCommand = t.runCommand();
 const viewFile = (path = `${WS}/src/app.ts`) => t.viewFile(path);
 

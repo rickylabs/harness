@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { rmSync } from "node:fs";
 import { chmod, lstat, symlink } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { it } from "node:test";
 import { sqliteStore } from "../../src/adapters/sqlite-store.js";
 import { readAgyStore } from "../../src/application/read-store.js";
@@ -86,10 +86,12 @@ it("refuses directories and databases owned by anyone else", () => withStore(asy
   assert.equal((await readWith(sqliteStore({ fileOwner: uid + 1 }), f.root)).reason, "source_unavailable");
 }));
 
-it("refuses a store reached through a symlinked ancestor", () => withStore(async f => {
-  await symlink(join(f.base, ".divybot-native"), join(f.base, "alias"));
-  const alias = join(f.base, "alias", f.root.split("/").slice(-2).join("/"));
-  assert.equal((await read(alias, id => id === rootID)).reason, "source_unavailable");
+it("refuses a store reached through a symlinked ancestor above the checked directories", () => withStore(async f => {
+  const alias = f.base + "-alias";
+  await symlink(f.base, alias);
+  try {
+    assert.equal((await read(join(alias, relative(f.base, f.root)), id => id === rootID)).reason, "source_unavailable");
+  } finally { rmSync(alias, { force: true }); }
 }));
 
 it("refuses a database that is not a regular file without opening it", async () => {
@@ -176,7 +178,9 @@ it("refuses a store whose summaries changed while the trajectories were read", (
   const original = f.summaryDB.prepare("SELECT raw_summary FROM conversation_summaries WHERE conversation_id=?").get(rootID)!["raw_summary"] as Buffer;
   assert.equal((await during(() => f.summaryDB.prepare("UPDATE conversation_summaries SET not_fully_idle=1 WHERE conversation_id=?").run(rootID))).reason, "source_unavailable", "a scalar column");
   f.summaryDB.prepare("UPDATE conversation_summaries SET not_fully_idle=0 WHERE conversation_id=?").run(rootID);
-  assert.equal((await during(() => f.summaryDB.prepare("UPDATE conversation_summaries SET raw_summary=? WHERE conversation_id=?").run(Buffer.concat([original, Buffer.from([8, 1])]), rootID))).reason, "source_unavailable", "the summary blob");
+  const sameLength = Buffer.from(original); sameLength[sameLength.indexOf(Buffer.from([5 * 8, 1])) + 1] = 3;
+  assert.equal(sameLength.length, original.length, "fixture: only the blob's bytes change, not its length");
+  assert.equal((await during(() => f.summaryDB.prepare("UPDATE conversation_summaries SET raw_summary=? WHERE conversation_id=?").run(sameLength, rootID))).reason, "source_unavailable", "the summary blob");
   f.summaryDB.prepare("UPDATE conversation_summaries SET raw_summary=? WHERE conversation_id=?").run(original, rootID);
   assert.equal((await during(() => f.summaryDB.prepare("INSERT OR IGNORE INTO conversation_summaries(conversation_id,parent_conversation_id,step_count,last_user_input_step_index,not_fully_idle,killed,raw_summary) VALUES(?,?,?,?,?,?,?)")
     .run("ffffffff-ffff-4fff-8fff-ffffffffffff", "", 1, 0, 0, 0, Buffer.from([8, 1])))).reason, "source_unavailable", "an appended summary");

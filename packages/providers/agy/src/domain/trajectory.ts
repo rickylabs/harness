@@ -5,7 +5,7 @@
  */
 import type { AgyConversationSnapshot, AgyStepKind, AgyStepStatus, AgyStopReason, AgySummaryState,
   AgyTrajectoryStep } from "@rickylabs/harness-contracts";
-import { MAX_BLOB, nested, numeric, protobuf, sameBytes, text, timestamp } from "./protobuf.js";
+import { nested, numeric, protobuf, sameBytes, text, timestamp } from "./protobuf.js";
 
 export const AGY_CONVERSATION_ID = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
 export const MAX_STEPS = 4096;
@@ -40,7 +40,7 @@ export function decodeAgyConversation(summary: StoreRow, rows: readonly StoreRow
     if (typeof id !== "string" || !AGY_CONVERSATION_ID.test(id) || (parent !== null && parent !== "" &&
         (!AGY_CONVERSATION_ID.test(parent as string) || parent === id))) return null;
     const raw = blob(summary["raw_summary"]);
-    if (stepCount !== rows.length || rows.length === 0 || rows.length > MAX_STEPS || raw === null) return null;
+    if (stepCount !== rows.length || rows.length > MAX_STEPS || raw === null) return null;
     const native = protobuf(raw), trajectory = summary["trajectory_id"];
     if (typeof trajectory !== "string" || !AGY_CONVERSATION_ID.test(trajectory) ||
         text(native, 4) !== trajectory || numeric(native, 2) !== stepCount) return null;
@@ -83,4 +83,3 @@ export function decodeAgyConversation(summary: StoreRow, rows: readonly StoreRow
       interrupted: (numeric(native, 25) ?? 0) !== 0, steps, workspaceRoot };
   } catch { return null; }
 }
-export { MAX_BLOB };

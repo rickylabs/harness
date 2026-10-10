@@ -18,7 +18,8 @@ export function protobuf(bytes: Uint8Array): Fields {
     let value = 0n, shift = 0n;
     for (let i = 0; i < 10; i++) {
       const byte = bytes[cursor++];
-      if (byte === undefined || (i === 9 && byte > 1)) throw new Error();
+      // A tenth byte above 1 overflows 64 bits, which the safe-integer bound below already refuses.
+      if (byte === undefined) throw new Error();
       value |= BigInt(byte & 127) << shift;
       if ((byte & 128) === 0) {
         if (value > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error();
