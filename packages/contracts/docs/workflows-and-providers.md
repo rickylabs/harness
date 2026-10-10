@@ -288,7 +288,7 @@ credentials, private paths and hosts, ambiguous route bindings, duplicate meter 
 quantities and rows observed after `generatedAt`. The private file reader is `readProviderLimitsFile` in
 [`@rickylabs/governance`](../../governance/README.md#provider-limit-evidence).
 
-### Warnings and route admission
+### Warnings and route admission (0.42.0, rickylabs/atelier-cockpit#451)
 
 `assessProviderLimits(snapshot, now)` turns a decoded snapshot into `ProviderLimitAssessmentV1`
 at `now` (epoch milliseconds), with no I/O. Each meter becomes a `ProviderLimitAdvisoryV1` with
