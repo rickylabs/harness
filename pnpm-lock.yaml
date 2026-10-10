@@ -95,6 +95,9 @@ importers:
       '@opencode-ai/sdk':
         specifier: 1.18.35
         version: 1.18.35
+      '@rickylabs/harness-contracts':
+        specifier: workspace:*
+        version: link:../../contracts
       '@rickylabs/subagents':
         specifier: workspace:*
         version: link:../../subagents
@@ -122,6 +125,9 @@ importers:
       '@rickylabs/host-orchid':
         specifier: workspace:*
         version: link:../hosts/orchid
+      '@rickylabs/provider-opencode':
+        specifier: workspace:*
+        version: link:../providers/opencode
       '@rickylabs/subagents':
         specifier: workspace:*
         version: link:../subagents

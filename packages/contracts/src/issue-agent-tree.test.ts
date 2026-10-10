@@ -1,33 +1,9 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
 import { projectRouteIdentity } from "./route.js";
-import { ISSUE_AGENT_TREE_FRESH_MS, readIssueAgentTreeSnapshot, type IssueAgentTreeSnapshot } from "./issue-agent-tree.js";
-import { unavailableAgentCost, type AgentObservation } from "./agent-observations.js";
-
-const at = "2026-01-01T00:00:00.000Z", rev = "a".repeat(64), dispatchId = "assignment_" + "b".repeat(64);
-const absent = () => ({ value: null, reason: "source_not_bound", observedAt: null, validUntil: null, revision: null } as const);
-const observation: AgentObservation = { agentId: "agent_" + "c".repeat(64), repo: { owner: "example", name: "project" }, issueNumber: 42,
-  assignment: { id: dispatchId, dispatcher: "divybot", basis: "dispatcher-confirmed" },
-  parentAgentId: { state: "confirmed-root", value: null, reason: null }, workspace: absent(), pane: absent(), tab: absent(), terminal: absent(),
-  running: absent(), route: projectRouteIdentity(null), cost: unavailableAgentCost(), observedAt: at, revision: rev };
-const unknown = { value: null, source: "unavailable", reason: "source_not_bound" } as const;
-const unplaced = { value: null, basis: "unavailable", observedAt: null, reason: "source_not_bound" } as const;
-const node = { dispatchId, observation, harness: { value: "codex", source: "dispatch", reason: null }, provider: unknown,
-  router: unknown, routePolicy: { value: null, digest: null, source: "unavailable", reason: "source_not_bound" },
-  model: unknown, location: { host: unplaced, container: unplaced, seat: unplaced },
-  nativeDepth: unknown,
-  budget: { tokenLimit: null, source: "unavailable", reason: "source_not_bound" }, quotaRegime: { value: "subscription", reason: null },
-  liveness: { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" },
-  actionState: { state: "unknown", observedAt: null, reason: "source_not_bound" }, endedBy: null,
-  terminalOutcome: { value: null, source: "unavailable", observedAt: null, reason: "measurement_missing" },
-  startedAt: null, startedAtReason: "run_not_found", endedAt: null, endedAtReason: "measurement_missing",
-  transcript: { value: null, reason: "source_not_bound" },
-  history: [{ dispatchId, kind: "dispatch-observed", at }], historyTruncated: false } as const;
-const snapshot = (): IssueAgentTreeSnapshot => ({ schema: 1, protocol: 1, observedAt: at,
-  validUntil: "2026-01-01T00:00:15.000Z", revision: rev, complete: true, reason: null,
-  issues: [{ repo: observation.repo, issueNumber: 42, complete: true, reason: null,
-    dispatches: [{ dispatchId, agents: [node] }] }] });
-const read = (value: unknown) => readIssueAgentTreeSnapshot(value);
+import { ISSUE_AGENT_TREE_FRESH_MS } from "./issue-agent-tree.js";
+import { unavailableAgentCost } from "./agent-observations.js";
+import { absent, at, dispatchId, node, observation, read, rev, snapshot, unknown } from "./fixtures/issue-agent-tree.js";
 
 it("decodes screened AGY native message activity and rejects private text", () => {
   const s = snapshot();
@@ -59,54 +35,6 @@ it("preserves mixed Harness and legacy cost sources through the grouped issue de
     cost.runTokens!.source = "harness-telemetry.host-capacity";
     assert.equal(read(tree).ok, false, "the grouped decoder must not bypass a cross-class source refusal");
   }
-});
-it("accepts a sourced current budget only as a positive receipt value on the root", () => {
-  const s = snapshot();
-  const withBudget = (budget: unknown) => ({ ...s, issues: [{ ...s.issues[0], dispatches: [{ dispatchId,
-    agents: [{ ...node, budget }] }] }] });
-  assert.equal(read(withBudget({ tokenLimit: 1_500, source: "action-receipt", reason: null })).ok, true);
-  assert.equal(read(withBudget({ tokenLimit: 0, source: "action-receipt", reason: null })).ok, false);
-  assert.equal(read(withBudget({ tokenLimit: "PRIVATE-BUDGET", source: "action-receipt", reason: null })).ok, false);
-});
-it("decodes bounded source-backed resource history and rejects invented child budgets", () => {
-  const s = snapshot();
-  const budget = { tokenLimit: 1_000, source: "route-default", reason: null } as const;
-  const usage = { usedTokens: 7, budgetTokens: 1_000, observedAt: at,
-    source: "codex-token-count", reason: null } as const;
-  const resourceHistory = { tokens: { points: [{ at, usedTokens: 7 }], truncated: false,
-    source: "codex-token-count", reason: null },
-    budgets: { points: [{ at, tokenLimit: 1_000, source: "route-default" }],
-      truncated: false, reason: null } } as const;
-  const root = { ...node, parentAgentId: null, budget, tokenUsage: usage, resourceHistory };
-  const tree = (agents: unknown[]) => ({ ...s, issues: [{ ...s.issues[0],
-    dispatches: [{ dispatchId, agents }] }] });
-  assert.equal(read(tree([root])).ok, true);
-  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
-    tokens: { ...resourceHistory.tokens, points: [{ at, usedTokens: 8 }] } } }])).ok, false);
-  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
-    tokens: { ...resourceHistory.tokens, points: [{ at, usedTokens: Number.MAX_SAFE_INTEGER + 1 }] } } }])).ok, false);
-  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
-    tokens: { ...resourceHistory.tokens, points: [{ at: "2026-02-30T00:00:00.000Z", usedTokens: 7 }] } } }])).ok, false);
-  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
-    budgets: { ...resourceHistory.budgets, points: [{ at, tokenLimit: 900, source: "route-default" }] } } }])).ok, false);
-  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
-    budgets: { ...resourceHistory.budgets, points: [{ at, tokenLimit: 0, source: "route-default" }] } } }])).ok, false);
-  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
-    budgets: { ...resourceHistory.budgets, points: [{ at, tokenLimit: 1_000, source: "action-receipt" }] } } }])).ok, false);
-  assert.equal(read(tree([{ ...root, resourceHistory: { ...resourceHistory,
-    tokens: { ...resourceHistory.tokens, truncated: true } } }])).ok, false);
-  const childObservation = { ...observation, agentId: "agent_" + "d".repeat(64),
-    parentAgentId: { state: "known-parent", value: observation.agentId, reason: null } };
-  const child = { ...root, observation: childObservation, parentAgentId: observation.agentId,
-    harness: { value: "codex", source: "native", reason: null },
-    budget: node.budget, tokenUsage: { ...usage, budgetTokens: null },
-    resourceHistory: { tokens: resourceHistory.tokens,
-      budgets: { points: [], truncated: false, reason: "source_not_bound" } } };
-  assert.equal(read(tree([root, child])).ok, true);
-  assert.equal(read(tree([root, { ...child, budget, tokenUsage: usage, resourceHistory }])).ok, false);
-  assert.equal(read(tree([{ ...node, resourceHistory: { tokens: { points: [], truncated: false,
-    source: "unavailable", reason: "source_not_bound" }, budgets: { points: [], truncated: false,
-    reason: "source_not_bound" } } }])).ok, true);
 });
 it("accepts a source-bound launch refusal with no agent and rejects unsourced or unsafe reasons", () => {
   const s = snapshot();

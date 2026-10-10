@@ -10,6 +10,7 @@
     "tests"
   ],
   "references": [
+    { "path": "../../contracts" },
     { "path": "../../subagents" }
   ]
 }

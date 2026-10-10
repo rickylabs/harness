@@ -113,12 +113,14 @@ environment:
   HARNESS_TELEMETRY_DISPATCH_ROOT           private Orchid receipt root
   HARNESS_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT private Claude child-start root
   HARNESS_TELEMETRY_PLACEMENT_HOST          exact verified host label
+  HARNESS_TELEMETRY_OPENCODE_SERVER         opencode serve base url for OpenCode issue reads
 
 The corresponding DSH_TELEMETRY_* settings remain legacy aliases. Equal dual values are accepted;
 conflicting values refuse the source. Native bindings keep exact values and existing private-source
-checks. LOG_NAME is new and has no legacy alias. Readers and writers refuse mixed log families,
-including rotations outside the configured count. A selected canonical source must contain valid
-events; migration requires stopping writers and moving the whole family before changing settings.
+checks. LOG_NAME and OPENCODE_SERVER are new and have no legacy alias. Readers and writers refuse
+mixed log families, including rotations outside the configured count. A selected canonical source
+must contain valid events; migration requires stopping writers and moving the whole family before
+changing settings.
 
 exit codes:
   0  the picture is complete

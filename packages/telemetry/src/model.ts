@@ -47,18 +47,31 @@ export interface RunUsage {
 /**
  * Every input token the model processed, the way each vendor's own counter means it.
  *
- * Codex's `input_tokens` already contains its cached input. Claude reports cache reads and cache
- * writes beside an `input_tokens` that excludes both, so a Claude run adds them back, which makes
- * one used-tokens figure mean the same thing for both seams. A cache field Claude did not report
+ * Codex's `input_tokens` already contains its cached input. Claude and OpenCode report cache reads
+ * and cache writes beside an input count that excludes both, so those runs add them back, which makes
+ * one used-tokens figure mean the same thing for every seam. A cache field the vendor did not report
  * adds nothing; the separate fields stay on the run for the per-kind cost rows.
  */
 export function processedInputTokens(source: string, usage: RunUsage): number | undefined {
   if (usage.inputTokens === undefined) return undefined;
-  if (source !== "claude") return usage.inputTokens;
+  if (source !== "claude" && source !== "opencode") return usage.inputTokens;
   // Each part is checked on its own, so a malformed part cannot hide inside a plausible sum.
   const parts = [usage.inputTokens, usage.cacheReadTokens ?? 0, usage.cacheWriteTokens ?? 0];
   if (!parts.every(part => Number.isSafeInteger(part) && part >= 0)) return undefined;
   return parts[0]! + parts[1]! + parts[2]!;
+}
+
+/**
+ * Every output token the model produced, the way each vendor's own counter means it.
+ *
+ * Codex and Claude count reasoning inside their output. OpenCode reports `reasoning` beside an
+ * `output` that excludes it, so an OpenCode run adds it back. Each part is checked on its own.
+ */
+export function processedOutputTokens(source: string, usage: RunUsage): number | undefined {
+  if (usage.outputTokens === undefined || source !== "opencode") return usage.outputTokens;
+  const parts = [usage.outputTokens, usage.reasoningTokens ?? 0];
+  if (!parts.every(part => Number.isSafeInteger(part) && part >= 0)) return undefined;
+  return parts[0]! + parts[1]!;
 }
 
 /**

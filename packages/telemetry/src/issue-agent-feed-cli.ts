@@ -11,7 +11,10 @@ import { MAX_AGENT_OBSERVATIONS, MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FR
 import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { scanClaudeIssue } from "./backfill/claude-issue.js";
 import { scanAGYIssue } from "./backfill/agy.js";
-import { scanOpenCodeIssue } from "./backfill/opencode-issue.js";
+import { readOpenCodeIssue } from "./opencode-issue.js";
+import type { OpenCodeSessionReads } from "./opencode-reads.js";
+import { openOpenCodeChanges, type OpenCodeChanges } from "./opencode-feed-changes.js";
+import { baseUrlProblems, createSdkSessionReader } from "@rickylabs/provider-opencode";
 import { buildAgentObservations } from "./agent-observations.js";
 import { readClaudeChildStarts } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
@@ -24,6 +27,21 @@ import type { DispatchEvidence, OrchidLaunchState } from "@rickylabs/harness-con
 import type { RunRecord } from "./model.js";
 /** Composition root: the Orchid host behind the telemetry-owned port. */
 const host: OrchidReads = orchidHost;
+
+/** The OpenCode server behind its port, or why there is none: no url is not bound, a bad url is unavailable. */
+export type OpenCodeServerBinding =
+  | { readonly reads: OpenCodeSessionReads }
+  | { readonly reason: "source_not_bound" | "source_unavailable" };
+/** Composition root: `createSdkSessionReader` (`@opencode-ai/sdk`) behind the telemetry-owned port. */
+export function openCodeServerBinding(baseUrl: string | undefined): OpenCodeServerBinding {
+  if (baseUrl === undefined) return { reason: "source_not_bound" };
+  if (baseUrlProblems(baseUrl).length > 0) return { reason: "source_unavailable" };
+  return { reads: createSdkSessionReader({ baseUrl }) };
+}
+/** One issue's OpenCode reads finish within this, well inside the safety rescan, or the issue is unavailable. */
+const OPENCODE_READ_MS = 5_000;
+/** Well below the 30-second contract freshness limit, including scan time. */
+export const SAFETY_RESCAN_MS = 12_000;
 
 export interface IssueAgentFeedOptions {
   readonly home: string;
@@ -42,6 +60,19 @@ export interface IssueAgentFeedOptions {
    * reader accepts: a reader on 0.36 or older rejects a whole snapshot holding a bounded row.
    */
   readonly partialTrees?: boolean;
+  /** The OpenCode server; resolved from the environment when omitted. */
+  readonly openCode?: OpenCodeServerBinding;
+  /** Private OpenCode session ids the scan read, for the watch loop's event-stream hint; never published. */
+  readonly watchOpenCodeSessions?: Set<string>;
+  /** Cancels in-flight server reads when the feed stops. */
+  readonly signal?: AbortSignal;
+  /**
+   * The observation clock in epoch ms, read after a server read finishes; `now` when omitted. The
+   * snapshot is stamped with the latest such clock, so no fact a read saw is newer than its frame.
+   */
+  readonly clock?: () => number;
+  /** The signal that ends one issue's server reads after `ms`; `AbortSignal.timeout` when omitted. */
+  readonly deadline?: (ms: number) => AbortSignal;
 }
 
 const PRE_DISPATCH_MS = 600_000;
@@ -95,6 +126,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   try { wireFamily = resolveWireFamily(options.env); bindings = resolveNativeOperatorBindings(options.env); }
   catch { return unavailableSnapshot(options.now, "source_unavailable"); }
   if (bindings.dispatchRoot === undefined) return unavailableSnapshot(options.now, "source_not_bound");
+  const openCode = options.openCode ?? openCodeServerBinding(bindings.openCodeServer);
   const orchid = await host.readDispatches(bindings.dispatchRoot);
   const nowMs = Date.parse(options.now);
   if (!Number.isFinite(nowMs) || orchid.reason !== null) return unavailableSnapshot(options.now, "source_unavailable");
@@ -130,30 +162,33 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   if (options.issueKey !== undefined && ordered.length === 0) {
     return unavailableSnapshot(options.now, orchid.degraded ? "source_unavailable" : "source_not_bound");
   }
-  const entries: { repo: IssueAgentTree["repo"]; issueNumber: number; snapshot: IssueAgentTreeSnapshot;
+  // Each issue's snapshot is built once the frame's clock is known: the latest clock any read was judged at.
+  const entries: { repo: IssueAgentTree["repo"]; issueNumber: number; build: (at: string) => IssueAgentTreeSnapshot;
     launchBlock?: IssueLaunchBlock }[] = [];
-  let remainingBytes = MAX_FRAME_TRANSCRIPT_BYTES;
+  let remainingBytes = MAX_FRAME_TRANSCRIPT_BYTES, observedMs = nowMs;
+  const clock = options.clock ?? (() => nowMs);
   for (const group of ordered.slice(0, MAX_AGENT_OBSERVATIONS)) {
     const entry = { repo: group.repo, issueNumber: group.issueNumber,
-      snapshot: unavailableSnapshot(options.now, "binding_unavailable"),
+      build: (at: string) => unavailableSnapshot(at, "binding_unavailable"),
       ...(group.block === undefined ? {} : { launchBlock: group.block }) };
+    const unavailable = (reason: IssueAgentTreeSnapshot["reason"]) => { entry.build = at => unavailableSnapshot(at, reason); };
     entries.push(entry);
     if (group.dispatches.length === 0 && group.refusal !== undefined) {
       const issue: IssueAgentTree = { repo: group.repo, issueNumber: group.issueNumber,
         complete: true, reason: null, dispatches: [], launchRefusal: {
           state: "refused", reason: group.refusal.reasonCode, at: group.refusal.observedAt,
           dispatchId: group.refusal.dispatchId, source: "orchid" } };
-      entry.snapshot = { schema: 1, protocol: 1, observedAt: options.now,
-        validUntil: new Date(nowMs + ISSUE_AGENT_TREE_FRESH_MS).toISOString(),
+      entry.build = at => ({ schema: 1, protocol: 1, observedAt: at,
+        validUntil: new Date(Date.parse(at) + ISSUE_AGENT_TREE_FRESH_MS).toISOString(),
         revision: createHash("sha256").update(JSON.stringify(issue)).digest("hex"),
-        complete: true, reason: null, issues: [issue] };
+        complete: true, reason: null, issues: [issue] });
       continue;
     }
     if (group.dispatches.length === 0) continue;
     if (group.dispatches.some(d => (d.source !== "codex" && d.source !== "claude" && d.source !== "agy" && d.source !== "opencode") || d.observedAt === undefined)) continue;
     if (group.dispatches.length > MAX_ISSUE_DISPATCHES || remainingBytes <= 0 ||
         group.dispatches.some(d => !dispatchReadWindow(d, nowMs).readable)) {
-      entry.snapshot = unavailableSnapshot(options.now, "scan_limit"); continue;
+      unavailable("scan_limit"); continue;
     }
     const issueFileLimit = Math.min(options.limit, MAX_ISSUE_FILES);
     const runs: RunRecord[] = [];
@@ -171,13 +206,12 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
           maxTranscriptBytes: MAX_TRANSCRIPT_BYTES, maxTotalBytes: remainingBytes, notAfterMs: nowMs });
       remainingBytes -= scan.bytesRead;
       if (scan.degraded) {
-        entry.snapshot = unavailableSnapshot(options.now,
-          scan.notes.some(note => note.includes("only the") || note.includes("read bound") || note.includes("scan_limit")) ? "scan_limit" : "source_unavailable");
+        unavailable(scan.notes.some(note => note.includes("only the") || note.includes("read bound") || note.includes("scan_limit")) ? "scan_limit" : "source_unavailable");
         continue;
       }
       // The roots were read and their tree is exact; only its descendants were bounded.
       bounded = scan.partial.length > 0;
-      if (bounded && options.partialTrees !== true) { entry.snapshot = unavailableSnapshot(options.now, "scan_limit"); continue; }
+      if (bounded && options.partialTrees !== true) { unavailable("scan_limit"); continue; }
       runs.push(...scan.runs);
     }
     if (group.dispatches.some(d => d.source === "claude")) {
@@ -185,7 +219,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
         id => group.dispatches.some(dispatch => host.matchesNativeRootIdentity(dispatch, id, "claude")),
         issueFileLimit - runs.length, MAX_TRANSCRIPT_BYTES, remainingBytes, nowMs);
       remainingBytes -= scan.bytesRead;
-      if (scan.reason !== null) { entry.snapshot = unavailableSnapshot(options.now, scan.reason); continue; }
+      if (scan.reason !== null) { unavailable(scan.reason); continue; }
       runs.push(...scan.runs);
     }
     let agyUnavailable = false;
@@ -197,7 +231,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       remainingBytes -= scan.bytesRead;
       for (const file of scan.files) options.watchFiles?.add(file);
       options.watchStoreRoots?.add(store);
-      if (scan.reason !== null) { entry.snapshot = unavailableSnapshot(options.now, scan.reason); agyUnavailable = true; break; }
+      if (scan.reason !== null) { unavailable(scan.reason); agyUnavailable = true; break; }
       runs.push(...scan.runs);
     }
     if (agyUnavailable) continue;
@@ -205,15 +239,17 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     for (const dispatch of group.dispatches.filter(d => d.source === "opencode")) {
       const id = host.openCodeSessionID(dispatch);
       if (id === null) { openCodeUnavailable = true; break; }
-      const path = defaultRoots(options.home).opencodeDb!;
-      const scan = await scanOpenCodeIssue(path, id, issueFileLimit - runs.length, remainingBytes, nowMs);
+      if (!("reads" in openCode)) { unavailable(openCode.reason); openCodeUnavailable = true; break; }
+      const timeout = (options.deadline ?? AbortSignal.timeout)(OPENCODE_READ_MS);
+      const scan = await readOpenCodeIssue(openCode.reads, id, { limit: issueFileLimit - runs.length,
+        maxBytes: remainingBytes, clock, signal: options.signal === undefined ? timeout : AbortSignal.any([options.signal, timeout]) });
       remainingBytes -= scan.bytesRead;
-      for (const file of scan.files) options.watchFiles?.add(file);
-      options.watchStoreRoots?.add(path.slice(0, path.lastIndexOf("/")));
+      for (const session of scan.sessions) options.watchOpenCodeSessions?.add(session);
       if (scan.reason !== null || !await host.verifyOpenCodeBinding(dispatch)) {
-        entry.snapshot = unavailableSnapshot(options.now, scan.reason ?? "binding_unavailable");
+        unavailable(scan.reason ?? "binding_unavailable");
         openCodeUnavailable = true; break;
       }
+      observedMs = Math.max(observedMs, scan.observedMs ?? observedMs);
       runs.push(...scan.runs);
     }
     if (openCodeUnavailable) continue;
@@ -228,14 +264,15 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
         children, options.now, options.watchFiles);
       for (const [key, at] of starts) claudeChildStarts.set(key, at);
     }
-    const observations = buildAgentObservations({ wireFamily, dispatches: group.dispatches, runs,
-      observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true,
-      claudeChildStarts, host });
-    entry.snapshot = buildIssueAgentTreeSnapshot({ wireFamily, observations, dispatches: group.dispatches, runs,
+    entry.build = at => buildIssueAgentTreeSnapshot({ wireFamily, dispatches: group.dispatches, runs,
+      observations: buildAgentObservations({ wireFamily, dispatches: group.dispatches, runs,
+        observedAt: at, sourceBound: true, dispatchComplete: true, nativeComplete: true, claudeChildStarts, host }),
       localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete, bounded, host });
   }
+  const observedAt = new Date(observedMs).toISOString();
   // A malformed receipt cannot be proven unrelated to a scoped issue.
-  const combined = combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,
+  const combined = combineIssueAgentTreeSnapshots({ observedAt,
+    entries: entries.map(({ build, ...entry }) => ({ ...entry, snapshot: build(observedAt) })),
     globalReason: groups.size > MAX_AGENT_OBSERVATIONS ? "scan_limit" : orchid.degraded ? "source_unavailable" : null });
   const issues = combined.issues.map(issue => {
     const key = `${issue.repo.owner.toLowerCase()}/${issue.repo.name.toLowerCase()}#${issue.issueNumber}`;
@@ -246,7 +283,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   const snapshot = { ...combined, issues,
     revision: createHash("sha256").update(JSON.stringify({ issues, reason: combined.reason })).digest("hex") };
   const decoded = readIssueAgentTreeSnapshot(snapshot);
-  return decoded.ok ? decoded.snapshot : unavailableSnapshot(options.now);
+  return decoded.ok ? decoded.snapshot : unavailableSnapshot(observedAt);
 }
 
 function unavailableSnapshot(at: string, reason: IssueAgentTreeSnapshot["reason"] = "source_unavailable"): IssueAgentTreeSnapshot {
@@ -263,11 +300,9 @@ export interface IssueAgentFeedDependencies {
   readonly wait?: (ms: number, signal: AbortSignal) => Promise<void>;
   readonly elapsed?: () => number;
   readonly changes?: IssueFeedChanges;
+  readonly openCodeChanges?: OpenCodeChanges;
   readonly env?: Readonly<Record<string, string | undefined>>;
 }
-
-/** Well below the 30-second contract freshness limit, including scan time. */
-const SAFETY_RESCAN_MS = 12_000;
 
 /** `--watch` writes full snapshots and heartbeats; every new process starts seq 0. */
 export async function issueAgentFeedCommand(args: readonly string[], deps: IssueAgentFeedDependencies = {}): Promise<number> {
@@ -304,11 +339,14 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
   try { resolveWireFamily(env); bindings = resolveNativeOperatorBindings(env); }
   catch {
     configurationUnavailable = true;
-    bindings = { dispatchRoot: undefined, claudeChildEventRoot: undefined, placementHost: undefined };
+    bindings = { dispatchRoot: undefined, claudeChildEventRoot: undefined, placementHost: undefined, openCodeServer: undefined };
   }
+  const openCode = openCodeServerBinding(bindings.openCodeServer);
   const changes = watch && !configurationUnavailable ? deps.changes ?? (deps.collect === undefined
     ? openIssueFeedChanges(bindings.dispatchRoot, defaultRoots(home).codexSessions!,
       defaultRoots(home).claudeProjects, bindings.claudeChildEventRoot) : undefined) : undefined;
+  const openCodeChanges = watch && !configurationUnavailable ? deps.openCodeChanges ??
+    (deps.collect === undefined && "reads" in openCode ? openOpenCodeChanges(openCode.reads) : undefined) : undefined;
   const generation = deps.generation?.() ?? randomUUID();
   const abort = new AbortController();
   let stopped = false, seq = 0;
@@ -328,18 +366,21 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
   try {
     do {
       if (stopped) break;
-      const changed = changes?.consume() ?? false;
+      // Both are drained every pass, so a hint never outlives the scan it caused.
+      const changed = [changes?.consume() ?? false, openCodeChanges?.consume() ?? false].includes(true);
       const scan = cached === undefined || changed || elapsed() - scannedAt >= SAFETY_RESCAN_MS;
       let snapshot = cached;
       if (scan) {
         const at = clock(), files = new Set<string>();
-        const storeRoots = new Set<string>();
+        const storeRoots = new Set<string>(), openCodeSessions = new Set<string>();
         try {
           if (configurationUnavailable) throw Error();
           snapshot = await collect({ home, limit, env, now: at, watchFiles: files, watchStoreRoots: storeRoots,
+          openCode, watchOpenCodeSessions: openCodeSessions, signal: abort.signal, clock: () => Date.parse(clock()),
           ...(partialTrees ? { partialTrees } : {}), ...(issueKey === undefined ? {} : { issueKey }) }); }
         catch { snapshot = unavailableSnapshot(at); }
         changes?.setFiles(files, storeRoots);
+        openCodeChanges?.watch(openCodeSessions);
         scannedAt = elapsed();
       }
       if (stopped) break;
@@ -363,7 +404,7 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
     return 0;
   } catch { process.stderr.write("issue-agents: output unavailable\n"); return 3; }
   finally {
-    changes?.close();
+    changes?.close(); openCodeChanges?.close();
     process.removeListener("SIGINT", stop); process.removeListener("SIGTERM", stop);
     output.removeListener("error", stop); output.removeListener("close", stop);
   }

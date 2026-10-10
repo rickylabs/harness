@@ -1,4 +1,4 @@
-# Contracts: agent trees, placement and stop state (0.5.3 to 0.12.0)
+# Contracts: agent trees, placement and stop state (0.5.3 to 0.12.0, 0.36.0, 0.37.0, 0.41.0)
 
 Part of the [`@rickylabs/harness-contracts` README](../README.md), split out to keep each page
 under the 500-line cap. Each section states the release that introduced it.
@@ -95,6 +95,33 @@ Missing or malformed files and a host mismatch retain named unavailable reasons.
 GPU never becomes a zero reading. Version 0.7.0 adds optional per-card VRAM readings whose
 sum must equal the aggregate. The decoder accepts 0.5.x observations without the fourth row
 and normalizes it to unavailable. Version 0.6.0 was published from its tagged merge.
+
+## OpenCode reads in 0.41.0
+
+Consumer: rickylabs/atelier-cockpit#540. Schema and protocol remain 1, and every earlier frame decodes
+unchanged.
+
+**Token usage.** `AgentTokenUsage.source` and the resource-history `tokens.source` accept
+`opencode-usage` beside `codex-token-count` and `claude-usage`. `AGENT_TOKEN_SOURCES` exports the
+frozen vocabulary and `AgentTokenSource` its union. Each label names the vendor's own counter. An
+OpenCode figure is the session's native `tokens` aggregate (the sum of its assistant messages'
+`tokens`), counted as input + cache read + cache write + output + reasoning, because OpenCode's
+input excludes both cache kinds and its output excludes reasoning. A vendor with no token reading
+(AGY) stays `unavailable`; telemetry never borrows another vendor's label.
+
+**Tool lifecycle.** An activity step may carry `lifecycle` (`AgentToolLifecycle`): the native state
+of the tool call it describes and the clocks the vendor reports for that state. `pending` is a
+requested call that has not run, so both clocks are `null`; `running` has `startedAt` only;
+`completed` and `error` have both, with `startedAt <= endedAt`. No clock may be later than the
+activity's `observedAt`. A step without the field is a vendor that reports no lifecycle. The same
+call keeps its step `id` as its state moves, so a consumer replaces the step rather than adding one.
+
+**Bounded native reads.** `NativeReadBounds`, `NativeReadOutcome` and `NativeSessionEvents` are
+type-only exports: the one definition of a bounded session-server read that the OpenCode provider
+port answers with and the telemetry port consumes.
+
+A 0.40 or older reader rejects a whole snapshot that holds an `opencode-usage` row or a step with
+`lifecycle`, so a consumer upgrades this package before it reads a telemetry build that emits one.
 
 ## Bounded issue trees in 0.37.0
 
