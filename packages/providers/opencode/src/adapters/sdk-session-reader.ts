@@ -47,8 +47,8 @@ export interface SdkSessionReaderOptions extends SdkServerOptions {
  */
 function guarded(response: Response, admit: (chunk: Uint8Array) => boolean): Response {
   const source = response.body;
-  // A body-less status cannot be rebuilt with a stream; there is nothing to count anyway.
-  if (source === null || [101, 204, 205, 304].includes(response.status)) return response;
+  // A body-less reply (every 101, 204, 205 and 304 is one) has nothing to count and no stream to rebuild.
+  if (source === null) return response;
   const reader = source.getReader();
   const body = new ReadableStream<Uint8Array>({
     async pull(controller): Promise<void> {
@@ -86,20 +86,23 @@ function metered(inner: typeof fetch, maxBytes: number, meter: Meter): typeof fe
 }
 
 /**
- * A `fetch` whose event stream errors once one frame passes `maxFrameBytes`. Lines end at LF, CR or
- * CRLF and an empty line ends the frame, as the SSE grammar (and the SDK's own split) has it; each
- * connection counts from zero.
+ * A `fetch` whose event stream errors once one frame passes `maxFrameBytes`. A frame is its lines with
+ * their line endings, every byte counted once; the empty line that ends it belongs to no frame. Lines
+ * end at LF, CR or CRLF, as the SSE grammar (and the SDK's own split) has it. Each connection counts
+ * from zero.
  */
 function framed(inner: typeof fetch, maxFrameBytes: number): typeof fetch {
   return (async (input: Parameters<typeof fetch>[0], init?: RequestInit): Promise<Response> => {
-    let frame = 0, line = 0, carriage = false;
+    // `closing`: the last byte was a CR that ended the frame, so an LF after it is that same empty line.
+    let frame = 0, line = 0, carriage = false, closing = false;
     return guarded(await inner(input, init), (chunk) => {
       for (const byte of chunk) {
-        // The LF of a CRLF ends the line the CR already ended.
-        if (byte === 0x0a && carriage) { carriage = false; continue; }
-        carriage = byte === 0x0d;
-        if (byte === 0x0a || byte === 0x0d) {
-          if (line === 0) { frame = 0; continue; }
+        const crlf = byte === 0x0a && carriage, ended = closing;
+        carriage = byte === 0x0d; closing = false;
+        if (crlf) {
+          if (ended) continue;
+        } else if (byte === 0x0a || byte === 0x0d) {
+          if (line === 0) { frame = 0; closing = carriage; continue; }
           line = 0;
         } else line += 1;
         frame += 1;

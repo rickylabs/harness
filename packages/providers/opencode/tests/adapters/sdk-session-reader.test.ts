@@ -63,6 +63,11 @@ describe("createSdkSessionReader", () => {
     assert.equal(exact.kind, "ok"); assert.equal(exact.bytes, size);
   });
 
+  it("reads a body-less reply as the SDK hands it back, not as a failed read", async () => {
+    const { reader: r } = reader(() => ({ status: 204 }));
+    assert.equal((await r.session(recording.rootID, bounds())).kind, "ok");
+  });
+
   it("abandons a read when its signal aborts", async () => {
     const { reader: r } = reader();
     const abort = new AbortController(); abort.abort();
@@ -143,10 +148,36 @@ describe("the event frame cap", () => {
     assert.deepEqual(result, { seen: [], failed: true, cancelled: true });
   });
 
-  it("counts a frame's CRLF-ended lines into one frame: a line end is not a blank line", { timeout: 10_000 }, async () => {
+  it("counts unterminated CRLF-ended lines into one frame: a line end is not a blank line", { timeout: 10_000 }, async () => {
     const result = await capped(256, channel => channel.raw(`data: ${"a".repeat(40)}\r\n`.repeat(10)));
     assert.deepEqual(result, { seen: [], failed: true, cancelled: true });
   });
+
+  it("counts every byte of unterminated CRLF input, line endings included: one byte over is refused", { timeout: 10_000 }, async () => {
+    // 21 lines of 12 bytes and one of 5: 257 bytes, 22 of them line endings, and never an empty line.
+    const result = await capped(256, channel => channel.raw(`data: aaaa\r\n`.repeat(21) + "dat\r\n"));
+    assert.deepEqual(result, { seen: [], failed: true, cancelled: true });
+  });
+
+  /** One event split over two data lines, exactly `bytes` long with its line endings; the empty line is extra. */
+  const sized = (sessionID: string, bytes: number, eol: string) => {
+    const head = `data: {"type":"session.idle",${eol}data: "properties":{"sessionID":"${sessionID}","pad":"`, tail = `"}}${eol}`;
+    return `${head}${"a".repeat(bytes - Buffer.byteLength(head + tail))}${tail}${eol}`;
+  };
+  for (const [name, eol] of [["LF", "\n"], ["CRLF", "\r\n"], ["CR", "\r"]] as const) {
+    it(`admits ${name} frames of exactly the cap, back to back`, async () => {
+      const result = await capped(256, channel => {
+        channel.raw(sized("ses_first", 256, eol)); channel.raw(sized("ses_second", 256, eol));
+        channel.close();
+      });
+      assert.deepEqual(result, { seen: ["ses_first", "ses_second"], failed: false, cancelled: false });
+    });
+
+    it(`refuses a ${name} frame one byte over the cap before delivery, and cancels the connection`, { timeout: 10_000 }, async () => {
+      const result = await capped(256, channel => channel.raw(sized("ses_over", 257, eol)));
+      assert.deepEqual(result, { seen: [], failed: true, cancelled: true });
+    });
+  }
 
   it("aborting the signal ends the stream quietly and releases the connection", async () => {
     const channel = eventChannel(), abort = new AbortController();
