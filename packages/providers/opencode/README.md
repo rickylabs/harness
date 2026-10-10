@@ -224,11 +224,21 @@ included, so a reply's size is the agent's business; each call gets its own mete
 reads the body through it, and past the cap the stream errors before the rest is buffered. That reply
 is `oversized`, never a prefix parsed as if it were the whole. The server's own `404` is `missing`,
 the one reply that says the session is not there; everything else that is not `ok` is `unavailable`.
-Shapes are not read here: the caller's checked readers decide whether a body is a session.
+Shapes are not read here: the caller's checked readers decide whether a body is a session. The bound,
+outcome and event shapes (`NativeReadBounds`, `NativeReadOutcome`, `NativeSessionEvents`) are
+`@rickylabs/harness-contracts`', because telemetry's port shares them.
+
+The event stream is bounded per frame. The SDK buffers `GET /event` text until a blank line ends a
+frame, so the stream is read through a `fetch` that counts each frame's bytes as they arrive (lines
+end at LF, CR or CRLF; an empty line ends the frame) and, past `MAX_EVENT_FRAME_BYTES` (1 MiB),
+cancels the connection and errors the body before the SDK holds the excess. The caller sees a stream
+that failed, never a truncated event.
 
 `tests/fixtures/recorded-session.json` is a real 1.18.35 recording (its `provenance` field says how
-it was taken and what was scrubbed), so the read side is checked against replies the server actually
-sent rather than against the SDK's types alone.
+it was taken and what was scrubbed; its token counters and costs are synthetic), so the read side is
+checked against replies the server actually sent rather than against the SDK's types alone. It is
+exported as `@rickylabs/provider-opencode/test-fixtures` (`recording`, `recordedFetch`), the one owner
+of that recording for telemetry's tests and the cross-package parity test.
 
 ## Still open
 

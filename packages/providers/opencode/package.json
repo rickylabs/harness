@@ -11,6 +11,10 @@
     ".": {
       "types": "./dist/mod.d.ts",
       "default": "./dist/mod.js"
+    },
+    "./test-fixtures": {
+      "types": "./dist/tests/fixtures/recorded-server.d.ts",
+      "default": "./dist/tests/fixtures/recorded-server.js"
     }
   },
   "files": [
@@ -24,6 +28,7 @@
   },
   "dependencies": {
     "@opencode-ai/sdk": "1.18.35",
+    "@rickylabs/harness-contracts": "workspace:*",
     "@rickylabs/subagents": "workspace:*"
   }
 }

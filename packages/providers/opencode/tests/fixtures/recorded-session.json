@@ -1,734 +1,85 @@
 {
- "provenance": "opencode 1.18.35 `serve --pure` in an isolated temporary home, driven by `opencode run --attach` on the free model opencode/big-pickle (no owner account, host or data). Replies captured through the server HTTP API; then scrubbed: the workspace path, both session ids and the project id are re-keyed. Message ids, part ids, clocks, tokens and tool states are as recorded.",
+ "provenance": "opencode 1.18.35 `serve --pure` in an isolated temporary home, driven by `opencode run --attach` on the free model opencode/big-pickle (no owner account, host or data). Replies captured through the server HTTP API; then scrubbed: the workspace path, both session ids and the project id are re-keyed. Message ids, part ids, clocks and tool states are as recorded. SYNTHETIC, not recorded: every token counter and cost. The n-th assistant message of a session (and its step-finish part) carries input 100n, output 10n, reasoning n, cache read 1000n, cache write n and their sum as total; each session's tokens are the sum over its assistant messages, the relationship the recording showed; every cost is 0; the in-progress message in the event slice keeps all-zero counters.",
  "rootID": "ses_0recordedRootSession01",
  "childID": "ses_0recordedChildSession1",
  "unknownID": "ses_0recordedUnknownSession",
  "replies": {
   "/session/ses_0recordedRootSession01": {
    "status": 200,
-   "body": {
-    "id": "ses_0recordedRootSession01",
-    "slug": "playful-meadow",
-    "projectID": "prj_recorded",
-    "directory": "/workspace/project",
-    "path": "",
-    "summary": {
-     "additions": 0,
-     "deletions": 0,
-     "files": 0
-    },
-    "cost": 0,
-    "tokens": {
-     "input": 6800,
-     "output": 133,
-     "reasoning": 572,
-     "cache": {
-      "read": 34064,
-      "write": 0
-     }
-    },
-    "title": "New session - 2026-10-09T20:59:48.289Z",
-    "agent": "build",
-    "model": {
-     "id": "big-pickle",
-     "providerID": "opencode",
-     "variant": "default"
-    },
-    "version": "1.18.35",
-    "time": {
-     "created": 1791579588289,
-     "updated": 1791579700797
-    },
-    "permission": [
-     {
-      "permission": "question",
-      "pattern": "*",
-      "action": "deny"
-     },
-     {
-      "permission": "plan_enter",
-      "pattern": "*",
-      "action": "deny"
-     },
-     {
-      "permission": "plan_exit",
-      "pattern": "*",
-      "action": "deny"
-     }
-    ]
-   }
+   "body": {"id": "ses_0recordedRootSession01", "slug": "playful-meadow", "projectID": "prj_recorded", "directory": "/workspace/project", "path": "", "summary": {"additions": 0, "deletions": 0, "files": 0}, "cost": 0, "tokens": {"input": 2100, "output": 210, "reasoning": 21, "cache": {"read": 21000, "write": 21}}, "title": "New session - 2026-10-09T20:59:48.289Z", "agent": "build", "model": {"id": "big-pickle", "providerID": "opencode", "variant": "default"}, "version": "1.18.35", "time": {"created": 1791579588289, "updated": 1791579700797}, "permission": [{"permission": "question", "pattern": "*", "action": "deny"}, {"permission": "plan_enter", "pattern": "*", "action": "deny"}, {"permission": "plan_exit", "pattern": "*", "action": "deny"}]}
   },
   "/session/ses_0recordedRootSession01/children": {
    "status": 200,
-   "body": [
-    {
-     "id": "ses_0recordedChildSession1",
-     "slug": "happy-knight",
-     "projectID": "prj_recorded",
-     "directory": "/workspace/project",
-     "path": "",
-     "parentID": "ses_0recordedRootSession01",
-     "summary": {
-      "additions": 0,
-      "deletions": 0,
-      "files": 0
-     },
-     "cost": 0,
-     "tokens": {
-      "input": 4610,
-      "output": 40,
-      "reasoning": 14,
-      "cache": {
-       "read": 8064,
-       "write": 0
-      }
-     },
-     "title": "run ls\n (@general subagent)",
-     "agent": "general",
-     "model": {
-      "id": "big-pickle",
-      "providerID": "opencode",
-      "variant": "default"
-     },
-     "version": "1.18.35",
-     "time": {
-      "created": 1791579687152,
-      "updated": 1791579692783
-     },
-     "permission": [
-      {
-       "permission": "question",
-       "pattern": "*",
-       "action": "deny"
-      },
-      {
-       "permission": "plan_enter",
-       "pattern": "*",
-       "action": "deny"
-      },
-      {
-       "permission": "plan_exit",
-       "pattern": "*",
-       "action": "deny"
-      },
-      {
-       "permission": "task",
-       "pattern": "*",
-       "action": "deny"
-      }
-     ]
-    }
-   ]
+   "body": [{"id": "ses_0recordedChildSession1", "slug": "happy-knight", "projectID": "prj_recorded", "directory": "/workspace/project", "path": "", "parentID": "ses_0recordedRootSession01", "summary": {"additions": 0, "deletions": 0, "files": 0}, "cost": 0, "tokens": {"input": 300, "output": 30, "reasoning": 3, "cache": {"read": 3000, "write": 3}}, "title": "run ls\n (@general subagent)", "agent": "general", "model": {"id": "big-pickle", "providerID": "opencode", "variant": "default"}, "version": "1.18.35", "time": {"created": 1791579687152, "updated": 1791579692783}, "permission": [{"permission": "question", "pattern": "*", "action": "deny"}, {"permission": "plan_enter", "pattern": "*", "action": "deny"}, {"permission": "plan_exit", "pattern": "*", "action": "deny"}, {"permission": "task", "pattern": "*", "action": "deny"}]}]
   },
   "/session/ses_0recordedRootSession01/message": {
    "status": 200,
    "body": [
     {
-     "info": {
-      "id": "msg_122770817001bF4MJT6j0q8Gbp",
-      "sessionID": "ses_0recordedRootSession01",
-      "role": "user",
-      "time": {
-       "created": 1791579588631
-      },
-      "summary": {
-       "diffs": []
-      },
-      "agent": "build",
-      "model": {
-       "providerID": "opencode",
-       "modelID": "big-pickle"
-      }
-     },
+     "info": {"id": "msg_122770817001bF4MJT6j0q8Gbp", "sessionID": "ses_0recordedRootSession01", "role": "user", "time": {"created": 1791579588631}, "summary": {"diffs": []}, "agent": "build", "model": {"providerID": "opencode", "modelID": "big-pickle"}},
      "parts": [
-      {
-       "id": "prt_122770827001H2iFT8uS1mvbFU",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122770817001bF4MJT6j0q8Gbp",
-       "type": "text",
-       "text": "\"Use the bash tool to run: git status. Then read README.md with the read tool. Then reply with one short sentence saying what the repository contains.\""
-      }
+      {"id": "prt_122770827001H2iFT8uS1mvbFU", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122770817001bF4MJT6j0q8Gbp", "type": "text", "text": "\"Use the bash tool to run: git status. Then read README.md with the read tool. Then reply with one short sentence saying what the repository contains.\""}
      ]
     },
     {
-     "info": {
-      "id": "msg_122770f77001hU7rTfBtD3QdmQ",
-      "sessionID": "ses_0recordedRootSession01",
-      "role": "assistant",
-      "time": {
-       "created": 1791579590519,
-       "completed": 1791579604132
-      },
-      "parentID": "msg_122770817001bF4MJT6j0q8Gbp",
-      "modelID": "big-pickle",
-      "providerID": "opencode",
-      "mode": "build",
-      "agent": "build",
-      "path": {
-       "cwd": "/workspace/project",
-       "root": "/workspace/project"
-      },
-      "cost": 0,
-      "tokens": {
-       "total": 6830,
-       "input": 6531,
-       "output": 22,
-       "reasoning": 179,
-       "cache": {
-        "read": 98,
-        "write": 0
-       }
-      },
-      "finish": "tool-calls"
-     },
+     "info": {"id": "msg_122770f77001hU7rTfBtD3QdmQ", "sessionID": "ses_0recordedRootSession01", "role": "assistant", "time": {"created": 1791579590519, "completed": 1791579604132}, "parentID": "msg_122770817001bF4MJT6j0q8Gbp", "modelID": "big-pickle", "providerID": "opencode", "mode": "build", "agent": "build", "path": {"cwd": "/workspace/project", "root": "/workspace/project"}, "cost": 0, "tokens": {"total": 1112, "input": 100, "output": 10, "reasoning": 1, "cache": {"read": 1000, "write": 1}}, "finish": "tool-calls"},
      "parts": [
-      {
-       "id": "prt_12277406a001Pt2XCRdT5ppn54",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122770f77001hU7rTfBtD3QdmQ",
-       "type": "step-start",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"
-      },
-      {
-       "id": "prt_122774074001qoy80md7LTEqqc",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122770f77001hU7rTfBtD3QdmQ",
-       "type": "tool",
-       "callID": "1113339e-e650-4ee9-8d1a-0547a41f4fc4",
-       "tool": "bash",
-       "state": {
-        "status": "completed",
-        "input": {
-         "command": "git status"
-        },
-        "output": "On branch master\n\nNo commits yet\n\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\tREADME.md\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n",
-        "title": "git status",
-        "metadata": {
-         "output": "On branch master\n\nNo commits yet\n\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\tREADME.md\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n",
-         "exit": 0,
-         "truncated": false
-        },
-        "time": {
-         "start": 1791579603078,
-         "end": 1791579603867
-        }
-       }
-      },
-      {
-       "id": "prt_1227744370015wxCdZLamGLdAw",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122770f77001hU7rTfBtD3QdmQ",
-       "type": "step-finish",
-       "reason": "tool-calls",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee",
-       "cost": 0,
-       "tokens": {
-        "total": 6830,
-        "input": 6531,
-        "output": 22,
-        "reasoning": 179,
-        "cache": {
-         "read": 98,
-         "write": 0
-        }
-       }
-      }
+      {"id": "prt_12277406a001Pt2XCRdT5ppn54", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122770f77001hU7rTfBtD3QdmQ", "type": "step-start", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"},
+      {"id": "prt_122774074001qoy80md7LTEqqc", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122770f77001hU7rTfBtD3QdmQ", "type": "tool", "callID": "1113339e-e650-4ee9-8d1a-0547a41f4fc4", "tool": "bash", "state": {"status": "completed", "input": {"command": "git status"}, "output": "On branch master\n\nNo commits yet\n\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\tREADME.md\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n", "title": "git status", "metadata": {"output": "On branch master\n\nNo commits yet\n\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\tREADME.md\n\nnothing added to commit but untracked files present (use \"git add\" to track)\n", "exit": 0, "truncated": false}, "time": {"start": 1791579603078, "end": 1791579603867}}},
+      {"id": "prt_1227744370015wxCdZLamGLdAw", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122770f77001hU7rTfBtD3QdmQ", "type": "step-finish", "reason": "tool-calls", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee", "cost": 0, "tokens": {"total": 1112, "input": 100, "output": 10, "reasoning": 1, "cache": {"read": 1000, "write": 1}}}
      ]
     },
     {
-     "info": {
-      "id": "msg_1227744af001TIK02junlzeijR",
-      "sessionID": "ses_0recordedRootSession01",
-      "role": "assistant",
-      "time": {
-       "created": 1791579604143,
-       "completed": 1791579609622
-      },
-      "parentID": "msg_122770817001bF4MJT6j0q8Gbp",
-      "modelID": "big-pickle",
-      "providerID": "opencode",
-      "mode": "build",
-      "agent": "build",
-      "path": {
-       "cwd": "/workspace/project",
-       "root": "/workspace/project"
-      },
-      "cost": 0,
-      "tokens": {
-       "total": 6740,
-       "input": 75,
-       "output": 34,
-       "reasoning": 0,
-       "cache": {
-        "read": 6631,
-        "write": 0
-       }
-      },
-      "finish": "tool-calls"
-     },
+     "info": {"id": "msg_1227744af001TIK02junlzeijR", "sessionID": "ses_0recordedRootSession01", "role": "assistant", "time": {"created": 1791579604143, "completed": 1791579609622}, "parentID": "msg_122770817001bF4MJT6j0q8Gbp", "modelID": "big-pickle", "providerID": "opencode", "mode": "build", "agent": "build", "path": {"cwd": "/workspace/project", "root": "/workspace/project"}, "cost": 0, "tokens": {"total": 2224, "input": 200, "output": 20, "reasoning": 2, "cache": {"read": 2000, "write": 2}}, "finish": "tool-calls"},
      "parts": [
-      {
-       "id": "prt_12277576e001SuTuBZyT5fGBRD",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_1227744af001TIK02junlzeijR",
-       "type": "step-start",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"
-      },
-      {
-       "id": "prt_122775773001lOnLpFhtG0N6zn",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_1227744af001TIK02junlzeijR",
-       "type": "tool",
-       "callID": "155bfe53-32ec-4aec-98e5-c9bbaf76bec9",
-       "tool": "read",
-       "state": {
-        "status": "completed",
-        "input": {
-         "filePath": "/workspace/project/README.md"
-        },
-        "output": "<path>/workspace/project/README.md</path>\n<type>file</type>\n<content>\n1: # demo\n\n(End of file - total 1 lines)\n</content>",
-        "title": "README.md",
-        "metadata": {
-         "preview": "# demo",
-         "truncated": false,
-         "loaded": [],
-         "display": {
-          "type": "file",
-          "path": "/workspace/project/README.md",
-          "text": "# demo",
-          "lineStart": 1,
-          "lineEnd": 1,
-          "totalLines": 1,
-          "truncated": false
-         }
-        },
-        "time": {
-         "start": 1791579608964,
-         "end": 1791579609017
-        }
-       }
-      },
-      {
-       "id": "prt_1227758e7001k1xX3SQvGTD40N",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_1227744af001TIK02junlzeijR",
-       "type": "step-finish",
-       "reason": "tool-calls",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee",
-       "cost": 0,
-       "tokens": {
-        "total": 6740,
-        "input": 75,
-        "output": 34,
-        "reasoning": 0,
-        "cache": {
-         "read": 6631,
-         "write": 0
-        }
-       }
-      }
+      {"id": "prt_12277576e001SuTuBZyT5fGBRD", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_1227744af001TIK02junlzeijR", "type": "step-start", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"},
+      {"id": "prt_122775773001lOnLpFhtG0N6zn", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_1227744af001TIK02junlzeijR", "type": "tool", "callID": "155bfe53-32ec-4aec-98e5-c9bbaf76bec9", "tool": "read", "state": {"status": "completed", "input": {"filePath": "/workspace/project/README.md"}, "output": "<path>/workspace/project/README.md</path>\n<type>file</type>\n<content>\n1: # demo\n\n(End of file - total 1 lines)\n</content>", "title": "README.md", "metadata": {"preview": "# demo", "truncated": false, "loaded": [], "display": {"type": "file", "path": "/workspace/project/README.md", "text": "# demo", "lineStart": 1, "lineEnd": 1, "totalLines": 1, "truncated": false}}, "time": {"start": 1791579608964, "end": 1791579609017}}},
+      {"id": "prt_1227758e7001k1xX3SQvGTD40N", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_1227744af001TIK02junlzeijR", "type": "step-finish", "reason": "tool-calls", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee", "cost": 0, "tokens": {"total": 2224, "input": 200, "output": 20, "reasoning": 2, "cache": {"read": 2000, "write": 2}}}
      ]
     },
     {
-     "info": {
-      "id": "msg_122775a27001QAltf2c3mrREIW",
-      "sessionID": "ses_0recordedRootSession01",
-      "role": "assistant",
-      "time": {
-       "created": 1791579609639,
-       "completed": 1791579626036
-      },
-      "parentID": "msg_122770817001bF4MJT6j0q8Gbp",
-      "modelID": "big-pickle",
-      "providerID": "opencode",
-      "mode": "build",
-      "agent": "build",
-      "path": {
-       "cwd": "/workspace/project",
-       "root": "/workspace/project"
-      },
-      "cost": 0,
-      "tokens": {
-       "total": 6988,
-       "input": 60,
-       "output": 14,
-       "reasoning": 175,
-       "cache": {
-        "read": 6739,
-        "write": 0
-       }
-      },
-      "finish": "stop"
-     },
+     "info": {"id": "msg_122775a27001QAltf2c3mrREIW", "sessionID": "ses_0recordedRootSession01", "role": "assistant", "time": {"created": 1791579609639, "completed": 1791579626036}, "parentID": "msg_122770817001bF4MJT6j0q8Gbp", "modelID": "big-pickle", "providerID": "opencode", "mode": "build", "agent": "build", "path": {"cwd": "/workspace/project", "root": "/workspace/project"}, "cost": 0, "tokens": {"total": 3336, "input": 300, "output": 30, "reasoning": 3, "cache": {"read": 3000, "write": 3}}, "finish": "stop"},
      "parts": [
-      {
-       "id": "prt_1227798f40012oM2l3tnfCgnyy",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122775a27001QAltf2c3mrREIW",
-       "type": "step-start",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"
-      },
-      {
-       "id": "prt_122779914001xgamVhU3zOkPsJ",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122775a27001QAltf2c3mrREIW",
-       "type": "text",
-       "text": "The repository contains a demo project.",
-       "time": {
-        "start": 1791579625748,
-        "end": 1791579625758
-       }
-      },
-      {
-       "id": "prt_12277999a001uhUOJwN5ZNio8I",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122775a27001QAltf2c3mrREIW",
-       "type": "step-finish",
-       "reason": "stop",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee",
-       "cost": 0,
-       "tokens": {
-        "total": 6988,
-        "input": 60,
-        "output": 14,
-        "reasoning": 175,
-        "cache": {
-         "read": 6739,
-         "write": 0
-        }
-       }
-      }
+      {"id": "prt_1227798f40012oM2l3tnfCgnyy", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122775a27001QAltf2c3mrREIW", "type": "step-start", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"},
+      {"id": "prt_122779914001xgamVhU3zOkPsJ", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122775a27001QAltf2c3mrREIW", "type": "text", "text": "The repository contains a demo project.", "time": {"start": 1791579625748, "end": 1791579625758}},
+      {"id": "prt_12277999a001uhUOJwN5ZNio8I", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122775a27001QAltf2c3mrREIW", "type": "step-finish", "reason": "stop", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee", "cost": 0, "tokens": {"total": 3336, "input": 300, "output": 30, "reasoning": 3, "cache": {"read": 3000, "write": 3}}}
      ]
     },
     {
-     "info": {
-      "id": "msg_122783dfb001kBt2J6zdiOe2D4",
-      "sessionID": "ses_0recordedRootSession01",
-      "role": "user",
-      "time": {
-       "created": 1791579667964
-      },
-      "summary": {
-       "diffs": []
-      },
-      "agent": "build",
-      "model": {
-       "providerID": "opencode",
-       "modelID": "big-pickle"
-      }
-     },
+     "info": {"id": "msg_122783dfb001kBt2J6zdiOe2D4", "sessionID": "ses_0recordedRootSession01", "role": "user", "time": {"created": 1791579667964}, "summary": {"diffs": []}, "agent": "build", "model": {"providerID": "opencode", "modelID": "big-pickle"}},
      "parts": [
-      {
-       "id": "prt_122783dfd001NKA743CO5waJAp",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122783dfb001kBt2J6zdiOe2D4",
-       "type": "text",
-       "text": "\"Use the task tool to launch one general subagent whose only job is to run the bash command: ls. When it returns, reply with one short sentence.\""
-      }
+      {"id": "prt_122783dfd001NKA743CO5waJAp", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122783dfb001kBt2J6zdiOe2D4", "type": "text", "text": "\"Use the task tool to launch one general subagent whose only job is to run the bash command: ls. When it returns, reply with one short sentence.\""}
      ]
     },
     {
-     "info": {
-      "id": "msg_122783e3e001lvDjejmtcUg1wW",
-      "sessionID": "ses_0recordedRootSession01",
-      "role": "assistant",
-      "time": {
-       "created": 1791579668030,
-       "completed": 1791579684983
-      },
-      "parentID": "msg_122783dfb001kBt2J6zdiOe2D4",
-      "modelID": "big-pickle",
-      "providerID": "opencode",
-      "mode": "build",
-      "agent": "build",
-      "path": {
-       "cwd": "/workspace/project",
-       "root": "/workspace/project"
-      },
-      "cost": 0,
-      "tokens": {
-       "total": 6863,
-       "input": 49,
-       "output": 16,
-       "reasoning": 0,
-       "cache": {
-        "read": 6798,
-        "write": 0
-       }
-      },
-      "finish": "tool-calls"
-     },
+     "info": {"id": "msg_122783e3e001lvDjejmtcUg1wW", "sessionID": "ses_0recordedRootSession01", "role": "assistant", "time": {"created": 1791579668030, "completed": 1791579684983}, "parentID": "msg_122783dfb001kBt2J6zdiOe2D4", "modelID": "big-pickle", "providerID": "opencode", "mode": "build", "agent": "build", "path": {"cwd": "/workspace/project", "root": "/workspace/project"}, "cost": 0, "tokens": {"total": 4448, "input": 400, "output": 40, "reasoning": 4, "cache": {"read": 4000, "write": 4}}, "finish": "tool-calls"},
      "parts": [
-      {
-       "id": "prt_122787ec9001LpZrm7t4mXWOJy",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122783e3e001lvDjejmtcUg1wW",
-       "type": "step-start",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"
-      },
-      {
-       "id": "prt_122787ed8001L7fc5GQHTDxUM6",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122783e3e001lvDjejmtcUg1wW",
-       "type": "tool",
-       "callID": "aeeb6c30-12cd-4753-865f-2e8701801fb3",
-       "tool": "task",
-       "state": {
-        "status": "error",
-        "input": {
-         "description": "run ls"
-        },
-        "error": "The task tool was called with invalid arguments: SchemaError(Missing key\n  at [\"prompt\"]).\nPlease rewrite the input so it satisfies the expected schema.",
-        "time": {
-         "start": 1791579684589,
-         "end": 1791579684600
-        }
-       }
-      },
-      {
-       "id": "prt_122787ffd001gt8CXRU6ATnZLl",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122783e3e001lvDjejmtcUg1wW",
-       "type": "step-finish",
-       "reason": "tool-calls",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee",
-       "cost": 0,
-       "tokens": {
-        "total": 6863,
-        "input": 49,
-        "output": 16,
-        "reasoning": 0,
-        "cache": {
-         "read": 6798,
-         "write": 0
-        }
-       }
-      }
+      {"id": "prt_122787ec9001LpZrm7t4mXWOJy", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122783e3e001lvDjejmtcUg1wW", "type": "step-start", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"},
+      {"id": "prt_122787ed8001L7fc5GQHTDxUM6", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122783e3e001lvDjejmtcUg1wW", "type": "tool", "callID": "aeeb6c30-12cd-4753-865f-2e8701801fb3", "tool": "task", "state": {"status": "error", "input": {"description": "run ls"}, "error": "The task tool was called with invalid arguments: SchemaError(Missing key\n  at [\"prompt\"]).\nPlease rewrite the input so it satisfies the expected schema.", "time": {"start": 1791579684589, "end": 1791579684600}}},
+      {"id": "prt_122787ffd001gt8CXRU6ATnZLl", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122783e3e001lvDjejmtcUg1wW", "type": "step-finish", "reason": "tool-calls", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee", "cost": 0, "tokens": {"total": 4448, "input": 400, "output": 40, "reasoning": 4, "cache": {"read": 4000, "write": 4}}}
      ]
     },
     {
-     "info": {
-      "id": "msg_122788083001p0Qd7Vq18WfNc6",
-      "sessionID": "ses_0recordedRootSession01",
-      "role": "assistant",
-      "time": {
-       "created": 1791579684995,
-       "completed": 1791579693029
-      },
-      "parentID": "msg_122783dfb001kBt2J6zdiOe2D4",
-      "modelID": "big-pickle",
-      "providerID": "opencode",
-      "mode": "build",
-      "agent": "build",
-      "path": {
-       "cwd": "/workspace/project",
-       "root": "/workspace/project"
-      },
-      "cost": 0,
-      "tokens": {
-       "total": 6935,
-       "input": 39,
-       "output": 33,
-       "reasoning": 0,
-       "cache": {
-        "read": 6863,
-        "write": 0
-       }
-      },
-      "finish": "tool-calls"
-     },
+     "info": {"id": "msg_122788083001p0Qd7Vq18WfNc6", "sessionID": "ses_0recordedRootSession01", "role": "assistant", "time": {"created": 1791579684995, "completed": 1791579693029}, "parentID": "msg_122783dfb001kBt2J6zdiOe2D4", "modelID": "big-pickle", "providerID": "opencode", "mode": "build", "agent": "build", "path": {"cwd": "/workspace/project", "root": "/workspace/project"}, "cost": 0, "tokens": {"total": 5560, "input": 500, "output": 50, "reasoning": 5, "cache": {"read": 5000, "write": 5}}, "finish": "tool-calls"},
      "parts": [
-      {
-       "id": "prt_1227888b2001RBzl2wUyRI5Ffc",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122788083001p0Qd7Vq18WfNc6",
-       "type": "step-start",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"
-      },
-      {
-       "id": "prt_1227888e5001YRaAz8lwUNV5Wv",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122788083001p0Qd7Vq18WfNc6",
-       "type": "tool",
-       "callID": "82fd726e-6704-4d55-828d-b175bb9b823a",
-       "tool": "task",
-       "state": {
-        "status": "completed",
-        "input": {
-         "description": "run ls\n",
-         "prompt": "Run the bash command: ls.\n",
-         "subagent_type": "general"
-        },
-        "output": "<task id=\"ses_0recordedChildSession1\" state=\"completed\">\n<task_result>\nREADME.md\n</task_result>\n</task>",
-        "title": "run ls\n",
-        "metadata": {
-         "parentSessionId": "ses_0recordedRootSession01",
-         "sessionId": "ses_0recordedChildSession1",
-         "model": {
-          "modelID": "big-pickle",
-          "providerID": "opencode"
-         },
-         "truncated": false
-        },
-        "time": {
-         "start": 1791579687158,
-         "end": 1791579692775
-        }
-       }
-      },
-      {
-       "id": "prt_122789f79001vneKPgH1l2WofE",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122788083001p0Qd7Vq18WfNc6",
-       "type": "step-finish",
-       "reason": "tool-calls",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee",
-       "cost": 0,
-       "tokens": {
-        "total": 6935,
-        "input": 39,
-        "output": 33,
-        "reasoning": 0,
-        "cache": {
-         "read": 6863,
-         "write": 0
-        }
-       }
-      }
+      {"id": "prt_1227888b2001RBzl2wUyRI5Ffc", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122788083001p0Qd7Vq18WfNc6", "type": "step-start", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"},
+      {"id": "prt_1227888e5001YRaAz8lwUNV5Wv", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122788083001p0Qd7Vq18WfNc6", "type": "tool", "callID": "82fd726e-6704-4d55-828d-b175bb9b823a", "tool": "task", "state": {"status": "completed", "input": {"description": "run ls\n", "prompt": "Run the bash command: ls.\n", "subagent_type": "general"}, "output": "<task id=\"ses_0recordedChildSession1\" state=\"completed\">\n<task_result>\nREADME.md\n</task_result>\n</task>", "title": "run ls\n", "metadata": {"parentSessionId": "ses_0recordedRootSession01", "sessionId": "ses_0recordedChildSession1", "model": {"modelID": "big-pickle", "providerID": "opencode"}, "truncated": false}, "time": {"start": 1791579687158, "end": 1791579692775}}},
+      {"id": "prt_122789f79001vneKPgH1l2WofE", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122788083001p0Qd7Vq18WfNc6", "type": "step-finish", "reason": "tool-calls", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee", "cost": 0, "tokens": {"total": 5560, "input": 500, "output": 50, "reasoning": 5, "cache": {"read": 5000, "write": 5}}}
      ]
     },
     {
-     "info": {
-      "id": "msg_122789ffa001ks2YC3CmYUI4IA",
-      "sessionID": "ses_0recordedRootSession01",
-      "role": "assistant",
-      "time": {
-       "created": 1791579693050,
-       "completed": 1791579700727
-      },
-      "parentID": "msg_122783dfb001kBt2J6zdiOe2D4",
-      "modelID": "big-pickle",
-      "providerID": "opencode",
-      "mode": "build",
-      "agent": "build",
-      "path": {
-       "cwd": "/workspace/project",
-       "root": "/workspace/project"
-      },
-      "cost": 0,
-      "tokens": {
-       "total": 7213,
-       "input": 46,
-       "output": 14,
-       "reasoning": 218,
-       "cache": {
-        "read": 6935,
-        "write": 0
-       }
-      },
-      "finish": "stop"
-     },
+     "info": {"id": "msg_122789ffa001ks2YC3CmYUI4IA", "sessionID": "ses_0recordedRootSession01", "role": "assistant", "time": {"created": 1791579693050, "completed": 1791579700727}, "parentID": "msg_122783dfb001kBt2J6zdiOe2D4", "modelID": "big-pickle", "providerID": "opencode", "mode": "build", "agent": "build", "path": {"cwd": "/workspace/project", "root": "/workspace/project"}, "cost": 0, "tokens": {"total": 6672, "input": 600, "output": 60, "reasoning": 6, "cache": {"read": 6000, "write": 6}}, "finish": "stop"},
      "parts": [
-      {
-       "id": "prt_12278bb550018qbhwPj84GCjNb",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122789ffa001ks2YC3CmYUI4IA",
-       "type": "step-start",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"
-      },
-      {
-       "id": "prt_12278bb5f001nbxSPP3kRIii27",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122789ffa001ks2YC3CmYUI4IA",
-       "type": "text",
-       "text": "The subagent found README.md.",
-       "time": {
-        "start": 1791579700063,
-        "end": 1791579700219
-       }
-      },
-      {
-       "id": "prt_12278bd41001KSqf3x3NePKQrD",
-       "sessionID": "ses_0recordedRootSession01",
-       "messageID": "msg_122789ffa001ks2YC3CmYUI4IA",
-       "type": "step-finish",
-       "reason": "stop",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee",
-       "cost": 0,
-       "tokens": {
-        "total": 7213,
-        "input": 46,
-        "output": 14,
-        "reasoning": 218,
-        "cache": {
-         "read": 6935,
-         "write": 0
-        }
-       }
-      }
+      {"id": "prt_12278bb550018qbhwPj84GCjNb", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122789ffa001ks2YC3CmYUI4IA", "type": "step-start", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"},
+      {"id": "prt_12278bb5f001nbxSPP3kRIii27", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122789ffa001ks2YC3CmYUI4IA", "type": "text", "text": "The subagent found README.md.", "time": {"start": 1791579700063, "end": 1791579700219}},
+      {"id": "prt_12278bd41001KSqf3x3NePKQrD", "sessionID": "ses_0recordedRootSession01", "messageID": "msg_122789ffa001ks2YC3CmYUI4IA", "type": "step-finish", "reason": "stop", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee", "cost": 0, "tokens": {"total": 6672, "input": 600, "output": 60, "reasoning": 6, "cache": {"read": 6000, "write": 6}}}
      ]
     }
    ]
   },
   "/session/ses_0recordedChildSession1": {
    "status": 200,
-   "body": {
-    "id": "ses_0recordedChildSession1",
-    "slug": "happy-knight",
-    "projectID": "prj_recorded",
-    "directory": "/workspace/project",
-    "path": "",
-    "parentID": "ses_0recordedRootSession01",
-    "summary": {
-     "additions": 0,
-     "deletions": 0,
-     "files": 0
-    },
-    "cost": 0,
-    "tokens": {
-     "input": 4610,
-     "output": 40,
-     "reasoning": 14,
-     "cache": {
-      "read": 8064,
-      "write": 0
-     }
-    },
-    "title": "run ls\n (@general subagent)",
-    "agent": "general",
-    "model": {
-     "id": "big-pickle",
-     "providerID": "opencode",
-     "variant": "default"
-    },
-    "version": "1.18.35",
-    "time": {
-     "created": 1791579687152,
-     "updated": 1791579692783
-    },
-    "permission": [
-     {
-      "permission": "question",
-      "pattern": "*",
-      "action": "deny"
-     },
-     {
-      "permission": "plan_enter",
-      "pattern": "*",
-      "action": "deny"
-     },
-     {
-      "permission": "plan_exit",
-      "pattern": "*",
-      "action": "deny"
-     },
-     {
-      "permission": "task",
-      "pattern": "*",
-      "action": "deny"
-     }
-    ]
-   }
+   "body": {"id": "ses_0recordedChildSession1", "slug": "happy-knight", "projectID": "prj_recorded", "directory": "/workspace/project", "path": "", "parentID": "ses_0recordedRootSession01", "summary": {"additions": 0, "deletions": 0, "files": 0}, "cost": 0, "tokens": {"input": 300, "output": 30, "reasoning": 3, "cache": {"read": 3000, "write": 3}}, "title": "run ls\n (@general subagent)", "agent": "general", "model": {"id": "big-pickle", "providerID": "opencode", "variant": "default"}, "version": "1.18.35", "time": {"created": 1791579687152, "updated": 1791579692783}, "permission": [{"permission": "question", "pattern": "*", "action": "deny"}, {"permission": "plan_enter", "pattern": "*", "action": "deny"}, {"permission": "plan_exit", "pattern": "*", "action": "deny"}, {"permission": "task", "pattern": "*", "action": "deny"}]}
   },
   "/session/ses_0recordedChildSession1/children": {
    "status": 200,
@@ -738,328 +89,46 @@
    "status": 200,
    "body": [
     {
-     "info": {
-      "id": "msg_122788903001sSwhAq87Ks973K",
-      "sessionID": "ses_0recordedChildSession1",
-      "role": "user",
-      "time": {
-       "created": 1791579687173
-      },
-      "summary": {
-       "diffs": []
-      },
-      "agent": "general",
-      "model": {
-       "providerID": "opencode",
-       "modelID": "big-pickle"
-      }
-     },
+     "info": {"id": "msg_122788903001sSwhAq87Ks973K", "sessionID": "ses_0recordedChildSession1", "role": "user", "time": {"created": 1791579687173}, "summary": {"diffs": []}, "agent": "general", "model": {"providerID": "opencode", "modelID": "big-pickle"}},
      "parts": [
-      {
-       "id": "prt_122788912001MUt0dL7gFT2ZDa",
-       "sessionID": "ses_0recordedChildSession1",
-       "messageID": "msg_122788903001sSwhAq87Ks973K",
-       "type": "text",
-       "text": "Run the bash command: ls.\n"
-      }
+      {"id": "prt_122788912001MUt0dL7gFT2ZDa", "sessionID": "ses_0recordedChildSession1", "messageID": "msg_122788903001sSwhAq87Ks973K", "type": "text", "text": "Run the bash command: ls.\n"}
      ]
     },
     {
-     "info": {
-      "id": "msg_12278892e001sSXuDomBafDMqh",
-      "sessionID": "ses_0recordedChildSession1",
-      "role": "assistant",
-      "time": {
-       "created": 1791579687214,
-       "completed": 1791579690506
-      },
-      "parentID": "msg_122788903001sSwhAq87Ks973K",
-      "modelID": "big-pickle",
-      "providerID": "opencode",
-      "mode": "general",
-      "agent": "general",
-      "path": {
-       "cwd": "/workspace/project",
-       "root": "/workspace/project"
-      },
-      "cost": 0,
-      "tokens": {
-       "total": 6355,
-       "input": 4512,
-       "output": 37,
-       "reasoning": 14,
-       "cache": {
-        "read": 1792,
-        "write": 0
-       }
-      },
-      "finish": "tool-calls"
-     },
+     "info": {"id": "msg_12278892e001sSXuDomBafDMqh", "sessionID": "ses_0recordedChildSession1", "role": "assistant", "time": {"created": 1791579687214, "completed": 1791579690506}, "parentID": "msg_122788903001sSwhAq87Ks973K", "modelID": "big-pickle", "providerID": "opencode", "mode": "general", "agent": "general", "path": {"cwd": "/workspace/project", "root": "/workspace/project"}, "cost": 0, "tokens": {"total": 1112, "input": 100, "output": 10, "reasoning": 1, "cache": {"read": 1000, "write": 1}}, "finish": "tool-calls"},
      "parts": [
-      {
-       "id": "prt_1227893a70010FgF6f6Odq2hJH",
-       "sessionID": "ses_0recordedChildSession1",
-       "messageID": "msg_12278892e001sSXuDomBafDMqh",
-       "type": "step-start",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"
-      },
-      {
-       "id": "prt_1227893f9001ajhjackXEGyU5Z",
-       "sessionID": "ses_0recordedChildSession1",
-       "messageID": "msg_12278892e001sSXuDomBafDMqh",
-       "type": "reasoning",
-       "text": "The user wants me to run the bash command `ls`. Simple.",
-       "time": {
-        "start": 1791579689978,
-        "end": 1791579690056
-       }
-      },
-      {
-       "id": "prt_12278944d001dkbnIDbjACsVT1",
-       "sessionID": "ses_0recordedChildSession1",
-       "messageID": "msg_12278892e001sSXuDomBafDMqh",
-       "type": "tool",
-       "callID": "call_00_skk3fi2ol5juq7qchx7px361",
-       "tool": "bash",
-       "state": {
-        "status": "completed",
-        "input": {
-         "command": "ls"
-        },
-        "output": "README.md\n",
-        "title": "ls",
-        "metadata": {
-         "output": "README.md\n",
-         "exit": 0,
-         "truncated": false
-        },
-        "time": {
-         "start": 1791579690108,
-         "end": 1791579690223
-        }
-       }
-      },
-      {
-       "id": "prt_12278955d001b0RE300Wu71Dfr",
-       "sessionID": "ses_0recordedChildSession1",
-       "messageID": "msg_12278892e001sSXuDomBafDMqh",
-       "type": "step-finish",
-       "reason": "tool-calls",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee",
-       "cost": 0,
-       "tokens": {
-        "total": 6355,
-        "input": 4512,
-        "output": 37,
-        "reasoning": 14,
-        "cache": {
-         "read": 1792,
-         "write": 0
-        }
-       }
-      }
+      {"id": "prt_1227893a70010FgF6f6Odq2hJH", "sessionID": "ses_0recordedChildSession1", "messageID": "msg_12278892e001sSXuDomBafDMqh", "type": "step-start", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"},
+      {"id": "prt_1227893f9001ajhjackXEGyU5Z", "sessionID": "ses_0recordedChildSession1", "messageID": "msg_12278892e001sSXuDomBafDMqh", "type": "reasoning", "text": "The user wants me to run the bash command `ls`. Simple.", "time": {"start": 1791579689978, "end": 1791579690056}},
+      {"id": "prt_12278944d001dkbnIDbjACsVT1", "sessionID": "ses_0recordedChildSession1", "messageID": "msg_12278892e001sSXuDomBafDMqh", "type": "tool", "callID": "call_00_skk3fi2ol5juq7qchx7px361", "tool": "bash", "state": {"status": "completed", "input": {"command": "ls"}, "output": "README.md\n", "title": "ls", "metadata": {"output": "README.md\n", "exit": 0, "truncated": false}, "time": {"start": 1791579690108, "end": 1791579690223}}},
+      {"id": "prt_12278955d001b0RE300Wu71Dfr", "sessionID": "ses_0recordedChildSession1", "messageID": "msg_12278892e001sSXuDomBafDMqh", "type": "step-finish", "reason": "tool-calls", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee", "cost": 0, "tokens": {"total": 1112, "input": 100, "output": 10, "reasoning": 1, "cache": {"read": 1000, "write": 1}}}
      ]
     },
     {
-     "info": {
-      "id": "msg_1227896db001psHfH1dYWfQpJB",
-      "sessionID": "ses_0recordedChildSession1",
-      "role": "assistant",
-      "time": {
-       "created": 1791579690723,
-       "completed": 1791579692714
-      },
-      "parentID": "msg_122788903001sSwhAq87Ks973K",
-      "modelID": "big-pickle",
-      "providerID": "opencode",
-      "mode": "general",
-      "agent": "general",
-      "path": {
-       "cwd": "/workspace/project",
-       "root": "/workspace/project"
-      },
-      "cost": 0,
-      "tokens": {
-       "total": 6373,
-       "input": 98,
-       "output": 3,
-       "reasoning": 0,
-       "cache": {
-        "read": 6272,
-        "write": 0
-       }
-      },
-      "finish": "stop"
-     },
+     "info": {"id": "msg_1227896db001psHfH1dYWfQpJB", "sessionID": "ses_0recordedChildSession1", "role": "assistant", "time": {"created": 1791579690723, "completed": 1791579692714}, "parentID": "msg_122788903001sSwhAq87Ks973K", "modelID": "big-pickle", "providerID": "opencode", "mode": "general", "agent": "general", "path": {"cwd": "/workspace/project", "root": "/workspace/project"}, "cost": 0, "tokens": {"total": 2224, "input": 200, "output": 20, "reasoning": 2, "cache": {"read": 2000, "write": 2}}, "finish": "stop"},
      "parts": [
-      {
-       "id": "prt_122789d10001cpHKHQyJJSlKx6",
-       "sessionID": "ses_0recordedChildSession1",
-       "messageID": "msg_1227896db001psHfH1dYWfQpJB",
-       "type": "step-start",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"
-      },
-      {
-       "id": "prt_122789d42001hgrMEGxVnfr0PM",
-       "sessionID": "ses_0recordedChildSession1",
-       "messageID": "msg_1227896db001psHfH1dYWfQpJB",
-       "type": "text",
-       "text": "README.md",
-       "time": {
-        "start": 1791579692354,
-        "end": 1791579692359
-       }
-      },
-      {
-       "id": "prt_122789dcb0019uxqRo7pA1u4F0",
-       "sessionID": "ses_0recordedChildSession1",
-       "messageID": "msg_1227896db001psHfH1dYWfQpJB",
-       "type": "step-finish",
-       "reason": "stop",
-       "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee",
-       "cost": 0,
-       "tokens": {
-        "total": 6373,
-        "input": 98,
-        "output": 3,
-        "reasoning": 0,
-        "cache": {
-         "read": 6272,
-         "write": 0
-        }
-       }
-      }
+      {"id": "prt_122789d10001cpHKHQyJJSlKx6", "sessionID": "ses_0recordedChildSession1", "messageID": "msg_1227896db001psHfH1dYWfQpJB", "type": "step-start", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee"},
+      {"id": "prt_122789d42001hgrMEGxVnfr0PM", "sessionID": "ses_0recordedChildSession1", "messageID": "msg_1227896db001psHfH1dYWfQpJB", "type": "text", "text": "README.md", "time": {"start": 1791579692354, "end": 1791579692359}},
+      {"id": "prt_122789dcb0019uxqRo7pA1u4F0", "sessionID": "ses_0recordedChildSession1", "messageID": "msg_1227896db001psHfH1dYWfQpJB", "type": "step-finish", "reason": "stop", "snapshot": "5dadd1311caf60dbb1c640bf8060a87309319eee", "cost": 0, "tokens": {"total": 2224, "input": 200, "output": 20, "reasoning": 2, "cache": {"read": 2000, "write": 2}}}
      ]
     }
    ]
   },
   "/session/ses_0recordedUnknownSession": {
    "status": 404,
-   "body": {
-    "name": "NotFoundError",
-    "data": {
-     "message": "Session not found: ses_0recordedUnknownSession"
-    }
-   }
+   "body": {"name": "NotFoundError", "data": {"message": "Session not found: ses_0recordedUnknownSession"}}
   }
  },
  "events": [
-  {
-   "id": "evt_122770594001q9Sanu9dW0MW7z",
-   "type": "server.connected",
-   "properties": {}
-  },
-  {
-   "id": "evt_122770829001vJPfrUcqpJA9Eo",
-   "type": "message.updated",
-   "properties": {
-    "sessionID": "ses_0recordedRootSession01",
-    "info": {
-     "id": "msg_122770817001bF4MJT6j0q8Gbp",
-     "role": "user",
-     "sessionID": "ses_0recordedRootSession01",
-     "time": {
-      "created": 1791579588631
-     },
-     "agent": "build",
-     "model": {
-      "providerID": "opencode",
-      "modelID": "big-pickle"
-     }
-    }
-   }
-  },
-  {
-   "id": "evt_122770f68001QSfUYub34iI7rU",
-   "type": "session.status",
-   "properties": {
-    "sessionID": "ses_0recordedRootSession01",
-    "status": {
-     "type": "busy"
-    }
-   }
-  },
-  {
-   "id": "evt_122770f77001wxSteWyU14SZ7D",
-   "type": "message.updated",
-   "properties": {
-    "sessionID": "ses_0recordedRootSession01",
-    "info": {
-     "id": "msg_122770f77001hU7rTfBtD3QdmQ",
-     "parentID": "msg_122770817001bF4MJT6j0q8Gbp",
-     "role": "assistant",
-     "mode": "build",
-     "agent": "build",
-     "path": {
-      "cwd": "/workspace/project",
-      "root": "/workspace/project"
-     },
-     "cost": 0,
-     "tokens": {
-      "input": 0,
-      "output": 0,
-      "reasoning": 0,
-      "cache": {
-       "read": 0,
-       "write": 0
-      }
-     },
-     "modelID": "big-pickle",
-     "providerID": "opencode",
-     "time": {
-      "created": 1791579590519
-     },
-     "sessionID": "ses_0recordedRootSession01"
-    }
-   }
-  },
-  {
-   "id": "evt_1227719cb00155KYtNVMNiUWtC",
-   "type": "plugin.added",
-   "properties": {
-    "id": "core/config-reference"
-   }
-  },
-  {
-   "id": "evt_1227719cd0012dGt7Z72gjPxgW",
-   "type": "plugin.added",
-   "properties": {
-    "id": "agent"
-   }
-  },
-  {
-   "id": "evt_1227722c2001DSvhRmfGmXWEQS",
-   "type": "session.status",
-   "properties": {
-    "sessionID": "ses_0recordedRootSession01",
-    "status": {
-     "type": "busy"
-    }
-   }
-  },
-  {
-   "id": "evt_122772ce9001BPke7Zk9jKkTI6",
-   "type": "server.heartbeat",
-   "properties": {}
-  },
-  {
-   "id": "evt_1227753fe001LC9WLOcGHxHaZV",
-   "type": "server.heartbeat",
-   "properties": {}
-  },
-  {
-   "id": "evt_122779a3d0023JtsLD2Fcyw6pF",
-   "type": "session.idle",
-   "properties": {
-    "sessionID": "ses_0recordedRootSession01"
-   }
-  },
-  {
-   "id": "evt_122789edd001zJ2DzcGUgG5x6R",
-   "type": "session.idle",
-   "properties": {
-    "sessionID": "ses_0recordedChildSession1"
-   }
-  }
+  {"id": "evt_122770594001q9Sanu9dW0MW7z", "type": "server.connected", "properties": {}},
+  {"id": "evt_122770829001vJPfrUcqpJA9Eo", "type": "message.updated", "properties": {"sessionID": "ses_0recordedRootSession01", "info": {"id": "msg_122770817001bF4MJT6j0q8Gbp", "role": "user", "sessionID": "ses_0recordedRootSession01", "time": {"created": 1791579588631}, "agent": "build", "model": {"providerID": "opencode", "modelID": "big-pickle"}}}},
+  {"id": "evt_122770f68001QSfUYub34iI7rU", "type": "session.status", "properties": {"sessionID": "ses_0recordedRootSession01", "status": {"type": "busy"}}},
+  {"id": "evt_122770f77001wxSteWyU14SZ7D", "type": "message.updated", "properties": {"sessionID": "ses_0recordedRootSession01", "info": {"id": "msg_122770f77001hU7rTfBtD3QdmQ", "parentID": "msg_122770817001bF4MJT6j0q8Gbp", "role": "assistant", "mode": "build", "agent": "build", "path": {"cwd": "/workspace/project", "root": "/workspace/project"}, "cost": 0, "tokens": {"input": 0, "output": 0, "reasoning": 0, "cache": {"read": 0, "write": 0}}, "modelID": "big-pickle", "providerID": "opencode", "time": {"created": 1791579590519}, "sessionID": "ses_0recordedRootSession01"}}},
+  {"id": "evt_1227719cb00155KYtNVMNiUWtC", "type": "plugin.added", "properties": {"id": "core/config-reference"}},
+  {"id": "evt_1227719cd0012dGt7Z72gjPxgW", "type": "plugin.added", "properties": {"id": "agent"}},
+  {"id": "evt_1227722c2001DSvhRmfGmXWEQS", "type": "session.status", "properties": {"sessionID": "ses_0recordedRootSession01", "status": {"type": "busy"}}},
+  {"id": "evt_122772ce9001BPke7Zk9jKkTI6", "type": "server.heartbeat", "properties": {}},
+  {"id": "evt_1227753fe001LC9WLOcGHxHaZV", "type": "server.heartbeat", "properties": {}},
+  {"id": "evt_122779a3d0023JtsLD2Fcyw6pF", "type": "session.idle", "properties": {"sessionID": "ses_0recordedRootSession01"}},
+  {"id": "evt_122789edd001zJ2DzcGUgG5x6R", "type": "session.idle", "properties": {"sessionID": "ses_0recordedChildSession1"}}
  ]
 }

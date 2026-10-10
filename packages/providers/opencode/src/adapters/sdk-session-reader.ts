@@ -11,19 +11,63 @@
  *   output included, so a reply's size is the agent's business, not ours. Each call gets its own
  *   metered `fetch`: the SDK reads the body through it, and past the cap the stream errors before the
  *   rest is buffered. That reply is `oversized`, never a prefix parsed as if it were the whole.
+ * - **A byte cap on every event frame.** The SDK buffers `GET /event` text until a blank line ends a
+ *   frame, and a server-sent frame has no size of its own. The event stream is read through a
+ *   `fetch` that counts each frame's bytes as they arrive and, past `MAX_EVENT_FRAME_BYTES`, cancels
+ *   the connection and errors the body before the SDK holds the excess. The SDK still does the
+ *   framing; this only counts, so a frame under the cap reaches it byte for byte.
  * - **One word per reply.** `ok`, the server's own `404` (`missing`), `oversized`, or `unavailable`
- *   (`src/domain/outcome.ts`). Nothing here reads a body's shape; the caller's checked readers do.
+ *   (`NativeReadOutcome` in `@rickylabs/harness-contracts`). Nothing here reads a body's shape; the
+ *   caller's checked readers do.
  *
  * The event side reduces each server-wide event to the session it names (`sessionOf`) and drops the
  * rest, so a caller holds a session id, never an event payload — the payloads carry the agent's text.
+ * Memory per stream is one frame at most, plus the chunk in hand.
  */
 
 import { createOpencodeClient, type OpencodeClient } from "@opencode-ai/sdk/v2/client";
 
+import type { NativeReadBounds, NativeReadOutcome, NativeSessionEvents } from "@rickylabs/harness-contracts";
+
 import { readEvent, sessionOf } from "../domain/events.js";
-import type { ReadOutcome } from "../domain/outcome.js";
-import type { OpencodeSessionReader, ReadBounds, SessionEvents } from "../ports/session-reader.js";
+import type { OpencodeSessionReader } from "../ports/session-reader.js";
 import { openEvents, type SdkServerOptions } from "./sdk-server.js";
+
+/** The most one server-sent event may hold before its blank line. A message part, tool output included, fits. */
+export const MAX_EVENT_FRAME_BYTES = 1_048_576;
+
+export interface SdkSessionReaderOptions extends SdkServerOptions {
+  /** The per-frame cap on `GET /event`; `MAX_EVENT_FRAME_BYTES` when omitted. */
+  readonly maxEventFrameBytes?: number;
+}
+
+/**
+ * The response with a body that shows each chunk to `admit` before anything downstream reads it. A
+ * refused chunk is never passed on: the source is cancelled and the body errors instead.
+ */
+function guarded(response: Response, admit: (chunk: Uint8Array) => boolean): Response {
+  const source = response.body;
+  // A body-less status cannot be rebuilt with a stream; there is nothing to count anyway.
+  if (source === null || [101, 204, 205, 304].includes(response.status)) return response;
+  const reader = source.getReader();
+  const body = new ReadableStream<Uint8Array>({
+    async pull(controller): Promise<void> {
+      const { done, value } = await reader.read();
+      if (done) {
+        controller.close();
+        return;
+      }
+      if (!admit(value)) {
+        await reader.cancel();
+        controller.error(new RangeError("the reply passed its read bound"));
+        return;
+      }
+      controller.enqueue(value);
+    },
+    cancel: (reason) => reader.cancel(reason),
+  });
+  return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
+}
 
 /** Bytes read so far, and whether the cap was passed. One per call. */
 interface Meter {
@@ -33,31 +77,36 @@ interface Meter {
 
 /** A `fetch` whose response body errors once more than `maxBytes` have been read from it. */
 function metered(inner: typeof fetch, maxBytes: number, meter: Meter): typeof fetch {
+  return (async (input: Parameters<typeof fetch>[0], init?: RequestInit): Promise<Response> =>
+    guarded(await inner(input, init), (chunk) => {
+      meter.bytes += chunk.byteLength;
+      meter.over = meter.bytes > maxBytes;
+      return !meter.over;
+    })) as typeof fetch;
+}
+
+/**
+ * A `fetch` whose event stream errors once one frame passes `maxFrameBytes`. Lines end at LF, CR or
+ * CRLF and an empty line ends the frame, as the SSE grammar (and the SDK's own split) has it; each
+ * connection counts from zero.
+ */
+function framed(inner: typeof fetch, maxFrameBytes: number): typeof fetch {
   return (async (input: Parameters<typeof fetch>[0], init?: RequestInit): Promise<Response> => {
-    const response = await inner(input, init);
-    const source = response.body;
-    // A body-less status cannot be rebuilt with a stream; there is nothing to meter anyway.
-    if (source === null || [101, 204, 205, 304].includes(response.status)) return response;
-    const reader = source.getReader();
-    const body = new ReadableStream<Uint8Array>({
-      async pull(controller): Promise<void> {
-        const { done, value } = await reader.read();
-        if (done) {
-          controller.close();
-          return;
-        }
-        meter.bytes += value.byteLength;
-        if (meter.bytes > maxBytes) {
-          meter.over = true;
-          await reader.cancel();
-          controller.error(new RangeError("the reply passed its read bound"));
-          return;
-        }
-        controller.enqueue(value);
-      },
-      cancel: (reason) => reader.cancel(reason),
+    let frame = 0, line = 0, carriage = false;
+    return guarded(await inner(input, init), (chunk) => {
+      for (const byte of chunk) {
+        // The LF of a CRLF ends the line the CR already ended.
+        if (byte === 0x0a && carriage) { carriage = false; continue; }
+        carriage = byte === 0x0d;
+        if (byte === 0x0a || byte === 0x0d) {
+          if (line === 0) { frame = 0; continue; }
+          line = 0;
+        } else line += 1;
+        frame += 1;
+        if (frame > maxFrameBytes) return false;
+      }
+      return true;
     });
-    return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
   }) as typeof fetch;
 }
 
@@ -68,8 +117,8 @@ interface SdkResult {
 }
 
 /** One bounded SDK call, as a read outcome. Never throws. */
-async function read(base: typeof fetch, bounds: ReadBounds,
-  call: (options: { fetch: typeof fetch; signal: AbortSignal }) => Promise<SdkResult>): Promise<ReadOutcome> {
+async function read(base: typeof fetch, bounds: NativeReadBounds,
+  call: (options: { fetch: typeof fetch; signal: AbortSignal }) => Promise<SdkResult>): Promise<NativeReadOutcome> {
   const meter: Meter = { bytes: 0, over: false };
   let result: SdkResult;
   try {
@@ -95,24 +144,25 @@ async function* sessionsOf(events: AsyncIterable<unknown>): AsyncGenerator<strin
   }
 }
 
-async function openSessionEvents(client: OpencodeClient, signal: AbortSignal): Promise<SessionEvents> {
+async function openSessionEvents(client: OpencodeClient, signal: AbortSignal): Promise<NativeSessionEvents> {
   const opened = await openEvents(client, signal);
   return opened.kind === "open" ? { kind: "open", sessions: sessionsOf(opened.events) } : opened;
 }
 
-/** Build the read port over one SDK client. Same options as `createSdkServer`. */
-export function createSdkSessionReader(options: SdkServerOptions): OpencodeSessionReader {
+/** Build the read port over the SDK client. Same options as `createSdkServer`, plus the event frame cap. */
+export function createSdkSessionReader(options: SdkSessionReaderOptions): OpencodeSessionReader {
   const base = options.fetch ?? globalThis.fetch;
-  const client = createOpencodeClient({
+  const client = (fetch: typeof globalThis.fetch): OpencodeClient => createOpencodeClient({
     baseUrl: options.baseUrl,
-    fetch: base,
+    fetch,
     ...(options.headers === undefined ? {} : { headers: options.headers }),
   });
+  const reads = client(base), events = client(framed(base, options.maxEventFrameBytes ?? MAX_EVENT_FRAME_BYTES));
   return {
-    session: (sessionID, bounds) => read(base, bounds, (call) => client.session.get({ sessionID }, call)),
-    children: (sessionID, bounds) => read(base, bounds, (call) => client.session.children({ sessionID }, call)),
+    session: (sessionID, bounds) => read(base, bounds, (call) => reads.session.get({ sessionID }, call)),
+    children: (sessionID, bounds) => read(base, bounds, (call) => reads.session.children({ sessionID }, call)),
     messages: (sessionID, limit, bounds) =>
-      read(base, bounds, (call) => client.session.messages({ sessionID, limit }, call)),
-    sessionEvents: (signal) => openSessionEvents(client, signal),
+      read(base, bounds, (call) => reads.session.messages({ sessionID, limit }, call)),
+    sessionEvents: (signal) => openSessionEvents(events, signal),
   };
 }

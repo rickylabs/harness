@@ -2,14 +2,15 @@
  * The read adapter: the real SDK client over a fake `fetch` that serves a recorded 1.18.35 session.
  *
  * Pinned here: the requests the SDK builds for each read, the word each kind of reply becomes, the
- * byte cap that stops a reply before it is buffered, and the event stream reduced to session ids.
+ * byte cap that stops a reply before it is buffered, the event stream reduced to session ids, and the
+ * per-frame cap that stops an event before the SDK buffers it.
  */
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { createSdkSessionReader } from "../../src/adapters/sdk-session-reader.js";
-import { BASE_URL, eventChannel, json, text, unreachable } from "../fixtures/fake-fetch.js";
+import { BASE_URL, eventChannel, json, text, unreachable, type EventChannel } from "../fixtures/fake-fetch.js";
 import { recordedFetch, recording } from "../fixtures/recorded-server.js";
 
 const bounds = (maxBytes = 1_048_576) => ({ maxBytes, signal: new AbortController().signal });
@@ -95,5 +96,66 @@ describe("createSdkSessionReader", () => {
     const fetch = (async () => channel.response) as typeof globalThis.fetch;
     const opened = await createSdkSessionReader({ baseUrl: BASE_URL, fetch }).sessionEvents(new AbortController().signal);
     assert.equal(opened.kind, "closed");
+  });
+});
+
+/** A stream capped at `maxEventFrameBytes`, over a channel the test writes to. */
+async function capped(maxEventFrameBytes: number, write: (channel: EventChannel) => void) {
+  const channel = eventChannel(), abort = new AbortController();
+  const fetch = (async () => channel.response) as typeof globalThis.fetch;
+  const opened = await createSdkSessionReader({ baseUrl: BASE_URL, fetch, maxEventFrameBytes }).sessionEvents(abort.signal);
+  assert.equal(opened.kind, "open");
+  write(channel);
+  const seen: string[] = [];
+  let failed = false;
+  try { if (opened.kind === "open") for await (const session of opened.sessions) seen.push(session); }
+  catch { failed = true; }
+  return { seen, failed, cancelled: channel.cancelled };
+}
+const idle = (sessionID: string, pad = "") => ({ type: "session.idle", properties: { sessionID, pad } });
+
+describe("the event frame cap", () => {
+  it("is per frame, not per stream: any number of frames under it arrive whole, LF or CRLF delimited", async () => {
+    const ids = Array.from({ length: 24 }, (_, i) => `ses_frame${i}`);
+    const result = await capped(256, channel => {
+      ids.forEach((id, i) => {
+        if (i % 2 === 0) channel.send(idle(id));
+        else channel.raw(`data: ${JSON.stringify(idle(id))}\r\n\r\n`);
+      });
+      channel.close();
+    });
+    assert.deepEqual(result, { seen: ids, failed: false, cancelled: false });
+  });
+
+  it("refuses a complete frame over the cap before it is delivered, and cancels the connection", async () => {
+    const result = await capped(256, channel => {
+      channel.send(idle("ses_before"));
+      channel.send(idle("ses_oversized", "a".repeat(512)));
+      channel.send(idle("ses_after"));
+      channel.close();
+    });
+    assert.deepEqual(result, { seen: ["ses_before"], failed: true, cancelled: true });
+  });
+
+  // The server never ends either frame below and keeps the connection open: only the cap ends the read.
+  it("refuses an unterminated frame as it grows, without waiting for a blank line that never comes", { timeout: 10_000 }, async () => {
+    const result = await capped(256, channel => channel.raw(`data: ${"a".repeat(512)}`));
+    assert.deepEqual(result, { seen: [], failed: true, cancelled: true });
+  });
+
+  it("counts a frame's CRLF-ended lines into one frame: a line end is not a blank line", { timeout: 10_000 }, async () => {
+    const result = await capped(256, channel => channel.raw(`data: ${"a".repeat(40)}\r\n`.repeat(10)));
+    assert.deepEqual(result, { seen: [], failed: true, cancelled: true });
+  });
+
+  it("aborting the signal ends the stream quietly and releases the connection", async () => {
+    const channel = eventChannel(), abort = new AbortController();
+    const fetch = (async () => channel.response) as typeof globalThis.fetch;
+    const opened = await createSdkSessionReader({ baseUrl: BASE_URL, fetch }).sessionEvents(abort.signal);
+    assert.equal(opened.kind, "open");
+    channel.send(idle("ses_live"));
+    const seen: string[] = [];
+    if (opened.kind === "open") for await (const session of opened.sessions) { seen.push(session); abort.abort(); }
+    assert.deepEqual([seen, channel.cancelled], [["ses_live"], true]);
   });
 });

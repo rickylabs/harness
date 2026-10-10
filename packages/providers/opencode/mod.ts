@@ -19,7 +19,7 @@
  *   guesses that run the wrong model.
  * - **An observer reads through its own port** — `src/ports/session-reader.ts`, over the same SDK in
  *   `src/adapters/sdk-session-reader.ts`: session, children, messages and the session each event
- *   names, every reply byte-capped. Telemetry's issue reader composes it.
+ *   names, every reply and every event frame byte-capped. Telemetry's issue reader composes it.
  * - **Nothing this package emits can carry a credential** — `src/domain/secrets.ts`. It never reads
  *   one, and everything it says goes through one scrubbing boundary, because the strings that leak
  *   are the ones the server wrote.
@@ -49,7 +49,6 @@ export {
   refutes,
   EXCERPT_LIMIT,
   type HttpOutcome,
-  type ReadOutcome,
   type StreamOutcome,
 } from "./src/domain/outcome.js";
 
@@ -57,7 +56,7 @@ export { basename, leaks, pathIsCredentialFile, scrub, CREDENTIAL_FILES } from "
 
 export type { OpencodeServer } from "./src/ports/server.js";
 
-export type { OpencodeSessionReader, ReadBounds, SessionEvents } from "./src/ports/session-reader.js";
+export type { OpencodeSessionReader } from "./src/ports/session-reader.js";
 
 export { baseUrlProblems, createSdkServer, type SdkServerOptions } from "./src/adapters/sdk-server.js";
 
