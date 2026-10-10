@@ -181,9 +181,9 @@ function resourceHistoryRow(value: unknown, capturedAt: string, root: boolean,
     if (tokens.reason === null || tokens.truncated !== false || array(tokens.points, 0).length !== 0) return bad();
     tokenHistory = { points: [], truncated: false, source: "unavailable", reason: reason(tokens.reason) };
   } else {
-    if (!tokenSource(tokens.source) ||
-        tokens.reason !== null || typeof tokens.truncated !== "boolean" ||
-        usage?.source !== tokens.source || usage.usedTokens === null) return bad();
+    // The history names the counter its current usage was decoded with: that equality is the vocabulary check.
+    if (usage === undefined || usage.usedTokens === null || usage.source !== tokens.source ||
+        tokens.reason !== null || typeof tokens.truncated !== "boolean") return bad();
     const points = array(tokens.points, MAX_AGENT_RESOURCE_POINTS).map(point => {
       const p = record(point, ["at", "usedTokens"]), at = stamp(p.at);
       if (at > capturedAt || typeof p.usedTokens !== "number" || !Number.isSafeInteger(p.usedTokens) || p.usedTokens < 0) return bad();
@@ -193,7 +193,7 @@ function resourceHistoryRow(value: unknown, capturedAt: string, root: boolean,
         points.at(-1)!.usedTokens !== usage.usedTokens) return bad();
     for (let i = 1; i < points.length; i++) if (points[i - 1]!.at >= points[i]!.at ||
         points[i - 1]!.usedTokens >= points[i]!.usedTokens) return bad();
-    tokenHistory = { points, truncated: tokens.truncated, source: tokens.source, reason: null };
+    tokenHistory = { points, truncated: tokens.truncated, source: usage.source, reason: null };
   }
   const budgets = record(row.budgets, ["points", "truncated", "reason"]);
   let budgetHistory: AgentBudgetHistory;
