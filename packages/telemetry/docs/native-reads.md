@@ -188,7 +188,8 @@ the official `@opencode-ai/sdk`, behind the telemetry-owned port
 
 The read (`src/opencode-issue.ts`) asks for the root (`session.get`), its
 explicit children (`session.children`, up to 20 sessions) and each session's
-latest 100 messages (`session.messages`, `limit=101`), every reply byte-capped
+latest 100 messages plus one (`session.messages`, `limit=101`, the extra one saying
+older messages exist), every reply byte-capped
 against one 8 MiB issue budget and cancelled after 5 seconds. A root the server
 answers `404` for is `binding_unavailable`, an unreadable server or a reply that
 is not an SDK shape is `source_unavailable`, and a passed bound is `scan_limit`:

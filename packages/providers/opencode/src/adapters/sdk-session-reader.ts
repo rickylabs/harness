@@ -127,10 +127,10 @@ async function read(base: typeof fetch, bounds: NativeReadBounds,
   try {
     result = await call({ fetch: metered(base, bounds.maxBytes, meter), signal: bounds.signal });
   } catch {
-    // The SDK returns a rejected `fetch`; what throws is a body it could not finish reading or parse.
+    // The SDK returns a rejected `fetch`; what throws is a body it could not finish reading or parse,
+    // and a body cut off at the cap is always one: the SDK reads every body it returns.
     return { kind: meter.over ? "oversized" : "unavailable", bytes: meter.bytes };
   }
-  if (meter.over) return { kind: "oversized", bytes: meter.bytes };
   const response = result.response;
   if (response === undefined) return { kind: "unavailable", bytes: meter.bytes };
   if (response.status === 404) return { kind: "missing", bytes: meter.bytes };

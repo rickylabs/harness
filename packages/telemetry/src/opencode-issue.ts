@@ -18,7 +18,8 @@ import type { RunRecord } from "./model.js";
 import type { OpenCodeSessionReads } from "./opencode-reads.js";
 import { openCodeRun, readOpenCodeSession, sessionID, type OpenCodeSessionHead } from "./opencode-session.js";
 
-/** Messages read per session: the latest ones, which hold the current turn and far more than the 20 published steps. */
+/** The message window per session: the latest ones, which hold the current turn and far more than the 20 published
+ * steps. One more is read, which says older messages exist. */
 export const MAX_OPENCODE_MESSAGES = 100;
 /** Reply bytes one issue may read, across every session in its tree. */
 export const MAX_OPENCODE_ISSUE_BYTES = 8 * 1_048_576;
@@ -112,8 +113,9 @@ export async function readOpenCodeIssue(reads: OpenCodeSessionReads, root: strin
     for (const { reply, messages } of tree) {
       const head = readOpenCodeSession(reply, observedMs);
       if (head === null) return fail("source_unavailable");
+      // The one message past the window is the probe that says older ones exist; it is read like the rest.
       const windowed = messages!.length > MAX_OPENCODE_MESSAGES;
-      const run = openCodeRun(head, windowed ? messages!.slice(-MAX_OPENCODE_MESSAGES) : messages!, windowed,
+      const run = openCodeRun(head, messages!, windowed,
         `opencode-session:${head.id}`, observedMs);
       if (run === null) return fail("source_unavailable");
       runs.push(run);

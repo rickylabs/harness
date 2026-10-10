@@ -40,6 +40,10 @@ it("publishes a used-tokens figure only for a safe, non-negative total at a vali
   assert.deepEqual(issueTokenUsage(codex({ inputTokens: Number.MAX_SAFE_INTEGER, outputTokens: 1 }), null, later), unavailable);
   // A run whose clock the caller could not validate has no reading, however good its counters.
   assert.deepEqual(issueTokenUsage(codex({ inputTokens: 10, outputTokens: 5 }), null, null), unavailable);
+  // A run clock later than the snapshot stamps nothing: the snapshot still decodes, without a reading.
+  const ahead = build(dispatch, [{ ...codex({ inputTokens: 10, outputTokens: 5 }), updatedAt: "2026-01-01T00:00:02.000Z" }]);
+  assert.equal(readIssueAgentTreeSnapshot(ahead).ok, true);
+  assert.deepEqual(ahead.issues[0]!.dispatches[0]!.agents[0]!.tokenUsage?.source, "unavailable");
   // No run at all is not bound, not a missing measurement.
   assert.deepEqual(issueTokenUsage(undefined, null, later), { ...unavailable, reason: "source_not_bound" });
 });
