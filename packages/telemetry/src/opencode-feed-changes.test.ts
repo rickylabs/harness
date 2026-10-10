@@ -77,14 +77,14 @@ it("close is permanent: a later watch opens nothing", async () => {
 });
 
 it("the watch loop hands the scanned sessions to the hint and rescans when it fires", async () => {
-  const watched: string[][] = [];
+  const watched: string[][] = [], clocks: (number | undefined)[] = [];
   let collects = 0, fire = false;
   const output = new Writable({ write(_chunk, _encoding, done) { done(); } });
   const at = "2026-01-01T00:00:00.000Z";
   const code = await issueAgentFeedCommand(["--watch"], { output, now: () => at, generation: () => "fixture",
     env: {}, elapsed: () => 0,
     collect: async options => {
-      collects++; options.watchOpenCodeSessions?.add("ses_fixture");
+      collects++; options.watchOpenCodeSessions?.add("ses_fixture"); clocks.push(options.clock?.());
       return { schema: 1, protocol: 1, observedAt: at, validUntil: "2026-01-01T00:00:15.000Z", revision: "a".repeat(64),
         complete: true, reason: null, issues: [] };
     },
@@ -94,6 +94,8 @@ it("the watch loop hands the scanned sessions to the hint and rescans when it fi
   assert.equal(code, 0);
   assert.equal(collects, 2, "the hint caused the second scan before the safety rescan");
   assert.deepEqual(watched[0], ["ses_fixture"]);
+  // The reads are judged at the command's own clock, read when they finish.
+  assert.deepEqual(clocks, [Date.parse(at), Date.parse(at)]);
 });
 
 it("a stream that ends after the scan replaced it never orphans its successor", async () => {

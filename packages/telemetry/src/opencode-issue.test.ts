@@ -171,6 +171,9 @@ it("a fact the server wrote while it was read is judged at the clock read after 
     assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
     assert.deepEqual([agents(snapshot)[0]?.terminalOutcome.value, agents(snapshot)[0]?.endedAt, snapshot.observedAt],
       ["succeeded", iso(nowMs + 1), iso(clock)]);
+    // A clock that steps back during the read never stamps the frame before the scan began.
+    snapshot = await f.collect(server().binding, { clock: () => nowMs - 1_000 });
+    assert.deepEqual([readIssueAgentTreeSnapshot(snapshot).ok, snapshot.observedAt], [true, now]);
     // Still later than the clock read after the reads: from the future, so refused.
     clock = nowMs;
     snapshot = await f.collect(finishAt(nowMs + 60_000).binding, { clock: () => clock });
