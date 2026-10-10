@@ -317,7 +317,7 @@ vocabulary and times after `generatedAt` are refused.
 `readLocalCapacityRow`. It is independent of quota and spend: unbound is `source_not_bound`, an unreadable
 kernel source is unavailable with its reason, and a measurement is never zero by default.
 
-## Physical transport capacity and pacing (0.40.0)
+## Physical transport capacity and pacing (0.41.0)
 
 `TransportAvailability.transportCapacity` is optional. Absence is unknown, never
 free seats. When present, it lists all four `MATRIX_TRANSPORTS` in availability
@@ -347,6 +347,6 @@ The existing source coverage, clocks and freshness remain authoritative.
 
 Install the published contracts and accepting Harness reader before enabling
 Orchid's `matrix.transport_capacity`. The owner releases from merged `main` with
-`harness-contracts-v0.40.0` through `.github/workflows/release-contracts.yml`; the
+`harness-contracts-v0.41.0` through `.github/workflows/release-contracts.yml`; the
 tag version must match the manifest. If another additive contracts PR releases
 first, rebase and use the next unpublished minor version with its matching tag.

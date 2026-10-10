@@ -39,7 +39,7 @@ export const TRANSPORT_CAPACITY_REASONS = ["seats-not-configured", "seat-budget-
 export const TRANSPORT_PACING_STATES = ["clear", "limited", "unknown", "unmetered"] as const;
 export const TRANSPORT_PACING_LIMITED_REASONS = ["governor-pacing", "5h-ceiling", "weekly-ceiling"] as const;
 export const TRANSPORT_PACING_UNKNOWN_REASONS = ["meter-unread", "meter-stale", "window-expired", "ceiling-misconfigured"] as const;
-/** Orchid's physical seats and independent pacing, from the same admission tick (0.40.0). */
+/** Orchid's physical seats and independent pacing, from the same admission tick (0.41.0). */
 export interface TransportCapacityRow {
   readonly transport: MatrixTransport;
   readonly capacity: (typeof TRANSPORT_CAPACITY_STATES)[number];
