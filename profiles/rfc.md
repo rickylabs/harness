@@ -20,6 +20,10 @@ Compatibility alias for [researcher](researcher.md). Read that profile before
 starting: it owns the research, evaluation and ratified RFC filing process.
 The `rfc` name remains valid for existing briefs and persisted references.
 
+On Expo repositories, use Expo's official `@expo/agent-cli`, Expo MCP, Expo skills and
+installed-SDK documentation before planning, editing or reviewing. Follow the target
+repository's package-manager and development-build instructions.
+
 | Field | Value |
 | --- | --- |
 | `run-mode` | `seed` — research and plan, no implementation |

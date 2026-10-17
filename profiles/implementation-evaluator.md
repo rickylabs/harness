@@ -19,6 +19,10 @@ guardrails:
 
 Reviews the exact implementation head and records an independent verdict.
 
+On Expo repositories, use Expo's official `@expo/agent-cli`, Expo MCP, Expo skills and
+installed-SDK documentation before planning, editing or reviewing. Follow the target
+repository's package-manager and development-build instructions.
+
 | Field | Value |
 | --- | --- |
 | `run-mode` | evaluation — independent implementation review |

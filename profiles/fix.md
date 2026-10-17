@@ -23,6 +23,10 @@ One reported defect. One run directory, one branch, one pull request, one conven
 Use this when the work is "something that worked, or should work, does not". New behavior
 is a [`leaf`](leaf.md); a fix that turns out to need new behavior stops and says so.
 
+On Expo repositories, use Expo's official `@expo/agent-cli`, Expo MCP, Expo skills and
+installed-SDK documentation before planning, editing or reviewing. Follow the target
+repository's package-manager and development-build instructions.
+
 | Field | Value |
 | --- | --- |
 | `run-mode` | `run-loop` — the slice contract, with one slice |
