@@ -14,6 +14,17 @@ function observed(row: Record<string, unknown> | null, runId: string, kind: "sea
   return at !== null && at >= after ? at : null;
 }
 
+const INTENT_FIELDS = ["schemaVersion", "issue", "dispatchKey", "nativeRunId", "nativeSessionId",
+  "host", "paneId", "workspaceId", "cause", "startedAt"] as const;
+const scalar = (value: unknown) => typeof value === "string" && value.length > 0 &&
+  Buffer.byteLength(value) <= 256 && !/[\x00-\x1f\x7f]/.test(value);
+/** Orchid's optional Herdr session scope (orchid#115): closed, routing-only, never projected. */
+function herdrScope(value: unknown): boolean {
+  const row = object(value);
+  return row !== null && scalar(row.session) &&
+    (exact(row, ["session"]) || exact(row, ["session", "machine"]) && scalar(row.machine));
+}
+
 export async function readOrchidTeardownObservation(record: string, expected: {
   readonly runId: string; readonly repository: string; readonly issueNumber: number;
   readonly host: string | null; readonly paneId: string; readonly workspaceId: string;
@@ -24,8 +35,8 @@ export async function readOrchidTeardownObservation(record: string, expected: {
     const intent = await readPrivateJSON(join(record, "teardown-intent.json"));
     const anchor = await readPrivateJSON(join(record, "teardown-anchor.json"), 65_536);
     const binding = await readPrivateJSON(join(record, "binding.json"), 262_144);
-    if (intent === null || !exact(intent, ["schemaVersion", "issue", "dispatchKey", "nativeRunId", "nativeSessionId",
-      "host", "paneId", "workspaceId", "cause", "startedAt"]) ||
+    if (intent === null || !(exact(intent, INTENT_FIELDS) || exact(intent, [...INTENT_FIELDS, "herdrScope"]) &&
+      herdrScope(intent.herdrScope)) ||
       intent.schemaVersion !== 1 || intent.issue !== expected.issueNumber || intent.dispatchKey !== key ||
       intent.nativeRunId !== expected.runId || intent.host !== expected.host ||
       intent.paneId !== expected.paneId || intent.workspaceId !== expected.workspaceId ||

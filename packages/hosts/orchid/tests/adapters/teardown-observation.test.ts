@@ -88,3 +88,20 @@ it("withholds an unbound intent, an absent anchor, and malformed process proof",
     assert.equal(await readOrchidTeardownObservation(f.record, expected), undefined);
   } finally { await rm(f.root, { recursive: true, force: true }); }
 });
+
+it("orchid#115: reads a teardown intent carrying the closed Herdr session scope", async () => {
+  const f = await fixture();
+  try {
+    await f.write("teardown-process-observed.json", observation("process_absent", processAt));
+    for (const herdrScope of [{ session: "dispatch" }, { session: "dispatch", machine: "fixture-machine" }]) {
+      await f.write("teardown-intent.json", { herdrScope, ...intent });
+      assert.deepEqual(await readOrchidTeardownObservation(f.record, expected),
+        { cause: "timeout", seatObservedAt: null, processObservedAt: "2026-01-01T00:00:03.000Z" });
+    }
+    for (const herdrScope of [null, "dispatch", {}, { session: "" }, { session: "dispatch", extra: "x" },
+      { session: "dispatch", machine: 7 }, { session: "line\nbreak" }]) {
+      await f.write("teardown-intent.json", { herdrScope, ...intent });
+      assert.equal(await readOrchidTeardownObservation(f.record, expected), undefined, JSON.stringify(herdrScope));
+    }
+  } finally { await rm(f.root, { recursive: true, force: true }); }
+});
