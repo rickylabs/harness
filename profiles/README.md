@@ -63,6 +63,10 @@ Then the phases, in order, each one saying what it produces and what proves it.
    question, the options, your recommendation, and the cost of being wrong (I4, §8).
 6. **A gate that cannot run is unproven.** Record it as unproven. Never assume it green, and
    never substitute a narrower command and call it the gate.
+7. **Expo tooling first.** On an Expo repository, every agent uses the official Expo agent CLI
+   (`@expo/agent-cli`), Expo MCP and Expo skills with the installed SDK’s official documentation
+   before planning, editing or reviewing; follow the repository’s package manager and dev-build
+   instructions. See [Expo agent tooling](https://expo.dev/changelog/sdk-58#agentic-development-with-expo-clis).
 
 ---
 
