@@ -364,7 +364,7 @@ export function buildIssueAgentTreeSnapshot(input: {
   readonly actions?: readonly PublicActionReceipt[];
   readonly actionsComplete?: boolean;
   /**
-   * The native tree was read whole from its roots but its extent was bounded: the rows say
+   * The observed forest is closed, but descendants or unresolved launch attempts bound its extent: rows say
    * `scan_limit` and keep the agents read, never a complete claim. Contract 0.37 and later.
    */
   readonly bounded?: boolean;

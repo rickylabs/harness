@@ -47,6 +47,7 @@ same change and names the consumer that must follow.
 | Surface | Path | Read by |
 | --- | --- | --- |
 | contracts package exports `.`, `./server`, `./route` | `packages/contracts/package.json` | atelier-cockpit |
+| native dispatch and teardown evidence | `packages/hosts/orchid/mod.ts` | atelier-cockpit pinned reader |
 | delegation matrix | `packages/routing/matrix/delegation-matrix.ts` | orchid, atelier-cockpit |
 | routing policy | `packages/routing/matrix/routing-policy.ts` | orchid, atelier-cockpit |
 | matrix contract | `packages/routing/matrix/contract.ts` | orchid |
