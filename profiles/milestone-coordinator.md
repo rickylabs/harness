@@ -20,6 +20,10 @@ Follow a GitHub milestone to completion by running four lanes under one coordina
 This shape has completed two milestones end to end. The rules below are the ones those runs
 actually obeyed — not a design for how it might work.
 
+On Expo repositories, use Expo's official `@expo/agent-cli`, Expo MCP, Expo skills and
+installed-SDK documentation before planning, editing or reviewing. Follow the target
+repository's package-manager and development-build instructions.
+
 | Field | Value |
 | --- | --- |
 | `run-mode` | `milestone-run` — the cluster contract |

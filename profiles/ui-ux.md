@@ -18,6 +18,10 @@ guardrails:
 
 Delivers owner-selected interface work with visual and behavioral evidence.
 
+On Expo repositories, use Expo's official `@expo/agent-cli`, Expo MCP, Expo skills and
+installed-SDK documentation before planning, editing or reviewing. Follow the target
+repository's package-manager and development-build instructions.
+
 | Field | Value |
 | --- | --- |
 | `run-mode` | run-loop — scoped interface change |

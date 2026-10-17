@@ -18,6 +18,10 @@ guardrails:
 
 Delivers scoped documentation grounded in current source and verified examples.
 
+On Expo repositories, use Expo's official `@expo/agent-cli`, Expo MCP, Expo skills and
+installed-SDK documentation before planning, editing or reviewing. Follow the target
+repository's package-manager and development-build instructions.
+
 | Field | Value |
 | --- | --- |
 | `run-mode` | run-loop — scoped documentation change |
