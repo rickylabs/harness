@@ -13,6 +13,7 @@ import {
 } from "./src/application/native-binding-registry.js";
 
 export { readOrchidDispatches } from "./src/adapters/dispatch-reader.js";
+export { readOrchidTeardownObservation } from "./src/adapters/teardown-observation.js";
 export { readOrchidNativeBinding, verifyOrchidOpenCodeBinding } from "./src/adapters/native-binding-reader.js";
 export { bindOrchidDispatchEvidence } from "./src/application/bind-dispatch-evidence.js";
 export {

@@ -127,6 +127,12 @@ const RAW_SOURCES = {
     "../config/discovery.native.v1.json"],
   "packages/contracts/src/governance-read.ts": null,
 };
+test("cockpit: the pinned native reader's Orchid host entry exports its private evidence seam", async () => {
+  assertExports(COCKPIT, "packages/hosts/orchid/mod.ts", await load("packages/hosts/orchid/dist/mod.js"), {
+    ...kinds("object", "orchidHost"),
+    ...kinds("function", "readOrchidDispatches readOrchidTeardownObservation"),
+  });
+});
 test("cockpit: raw-URL source files exist and import only what cockpit's import map resolves", () => {
   for (const [path, imports] of Object.entries(RAW_SOURCES)) {
     assert.ok(existsSync(join(root, path)), `${COCKPIT}: ${path} is missing (imported by raw URL)`);

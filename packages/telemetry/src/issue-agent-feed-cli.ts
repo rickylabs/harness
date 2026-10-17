@@ -37,8 +37,8 @@ export interface IssueAgentFeedOptions {
   /** Exact private roots certified by native bindings; only watch hints, never evidence. */
   readonly watchStoreRoots?: Set<string>;
   /**
-   * Publish a bounded Codex tree as a `scan_limit` issue that keeps the agents it read (contract
-   * 0.37 and later). Without it the issue is `scan_limit` with no agents, which every earlier
+   * Publish a closed observed forest with bounded descendants or unresolved launch attempts as a
+   * `scan_limit` issue (contract 0.37 and later). Without it the issue has no agents, which every earlier
    * reader accepts: a reader on 0.36 or older rejects a whole snapshot holding a bounded row.
    */
   readonly partialTrees?: boolean;
@@ -228,10 +228,19 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
         children, options.now, options.watchFiles);
       for (const [key, at] of starts) claudeChildStarts.set(key, at);
     }
-    const observations = buildAgentObservations({ wireFamily, dispatches: group.dispatches, runs,
+    let dispatches = group.dispatches;
+    if (options.partialTrees) {
+      const resolved = dispatches.filter(dispatch => host.resolveNativeRoot(dispatch, runs) !== null);
+      // Unresolved attempts bound the forest's extent; they cannot erase an exactly verified retry.
+      if (resolved.length > 0 && resolved.length < dispatches.length) {
+        dispatches = resolved;
+        bounded = true;
+      }
+    }
+    const observations = buildAgentObservations({ wireFamily, dispatches, runs,
       observedAt: options.now, sourceBound: true, dispatchComplete: true, nativeComplete: true,
       claudeChildStarts, host });
-    entry.snapshot = buildIssueAgentTreeSnapshot({ wireFamily, observations, dispatches: group.dispatches, runs,
+    entry.snapshot = buildIssueAgentTreeSnapshot({ wireFamily, observations, dispatches, runs,
       localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete, bounded, host });
   }
   // A malformed receipt cannot be proven unrelated to a scoped issue.
