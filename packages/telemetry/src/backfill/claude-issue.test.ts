@@ -42,6 +42,26 @@ it("reads only the private-ID-selected Claude root and its child tree", async ()
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+it("reads a root that carries the CLI's request-log records (rickylabs/harness#743)", async () => {
+  const root = await mkdtemp(join(tmpdir(), "claude-issue-requests-"));
+  const project = join(root, "fixture-project");
+  const row = (value: unknown) => JSON.stringify(value) + "\n";
+  try {
+    await mkdir(project);
+    await writeFile(join(project, rootId + ".jsonl"), transcript(rootId) +
+      row({ type: "api-request-shape", timestamp: later, sessionId: rootId, shapeHash: "s1" }) +
+      row({ type: "api-request", timestamp: later, sessionId: rootId, shapeHash: "s1" }) +
+      row({ type: "api-request-blob", sessionId: rootId, hash: "h1" }));
+    const scan = await scanClaudeIssue(root, id => id === rootId, 20, 8 * 1_048_576, 32 * 1_048_576);
+    assert.equal(scan.reason, null);
+    assert.equal(scan.runs[0]?.usage.inputTokens, 5);
+    await writeFile(join(project, rootId + ".jsonl"), transcript(rootId) +
+      row({ type: "warp-drive", timestamp: later, sessionId: rootId }));
+    assert.equal((await scanClaudeIssue(root, id => id === rootId, 20, 8 * 1_048_576,
+      32 * 1_048_576)).reason, "source_unavailable"); // An unknown type still refuses the root.
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 it("keeps duplicate roots, forged child parents, symlinks and partial transcripts unavailable", async () => {
   const root = await mkdtemp(join(tmpdir(), "claude-issue-negative-"));
   const project = join(root, "fixture-project"), other = join(root, "other-project");

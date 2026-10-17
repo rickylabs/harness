@@ -114,10 +114,18 @@ export const KNOWN_TYPES: ReadonlySet<string> = new Set([
  *
  * 100 of those 445 transcripts end on one of these records. None of the types that appeared at a
  * tail carries a timestamp, so none of them could have understated a run's last activity.
+ *
+ * Claude Code added three request-log types after that census (seen 2026-10-17): `api-request` and
+ * `api-request-shape` time the request the CLI sent, not an agent activity, and `api-request-blob`
+ * holds request content keyed by hash. The reply to a request is an `assistant` record, read below
+ * with its own time and usage, so skipping these loses neither.
  */
 export const OBSERVED_UNREAD_TYPES: ReadonlyMap<string, string> = new Map([
   ["agent-name", "no timestamp field; names a subagent, not an activity"],
   ["ai-title", "no timestamp field; a generated session title"],
+  ["api-request", "times a request the CLI sent; its reply is an assistant record already read"],
+  ["api-request-blob", "no timestamp field; request content keyed by hash"],
+  ["api-request-shape", "times a request shape the CLI recorded, not an agent activity"],
   ["artifact-autoreact-ledger", "artifact reaction bookkeeping; activity-time semantics unverified"],
   ["artifact-comment-monitor", "artifact comment-monitor bookkeeping; activity-time semantics unverified"],
   ["cost-state", "no timestamp field; carries startTime and totals, not an activity instant"],
