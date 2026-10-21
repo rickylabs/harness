@@ -37,7 +37,7 @@ export const LM_STUDIO_LOGS: DiagnosticPointer = {
  */
 export const OPENCODE_LOG: DiagnosticPointer = {
   what: "opencode relay log (OpenRouter and local-model calls), UTC",
-  where: "~/.local/state/opencode/log/opencode.log on ai-agents",
+  where: "log/opencode.log in the OpenCode 2.x data directory (each line carries run= and role=)",
   grep: "run=<id>",
   why: "an OpenRouter or local-model failure reaches the caller as a stalled or empty stream; the sequence stream -> project copy refresh -> message=process shows where it actually stopped",
 };
