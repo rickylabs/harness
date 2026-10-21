@@ -20,7 +20,8 @@ import { compareStrings } from "../order.js";
 import { parseClaudeTranscript } from "./claude.js";
 import { parseCodexRollout } from "./codex.js";
 import { transcriptAsOf, type ParsedTranscript } from "./jsonl.js";
-import { openOpencodeDb, readSessions } from "./opencode.js";
+import { openOpencodeDb, readSessions, RUN_SESSION_COLUMNS } from "./opencode.js";
+import { listOpenCodeRunStores } from "./opencode-run-store.js";
 
 export interface BackfillRoots {
   /** `~/.claude/projects`. */
@@ -735,6 +736,25 @@ export async function backfillFromDisk(
         reader.close();
       }
     }
+  }
+
+  if (roots.opencodeData !== undefined) {
+    // OpenCode 2.x: one run database per run, the newest first; each is bounded like the legacy store.
+    const read: RunRecord[] = [];
+    for (const path of await listOpenCodeRunStores(roots.opencodeData, limit + 1)) {
+      const { reader, note, absent } = await openOpencodeDb(path);
+      if (note !== null && !absent) { notes.push(note); degraded = true; }
+      if (reader === null) continue;
+      try { read.push(...readSessions(reader, path, { limit: limit + 1, sinceMs }, RUN_SESSION_COLUMNS)); }
+      catch (error) { notes.push(`opencode: run database query failed (${errorCode(error)})`); degraded = true; }
+      finally { reader.close(); }
+    }
+    read.sort((a, b) => compareStrings(b.updatedAt, a.updatedAt) || compareStrings(a.id, b.id));
+    if (read.length > limit) {
+      notes.push(`opencode: more than ${limit} run database session(s) match — only the ${limit} most recent were read`);
+      degraded = true;
+    }
+    runs.push(...read.slice(0, limit));
   }
 
   // Deterministic order: newest activity first, ties broken by id so two runs updated in the same

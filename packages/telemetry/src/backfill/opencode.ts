@@ -60,6 +60,8 @@ export const SESSION_COLUMNS = `
          tokens_cache_read, tokens_cache_write,
          time_created, time_updated
     from session` as const;
+/** The same session columns in an OpenCode 2.x run database (`session_v2` keeps their names and units). */
+export const RUN_SESSION_COLUMNS = SESSION_COLUMNS.replace(/from session$/, "from session_v2");
 
 /** How much of the store to read. Both bounds travel as parameters, never as query text. */
 export interface SessionBounds {
@@ -88,9 +90,9 @@ export interface BoundQuery {
  * back to the creation time for a row that was never updated — without it those rows would sort last
  * and be dropped by a bound they are not actually outside of.
  */
-export function sessionQuery(bounds: SessionBounds): BoundQuery {
+export function sessionQuery(bounds: SessionBounds, columns: string = SESSION_COLUMNS): BoundQuery {
   const params: number[] = [];
-  let text: string = SESSION_COLUMNS;
+  let text: string = columns;
   const since = bounds.sinceMs ?? null;
   if (since !== null) {
     text += `\n   where coalesce(time_updated, time_created) >= ?`;
@@ -272,8 +274,9 @@ export function readSessions(
   reader: SqliteReader,
   origin: string,
   bounds: SessionBounds,
+  columns: string = SESSION_COLUMNS,
 ): readonly RunRecord[] {
-  const { text, params } = sessionQuery(bounds);
+  const { text, params } = sessionQuery(bounds, columns);
   const runs: RunRecord[] = [];
   for (const row of reader.all(text, params)) {
     const run = rowToRun(row as unknown as SessionRow, origin);

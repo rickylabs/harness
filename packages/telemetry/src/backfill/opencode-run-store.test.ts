@@ -3,11 +3,12 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { it } from "node:test";
 import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { collectIssueAgentTree } from "../issue-agent-feed-cli.js";
+import { backfillFromDisk } from "./index.js";
 import { OPERATOR_ENV } from "../operator-environment.js";
 import { OPENCODE_RUN_DB_PREFIX, openCodeRunStorePath } from "./opencode-run-store.js";
 
@@ -21,12 +22,14 @@ async function fixture(turn: Turn = {}) {
   const data = join(base, ".local/share/opencode"); await mkdir(data, { recursive: true, mode: 0o700 });
   const path = openCodeRunStorePath(data, rootID)!, db = new DatabaseSync(path);
   db.exec(`PRAGMA journal_mode=WAL;
-    CREATE TABLE session_v2(id TEXT PRIMARY KEY,project_id TEXT,parent_id TEXT,directory TEXT,version TEXT,
-      time_created INTEGER,time_updated INTEGER,time_suspended INTEGER);
+    CREATE TABLE session_v2(id TEXT PRIMARY KEY,project_id TEXT,parent_id TEXT,directory TEXT,title TEXT,version TEXT,
+      agent TEXT,model TEXT,cost REAL,tokens_input INTEGER,tokens_output INTEGER,tokens_reasoning INTEGER,
+      tokens_cache_read INTEGER,tokens_cache_write INTEGER,time_created INTEGER,time_updated INTEGER,time_suspended INTEGER);
     CREATE TABLE session_message(id TEXT PRIMARY KEY,session_id TEXT,type TEXT,seq INTEGER,time_created INTEGER,
       time_updated INTEGER,data TEXT);`);
-  db.prepare("INSERT INTO session_v2 VALUES(?,?,?,?,?,?,?,?)").run(rootID, "prj_fixture", null, "/PRIVATE/WORKSPACE",
-    "2.1.2", epoch, epoch + 25_000, null);
+  db.prepare("INSERT INTO session_v2 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").run(rootID, "prj_fixture", null,
+    "/PRIVATE/WORKSPACE", "PRIVATE-TITLE-CANARY", "2.1.2", null, JSON.stringify({ id: model, providerID: provider }), 0.25,
+    1200, 300, 0, 50, 0, epoch, epoch + 25_000, null);
   let seq = 0;
   const message = (id: string, type: string, body: object, at: number) =>
     db.prepare("INSERT INTO session_message VALUES(?,?,?,?,?,?,?)").run(id, rootID, type, ++seq, at, at, JSON.stringify(body));
@@ -84,4 +87,14 @@ it("OpenCode 2.x turns without a succeeded native end, a final answer or settled
   const f = await fixture({ variant: "high" });
   try { assert.equal(agent(await f.collect())?.observation.route.observed.effort.value, "high"); }
   finally { await f.close(); }
+});
+it("OpenCode 2.x run databases join the backfill runs with their session usage, never the legacy store's rows", async () => {
+  const f = await fixture();
+  try {
+    const result = await backfillFromDisk({ opencodeData: dirname(f.path) }, { limit: 5 });
+    const runs = result.runs.filter(run => run.source === "opencode");
+    assert.equal(runs.length, 1); assert.equal(runs[0]!.id, rootID); assert.equal(runs[0]!.origin, f.path);
+    assert.equal(runs[0]!.identity.model, model); assert.equal(runs[0]!.identity.provider, provider);
+    assert.equal(runs[0]!.usage.inputTokens, 1200); assert.equal(runs[0]!.usage.outputTokens, 300);
+  } finally { await f.close(); }
 });

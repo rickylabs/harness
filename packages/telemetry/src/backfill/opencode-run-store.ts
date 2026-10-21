@@ -4,6 +4,7 @@
  * would become a second executor of a live or killed run. Row shapes are @opencode/client 2.1.2
  * `SessionInfo` and `SessionMessageInfo`. Only an exact private root and its children are read. */
 import { createHash } from "node:crypto";
+import { lstat, readdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { nativeMessageActivity, recentActivity } from "../native-activity.js";
 import type { RunRecord } from "../model.js";
@@ -17,6 +18,17 @@ export const OPENCODE_RUN_DB_PREFIX = "opencode-v2-";
 /** The run database of one root session, or null for an id that cannot name one. */
 export function openCodeRunStorePath(dataDirectory: string, root: string): string | null {
   return sessionID(root) ? join(dataDirectory, OPENCODE_RUN_DB_PREFIX + root + ".db") : null;
+}
+const RUN_STORE_NAME = /^opencode-v2-ses_[A-Za-z0-9_-]{1,252}\.db$/;
+/** The newest run databases in the data directory by modification time, at most `limit`, never following links. */
+export async function listOpenCodeRunStores(dataDirectory: string, limit: number): Promise<readonly string[]> {
+  const names = (await readdir(dataDirectory).catch(() => [] as string[])).filter(name => RUN_STORE_NAME.test(name));
+  const stores = await Promise.all(names.map(async name => {
+    const stat = await lstat(join(dataDirectory, name)).catch(() => null);
+    return stat?.isFile() ? { path: join(dataDirectory, name), at: stat.mtimeMs } : null;
+  }));
+  return stores.filter(store => store !== null).sort((a, b) => b.at - a.at || a.path.localeCompare(b.path))
+    .slice(0, limit).map(store => store.path);
 }
 /** Every table and column this projection reads. A store missing any of them is not a 2.x run database. */
 const RUN_COLUMNS = {
