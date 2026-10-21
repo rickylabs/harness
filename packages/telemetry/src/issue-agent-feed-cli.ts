@@ -12,6 +12,8 @@ import { backfillFromDisk, defaultRoots } from "./backfill/index.js";
 import { scanClaudeIssue } from "./backfill/claude-issue.js";
 import { scanAGYIssue } from "./backfill/agy.js";
 import { scanOpenCodeIssue } from "./backfill/opencode-issue.js";
+import { openCodeRunStorePath, scanOpenCodeRunStore } from "./backfill/opencode-run-store.js";
+import { lstat } from "node:fs/promises";
 import { buildAgentObservations } from "./agent-observations.js";
 import { readClaudeChildStarts } from "./claude-child-events.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
@@ -205,8 +207,12 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     for (const dispatch of group.dispatches.filter(d => d.source === "opencode")) {
       const id = host.openCodeSessionID(dispatch);
       if (id === null) { openCodeUnavailable = true; break; }
-      const path = defaultRoots(options.home).opencodeDb!;
-      const scan = await scanOpenCodeIssue(path, id, issueFileLimit - runs.length, remainingBytes, nowMs);
+      // A 2.x run owns its run database; a session without one is a 1.x run that ended in the legacy store.
+      const roots = defaultRoots(options.home), runStore = openCodeRunStorePath(roots.opencodeData!, id);
+      const legacy = runStore === null || await lstat(runStore).then(() => false, () => true);
+      const path = legacy ? roots.opencodeDb! : runStore!;
+      const scan = await (legacy ? scanOpenCodeIssue : scanOpenCodeRunStore)(path, id, issueFileLimit - runs.length,
+        remainingBytes, nowMs);
       remainingBytes -= scan.bytesRead;
       for (const file of scan.files) options.watchFiles?.add(file);
       options.watchStoreRoots?.add(path.slice(0, path.lastIndexOf("/")));

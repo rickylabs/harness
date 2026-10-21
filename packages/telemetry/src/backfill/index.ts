@@ -21,14 +21,17 @@ import { parseClaudeTranscript } from "./claude.js";
 import { parseCodexRollout } from "./codex.js";
 import { transcriptAsOf, type ParsedTranscript } from "./jsonl.js";
 import { openOpencodeDb, readSessions } from "./opencode.js";
+import { readOpenCodeRunSessions } from "./opencode-run-store.js";
 
 export interface BackfillRoots {
   /** `~/.claude/projects`. */
   readonly claudeProjects?: string;
   /** `~/.codex/sessions`. */
   readonly codexSessions?: string;
-  /** `~/.local/share/opencode/opencode.db`. */
+  /** `~/.local/share/opencode/opencode.db`: the 1.x legacy store, read only for runs that already ended. */
   readonly opencodeDb?: string;
+  /** `~/.local/share/opencode`: the OpenCode data directory that holds each 2.x run database. */
+  readonly opencodeData?: string;
 }
 
 /** How much of each store to read. Both bounds are pushed into the readers, not applied after. */
@@ -735,6 +738,11 @@ export async function backfillFromDisk(
     }
   }
 
+  if (roots.opencodeData !== undefined) {
+    const read = await readOpenCodeRunSessions(roots.opencodeData, limit, sinceMs);
+    notes.push(...read.notes); degraded ||= read.degraded; runs.push(...read.runs);
+  }
+
   // Deterministic order: newest activity first, ties broken by id so two runs updated in the same
   // millisecond do not swap places between snapshots.
   runs.sort((a, b) => compareStrings(b.updatedAt, a.updatedAt) || compareStrings(a.id, b.id));
@@ -747,6 +755,7 @@ export function defaultRoots(home: string): BackfillRoots {
     claudeProjects: join(home, ".claude", "projects"),
     codexSessions: join(home, ".codex", "sessions"),
     opencodeDb: join(home, ".local", "share", "opencode", "opencode.db"),
+    opencodeData: join(home, ".local", "share", "opencode"),
   };
 }
 

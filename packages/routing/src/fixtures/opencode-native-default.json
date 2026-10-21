@@ -1,5 +1,5 @@
 {
-  "version": "1.18.34",
+  "version": "2.1.2",
   "unverifiedVersion": "9.0.0",
   "models": [
     {
@@ -26,7 +26,8 @@
         },
         "interleaved": false
       },
-      "variants": {}
+      "variants": [],
+      "enabled": true
     },
     {
       "id": "kimi-k2.6",
@@ -52,7 +53,8 @@
         },
         "interleaved": false
       },
-      "variants": {}
+      "variants": [],
+      "enabled": true
     },
     {
       "id": "qwen3.8-flash-next",
@@ -78,7 +80,8 @@
         },
         "interleaved": false
       },
-      "variants": {}
+      "variants": [],
+      "enabled": true
     },
     {
       "id": "qwen3.8-flash-next",
@@ -104,17 +107,27 @@
         },
         "interleaved": false
       },
-      "variants": {
-        "low": {
-          "reasoningEffort": "low"
+      "variants": [
+        {
+          "id": "low",
+          "settings": {
+            "reasoningEffort": "low"
+          }
         },
-        "medium": {
-          "reasoningEffort": "medium"
+        {
+          "id": "medium",
+          "settings": {
+            "reasoningEffort": "medium"
+          }
         },
-        "high": {
-          "reasoningEffort": "high"
+        {
+          "id": "high",
+          "settings": {
+            "reasoningEffort": "high"
+          }
         }
-      }
+      ],
+      "enabled": true
     }
   ],
   "connections": [
@@ -122,19 +135,28 @@
     "n5air-rocm",
     "ollama-cloud"
   ],
-  "opaqueVariants": {
-    "thinking": {
-      "thinking": {
-        "budgetTokens": 1024
+  "needsAuth": [
+    "fixture-needs-auth"
+  ],
+  "opaqueVariants": [
+    {
+      "id": "thinking",
+      "settings": {
+        "thinking": {
+          "budgetTokens": 1024
+        }
       }
     }
-  },
-  "disabledVariants": {
-    "low": {
-      "disabled": true,
-      "reasoningEffort": "low"
+  ],
+  "disabledVariants": [
+    {
+      "id": "low",
+      "settings": {
+        "disabled": true,
+        "reasoningEffort": "low"
+      }
     }
-  },
+  ],
   "otherLauncher": {
     "installed": "yes",
     "version": "2.1.288",

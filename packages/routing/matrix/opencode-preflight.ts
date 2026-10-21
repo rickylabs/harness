@@ -15,13 +15,30 @@ async function boundedText(stream: ReadableStream<Uint8Array>, maximum = maximum
   for (const chunk of chunks) { all.set(chunk, offset); offset += chunk.length; }
   return new TextDecoder('utf-8', { fatal: true }).decode(all);
 }
+/** OpenCode 2.x `model.list` through a private server the command owns, over an in-memory store: it opens no
+ * `opencode.db` and no run database, so it never resumes a session. */
+export const OPENCODE_MODEL_LIST_ARGS = ['api', 'model.list', '--standalone'] as const;
+export const OPENCODE_PRIVATE_DB = ':memory:';
+/** `{ location, data: [{ id, providerID }] }` to `providerID/id` lines for one provider. */
+export function openCodeCatalogLines(body: string, provider: string): string {
+  const parsed: unknown = JSON.parse(body);
+  const data = parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as { data?: unknown }).data : undefined;
+  if (!Array.isArray(data)) throw new Error('catalog-malformed');
+  return data.flatMap((value: unknown) => {
+    const model = value !== null && typeof value === 'object' ? value as Record<string, unknown> : {};
+    if (typeof model.id !== 'string' || typeof model.providerID !== 'string') throw new Error('catalog-malformed');
+    return model.providerID === provider && model.enabled !== false ? [`${model.providerID}/${model.id}`] : [];
+  }).join('\n');
+}
 /** Caller launcher binary; native errors never cross the diagnostic boundary. */
 export async function readOpenCodeModels(binary: string, provider: string, cwd: string): Promise<string> {
-  const child = new Deno.Command(binary, { args: ['models', provider], cwd, stdin: 'null', stdout: 'piped', stderr: 'null' }).spawn();
+  const child = new Deno.Command(binary, { args: [...OPENCODE_MODEL_LIST_ARGS], cwd, env: { OPENCODE_DB: OPENCODE_PRIVATE_DB },
+    stdin: 'null', stdout: 'piped', stderr: 'null' }).spawn();
   const deadline = setTimeout(() => { try { child.kill('SIGKILL'); } catch { /* already exited */ } }, 15_000);
   try {
     const output = await boundedText(child.stdout);
-    if (!(await child.status).success) throw new Error('catalog-unavailable'); return output;
+    if (!(await child.status).success) throw new Error('catalog-unavailable');
+    return openCodeCatalogLines(output, provider);
   } finally {
     clearTimeout(deadline); try { child.kill('SIGKILL'); } catch { /* already exited */ }
     await child.status;

@@ -10,10 +10,10 @@ export type DiscoveryLauncher = typeof DISCOVERY_LAUNCHERS[number];
 export type DiscoveryFact = "yes" | "no" | "unknown";
 export type DiscoveryProblem = "not-installed" | "command-failed" | "timeout" | "oversized" |
   "malformed" | "unsupported" | "empty-catalog" | "not-requested";
-export const DISCOVERY_SOURCES = ["version", "auth-status", "model/list", "models", "declared",
+export const DISCOVERY_SOURCES = ["version", "auth-status", "model/list", "declared",
   "claude.sdk.initialize", "claude.auth.apiProvider", "codex.config/read", "codex.builtin-provider", "codex.builtin-provider.unverified",
-  "opencode.models.providerID", "opencode.models.providerPrefix", "opencode.models.variants", "opencode.provider/list.connected",
-  "opencode.config/providers", "opencode.config/providers.providerID", "opencode.config/providers.variants", "agy.models", "agy.auth-gate", "agy.command.config", "agy.command.model"] as const;
+  "opencode.api/model", "opencode.api/model.providerID", "opencode.api/model.variants", "opencode.api/integration.connections",
+  "agy.models", "agy.auth-gate", "agy.command.config", "agy.command.model"] as const;
 export type DiscoverySource = typeof DISCOVERY_SOURCES[number];
 export interface DiscoveryProvider {
   readonly id: string | null;
@@ -25,7 +25,7 @@ export interface ProviderConnection {
   readonly id: string;
   /** Native configured/credential connection presence, never payment or live access. */
   readonly connected: DiscoveryFact;
-  readonly source: "opencode.provider/list.connected";
+  readonly source: "opencode.api/integration.connections";
 }
 export interface DiscoveredModel {
   readonly id: string;
@@ -78,6 +78,8 @@ export interface CliDiscoveryOptions {
 }
 const ID = /^[^\s\u0000-\u001f\u007f]{1,256}$/u;
 const VERSION = /\b\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?\b/;
+/** `--version` text; OpenCode 2.x prints `opencode v2.1.2`, so a `v` may precede the number. */
+const VERSION_TEXT = /(?:^|[^\w.])v?(\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?)\b/;
 const MAX_MODELS = 4096;
 /** One child process never runs longer than this; a launcher budget above it spans several children. */
 const CHILD_MAX_MS = 60_000;
@@ -184,19 +186,6 @@ function nativeJson(text: string): unknown {
   };
   try { visit(0); space(); if (at !== text.length) throw new DiscoveryError("malformed"); return JSON.parse(text); }
   catch (error) { if (error instanceof DiscoveryError) throw error; throw new DiscoveryError("malformed"); }
-}
-/** Locate one bounded JSON object in the native mixed header/JSON model listing. */
-function jsonObjectEnd(text: string, start: number): number {
-  let depth = 0, quoted = false;
-  for (let at = start; at < text.length; at++) {
-    const char = text[at];
-    if (quoted) { if (char === "\\") at++; else if (char === '"') quoted = false; continue; }
-    if (char === '"') quoted = true;
-    else if (char === "{" || char === "[") depth++;
-    else if (char === "}" || char === "]") { if (--depth === 0) return at + 1; }
-    if (depth > 64) throw new DiscoveryError("oversized");
-  }
-  throw new DiscoveryError("malformed");
 }
 /** Owns one child and all its pipes. No stderr/raw command error ever leaves this boundary. */
 function child(binary: string, args: readonly string[], options: CliDiscoveryOptions, environment?: NodeJS.ProcessEnv) {
@@ -406,16 +395,20 @@ async function claudeCatalog(binary: string, options: CliDiscoveryOptions): Prom
     return [...models.values()];
   } finally { await running.close(); }
 }
+/** OpenCode 2.x `Model.Variant[]`: `{ id, settings }`. A variant is an effort only when its own native setting
+ * applies exactly that effort; a name alone never establishes one. */
 function nativeVariantEfforts(value: unknown): { variants: string[]; efforts: string[] | null } {
-  if (value === undefined) return { variants: [], efforts: null };
-  const variants = object(value), names = checkedVariants(Object.keys(variants)), efforts: string[] = [];
-  // A verified complete native map with no choices establishes default-only support.
+  if (!Array.isArray(value)) throw new DiscoveryError("malformed");
+  const entries = value.map(object), names = checkedVariants(entries.map(entry => entry.id)), efforts: string[] = [];
+  // A verified complete native list with no choices establishes default-only support.
   // It does not mean reasoning is disabled or that a named effort was applied.
   if (names.length === 0) return { variants: [], efforts: [] };
-  for (const name of names) {
-    const body = object(variants[name]);
+  const enabled: string[] = [];
+  for (const [index, name] of names.entries()) {
+    const body = entries[index]!.settings === undefined ? {} : object(entries[index]!.settings);
     if (body.disabled !== undefined && typeof body.disabled !== "boolean") throw new DiscoveryError("malformed");
     if (body.disabled === true) continue;
+    enabled.push(name);
     const assertions: unknown[] = [body.effort, body.reasoningEffort, body.reasoning_effort].filter(v => v !== undefined);
     if (body.reasoning !== undefined) {
       const reasoning = object(body.reasoning);
@@ -427,58 +420,34 @@ function nativeVariantEfforts(value: unknown): { variants: string[]; efforts: st
     // The native option key must actually apply that effort, not merely be named after one.
     if (assertions[0] === name) efforts.push(name);
   }
-  return { variants: names.filter(name => object(variants[name]).disabled !== true), efforts: efforts.length ? efforts : null };
+  return { variants: enabled, efforts: efforts.length ? efforts : null };
 }
-function openCodeModels(stdout: string): DiscoveredModel[] {
-  const models: DiscoveredModel[] = [];
-  let at = 0;
-  while (at < stdout.length) {
-    while (at < stdout.length && /\s/.test(stdout[at]!)) at++;
-    if (at === stdout.length) break;
-    const newline = stdout.indexOf("\n", at), end = newline < 0 ? stdout.length : newline;
-    const id = checkedIds([stdout.slice(at, end).trim()])[0]!, slash = id.indexOf("/");
-    if (slash < 1 || slash === id.length - 1) throw new DiscoveryError("malformed");
-    const prefix = id.slice(0, slash), nativeID = id.slice(slash + 1);
-    at = end;
-    while (at < stdout.length && /\s/.test(stdout[at]!)) at++;
-    if (stdout[at] === "{") {
-      const objectEnd = jsonObjectEnd(stdout, at), record = object(nativeJson(stdout.slice(at, objectEnd)));
-      at = objectEnd;
-      if (at < stdout.length && !/\s/.test(stdout[at]!)) throw new DiscoveryError("malformed");
-      if (record.id !== nativeID || record.providerID !== prefix) throw new DiscoveryError("malformed");
-      const capability = nativeVariantEfforts(record.variants);
-      models.push({ id, ...capability, provider: provider(record.providerID, "opencode.models.providerID", "model"),
-        effortSource: capability.efforts === null ? null : "opencode.models.variants" });
-    } else {
-      // Older native CLIs expose exact provider-prefixed IDs without verbose capability bodies.
-      models.push({ id, efforts: null, provider: provider(prefix, "opencode.models.providerPrefix", "model"),
-        variants: [], effortSource: null });
-    }
-    if (models.length > MAX_MODELS) throw new DiscoveryError("oversized");
-  }
-  checkedIds(models.map(model => model.id));
-  if (!models.length) throw new DiscoveryError("empty-catalog");
-  return models;
-}
+/** The 2.x routes discovery reads, and their response caps. */
+const OPENCODE_API = { models: "/api/model", integrations: "/api/integration" } as const;
+type OpenCodeRoute = typeof OPENCODE_API[keyof typeof OPENCODE_API];
+/** The private server's own store: in memory, so discovery never opens `opencode.db` or a run database. */
+const OPENCODE_PRIVATE_DB = ":memory:";
+/** OpenCode 2.x basic-auth user; the password is per process. */
+const OPENCODE_USER = "opencode";
 /** Private native payload may contain secrets. Only validated catalog and connection facts leave this boundary.
- * Owned authenticated loopback listener; no credential files, sessions, turns, redirects or writes.
+ * Owned authenticated loopback server over an in-memory store; no credential reads, sessions, turns, redirects or writes.
  */
 async function openCodeMetadata<T>(binary: string, options: CliDiscoveryOptions,
-  project: (get: (path: "/provider" | "/config/providers") => Promise<Record<string, unknown>>) => Promise<T>): Promise<T> {
-  const secret = randomBytes(32).toString("hex"), username = "harness_discovery";
-  const running = child(binary, ["serve", "--pure", "--hostname", "127.0.0.1", "--port", "0"], options,
-    { ...process.env, OPENCODE_SERVER_USERNAME: username, OPENCODE_SERVER_PASSWORD: secret });
+  project: (get: (path: OpenCodeRoute) => Promise<Record<string, unknown>>) => Promise<T>): Promise<T> {
+  const secret = randomBytes(32).toString("hex");
+  const running = child(binary, ["serve", "--hostname", "127.0.0.1", "--port", "0"], options,
+    { ...process.env, OPENCODE_PASSWORD: secret, OPENCODE_DB: OPENCODE_PRIVATE_DB });
   const timeout = options.timeoutMs ?? 15_000, deadline = Date.now() + timeout, controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
     const line = await running.line();
-    const match = /^opencode server listening on (http:\/\/127\.0\.0\.1:([1-9][0-9]{0,4}))$/.exec(line);
+    const match = /^server listening on (http:\/\/127\.0\.0\.1:([1-9][0-9]{0,4}))$/.exec(line);
     if (!match || Number(match[2]) > 65535) throw new DiscoveryError("malformed");
-    return await project(async path => {
+    return await project(async path => { try {
       const response = await fetch(match[1] + path, { method: "GET", redirect: "error", signal: controller.signal,
-        headers: { Authorization: "Basic " + Buffer.from(username + ":" + secret).toString("base64") } });
+        headers: { Authorization: "Basic " + Buffer.from(OPENCODE_USER + ":" + secret).toString("base64") } });
       if (response.status !== 200 || !response.body) throw new DiscoveryError("command-failed");
-      const maximum = options.maximumBytes ?? (path === "/config/providers" ? 1024 * 1024 : MAX_PROVIDER_BYTES), reader = response.body.getReader();
+      const maximum = options.maximumBytes ?? MAX_PROVIDER_BYTES, reader = response.body.getReader();
       const buffers: Uint8Array[] = []; let size = 0;
       try {
         for (;;) {
@@ -492,49 +461,63 @@ async function openCodeMetadata<T>(binary: string, options: CliDiscoveryOptions,
       try { text = new TextDecoder("utf-8", { fatal: true }).decode(Buffer.concat(buffers)); }
       catch { throw new DiscoveryError("malformed"); }
       return object(nativeJson(text));
-    });
+    } catch (error) {
+      // Both reads share one deadline; a late failure on the second read is still a timeout.
+      if (controller.signal.aborted || Date.now() >= deadline) throw new DiscoveryError("timeout");
+      throw error;
+    } });
   } catch (error) {
     if (controller.signal.aborted || Date.now() >= deadline) throw new DiscoveryError("timeout");
     throw error;
   } finally { clearTimeout(timer); controller.abort(); await running.close(); }
 }
-function openCodeConnectionFacts(data: Record<string, unknown>, models: readonly DiscoveredModel[]): ProviderConnection[] {
-  const connected = checkedIds(data.connected);
-  if (connected.length > 512 || connected.some(id => !PROVIDER_ID.test(id))) throw new DiscoveryError("malformed");
-  const ids = new Set([...connected, ...models.map(m => m.provider!.id!)]);
+/** 2.x list responses are `{ location, data: [...] }`. */
+function listData(body: Record<string, unknown>): Record<string, unknown>[] {
+  if (!Array.isArray(body.data)) throw new DiscoveryError("malformed");
+  if (body.data.length > MAX_MODELS) throw new DiscoveryError("oversized");
+  return body.data.map(object);
+}
+/** `GET /api/integration` connections. The private in-memory store holds no saved credential, so a provider with no
+ * connection there is unknown, never "no"; a connection marked `needs_auth` is "no". */
+function openCodeConnectionFacts(body: Record<string, unknown>, models: readonly DiscoveredModel[]): ProviderConnection[] {
+  const integrations = listData(body);
+  checkedIds(integrations.map(integration => integration.id));
+  const state = new Map<string, DiscoveryFact>();
+  for (const integration of integrations) {
+    if (!Array.isArray(integration.connections)) throw new DiscoveryError("malformed");
+    if (!integration.connections.length) continue;
+    if (typeof integration.id !== "string" || !PROVIDER_ID.test(integration.id)) throw new DiscoveryError("malformed");
+    const ready = integration.connections.map(object).some(connection => connection.status === undefined);
+    state.set(integration.id, ready ? "yes" : "no");
+  }
+  const ids = new Set([...state.keys(), ...models.map(m => m.provider!.id!)]);
   if (ids.size > 512) throw new DiscoveryError("oversized");
-  return [...ids].map(id => ({ id, connected: connected.includes(id) ? "yes" : "no", source: "opencode.provider/list.connected" }));
+  return [...ids].map(id => ({ id, connected: state.get(id) ?? "unknown", source: "opencode.api/integration.connections" }));
 }
-async function openCodeConnections(binary: string, models: readonly DiscoveredModel[], options: CliDiscoveryOptions): Promise<ProviderConnection[]> {
-  return await openCodeMetadata(binary, options, async get => openCodeConnectionFacts(await get("/provider"), models));
-}
-function openCodeHttpModels(data: Record<string, unknown>): DiscoveredModel[] {
-  if (!Array.isArray(data.providers)) throw new DiscoveryError("malformed");
-  if (data.providers.length > 512) throw new DiscoveryError("oversized");
-  checkedIds(data.providers.map(value => object(value).id));
+function openCodeApiModels(body: Record<string, unknown>): DiscoveredModel[] {
   const models: DiscoveredModel[] = [];
-  for (const value of data.providers) {
-    const p = object(value), binding = provider(p.id, "opencode.config/providers.providerID", "model"), nativeModels = object(p.models);
-    for (const id of checkedIds(Object.keys(nativeModels))) {
-      const record = object(nativeModels[id]);
-      if (record.id !== id || record.providerID !== binding.id) throw new DiscoveryError("malformed");
-      const capability = nativeVariantEfforts(record.variants);
-      models.push({ id: binding.id + "/" + id, ...capability, provider: binding,
-        effortSource: capability.efforts === null ? null : "opencode.config/providers.variants" });
-    }
+  for (const record of listData(body)) {
+    // `enabled` and `variants` are required by the 2.x Model.Info contract.
+    if (typeof record.enabled !== "boolean") throw new DiscoveryError("malformed");
+    if (!record.enabled) continue;
+    const binding = provider(record.providerID, "opencode.api/model.providerID", "model");
+    const nativeID = checkedIds([record.id])[0]!;
+    const capability = nativeVariantEfforts(record.variants);
+    models.push({ id: binding.id + "/" + nativeID, ...capability, provider: binding,
+      effortSource: capability.efforts === null ? null : "opencode.api/model.variants" });
   }
   checkedIds(models.map(model => model.id));
   if (!models.length) throw new DiscoveryError("empty-catalog");
   return models;
 }
-async function openCodeHttpCatalog(binary: string, options: CliDiscoveryOptions, observation: CliObservation): Promise<CliObservation> {
+async function openCodeCatalog(binary: string, options: CliDiscoveryOptions, observation: CliObservation): Promise<CliObservation> {
   return await openCodeMetadata(binary, options, async get => {
-    const models = openCodeHttpModels(await get("/config/providers"));
+    const models = openCodeApiModels(await get(OPENCODE_API.models));
     const catalog: CliObservation = { ...observation, catalog: "observed", models,
-      sources: [...new Set<DiscoverySource>(["version", "opencode.config/providers", ...models.flatMap(m =>
+      sources: [...new Set<DiscoverySource>(["version", "opencode.api/model", ...models.flatMap(m =>
         [m.provider?.source, m.effortSource].filter((source): source is DiscoverySource => source != null))])] };
-    try { return { ...catalog, providerConnections: openCodeConnectionFacts(await get("/provider"), models),
-      sources: [...catalog.sources, "opencode.provider/list.connected"] }; }
+    try { return { ...catalog, providerConnections: openCodeConnectionFacts(await get(OPENCODE_API.integrations), models),
+      sources: [...catalog.sources, "opencode.api/integration.connections"] }; }
     catch (error) { return { ...catalog, problems: [problem(error)] }; }
   });
 }
@@ -635,7 +618,7 @@ async function observe(launcher: DiscoveryLauncher, launcherOptions: CliDiscover
     return { ...base, installed: why === "not-installed" ? "no" : "unknown", problems: [why] };
   }
   if (version.code !== 0) return { ...base, problems: ["command-failed"] };
-  const observation: CliObservation = { ...base, installed: "yes", version: VERSION.exec(version.stdout)?.[0] ?? null,
+  const observation: CliObservation = { ...base, installed: "yes", version: VERSION_TEXT.exec(version.stdout)?.[1] ?? null,
     sources: ["version"], problems: [] };
   if (launcher === "claude") {
     let authenticated: DiscoveryFact = "unknown", binding = UNKNOWN_PROVIDER;
@@ -654,31 +637,19 @@ async function observe(launcher: DiscoveryLauncher, launcherOptions: CliDiscover
         sources: [...sources, "claude.sdk.initialize"], problems };
     } catch (error) { return { ...observation, authenticated, provider: binding, sources, problems: [...problems, problem(error)] }; }
   }
-  const fallbackProblems: DiscoveryProblem[] = [];
   try {
-    if (launcher === "opencode") {
-      try { return await openCodeHttpCatalog(binary, options, observation); }
-      catch (error) { fallbackProblems.push(problem(error)); }
-    }
+    if (launcher === "opencode") return await openCodeCatalog(binary, options, observation);
     if (launcher === "codex") {
       const catalog = await codexCatalog(binary, options);
       return { ...observation, catalog: "observed", models: catalog.models, authenticated: catalog.authenticated,
         provider: catalog.provider, problems: catalog.problems, sources: ["version", "auth-status", "model/list", ...(catalog.provider.source ? [catalog.provider.source] : [])] };
     }
-    const output = await command(binary, launcher === "agy" ? ["models"] : ["models", "--verbose", "--pure"], options);
+    const output = await command(binary, ["models"], options);
     if (output.code !== 0) throw new DiscoveryError("command-failed");
-    if (launcher === "agy") {
-      const ids = checkedIds(output.stdout.split(/\r?\n/).filter(line => line.trim()).map(line => line.split("\t")[0]));
-      if (!ids.length) throw new DiscoveryError("empty-catalog");
-      return await agyFacts(binary, ids, launcherOptions, observation);
-    }
-    const models = openCodeModels(output.stdout);
-    const catalog: CliObservation = { ...observation, catalog: "observed", models, problems: fallbackProblems, sources: [...new Set<DiscoverySource>(["version", "models", ...models.flatMap(m =>
-      [m.provider?.source, m.effortSource].filter((source): source is DiscoverySource => source != null))])] };
-    try { return { ...catalog, providerConnections: await openCodeConnections(binary, models, options),
-      sources: [...catalog.sources, "opencode.provider/list.connected"] }; }
-    catch (error) { return { ...catalog, problems: [...new Set([...fallbackProblems, problem(error)])] }; }
-  } catch (error) { return { ...observation, problems: [...new Set([...fallbackProblems, problem(error)])] }; }
+    const ids = checkedIds(output.stdout.split(/\r?\n/).filter(line => line.trim()).map(line => line.split("\t")[0]));
+    if (!ids.length) throw new DiscoveryError("empty-catalog");
+    return await agyFacts(binary, ids, launcherOptions, observation);
+  } catch (error) { return { ...observation, problems: [problem(error)] }; }
 }
 /** No model/provider whitelist: IDs and effort options are discovered as data. No turns or credential reads. */
 export async function discoverCliCapabilities(options: CliDiscoveryOptions): Promise<CliDiscoverySnapshot> {
@@ -706,8 +677,7 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
     const nativeSources: Record<DiscoveryLauncher, readonly DiscoverySource[]> = {
       claude: ["version", "auth-status", "claude.sdk.initialize", "claude.auth.apiProvider"],
       codex: ["version", "auth-status", "model/list", "codex.config/read", "codex.builtin-provider", "codex.builtin-provider.unverified"],
-      opencode: ["version", "models", "opencode.models.providerID", "opencode.models.providerPrefix", "opencode.models.variants", "opencode.provider/list.connected",
-        "opencode.config/providers", "opencode.config/providers.providerID", "opencode.config/providers.variants"],
+      opencode: ["version", "opencode.api/model", "opencode.api/model.providerID", "opencode.api/model.variants", "opencode.api/integration.connections"],
       agy: ["version", "declared", "agy.models", "agy.auth-gate", "agy.command.config", "agy.command.model"],
     };
     for (const name of DISCOVERY_LAUNCHERS) {
@@ -722,9 +692,9 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
           !Array.isArray(record.problems) || record.problems.length > 8 || record.problems.some(v =>
             !["not-installed", "command-failed", "timeout", "oversized", "malformed", "unsupported", "empty-catalog", "not-requested"].includes(v))) return false;
       if (name === "opencode" && record.authenticated !== "unknown") return false;
-      const httpCatalog = record.sources.includes("opencode.config/providers");
-      if (record.sources.some(source => typeof source === "string" && source.startsWith("opencode.config/providers")) &&
-          (!httpCatalog || record.catalog !== "observed")) return false;
+      const apiCatalog = record.sources.includes("opencode.api/model");
+      if (record.sources.some(source => typeof source === "string" && source.startsWith("opencode.api/")) &&
+          (!apiCatalog || record.catalog !== "observed")) return false;
       if (Object.hasOwn(record, "authenticationSource")) {
         if (name !== "agy" || (record.authenticated === "unknown" ? record.authenticationSource !== null : record.authenticationSource !== "agy.auth-gate")) return false;
       }
@@ -745,8 +715,7 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
           (p.source === "codex.builtin-provider" && p.id === nativeBindings.codex.builtinProvider));
         if (name === "agy") return scope === "cli" && p.source === "agy.command.config" && record.authenticated === "yes" && Object.values(nativeBindings.agy.providerBindings).includes(p.id);
         return name === "opencode" && scope === "model" && modelID?.startsWith(p.id + "/") === true &&
-          (p.source === "opencode.models.providerID" || p.source === "opencode.models.providerPrefix" ||
-            (httpCatalog && p.source === "opencode.config/providers.providerID"));
+          apiCatalog && p.source === "opencode.api/model.providerID";
       };
       if (Object.hasOwn(record, "provider") && !binding(record.provider, "cli")) return false;
       // The unverified marker names a build whose compiled default is unproven: never beside any provider binding.
@@ -762,7 +731,7 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
               : name === "codex" && object(model.provider).source === "codex.builtin-provider"))) return false;
         if (Object.hasOwn(model, "label") && (typeof model.label !== "string" || screenedLabel(model.label) !== model.label || Object.hasOwn(model, "labelWithheld"))) return false;
         if (Object.hasOwn(model, "labelWithheld") && model.labelWithheld !== "screened") return false;
-        if (httpCatalog && object(model.provider).source !== "opencode.config/providers.providerID") return false;
+        if (apiCatalog && object(model.provider).source !== "opencode.api/model.providerID") return false;
         ids.push(model.id);
         if (model.efforts !== null) checkedEfforts(model.efforts);
         if (name === "agy" && model.efforts !== null && (record.authenticated !== "yes" || model.effortSource !== "agy.command.model" || !record.sources.includes("agy.command.model") || (model.efforts as unknown[]).length > 1)) return false;
@@ -783,9 +752,9 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
         if (Object.hasOwn(model, "variants")) { if (name !== "opencode") return false; checkedVariants(model.variants); }
         if (name === "opencode" && model.efforts !== null && (model.efforts as unknown[]).length === 0 &&
             (checkedVariants(model.variants).length !== 0 ||
-             model.effortSource !== (httpCatalog ? "opencode.config/providers.variants" : "opencode.models.variants"))) return false;
+             model.effortSource !== "opencode.api/model.variants")) return false;
         if (Object.hasOwn(model, "effortSource")) {
-          const expected = name === "claude" ? "claude.sdk.initialize" : name === "codex" ? "model/list" : name === "agy" ? "agy.command.model" : httpCatalog ? "opencode.config/providers.variants" : "opencode.models.variants";
+          const expected = name === "claude" ? "claude.sdk.initialize" : name === "codex" ? "model/list" : name === "agy" ? "agy.command.model" : "opencode.api/model.variants";
           if (model.efforts === null) { if (model.effortSource !== null) return false; }
           else if (model.effortSource !== expected || !record.sources.includes(expected)) return false;
           if (name === "opencode" && model.efforts !== null && (!Array.isArray(model.variants) || (model.efforts as unknown[]).some((e: unknown) => !(model.variants as unknown[]).includes(e)))) return false;
@@ -795,17 +764,17 @@ export function validateCliDiscoverySnapshot(value: unknown): value is CliDiscov
       if ((record.catalog === "observed" && (record.installed !== "yes" || !ids.length)) ||
           (record.catalog === "unknown" && ids.length > 0) || (record.catalog === "declared" && name !== "agy")) return false;
       if (Object.hasOwn(record, "providerConnections")) {
-        if (name !== "opencode" || record.catalog !== "observed" || !record.sources.includes("opencode.provider/list.connected") ||
+        if (name !== "opencode" || record.catalog !== "observed" || !record.sources.includes("opencode.api/integration.connections") ||
             !Array.isArray(record.providerConnections) || record.providerConnections.length > 512) return false;
         const connections: unknown[] = [];
         for (const value of record.providerConnections) {
           const p = object(value);
           if (!shape(p, ["id", "connected", "source"]) || typeof p.id !== "string" || !PROVIDER_ID.test(p.id) ||
-              !fact(p.connected) || p.source !== "opencode.provider/list.connected") return false;
+              !fact(p.connected) || p.source !== "opencode.api/integration.connections") return false;
           connections.push(p.id);
         }
         checkedIds(connections);
-      } else if (record.sources.includes("opencode.provider/list.connected")) return false;
+      } else if (record.sources.includes("opencode.api/integration.connections")) return false;
     }
     return true;
   } catch { return false; }

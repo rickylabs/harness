@@ -1,19 +1,20 @@
-/** OpenCode legacy message/part projection. The family is decided by the store's structure
- * (LEGACY_COLUMNS, no bound next-family rows, strict row/part validation), never by the CLI
- * version. Only an exact private root is read. */
+/** OpenCode 1.x (legacy store) message/part projection: runs that ended before OpenCode 2.x replaced it.
+ * The family is decided by the store's structure (LEGACY_COLUMNS, no bound next-family rows, strict
+ * row/part validation), never by the CLI version. Only an exact private root is read. 2.x runs live in
+ * their own run database (opencode-run-store.ts). */
 import { createHash } from "node:crypto";
 import { lstat, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, normalize } from "node:path";
 import { nativeMessageActivity, recentActivity } from "../native-activity.js";
 import type { RunRecord } from "../model.js";
 
-const MAX_ROWS = 4096, MAX_ROW_BYTES = 1_048_576, MAX_ISSUE_BYTES = 8 * MAX_ROW_BYTES;
-const sessionID = (v: unknown): v is string => typeof v === "string" && /^ses_[A-Za-z0-9_-]{1,252}$/.test(v);
-const nativeID = (v: unknown, prefix: string): v is string => typeof v === "string" &&
+export const MAX_ROWS = 4096, MAX_ROW_BYTES = 1_048_576, MAX_ISSUE_BYTES = 8 * MAX_ROW_BYTES;
+export const sessionID = (v: unknown): v is string => typeof v === "string" && /^ses_[A-Za-z0-9_-]{1,252}$/.test(v);
+export const nativeID = (v: unknown, prefix: string): v is string => typeof v === "string" &&
   v.startsWith(prefix) && /^[A-Za-z0-9_-]{1,256}$/.test(v);
-const providerID = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9][a-z0-9._-]{0,63}$/.test(v);
-const modelID = (v: unknown): v is string => typeof v === "string" && /^~?[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(v);
-type Row = Readonly<Record<string, unknown>>;
+export const providerID = (v: unknown): v is string => typeof v === "string" && /^[a-z0-9][a-z0-9._-]{0,63}$/.test(v);
+export const modelID = (v: unknown): v is string => typeof v === "string" && /^~?[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$/.test(v);
+export type Row = Readonly<Record<string, unknown>>;
 /** Every table and column this projection reads. A store missing any of them is not the legacy family. */
 const LEGACY_COLUMNS = {
   session: ["id", "parent_id", "version", "time_created"],
@@ -21,15 +22,15 @@ const LEGACY_COLUMNS = {
   part: ["id", "message_id", "session_id", "data"],
 } as const;
 /** Bounded and non-empty only: the label is never a family or compatibility decision. */
-const versionLabel = (v: unknown): boolean => typeof v === "string" && v.length > 0 && v.length <= 64;
-const object = (v: unknown): Record<string, unknown> => {
+export const versionLabel = (v: unknown): boolean => typeof v === "string" && v.length > 0 && v.length <= 64;
+export const object = (v: unknown): Record<string, unknown> => {
   if (v === null || typeof v !== "object" || Array.isArray(v)) throw Error();
   return v as Record<string, unknown>;
 };
 /** JSON.parse validates grammar; the bounded token walk rejects duplicate keys before projection.
  * It never evaluates code. Decode blob bytes strictly, not SQLite's replacement-character text.
  */
-function nativeJSON(value: unknown): Record<string, unknown> {
+export function nativeJSON(value: unknown): Record<string, unknown> {
   if (!(value instanceof Uint8Array) || value.byteLength > MAX_ROW_BYTES) throw Error();
   const text = new TextDecoder("utf-8", { fatal: true }).decode(value);
   const parsed: unknown = JSON.parse(text);
@@ -52,7 +53,7 @@ function nativeJSON(value: unknown): Record<string, unknown> {
   }
   return object(parsed);
 }
-function millis(value: unknown, start: number, now: number): number {
+export function millis(value: unknown, start: number, now: number): number {
   if (!Number.isSafeInteger(value) || (value as number) < start || (value as number) > now ||
       !Number.isFinite(new Date(value as number).getTime())) throw Error();
   return value as number;
@@ -172,93 +173,109 @@ export interface OpenCodeIssueScan {
   readonly runs: readonly RunRecord[]; readonly bytesRead: number;
   readonly reason: "scan_limit" | "source_unavailable" | null; readonly files: readonly string[];
 }
+type NativeStore = InstanceType<typeof import("node:sqlite").DatabaseSync>;
+/** Opens an operator-owned, non-writable, non-symlinked SQLite store read-only and query-only, and runs
+ * `read` in one read transaction. Null when the store is unsafe or was replaced during the read. Shared by
+ * the legacy store and the 2.x run database readers; neither ever starts an OpenCode host. */
+export async function readNativeStore<T>(path: string, read: (db: NativeStore) => T): Promise<T | null> {
+  if (!isAbsolute(path) || normalize(path) !== path) return null;
+  for (const candidate of [dirname(path), path, path + "-wal", path + "-shm"]) {
+    let stat;
+    try { stat = await lstat(candidate); }
+    catch (error) { if (candidate !== path && candidate !== dirname(path) && (error as NodeJS.ErrnoException).code === "ENOENT") continue; throw error; }
+    if (stat.uid !== process.getuid?.() || (stat.mode & 0o022) !== 0 ||
+        (candidate === dirname(path) ? !stat.isDirectory() : !stat.isFile()) || await realpath(candidate) !== candidate) return null;
+  }
+  const before = await lstat(path), { DatabaseSync } = await import("node:sqlite");
+  const db = new DatabaseSync(path, { readOnly: true, timeout: 200 });
+  try {
+    const opened = await lstat(path);
+    if (before.ino !== opened.ino || before.dev !== opened.dev) return null;
+    db.exec("PRAGMA query_only=ON; BEGIN");
+    const result = read(db);
+    const after = await lstat(path);
+    if (after.ino !== before.ino || after.dev !== before.dev || await realpath(path) !== path) return null;
+    return result;
+  } finally { db.close(); }
+}
+/** A pending descendant cannot make a root/tree appear fully Done. */
+export function holdPendingTrees(runs: RunRecord[]): void {
+  for (let i = 0; i < runs.length; i++) if (runs[i]!.outcome === "complete" && runs.some(run => {
+    let parent = run.parentId;
+    for (let depth = 0; parent !== null && depth < 20; depth++) {
+      if (parent === runs[i]!.id) return run.outcome !== "complete" && run.outcome !== "failed";
+      parent = runs.find(candidate => candidate.id === parent)?.parentId ?? null;
+    }
+    return false;
+  })) { const { terminalAt: _at, terminalCause: _cause, ...run } = runs[i]!; runs[i] = { ...run, outcome: "running" }; }
+}
 /** No global session scan: indexed exact-root/parent queries and bounded message/part reads. */
 export async function scanOpenCodeIssue(path: string, root: string, limit: number, maxBytes: number,
   nowMs: number): Promise<OpenCodeIssueScan> {
   let bytesRead = 0;
   const files = [path, path + "-wal", dirname(path)];
   const fail = (reason: OpenCodeIssueScan["reason"]): OpenCodeIssueScan => ({ runs: [], bytesRead, reason, files });
+  if (!sessionID(root) || limit < 1) return fail("source_unavailable");
   try {
-    if (!isAbsolute(path) || normalize(path) !== path || !sessionID(root) || limit < 1) return fail("source_unavailable");
-    for (const candidate of [dirname(path), path, path + "-wal", path + "-shm"]) {
-      let stat;
-      try { stat = await lstat(candidate); }
-      catch (error) { if (candidate !== path && candidate !== dirname(path) && (error as NodeJS.ErrnoException).code === "ENOENT") continue; throw error; }
-      if (stat.uid !== process.getuid?.() || (stat.mode & 0o022) !== 0 ||
-          (candidate === dirname(path) ? !stat.isDirectory() : !stat.isFile()) || await realpath(candidate) !== candidate) return fail("source_unavailable");
-    }
-    const before = await lstat(path), { DatabaseSync } = await import("node:sqlite");
-    const db = new DatabaseSync(path, { readOnly: true, timeout: 200 });
-    try {
-      const opened = await lstat(path);
-      if (before.ino !== opened.ino || before.dev !== opened.dev) return fail("source_unavailable");
-      db.exec("PRAGMA query_only=ON; BEGIN");
-      // Structure before any row bytes: a store without the legacy tables/columns is refused unread.
-      for (const [table, required] of Object.entries(LEGACY_COLUMNS)) {
-        const names = new Set(db.prepare("SELECT name FROM pragma_table_info(?)").all(table).map(row => row.name));
-        if (required.some(column => !names.has(column))) return fail("source_unavailable");
-      }
-      const columns = `CASE WHEN length(CAST(id AS BLOB)) <= 256 THEN id END AS id,
-        CASE WHEN parent_id IS NULL OR length(CAST(parent_id AS BLOB)) <= 256 THEN parent_id END AS parent_id,
-        length(CAST(parent_id AS BLOB)) AS parent_bytes,
-        CASE WHEN length(CAST(version AS BLOB)) <= 64 THEN version END AS version,time_created`;
-      const roots = db.prepare(`SELECT ${columns} FROM session WHERE id=? LIMIT 2`).all(root);
-      if (roots.length !== 1 || roots[0]!.parent_id !== null || roots[0]!.parent_bytes !== null) return fail("source_unavailable");
-      const sessions = [...roots], selected = new Set([root]);
-      const maxSessions = Math.min(limit, 20);
-      for (let cursor = 0; cursor < sessions.length; cursor++) {
-        const children = db.prepare(`SELECT ${columns} FROM session WHERE parent_id=? ORDER BY id LIMIT ?`)
-          .all(sessions[cursor]!.id as string, maxSessions + 1);
-        for (const child of children) {
-          if (!sessionID(child.id) || selected.has(child.id)) return fail("source_unavailable");
-          selected.add(child.id); sessions.push(child);
-          if (sessions.length > maxSessions) return fail("scan_limit");
+    const scanned = await readNativeStore(path, (db): OpenCodeIssueScan => {
+      try {
+        // Structure before any row bytes: a store without the legacy tables/columns is refused unread.
+        for (const [table, required] of Object.entries(LEGACY_COLUMNS)) {
+          const names = new Set(db.prepare("SELECT name FROM pragma_table_info(?)").all(table).map(row => row.name));
+          if (required.some(column => !names.has(column))) return fail("source_unavailable");
         }
-      }
-      const tables = new Set(db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name IN ('session_message','session_input')").all().map(row => row.name));
-      const runs: RunRecord[] = [];
-      let rowsRead = 0;
-      for (const session of sessions) {
-        const id = session.id as string;
-        for (const table of ["session_message", "session_input"] as const) {
-          if (tables.has(table) && db.prepare(table === "session_message"
-            ? "SELECT 1 FROM session_message WHERE session_id=? LIMIT 1"
-            : "SELECT 1 FROM session_input WHERE session_id=? LIMIT 1").get(id)) return fail("source_unavailable");
+        const columns = `CASE WHEN length(CAST(id AS BLOB)) <= 256 THEN id END AS id,
+          CASE WHEN parent_id IS NULL OR length(CAST(parent_id AS BLOB)) <= 256 THEN parent_id END AS parent_id,
+          length(CAST(parent_id AS BLOB)) AS parent_bytes,
+          CASE WHEN length(CAST(version AS BLOB)) <= 64 THEN version END AS version,time_created`;
+        const roots = db.prepare(`SELECT ${columns} FROM session WHERE id=? LIMIT 2`).all(root);
+        if (roots.length !== 1 || roots[0]!.parent_id !== null || roots[0]!.parent_bytes !== null) return fail("source_unavailable");
+        const sessions = [...roots], selected = new Set([root]);
+        const maxSessions = Math.min(limit, 20);
+        for (let cursor = 0; cursor < sessions.length; cursor++) {
+          const children = db.prepare(`SELECT ${columns} FROM session WHERE parent_id=? ORDER BY id LIMIT ?`)
+            .all(sessions[cursor]!.id as string, maxSessions + 1);
+          for (const child of children) {
+            if (!sessionID(child.id) || selected.has(child.id)) return fail("source_unavailable");
+            selected.add(child.id); sessions.push(child);
+            if (sessions.length > maxSessions) return fail("scan_limit");
+          }
         }
-        const read = (parts: boolean): Row[] => {
-          const sizes = db.prepare(parts
-            ? "SELECT length(CAST(data AS BLOB)) AS bytes FROM part WHERE session_id=? ORDER BY id LIMIT ?"
-            : "SELECT length(CAST(data AS BLOB)) AS bytes FROM message WHERE session_id=? ORDER BY id LIMIT ?")
-            .all(id, MAX_ROWS - rowsRead + 1);
-          if (sizes.length + rowsRead > MAX_ROWS || sizes.some(row => !Number.isSafeInteger(row.bytes) ||
-              (row.bytes as number) < 0 || (row.bytes as number) > MAX_ROW_BYTES)) throw new RangeError();
-          const bytes = sizes.reduce((sum, row) => sum + (row.bytes as number), 0);
-          if (bytesRead + bytes > Math.min(maxBytes, MAX_ISSUE_BYTES)) throw new RangeError();
-          rowsRead += sizes.length; bytesRead += bytes;
-          return db.prepare(parts
-            ? `SELECT CASE WHEN length(CAST(id AS BLOB)) <= 256 THEN id END AS id,
-                CASE WHEN length(CAST(message_id AS BLOB)) <= 256 THEN message_id END AS message_id,
-                session_id,CAST(data AS BLOB) AS data FROM part WHERE session_id=? ORDER BY id LIMIT ?`
-            : "SELECT CASE WHEN length(CAST(id AS BLOB)) <= 256 THEN id END AS id,session_id,CAST(data AS BLOB) AS data FROM message WHERE session_id=? ORDER BY id LIMIT ?")
-            .all(id, sizes.length);
-        };
-        const messages = read(false), parts = read(true), run = openCodeConversation(session, messages, parts, path, nowMs);
-        if (run === null) return fail("source_unavailable");
-        runs.push(run);
-      }
-      // A pending descendant cannot make a root/tree appear fully Done.
-      for (let i = 0; i < runs.length; i++) if (runs[i]!.outcome === "complete" && runs.some(run => {
-        let parent = run.parentId;
-        for (let depth = 0; parent !== null && depth < 20; depth++) {
-          if (parent === runs[i]!.id) return run.outcome !== "complete" && run.outcome !== "failed";
-          parent = runs.find(candidate => candidate.id === parent)?.parentId ?? null;
+        const tables = new Set(db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name IN ('session_message','session_input')").all().map(row => row.name));
+        const runs: RunRecord[] = [];
+        let rowsRead = 0;
+        for (const session of sessions) {
+          const id = session.id as string;
+          for (const table of ["session_message", "session_input"] as const) {
+            if (tables.has(table) && db.prepare(table === "session_message"
+              ? "SELECT 1 FROM session_message WHERE session_id=? LIMIT 1"
+              : "SELECT 1 FROM session_input WHERE session_id=? LIMIT 1").get(id)) return fail("source_unavailable");
+          }
+          const read = (parts: boolean): Row[] => {
+            const sizes = db.prepare(parts
+              ? "SELECT length(CAST(data AS BLOB)) AS bytes FROM part WHERE session_id=? ORDER BY id LIMIT ?"
+              : "SELECT length(CAST(data AS BLOB)) AS bytes FROM message WHERE session_id=? ORDER BY id LIMIT ?")
+              .all(id, MAX_ROWS - rowsRead + 1);
+            if (sizes.length + rowsRead > MAX_ROWS || sizes.some(row => !Number.isSafeInteger(row.bytes) ||
+                (row.bytes as number) < 0 || (row.bytes as number) > MAX_ROW_BYTES)) throw new RangeError();
+            const bytes = sizes.reduce((sum, row) => sum + (row.bytes as number), 0);
+            if (bytesRead + bytes > Math.min(maxBytes, MAX_ISSUE_BYTES)) throw new RangeError();
+            rowsRead += sizes.length; bytesRead += bytes;
+            return db.prepare(parts
+              ? `SELECT CASE WHEN length(CAST(id AS BLOB)) <= 256 THEN id END AS id,
+                  CASE WHEN length(CAST(message_id AS BLOB)) <= 256 THEN message_id END AS message_id,
+                  session_id,CAST(data AS BLOB) AS data FROM part WHERE session_id=? ORDER BY id LIMIT ?`
+              : "SELECT CASE WHEN length(CAST(id AS BLOB)) <= 256 THEN id END AS id,session_id,CAST(data AS BLOB) AS data FROM message WHERE session_id=? ORDER BY id LIMIT ?")
+              .all(id, sizes.length);
+          };
+          const messages = read(false), parts = read(true), run = openCodeConversation(session, messages, parts, path, nowMs);
+          if (run === null) return fail("source_unavailable");
+          runs.push(run);
         }
-        return false;
-      })) { const { terminalAt: _at, terminalCause: _cause, ...run } = runs[i]!; runs[i] = { ...run, outcome: "running" }; }
-      const after = await lstat(path);
-      if (after.ino !== before.ino || after.dev !== before.dev || await realpath(path) !== path) return fail("source_unavailable");
-      return { runs, bytesRead, reason: null, files };
-    } catch (error) { return fail(error instanceof RangeError ? "scan_limit" : "source_unavailable"); }
-    finally { db.close(); }
+        holdPendingTrees(runs);
+        return { runs, bytesRead, reason: null, files };
+      } catch (error) { return fail(error instanceof RangeError ? "scan_limit" : "source_unavailable"); }
+    });
+    return scanned ?? fail("source_unavailable");
   } catch { return fail("source_unavailable"); }
 }

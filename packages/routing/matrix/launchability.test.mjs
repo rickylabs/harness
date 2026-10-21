@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { resolveWorkloadRoute } from './routing-policy.ts';
 import { assertRouteLaunchable, RouteLaunchError } from './launchability.ts';
-import { preflightWorkloadRoute } from './opencode-preflight.ts';
+import { OPENCODE_MODEL_LIST_ARGS, OPENCODE_PRIVATE_DB, openCodeCatalogLines, preflightWorkloadRoute } from './opencode-preflight.ts';
 
 const auth = { authorizer: 'owner', rationale: 'Authorized evaluator coverage' };
 const request = (tier, role = 'implementation_evaluation', generatorModel = 'sol') => ({
@@ -62,5 +62,19 @@ test('catalog failure and oversized output expose fixed diagnostics and the sele
       assert.ok(!error.message.includes('private native error'));
       return refusal(error, 'launcher-catalog-unavailable', 'openrouter/meta/muse-spark-1.3');
     });
+  }
+});
+
+test('OpenCode 2.x model.list projects exact enabled provider/model lines from its private in-memory server', () => {
+  assert.deepEqual(OPENCODE_MODEL_LIST_ARGS, ['api', 'model.list', '--standalone']);
+  assert.equal(OPENCODE_PRIVATE_DB, ':memory:', 'the preflight never opens opencode.db or a run database');
+  const body = JSON.stringify({ location: { directory: 'fixture' }, data: [
+    { id: 'meta/muse-spark-1.3', providerID: 'openrouter', enabled: true, variants: [] },
+    { id: 'meta/muse-spark-1.3-retired', providerID: 'openrouter', enabled: false, variants: [] },
+    { id: 'muse-spark-1.3', providerID: 'opencode', enabled: true, variants: [] },
+  ] });
+  assert.equal(openCodeCatalogLines(body, 'openrouter'), 'openrouter/meta/muse-spark-1.3');
+  for (const malformed of ['{}', '{"data":{}}', '{"data":[{"id":1,"providerID":"openrouter"}]}', 'openrouter/meta/muse-spark-1.3']) {
+    assert.throws(() => openCodeCatalogLines(malformed, 'openrouter'));
   }
 });

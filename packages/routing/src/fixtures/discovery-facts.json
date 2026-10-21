@@ -62,38 +62,58 @@
     {
       "id": "fixture-one",
       "providerID": "fixture-provider",
-      "variants": {
-        "low": {
-          "reasoningEffort": "low"
+      "variants": [
+        {
+          "id": "low",
+          "settings": {
+            "reasoningEffort": "low"
+          }
         },
-        "high": {
-          "effort": "high"
+        {
+          "id": "high",
+          "settings": {
+            "effort": "high"
+          }
         },
-        "opaque": {
-          "effort": "high"
+        {
+          "id": "opaque",
+          "settings": {
+            "effort": "high"
+          }
         }
-      },
+      ],
       "api": {
         "npm": "PRIVATE-SDK-CANARY"
       },
-      "description": "PRIVATE-DESCRIPTION-CANARY"
+      "description": "PRIVATE-DESCRIPTION-CANARY",
+      "enabled": true
     },
     {
       "id": "fixture-two",
       "providerID": "fixture-offline",
-      "variants": {
-        "thinking": {
-          "thinking": {
-            "budgetTokens": 1024
+      "variants": [
+        {
+          "id": "thinking",
+          "settings": {
+            "thinking": {
+              "budgetTokens": 1024
+            }
           }
         },
-        "Native_Custom": {
-          "thinking": {
-            "budgetTokens": 2048
+        {
+          "id": "Native_Custom",
+          "settings": {
+            "thinking": {
+              "budgetTokens": 2048
+            }
           }
         },
-        "0": {}
-      }
+        {
+          "id": "0",
+          "settings": {}
+        }
+      ],
+      "enabled": true
     }
   ],
   "connections": [
