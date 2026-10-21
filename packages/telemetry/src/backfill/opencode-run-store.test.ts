@@ -10,7 +10,7 @@ import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { collectIssueAgentTree } from "../issue-agent-feed-cli.js";
 import { backfillFromDisk } from "./index.js";
 import { OPERATOR_ENV } from "../operator-environment.js";
-import { OPENCODE_RUN_DB_PREFIX, openCodeRunStorePath } from "./opencode-run-store.js";
+import { OPENCODE_RUN_DB_PREFIX, openCodeRunConversation, openCodeRunStorePath } from "./opencode-run-store.js";
 
 const rootID = "ses_fixture_run", epoch = Date.parse("2026-01-01T00:00:00.000Z");
 const provider = "fixture-provider", model = "nested/model:1", qualified = provider + "/" + model;
@@ -97,4 +97,25 @@ it("OpenCode 2.x run databases join the backfill runs with their session usage, 
     assert.equal(runs[0]!.identity.model, model); assert.equal(runs[0]!.identity.provider, provider);
     assert.equal(runs[0]!.usage.inputTokens, 1200); assert.equal(runs[0]!.usage.outputTokens, 300);
   } finally { await f.close(); }
+});
+/** One row per message, in seq order, with the 2.x JSON payload. */
+const rows = (...messages: [string, object][]) => messages.map(([type, data], index) => ({ id: `msg_fixture_${index}`,
+  session_id: rootID, type, seq: index + 1, data: new TextEncoder().encode(JSON.stringify(data)) }));
+const session = { id: rootID, parent_id: null, version: "2.1.2", time_created: epoch };
+const answer = (completed: number) => ["assistant", { time: { created: epoch + 1000, streamed: epoch + 2000, completed },
+  agent: "build", model: { id: model, providerID: provider }, content: [{ type: "text", text: "Done." }], finish: "stop" }] as [string, object];
+const user: [string, object] = ["user", { time: { created: epoch }, text: "PRIVATE", files: [] }];
+it("OpenCode 2.x compaction after a succeeded turn clears its Done until new completion evidence", () => {
+  const done = openCodeRunConversation(session, rows(user, answer(epoch + 3000), ["idle", { time: { created: epoch + 3100 }, outcome: "succeeded" }]),
+    "origin", epoch + 30_000);
+  assert.equal(done?.outcome, "complete");
+  const compacting = openCodeRunConversation(session, rows(user, answer(epoch + 3000),
+    ["idle", { time: { created: epoch + 3100 }, outcome: "succeeded" }],
+    ["compaction", { time: { created: epoch + 4000 }, type: "compaction", status: "running" }]), "origin", epoch + 30_000);
+  assert.notEqual(compacting?.outcome, "complete"); assert.equal(compacting?.terminalAt, undefined);
+});
+it("OpenCode 2.x succeeded idle that predates the answer's completion is refused as Done", () => {
+  const run = openCodeRunConversation(session, rows(user, answer(epoch + 5000),
+    ["idle", { time: { created: epoch + 3100 }, outcome: "succeeded" }]), "origin", epoch + 30_000);
+  assert.notEqual(run?.outcome, "complete");
 });

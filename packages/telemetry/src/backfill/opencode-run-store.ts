@@ -60,8 +60,9 @@ const RUN_COLUMNS = {
 /** The `SessionMessageInfo` members of 2.1.2. Any other type is refused, never guessed. */
 const MESSAGE_TYPES = new Set(["user", "assistant", "idle", "synthetic", "system", "skill", "shell", "compaction",
   "agent-switched", "model-switched", "location-switched"]);
-/** Inputs that start a new turn; the previous turn's end no longer describes the session. */
-const TURN_STARTS = new Set(["user", "synthetic", "shell"]);
+/** Work that starts after a turn's end (a new input, or a compaction run without one); that end no longer
+ * describes the session until new completion evidence arrives. */
+const TURN_STARTS = new Set(["user", "synthetic", "shell", "compaction"]);
 const TOOL_STATES = new Set(["streaming", "running", "completed", "error"]);
 const VARIANT = /^[a-z][a-z0-9_-]{0,63}$/;
 /** OpenCode records the absence of a variant as this name; it is not an effort. */
@@ -78,7 +79,8 @@ export function openCodeRunConversation(session: Row, messages: readonly Row[], 
     const steps: NonNullable<RunRecord["activitySteps"]>[number][] = [];
     let identity: RunRecord["identity"] = { model: null, provider: null, effort: null, profile: null };
     let outcome: RunRecord["outcome"] = "unknown", terminalAt: string | undefined, terminalCause: RunRecord["terminalCause"];
-    let updated = start, seq = -1, answered = false;
+    // `answeredAt`: completion clock of a finished, non-empty, tool-settled stop answer in this turn, else null.
+    let updated = start, seq = -1, answeredAt: number | null = null;
     for (const row of messages) {
       if (!nativeID(row.id, "msg_") || row.session_id !== id || seen.has(row.id) || !Number.isSafeInteger(row.seq) ||
           (row.seq as number) <= seq || !MESSAGE_TYPES.has(row.type as string)) return null;
@@ -87,9 +89,9 @@ export function openCodeRunConversation(session: Row, messages: readonly Row[], 
       if ((data.id !== undefined && data.id !== row.id) || (data.type !== undefined && data.type !== type)) return null;
       const created = millis(time.created, start, nowMs); updated = Math.max(updated, created);
       if (TURN_STARTS.has(type)) {
-        outcome = "running"; terminalAt = undefined; terminalCause = undefined; answered = false;
+        outcome = "running"; terminalAt = undefined; terminalCause = undefined; answeredAt = null;
       } else if (type === "assistant") {
-        outcome = "running"; terminalAt = undefined; terminalCause = undefined; answered = false;
+        outcome = "running"; terminalAt = undefined; terminalCause = undefined; answeredAt = null;
         const route = object(data.model);
         if (!providerID(route.providerID) || !modelID(route.id) ||
             (route.variant !== undefined && (typeof route.variant !== "string" || !VARIANT.test(route.variant)))) return null;
@@ -114,13 +116,16 @@ export function openCodeRunConversation(session: Row, messages: readonly Row[], 
           } else if (item.type !== "reasoning") throw Error();
         });
         if (time.completed !== undefined) {
-          updated = Math.max(updated, millis(time.completed, at, nowMs));
-          answered = (data.error === undefined || data.error === null) && data.finish === "stop" && nonempty && !pending;
+          const completed = millis(time.completed, at, nowMs);
+          updated = Math.max(updated, completed);
+          const answered = (data.error === undefined || data.error === null) && data.finish === "stop" && nonempty && !pending;
+          answeredAt = answered ? completed : null;
         }
       } else if (type === "idle") {
         // An idle with no turn in progress before it proves nothing about this session's work.
         if (outcome !== "running") { outcome = "unknown"; continue; }
-        if (data.outcome === "succeeded") outcome = answered ? "complete" : "unknown";
+        // The native end must follow the answer it closes; an earlier idle clock contradicts it.
+        if (data.outcome === "succeeded") outcome = answeredAt !== null && created >= answeredAt ? "complete" : "unknown";
         else if (data.outcome === "failed") { outcome = "failed"; terminalCause = "error"; }
         else if (data.outcome === "interrupted") { outcome = "failed"; terminalCause = "cancelled"; }
         else return null;
