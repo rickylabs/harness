@@ -8,6 +8,8 @@ import { lstat, readdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { nativeMessageActivity, recentActivity } from "../native-activity.js";
 import type { RunRecord } from "../model.js";
+import { compareStrings } from "../order.js";
+import { openOpencodeDb, readSessions, RUN_SESSION_COLUMNS } from "./opencode.js";
 import {
   holdPendingTrees, MAX_ISSUE_BYTES, MAX_ROW_BYTES, MAX_ROWS, millis, modelID, nativeID, nativeJSON, object,
   providerID, readNativeStore, sessionID, versionLabel, type OpenCodeIssueScan, type Row,
@@ -29,6 +31,26 @@ export async function listOpenCodeRunStores(dataDirectory: string, limit: number
   }));
   return stores.filter(store => store !== null).sort((a, b) => b.at - a.at || a.path.localeCompare(b.path))
     .slice(0, limit).map(store => store.path);
+}
+/** The backfill seam's 2.x half: each run database's session row, newest first, bounded like the legacy store. */
+export async function readOpenCodeRunSessions(dataDirectory: string, limit: number, sinceMs: number | null):
+  Promise<{ readonly runs: readonly RunRecord[]; readonly notes: readonly string[]; readonly degraded: boolean }> {
+  const read: RunRecord[] = [], notes: string[] = [];
+  let degraded = false;
+  for (const path of await listOpenCodeRunStores(dataDirectory, limit + 1)) {
+    const { reader, note, absent } = await openOpencodeDb(path);
+    if (note !== null && !absent) { notes.push(note); degraded = true; }
+    if (reader === null) continue;
+    try { read.push(...readSessions(reader, path, { limit: limit + 1, sinceMs }, RUN_SESSION_COLUMNS)); }
+    catch (error) { notes.push(`opencode: run database query failed (${(error as NodeJS.ErrnoException).code ?? "unknown"})`); degraded = true; }
+    finally { reader.close(); }
+  }
+  read.sort((a, b) => compareStrings(b.updatedAt, a.updatedAt) || compareStrings(a.id, b.id));
+  if (read.length > limit) {
+    notes.push(`opencode: more than ${limit} run database session(s) match — only the ${limit} most recent were read`);
+    degraded = true;
+  }
+  return { runs: read.slice(0, limit), notes, degraded };
 }
 /** Every table and column this projection reads. A store missing any of them is not a 2.x run database. */
 const RUN_COLUMNS = {
