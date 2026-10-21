@@ -27,8 +27,10 @@ export interface BackfillRoots {
   readonly claudeProjects?: string;
   /** `~/.codex/sessions`. */
   readonly codexSessions?: string;
-  /** `~/.local/share/opencode/opencode.db`. */
+  /** `~/.local/share/opencode/opencode.db`: the 1.x legacy store, read only for runs that already ended. */
   readonly opencodeDb?: string;
+  /** `~/.local/share/opencode`: the OpenCode data directory that holds each 2.x run database. */
+  readonly opencodeData?: string;
 }
 
 /** How much of each store to read. Both bounds are pushed into the readers, not applied after. */
@@ -747,6 +749,7 @@ export function defaultRoots(home: string): BackfillRoots {
     claudeProjects: join(home, ".claude", "projects"),
     codexSessions: join(home, ".codex", "sessions"),
     opencodeDb: join(home, ".local", "share", "opencode", "opencode.db"),
+    opencodeData: join(home, ".local", "share", "opencode"),
   };
 }
 
