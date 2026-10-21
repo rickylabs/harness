@@ -17,6 +17,7 @@ async function fixture(run: (directory: string, binary: (kind: string, behavior?
     await writeFile(file, `#!/usr/bin/env node
 import { appendFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:http';
 const kind = ${JSON.stringify(kind)}, behavior = ${JSON.stringify(behavior)}, log = ${JSON.stringify(log)};
 const args = process.argv.slice(2);
 appendFileSync(log, JSON.stringify({args}) + '\\n');
@@ -26,10 +27,17 @@ if (behavior === 'timeout') { setInterval(() => {}, 1000); }
 else if (behavior === 'pipe-holder') { spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {stdio: ['ignore', 'inherit', 'inherit']}); process.exit(0); }
 else if (behavior === 'oversized') { process.stdout.write('x'.repeat(8192)); }
 else if (behavior === 'invalid-utf8') { process.stdout.write(Buffer.from([0xff])); }
-else if (args[0] === 'models') {
-  if (behavior === 'normal') console.log('fixture/alpha-v1\\nfixture/beta-v2@quant~latest');
-  if (behavior === 'duplicate') console.log('fixture/alpha-v1\\nfixture/alpha-v1');
-  if (behavior === 'malformed') console.log('invalid whitespace id');
+else if (args[0] === 'serve') {
+  // OpenCode 2.x: an authenticated loopback API server over the in-memory store discovery hands it.
+  const model = id => ({ id, providerID: 'fixture', variants: [], enabled: true });
+  const data = behavior === 'empty' ? [] : behavior === 'duplicate' ? [model('alpha-v1'), model('alpha-v1')]
+    : behavior === 'malformed' ? [model('invalid whitespace id')] : [model('alpha-v1'), model('beta-v2@quant~latest')];
+  const server = createServer((req, res) => {
+    appendFileSync(log, JSON.stringify({endpoint: req.url, database: process.env.OPENCODE_DB}) + '\\n');
+    if (req.headers.authorization !== 'Basic ' + Buffer.from('opencode:' + process.env.OPENCODE_PASSWORD).toString('base64')) { res.writeHead(403); res.end(); return; }
+    res.end(JSON.stringify(req.url === '/api/model' ? {location: {directory: 'fixture'}, data} : {location: {directory: 'fixture'}, data: []}));
+  });
+  server.listen(0, '127.0.0.1', () => console.log('server listening on http://127.0.0.1:' + server.address().port));
 }
 else if (args[0] === 'app-server') {
   let buffered = '';

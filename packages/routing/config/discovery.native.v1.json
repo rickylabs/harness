@@ -13,16 +13,12 @@
     ]
   },
   "opencode": {
-    "httpCatalogSources": [
-      "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/server/routes/instance/httpapi/handlers/config.ts",
-      "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/server/routes/instance/httpapi/groups/config.ts"
-    ],
     "sources": [
-      "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/provider/provider.ts",
-      "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/provider/transform.ts",
-      "https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/cli/cmd/models.ts"
+      "https://opencode.ai/v2/docs/api/",
+      "https://github.com/anomalyco/opencode/blob/v2.1.2/packages/server/src/routes.ts",
+      "https://github.com/anomalyco/opencode/blob/v2.1.2/packages/cli/src/database-path.ts"
     ],
-    "verification": "The final native model object includes normalized variants, with disabled choices removed. An explicit empty map establishes no selectable named variant; use the native default with no variant argument. Missing maps and nonempty opaque variants do not establish this contract."
+    "verification": "OpenCode 2.1.2 serves GET /api/model as { location, data: Model.Info[] } with variants as [{ id, settings }], and GET /api/integration as { location, data: Integration.Info[] } with connections [{ type: env | credential, status? }]. The discovery server runs over OPENCODE_DB=:memory:, so it sees environment connections only: no saved credential, no session, nothing to resume."
   },
   "agy": {
     "providerBindings": {

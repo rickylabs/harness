@@ -15,8 +15,12 @@ function snapshot(launcher, ids, observedAt = new Date().toISOString()) {
   const absent = () => ({ installed: 'unknown', version: null, authenticated: 'unknown', entitlement: 'unknown',
     quota: 'unknown', catalog: 'unknown', models: [], sources: [], problems: ['not-requested'] });
   const launchers = Object.fromEntries(['claude', 'codex', 'opencode', 'agy'].map(name => [name, absent()]));
+  // OpenCode 2.x API catalogs bind every model to its native provider ID.
+  const opencode = raw => { const id = raw.includes('/') ? raw : 'fixture/' + raw;
+    return { id, efforts: null, provider: { id: id.split('/')[0], source: 'opencode.api/model.providerID', scope: 'model' } }; };
   if (launcher) launchers[launcher] = { ...absent(), installed: 'yes', version: '1.2.3', catalog: 'observed',
-    models: ids.map(id => ({ id, efforts: null })), sources: [launcher === 'codex' ? 'model/list' : launcher === 'claude' ? 'claude.sdk.initialize' : launcher === 'agy' ? 'agy.models' : 'models'], problems: [] };
+    models: ids.map(id => launcher === 'opencode' ? opencode(id) : { id, efforts: null }),
+    sources: launcher === 'opencode' ? ['opencode.api/model', 'opencode.api/model.providerID'] : [launcher === 'codex' ? 'model/list' : launcher === 'claude' ? 'claude.sdk.initialize' : 'agy.models'], problems: [] };
   return { schemaVersion: 1, observedAt, launchers };
 }
 const refuses = (code, selected) => error => error instanceof RouteLaunchError && error.code === code &&

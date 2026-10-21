@@ -12,7 +12,7 @@ async function fixture(run: (cwd: string, binary: string, data: any) => Promise<
   try {
     const data = JSON.parse(await readFile(new URL("../src/fixtures/opencode-native-default.json", import.meta.url), "utf8"));
     await writeFile(join(cwd, "data.json"), JSON.stringify({ ...data, behavior }), { mode: 0o600 });
-    const binary = fileURLToPath(new URL("../src/fixtures/opencode-native-default-cli.mjs", import.meta.url));
+    const binary = fileURLToPath(new URL("../src/fixtures/opencode-http-catalog-cli.mjs", import.meta.url));
     await run(cwd, binary, data);
   } finally { await rm(cwd, { recursive: true, force: true }); }
 }
@@ -20,7 +20,7 @@ async function observe(cwd: string, binary: string) {
   return await discoverCliCapabilities({ cwd, only: ["opencode"], binaries: { opencode: binary }, timeoutMs: 3000 });
 }
 
-test("native default: real empty variant maps establish default only; named ROCm efforts remain exact", async () => fixture(async (cwd, binary, data) => {
+test("native default: real empty variant lists establish default only; named ROCm efforts remain exact", async () => fixture(async (cwd, binary, data) => {
   const s = await observe(cwd, binary), o = s.launchers.opencode;
   assert.equal(o.catalog, "observed");
   assert.deepEqual(o.problems, []);
@@ -32,17 +32,17 @@ test("native default: real empty variant maps establish default only; named ROCm
     assert.equal(m.provider?.id, data.models[i].providerID);
     assert.deepEqual(m.variants, []);
     assert.deepEqual(m.efforts, [], "native complete empty map must expose provider default, never unknown or invented high");
-    assert.equal(m.effortSource, "opencode.config/providers.variants");
+    assert.equal(m.effortSource, "opencode.api/model.variants");
   }
   assert.deepEqual(o.models[3]!.efforts, ["low", "medium", "high"]);
   const log = (await readFile(join(cwd, "commands.jsonl"), "utf8")).trim().split("\n").map(v => JSON.parse(v));
   assert.deepEqual(log.filter(v => v.args).map(v => v.args[0]), ["--version", "serve"]);
-  assert.deepEqual(log.filter(v => v.endpoint).map(v => v.endpoint), ["/config/providers", "/provider"]);
+  assert.deepEqual(log.filter(v => v.endpoint).map(v => v.endpoint), ["/api/model", "/api/integration"]);
   const server = log.find(v => v.args?.[0] === "serve");
   assert.throws(() => process.kill(server.pid, 0), { code: "ESRCH" });
 }));
 
-for (const behavior of ["missing", "opaque", "disabled"]) {
+for (const behavior of ["opaque", "disabled"]) {
   test("native default: " + behavior + " does not assert default-only support", async () => fixture(async (cwd, binary) => {
     const s = await observe(cwd, binary), o = s.launchers.opencode;
     assert.equal(o.catalog, "observed");
@@ -54,7 +54,7 @@ for (const behavior of ["missing", "opaque", "disabled"]) {
   }, behavior));
 }
 
-for (const behavior of ["null", "array", "duplicate", "id-mismatch", "provider-mismatch"]) {
+for (const behavior of ["missing", "null", "object-variants", "duplicate", "model-duplicate", "provider-type"]) {
   test("native default: malformed " + behavior + " cannot certify a model", async () => fixture(async (cwd, binary) => {
     const s = await observe(cwd, binary);
     assert.equal(s.launchers.opencode.catalog, "unknown");
@@ -77,10 +77,10 @@ test("native default: paired validator rejects default claims without the exact 
   const s = await observe(cwd, binary);
   // Also certifies the reader independently of which producer implementation is imported.
   for (const m of s.launchers.opencode.models.slice(0, 3)) {
-    Object.assign(m, { efforts: [], variants: [], effortSource: "opencode.config/providers.variants" });
+    Object.assign(m, { efforts: [], variants: [], effortSource: "opencode.api/model.variants" });
   }
-  if (!s.launchers.opencode.sources.includes("opencode.config/providers.variants")) {
-    Object.assign(s.launchers.opencode, { sources: [...s.launchers.opencode.sources, "opencode.config/providers.variants"] });
+  if (!s.launchers.opencode.sources.includes("opencode.api/model.variants")) {
+    Object.assign(s.launchers.opencode, { sources: [...s.launchers.opencode.sources, "opencode.api/model.variants"] });
   }
   assert.ok(validateCliDiscoverySnapshot(s));
   const other = structuredClone(s);
@@ -91,7 +91,7 @@ test("native default: paired validator rejects default claims without the exact 
     ["missing variant proof", v => { delete v.launchers.opencode.models[0].variants; }],
     ["missing source", v => { v.launchers.opencode.models[0].effortSource = null; }],
     ["absent source property", v => { delete v.launchers.opencode.models[0].effortSource; }],
-    ["missing observation source", v => { v.launchers.opencode.sources = v.launchers.opencode.sources.filter((x: string) => x !== "opencode.config/providers.variants"); }],
+    ["missing observation source", v => { v.launchers.opencode.sources = v.launchers.opencode.sources.filter((x: string) => x !== "opencode.api/model.variants"); }],
   ];
   for (const [name, mutate] of mutations) {
     const v = structuredClone(s); mutate(v);

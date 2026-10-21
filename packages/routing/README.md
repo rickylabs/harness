@@ -374,11 +374,13 @@ The additive optional fields are strictly decoded by `validateCliDiscoverySnapsh
   Claude 2.1.288 native initialization omits both effort fields exactly when effort is
   unsupported, so that verified serializer establishes Haiku's empty set. Unverified
   serializers retain null unless they explicitly report `supportsEffort: false`.
-- OpenCode `providerConnections: [{ id, connected, source }]` records exact native configured
-  or credential connection presence from `opencode.provider/list.connected`. Consumers join
-  exact provider IDs. A failed read omits the list; an absent ID in a successful native set is
-  `no`. Neither `yes` nor `no` asserts payment, quota, credential validity, or model access.
-  CLI-level OpenCode authentication remains unknown.
+- OpenCode `providerConnections: [{ id, connected, source }]` records native connection presence
+  from `opencode.api/integration.connections` (OpenCode 2.x `GET /api/integration`). Consumers
+  join exact provider IDs. A failed read omits the list. The discovery server runs over an
+  in-memory store, so it sees environment connections only: a provider without a connection
+  there is `unknown`, a connection marked `needs_auth` is `no`. Neither `yes` nor `no` asserts
+  payment, quota, credential validity, or model access. CLI-level OpenCode authentication
+  remains unknown.
 
 - AGY `authenticationSource: "agy.auth-gate"` proves native sign-in or configured credential
   presence through a successful metadata command. It does not assert payment, quota or model
@@ -398,7 +400,7 @@ they add no matrix route, model allowlist, or family selection to TypeScript.
 | --- | --- | --- |
 | Claude | `--version`, `auth status`, bare SDK stream-JSON `initialize` | Login presence; native first-party backend maps to Anthropic; resolved aliases and per-model effort levels. SDK initialization uses no prompt, hooks, MCP servers, settings, or session persistence. |
 | Codex | `--version`, stdio `app-server`: `initialize`, `initialized`, `account/read` (`refreshToken: false`), paginated `model/list`, `config/read` (`cwd`: absolute observation directory), `configRequirements/read` | Exact IDs, declared efforts, login presence, scoped configured provider. The source-verified 0.159.3/0.160.0 built-in OpenAI default requires successful empty requirements, null configured provider and no custom provider definitions. The child and configuration read share one normalized absolute cwd so project `.codex` layers are included. Null alone, an unverified version, failed scoped reads or unknown constraints keep provider unknown; failed scoped reads never retry without cwd. |
-| OpenCode | `--version`, `models --verbose --pure`, owned authenticated loopback `serve --pure` with only `GET /provider` | Exact provider/model IDs, enabled variant names, explicitly matching effort bodies, and native provider connection IDs. No label-to-provider or family inference. |
+| OpenCode | `--version`; an owned authenticated loopback `serve` (2.x) over `OPENCODE_DB=:memory:` with only `GET /api/model` and `GET /api/integration` | Exact provider/model IDs, enabled variant names, variant settings that apply exactly that effort, and environment connection presence. The private server opens no `opencode.db` and no run database, so it has no session to resume. No label-to-provider or family inference. |
 | AGY | `--version`, tab-separated `models`; verified 1.2.16 and 1.2.17 built-in JSON `/config` and exact-ID `/model` reports | Exact opaque IDs; native authentication-gate presence; effective scoped provider configuration; exact model effort; the vendor display `label` from the exact-ID `/model` report, only under the verified first-party binding. Every report must have zero turns and tokens, an empty conversation ID, a successful exit and the requested command. Other versions retain unknown facts without receiving print requests. Optional declared IDs remain unobserved when AGY is not requested. |
 
 Primary source anchors: [Claude SDK model metadata](https://github.com/anthropics/claude-agent-sdk-typescript),
@@ -408,8 +410,8 @@ Primary source anchors: [Claude SDK model metadata](https://github.com/anthropic
 [Codex 0.160.1 provider resolution](https://github.com/openai/codex/blob/rust-v0.160.1/codex-rs/core/src/config/mod.rs)
 (byte-identical to 0.160.0's),
 [Codex scoped configuration reads](https://github.com/openai/codex/blob/rust-v0.160.0/codex-rs/app-server/src/config_manager_service.rs#L119-L135),
-[OpenCode native model listing](https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/cli/cmd/models.ts),
-and [OpenCode provider handler](https://github.com/anomalyco/opencode/blob/aec0b9a6d8898f68f923aaf08b7306d931fd9d76/packages/opencode/src/server/routes/instance/httpapi/handlers/provider.ts).
+and the [OpenCode 2.x server API](https://opencode.ai/v2/docs/api/)
+([2.1.2 routes](https://github.com/anomalyco/opencode/blob/v2.1.2/packages/server/src/routes.ts)).
 [AGY authentication/provider configuration](https://www.agy.dev/docs/cli/install/) and
 [AGY built-in headless reports](https://www.agy.dev/docs/cli/headless/) describe the native
 metadata surface. AGY 1.2.16's installed `printmode.run` was inspected: `waitForAuth` and
