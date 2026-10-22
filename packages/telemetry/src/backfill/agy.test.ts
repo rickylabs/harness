@@ -26,16 +26,22 @@ const bytes = (field: number, value: string | Buffer) => {
 const time = (field: number, offset: number) => bytes(field, integer(1, seconds + offset));
 type Options = { id?: string; parent?: string; active?: boolean; stop?: number; message?: string; status?: number;
   interrupted?: boolean; killed?: boolean; childActive?: boolean; staleSummary?: boolean; userIndex?: number;
-  summaryState?: number; summaryRunning?: boolean; summaryNotIdle?: boolean };
+  summaryState?: number; summaryRunning?: boolean; summaryNotIdle?: boolean; errorMessage?: boolean };
 function fixture(o: Options = {}) {
   const id = o.id ?? rootID, status = o.status ?? (o.active ? 2 : 3);
-  const metadata = Buffer.concat([time(1, 1), ...(o.active ? [] : [time(8, 2)])]);
+  // AGY 1.4.5 records its error-message step with a creation time only, never a completion time.
+  const metadata = Buffer.concat([time(1, 1), ...(o.active || o.errorMessage ? [] : [time(8, 2)])]);
   const response = Buffer.concat([bytes(1, o.message ?? "The work is complete."), bytes(3, "PRIVATE-THINKING-CANARY"),
     bytes(16, "PRIVATE-RAW-THINKING-CANARY"), integer(12, o.stop ?? 2)]);
   const rows = [{ idx: 0, step_type: 14, status: 3, step_format: 0, metadata: time(1, 0), error_details: null,
     step_payload: Buffer.concat([integer(1, 14), integer(4, 3), bytes(19, bytes(1, "PRIVATE-USER-CANARY"))]) },
-  { idx: 1, step_type: 15, status, step_format: 0, metadata, error_details: null,
-    step_payload: Buffer.concat([integer(1, 15), integer(4, status), bytes(5, metadata), bytes(20, response)]) }];
+  o.errorMessage
+    // AGY's own error-message step: the provider refusal text rides in field 24, error_details stays NULL.
+    ? { idx: 1, step_type: 17, status, step_format: 0, metadata, error_details: null,
+      step_payload: Buffer.concat([integer(1, 17), integer(4, status), bytes(5, metadata),
+        bytes(24, Buffer.concat([bytes(3, "PRIVATE-PROVIDER-ERROR-CANARY"), integer(5, 1)]))]) }
+    : { idx: 1, step_type: 15, status, step_format: 0, metadata, error_details: null,
+      step_payload: Buffer.concat([integer(1, 15), integer(4, status), bytes(5, metadata), bytes(20, response)]) }];
   const summary = { conversation_id: id, parent_conversation_id: o.parent ?? "", step_count: rows.length,
     last_user_input_step_index: 0, not_fully_idle: o.active || o.summaryNotIdle ? 1 : 0, killed: o.killed ? 1 : 0,
     trajectory_id: trajectoryID,
@@ -74,6 +80,26 @@ it("AGY cancellation and error keep their native timestamp and never become succ
     const f = fixture({ stop }), run = agyConversation(f.summary, f.rows, "private", captured)!;
     assert.equal(run.outcome, "failed"); assert.equal(run.terminalCause, stop === 16 ? "cancelled" : "error");
   }
+});
+it("AGY native error-message step ending the turn (a provider quota refusal) is a terminal error", () => {
+  const f = fixture({ errorMessage: true }), run = agyConversation(f.summary, f.rows, "private", captured)!;
+  assert.equal(run.outcome, "failed"); assert.equal(run.terminalCause, "error");
+  assert.equal(run.terminalAt, new Date((seconds + 1) * 1000).toISOString());
+  assert.ok(!JSON.stringify(run).includes("PRIVATE-"));
+  // Not a finished step (unspecified, pending or still being written): no end.
+  for (const status of [0, 1, 2]) {
+    const g = fixture({ errorMessage: true, status }), open = agyConversation(g.summary, g.rows, "private", captured)!;
+    assert.notEqual(open.outcome, "failed"); assert.equal(open.terminalAt, undefined);
+  }
+  // Still running, or a newer activity, never ends on that error.
+  for (const o of [{ active: true }, { summaryRunning: true }, { childActive: true }] satisfies Options[]) {
+    const g = fixture({ ...o, errorMessage: true }), live = agyConversation(g.summary, g.rows, "private", captured)!;
+    assert.notEqual(live.outcome, "failed"); assert.equal(live.terminalAt, undefined);
+  }
+  // A type-17 step without its native error message proves nothing.
+  const bare = fixture({ errorMessage: true });
+  bare.rows[1]!.step_payload = Buffer.concat([integer(1, 17), integer(4, 3), bytes(5, bare.rows[1]!.metadata)]);
+  assert.equal(agyConversation(bare.summary, bare.rows, "private", captured)?.outcome, "unknown");
 });
 it("AGY summary-only resumed activity clears every prior terminal outcome before trajectory updates", () => {
   for (const activity of [{ summaryState: 2 }, { summaryState: 4 }, { summaryRunning: true },
