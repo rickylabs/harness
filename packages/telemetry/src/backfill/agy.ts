@@ -6,6 +6,10 @@ import { nativeMessageActivity } from "../native-activity.js";
 import type { RunRecord } from "../model.js";
 
 const ID = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/;
+/** AGY's native error-message Step (type 17): a provider refusal such as a quota stop, its text in field 24. */
+const ERROR_MESSAGE_STEP = 17, ERROR_MESSAGE_FIELD = 24;
+/** The native Step status of a finished step. */
+const STEP_DONE = 3;
 const MAX_SESSIONS = 20, MAX_STEPS = 4096, MAX_BLOB = 1_048_576;
 type Field = number | Uint8Array;
 type Fields = ReadonlyMap<number, Field>;
@@ -136,9 +140,13 @@ export function agyConversation(summary: Row, rows: readonly Row[], origin: stri
         const activity = nativeMessageActivity("agy-transcript", id, index, at, responseText);
         if (activity !== null) steps.push(activity);
       }
-      if (latestUser >= 0) final = completed === null ? null : { at: completed, status: row.status as number,
+      // A finished error-message step is written once with its creation time only; that time ends the turn.
+      const nativeError = row.step_type === ERROR_MESSAGE_STEP && row.status === STEP_DONE &&
+        frame.get(ERROR_MESSAGE_FIELD) instanceof Uint8Array;
+      const ended = completed ?? (nativeError ? at : null);
+      if (latestUser >= 0) final = ended === null ? null : { at: ended, status: row.status as number,
         type: row.step_type as number, nonempty: responseText !== null && responseText.trim() !== "",
-        stop, error: blob(row.error_details)?.length !== undefined && blob(row.error_details)!.length > 0 };
+        stop, error: nativeError || blob(row.error_details)?.length !== undefined && blob(row.error_details)!.length > 0 };
     }
     if (nativeUserIndex !== latestUser) return null;
     const modifiedAt = timestamp(native, 3, nowMs);
