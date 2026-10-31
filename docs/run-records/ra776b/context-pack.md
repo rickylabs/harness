@@ -15,3 +15,7 @@ claim to deliver native restart recovery. The Herdr package move remains a nonbl
 
 Final reconciliation against committed b6dda35e52c3474f5200f0a4e81bdd02985a5ded
 returned PASS; see `review.md` for the substantive result and evidence.
+
+A final protocol audit adds native recorded-token support for `codex-run` and `opencode-run`,
+without changing public wire shapes. Prior sign-off remains historical evidence for its exact
+source; the final reviewer records the token extension's committed source and gates before READY.

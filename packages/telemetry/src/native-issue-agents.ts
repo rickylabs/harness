@@ -14,7 +14,7 @@ import { resolveWireFamily } from "./producer-names.js";
 const digest = (value: unknown) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 const handle = (value: unknown): value is string => typeof value === "string" && value.length > 0 && value.length <= 256;
-const label = /^(codex|claude|agy|opencode)-([1-9][0-9]{0,15})$/;
+const label = /^(codex|codex-run|claude|agy|opencode|opencode-run)-([1-9][0-9]{0,15})$/;
 const id = (value: unknown): value is string => typeof value === "string" && Buffer.byteLength(value) <= 512 &&
   value.length > 0 && !/[\x00-\x20\x7f]/.test(value);
 interface Seat { readonly workspace: string; readonly pane: string; readonly terminal: string;
@@ -156,7 +156,10 @@ export async function collectNativeIssueAgents(input: {
       i !== j && row.dispatchKey === other.dispatchKey)).map(row => row.dispatchKey));
     for (const record of records) {
       const query = all.get(record.key)!;
-      const source = label.exec(query.label)![1] as Seat["source"];
+      const recordedAgent = label.exec(query.label)![1]!;
+      // Native run tokens identify the launch; Herdr and receipts use the canonical vendor.
+      const source = (recordedAgent === "codex-run" ? "codex" :
+        recordedAgent === "opencode-run" ? "opencode" : recordedAgent) as Seat["source"];
       const matchingSeats = seats.filter(seat => workspaces.get(seat.workspace) === query.label);
       const candidate = matchingSeats.length === 1 ? matchingSeats[0] : undefined;
       const seat = candidate && !ambiguousKeys.has(record.key) && candidate.id === record.nativeSessionId && candidate.source === source &&

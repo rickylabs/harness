@@ -37,7 +37,7 @@ async function fixture(run: (f: {
   metadata(read: (receipt: DispatchEvidence, binding: { readonly paneId: string }) => Promise<void>): void;
   readonly requests: string[][];
   readonly nativeId: string;
-}) => Promise<void>, source: "codex" | "claude" | "agy" | "opencode" = "codex") {
+}) => Promise<void>, source: "codex" | "claude" | "agy" | "opencode" = "codex", recordedAgent: string = source) {
   const home = await mkdtemp(join(tmpdir(), "nr-"));
   const receipts = join(home, "receipts"), socket = join(home, "run.sock");
   const id = source === "opencode" ? "ses_" + randomUUID() : randomUUID(); let seatId = id, status = "working", duplicated = false; let key = "", workspace = "original-workspace", pane = "original-pane", phase = "active";
@@ -58,7 +58,7 @@ async function fixture(run: (f: {
         missing: rpc.params.keys.filter((q: { key: string }) => q.key !== "701").map((q: { key: string }) => ({ key: q.key, reason: "run_not_found" })),
         records: rpc.params.keys.some((q: { key: string }) => q.key === "701") ? [{
           key: "701", issue: { repo, number: 776 }, dispatchKey: key, nativeSessionId: id,
-          agent: source, label: `${source}-701`, phase, observedAt: now,
+          agent: recordedAgent, label: `${recordedAgent}-701`, phase, observedAt: now,
         }] : [] } }) + "\n");
     });
   });
@@ -129,11 +129,11 @@ async function fixture(run: (f: {
           agent_session: { source: source === "agy" ? "herdr:antigravity_cli" : `herdr:${source}`, agent: source, kind: "id", value: seatId } };
         const options = { home, limit: 20, now, partialTrees, ...(issueKey ? { issueKey } : {}),
           knownRuns: [...knownRuns], onBinding: async (receipt: DispatchEvidence, binding: { readonly paneId: string }) => {
-            if (!knownRuns.length) knownRuns.push({ key: "701", label: `${source}-701` });
+            if (!knownRuns.length) knownRuns.push({ key: "701", label: `${recordedAgent}-701` });
             await metadata?.(receipt, binding);
           },
           env: { [OPERATOR_ENV.dispatchRoot]: receipts, [OPERATOR_ENV.placementHost]: "fixture-node", HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: socket },
-          nativeSnapshot: { workspaces: disappeared ? [] : [...clutter, { workspace_id: workspace, label: `${source}-701` }],
+          nativeSnapshot: { workspaces: disappeared ? [] : [...clutter, { workspace_id: workspace, label: `${recordedAgent}-701` }],
             agents: disappeared ? [] : duplicated ? [agent, { ...agent, pane_id: "duplicate-pane", terminal_id: "duplicate-terminal" }] : [agent] } };
         return collectIssueAgentTree(options);
       } });
@@ -323,3 +323,19 @@ it("native launch blocks coexist with an already running assignment", () => fixt
   assert.equal(snapshot.issues[0]?.dispatches[0]?.agents.find(a => a.parentAgentId === null)?.liveness.state, "running");
   assert(readIssueAgentTreeSnapshot(snapshot).ok);
 }));
+
+for (const [source, recordedAgent] of [["codex", "codex-run"], ["opencode", "opencode-run"]] as const) {
+  it(`${recordedAgent}: preserves the exact recorded label while matching the canonical native integration`, () => fixture(async f => {
+    f.restore();
+    const before = await f.collect(undefined, false);
+    const root = before.issues[0]?.dispatches[0]?.agents[0];
+    assert.equal(root?.harness.value, source);
+    assert.equal(root?.liveness.state, "running");
+    assert.deepEqual(f.requests, [["701"]]);
+    f.complete();
+    const ended = (await f.collect(undefined, false)).issues[0]?.dispatches[0]?.agents[0];
+    assert.equal(ended?.liveness.state, "ended");
+    assert.equal(ended?.observation.assignment.id, root?.observation.assignment.id);
+    assert.ok(!JSON.stringify(before).includes(f.nativeId));
+  }, source, recordedAgent));
+}

@@ -8,7 +8,7 @@ directory outside Git. All final commands exited 0:
 | `pnpm install --frozen-lockfile` | `Scope: all 15 workspace projects`; lockfile up to date |
 | `pnpm run typecheck` | `typecheck ok — 5 stage(s), all green`; compile ran |
 | `pnpm run build` | `build ok — 15 stage(s), all green`; compile ran |
-| `pnpm test` | `test ok — 8 stage(s), all green`; telemetry: 808 tests, 808 pass, 0 fail |
+| `pnpm test` | `test ok — 8 stage(s), all green`; telemetry: 810 tests, 810 pass, 0 fail |
 | `pnpm run check:leaks` | exit 0, no findings |
 
 The initial environment used a tool-manager shim which selected a newer npm with a different pack
@@ -30,3 +30,9 @@ The whole-repository prune search (excluding owner-controlled run files) for the
 basename and function returned exit 1 with zero matches. The changed-file cap and whitespace checks
 passed; owner-controlled run files and generated files are unchanged. Private logs and native
 fixtures are not committed. Real deployment and privileged upstream kernel checks are not claimed.
+
+The final native recorded-token controls compiled and failed against the prior signed source
+(2 tests, 0 pass, 2 fail, exit 1): `codex-run` and `opencode-run` workspaces lost their roots.
+With the documented native tokens supported, both controls pass (2 pass, 0 fail, exit 0), covering
+restored canonical integration matching and final assignment end with stable opaque identity.
+All five root gates above were rerun after that production change; the final telemetry count is 810.

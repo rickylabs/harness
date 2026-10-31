@@ -3,6 +3,8 @@ import { createConnection } from "node:net";
 import { isAbsolute } from "node:path";
 export const NATIVE_RUN_BATCH_LIMIT = 128;
 const FRAME_BYTES = 1_048_576;
+/** Recorded Orchid tokens; preserve the full token and label on the native wire. */
+const NATIVE_RUN_AGENTS = ["codex", "codex-run", "claude", "agy", "opencode", "opencode-run"] as const;
 export interface NativeRunQuery { readonly key: string; readonly label: string }
 export interface NativeRunRecord {
   readonly key: string;
@@ -61,7 +63,7 @@ export async function lookupOrchidNativeRuns(socket: string | undefined, queries
   if (!socket || !isAbsolute(socket) || queries.length > NATIVE_RUN_BATCH_LIMIT ||
       new Set(queries.map(q => q.key)).size !== queries.length || queries.some(q =>
         !/^[1-9][0-9]{0,15}$/.test(q.key) || !Number.isSafeInteger(Number(q.key)) ||
-        !["codex", "claude", "agy", "opencode"].some(agent => q.label === agent + "-" + q.key))) {
+        !NATIVE_RUN_AGENTS.some(agent => q.label === agent + "-" + q.key))) {
     throw Error("native run source unavailable");
   }
   return await new Promise((resolve, reject) => {

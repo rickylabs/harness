@@ -28,3 +28,10 @@ failure catch preserving independent admissions, launch-block coexistence, the
 corrected fallback assertions, and the test-only older-decoder import seam with
 its explicit opt-in negative. Root gates all exit 0 with telemetry at 808 pass
 and 0 fail; revert and 0.36 compatibility receipts match their logs. Result PASS.
+
+Final protocol audit: Orchid's documented recorded agent vocabulary includes `codex-run` and
+`opencode-run`. The native client and collector excluded these labels even though Herdr and the
+receipt use the canonical vendor. Two real-socket controls compiled and failed against the signed
+prior source, demonstrating missing roots. The repair preserves the exact recorded token/label
+for native lookup and maps only the documented vendor tokens for integration/receipt matching.
+The same independent reviewer reconciles this bounded extension before final readiness.

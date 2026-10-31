@@ -165,7 +165,9 @@ for shared-run refusal, repeated-dispatch handling, source timestamps and limits
 When `HARNESS_TELEMETRY_ORCHID_RUN_SOCKET` is configured, current workspaces from Herdr's official
 snapshot API select Orchid's native job/comment coordinates. Restored vendor labels and the
 integration-reported native session identity recover the same receipt after restart, even when
-physical pane/workspace handles change. `src/native-issue-agents.ts` owns this join. Keyed native
+physical pane/workspace handles change. Recorded `codex-run` and `opencode-run` labels stay exact
+on the native wire; only vendor matching maps them to the canonical Herdr integration/receipt source.
+`src/native-issue-agents.ts` owns this join. Keyed native
 lookups and exact receipt reads are batched; retained dispatch history never selects current work.
 A current `working` root is running. `idle`, `done` and `blocked` mean an idle turn, never final
 assignment completion. Only Orchid's completed-run fence ends that assignment. Its outcome and
