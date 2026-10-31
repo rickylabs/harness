@@ -27,3 +27,18 @@ erase native execution), the seventh regression (unchanged receipt versus
 restored handle, running survives metadata failure with no leak, no callback
 on mismatched session), and worklog. Focused build and seven native tests
 exit 0. Broad root gates pending until verified; no failure assumed.
+
+## Native replay extension supervisor sign-off
+
+Reviewed author head: add2eda4611bd3c38c6dcdcd3cf3ad3913afa07d, whose
+committed source matches the reviewed uncommitted delta. Verdict: PASS for the
+Harness native replay slice. Current labels plus bounded remembered
+coordinates with working-first priority and keyed batches only; final native
+record plus exact receipt retains the ended root without a seat while active
+absent-seat stays unknown; legacy stop/teardown/Claude-status facts stripped
+after the supervisor-found stale-stop regression failed red pre-fix;
+checkpoint hints persist without execution claim under the availability flag.
+Final gates: frozen install, typecheck, root build, full test and leak scan
+all exit 0; 15/15 native regressions green. Live deployment not tested.
+Consumer draft PR954 gates still running with independent code PASS; whole
+goal NOT READY until the final consumer completes.

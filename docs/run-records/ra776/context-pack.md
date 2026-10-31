@@ -14,6 +14,11 @@ Supervisor sign-off: certified-receipt port PASS at
 649c15dd72a58c31587788e817ab4fa05b3bfb02; focused build and seven native tests
 exit 0, broad gates pending (see review.md). Cockpit leaf pending; end-to-end NOT certified.
 
+Supervisor sign-off: native replay extension PASS at
+add2eda4611bd3c38c6dcdcd3cf3ad3913afa07d; frozen install/typecheck/build/test
+and leaks all exit 0, 15/15 native regressions green (see review.md). Live
+deployment not tested. Consumer draft PR954 gates running; whole goal NOT READY.
+
 Native completion replay extension: current labels plus bounded remembered native coordinates, current working seats first, keyed batches only. Native final record plus exact receipt survives seat disappearance; missing active seat stays Unknown. Canonical collector now also returns point-selected receipt/observation and native Codex thread-binding bundles so current roots do not depend on historical feed membership. Root-only tree uses the existing bounded scan_limit contract; no claim of complete descendants. Focused build and 14 native regression tests exit 0. Full root gates and same-session implementation review pending for this extension.
 
 Supervisor found stale paired stop/teardown files could override resumed native work. The new real paired-stop regression failed before the fix; this source now strips all legacy stop/teardown/Claude-status facts and uses current Herdr execution plus native Orchid final phase only. Fifteen native regressions pass. Coordinate hints intentionally persist during upstream unavailability, with no execution or binding claim; the lease-fenced consumer merges them without clearing prior hints. Full install/typecheck/root build/test passed before this follow-up and are rerun for the final source.
