@@ -128,10 +128,15 @@ const RAW_SOURCES = {
   "packages/contracts/src/governance-read.ts": null,
 };
 test("cockpit: the pinned native reader's Orchid host entry exports its private evidence seam", async () => {
-  assertExports(COCKPIT, "packages/hosts/orchid/mod.ts", await load("packages/hosts/orchid/dist/mod.js"), {
+  const host = await load("packages/hosts/orchid/dist/mod.js");
+  assertExports(COCKPIT, "packages/hosts/orchid/mod.ts", host, {
     ...kinds("object", "orchidHost"),
     ...kinds("function", "readOrchidDispatches readOrchidTeardownObservation"),
   });
+  // A pinned caller can still omit the optional paging argument; the composition port is the same API.
+  assert.equal(host.orchidHost.readDispatches, host.readOrchidDispatches);
+  const absent = await host.readOrchidDispatches(undefined);
+  assert.deepEqual(Object.keys(absent).sort(), ["degraded", "dispatches", "launchStates", "notes", "reason", "root"]);
 });
 test("cockpit: raw-URL source files exist and import only what cockpit's import map resolves", () => {
   for (const [path, imports] of Object.entries(RAW_SOURCES)) {

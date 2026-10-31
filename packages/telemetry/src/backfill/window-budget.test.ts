@@ -47,6 +47,32 @@ const filler = (n: number, bytes: number) => line(n, "response_item", { type: "f
 const meta = (session: string, parent: string | null = null) => line(0, "session_meta", { id: session, cwd: "/fixture",
   model_provider: "fixture", ...(parent ? { source: { subagent: { thread_spawn: { parent_thread_id: parent, depth: 1 } } } } : {}) });
 
+it("charges backward turn recovery, ignores future boundaries, and never borrows head state over a capped gap", () => fixture(async ({ put, scan, feed }) => {
+  const start = meta(id(1)) + event(1, "task_complete") + filler(2, 300_000);
+  await put(id(1), start + event(3, "task_started") + filler(100, 9_000_000) +
+    tokens(110) + event(121, "task_complete"));
+  const recovered = await scan();
+  assert.equal(recovered.runs[0]?.outcome, "running", "a future completion does not end this capture");
+  assert.equal(recovered.bytesRead, reads, "backward lookup charges every actual read");
+  assert.ok(reads > 9_000_000 && reads <= FRAME);
+  assert.equal((await feed()).issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  // The newest boundary lies beyond the whole frame's budget: the old head completion is not reused.
+  await put(id(1), start + event(3, "task_started") + filler(100, FRAME + 1_000) + tokens(110));
+  const capped = await scan();
+  assert.equal(capped.runs[0]?.outcome, "unknown");
+  assert.equal(capped.bytesRead, reads);
+  assert.ok(reads <= FRAME);
+}));
+
+it("a malformed record between the tail and its turn boundary cannot certify running", () => fixture(async ({ put, scan }) => {
+  await put(id(1), meta(id(1)) + filler(2, 300_000) + event(3, "task_started") +
+    "{broken-native-record\n" + filler(100, 9_000_000) + tokens(110));
+  const result = await scan();
+  assert.equal(result.runs[0]?.outcome, "unknown");
+  assert.equal(result.bytesRead, reads);
+  assert.ok(reads <= FRAME);
+}));
+
 async function fixture(fn: (f: {
   put: (session: string, text: string) => Promise<string>;
   scan: () => ReturnType<typeof backfillFromDisk>;

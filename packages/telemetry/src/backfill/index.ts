@@ -11,9 +11,14 @@
  * notes say it in prose, and prose is not something a caller can branch on.
  */
 
-import { lstat, open, opendir, readdir, readFile, stat } from "node:fs/promises";
-import { constants } from "node:fs";
+import { lstat, opendir, readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { collectCodexWindows, errorCode } from "./codex-discovery.js";
+export { CODEX_WINDOW_MAX_MS } from "./codex-discovery.js";
+import { selectCodexIssue, type CodexName, type CodexHead } from "./codex-selection.js";
+import { readBounded, readHeadTail, headTailRun, type Transcript } from "./transcript-read.js";
+/** Rollout names enumerated per issue scan; the root may be unseen beyond it. */
+const CODEX_WINDOW_NAMES = 4_096;
 
 import type { RunRecord } from "../model.js";
 import { compareStrings } from "../order.js";
@@ -52,6 +57,10 @@ export interface BackfillOptions {
   readonly codexWindows?: readonly { readonly startMs: number; readonly endMs: number }[];
   /** Issue feed only: private Orchid root predicate; no native identity enters public output. */
   readonly codexRootMatches?: (id: string) => boolean;
+  /** Scheduling only; never used to establish native state or identity. */
+  readonly codexRootPriority?: (id: string) => number;
+  /** Current issue-tree readers can keep verified roots when another root exceeds the byte budget. */
+  readonly partialRoots?: boolean;
   /**
    * Issue feed only: a transcript over either byte bound is withheld, with degraded=true. A
    * dispatch-matched root or descendant is instead read as head and tail windows.
@@ -76,8 +85,8 @@ export interface BackfillResult {
    */
   readonly degraded: boolean;
   /**
-   * Issue feed only: why a dispatch-matched Codex tree was read in part. The root is always read
-   * whole or the scan is degraded instead; these name the descendants that may be missing. Empty
+   * Issue feed only: why a dispatch-matched Codex tree was read in part. Roots are mandatory unless
+   * partialRoots permits a budget-bounded retry after a verified root; descendants can be missing. Empty
    * when the tree is complete. Not degraded: what was read is exact, only its extent is bounded.
    */
   readonly partial: readonly CodexTreePartialReason[];
@@ -97,261 +106,23 @@ export interface BackfillResult {
  * - `descendant_transcript_unreadable`: a selected descendant's transcript could not be opened or
  *   read, no longer held the session its head named, yielded no run, or held lines the parser
  *   could not read.
+ * - `root_transcript_bound`: with partialRoots, a retry exceeded the remaining byte budget after
+ *   at least one other root was verified. The issue's resolved dispatches remain a bounded forest.
  * A descendant omitted for either transcript reason takes its own descendants with it, so the
  * agents served are always a closed tree from the roots.
  */
 export const CODEX_TREE_PARTIAL_REASONS = ["descendant_heads_bound", "descendant_heads_budget",
   "descendant_head_unreadable", "selected_files_bound", "descendant_transcript_bound",
-  "descendant_transcript_unreadable"] as const;
+  "descendant_transcript_unreadable", "root_transcript_bound"] as const;
 export type CodexTreePartialReason = typeof CODEX_TREE_PARTIAL_REASONS[number];
 
-/** One transcript found on disk, with the filesystem's own record of when it was last written. */
-interface Transcript {
-  readonly path: string;
-  readonly mtimeMs: number;
-}
-/** A canonical rollout name: its creation clock and session id, read from the name alone. */
-interface CodexName {
-  readonly path: string;
-  readonly createdMs: number;
-  readonly id: string;
-}
-interface CodexHead {
-  readonly id: string;
-  readonly parentId: string | null;
-}
-const CODEX_HEAD_BYTES = 65_536;
-/** Descendant heads read per issue scan, newest first. The root is found by name, never counted. */
-const CODEX_HEAD_CANDIDATES = 128;
-/** Rollout names enumerated per issue scan. Past it the root itself may be unseen: refused. */
-const CODEX_WINDOW_NAMES = 4_096;
-/**
- * A descendant is created after its root, but rollout names carry the writer's local wall clock,
- * which a DST change can set back. Candidates are names no earlier than the root's minus this.
- */
-const CODEX_SPAWN_CLOCK_MARGIN_MS = 2 * 3_600_000;
 
-/**
- * Read the first session_meta line only; full files, including huge neighbours, stay unopened.
- * `charge` receives every byte as it is read, so an unreadable or refused head still pays for it.
- */
-async function readCodexHead(path: string, charge: (bytes: number) => void): Promise<CodexHead | null> {
-  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
-  try {
-    if (!(await file.stat()).isFile()) return null;
-    const bytes = Buffer.allocUnsafe(CODEX_HEAD_BYTES + 1);
-    let size = 0, lineEnd = -1;
-    while (size < bytes.length && lineEnd < 0) {
-      const { bytesRead } = await file.read(bytes, size, Math.min(512, bytes.length - size), size);
-      charge(bytesRead);
-      if (bytesRead === 0) break;
-      lineEnd = bytes.subarray(size, size + bytesRead).indexOf(10);
-      if (lineEnd >= 0) lineEnd += size;
-      size += bytesRead;
-    }
-    if (size > CODEX_HEAD_BYTES) return null;
-    if (lineEnd < 0) lineEnd = size; // A final JSONL record may omit its trailing newline.
-    const line = JSON.parse(bytes.subarray(0, lineEnd).toString("utf8")) as unknown;
-    if (typeof line !== "object" || line === null || Array.isArray(line) ||
-        (line as Record<string, unknown>).type !== "session_meta") return null;
-    const payload = (line as Record<string, unknown>).payload;
-    if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return null;
-    const p = payload as Record<string, unknown>;
-    const str = (value: unknown) => typeof value === "string" && value.length > 0 ? value : null;
-    const id = str(p.id) ?? str(p.session_id);
-    if (id === null) return null;
-    const source = typeof p.source === "object" && p.source !== null && !Array.isArray(p.source) ? p.source as Record<string, unknown> : null;
-    const subagent = typeof source?.subagent === "object" && source.subagent !== null && !Array.isArray(source.subagent)
-      ? source.subagent as Record<string, unknown> : null;
-    const spawned = typeof subagent?.thread_spawn === "object" && subagent.thread_spawn !== null && !Array.isArray(subagent.thread_spawn)
-      ? subagent.thread_spawn as Record<string, unknown> : null;
-    const parents = new Set<string>();
-    for (const candidate of [p.parent_thread_id, spawned?.parent_thread_id]) {
-      if (candidate === undefined || candidate === null) continue;
-      const parent = str(candidate);
-      if (parent === null || parent.trim() !== parent) return null;
-      parents.add(parent);
-    }
-    if (parents.size > 1 || parents.has(id)) return null;
-    return { id, parentId: parents.values().next().value ?? null };
-  } finally { await file.close(); }
-}
-
-interface CodexSelection {
-  readonly selected: readonly { readonly file: Transcript; readonly head: CodexHead }[];
-  readonly bytesRead: number;
-  /** A note that refuses the scan: the root itself could not be established. */
-  readonly refused: string | null;
-  readonly partial: readonly CodexTreePartialReason[];
-  /** The first `roots` selected rows are the roots; every later row is a descendant. */
-  readonly roots: number;
-}
-
-/**
- * The dispatch-matched tree. Roots are found by their rollout name, which carries the session id,
- * and confirmed by their head; no neighbour is read to find them. Descendants are read from the
- * newest `CODEX_HEAD_CANDIDATES` names created no earlier than the earliest root, and linked to it
- * through their heads' parent ids. A bound reached on descendants makes the tree partial, never
- * refused. The selection lists parents before children, so a bounded prefix stays a closed tree.
- */
-async function selectCodexIssue(names: readonly CodexName[], rootMatches: (id: string) => boolean,
-  limit: number, remainingBytes: number): Promise<CodexSelection> {
-  let bytesRead = 0;
-  const partial = new Set<CodexTreePartialReason>();
-  const charge = (bytes: number) => { bytesRead += bytes; };
-  const fits = () => bytesRead + CODEX_HEAD_BYTES + 1 <= remainingBytes;
-  const refuse = (note: string): CodexSelection => ({ selected: [], bytesRead, refused: note, partial: [], roots: 0 });
-  const transcript = (name: CodexName): Transcript => ({ path: name.path, mtimeMs: name.createdMs });
-  const roots = names.filter(name => rootMatches(name.id)).sort((a, b) => compareStrings(a.path, b.path));
-  if (roots.length === 0) return { selected: [], bytesRead, refused: null, partial: [], roots: 0 };
-  if (roots.length > limit) return refuse("codex: head or selected-file scan_limit");
-  const rootHeads: { file: Transcript; head: CodexHead }[] = [];
-  const ids = new Set<string>();
-  for (const name of roots) {
-    if (!fits()) return refuse("codex: head or selected-file scan_limit");
-    let head: CodexHead | null;
-    try { head = await readCodexHead(name.path, charge); } catch { head = null; }
-    // The name says which session the file holds; a head that disagrees, or a second file under
-    // the same name id, leaves the root unestablished.
-    if (head === null || head.id !== name.id || ids.has(head.id)) return refuse("codex: candidate head could not be read");
-    ids.add(head.id);
-    rootHeads.push({ file: transcript(name), head });
-  }
-  const earliest = Math.min(...roots.map(name => name.createdMs)) - CODEX_SPAWN_CLOCK_MARGIN_MS;
-  const candidates = names.filter(name => !roots.includes(name) && name.createdMs >= earliest)
-    .sort((a, b) => b.createdMs - a.createdMs || compareStrings(a.path, b.path));
-  if (candidates.length > CODEX_HEAD_CANDIDATES) partial.add("descendant_heads_bound");
-  const heads: { file: Transcript; head: CodexHead }[] = [];
-  const ambiguous = new Set<string>();
-  for (const name of candidates.slice(0, CODEX_HEAD_CANDIDATES)) {
-    if (!fits()) { partial.add("descendant_heads_budget"); break; }
-    let head: CodexHead | null;
-    try { head = await readCodexHead(name.path, charge); } catch { head = null; }
-    if (head === null || head.id !== name.id) { partial.add("descendant_head_unreadable"); continue; }
-    if (ids.has(head.id)) { ambiguous.add(head.id); continue; }
-    ids.add(head.id);
-    heads.push({ file: transcript(name), head });
-  }
-  if (ambiguous.size > 0) partial.add("descendant_head_unreadable");
-  const children = new Map<string, { file: Transcript; head: CodexHead }[]>();
-  for (const row of heads) {
-    if (row.head.parentId === null || ambiguous.has(row.head.id)) continue;
-    children.set(row.head.parentId, [...children.get(row.head.parentId) ?? [], row]);
-  }
-  // Breadth first from the roots, newest first within a generation.
-  const tree = [...rootHeads];
-  for (let i = 0; i < tree.length; i++) tree.push(...children.get(tree[i]!.head.id) ?? []);
-  if (tree.length > limit) partial.add("selected_files_bound");
-  return { selected: tree.slice(0, limit), bytesRead, refused: null, roots: rootHeads.length,
-    partial: CODEX_TREE_PARTIAL_REASONS.filter(reason => partial.has(reason)) };
-}
-
-/**
- * Read the file as it stood when it was opened: never past the size measured then, plus one
- * sentinel byte that shows whether it grew. A file that grew keeps exactly the complete records it
- * held at open, including a final record without its newline when that record is complete JSON on
- * its own; bytes past the measured size are not yet seen and belong to the next read. `charge`
- * receives every byte as it is read, usable or not, so a refusal or an error still pays for it.
- */
-async function readBounded(path: string, maxBytes: number, charge: (bytes: number) => void): Promise<string | null> {
-  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
-  try {
-    const info = await file.stat();
-    if (!info.isFile() || info.size > maxBytes) return null;
-    const bytes = Buffer.allocUnsafe(info.size + 1);
-    let size = 0;
-    while (size < bytes.length) {
-      const { bytesRead } = await file.read(bytes, size, bytes.length - size, size);
-      charge(bytesRead);
-      if (bytesRead === 0) break;
-      size += bytesRead;
-    }
-    if (size <= info.size) return bytes.subarray(0, size).toString("utf8");
-    const snapshot = bytes.subarray(0, info.size);
-    const lastLine = snapshot.lastIndexOf(10) + 1;
-    try {
-      // Complete at open: it stays, whatever was appended after it.
-      JSON.parse(snapshot.subarray(lastLine).toString("utf8"));
-      return snapshot.toString("utf8");
-    } catch {
-      // Still being written at open: only the records before it were seen.
-      return snapshot.subarray(0, lastLine).toString("utf8");
-    }
-  } finally { await file.close(); }
-}
-
-const CODEX_WINDOW_HEAD_BYTES = 262_144;
-const CODEX_WINDOW_TAIL_BYTES = 2_097_152;
-
-/**
- * A dispatch-matched rollout past the per-transcript read bound, as its first and last complete
- * records. The head holds the session identity, the tail the latest state; the middle stays unread.
- * Null when either part has no complete record. Nothing is read unless both windows and the tail's
- * one byte of look-behind fit the budget; `charge` receives every byte read, usable or not.
- */
-async function readHeadTail(path: string, maxBytes: number, charge: (bytes: number) => void):
-  Promise<{ readonly head: string; readonly tail: string } | null> {
-  if (maxBytes < CODEX_WINDOW_HEAD_BYTES + CODEX_WINDOW_TAIL_BYTES + 1) return null;
-  const file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
-  try {
-    const info = await file.stat();
-    if (!info.isFile()) return null;
-    const read = async (position: number, length: number) => {
-      const bytes = Buffer.allocUnsafe(length);
-      let size = 0;
-      while (size < length) {
-        const { bytesRead } = await file.read(bytes, size, length - size, position + size);
-        charge(bytesRead);
-        if (bytesRead === 0) break;
-        size += bytesRead;
-      }
-      return bytes.subarray(0, size);
-    };
-    // The size is fixed here: lines a growing file appends later belong to the next read.
-    const head = await read(0, Math.min(info.size, CODEX_WINDOW_HEAD_BYTES));
-    const headEnd = head.lastIndexOf(10);
-    const tailStart = Math.max(info.size - CODEX_WINDOW_TAIL_BYTES, head.length);
-    // One byte of look-behind says whether the tail starts on a record boundary: the first record
-    // begins after the first newline, so after a newline at the look-behind byte it is complete and
-    // kept, while a clipped first record is dropped unparsed.
-    const tail = await read(tailStart - 1, info.size - tailStart + 1);
-    const tailFrom = tail.indexOf(10) + 1;
-    if (headEnd < 0 || tailFrom === 0) return null;
-    // The tail runs to the end of the file: a final record without its newline is still a record.
-    return { head: head.subarray(0, headEnd + 1).toString("utf8"), tail: tail.subarray(tailFrom).toString("utf8") };
-  } finally { await file.close(); }
-}
-
-/**
- * One run from a head and a tail window. Identity comes from the head. State comes only from the
- * tail: a turn the head saw finish says nothing about one the unread middle may have started, so
- * no outcome crosses the gap. The token history between the windows is unread and marked so.
- */
-function headTailRun(head: RunRecord, tail: RunRecord): RunRecord {
-  const samples = tail.tokenSamples;
-  return {
-    ...tail,
-    startedAt: head.startedAt,
-    identity: { model: tail.identity.model ?? head.identity.model, effort: tail.identity.effort ?? head.identity.effort,
-      provider: head.identity.provider ?? tail.identity.provider, profile: head.identity.profile ?? tail.identity.profile },
-    linkedIssues: head.linkedIssues,
-    ...(samples === undefined ? {} : { tokenSamples: { ...samples, partial: true } }),
-  };
-}
-
-type Scan =
+export type Scan =
   | { readonly kind: "absent" }
   | { readonly kind: "unreadable"; readonly reason: string }
   | { readonly kind: "found"; readonly files: readonly Transcript[]; readonly skipped: number; readonly limited?: boolean;
       /** Codex issue scans only: canonical rollout names, enumerated without opening a file. */
       readonly names?: readonly CodexName[] };
-
-/** The machine-readable part of a thrown error. No message, and therefore no path in it. */
-function errorCode(error: unknown): string {
-  const code = (error as { readonly code?: unknown } | null)?.code;
-  if (typeof code === "string" && code.length > 0) return code;
-  return error instanceof Error ? error.name : "unknown error";
-}
 
 /**
  * Every `*.jsonl` under a root, at any depth, with its modification time.
@@ -430,79 +201,6 @@ async function collectBoundedJsonl(root: string, cap: number): Promise<Scan> {
   return { kind: "found", files, skipped, limited };
 }
 
-/**
- * The longest receipt window an issue scan accepts: a run read up to seven days after its dispatch,
- * plus ten minutes before the dispatch and ten after the end. Rollout names stay under the same
- * per-directory entry bound and per-scan name bound whatever the window's length.
- */
-export const CODEX_WINDOW_MAX_MS = 7 * 86_400_000 + 2 * 600_000;
-
-/**
- * Visit an offset-safe envelope around receipt dates; filename clocks may be local to another process.
- * With `namesOnly`, canonical names are listed with their creation clock and session id and no
- * file is opened or stat'ed: an issue scan picks the ones it reads by name.
- */
-async function collectCodexWindows(root: string, windows: NonNullable<BackfillOptions["codexWindows"]>, limit: number,
-  offsetEnvelopeMs: number, namesOnly = false): Promise<Scan> {
-  try {
-    if (!(await lstat(root)).isDirectory()) return { kind: "unreadable", reason: "not a directory" };
-  } catch (error) {
-    const reason = errorCode(error);
-    return reason === "ENOENT" ? { kind: "absent" } : { kind: "unreadable", reason };
-  }
-  if (windows.length === 0 || windows.length > 8 || windows.some(w => !Number.isSafeInteger(w.startMs) ||
-      !Number.isSafeInteger(w.endMs) || w.endMs < w.startMs || w.endMs - w.startMs > CODEX_WINDOW_MAX_MS)) {
-    return { kind: "unreadable", reason: "invalid receipt window" };
-  }
-  const dates = new Set<string>();
-  for (const window of windows) {
-    for (let day = Math.floor((window.startMs - offsetEnvelopeMs) / 86_400_000);
-      day <= Math.floor((window.endMs + offsetEnvelopeMs) / 86_400_000); day++) {
-      dates.add(new Date(day * 86_400_000).toISOString().slice(0, 10));
-    }
-  }
-  const files: Transcript[] = [];
-  const names: CodexName[] = [];
-  let skipped = 0;
-  let limited = false;
-  for (const date of [...dates].sort()) {
-    const [year, month, day] = date.split("-");
-    const dir = join(root, year!, month!, day!);
-    let dirHandle;
-    try {
-      for (const part of [join(root, year!), join(root, year!, month!), dir]) {
-        if (!(await lstat(part)).isDirectory()) throw new Error("not a directory");
-      }
-      dirHandle = await opendir(dir);
-    }
-    catch (error) { if (errorCode(error) !== "ENOENT") skipped++; continue; }
-    let entriesSeen = 0;
-    try {
-      for await (const entry of dirHandle) {
-        if (++entriesSeen > 1000) { limited = true; break; }
-        if (!entry.name.startsWith("rollout-")) continue;
-        const match = /^rollout-(\d{4}-\d\d-\d\d)T(\d\d)-(\d\d)-(\d\d)-([0-9a-f-]{36})\.jsonl$/.exec(entry.name);
-        if (!entry.isFile() || !match || match[1] !== date) { skipped++; continue; }
-        const created = Date.parse(`${match[1]}T${match[2]}:${match[3]}:${match[4]}.000Z`);
-        if (!Number.isFinite(created) || !windows.some(w =>
-          created >= w.startMs - offsetEnvelopeMs && created <= w.endMs + offsetEnvelopeMs)) continue;
-        const path = join(dir, entry.name);
-        if (namesOnly) {
-          names.push({ path, createdMs: created, id: match[5]! });
-          if (names.length > limit) break;
-          continue;
-        }
-        const found = await lstat(path).catch(() => null);
-        if (!found?.isFile()) skipped++;
-        else files.push({ path, mtimeMs: found.mtimeMs });
-        if (files.length > limit) break;
-      }
-    } catch { skipped++; }
-    if (limited || files.length > limit || names.length > limit) break;
-  }
-  return { kind: "found", files, skipped, limited, ...(namesOnly ? { names } : {}) };
-}
-
 /** How many runs to read per seam before stopping. A fleet accumulates thousands. */
 export const DEFAULT_SCAN_LIMIT = 500;
 
@@ -568,7 +266,7 @@ export async function backfillFromDisk(
         notes.push("codex: candidate scan_limit"); degraded = true; continue;
       }
       const selected = await selectCodexIssue(names, options.codexRootMatches, limit,
-        (options.maxTotalBytes ?? Infinity) - bytesRead);
+        (options.maxTotalBytes ?? Infinity) - bytesRead, options.codexRootPriority);
       bytesRead += selected.bytesRead;
       if (selected.refused !== null) { notes.push(selected.refused); degraded = true; continue; }
       for (const reason of selected.partial) { partialTree.push(reason); notes.push(`codex: tree partial (${reason})`); }
@@ -602,6 +300,7 @@ export async function backfillFromDisk(
     // An issue tree's descendants, once its roots are established: a failure omits that descendant
     // and its own descendants, under a named reason, and never the roots or their other branches.
     const omitted = new Set<string>();
+    let readRoots = 0;
     const omit = (head: CodexHead, reason: CodexTreePartialReason) => {
       omitted.add(head.id);
       if (!partialTree.includes(reason)) {
@@ -629,10 +328,12 @@ export async function backfillFromDisk(
           if (bounded === null && expectedHeads.has(path)) {
             // A bounded read refuses only at open, before reading anything, so the window has this
             // file's whole allowance within what the frame has left.
-            window = await readHeadTail(path, budget, charge);
+            window = await readHeadTail(path, budget, charge,
+              (options.maxTotalBytes ?? options.maxTranscriptBytes ?? budget) - bytesRead, options.notAfterMs);
           }
           if (bounded === null && window === null) {
             if (descendant !== null) omit(descendant, "descendant_transcript_bound"); // guard:descendant-bound-partial
+            else if (options.partialRoots && readRoots > 0 && expected !== undefined) omit(expected, "root_transcript_bound");
             else limited++;
             continue;
           }
@@ -653,7 +354,7 @@ export async function backfillFromDisk(
           const head = asOf(window.head);
           // The tail keeps the session identity line, so it parses as the same thread.
           const identity = head.slice(0, head.indexOf("\n") + 1);
-          const first = parse(head, path), last = parse(identity + asOf(window.tail), path);
+          const first = parse(head, path), last = parse(identity + window.state + asOf(window.tail), path);
           parsed = { run: first.run === null || last.run === null ? null : headTailRun(first.run, last.run),
             notes: [...first.notes, ...last.notes] };
         } else {
@@ -685,7 +386,7 @@ export async function backfillFromDisk(
         partial.set(note.reason, { files: seen.files + 1, lines: seen.lines + note.lines });
       }
       if (parsed.run === null) empty += 1;
-      else runs.push(parsed.run);
+      else { runs.push(parsed.run); if (rootPaths.has(path)) readRoots++; }
     }
     if (unreadable > 0) {
       notes.push(`${seam}: ${unreadable} transcript(s) could not be read`);

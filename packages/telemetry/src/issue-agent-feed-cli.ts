@@ -21,6 +21,8 @@ import { readActionReceipts } from "./action-receipt-cli.js";
 import { orchidHost } from "@rickylabs/host-orchid";
 import type { OrchidReads } from "./host-reads.js";
 import { readLocalHostCapacity } from "./host-capacity.js";
+import { hasRunningTree, nativeActivityPriority, readCodexActivityHints } from "./issue-agent-priority.js";
+import { readIssueAgentDispatches } from "./issue-agent-dispatches.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 import type { DispatchEvidence, OrchidLaunchState } from "@rickylabs/harness-contracts";
 import type { RunRecord } from "./model.js";
@@ -97,7 +99,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   try { wireFamily = resolveWireFamily(options.env); bindings = resolveNativeOperatorBindings(options.env); }
   catch { return unavailableSnapshot(options.now, "source_unavailable"); }
   if (bindings.dispatchRoot === undefined) return unavailableSnapshot(options.now, "source_not_bound");
-  const orchid = await host.readDispatches(bindings.dispatchRoot);
+  const orchid = await readIssueAgentDispatches(host, bindings.dispatchRoot);
   const nowMs = Date.parse(options.now);
   if (!Number.isFinite(nowMs) || orchid.reason !== null) return unavailableSnapshot(options.now, "source_unavailable");
   const localCapacity = await readLocalHostCapacity(options.now, bindings.placementHost, {}, wireFamily);
@@ -126,7 +128,14 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     if (!group) { group = { repo: { owner, name }, issueNumber: dispatch.issue.number, dispatches: [] }; groups.set(key, group); }
     group.dispatches.push(dispatch);
   }
+  const hints = await readCodexActivityHints(defaultRoots(options.home).codexSessions!);
+  const priorities = new Map([...groups.values()].map(group => [group, {
+    possibleActive: group.dispatches.some(dispatch => dispatchEndMs(dispatch, nowMs) === null),
+    activity: nativeActivityPriority(group.dispatches, hints, host),
+  }]));
   const ordered = [...groups.values()].sort((a, b) =>
+    Number(priorities.get(b)!.possibleActive) - Number(priorities.get(a)!.possibleActive) ||
+    priorities.get(b)!.activity - priorities.get(a)!.activity ||
     Math.max(...b.dispatches.map(d => Date.parse(d.observedAt!)), b.refusal ? Date.parse(b.refusal.observedAt) : b.block ? Date.parse(b.block.at) : -Infinity) -
     Math.max(...a.dispatches.map(d => Date.parse(d.observedAt!)), a.refusal ? Date.parse(a.refusal.observedAt) : a.block ? Date.parse(a.block.at) : -Infinity));
   if (options.issueKey !== undefined && ordered.length === 0) {
@@ -135,7 +144,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
   const entries: { repo: IssueAgentTree["repo"]; issueNumber: number; snapshot: IssueAgentTreeSnapshot;
     launchBlock?: IssueLaunchBlock }[] = [];
   let remainingBytes = MAX_FRAME_TRANSCRIPT_BYTES;
-  for (const group of ordered.slice(0, MAX_AGENT_OBSERVATIONS)) {
+  for (const group of ordered) {
     const entry = { repo: group.repo, issueNumber: group.issueNumber,
       snapshot: unavailableSnapshot(options.now, "binding_unavailable"),
       ...(group.block === undefined ? {} : { launchBlock: group.block }) };
@@ -170,6 +179,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       const scan = await backfillFromDisk(codexSessions === undefined ? {} : { codexSessions },
         { limit: issueFileLimit, codexWindows: windows,
           codexRootMatches: id => codexDispatches.some(dispatch => host.matchesNativeRootIdentity(dispatch, id, "codex")),
+          codexRootPriority: id => hints.get(id) ?? -Infinity, partialRoots: options.partialTrees === true,
           maxTranscriptBytes: MAX_TRANSCRIPT_BYTES, maxTotalBytes: remainingBytes, notAfterMs: nowMs });
       remainingBytes -= scan.bytesRead;
       if (scan.degraded) {
@@ -250,8 +260,10 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
       localCapacity, actions: actionScan.receipts, actionsComplete: actionScan.complete, bounded, host });
   }
   // A malformed receipt cannot be proven unrelated to a scoped issue.
+  entries.sort((a, b) => Number(hasRunningTree(b.snapshot)) - Number(hasRunningTree(a.snapshot)));
   const combined = combineIssueAgentTreeSnapshots({ observedAt: options.now, entries,
-    globalReason: groups.size > MAX_AGENT_OBSERVATIONS ? "scan_limit" : orchid.degraded ? "source_unavailable" : null });
+    globalReason: groups.size > MAX_AGENT_OBSERVATIONS || orchid.notes.includes("orchid-dispatch: scan_limit")
+      ? "scan_limit" : orchid.degraded ? "source_unavailable" : null });
   const issues = combined.issues.map(issue => {
     const key = `${issue.repo.owner.toLowerCase()}/${issue.repo.name.toLowerCase()}#${issue.issueNumber}`;
     const refusal = groups.get(key)?.refusal;

@@ -1,7 +1,7 @@
 /** Read the dispatcher's existing private matrix reservations; no collection or native-session guesses. */
 import { createHash } from "node:crypto";
 import { constants } from "node:fs";
-import { lstat, open, readdir, realpath } from "node:fs/promises";
+import { lstat, open, opendir, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { compareRouteIdentity, projectRouteIdentity, openCodeModelSyntax, openCodeProvider, ISSUE_LAUNCH_BLOCK_REASONS,
   ISSUE_LAUNCH_REFUSAL_REASONS, ORCHID_OBSERVER_REASON, ORCHID_ROUTE_FIELDS, unavailableOrchidRouteReasons,
@@ -14,6 +14,8 @@ import { readOrchidTeardownObservation } from "./teardown-observation.js";
 import { readOrchidClaudeStatus } from "./claude-status.js";
 
 const hash = /^[a-f0-9]{64}$/;
+const DISPATCH_PAGE_SIZE = 1_000;
+const MAX_RECEIPT_DIRECTORY_ENTRIES = 16_384;
 const commit = /^[a-f0-9]{40}$/;
 const label = (value: unknown): value is string => typeof value === "string" &&
   value.length <= 256 && /^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(value);
@@ -106,13 +108,16 @@ async function readLaunchState(root: string, name: string): Promise<OrchidLaunch
 }
 
 /** Root diagnostics echo only the configured root, never a descriptor path, native identity, or raw receipt. */
-export async function readOrchidDispatches(root: string | undefined): Promise<OrchidDispatchRead> {
+export async function readOrchidDispatches(root: string | undefined, page?: { readonly after?: string }):
+  Promise<OrchidDispatchRead & { readonly nextCursor?: string | null }> {
   if (root === undefined) return { root, reason: null, dispatches: [], launchStates: [], notes: [], degraded: false };
   const dispatches: DispatchEvidence[] = [];
   const launchStates: OrchidLaunchState[] = [];
   const notes = new Set<string>();
   let reason: OrchidDispatchUnavailableReason | null = null;
+  let nextCursor: string | null = null;
   try {
+    if (page?.after !== undefined && !hash.test(page.after)) throw new Error();
     if (!isAbsolute(root)) reason = "relative_path";
     if (reason !== null) throw new Error();
     let rootStat;
@@ -132,8 +137,12 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
       catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
       if (dirname(dir) === dir) break;
     }
-    const names = await readdir(root);
-    const launches = names.filter(name => launchFile.test(name)).sort();
+    const names: string[] = [];
+    for await (const entry of await opendir(root)) {
+      if (names.length === MAX_RECEIPT_DIRECTORY_ENTRIES) { notes.add("orchid-dispatch: scan_limit"); break; }
+      names.push(entry.name);
+    }
+    const launches = page?.after === undefined ? names.filter(name => launchFile.test(name)).sort() : [];
     if (launches.length > 1000) notes.add("orchid-dispatch: scan_limit");
     const seenLaunchIssues = new Set<string>();
     const ambiguousLaunchIssues = new Set<string>();
@@ -152,9 +161,12 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
         if (ambiguousLaunchIssues.has(`${row.issue.repo.toLowerCase()}#${row.issue.number}`)) launchStates.splice(i, 1);
       }
     }
-    const entries = names.filter(name => hash.test(name)).sort();
-    if (entries.length > 1000) notes.add("orchid-dispatch: scan_limit");
-    for (const key of entries.slice(0, 1000)) {
+    const entries = names.filter(name => hash.test(name) && (page?.after === undefined || name > page.after)).sort();
+    if (entries.length > DISPATCH_PAGE_SIZE) {
+      if (page === undefined) notes.add("orchid-dispatch: scan_limit");
+      else nextCursor = entries[DISPATCH_PAGE_SIZE - 1]!;
+    }
+    for (const key of entries.slice(0, DISPATCH_PAGE_SIZE)) {
       try {
         const record = join(root, key, "record");
         for (const dir of [join(root, key), record]) {
@@ -257,5 +269,6 @@ export async function readOrchidDispatches(root: string | undefined): Promise<Or
       } catch { notes.add("orchid-dispatch: binding_unavailable"); }
     }
   } catch { notes.add("orchid-dispatch: source_unavailable"); }
-  return { root, reason, dispatches, launchStates, notes: [...notes], degraded: notes.size > 0 };
+  return { root, reason, dispatches, launchStates, notes: [...notes], degraded: notes.size > 0,
+    ...(page === undefined ? {} : { nextCursor }) };
 }

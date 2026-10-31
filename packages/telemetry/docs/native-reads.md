@@ -475,3 +475,22 @@ The CLI is `harness-telemetry`. Cost and governance output support explicit
 readers are upgraded; invalid values refuse collection. The selection affects only names on
 originated rows, preserving measurements, source clocks and native attribution. Received
 provenance remains unchanged.
+
+## Resumed issue agents and bounded history
+
+`issue-agents` joins a resumed session through the existing verified receipt's native identity.
+Large Codex rollouts keep their head and tail; when the tail has no native turn boundary, a reverse
+scan recovers the newest boundary at or before capture. `CODEX_TURN_SCAN_BYTES` caps that lookup at
+32 MiB, and every byte also pays against the unchanged 32 MiB frame budget. No observed boundary
+means unknown; a completion in the head cannot end a turn across an unread gap. Token history stays partial.
+
+Reads prioritize receipts without paired end evidence, then durable-matched native file activity,
+then newest dispatch. File clocks only schedule reads; running still requires fresh native evidence.
+Observed running trees enter the existing issue/agent/byte output caps before ended history.
+Receipt traversal uses at most `MAX_DISPATCH_PAGES_PER_FRAME` (four) pages of 1,000 receipts per frame;
+directory enumeration is capped at 16,384 entries; omitted pages/output report `scan_limit`. Metadata hints are indexed once per frame,
+bounded by 16,384 directory entries and 1,024 directories; unavailable hints remain neutral.
+With partial trees, an unread retry cannot erase an already verified root. One large state lookup
+can spend most of a frame: other large active roots can remain unknown or
+`scan_limit` while contention persists. No scheduling hint becomes liveness evidence.
+[Regression and review evidence](../../../docs/run-records/ra776/worklog.md) records the failing controls.

@@ -1,0 +1,5 @@
+# ra776 context
+Current change repairs large/resumed native turn-state reads and keeps observed active issue forests ahead of history at output limits. The existing private receipt NativeSessionID remains the only root join.
+Read worklog.md for design and red-control evidence. Native IO charges every backward read to the unchanged frame budget. Metadata hints never enter observations. Four host pages bound receipt traversal; remaining pages are explicitly scan_limit. Missing native boundaries remain unknown; old head completion is never reused across a gap.
+Baseline root install/typecheck/build/test passed using the declared pnpm version, Node 24 and executable temporary storage outside Git. Default host Node/npm and temporary execution needed environment correction; no source gate was weakened.
+All four root gates passed (exit 0). Independent Meta implementation review passed; final exact-head attestation and PR publication follow this implementation commit. Read worklog.md for real output summaries and the measured full-feed contention limit.

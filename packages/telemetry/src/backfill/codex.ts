@@ -85,6 +85,15 @@ const num = (value: unknown): number | null =>
 const obj = (value: unknown): JsonObject | null =>
   typeof value === "object" && value !== null && !Array.isArray(value) ? (value as JsonObject) : null;
 
+/** Native turn boundaries shared by full parsing and bounded backward state recovery. */
+export function codexTurnOutcome(kind: unknown): Pick<RunRecord, "outcome" | "terminalCause"> | null {
+  if (kind === "task_started") return { outcome: "running" };
+  if (kind === "task_complete") return { outcome: "complete" };
+  if (kind === "error" || kind === "stream_error") return { outcome: "failed", terminalCause: "error" };
+  if (kind === "turn_aborted") return { outcome: "failed", terminalCause: "cancelled" };
+  return null;
+}
+
 /**
  * Convert the vendor's Unix second to ISO 8601.
  *
@@ -285,10 +294,11 @@ export function parseCodexRollout(text: string, origin: string): ParsedTranscrip
       if (limits !== null && at !== null) quota.push(...quotasFromRateLimits(limits, at));
     }
 
-    if (kind === "task_started") { outcome = "running"; terminalCause = undefined; terminalAt = undefined; }
-    if (kind === "task_complete") { outcome = "complete"; terminalCause = undefined; terminalAt = at ?? undefined; }
-    if (kind === "error" || kind === "stream_error") { outcome = "failed"; terminalCause = "error"; terminalAt = at ?? undefined; }
-    if (kind === "turn_aborted") { outcome = "failed"; terminalCause = "cancelled"; terminalAt = at ?? undefined; }
+    const boundary = codexTurnOutcome(kind);
+    if (boundary !== null) {
+      outcome = boundary.outcome; terminalCause = boundary.terminalCause;
+      terminalAt = outcome === "running" ? undefined : at ?? undefined;
+    }
   }
 
   if (parentInvalid || parents.size > 1 || (id !== null && parents.has(id))) {
