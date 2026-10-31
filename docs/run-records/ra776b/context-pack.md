@@ -12,3 +12,6 @@ Accepted debt: missing native child/usage facets are tracked in Herdr #5725; nat
 Orchid #136; indexed negative/replay coverage is Orchid #135. Until those sources exist, bounded
 existing metadata readers remain. The fallback keeps its previous history bounds and does not
 claim to deliver native restart recovery. The Herdr package move remains a nonblocking follow-up.
+
+Final reconciliation against committed b6dda35e52c3474f5200f0a4e81bdd02985a5ded
+returned PASS; see `review.md` for the substantive result and evidence.

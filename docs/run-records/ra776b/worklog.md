@@ -21,3 +21,10 @@
 
 Independent GLM plan evaluation passed. Muse inspected the source and ran independent package
 checks. A final committed-head reconciliation is required before READY; see `review.md` for its result.
+
+Reconciliation: HEAD b6dda35e52c3474f5200f0a4e81bdd02985a5ded verified clean,
+then reviewed file by file. Late additions confirmed in the committed head: the
+failure catch preserving independent admissions, launch-block coexistence, the
+corrected fallback assertions, and the test-only older-decoder import seam with
+its explicit opt-in negative. Root gates all exit 0 with telemetry at 808 pass
+and 0 fail; revert and 0.36 compatibility receipts match their logs. Result PASS.
