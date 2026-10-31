@@ -18,15 +18,21 @@ async function fixture(run: (f: {
   status(state: string): void;
   mismatch(): void;
   duplicate(): void;
+  disappear(): void;
+  clutter(): void;
+  staleStop(): Promise<void>;
   restore(): void;
   complete(): void;
   metadata(read: (receipt: DispatchEvidence, binding: { readonly paneId: string }) => Promise<void>): void;
   readonly requests: string[][];
   readonly nativeId: string;
-}) => Promise<void>) {
+}) => Promise<void>, source: "codex" | "claude" | "agy" | "opencode" = "codex") {
   const home = await mkdtemp(join(tmpdir(), "nr-"));
   const receipts = join(home, "receipts"), socket = join(home, "run.sock");
-  const id = randomUUID(); let seatId = id, status = "working", duplicated = false; let key = "", workspace = "original-workspace", pane = "original-pane", phase = "active";
+  const id = source === "opencode" ? "ses_" + randomUUID() : randomUUID(); let seatId = id, status = "working", duplicated = false; let key = "", workspace = "original-workspace", pane = "original-pane", phase = "active";
+  let disappeared = false;
+  let clutter: { workspace_id: string; label: string }[] = [];
+  const knownRuns: { key: string; label: string }[] = [];
   const requests: string[][] = [];
   let metadata: ((receipt: DispatchEvidence, binding: { readonly paneId: string }) => Promise<void>) | undefined;
   const server = createServer(conn => {
@@ -37,10 +43,12 @@ async function fixture(run: (f: {
       const rpc = JSON.parse(bytes);
       requests.push(rpc.params.keys.map((q: { key: string }) => q.key));
       conn.end(JSON.stringify({ id: rpc.id, result: { type: "run_lookup", schemaVersion: 1,
-        generation: "fixture-generation", revision: 1, complete: true, missing: [], records: [{
+        generation: "fixture-generation", revision: 1, complete: true,
+        missing: rpc.params.keys.filter((q: { key: string }) => q.key !== "701").map((q: { key: string }) => ({ key: q.key, reason: "run_not_found" })),
+        records: rpc.params.keys.some((q: { key: string }) => q.key === "701") ? [{
           key: "701", issue: { repo, number: 776 }, dispatchKey: key, nativeSessionId: id,
-          agent: "codex", label: "codex-701", phase, observedAt: now,
-        }] } }) + "\n");
+          agent: source, label: `${source}-701`, phase, observedAt: now,
+        }] : [] } }) + "\n");
     });
   });
   try {
@@ -53,25 +61,45 @@ async function fixture(run: (f: {
       await mkdir(record, { recursive: true, mode: 0o700 });
       const write = (name: string, value: unknown) => writeFile(join(record, name), JSON.stringify(value), { mode: 0o600 });
       await write("dispatch.json", { schemaVersion: 1, runId: `orchid-${dispatchKey}`, issue: { repo, number },
-        parentRunId: null, source: "codex", provider: "fixture", model: "fixture-model", effort: "high", host,
+        parentRunId: null, source, provider: "fixture", model: "fixture-model", effort: "high", host,
         state: "dispatched", observedAt: dispatched, location: { paneId: "original-pane", workspaceId: "original-workspace" } });
       await write("binding.json", { IssueID: issueId, Repo: repo, BriefDigest: brief, Host: host,
-        Route: { transport: "codex", provider: "fixture", model: "fixture-model", effort: "high" }, NativeSessionID: nativeId });
+        ...(source === "agy" ? { NativeStore: { source: "agy", directory: join(home, ".divybot-native", dispatchKey, "agy") } } : {}),
+        Route: { transport: source, provider: "fixture", model: "fixture-model", effort: "high" }, NativeSessionID: nativeId });
       return dispatchKey;
     };
     key = await receipt(776, id);
-    await run({ receipt, requests, nativeId: id, metadata(read) { metadata = read; }, restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
+    const staleStop = async () => {
+      const operationId = randomUUID(), requestDigest = "d".repeat(64), runId = "orchid-" + key;
+      const dir = join(receipts, "actions", operationId);
+      await mkdir(dir, { recursive: true, mode: 0o700 });
+      const write = (path: string, value: unknown) => writeFile(path, JSON.stringify(value), { mode: 0o600 });
+      await write(join(receipts, key, "record", "stop-action.json"), { schemaVersion: 1, operationId, requestDigest });
+      await write(join(dir, "intent.json"), { requestDigest });
+      const opaque = (kind: string) => kind + "_" + createHash("sha256").update(kind + "\0" + runId).digest("hex");
+      await write(join(dir, "result.json"), { schemaVersion: 1, operationId, requestDigest, action: "stop", outcome: "accepted",
+        reason: "workspace_close_delivered", repository: repo, issueNumber: 776, agentId: opaque("agent"), dispatchId: opaque("assignment"),
+        nativeRunId: runId, host: "fixture-node", paneId: "original-pane", workspaceId: "original-workspace", observedAt: dispatched });
+      for (const [file, kind] of [["seat-observed.json", "seat_absent"], ["process-observed.json", "process_absent"]]) {
+        await write(join(dir, file!), { schemaVersion: 1, operationId, requestDigest, kind, observedAt: dispatched });
+      }
+    };
+    await run({ receipt, staleStop, requests, nativeId: id, metadata(read) { metadata = read; }, restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
       complete() { phase = "completed"; }, status(value) { status = value; },
-      mismatch() { seatId = randomUUID(); }, duplicate() { duplicated = true; }, collect(issueKey) {
+      mismatch() { seatId = randomUUID(); }, duplicate() { duplicated = true; }, disappear() { disappeared = true; },
+      clutter() { clutter = Array.from({ length: MAX_AGENT_OBSERVATIONS + 40 }, (_, n) => ({ workspace_id: `old-workspace-${n}`, label: `${source}-${1000 + n}` })); }, collect(issueKey) {
         // A variable remains assignable to the original collector, which must fail these controls.
-        const agent = { workspace_id: workspace, pane_id: pane, terminal_id: "fixture-terminal", agent: "codex",
+        const agent = { workspace_id: workspace, pane_id: pane, terminal_id: "fixture-terminal", agent: source,
           agent_status: status, revision: 3, state_change_seq: 4,
-          agent_session: { source: "herdr:codex", agent: "codex", kind: "id", value: seatId } };
+          agent_session: { source: source === "agy" ? "herdr:antigravity_cli" : `herdr:${source}`, agent: source, kind: "id", value: seatId } };
         const options = { home, limit: 20, now, partialTrees: true, ...(issueKey ? { issueKey } : {}),
-          ...(metadata ? { onBinding: metadata } : {}),
+          knownRuns: [...knownRuns], onBinding: async (receipt: DispatchEvidence, binding: { readonly paneId: string }) => {
+            if (!knownRuns.length) knownRuns.push({ key: "701", label: `${source}-701` });
+            await metadata?.(receipt, binding);
+          },
           env: { [OPERATOR_ENV.dispatchRoot]: receipts, HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: socket },
-          nativeSnapshot: { workspaces: [{ workspace_id: workspace, label: "codex-701" }],
-            agents: duplicated ? [agent, { ...agent, pane_id: "duplicate-pane", terminal_id: "duplicate-terminal" }] : [agent] } };
+          nativeSnapshot: { workspaces: disappeared ? [] : [...clutter, { workspace_id: workspace, label: `${source}-701` }],
+            agents: disappeared ? [] : duplicated ? [agent, { ...agent, pane_id: "duplicate-pane", terminal_id: "duplicate-terminal" }] : [agent] } };
         return collectIssueAgentTree(options);
       } });
   } finally { await new Promise<void>(resolve => server.close(() => resolve())); await rm(home, { recursive: true, force: true }); }
@@ -149,4 +177,53 @@ it("private attachment metadata sees only a certified receipt, and its failure c
   assert.ok(!JSON.stringify(result).includes("PRIVATE-"));
   f.mismatch(); await f.collect();
   assert.equal(observed.length, 1, "unverified receipts never reach the metadata reader");
+}));
+
+it("a remembered native coordinate resolves final assignment end after its workspace disappears", () => fixture(async f => {
+  const before = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
+  assert.equal(before?.liveness.state, "running");
+  f.disappear(); f.complete();
+  const after = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
+  assert.equal(after?.observation.assignment.id, before?.observation.assignment.id);
+  assert.equal(after?.liveness.state, "ended");
+  assert.equal(after?.terminalOutcome.value, null, "a final fence does not invent success");
+  assert.equal(after?.endedAt, null, "read time is not the exact native end time");
+}));
+it("a remembered active run without a native seat is unknown, never running or ended", () => fixture(async f => {
+  assert.equal((await f.collect()).issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  f.disappear();
+  const after = await f.collect();
+  assert.equal(after.complete, false);
+  assert.equal(after.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "unknown");
+}));
+
+for (const source of ["codex", "claude", "agy", "opencode"] as const) {
+  it(`${source}: native identity and execution need no vendor transcript or native history store`, () => fixture(async f => {
+    f.restore();
+    const root = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
+    assert.equal(root?.harness.value, source);
+    assert.equal(root?.liveness.state, "running");
+    f.disappear(); f.complete();
+    assert.equal((await f.collect()).issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "ended");
+  }, source));
+}
+it("reported native work wins capacity over unoccupied restored workspace labels", () => fixture(async f => {
+  f.clutter();
+  const result = await f.collect();
+  assert.equal(result.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  assert.equal(result.reason, "scan_limit");
+  assert.equal(f.requests[0]?.[0], "701");
+  assert(f.requests.every(keys => keys.length <= 128));
+  assert.equal(f.requests.flat().length, MAX_AGENT_OBSERVATIONS);
+}));
+
+it("a paired historical stop cannot end a resumed native working assignment", () => fixture(async f => {
+  await f.staleStop(); f.restore();
+  let certified = false;
+  f.metadata(async receipt => { assert.equal(receipt.stop?.seatObservedAt, dispatched); assert.equal(receipt.stop?.processObservedAt, dispatched); certified = true; });
+  const root = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
+  assert(certified, "the stale paired stop was actually read and validated");
+  assert.equal(root?.liveness.state, "running");
+  assert.equal(root?.observation.running.value, true);
+  assert.equal(root?.terminalOutcome.value, null);
 }));
