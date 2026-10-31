@@ -55,3 +55,36 @@ Worktree was clean at that hash before any doc edit. Verdict: PASS.
 
 Signed off as supervisor for the committed head above. No source was mutated
 by this review; only run-record docs were added.
+
+## Final token-extension review (separate)
+
+Extension source: 4745909489faf1535a76d4e8ce773a9ea7922ec5, diffed against the
+signed da8116c and reviewed file by file with the existing native proof.
+Verdict: PASS.
+
+- The native client extends its closed token list with exactly the two
+  officially recorded tokens. Query validation still requires the exact
+  `token-key` label; no response or public schema changes.
+- The collector regex accepts exactly the six recorded forms. Only the two
+  documented tokens map to their canonical vendor for seat, receipt and native
+  identity matching; the query label itself stays exact throughout. The mapping
+  is total over the accepted grammar, so the canonical cast cannot misfire, and
+  every downstream identity check still runs against canonical Herdr and receipt
+  data. Unknown labels remain refused; keys, bounds, duplicate and conflict
+  handling are untouched.
+- Interaction with the signed proof: the mapping feeds only the source
+  derivation that the prior review already approved. Strictness, refusal paths,
+  fallback behavior and decoder compatibility are preserved. The new real-socket
+  controls show roots restored with canonical integration, running state,
+  native final end and stable opaque assignment, with no native identity
+  crossing the public boundary.
+- Evidence: all five root gates exit 0 with telemetry at 810 pass and 0 fail.
+  The token controls fail on the prior signed source and pass after the fix.
+  The selection revert control re-ran on the new head with exact-byte restore,
+  and the tagged 0.36 decoder controls re-passed with the opted-bounded
+  negative intact. Leak and link checks on these docs are clean.
+
+Limitations carry forward from above, plus: Orchid #134 stays separately
+authored and reviewed with its own Go gates outside this review; the 808-count
+receipts are historical evidence for b6dda35 only, superseded here by the 810
+gate run for this head.

@@ -19,3 +19,7 @@ returned PASS; see `review.md` for the substantive result and evidence.
 A final protocol audit adds native recorded-token support for `codex-run` and `opencode-run`,
 without changing public wire shapes. Prior sign-off remains historical evidence for its exact
 source; the final reviewer records the token extension's committed source and gates before READY.
+
+Token-extension sign-off against committed 4745909489faf1535a76d4e8ce773a9ea7922ec5
+returned PASS with telemetry at 810 pass and 0 fail; see the final section of
+`review.md` for the substantive result and evidence.

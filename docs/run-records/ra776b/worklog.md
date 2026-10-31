@@ -35,3 +35,8 @@ receipt use the canonical vendor. Two real-socket controls compiled and failed a
 prior source, demonstrating missing roots. The repair preserves the exact recorded token/label
 for native lookup and maps only the documented vendor tokens for integration/receipt matching.
 The same independent reviewer reconciles this bounded extension before final readiness.
+
+Extension reconciliation: HEAD 4745909489faf1535a76d4e8ce773a9ea7922ec5 verified,
+then reviewed as a bounded diff against the signed prior head. Root gates all exit 0
+with telemetry at 810 pass and 0 fail; token red/green, selection revert and 0.36
+compatibility receipts match their logs. Result PASS.
