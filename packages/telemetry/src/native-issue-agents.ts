@@ -45,6 +45,8 @@ export async function readHerdrNativeSnapshot(): Promise<unknown> {
 /** Input is private structured Herdr data, never terminal content or a public request payload. */
 export async function collectNativeIssueAgents(input: {
   readonly nativeSnapshot: unknown; readonly env: OperatorEnvironment; readonly now: string; readonly issueKey?: string;
+  /** Private attachment metadata may reuse the certified receipt; it supplies no execution facts. */
+  readonly onBinding?: (receipt: DispatchEvidence, binding: Readonly<Binding>) => Promise<void>;
 }): Promise<NativeIssueAgentRead> {
   let tree = unavailableNativeTree(input.now);
   const bindings: Binding[] = [], lookups: Lookup[] = [];
@@ -139,7 +141,9 @@ export async function collectNativeIssueAgents(input: {
         observedAt: input.now, sourceBound: true, dispatchComplete: true, nativeComplete: true, wireFamily }).agents[0];
       if (!observation) { complete = false; continue; }
       if (record.phase === "completed") completedRuns.push({ agentId: observation.agentId, dispatchId: observation.assignment.id });
-      bindings.push({ agentId: observation.agentId, dispatchId: observation.assignment.id, terminalId: seat.terminal, paneId: seat.pane });
+      const binding = { agentId: observation.agentId, dispatchId: observation.assignment.id, terminalId: seat.terminal, paneId: seat.pane };
+      bindings.push(binding);
+      try { await input.onBinding?.(receipt, binding); } catch { /* Attachment metadata cannot erase native execution proof. */ }
       const lookup = lookups.find(row => row.terminalId === seat.terminal && row.paneId === seat.pane)!;
       lookups[lookups.indexOf(lookup)] = { ...lookup, outcome: "bound" };
     }

@@ -6,7 +6,7 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
-import { MAX_AGENT_OBSERVATIONS } from "@rickylabs/harness-contracts";
+import { MAX_AGENT_OBSERVATIONS, type DispatchEvidence } from "@rickylabs/harness-contracts";
 import { collectIssueAgentTree } from "./issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "./operator-environment.js";
 
@@ -20,6 +20,7 @@ async function fixture(run: (f: {
   duplicate(): void;
   restore(): void;
   complete(): void;
+  metadata(read: (receipt: DispatchEvidence, binding: { readonly paneId: string }) => Promise<void>): void;
   readonly requests: string[][];
   readonly nativeId: string;
 }) => Promise<void>) {
@@ -27,6 +28,7 @@ async function fixture(run: (f: {
   const receipts = join(home, "receipts"), socket = join(home, "run.sock");
   const id = randomUUID(); let seatId = id, status = "working", duplicated = false; let key = "", workspace = "original-workspace", pane = "original-pane", phase = "active";
   const requests: string[][] = [];
+  let metadata: ((receipt: DispatchEvidence, binding: { readonly paneId: string }) => Promise<void>) | undefined;
   const server = createServer(conn => {
     conn.setEncoding("utf8"); let bytes = "";
     conn.on("data", chunk => {
@@ -58,7 +60,7 @@ async function fixture(run: (f: {
       return dispatchKey;
     };
     key = await receipt(776, id);
-    await run({ receipt, requests, nativeId: id, restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
+    await run({ receipt, requests, nativeId: id, metadata(read) { metadata = read; }, restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
       complete() { phase = "completed"; }, status(value) { status = value; },
       mismatch() { seatId = randomUUID(); }, duplicate() { duplicated = true; }, collect(issueKey) {
         // A variable remains assignable to the original collector, which must fail these controls.
@@ -66,6 +68,7 @@ async function fixture(run: (f: {
           agent_status: status, revision: 3, state_change_seq: 4,
           agent_session: { source: "herdr:codex", agent: "codex", kind: "id", value: seatId } };
         const options = { home, limit: 20, now, partialTrees: true, ...(issueKey ? { issueKey } : {}),
+          ...(metadata ? { onBinding: metadata } : {}),
           env: { [OPERATOR_ENV.dispatchRoot]: receipts, HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: socket },
           nativeSnapshot: { workspaces: [{ workspace_id: workspace, label: "codex-701" }],
             agents: duplicated ? [agent, { ...agent, pane_id: "duplicate-pane", terminal_id: "duplicate-terminal" }] : [agent] } };
@@ -129,4 +132,21 @@ it("duplicate native seats stay unresolved instead of selecting one", () => fixt
 it("native source scoping selects the canonical issue without consulting other receipts", () => fixture(async f => {
   assert.equal((await f.collect("example/project#776")).issues[0]?.issueNumber, 776);
   assert.deepEqual((await f.collect("example/project#777")).issues, []);
+}));
+
+it("private attachment metadata sees only a certified receipt, and its failure cannot change execution", () => fixture(async f => {
+  const observed: string[] = [];
+  f.restore();
+  f.metadata(async (receipt, binding) => {
+    assert.equal(receipt.location?.paneId, "original-pane", "the receipt is unchanged, for independent scope validation");
+    assert.equal(binding.paneId, "restored-pane");
+    observed.push(receipt.runId);
+    throw Error("PRIVATE-ATTACHMENT-CANARY");
+  });
+  const result = await f.collect();
+  assert.equal(observed.length, 1);
+  assert.equal(result.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  assert.ok(!JSON.stringify(result).includes("PRIVATE-"));
+  f.mismatch(); await f.collect();
+  assert.equal(observed.length, 1, "unverified receipts never reach the metadata reader");
 }));

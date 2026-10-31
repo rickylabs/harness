@@ -16,3 +16,5 @@ Independent supervisor sign-off: PASS at reviewed code head
 53f4abe50f8fcabc117f961d83a08bc4195aa134. Final gates: frozen install,
 typecheck, root build and full test all exit 0; leak scan exit 0. Cockpit leaf
 explicitly pending; end-to-end task NOT certified.
+
+Consumer integration follow-up: the existing cockpit private issue-target scope reader must retain its exact receipt validation. A private `onBinding` port now receives only a certified receipt and binding, so that reader can point-read its scoped metadata without enumerating receipts or duplicating the native join. Metadata failure cannot change execution evidence. The native regression verifies this separation and refuses the callback on a mismatched session.
