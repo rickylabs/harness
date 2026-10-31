@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { projectHistoricalIssueFixture } from "./fixtures/historical-issue-tree.js";
+import { collectIssueAgentTree } from "./issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "./operator-environment.js";
 import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 
@@ -41,10 +41,10 @@ it("keeps a verified running retry visible without certifying an earlier unresol
         cwd: "/fixture", model_provider: "fixture" } },
       { timestamp: at, type: "event_msg", payload: { type: "task_started" } },
     ].map(row => JSON.stringify(row)).join("\n") + "\n");
-    const conservative = await projectHistoricalIssueFixture(options);
+    const conservative = await collectIssueAgentTree(options);
     assert.equal(conservative.complete, false);
     assert.equal(conservative.issues[0]?.dispatches.length, 0);
-    const partial = await projectHistoricalIssueFixture({ ...options, partialTrees: true });
+    const partial = await collectIssueAgentTree({ ...options, partialTrees: true });
     assert.ok(readIssueAgentTreeSnapshot(partial).ok);
     assert.equal(partial.complete, false);
     assert.equal(partial.issues[0]?.complete, false);
@@ -56,10 +56,10 @@ it("keeps a verified running retry visible without certifying an earlier unresol
     assert.equal(groups[0]?.agents[0]?.observation.parentAgentId.state, "confirmed-root");
     assert.ok(!JSON.stringify(partial).includes(rootId));
     const duplicate = await attempt("fixture-duplicate", true);
-    assert.equal((await projectHistoricalIssueFixture({ ...options, partialTrees: true })).issues[0]?.dispatches.length, 0);
+    assert.equal((await collectIssueAgentTree({ ...options, partialTrees: true })).issues[0]?.dispatches.length, 0);
     await rm(duplicate, { recursive: true, force: true });
     await rm(rollout);
-    assert.equal((await projectHistoricalIssueFixture({ ...options, partialTrees: true })).issues[0]?.dispatches.length, 0);
+    assert.equal((await collectIssueAgentTree({ ...options, partialTrees: true })).issues[0]?.dispatches.length, 0);
   } finally {
     await rm(home, { recursive: true, force: true });
     await rm(receipts, { recursive: true, force: true });

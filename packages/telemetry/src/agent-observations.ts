@@ -70,6 +70,7 @@ function claudeChildRunning(run: RunRecord, starts: ReadonlyMap<string, string> 
 export interface NativeRootObservation {
   readonly id: string;
   readonly running: AgentObservedValue<boolean>;
+  readonly completed?: boolean;
 }
 export function buildAgentObservations(input: {
   readonly wireFamily?: TelemetryWireFamily;
@@ -141,13 +142,14 @@ export function buildAgentObservations(input: {
   if (roots.size > 0 && !input.nativeComplete && dispatches.some(d => !input.nativeRoots?.has(d.runId))) { reason = "ancestry_unavailable"; return finish(); }
   // Bind only after every root identity and completeness fence has passed.
   for (const [key, root] of roots) {
-    if (dispatches.some(d => opaque("agent", d.runId) === root.agentId && input.nativeRoots?.has(d.runId))) continue;
-    const run = native.get(key)!;
+    const run = native.get(key);
+    if (run === undefined) continue;
     const cost = projectAgentCost(run, input.observedAt, wireFamily);
     const sourceDispatch = dispatches.find(d => opaque("agent", d.runId) === root.agentId);
     const nativeRunning = measuredRunning(run, input.observedAt);
-    const running = nativeRunning.value === true || sourceDispatch?.source !== "claude" ? nativeRunning
-      : claudeStatusRunning(sourceDispatch, input.observedAt);
+    const running = input.nativeRoots?.get(sourceDispatch?.runId ?? "")?.running ??
+      (nativeRunning.value === true || sourceDispatch?.source !== "claude" ? nativeRunning
+        : claudeStatusRunning(sourceDispatch, input.observedAt));
     const nativeRoute = sourceDispatch?.source === "opencode" ? projectRouteIdentity({ ...root.route,
       observed: {
         provider: { value: run.identity.provider, source: "opencode.message.providerID" },

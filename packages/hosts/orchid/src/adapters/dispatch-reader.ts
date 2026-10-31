@@ -106,7 +106,7 @@ async function readLaunchState(root: string, name: string): Promise<OrchidLaunch
 }
 
 /** Root diagnostics echo only the configured root, never a descriptor path, native identity, or raw receipt. */
-export async function readOrchidDispatches(root: string | undefined, selected?: { readonly keys: readonly string[] }): Promise<OrchidDispatchRead> {
+export async function readOrchidDispatches(root: string | undefined, selected?: { readonly keys: readonly string[]; readonly launchStates?: boolean }): Promise<OrchidDispatchRead> {
   if (root === undefined) return { root, reason: null, dispatches: [], launchStates: [], notes: [], degraded: false };
   const dispatches: DispatchEvidence[] = [];
   const launchStates: OrchidLaunchState[] = [];
@@ -135,7 +135,8 @@ export async function readOrchidDispatches(root: string | undefined, selected?: 
       if (dirname(dir) === dir) break;
     }
     // A native run lookup supplies exact keys; current runs never compete with retained history.
-    const names = selected === undefined ? await readdir(root) : [...selected.keys];
+    const names = selected === undefined ? await readdir(root) : [...selected.keys,
+      ...(selected.launchStates ? (await readdir(root)).filter(name => launchFile.test(name)) : [])];
     const launches = names.filter(name => launchFile.test(name)).sort();
     if (launches.length > 1000) notes.add("orchid-dispatch: scan_limit");
     const seenLaunchIssues = new Set<string>();

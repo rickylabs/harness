@@ -1,5 +1,5 @@
 import type { IssueFeedChanges } from "./issue-agent-feed-changes.js";
-import { projectHistoricalIssueFixture } from "./fixtures/historical-issue-tree.js";
+import { collectIssueAgentTree } from "./issue-agent-feed-cli.js";
 import assert from "node:assert/strict";
 import { it } from "node:test";
 import { Writable } from "node:stream";
@@ -181,18 +181,18 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     const older = join(home, ".codex", "sessions", "2025", "01", "01");
     await mkdir(older, { recursive: true });
     await writeFile(join(older, `rollout-2025-01-01T00-00-00-${rootId}.jsonl`), "{malformed\n");
-    const frame = await projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
+    const frame = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
       now: "2026-09-27T22:00:00.000Z" });
     assert.equal(frame.complete, false);
     assert.equal(frame.issues.length, 2);
     assert.equal(frame.issues[0]?.issueNumber, 378);
     assert.deepEqual([frame.issues[0]?.complete, frame.issues[0]?.reason, frame.issues[0]?.dispatches.length],
-      [false, "source_unavailable", 0]);
+      [false, "scan_limit", 0]);
     assert.equal(frame.issues[1]?.issueNumber, 387);
     assert.equal(frame.issues[1]?.complete, true);
     assert.equal(frame.issues[1]?.dispatches[0]?.agents.length, 2);
     assert.ok(!JSON.stringify(frame).includes(rootId));
-    const canonical = await projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts,
+    const canonical = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts,
       HARNESS_TELEMETRY_WIRE_FAMILY: "harness" }, limit: 20, now: "2026-09-27T22:00:00.000Z" });
     assert.equal(canonical.issues[1]?.complete, true);
     const names = { subscriptionHeadroom: "governance.usage", meteredSpend: "runs", runTokens: "runs", localCapacity: "host-capacity" };
@@ -205,19 +205,19 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     }
     const scoped = new Capture();
     const command = ["--json", "--issue", "example/project#387", "--home", home, "--limit", "20"];
-    assert.equal(await issueAgentFeedCommand(command, { output: scoped, collect: projectHistoricalIssueFixture, now: () => "2026-09-27T22:00:00.000Z",
+    assert.equal(await issueAgentFeedCommand(command, { output: scoped, collect: collectIssueAgentTree, now: () => "2026-09-27T22:00:00.000Z",
       env: { [OPERATOR_ENV.dispatchRoot]: receipts } }), 0);
     const scopedFrame = JSON.parse(scoped.lines[0]!);
     assert.equal(scopedFrame.complete, true);
     assert.deepEqual(scopedFrame.issues.map((row: { issueNumber: number }) => row.issueNumber), [387]);
     const canonicalCLI = new Capture();
-    assert.equal(await issueAgentFeedCommand(command, { output: canonicalCLI, collect: projectHistoricalIssueFixture, now: () => "2026-09-27T22:00:00.000Z",
+    assert.equal(await issueAgentFeedCommand(command, { output: canonicalCLI, collect: collectIssueAgentTree, now: () => "2026-09-27T22:00:00.000Z",
       env: { [OPERATOR_ENV.dispatchRoot]: receipts, HARNESS_TELEMETRY_WIRE_FAMILY: "harness" } }), 0);
     const canonicalFrame = JSON.parse(canonicalCLI.lines[0]!);
     assert.equal(canonicalFrame.issues[0].dispatches[0].agents[0].observation.cost.runTokens.source, "harness-telemetry.runs");
     const missing = new Capture();
     assert.equal(await issueAgentFeedCommand(["--json", "--issue", "example/project#999", "--home", home],
-      { output: missing, collect: projectHistoricalIssueFixture, now: () => "2026-09-27T22:00:00.000Z", env: { [OPERATOR_ENV.dispatchRoot]: receipts } }), 3);
+      { output: missing, collect: collectIssueAgentTree, now: () => "2026-09-27T22:00:00.000Z", env: { [OPERATOR_ENV.dispatchRoot]: receipts } }), 3);
     assert.equal(JSON.parse(missing.lines[0]!).reason, "source_not_bound");
   } finally {
     await rm(home, { recursive: true, force: true });
@@ -256,7 +256,7 @@ it("binds one Claude root and native child into live steps, tokens and separate 
       NativeSessionID: sessionId }), { mode: 0o600 });
     await writeFile(join(project, sessionId + ".jsonl"), transcript(false, 5, 2));
     await writeFile(childFile, transcript(true, 3, 1));
-    const frame = await projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
+    const frame = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
       now: "2026-09-29T00:00:10.000Z", issueKey: "example/project#451" });
     assert.equal(frame.complete, true);
     const agents = frame.issues[0]?.dispatches[0]?.agents ?? [];
@@ -317,7 +317,7 @@ it("RUN-6: records appended after the capture stay out of the frame instead of f
     const eventFile = join(events, `${createHash("sha256").update(sessionId).digest("hex")}.jsonl`);
     await writeFile(eventFile, hook("SubagentStart", "2026-09-30T11:21:00.681Z") + hook("SubagentStop", "2026-09-30T11:21:11.700Z"), { mode: 0o600 });
     await chmod(eventFile, 0o600);
-    const frame = await projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts, [CLAUDE_CHILD_EVENT_ROOT]: events },
+    const frame = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts, [CLAUDE_CHILD_EVENT_ROOT]: events },
       limit: 20, now, issueKey: "example/project#516" });
     assert.equal(frame.complete, true, String(frame.reason));
     const agents = frame.issues[0]?.dispatches[0]?.agents ?? [];

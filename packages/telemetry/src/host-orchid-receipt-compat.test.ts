@@ -76,8 +76,13 @@ it("P0 sanitized #552/#559/#561 receipts remain readable, honest and strictly de
       env: { DSH_TELEMETRY_DISPATCH_ROOT: f.root } });
     assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
     assert.equal(snapshot.complete, false);
-    assert.equal(snapshot.reason, "source_not_bound");
-    assert.deepEqual(snapshot.issues, [], "receipts without native sources cannot certify a current run census");
+    assert.equal(snapshot.reason, "binding_unavailable");
+    assert.equal(snapshot.issues.length, 4);
+    for (const issue of snapshot.issues.filter(issue => issue.issueNumber !== 545)) {
+      assert.equal(issue.complete, false);
+      assert.deepEqual(issue.dispatches, [], "missing native identities never invent an executing run");
+    }
+    assert.equal(snapshot.issues.find(issue => issue.issueNumber === 545)?.launchRefusal?.reason, "routing-invalid");
     const after = await Promise.all(f.files.map(path => readFile(path)));
     assert.deepEqual(after, before, "read must never modify the receipts or their durable fences");
   } finally { await f.close(); }

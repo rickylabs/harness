@@ -6,7 +6,8 @@ import { orchidHost, NATIVE_RUN_BATCH_LIMIT, type NativeRunQuery, type NativeRun
 import { ISSUE_AGENT_TREE_FRESH_MS, MAX_AGENT_OBSERVATIONS, readIssueAgentTreeSnapshot,
   type AgentObservations, type DispatchEvidence, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { buildAgentObservations, type NativeRootObservation } from "./agent-observations.js";
-import { buildIssueAgentTreeSnapshot } from "./issue-agent-feed.js";
+import { projectNativeIssueAgentFacets } from "./native-issue-agents-projection.js";
+import type { RunRecord } from "./model.js";
 import { resolveNativeOperatorBindings, type OperatorEnvironment } from "./operator-environment.js";
 import { publicThreadId } from "./codex-thread-project.js";
 import { resolveWireFamily } from "./producer-names.js";
@@ -25,7 +26,7 @@ interface Lookup { readonly terminalId: string; readonly paneId: string;
 export interface NativeIssueAgentRead {
   readonly issueAgentTree: IssueAgentTreeSnapshot;
   readonly runs: { readonly generatedAt: string; readonly complete: boolean; readonly dispatches: readonly DispatchEvidence[];
-    readonly runs: readonly never[]; readonly agentObservations: AgentObservations | null };
+    readonly runs: readonly RunRecord[]; readonly agentObservations: AgentObservations | null };
   readonly threadBindings: { readonly observation: AgentObservations | null;
     readonly bindings: readonly { readonly agentId: string; readonly threadId: string | null }[]; readonly reason: "source_incomplete" | null };
   readonly bindings: readonly Binding[];
@@ -53,6 +54,7 @@ export async function readHerdrNativeSnapshot(): Promise<unknown> {
 /** Input is private structured Herdr data, never terminal content or a public request payload. */
 export async function collectNativeIssueAgents(input: {
   readonly nativeSnapshot: unknown; readonly env: OperatorEnvironment; readonly now: string; readonly issueKey?: string;
+  readonly home?: string; readonly limit?: number; readonly partialTrees?: boolean;
   /** Private attachment metadata may reuse the certified receipt; it supplies no execution facts. */
   readonly knownRuns?: readonly NativeRunQuery[];
   readonly onBinding?: (receipt: DispatchEvidence, binding: Readonly<Binding>) => Promise<void>;
@@ -64,9 +66,10 @@ export async function collectNativeIssueAgents(input: {
   const completedRuns: { agentId: string; dispatchId: string }[] = [];
   let complete = true;
   let selectedDispatches: DispatchEvidence[] = [], selectedObservations: AgentObservations | null = null;
+  let selectedRuns: readonly RunRecord[] = [];
   const threadBindings: { agentId: string; threadId: string | null }[] = [];
   const finish = (): NativeIssueAgentRead => ({ issueAgentTree: tree,
-    runs: { generatedAt: input.now, complete: complete && keySourceAvailable, dispatches: selectedDispatches, runs: [], agentObservations: selectedObservations },
+    runs: { generatedAt: input.now, complete: complete && keySourceAvailable, dispatches: selectedDispatches, runs: selectedRuns, agentObservations: selectedObservations },
     threadBindings: { observation: selectedObservations, bindings: threadBindings.slice(0, 128),
       reason: complete && threadBindings.length <= 128 ? null : "source_incomplete" }, bindings, lookups,
     coverage: { complete }, completedRuns, unseatedRuns, runKeys, keySourceAvailable, rootMetadata: { observedAt: tree.observedAt, validUntil: tree.validUntil, revision: tree.revision,
@@ -77,7 +80,7 @@ export async function collectNativeIssueAgents(input: {
     const raw = input.nativeSnapshot;
     if (!object(raw) || !Array.isArray(raw.workspaces) || !Array.isArray(raw.agents)) throw Error();
     // This is a current native census bound, independent of retained receipts. Never select a history prefix.
-    if (raw.agents.length > MAX_AGENT_OBSERVATIONS) { tree = unavailableNativeTree(input.now, "scan_limit"); complete = false; return finish(); }
+    const censusOverflow = raw.agents.length > MAX_AGENT_OBSERVATIONS;
     const workspaces = new Map<string, string>(), ambiguous = new Set<string>();
     for (const row of raw.workspaces) {
       if (!object(row) || !handle(row.workspace_id) || typeof row.label !== "string") throw Error();
@@ -114,7 +117,7 @@ export async function collectNativeIssueAgents(input: {
       workspaces.get(seat.workspace) === query.label && seat.state === "working" && seat.id !== null);
     const all = new Map([...current].sort((a, b) => Number(nativeWorking(b[1])) - Number(nativeWorking(a[1]))));
     for (const query of known) if (!all.has(query.key)) all.set(query.key, query);
-    const overflow = all.size > MAX_AGENT_OBSERVATIONS;
+    const overflow = censusOverflow || all.size > MAX_AGENT_OBSERVATIONS;
     const selected = [...all.values()].slice(0, MAX_AGENT_OBSERVATIONS);
     if (overflow || ambiguousKeys.size) complete = false;
     for (const seat of seats) {
@@ -140,7 +143,15 @@ export async function collectNativeIssueAgents(input: {
       keySourceAvailable = true;
     }
     runKeys = selected.filter(q => current.has(q.key) || !absent.has(q.key));
-    const dispatches: DispatchEvidence[] = [], roots = new Map<string, NativeRootObservation>();
+    const dispatches: DispatchEvidence[] = [], metadataDispatches: DispatchEvidence[] = [], roots = new Map<string, NativeRootObservation>();
+    // Each batch validates its private root once, rather than walking Git ancestors for each run.
+    const receiptByKey = new Map<string, DispatchEvidence>();
+    const keys = [...new Set(records.map(record => record.dispatchKey))];
+    for (let at = 0; at < keys.length; at += NATIVE_RUN_BATCH_LIMIT) {
+      const read = await orchidHost.readDispatches(config.dispatchRoot, { keys: keys.slice(at, at + NATIVE_RUN_BATCH_LIMIT) });
+      if (read.degraded) complete = false;
+      for (const receipt of read.dispatches) receiptByKey.set(receipt.runId.slice("orchid-".length), receipt);
+    }
     const duplicatedReceipts = new Set(records.filter((row, i) => records.some((other, j) =>
       i !== j && row.dispatchKey === other.dispatchKey)).map(row => row.dispatchKey));
     for (const record of records) {
@@ -156,9 +167,8 @@ export async function collectNativeIssueAgents(input: {
       if (!seat && record.phase === "active" && matchingSeats.length > 0 && !known.some(q => q.key === record.key)) {
         complete = false; continue;
       }
-      const read = await orchidHost.readDispatches(config.dispatchRoot, { keys: [record.dispatchKey] });
-      const receipt = read.dispatches[0];
-      if (read.degraded || read.dispatches.length !== 1 || !receipt || receipt.runId !== "orchid-" + record.dispatchKey ||
+      const receipt = receiptByKey.get(record.dispatchKey);
+      if (!receipt || receipt.runId !== "orchid-" + record.dispatchKey ||
           receipt.source !== source || !orchidHost.matchesNativeRootIdentity(receipt, record.nativeSessionId, source)) { complete = false; continue; }
       // Native records own canonical issue identity. Native final phase carries no invented success or end time.
       const { claudeStatus: _status, stop: _stop, teardown: _teardown, ...provenance } = receipt;
@@ -166,12 +176,12 @@ export async function collectNativeIssueAgents(input: {
         ...(seat ? { location: { workspaceId: seat.workspace, paneId: seat.pane } } : {}) };
       const working = record.phase === "active" && seat?.state === "working";
       const idle = record.phase === "active" && seat !== undefined && ["idle", "done", "blocked"].includes(seat.state);
-      roots.set(dispatch.runId, { id: record.nativeSessionId, running: working || idle ? {
+      roots.set(dispatch.runId, { id: record.nativeSessionId, completed: record.phase === "completed", running: working || idle ? {
         value: working, reason: null, observedAt: input.now,
         validUntil: new Date(Date.parse(input.now) + ISSUE_AGENT_TREE_FRESH_MS).toISOString(),
         revision: digest([record.dispatchKey, seat?.revision, seat?.state]),
       } : { value: null, reason: "measurement_missing", observedAt: null, validUntil: null, revision: null } });
-      dispatches.push(dispatch);
+      dispatches.push(dispatch); metadataDispatches.push(receipt);
       const observation = buildAgentObservations({ dispatches: [dispatch], runs: [], nativeRoots: roots,
         observedAt: input.now, sourceBound: true, dispatchComplete: true, nativeComplete: true, wireFamily }).agents[0];
       if (!observation) { complete = false; continue; }
@@ -190,24 +200,23 @@ export async function collectNativeIssueAgents(input: {
       lookups[lookups.indexOf(lookup)] = { ...lookup, outcome: "bound" };
     }
     if (lookups.some(row => row.outcome !== "bound" && row.outcome !== "none")) complete = false;
-    const observations = buildAgentObservations({ dispatches, runs: [], nativeRoots: roots,
-      observedAt: input.now, sourceBound: true, dispatchComplete: true, nativeComplete: true, wireFamily });
-    // This source certifies roots, not a complete native descendant graph.
-    tree = buildIssueAgentTreeSnapshot({ dispatches, observations, runs: [], wireFamily, bounded: dispatches.length > 0 });
-    const terminalAssignments = new Set(completedRuns.map(row => row.dispatchId));
-    const issues = tree.issues.filter(issue => input.issueKey === undefined ||
-      `${issue.repo.owner.toLowerCase()}/${issue.repo.name.toLowerCase()}#${issue.issueNumber}` === input.issueKey)
-      .map(issue => ({ ...issue, dispatches: issue.dispatches.map(group => ({ ...group, agents: group.agents.map(agent =>
-        !terminalAssignments.has(agent.dispatchId) ? agent : { ...agent,
-          // The fence proves final assignment end, not an outcome or an exact end timestamp.
-          liveness: { state: "ended" as const, evidence: "native-outcome" as const, observedAt: input.now, reason: null },
-        }) })) }));
-    tree = { ...tree, issues, revision: digest({ issues }), complete: tree.complete && complete,
-      reason: tree.reason ?? (complete ? null : "binding_unavailable") };
+    const projection = await projectNativeIssueAgentFacets({ ...input, dispatches, metadataDispatches, roots, complete, overflow });
+    tree = projection.tree;
     const decoded = readIssueAgentTreeSnapshot(tree);
     if (!decoded.ok) throw Error();
     tree = decoded.snapshot;
-    selectedDispatches = dispatches; selectedObservations = observations;
+    selectedDispatches = dispatches; selectedObservations = projection.observations; selectedRuns = projection.runs;
     return finish();
-  } catch { complete = false; tree = unavailableNativeTree(input.now); bindings.length = 0; completedRuns.length = 0; unseatedRuns.length = 0; keySourceAvailable = false; threadBindings.length = 0; selectedDispatches = []; selectedObservations = null; return finish(); }
+  } catch {
+    complete = false; tree = unavailableNativeTree(input.now);
+    bindings.length = 0; completedRuns.length = 0; unseatedRuns.length = 0;
+    keySourceAvailable = false; threadBindings.length = 0;
+    selectedDispatches = []; selectedObservations = null; selectedRuns = [];
+    // Independent admission evidence survives a failed native read; execution never falls back.
+    try {
+      tree = (await projectNativeIssueAgentFacets({ ...input, dispatches: [], metadataDispatches: [],
+        roots: new Map(), complete: false, overflow: false, unavailableReason: "source_unavailable" })).tree;
+    } catch { /* Invalid configuration cannot certify any independent source. */ }
+    return finish();
+  }
 }

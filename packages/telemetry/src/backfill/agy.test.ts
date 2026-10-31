@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { it } from "node:test";
 import { agyConversation, scanAGYIssue } from "./agy.js";
-import { projectHistoricalIssueFixture } from "../fixtures/historical-issue-tree.js";
+import { collectIssueAgentTree } from "../issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "../operator-environment.js";
 import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 const rootID = "00000000-0000-4000-8000-000000000001", childID = "00000000-0000-4000-8000-000000000002";
@@ -197,7 +197,7 @@ it("AGY feed serves screened live text and exact Done while another issue stays 
     };
     await issue(42, true); await issue(43, false);
     const options = { home: f.base, limit: 20, now: new Date(captured).toISOString(), env: { [OPERATOR_ENV.dispatchRoot]: receipts } };
-    const snapshot = await projectHistoricalIssueFixture(options);
+    const snapshot = await collectIssueAgentTree(options);
     assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
     const good = snapshot.issues.find(i => i.issueNumber === 42)!;
     const unavailable = snapshot.issues.find(i => i.issueNumber === 43)!;
@@ -214,7 +214,7 @@ it("AGY feed serves screened live text and exact Done while another issue stays 
       .run(active.summary.raw_summary, rootID);
     const r = active.rows[1]!;
     f.native.db.prepare("UPDATE steps SET status=?,metadata=?,step_payload=? WHERE idx=1").run(r.status,r.metadata,r.step_payload);
-    const streaming = await projectHistoricalIssueFixture(options);
+    const streaming = await collectIssueAgentTree(options);
     const live = streaming.issues.find(i => i.issueNumber === 42)?.dispatches[0]?.agents[0]!;
     assert.equal(live.liveness.state, "running"); assert.equal(live.endedAt, null);
     assert.equal(live.activity?.steps[0]?.summary, "The work is complete.");
@@ -224,7 +224,7 @@ it("AGY feed serves screened live text and exact Done while another issue stays 
       const old = fixture({ stop }).rows[1]!;
       f.native.db.prepare("UPDATE steps SET status=?,metadata=?,step_payload=? WHERE idx=1")
         .run(old.status, old.metadata, old.step_payload);
-      const resumed = await projectHistoricalIssueFixture(options);
+      const resumed = await collectIssueAgentTree(options);
       assert.equal(readIssueAgentTreeSnapshot(resumed).ok, true);
       const current = resumed.issues.find(i => i.issueNumber === 42)?.dispatches[0]?.agents[0]!;
       assert.equal(current.liveness.state, "running"); assert.equal(current.endedAt, null);

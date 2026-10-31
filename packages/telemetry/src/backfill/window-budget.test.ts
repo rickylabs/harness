@@ -33,7 +33,7 @@ const open = fsp.open;
 }) as FilePromises["open"];
 syncBuiltinESMExports();
 const { backfillFromDisk } = await import("./index.js");
-const { projectHistoricalIssueFixture } = await import("../fixtures/historical-issue-tree.js");
+const { collectIssueAgentTree } = await import("../issue-agent-feed-cli.js");
 const { OPERATOR_ENV } = await import("../operator-environment.js");
 
 const TAIL = 2_097_152, MAX = 8_388_608, FRAME = 33_554_432;
@@ -50,7 +50,7 @@ const meta = (session: string, parent: string | null = null) => line(0, "session
 async function fixture(fn: (f: {
   put: (session: string, text: string) => Promise<string>;
   scan: () => ReturnType<typeof backfillFromDisk>;
-  feed: () => ReturnType<typeof projectHistoricalIssueFixture>;
+  feed: () => ReturnType<typeof collectIssueAgentTree>;
 }) => Promise<void>) {
   const home = await fsp.mkdtemp(join(tmpdir(), "window-budget-"));
   const store = join(home, ".codex", "sessions"), day = join(store, "2026", "10", "05"), receipts = join(home, "receipts");
@@ -80,7 +80,7 @@ async function fixture(fn: (f: {
       },
       feed: () => {
         reads = 0;
-        return projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now: at(120) });
+        return collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now: at(120) });
       },
     });
   } finally {

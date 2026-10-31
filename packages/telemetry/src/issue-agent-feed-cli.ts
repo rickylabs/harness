@@ -9,6 +9,7 @@ import { performance } from "node:perf_hooks";
 import type { Writable } from "node:stream";
 import { MAX_ISSUE_AGENT_TREE_BYTES, readIssueAgentTreeSnapshot,
   type IssueAgentTreeFrame, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+import { collectLegacyIssueAgentTree } from "./issue-agent-feed-legacy.js";
 import { collectNativeIssueAgents, readHerdrNativeSnapshot, unavailableNativeTree } from "./native-issue-agents.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 
@@ -20,6 +21,9 @@ export interface IssueAgentFeedOptions {
   readonly issueKey?: string;
   readonly nativeSnapshot?: unknown;
   readonly partialTrees?: boolean;
+  /** Private watch hints for the previous source, never execution evidence. */
+  readonly watchFiles?: Set<string>;
+  readonly watchStoreRoots?: Set<string>;
 }
 /** Current native roots select exact Orchid records; retained receipts never select a run. */
 export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Promise<IssueAgentTreeSnapshot> {
@@ -27,7 +31,8 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     resolveWireFamily(options.env);
     const bindings = resolveNativeOperatorBindings(options.env);
     if (bindings.dispatchRoot !== undefined && !isAbsolute(bindings.dispatchRoot)) throw Error();
-    if (bindings.dispatchRoot === undefined || bindings.orchidRunSocket === undefined) return unavailableNativeTree(options.now, "source_not_bound");
+    if (bindings.dispatchRoot === undefined) return unavailableNativeTree(options.now, "source_not_bound");
+    if (bindings.orchidRunSocket === undefined) return await collectLegacyIssueAgentTree(options);
     const nativeSnapshot = options.nativeSnapshot ?? await readHerdrNativeSnapshot();
     return (await collectNativeIssueAgents({ ...options, nativeSnapshot })).issueAgentTree;
   } catch { return unavailableNativeTree(options.now); }

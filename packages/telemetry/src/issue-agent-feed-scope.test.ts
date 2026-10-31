@@ -26,8 +26,12 @@ it("keeps native admission refusals and blocks independent of execution observat
       assert.deepEqual(read.dispatches, []);
       const current = await collectIssueAgentTree({ home: root, env: { HARNESS_TELEMETRY_DISPATCH_ROOT: root },
         limit: 20, now: common.observedAt, issueKey: "example/inbox#42" });
-      assert.equal(current.complete, false);
-      assert.deepEqual(current.issues, [], "an admission record cannot invent a native execution row");
+      assert.equal(current.complete, state.state === "refused");
+      assert.deepEqual(current.issues[0]?.dispatches, [], "admission never invents execution");
+      assert.equal(current.issues[0]?.[state.state === "refused" ? "launchRefusal" : "launchBlock"]?.reason, state.reasonCode);
+      const admissionOnly = await readOrchidDispatches(root, { keys: [], launchStates: true });
+      assert.deepEqual(admissionOnly.launchStates, read.launchStates);
+      assert.deepEqual(admissionOnly.dispatches, []);
     }
     await writeFile(path, JSON.stringify({ ...common, schemaVersion: 2, state: "blocked", reasonCode: "PRIVATE-ERROR-CANARY" }));
     const invalid = await readOrchidDispatches(root);

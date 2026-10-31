@@ -162,19 +162,60 @@ for shared-run refusal, repeated-dispatch handling, source timestamps and limits
 
 ## Native issue-agent reads
 
-The live producer reads current run workspaces from Herdr's official snapshot API. Restored labels (`codex-<commentId>` and the corresponding vendor labels) select Orchid's native job/comment coordinates. Herdr's built-in integrations supply the agent-native session identity and current execution state. Pane or workspace handles can change across restart; they never replace the session identity proof.
+When `HARNESS_TELEMETRY_ORCHID_RUN_SOCKET` is configured, current workspaces from Herdr's official
+snapshot API select Orchid's native job/comment coordinates. Restored vendor labels and the
+integration-reported native session identity recover the same receipt after restart, even when
+physical pane/workspace handles change. `src/native-issue-agents.ts` owns this join. Keyed native
+lookups and exact receipt reads are batched; retained dispatch history never selects current work.
+A current `working` root is running. `idle`, `done` and `blocked` mean an idle turn, never final
+assignment completion. Only Orchid's completed-run fence ends that assignment. Its outcome and
+exact end time stay unknown. Historical transcript outcomes and paired stops cannot override
+current native execution. Missing, conflicting or duplicated native identity stays unresolved.
 
-`src/native-issue-agents.ts` owns the join. It uses Orchid's versioned `run.lookup` socket method in bounded batches, then asks `orchidHost.readDispatches(root, { keys })` for only the associated receipt keys. The existing host adapter validates the receipt and exact private native identity. Retained receipts are never enumerated by the live path and never compete with active work for the observation limit. Requests exceeding current-census or transport bounds remain explicitly unavailable.
+`src/native-issue-agents-projection.ts` composes every existing feed facet. Current execution comes
+from native signals; capacity comes from the local kernel reader, actions from validated receipts,
+and child relationships, activity and measured costs from the existing bounded native stores and
+hooks where Herdr has no equivalent. A shared frame byte budget covers that supplemental metadata.
+Unknown metadata never invents root execution. See [Herdr #5725](https://github.com/herdrdev/herdr/issues/5725)
+for missing native child/usage signals. Admission-only receipt reads preserve refusals and blocks
+without reading historical dispatches; [Orchid #136](https://github.com/rickylabs/orchid/issues/136)
+tracks their missing native API. Existing sources remain until those upstream signals are available.
+[Orchid #135](https://github.com/rickylabs/orchid/issues/135) tracks identity-negative coverage and
+durable completion replay. Remembered coordinates are replay hints, never running evidence.
 
-Configure `HARNESS_TELEMETRY_DISPATCH_ROOT` and `HARNESS_TELEMETRY_ORCHID_RUN_SOCKET` on the observation worker. Existing operator-setting alias resolution also applies. These are private runtime values, not public stream fields. The socket primitive is supplied by [Orchid PR #133](https://github.com/rickylabs/orchid/pull/133), tracking [the upstream gap](https://github.com/rickylabs/orchid/issues/132). Without the native source, the producer reports unavailable and never reconstructs ancestry or infers running from receipts.
+A complete read has `complete:true, reason:null`; roots existing never makes it bounded. Real
+key/agent/metadata/transport overflow is `scan_limit`. With `--partial-trees`, a bounded issue keeps
+its closed observed forest using the existing contract 0.37 shape. Without that flag, an incomplete
+bounded issue has no dispatch rows, so readers at 0.36 or older accept the snapshot. Independent
+good issues stay available when another issue cannot be resolved. Opaque public identities and
+wire protocol are unchanged.
 
-The cockpit passes structured snapshots from its existing subscribed Herdr reader to `collectNativeIssueAgents`. The returned root metadata, exact seat bindings, per-seat lookup outcomes and native final-run fences are private intake data. The cockpit's canonical reconciler and existing CurrentStateWriter publish changed state through NetScript durable streams and TTL KV; Home reads the prepared projection.
+Without the socket setting, `src/issue-agent-feed-legacy.ts` supplies the previous bounded producer,
+using the shared metadata reader and projector. It preserves admission, children, actions, cost,
+capacity and existing scope/partial-tree behavior. A configured native source that fails reports
+unavailable; it never silently switches execution authority. The fallback is a rollout constraint,
+not evidence that native restart recovery is deployed. Its history bounds remain as documented below.
 
-A current `working` agent is running. `idle`, `done` and `blocked` are stopped turns; they do not prove assignment completion. Orchid's native completed-run fence proves the assignment has ended. It does not invent a successful outcome or an exact end timestamp. Missing, conflicting or duplicated native identity stays unresolved. Public agent and assignment IDs remain the existing opaque receipt-derived IDs.
+Deploy in this order:
 
-The CLI reads the official `herdr api snapshot`, subscribes to Orchid run invalidations and refreshes bounded native snapshots for freshness. The cockpit uses its own authoritative Herdr snapshot/events instead of running this CLI watch. Neither path reads terminal text, process ancestry or vendor transcript history for execution state. Admission receipts remain independently available through the host receipt adapter; a launch refusal is not an execution observation.
+1. Land [Orchid #133](https://github.com/rickylabs/orchid/pull/133), then
+   [#134](https://github.com/rickylabs/orchid/pull/134), and deploy the binary. Configure Orchid's
+   `native_run_socket` in a canonical private parent outside Git, mode 0700, with a mode 0600 socket.
+   Readers use the same numeric UID; a stale/read-socket failure must not stop supervision.
+2. Deploy this Harness reader. Set `HARNESS_TELEMETRY_DISPATCH_ROOT` and opt in with
+   `HARNESS_TELEMETRY_ORCHID_RUN_SOCKET`. Existing operator-setting alias/conflict rules apply.
+   Values are private runtime configuration and never enter public stream fields.
+3. Deploy [cockpit #951](https://github.com/rickylabs/atelier-cockpit/pull/951). It supersedes #954 and
+   owns its native observer independently of this CLI. Its observer-only `COCKPIT_ORCHID_RUN_SOCKET`,
+   `CONTROL_PLANE_SOCKET` and scoped `COCKPIT_HERDR_SERVER_MAPPING` follow that PR's deployment guide.
+   Mount private socket parents, preserving same-UID access and socket replacement across restarts.
 
-Historical scanner tests compose their typed output into the public pure tree projector through a test fixture. Those readers remain available to history/usage consumers and never supply facts to this live native source. The prior backward transcript reader and receipt-priority workaround have been removed from this change.
+The CLI reads `herdr api snapshot`, subscribes to Orchid native invalidations and refreshes bounded
+snapshots within freshness limits. Cockpit #951 uses its own typed subscribed native reader, then
+its existing worker/durable-stream/TTL-KV pipeline. Home reads prepared projections; it performs no
+external source calls. Neither native path derives root execution from terminal text, process
+ancestry or transcript history. No live deployment is performed by this change.
+
 
 ## Codex thread reads and goal notifications
 
@@ -204,8 +245,8 @@ child that completes or fails on its own carries `endedAt` from the exact time o
 `task_complete`, `error`, `stream_error` or `turn_aborted` record, never from its last activity; a
 later `task_started` clears it. Without such a record, `endedAt` stays unavailable. Unsafe, stale,
 absent or unmatched files leave the child unknown.
-The reader watches that directory for new events. A 12-second safety scan
-recovers missed filesystem events before the 15-second freshness deadline. A heartbeat between
+The CLI performs a 12-second safety scan for supplemental source changes. It
+recovers supplemental source changes before the 15-second freshness deadline. A heartbeat between
 scans keeps the original `observedAt` and `validUntil`; it never renews evidence by itself.
 Each process has a fresh generation and sequence starting at zero; a restarted
 consumer gets a new full snapshot. The cockpit backend, not this process, persists and replays

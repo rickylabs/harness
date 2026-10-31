@@ -34,7 +34,7 @@ const open = fsp.open;
 }) as FilePromises["open"];
 syncBuiltinESMExports();
 const { backfillFromDisk } = await import("./index.js");
-const { projectHistoricalIssueFixture } = await import("../fixtures/historical-issue-tree.js");
+const { collectIssueAgentTree } = await import("../issue-agent-feed-cli.js");
 const { OPERATOR_ENV } = await import("../operator-environment.js");
 
 const HEADS = 128, HEAD_BYTES = 65_536, MAX = 8_388_608, FRAME = 33_554_432;
@@ -50,7 +50,7 @@ async function fixture(fn: (f: {
   /** A rollout named for `session`, created `offsetMs` after the root's name clock. */
   put: (session: string, offsetMs: number, text?: string) => Promise<string>;
   scan: (options?: { limit?: number; maxTotalBytes?: number }) => ReturnType<typeof backfillFromDisk>;
-  feed: (partialTrees?: boolean) => ReturnType<typeof projectHistoricalIssueFixture>;
+  feed: (partialTrees?: boolean) => ReturnType<typeof collectIssueAgentTree>;
 }) => Promise<void>) {
   const home = await fsp.mkdtemp(join(tmpdir(), "codex-root-by-name-"));
   const store = join(home, ".codex", "sessions"), receipts = join(home, "receipts");
@@ -84,7 +84,7 @@ async function fixture(fn: (f: {
       },
       feed: (partialTrees = false) => {
         reads = 0; opened.length = 0;
-        return projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now: iso(now),
+        return collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now: iso(now),
           ...(partialTrees ? { partialTrees } : {}) });
       },
     });
@@ -94,7 +94,7 @@ async function fixture(fn: (f: {
   }
 }
 
-const agents = (frame: Awaited<ReturnType<typeof projectHistoricalIssueFixture>>) =>
+const agents = (frame: Awaited<ReturnType<typeof collectIssueAgentTree>>) =>
   frame.issues[0]?.dispatches.flatMap(dispatch => dispatch.agents) ?? [];
 
 it("finds the root by its rollout name past more than 128 Codex sessions in the window", () => fixture(async ({ put, scan, feed }) => {

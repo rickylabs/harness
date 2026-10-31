@@ -5,16 +5,27 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { it } from "node:test";
-import { MAX_AGENT_OBSERVATIONS, type DispatchEvidence } from "@rickylabs/harness-contracts";
+import { MAX_AGENT_OBSERVATIONS, readIssueAgentTreeSnapshot, type DispatchEvidence } from "@rickylabs/harness-contracts";
 import { collectIssueAgentTree } from "./issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "./operator-environment.js";
 
 const dispatched = "2026-10-05T12:00:00.000Z", now = "2026-10-05T13:01:00.000Z";
 const repo = "example/project", brief = "a".repeat(64);
+/** Test-only control: run real producer frames through the tagged older decoder. */
+async function compatibilityRead(snapshot: unknown) {
+  const control = process.env.HARNESS_ISSUE_TREE_READER_CONTROL;
+  const reader = control === undefined ? readIssueAgentTreeSnapshot :
+    (await import(pathToFileURL(control).href) as { readIssueAgentTreeSnapshot: typeof readIssueAgentTreeSnapshot }).readIssueAgentTreeSnapshot;
+  return reader(snapshot);
+}
 async function fixture(run: (f: {
   receipt(number: number, id: string): Promise<string>;
-  collect(issueKey?: string): ReturnType<typeof collectIssueAgentTree>;
+  facets(state?: "refused" | "blocked"): Promise<void>;
+  legacy(): ReturnType<typeof collectIssueAgentTree>;
+  failedNative(): ReturnType<typeof collectIssueAgentTree>;
+  collect(issueKey?: string, partialTrees?: boolean): ReturnType<typeof collectIssueAgentTree>;
   status(state: string): void;
   mismatch(): void;
   duplicate(): void;
@@ -84,20 +95,44 @@ async function fixture(run: (f: {
         await write(join(dir, file!), { schemaVersion: 1, operationId, requestDigest, kind, observedAt: dispatched });
       }
     };
-    await run({ receipt, staleStop, requests, nativeId: id, metadata(read) { metadata = read; }, restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
+    const facets = async (state: "refused" | "blocked" = "refused") => {
+      const sessions = join(home, ".codex", "sessions", "2026", "10", "05");
+      await mkdir(sessions, { recursive: true });
+      const child = randomUUID();
+      for (const [native, parent] of [[id, null], [child, id]]) {
+        const events = [
+          { timestamp: dispatched, type: "session_meta", payload: { session_id: native, timestamp: dispatched,
+            cwd: "/fixture", model_provider: "fixture", ...(parent ? { parent_thread_id: parent } : {}) } },
+          { timestamp: now, type: "event_msg", payload: { type: "task_started" } },
+          { timestamp: now, type: "event_msg", payload: { type: "token_count", info: {
+            total_token_usage: { input_tokens: 5, cached_input_tokens: 0, output_tokens: 2, reasoning_output_tokens: 0, total_tokens: 7 } } } },
+          ...(!parent ? [{ timestamp: now, type: "event_msg", payload: { type: "task_complete" } }] : []),
+        ];
+        await writeFile(join(sessions, `rollout-2026-10-05T12-00-00-${native}.jsonl`), events.map(row => JSON.stringify(row)).join("\n") + "\n");
+      }
+      await staleStop();
+      await writeFile(join(receipts, "launch-" + "f".repeat(64) + ".json"), JSON.stringify({ schemaVersion: state === "refused" ? 1 : 2,
+        state, reasonCode: state === "refused" ? "routing-invalid" : "goal-prompt-unconfirmed", observedAt: now, issue: { repo, number: 776 },
+        dispatchId: "assignment_" + "a".repeat(64) }), { mode: 0o600 });
+    };
+    const legacy = () => collectIssueAgentTree({ home, limit: 20, now, env: { [OPERATOR_ENV.dispatchRoot]: receipts } });
+    const failedNative = () => collectIssueAgentTree({ home, limit: 20, now,
+      env: { [OPERATOR_ENV.dispatchRoot]: receipts, HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: join(home, "unavailable.sock") },
+      nativeSnapshot: { workspaces: [], agents: [] } });
+    await run({ receipt, staleStop, facets, legacy, failedNative, requests, nativeId: id, metadata(read) { metadata = read; }, restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
       complete() { phase = "completed"; }, status(value) { status = value; },
       mismatch() { seatId = randomUUID(); }, duplicate() { duplicated = true; }, disappear() { disappeared = true; },
-      clutter() { clutter = Array.from({ length: MAX_AGENT_OBSERVATIONS + 40 }, (_, n) => ({ workspace_id: `old-workspace-${n}`, label: `${source}-${1000 + n}` })); }, collect(issueKey) {
+      clutter() { clutter = Array.from({ length: MAX_AGENT_OBSERVATIONS + 40 }, (_, n) => ({ workspace_id: `old-workspace-${n}`, label: `${source}-${1000 + n}` })); }, collect(issueKey, partialTrees = true) {
         // A variable remains assignable to the original collector, which must fail these controls.
         const agent = { workspace_id: workspace, pane_id: pane, terminal_id: "fixture-terminal", agent: source,
           agent_status: status, revision: 3, state_change_seq: 4,
           agent_session: { source: source === "agy" ? "herdr:antigravity_cli" : `herdr:${source}`, agent: source, kind: "id", value: seatId } };
-        const options = { home, limit: 20, now, partialTrees: true, ...(issueKey ? { issueKey } : {}),
+        const options = { home, limit: 20, now, partialTrees, ...(issueKey ? { issueKey } : {}),
           knownRuns: [...knownRuns], onBinding: async (receipt: DispatchEvidence, binding: { readonly paneId: string }) => {
             if (!knownRuns.length) knownRuns.push({ key: "701", label: `${source}-701` });
             await metadata?.(receipt, binding);
           },
-          env: { [OPERATOR_ENV.dispatchRoot]: receipts, HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: socket },
+          env: { [OPERATOR_ENV.dispatchRoot]: receipts, [OPERATOR_ENV.placementHost]: "fixture-node", HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: socket },
           nativeSnapshot: { workspaces: disappeared ? [] : [...clutter, { workspace_id: workspace, label: `${source}-701` }],
             agents: disappeared ? [] : duplicated ? [agent, { ...agent, pane_id: "duplicate-pane", terminal_id: "duplicate-terminal" }] : [agent] } };
         return collectIssueAgentTree(options);
@@ -226,4 +261,65 @@ it("a paired historical stop cannot end a resumed native working assignment", ()
   assert.equal(root?.liveness.state, "running");
   assert.equal(root?.observation.running.value, true);
   assert.equal(root?.terminalOutcome.value, null);
+}));
+
+it("an unbounded native snapshot is complete and the default needs no partial-tree capability", () => fixture(async f => {
+  const snapshot = await f.collect(undefined, false);
+  assert.equal(snapshot.complete, true);
+  assert.equal(snapshot.reason, null);
+  assert.equal(snapshot.issues[0]?.complete, true);
+  assert.equal(snapshot.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  assert((await compatibilityRead(snapshot)).ok);
+}));
+it("real native overflow is scan_limit and default readers get no bounded forest", () => fixture(async f => {
+  f.clutter();
+  const snapshot = await f.collect(undefined, false);
+  assert.equal(snapshot.complete, false);
+  assert.equal(snapshot.reason, "scan_limit");
+  assert.equal(snapshot.issues[0]?.reason, "scan_limit");
+  assert.deepEqual(snapshot.issues[0]?.dispatches, []);
+  assert((await compatibilityRead(snapshot)).ok);
+  const opted = await f.collect(undefined, true);
+  assert.equal(opted.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  assert(readIssueAgentTreeSnapshot(opted).ok);
+  if (process.env.HARNESS_ISSUE_TREE_READER_CONTROL !== undefined) assert.equal((await compatibilityRead(opted)).ok, false);
+}));
+it("native execution retains admission, actions, capacity, token costs and native children", () => fixture(async f => {
+  await f.facets(); f.restore();
+  const snapshot = await f.collect(undefined, false);
+  assert.equal(snapshot.complete, true);
+  assert.equal(snapshot.issues[0]?.launchRefusal?.reason, "routing-invalid");
+  const agents = snapshot.issues[0]?.dispatches[0]?.agents ?? [];
+  assert.equal(agents.length, 2);
+  const root = agents.find(agent => agent.parentAgentId === null)!;
+  const child = agents.find(agent => agent.parentAgentId !== null)!;
+  assert.equal(root.liveness.state, "running", "an earlier native turn completion cannot end resumed work");
+  assert.equal(root.terminalOutcome.value, null);
+  assert.equal(root.endedAt, null);
+  assert.equal(root.observation.cost.runTokens.availability, "available");
+  assert.equal(root.tokenUsage?.usedTokens, 7);
+  assert.notEqual(root.observation.cost.localCapacity.reason, "source_not_bound");
+  assert(root.timeline?.events.some(event => event.kind === "action-accepted" && event.action === "stop"));
+  assert.equal(child.parentAgentId, root.observation.agentId);
+  assert.equal(child.observation.cost.runTokens.availability, "available");
+  assert((await compatibilityRead(snapshot)).ok);
+}));
+
+it("an absent optional socket preserves previous feed data; a configured failed socket stays unavailable", () => fixture(async f => {
+  await f.facets();
+  const legacy = await f.legacy();
+  assert.equal(legacy.complete, true);
+  assert.equal(legacy.issues[0]?.launchRefusal?.reason, "routing-invalid");
+  assert.equal(legacy.issues[0]?.dispatches[0]?.agents.length, 2);
+  const failed = await f.failedNative();
+  assert.equal(failed.reason, "source_unavailable");
+  assert.deepEqual(failed.issues[0]?.dispatches, [], "no execution falls back to historical state");
+  assert.equal(failed.issues[0]?.launchRefusal?.reason, "routing-invalid", "independent admission stays available");
+}));
+it("native launch blocks coexist with an already running assignment", () => fixture(async f => {
+  await f.facets("blocked");
+  const snapshot = await f.collect();
+  assert.equal(snapshot.issues[0]?.launchBlock?.reason, "goal-prompt-unconfirmed");
+  assert.equal(snapshot.issues[0]?.dispatches[0]?.agents.find(a => a.parentAgentId === null)?.liveness.state, "running");
+  assert(readIssueAgentTreeSnapshot(snapshot).ok);
 }));
