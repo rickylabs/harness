@@ -3,3 +3,7 @@ Current change repairs large/resumed native turn-state reads and keeps observed 
 Read worklog.md for design and red-control evidence. Native IO charges every backward read to the unchanged frame budget. Metadata hints never enter observations. Four host pages bound receipt traversal; remaining pages are explicitly scan_limit. Missing native boundaries remain unknown; old head completion is never reused across a gap.
 Baseline root install/typecheck/build/test passed using the declared pnpm version, Node 24 and executable temporary storage outside Git. Default host Node/npm and temporary execution needed environment correction; no source gate was weakened.
 All four root gates passed (exit 0). Independent Meta implementation review passed; final exact-head attestation and PR publication follow this implementation commit. Read worklog.md for real output summaries and the measured full-feed contention limit.
+
+Supervisor sign-off: PASS at reviewed code head 4a0fb466fee5e0636903405303928ea48b193103
+(see review.md). Telemetry 808 pass, restart tests 3/3 pass, leak scan clean.
+Full feed remains partial under contention; no all-live-rows coverage claimed.

@@ -28,3 +28,9 @@ Read-only scoped live validation recovered a native running resumed root alongsi
 Reconcile: all source changes are within the declared surface; no contracts schema or cockpit source change; no owner-controlled runs or generated files touched. The assigned branch and Refs-only PR association follow the operator directive.
 
 [Lesson](lesson-2026-10-31.md): native-state recovery must be tested independently of durable identity, and verified retries must survive another retry's budget exhaustion.
+
+Independent supervisor sign-off: PASS at reviewed code head 4a0fb466fee5e0636903405303928ea48b193103.
+Final gates all exit 0 (install; typecheck 5 stages; build 15 stages; test 8 stages
+with telemetry 808 pass; leak scan clean). Restart integration tests 3/3 pass.
+Full-feed contention limit stands: partial at the fixed byte cap, no all-live-rows claim.
+See review.md for the substantive verdict.
