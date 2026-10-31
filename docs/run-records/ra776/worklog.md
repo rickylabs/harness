@@ -11,3 +11,8 @@ The owner's native-source requirement supersedes the earlier reverse-tail/histor
 7. Contributor path: `packages/telemetry/src/native-issue-agents.ts` owns the native join.
 
 New native controls failed on unchanged main: resumed run had no running root; history occupied 256 rows instead of selecting the current workspace. Both pass with the native source. Additional controls cover stopped turns, final end, changed identity, duplicate seats and issue scoping. The obsolete elapsed-history-window and filesystem-watch tests were replaced; historical scanner metadata parity remains through the public pure tree projector.
+
+Independent supervisor sign-off: PASS at reviewed code head
+53f4abe50f8fcabc117f961d83a08bc4195aa134. Final gates: frozen install,
+typecheck, root build and full test all exit 0; leak scan exit 0. Cockpit leaf
+explicitly pending; end-to-end task NOT certified.
