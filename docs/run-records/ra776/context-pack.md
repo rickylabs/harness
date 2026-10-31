@@ -9,3 +9,7 @@ Harness native regression controls pass; configured root gates and independent r
 Supervisor sign-off: Harness leaf PASS at
 53f4abe50f8fcabc117f961d83a08bc4195aa134; frozen install/typecheck/build/test
 exit 0, leaks exit 0 (see review.md). Cockpit leaf pending; end-to-end NOT certified.
+
+Supervisor sign-off: certified-receipt port PASS at
+649c15dd72a58c31587788e817ab4fa05b3bfb02; focused build and seven native tests
+exit 0, broad gates pending (see review.md). Cockpit leaf pending; end-to-end NOT certified.
