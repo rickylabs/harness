@@ -28,3 +28,9 @@ add2eda4611bd3c38c6dcdcd3cf3ad3913afa07d. Final gates all exit 0 (frozen
 install, typecheck, root build, full test, leak scan); 15/15 native
 regressions green with red pre-fix recorded. Live deployment not tested.
 Consumer draft PR954 still gating; whole goal NOT READY.
+
+Supervisor final end-to-end sign-off: PASS at Harness
+50e830975be0bca775bf8cb8ad9dee501a09e15e. Consumer chain complete with
+Orchid 97143ced47a7b10de5e746386e9992cfad23e33d and cockpit consumer PASS
+(2568 consumer tests, 909 parity, interop PASS). Earlier gating notes here are
+historical. No live deployment acceptance.
