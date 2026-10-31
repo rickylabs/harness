@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { it } from "node:test";
 import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
-import { collectIssueAgentTree } from "../issue-agent-feed-cli.js";
+import { projectHistoricalIssueFixture } from "../fixtures/historical-issue-tree.js";
 import { backfillFromDisk } from "./index.js";
 import { OPERATOR_ENV } from "../operator-environment.js";
 import { OPENCODE_RUN_DB_PREFIX, openCodeRunConversation, openCodeRunStorePath } from "./opencode-run-store.js";
@@ -50,11 +50,11 @@ async function fixture(turn: Turn = {}) {
     location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" } }), { mode: 0o600 });
   await writeFile(join(record, "binding.json"), JSON.stringify({ IssueID: issueId, Repo: repo, BriefDigest: brief,
     Route: { transport: "opencode", provider, model: qualified, effort: "provider_default" }, NativeSessionID: rootID }), { mode: 0o600 });
-  const collect = () => collectIssueAgentTree({ home: base, limit: 20, now, env: { [OPERATOR_ENV.dispatchRoot]: receipts } });
+  const collect = () => projectHistoricalIssueFixture({ home: base, limit: 20, now, env: { [OPERATOR_ENV.dispatchRoot]: receipts } });
   const close = async () => { db.close(); await rm(base, { recursive: true, force: true }); };
   return { base, path, collect, close };
 }
-const agent = (snapshot: Awaited<ReturnType<typeof collectIssueAgentTree>>) => snapshot.issues[0]?.dispatches[0]?.agents[0];
+const agent = (snapshot: Awaited<ReturnType<typeof projectHistoricalIssueFixture>>) => snapshot.issues[0]?.dispatches[0]?.agents[0];
 
 it("OpenCode 2.x run database serves the session's activity, route and native end on the issue page", async () => {
   const f = await fixture();

@@ -1,17 +1,18 @@
+import type { IssueFeedChanges } from "./issue-agent-feed-changes.js";
+import { projectHistoricalIssueFixture } from "./fixtures/historical-issue-tree.js";
 import assert from "node:assert/strict";
 import { it } from "node:test";
 import { Writable } from "node:stream";
 import { createHash } from "node:crypto";
-import { appendFile, mkdir, mkdtemp, open, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, open, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { collectIssueAgentTree, issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
+import { issueAgentFeedCommand } from "./issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "./operator-environment.js";
 import { CLAUDE_CHILD_EVENT_ROOT } from "./claude-child-events.js";
 import { chmod } from "node:fs/promises";
 import type { IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { at, Capture } from "./fixtures/issue-agent-feed-cli.js";
-import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 
 const snapshot = (complete: boolean): IssueAgentTreeSnapshot => ({ schema: 1, protocol: 1, observedAt: at,
   validUntil: "2026-01-01T00:00:15.000Z",
@@ -21,7 +22,7 @@ const snapshot = (complete: boolean): IssueAgentTreeSnapshot => ({ schema: 1, pr
 it("emits sequenced full snapshots, heartbeat, and degradation after success", async () => {
   const output = new Capture(); let calls = 0, waits = 0;
   let dirty = false;
-  const changes: IssueFeedChanges = { consume() { const value = dirty; dirty = false; return value; }, setFiles() {}, close() {} };
+  const changes: IssueFeedChanges = { consume() { const value = dirty; dirty = false; return value; }, close() {} };
   const code = await issueAgentFeedCommand(["--watch", "--interval-ms", "100"], {
     output, now: () => at, generation: () => "generation-a", env: {}, changes,
     collect: async () => { calls++; if (calls === 3) throw Error("PRIVATE-PATH-CANARY"); return snapshot(true); },
@@ -38,7 +39,7 @@ it("emits sequenced full snapshots, heartbeat, and degradation after success", a
 it("heartbeats retain the last observation and a missed event recovers by the safety deadline", async () => {
   const output = new Capture(); let elapsed = 0, scans = 0;
   const times: number[] = [];
-  const changes: IssueFeedChanges = { consume: () => false, setFiles() {}, close() {} };
+  const changes: IssueFeedChanges = { consume: () => false, close() {} };
   const code = await issueAgentFeedCommand(["--watch", "--interval-ms", "5000"], {
     output, changes, generation: () => "generation-safety", elapsed: () => elapsed,
     now: () => new Date(Date.parse(at) + elapsed).toISOString(),
@@ -60,7 +61,7 @@ it("heartbeats retain the last observation and a missed event recovers by the sa
 });
 it("a source change collects at the next heartbeat without waiting for the safety scan", async () => {
   const output = new Capture(); let elapsed = 0, dirty = false, scans = 0;
-  const changes: IssueFeedChanges = { consume() { const changed = dirty; dirty = false; return changed; }, setFiles() {}, close() {} };
+  const changes: IssueFeedChanges = { consume() { const changed = dirty; dirty = false; return changed; }, close() {} };
   const code = await issueAgentFeedCommand(["--watch"], {
     output, changes, elapsed: () => elapsed, now: () => new Date(Date.parse(at) + elapsed).toISOString(),
     collect: async options => { scans++; return { ...snapshot(true), observedAt: options.now,
@@ -71,52 +72,6 @@ it("a source change collects at the next heartbeat without waiting for the safet
   assert.equal(scans, 2);
   assert.deepEqual(output.lines.map(line => JSON.parse(line).snapshot.observedAt),
     [at, new Date(Date.parse(at) + 5000).toISOString()]);
-});
-it("filesystem hints ignore unrelated appends but notice bound files, new files and receipts", async () => {
-  const root = await mkdtemp(join(tmpdir(), "issue-watch-"));
-  const receipts = join(root, "receipts"), sessions = join(root, "sessions"), claude = join(root, "claude");
-  const childEvents = join(root, "child-events");
-  const day = join(sessions, "2026", "09", "28");
-  const claudeProject = join(claude, "fixture-project");
-  const record = join(receipts, "fixture", "record");
-  await mkdir(day, { recursive: true }); await mkdir(record, { recursive: true });
-  await mkdir(claudeProject, { recursive: true }); await mkdir(childEvents, { recursive: true });
-  const selected = join(day, "selected.jsonl"), unrelated = join(day, "unrelated.jsonl");
-  const claudeSelected = join(claudeProject, "selected.jsonl");
-  await writeFile(selected, "a"); await writeFile(unrelated, "a"); await writeFile(claudeSelected, "a");
-  const changes = openIssueFeedChanges(receipts, sessions, claude, childEvents);
-  const eventually = async () => {
-    for (let i = 0; i < 30; i++) {
-      if (changes.consume()) return true;
-      await new Promise(resolve => setTimeout(resolve, 20));
-    }
-    return false;
-  };
-  try {
-    changes.setFiles(new Set([selected, claudeSelected]));
-    await new Promise(resolve => setTimeout(resolve, 50));
-    changes.consume();
-    await appendFile(unrelated, "b");
-    await new Promise(resolve => setTimeout(resolve, 50));
-    assert.equal(changes.consume(), false);
-    await appendFile(selected, "b");
-    assert.equal(await eventually(), true);
-    await appendFile(claudeSelected, "b");
-    assert.equal(await eventually(), true);
-    await writeFile(join(day, "new.jsonl"), "a");
-    assert.equal(await eventually(), true);
-    await writeFile(join(claudeProject, "new.jsonl"), "a");
-    assert.equal(await eventually(), true);
-    await writeFile(join(record, "binding.json"), "{}");
-    assert.equal(await eventually(), true);
-    const childFile = join(childEvents, "fixture.jsonl");
-    await writeFile(childFile, "a");
-    assert.equal(await eventually(), true);
-    changes.setFiles(new Set([selected, claudeSelected, childFile]));
-    changes.consume();
-    await appendFile(childFile, "b");
-    assert.equal(await eventually(), true);
-  } finally { changes.close(); await rm(root, { recursive: true, force: true }); }
 });
 it("a new process generation starts with seq zero and one-shot reports incompleteness", async () => {
   const output = new Capture();
@@ -226,18 +181,18 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     const older = join(home, ".codex", "sessions", "2025", "01", "01");
     await mkdir(older, { recursive: true });
     await writeFile(join(older, `rollout-2025-01-01T00-00-00-${rootId}.jsonl`), "{malformed\n");
-    const frame = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
+    const frame = await projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
       now: "2026-09-27T22:00:00.000Z" });
     assert.equal(frame.complete, false);
     assert.equal(frame.issues.length, 2);
     assert.equal(frame.issues[0]?.issueNumber, 378);
     assert.deepEqual([frame.issues[0]?.complete, frame.issues[0]?.reason, frame.issues[0]?.dispatches.length],
-      [false, "scan_limit", 0]);
+      [false, "source_unavailable", 0]);
     assert.equal(frame.issues[1]?.issueNumber, 387);
     assert.equal(frame.issues[1]?.complete, true);
     assert.equal(frame.issues[1]?.dispatches[0]?.agents.length, 2);
     assert.ok(!JSON.stringify(frame).includes(rootId));
-    const canonical = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts,
+    const canonical = await projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts,
       HARNESS_TELEMETRY_WIRE_FAMILY: "harness" }, limit: 20, now: "2026-09-27T22:00:00.000Z" });
     assert.equal(canonical.issues[1]?.complete, true);
     const names = { subscriptionHeadroom: "governance.usage", meteredSpend: "runs", runTokens: "runs", localCapacity: "host-capacity" };
@@ -250,19 +205,19 @@ it("emits a bound issue tree despite a stale issue and scans only receipt-day ro
     }
     const scoped = new Capture();
     const command = ["--json", "--issue", "example/project#387", "--home", home, "--limit", "20"];
-    assert.equal(await issueAgentFeedCommand(command, { output: scoped, now: () => "2026-09-27T22:00:00.000Z",
+    assert.equal(await issueAgentFeedCommand(command, { output: scoped, collect: projectHistoricalIssueFixture, now: () => "2026-09-27T22:00:00.000Z",
       env: { [OPERATOR_ENV.dispatchRoot]: receipts } }), 0);
     const scopedFrame = JSON.parse(scoped.lines[0]!);
     assert.equal(scopedFrame.complete, true);
     assert.deepEqual(scopedFrame.issues.map((row: { issueNumber: number }) => row.issueNumber), [387]);
     const canonicalCLI = new Capture();
-    assert.equal(await issueAgentFeedCommand(command, { output: canonicalCLI, now: () => "2026-09-27T22:00:00.000Z",
+    assert.equal(await issueAgentFeedCommand(command, { output: canonicalCLI, collect: projectHistoricalIssueFixture, now: () => "2026-09-27T22:00:00.000Z",
       env: { [OPERATOR_ENV.dispatchRoot]: receipts, HARNESS_TELEMETRY_WIRE_FAMILY: "harness" } }), 0);
     const canonicalFrame = JSON.parse(canonicalCLI.lines[0]!);
     assert.equal(canonicalFrame.issues[0].dispatches[0].agents[0].observation.cost.runTokens.source, "harness-telemetry.runs");
     const missing = new Capture();
     assert.equal(await issueAgentFeedCommand(["--json", "--issue", "example/project#999", "--home", home],
-      { output: missing, now: () => "2026-09-27T22:00:00.000Z", env: { [OPERATOR_ENV.dispatchRoot]: receipts } }), 3);
+      { output: missing, collect: projectHistoricalIssueFixture, now: () => "2026-09-27T22:00:00.000Z", env: { [OPERATOR_ENV.dispatchRoot]: receipts } }), 3);
     assert.equal(JSON.parse(missing.lines[0]!).reason, "source_not_bound");
   } finally {
     await rm(home, { recursive: true, force: true });
@@ -301,7 +256,7 @@ it("binds one Claude root and native child into live steps, tokens and separate 
       NativeSessionID: sessionId }), { mode: 0o600 });
     await writeFile(join(project, sessionId + ".jsonl"), transcript(false, 5, 2));
     await writeFile(childFile, transcript(true, 3, 1));
-    const frame = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
+    const frame = await projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20,
       now: "2026-09-29T00:00:10.000Z", issueKey: "example/project#451" });
     assert.equal(frame.complete, true);
     const agents = frame.issues[0]?.dispatches[0]?.agents ?? [];
@@ -362,7 +317,7 @@ it("RUN-6: records appended after the capture stay out of the frame instead of f
     const eventFile = join(events, `${createHash("sha256").update(sessionId).digest("hex")}.jsonl`);
     await writeFile(eventFile, hook("SubagentStart", "2026-09-30T11:21:00.681Z") + hook("SubagentStop", "2026-09-30T11:21:11.700Z"), { mode: 0o600 });
     await chmod(eventFile, 0o600);
-    const frame = await collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts, [CLAUDE_CHILD_EVENT_ROOT]: events },
+    const frame = await projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts, [CLAUDE_CHILD_EVENT_ROOT]: events },
       limit: 20, now, issueKey: "example/project#516" });
     assert.equal(frame.complete, true, String(frame.reason));
     const agents = frame.issues[0]?.dispatches[0]?.agents ?? [];
@@ -376,3 +331,4 @@ it("RUN-6: records appended after the capture stay out of the frame instead of f
     for (const dir of [home, receipts, events]) await rm(dir, { recursive: true, force: true });
   }
 });
+

@@ -1,7 +1,8 @@
-/** Synthetic receipts and native events model a restored session, without process ancestry. */
+/** Native-source regressions: no transcript, process ancestry or history scan can supply these facts. */
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
-import { appendFile, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { it } from "node:test";
@@ -9,116 +10,123 @@ import { MAX_AGENT_OBSERVATIONS } from "@rickylabs/harness-contracts";
 import { collectIssueAgentTree } from "./issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "./operator-environment.js";
 
-const dispatched = "2026-10-05T12:00:00.000Z";
-const resumed = "2026-10-05T13:00:00.000Z";
-const now = "2026-10-05T13:01:00.000Z";
+const dispatched = "2026-10-05T12:00:00.000Z", now = "2026-10-05T13:01:00.000Z";
 const repo = "example/project", brief = "a".repeat(64);
-const event = (at: string, type: string, payload: Record<string, unknown>) =>
-  JSON.stringify({ timestamp: at, type, payload }) + "\n";
-const native = (at: string, type: string) => event(at, "event_msg", { type });
-const output = (bytes: number) => event(resumed, "response_item",
-  { type: "function_call_output", call_id: "fixture-call", output: "x".repeat(bytes) });
-
-async function fixture(fn: (f: {
-  home: string; receipts: string;
-  receipt: (number: number, options?: { id?: string; at?: string; suffix?: string; ended?: boolean }) => Promise<void>;
-  rollout: (id: string, text: string) => Promise<string>;
-  collect: (partialTrees?: boolean) => ReturnType<typeof collectIssueAgentTree>;
+async function fixture(run: (f: {
+  receipt(number: number, id: string): Promise<string>;
+  collect(issueKey?: string): ReturnType<typeof collectIssueAgentTree>;
+  status(state: string): void;
+  mismatch(): void;
+  duplicate(): void;
+  restore(): void;
+  complete(): void;
+  readonly requests: string[][];
+  readonly nativeId: string;
 }) => Promise<void>) {
-  const home = await mkdtemp(join(tmpdir(), "issue-restart-"));
-  const receipts = join(home, "receipts");
+  const home = await mkdtemp(join(tmpdir(), "nr-"));
+  const receipts = join(home, "receipts"), socket = join(home, "run.sock");
+  const id = randomUUID(); let seatId = id, status = "working", duplicated = false; let key = "", workspace = "original-workspace", pane = "original-pane", phase = "active";
+  const requests: string[][] = [];
+  const server = createServer(conn => {
+    conn.setEncoding("utf8"); let bytes = "";
+    conn.on("data", chunk => {
+      bytes += chunk;
+      if (!bytes.includes("\n")) return;
+      const rpc = JSON.parse(bytes);
+      requests.push(rpc.params.keys.map((q: { key: string }) => q.key));
+      conn.end(JSON.stringify({ id: rpc.id, result: { type: "run_lookup", schemaVersion: 1,
+        generation: "fixture-generation", revision: 1, complete: true, missing: [], records: [{
+          key: "701", issue: { repo, number: 776 }, dispatchKey: key, nativeSessionId: id,
+          agent: "codex", label: "codex-701", phase, observedAt: now,
+        }] } }) + "\n");
+    });
+  });
   try {
     await mkdir(receipts, { mode: 0o700 });
-    await fn({ home, receipts,
-      receipt: async (number, options = {}) => {
-        const issueId = `fixture-${number}-${options.suffix ?? "root"}`;
-        const key = createHash("sha256").update(`${issueId}\0${repo}\0${brief}`).digest("hex");
-        const record = join(receipts, key, "record"), runId = `orchid-${key}`, host = "fixture-node";
-        await mkdir(record, { recursive: true, mode: 0o700 });
-        const write = (name: string, value: unknown) => writeFile(join(record, name), JSON.stringify(value), { mode: 0o600 });
-        await write("dispatch.json", { schemaVersion: 1, runId, issue: { repo, number }, parentRunId: null,
-          source: "codex", provider: "fixture", model: "fixture-model", effort: "high", host,
-          state: "dispatched", observedAt: options.at ?? dispatched,
-          location: { paneId: "fixture-pane", workspaceId: "fixture-workspace" } });
-        await write("binding.json", { IssueID: issueId, Repo: repo, BriefDigest: brief, Host: host,
-          Route: { transport: "codex", provider: "fixture", model: "fixture-model", effort: "high" },
-          NativeSessionID: options.id ?? randomUUID() });
-        if (options.ended) {
-          await write("teardown-intent.json", { schemaVersion: 1, issue: number, dispatchKey: key, nativeRunId: runId,
-            nativeSessionId: options.id, host, paneId: "fixture-pane", workspaceId: "fixture-workspace",
-            cause: "teardown", startedAt: resumed });
-          await write("teardown-anchor.json", { schemaVersion: 1, operationId: "", requestDigest: "", groupId: 301,
-            rootPid: 301, members: [{ pid: 301, start: 9 }] });
-          for (const [kind, file] of [["seat_absent", "teardown-seat-observed.json"],
-            ["process_absent", "teardown-process-observed.json"]]) {
-            await write(file!, { schemaVersion: 1, nativeRunId: runId, kind, observedAt: resumed });
-          }
-        }
-      },
-      rollout: async (id, text) => {
-        const day = join(home, ".codex", "sessions", "2026", "10", "05");
-        await mkdir(day, { recursive: true });
-        const path = join(day, `rollout-2026-10-05T12-00-00-${id}.jsonl`);
-        await writeFile(path, event(dispatched, "session_meta", { id, cwd: "/fixture", model_provider: "fixture" }) + text);
-        return path;
-      },
-      collect: (partialTrees = true) => collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts },
-        limit: 20, now, partialTrees }),
-    });
-  } finally { await rm(home, { recursive: true, force: true }); }
+    await new Promise<void>(resolve => server.listen(socket, resolve));
+    const receipt = async (number: number, nativeId: string) => {
+      const issueId = `fixture-${number}`;
+      const dispatchKey = createHash("sha256").update(`${issueId}\0${repo}\0${brief}`).digest("hex");
+      const record = join(receipts, dispatchKey, "record"), host = "fixture-node";
+      await mkdir(record, { recursive: true, mode: 0o700 });
+      const write = (name: string, value: unknown) => writeFile(join(record, name), JSON.stringify(value), { mode: 0o600 });
+      await write("dispatch.json", { schemaVersion: 1, runId: `orchid-${dispatchKey}`, issue: { repo, number },
+        parentRunId: null, source: "codex", provider: "fixture", model: "fixture-model", effort: "high", host,
+        state: "dispatched", observedAt: dispatched, location: { paneId: "original-pane", workspaceId: "original-workspace" } });
+      await write("binding.json", { IssueID: issueId, Repo: repo, BriefDigest: brief, Host: host,
+        Route: { transport: "codex", provider: "fixture", model: "fixture-model", effort: "high" }, NativeSessionID: nativeId });
+      return dispatchKey;
+    };
+    key = await receipt(776, id);
+    await run({ receipt, requests, nativeId: id, restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
+      complete() { phase = "completed"; }, status(value) { status = value; },
+      mismatch() { seatId = randomUUID(); }, duplicate() { duplicated = true; }, collect(issueKey) {
+        // A variable remains assignable to the original collector, which must fail these controls.
+        const agent = { workspace_id: workspace, pane_id: pane, terminal_id: "fixture-terminal", agent: "codex",
+          agent_status: status, revision: 3, state_change_seq: 4,
+          agent_session: { source: "herdr:codex", agent: "codex", kind: "id", value: seatId } };
+        const options = { home, limit: 20, now, partialTrees: true, ...(issueKey ? { issueKey } : {}),
+          env: { [OPERATOR_ENV.dispatchRoot]: receipts, HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: socket },
+          nativeSnapshot: { workspaces: [{ workspace_id: workspace, label: "codex-701" }],
+            agents: duplicated ? [agent, { ...agent, pane_id: "duplicate-pane", terminal_id: "duplicate-terminal" }] : [agent] } };
+        return collectIssueAgentTree(options);
+      } });
+  } finally { await new Promise<void>(resolve => server.close(() => resolve())); await rm(home, { recursive: true, force: true }); }
 }
 
-it("resolves a resumed session to its original receipt and recovers running beyond the fixed tail", () => fixture(async f => {
-  const id = randomUUID();
-  await f.receipt(776, { id });
-  const path = await f.rollout(id, native(dispatched, "task_complete") + output(300_000));
-  // The host restarts: the native session appends to the same file; the receipt never changes.
-  await appendFile(path, native(resumed, "task_started") + output(9_000_000) + native(now, "agent_message"));
+it("links a restored workspace to the same native receipt and issue, then observes native assignment completion", () => fixture(async f => {
   const before = await f.collect();
-  const root = before.issues[0]?.dispatches[0]?.agents[0];
-  assert.equal(before.issues[0]?.issueNumber, 776);
+  const original = before.issues[0]?.dispatches[0]?.agents[0];
+  assert.equal(original?.liveness.state, "running");
+  f.restore();
+  const restored = await f.collect();
+  const root = restored.issues[0]?.dispatches[0]?.agents[0];
+  assert.equal(restored.issues[0]?.issueNumber, 776);
+  assert.equal(root?.observation.assignment.id, original?.observation.assignment.id);
   assert.equal(root?.observation.parentAgentId.state, "confirmed-root");
   assert.equal(root?.liveness.state, "running");
-  assert.equal(root?.endedAt, null, "the old completion in the head cannot end a resumed turn");
-  const assignment = root?.observation.assignment.id;
-  await f.receipt(776, { suffix: "missing-old-attempt" });
-  const partial = await f.collect();
-  assert.equal(partial.issues[0]?.reason, "scan_limit");
-  assert.equal(partial.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
-  assert.equal((await f.collect(false)).issues[0]?.reason, "ancestry_unavailable");
-  await appendFile(path, native(now, "task_complete"));
+  assert.equal(root?.endedAt, null);
+  f.complete();
   const ended = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
-  assert.equal(ended?.observation.assignment.id, assignment);
+  assert.equal(ended?.observation.assignment.id, root?.observation.assignment.id);
   assert.equal(ended?.liveness.state, "ended");
-  assert.ok(!JSON.stringify(partial).includes(id), "native identity stays private");
+  assert.ok(!JSON.stringify(restored).includes(f.nativeId), "native identity stays private");
 }));
 
-it("keeps the oldest active issue when the receipt set exceeds the issue observation limit", () => fixture(async f => {
-  const id = randomUUID();
-  await f.receipt(1, { id });
-  await f.rollout(id, native(now, "task_started"));
-  for (let n = 2; n <= MAX_AGENT_OBSERVATIONS + 2; n++) {
-    await f.receipt(n, { id: randomUUID(), at: "2026-10-05T12:30:00.000Z", ended: true });
+it("selects the oldest active receipt by its native key even when retained history exceeds the observation limit", () => fixture(async f => {
+  for (let n = 1; n <= MAX_AGENT_OBSERVATIONS + 2; n++) await f.receipt(n, randomUUID());
+  f.restore();
+  const snapshot = await f.collect();
+  assert.equal(snapshot.issues.length, 1, "only current native workspaces select receipts");
+  assert.equal(snapshot.issues[0]?.issueNumber, 776);
+  assert.equal(snapshot.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  assert.deepEqual(f.requests, [["701"]], "history never competes for a current run lookup");
+}));
+
+it("native idle, done and blocked are stopped turns, never final assignment outcomes", () => fixture(async f => {
+  for (const state of ["idle", "done", "blocked"]) {
+    f.status(state);
+    const root = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
+    assert.equal(root?.liveness.state, "idle");
+    assert.equal(root?.terminalOutcome.value, null);
+    assert.equal(root?.endedAt, null);
   }
-  const frame = await f.collect();
-  assert.equal(frame.complete, false);
-  assert.equal(frame.reason, "scan_limit");
-  assert.ok(frame.issues.length <= MAX_AGENT_OBSERVATIONS);
-  const active = frame.issues.find(issue => issue.issueNumber === 1);
-  assert.equal(active?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  f.status("unknown");
+  assert.equal((await f.collect()).issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "unknown");
 }));
-
-it("keeps a verified resumed root when a historical retry no longer fits the remaining frame bytes", () => fixture(async f => {
-  const historical = randomUUID(), active = randomUUID();
-  await f.receipt(776, { id: historical, suffix: "history" });
-  await f.rollout(historical, output(9_000_000) + native(dispatched, "task_complete"));
-  await f.receipt(776, { id: active });
-  await f.rollout(active, native(dispatched, "task_complete") + output(300_000) +
-    native(resumed, "task_started") + output(31_000_000) + native(now, "agent_message"));
-  const frame = await f.collect();
-  assert.equal(frame.issues[0]?.complete, false);
-  assert.equal(frame.issues[0]?.reason, "scan_limit");
-  const roots = frame.issues[0]?.dispatches.flatMap(dispatch => dispatch.agents) ?? [];
-  assert.equal(roots.length, 1, "an unread historical retry cannot erase a verified current root");
-  assert.equal(roots[0]?.liveness.state, "running");
+it("a restored label cannot bind a different native session", () => fixture(async f => {
+  f.restore(); f.mismatch();
+  const result = await f.collect();
+  assert.equal(result.complete, false);
+  assert.deepEqual(result.issues, []);
+}));
+it("duplicate native seats stay unresolved instead of selecting one", () => fixture(async f => {
+  f.duplicate();
+  const result = await f.collect();
+  assert.equal(result.complete, false);
+  assert.deepEqual(result.issues, []);
+}));
+it("native source scoping selects the canonical issue without consulting other receipts", () => fixture(async f => {
+  assert.equal((await f.collect("example/project#776")).issues[0]?.issueNumber, 776);
+  assert.deepEqual((await f.collect("example/project#777")).issues, []);
 }));

@@ -75,13 +75,9 @@ it("P0 sanitized #552/#559/#561 receipts remain readable, honest and strictly de
     const snapshot = await collectIssueAgentTree({ home: f.root, limit: 20, now: f.now,
       env: { DSH_TELEMETRY_DISPATCH_ROOT: f.root } });
     assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
-    for (const shape of shapes) {
-      const issue = snapshot.issues.find(row => row.issueNumber === shape.number)!;
-      assert.ok(issue); assert.equal(issue.complete, false); assert.equal(issue.reason, "binding_unavailable");
-      assert.deepEqual(issue.dispatches, []); // No native acceptance, running or Done is invented.
-    }
-    const neighbour = snapshot.issues.find(row => row.issueNumber === 545)!;
-    assert.equal(neighbour.complete, true); assert.equal(neighbour.launchRefusal?.reason, "routing-invalid");
+    assert.equal(snapshot.complete, false);
+    assert.equal(snapshot.reason, "source_not_bound");
+    assert.deepEqual(snapshot.issues, [], "receipts without native sources cannot certify a current run census");
     const after = await Promise.all(f.files.map(path => readFile(path)));
     assert.deepEqual(after, before, "read must never modify the receipts or their durable fences");
   } finally { await f.close(); }

@@ -33,7 +33,7 @@ const open = fsp.open;
 }) as FilePromises["open"];
 syncBuiltinESMExports();
 const { backfillFromDisk } = await import("./index.js");
-const { collectIssueAgentTree } = await import("../issue-agent-feed-cli.js");
+const { projectHistoricalIssueFixture } = await import("../fixtures/historical-issue-tree.js");
 const { OPERATOR_ENV } = await import("../operator-environment.js");
 
 const TAIL = 2_097_152, MAX = 8_388_608, FRAME = 33_554_432;
@@ -47,36 +47,10 @@ const filler = (n: number, bytes: number) => line(n, "response_item", { type: "f
 const meta = (session: string, parent: string | null = null) => line(0, "session_meta", { id: session, cwd: "/fixture",
   model_provider: "fixture", ...(parent ? { source: { subagent: { thread_spawn: { parent_thread_id: parent, depth: 1 } } } } : {}) });
 
-it("charges backward turn recovery, ignores future boundaries, and never borrows head state over a capped gap", () => fixture(async ({ put, scan, feed }) => {
-  const start = meta(id(1)) + event(1, "task_complete") + filler(2, 300_000);
-  await put(id(1), start + event(3, "task_started") + filler(100, 9_000_000) +
-    tokens(110) + event(121, "task_complete"));
-  const recovered = await scan();
-  assert.equal(recovered.runs[0]?.outcome, "running", "a future completion does not end this capture");
-  assert.equal(recovered.bytesRead, reads, "backward lookup charges every actual read");
-  assert.ok(reads > 9_000_000 && reads <= FRAME);
-  assert.equal((await feed()).issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
-  // The newest boundary lies beyond the whole frame's budget: the old head completion is not reused.
-  await put(id(1), start + event(3, "task_started") + filler(100, FRAME + 1_000) + tokens(110));
-  const capped = await scan();
-  assert.equal(capped.runs[0]?.outcome, "unknown");
-  assert.equal(capped.bytesRead, reads);
-  assert.ok(reads <= FRAME);
-}));
-
-it("a malformed record between the tail and its turn boundary cannot certify running", () => fixture(async ({ put, scan }) => {
-  await put(id(1), meta(id(1)) + filler(2, 300_000) + event(3, "task_started") +
-    "{broken-native-record\n" + filler(100, 9_000_000) + tokens(110));
-  const result = await scan();
-  assert.equal(result.runs[0]?.outcome, "unknown");
-  assert.equal(result.bytesRead, reads);
-  assert.ok(reads <= FRAME);
-}));
-
 async function fixture(fn: (f: {
   put: (session: string, text: string) => Promise<string>;
   scan: () => ReturnType<typeof backfillFromDisk>;
-  feed: () => ReturnType<typeof collectIssueAgentTree>;
+  feed: () => ReturnType<typeof projectHistoricalIssueFixture>;
 }) => Promise<void>) {
   const home = await fsp.mkdtemp(join(tmpdir(), "window-budget-"));
   const store = join(home, ".codex", "sessions"), day = join(store, "2026", "10", "05"), receipts = join(home, "receipts");
@@ -106,7 +80,7 @@ async function fixture(fn: (f: {
       },
       feed: () => {
         reads = 0;
-        return collectIssueAgentTree({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now: at(120) });
+        return projectHistoricalIssueFixture({ home, env: { [OPERATOR_ENV.dispatchRoot]: receipts }, limit: 20, now: at(120) });
       },
     });
   } finally {

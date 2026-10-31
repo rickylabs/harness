@@ -16,8 +16,7 @@ export interface NativeRootResolver {
   resolveNativeRoot<R extends NativeRunRef>(dispatch: DispatchEvidence, runs: readonly R[]): R | null;
 }
 export interface OrchidReads extends NativeRootResolver {
-  readDispatches(root: string | undefined, page?: { readonly after?: string }):
-    Promise<OrchidDispatchRead & { readonly nextCursor?: string | null }>;
+  readDispatches(root: string | undefined, selected?: { readonly keys: readonly string[] }): Promise<OrchidDispatchRead>;
   bindDispatchEvidence(dispatches: readonly DispatchEvidence[], evidence: readonly DispatchEvidence[]):
     { readonly dispatches: readonly DispatchEvidence[]; readonly degraded: boolean };
   matchesNativeRootIdentity(dispatch: DispatchEvidence, id: string, source: "codex" | "claude" | "agy" | "opencode"): boolean;

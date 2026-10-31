@@ -8,7 +8,7 @@ import { it } from "node:test";
 import { readAgentObservations } from "@rickylabs/harness-contracts";
 import { readOrchidDispatches, bindOrchidDispatchEvidence, orchidHost } from "@rickylabs/host-orchid";
 import { buildAgentObservations } from "./agent-observations.js";
-import { collectIssueAgentTree } from "./issue-agent-feed-cli.js";
+import { projectHistoricalIssueFixture } from "./fixtures/historical-issue-tree.js";
 const key = "a".repeat(64);
 const fixture = { schemaVersion: 1, runId: "orchid-" + key,
   issue: { repo: "example/inbox", number: 42 }, parentRunId: null, source: "codex",
@@ -200,7 +200,7 @@ it("serves the failed AGY issue as unknown without masking an unrelated known re
     const refusal = { schemaVersion: 1, issue: { repo: "example/inbox", number: 43 },
       dispatchId: "assignment_" + "c".repeat(64), state: "refused", reasonCode: "routing-invalid", observedAt: at };
     await writeFile(join(s.root, "launch-" + "d".repeat(64) + ".json"), JSON.stringify(refusal), { mode: 0o600 });
-    const snapshot = await collectIssueAgentTree({ home: s.root, limit: 10,
+    const snapshot = await projectHistoricalIssueFixture({ home: s.root, limit: 10,
       env: { DSH_TELEMETRY_DISPATCH_ROOT: s.root }, now: at });
     const failed = snapshot.issues.find(i => i.issueNumber === 42);
     const neighbour = snapshot.issues.find(i => i.issueNumber === 43);

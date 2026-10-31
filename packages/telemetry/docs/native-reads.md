@@ -160,59 +160,21 @@ A native parent link does not invent child location, router or running observati
 contract or decoder change is required. See [cost attribution](../../../docs/rfcs/0002-agent-cost-attribution.md)
 for shared-run refusal, repeated-dispatch handling, source timestamps and limits.
 
-AGY live issue collection uses the private `NativeSessionID` conversation ID and
-`NativeStore` from the same dispatched reservation. It reads only that retained
-store, never the global AGY history or a directory/title/time match. The installed
-1.2.14 adapter opens fixed SQLite tables read-only with WAL visibility and byte,
-session and step bounds. The conversation's `cascade_id` must match its bound ID;
-the separate trajectory ID must match the native protobuf summary. Only typed
-planner response text reaches the existing screening function. User prompts,
-thinking, tool output, titles, native IDs and store paths never enter the feed.
-A coherent latest user turn, native final status/stop reason and completion time
-are required for an end; idle, mtime and an empty response cannot prove Done.
-Current summary activity clears prior success, error and cancellation ends even
-when the trajectory has not yet recorded the resumed turn. Unreadable/unknown
-stores affect only their issue.
-AGY token/quota measurements remain unavailable. Contracts 0.34.0 adds `agy` and
-`agy-transcript` plus AGY direct-route decoding; upgrade the consumer decoder and
-reader before enabling the Orchid writer. Bound database/WAL watches are hints
-for a fresh read, with the periodic safety scan retained.
+## Native issue-agent reads
 
-OpenCode issue collection joins the dispatched reservation's private
-`NativeSessionID` to one root in the explicitly configured native database.
-The legacy adapter decides the store family from its structure, never from the
-OpenCode CLI version: the session/message/part tables must carry every column it
-reads (checked before any row is read), no next-family row may be bound to the
-session, and every row and part must pass the strict validation. The version
-label is only checked to be bounded and non-empty. It reads those fixed columns
-read-only with WAL visibility and per-issue/session/row/byte limits. It excludes unbound history, titles, paths,
-user text, reasoning and tool output. Unknown or mixed next-schema rows affect
-only their bound issue. Native database/WAL watches trigger rereads; they never
-prove a message or terminal state.
+The live producer reads current run workspaces from Herdr's official snapshot API. Restored labels (`codex-<commentId>` and the corresponding vendor labels) select Orchid's native job/comment coordinates. Herdr's built-in integrations supply the agent-native session identity and current execution state. Pane or workspace handles can change across restart; they never replace the session identity proof.
 
-Only persisted assistant text parts reach the existing screening function.
-Native token deltas are live-only, so this SQLite reader does not promise
-per-token updates. Stable step IDs replace the same persisted part on a reread.
-Success requires the latest user turn's final nonempty assistant stop, an exact
-native completion clock and no continuation tool. Resumed turns and pending
-children clear the root's prior end. Known native error/cancellation retain
-their own clock; unknown/empty/tool finishes and contradictory clocks cannot
-become Done. Typed provider/model/variant observations stay separate from the
-requested route; usage, quota and spend are not fabricated.
+`src/native-issue-agents.ts` owns the join. It uses Orchid's versioned `run.lookup` socket method in bounded batches, then asks `orchidHost.readDispatches(root, { keys })` for only the associated receipt keys. The existing host adapter validates the receipt and exact private native identity. Retained receipts are never enumerated by the live path and never compete with active work for the observation limit. Requests exceeding current-census or transport bounds remain explicitly unavailable.
 
-Contracts 0.35.0 adds `opencode-transcript`, direct OpenCode route decoding and
-bounded model-specific syntax for exact qualified identifiers. Model observation
-provenance `opencode.message.providerID+modelID` records the exact native field
-pair used to format the qualified ID; provider and variant carry their own native
-message provenance. Public path/secret screening stays in place. Publish after
-0.34.0, and upgrade the reader/decoder before enabling the writer binding.
+Configure `HARNESS_TELEMETRY_DISPATCH_ROOT` and `HARNESS_TELEMETRY_ORCHID_RUN_SOCKET` on the observation worker. Existing operator-setting alias resolution also applies. These are private runtime values, not public stream fields. The socket primitive is supplied by [Orchid PR #133](https://github.com/rickylabs/orchid/pull/133), tracking [the upstream gap](https://github.com/rickylabs/orchid/issues/132). Without the native source, the producer reports unavailable and never reconstructs ancestry or infers running from receipts.
 
-`node scripts/check-orchid-native-live-pair.mjs --live` is an opt-in integration control. It reads
-a bounded native header sample using the normal home (or privately configured
-`HARNESS_TELEMETRY_NATIVE_HOME`), exercises one real parent/child pair under an explicitly synthetic
-assignment in a temporary private store, and deletes that store. It never modifies the live
-receipt store or claims that the selected pair belongs to a live issue. Its separate live-issue
-verdict preserves incomplete ancestry. Output contains only counts and closed reasons.
+The cockpit passes structured snapshots from its existing subscribed Herdr reader to `collectNativeIssueAgents`. The returned root metadata, exact seat bindings, per-seat lookup outcomes and native final-run fences are private intake data. The cockpit's canonical reconciler and existing CurrentStateWriter publish changed state through NetScript durable streams and TTL KV; Home reads the prepared projection.
+
+A current `working` agent is running. `idle`, `done` and `blocked` are stopped turns; they do not prove assignment completion. Orchid's native completed-run fence proves the assignment has ended. It does not invent a successful outcome or an exact end timestamp. Missing, conflicting or duplicated native identity stays unresolved. Public agent and assignment IDs remain the existing opaque receipt-derived IDs.
+
+The CLI reads the official `herdr api snapshot`, subscribes to Orchid run invalidations and refreshes bounded native snapshots for freshness. The cockpit uses its own authoritative Herdr snapshot/events instead of running this CLI watch. Neither path reads terminal text, process ancestry or vendor transcript history for execution state. Admission receipts remain independently available through the host receipt adapter; a launch refusal is not an execution observation.
+
+Historical scanner tests compose their typed output into the public pure tree projector through a test fixture. Those readers remain available to history/usage consumers and never supply facts to this live native source. The prior backward transcript reader and receipt-priority workaround have been removed from this change.
 
 ## Codex thread reads and goal notifications
 
@@ -475,22 +437,3 @@ The CLI is `harness-telemetry`. Cost and governance output support explicit
 readers are upgraded; invalid values refuse collection. The selection affects only names on
 originated rows, preserving measurements, source clocks and native attribution. Received
 provenance remains unchanged.
-
-## Resumed issue agents and bounded history
-
-`issue-agents` joins a resumed session through the existing verified receipt's native identity.
-Large Codex rollouts keep their head and tail; when the tail has no native turn boundary, a reverse
-scan recovers the newest boundary at or before capture. `CODEX_TURN_SCAN_BYTES` caps that lookup at
-32 MiB, and every byte also pays against the unchanged 32 MiB frame budget. No observed boundary
-means unknown; a completion in the head cannot end a turn across an unread gap. Token history stays partial.
-
-Reads prioritize receipts without paired end evidence, then durable-matched native file activity,
-then newest dispatch. File clocks only schedule reads; running still requires fresh native evidence.
-Observed running trees enter the existing issue/agent/byte output caps before ended history.
-Receipt traversal uses at most `MAX_DISPATCH_PAGES_PER_FRAME` (four) pages of 1,000 receipts per frame;
-directory enumeration is capped at 16,384 entries; omitted pages/output report `scan_limit`. Metadata hints are indexed once per frame,
-bounded by 16,384 directory entries and 1,024 directories; unavailable hints remain neutral.
-With partial trees, an unread retry cannot erase an already verified root. One large state lookup
-can spend most of a frame: other large active roots can remain unknown or
-`scan_limit` while contention persists. No scheduling hint becomes liveness evidence.
-[Regression and review evidence](../../../docs/run-records/ra776/worklog.md) records the failing controls.

@@ -1,36 +1,13 @@
-# ra776 worklog
-The resumed session already keeps its durable receipt join. The missing running state came from a native turn boundary beyond the fixed tail.
+# Native revision worklog
 
-Design checkpoint:
-1. Public surface: current issue-agent snapshot, with native-only running/ended and honest truncation.
-2. Vocabulary: durable root is the verified receipt key; native boundary determines turn state; mtime is a scheduling hint only.
-3. Ports: OrchidReads, native RunRecord parsing, existing snapshot decoder; optional host page cursor stays private.
-4. Constants: existing wire/byte caps; CODEX_TURN_SCAN_BYTES, TURN_SCAN_CHUNK_BYTES and MAX_DISPATCH_PAGES_PER_FRAME bound new work.
-5. Slice: native state recovery, receipt paging/priority, regressions, docs and run evidence. Gate: focused IO/integration tests, root install/typecheck/build/test/leaks, independent implementation review.
-6. Deferred: no UI/backend migration, new root discovery, window expansion, or inferred liveness from process/pane/file clocks.
-7. Contributor path: packages/telemetry/src/issue-agent-feed-cli.ts composes native reads and scheduling.
+The owner's native-source requirement supersedes the earlier reverse-tail/history-priority implementation and sign-off.
 
-Plan evaluation: initial FAIL_PLAN correctly found the large-file native state gap; corrected plan PASS with explicit contention/freshness/byte documentation requirements.
-Red control: unchanged production source at origin/main, with only the new two-test integration file, compiled successfully. Node test exit 1: tests 2, pass 0, fail 2. Resume actual unknown vs expected running; oldest active group actual undefined vs expected running.
-Implementation: central native boundary vocabulary, bounded reverse recovery, per-frame metadata hints, no-paired-end before ended, running forests before output limits, bounded receipt paging. Focused tests: 30 tests, pass 30, fail 0 (exit 0). The independent Meta supervisor passed both the initial implementation and the final multi-root/directory-bound amendments. Exact-head attestation follows the implementation commit.
+1. Public surface: current issue roots retain their opaque assignment and issue across restored pane/workspace handles. History does not select live work.
+2. Vocabulary: restored workspace label selects a native job coordinate; native session identity proves attachment; a native completion fence proves final assignment end; an idle turn is separate.
+3. Ports: Herdr snapshot/events, Orchid keyed run lookup/change socket, exact receipt reads, cockpit canonical reconciler, existing NetScript durable streams and TTL KV projections.
+4. Constants: existing current observation cap, 128-key native transport batches, fixed read-only methods and restored-label grammar. No cap increase or model IDs.
+5. Slices: upstream source (PR #133, full Go race/vet/build exit 0, independent PASS); Harness native projection (in validation); cockpit subscribed intake and existing durable writer integration (next).
+6. Deferred: UI/mobile policy, production deployment and unrelated historical parser changes. Missing native signals remain unknown.
+7. Contributor path: `packages/telemetry/src/native-issue-agents.ts` owns the native join.
 
-Final root gates (all exit 0):
-
-    pnpm install --frozen-lockfile
-    pnpm run typecheck — typecheck ok, 5 stages all green
-    pnpm run build — build ok, 15 stages all green
-    pnpm test — test ok, 8 stages all green
-
-Three restart/capacity integration tests pass (exit 0), including a historical retry that cannot fit after native-state recovery. Byte-accounting tests cover backward reads, future completion, malformed records and capped gaps. Host-page test crosses 1,000 receipts; traversal guard verifies finite page exhaustion.
-
-Read-only scoped live validation recovered a native running resumed root alongside native ended history, with honest scan_limit. The full feed remains partial at its fixed byte cap; contention can omit the same large root in another frame. This is a measured limitation, not an all-live-rows claim.
-
-Reconcile: all source changes are within the declared surface; no contracts schema or cockpit source change; no owner-controlled runs or generated files touched. The assigned branch and Refs-only PR association follow the operator directive.
-
-[Lesson](lesson-2026-10-31.md): native-state recovery must be tested independently of durable identity, and verified retries must survive another retry's budget exhaustion.
-
-Independent supervisor sign-off: PASS at reviewed code head 4a0fb466fee5e0636903405303928ea48b193103.
-Final gates all exit 0 (install; typecheck 5 stages; build 15 stages; test 8 stages
-with telemetry 808 pass; leak scan clean). Restart integration tests 3/3 pass.
-Full-feed contention limit stands: partial at the fixed byte cap, no all-live-rows claim.
-See review.md for the substantive verdict.
+New native controls failed on unchanged main: resumed run had no running root; history occupied 256 rows instead of selecting the current workspace. Both pass with the native source. Additional controls cover stopped turns, final end, changed identity, duplicate seats and issue scoping. The obsolete elapsed-history-window and filesystem-watch tests were replaced; historical scanner metadata parity remains through the public pure tree projector.

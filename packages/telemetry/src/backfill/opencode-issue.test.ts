@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { it } from "node:test";
 import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
-import { collectIssueAgentTree } from "../issue-agent-feed-cli.js";
+import { projectHistoricalIssueFixture } from "../fixtures/historical-issue-tree.js";
 import { readOrchidDispatches, verifyOrchidOpenCodeBinding } from "@rickylabs/host-orchid";
 import { OPERATOR_ENV } from "../operator-environment.js";
 import { openCodeConversation, scanOpenCodeIssue } from "./opencode-issue.js";
@@ -61,7 +61,7 @@ async function fixture(o: FixtureOptions = {}) {
   };
   const record = await issue(42);
   const options = { home: base, limit: 20, now, env: { [OPERATOR_ENV.dispatchRoot]: receipts } };
-  const collect = () => collectIssueAgentTree(options);
+  const collect = () => projectHistoricalIssueFixture(options);
   const close = async () => { db.close(); await rm(base, { recursive: true, force: true }); };
   return { base, path, store, db, message, part, issue, record, options, collect, close };
 }
