@@ -118,6 +118,6 @@ Verdict: PASS.
   empty and partial censuses, with the opted-bounded negative retained. Leak
   and link checks on these docs are clean.
 
-Limits: the 810-count receipts supersede the 808 ones for readiness; Orchid
-#133/#134 were untouched during their coordinator re-review and remain outside
+Limits: the 811-count receipts supersede the older 808 and 810 counts for this
+source; Orchid #133/#134 were untouched during their coordinator re-review and remain outside
 this verdict; no live deployment or privileged check is claimed.
