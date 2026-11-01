@@ -59,8 +59,20 @@ Deploy in this order:
 
 1. Land [Orchid #133](https://github.com/rickylabs/orchid/pull/133), then
    [#134](https://github.com/rickylabs/orchid/pull/134), and deploy the binary. Configure Orchid's
-   `native_run_socket` in a canonical private parent outside Git, mode 0700, with a mode 0600 socket.
-   Readers use the same numeric UID; a stale/read-socket failure must not stop supervision.
+   `native_run_socket` in a canonical provisioned parent outside Git. The original endpoint requires
+   a dispatcher-owned mode-0700 parent, a mode-0600 socket and same-UID readers. The shared observer
+   server update is [Orchid #139](https://github.com/rickylabs/orchid/pull/139), following the latest
+   owner dispatch on [Harness #787](https://github.com/rickylabs/harness/issues/787): it sets the
+   socket to **0660** immediately after bind, preserves the setgid parent's group and also accepts
+   a canonical dispatcher-owned **2750** parent. The operator provisions and mounts the parent;
+   Orchid never creates or chmods it. A missing directory reports `parent-directory-missing`,
+   and supervision continues. Safe stale 0600/0660 sockets are probed and replaced; live or
+   foreign endpoints are preserved.
+   For a different observer UID, set `ORCHID_NATIVE_RUN_PEER_UID` in the **daemon** environment to
+   that one numeric UID. It replaces the same-UID default and is checked against Linux kernel
+   peer credentials before each request; group access alone does not authorize reads. A malformed
+   value reports `peer-uid-invalid` without stopping supervision. The owner-grant port keeps its
+   separate private policy. Native JSON-lines framing, schemas and methods remain unchanged.
 2. Deploy this Harness reader. Set `HARNESS_TELEMETRY_DISPATCH_ROOT` and opt in with
    `HARNESS_TELEMETRY_ORCHID_RUN_SOCKET`. Existing operator-setting alias/conflict rules apply.
    Values are private runtime configuration and never enter public stream fields.
@@ -72,7 +84,14 @@ Deploy in this order:
 3. Deploy [cockpit #951](https://github.com/rickylabs/atelier-cockpit/pull/951). It supersedes #954 and
    owns its native observer independently of this CLI. Its observer-only `COCKPIT_ORCHID_RUN_SOCKET`,
    `CONTROL_PLANE_SOCKET` and scoped `COCKPIT_HERDR_SERVER_MAPPING` follow that PR's deployment guide.
-   Mount private socket parents, preserving same-UID access and socket replacement across restarts.
+   Mount the provisioned socket parent so replacement remains visible across restarts. **Adopt the
+   shared policy in the consumer before deploying Orchid #139:** Cockpit's current
+   `orchid-native-runs/socket.ts` rejects anything except its own UID and 0700/0600. It needs an
+   explicit trusted server identity and shared-parent/socket policy; setting the socket environment
+   variable alone does not change that validation. Keep both Cockpit settings on the observer,
+   never on the web request path. Observer enrichment `certified`, Home Running parity with current
+   remote-control runs and removal after a completion remain operator acceptance checks after
+   consumer adoption and deployment; this server change does not establish those live facts.
 
 The CLI reads `herdr api snapshot`, subscribes to Orchid native invalidations and refreshes bounded
 snapshots within freshness limits. Cockpit #951 uses its own typed subscribed native reader, then
