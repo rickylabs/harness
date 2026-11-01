@@ -219,3 +219,5 @@ export { OPERATOR_ENV, LEGACY_OPERATOR_ENV, OperatorConfigurationError, resolveO
   type OperatorEnvironment, type OperatorSetting } from "./operator-environment.js";
 export { readObservabilityLog, assertObservabilityWriteTarget, OperatorLogError } from "./log-source.js";
 export { CANONICAL_LOG_NAME, LEGACY_LOG_NAME, LOG_NAME_ENV } from "./observability.js";
+
+export { collectNativeIssueAgents, type NativeIssueAgentRead } from "./native-issue-agents.js";

@@ -66,6 +66,12 @@ function claudeChildRunning(run: RunRecord, starts: ReadonlyMap<string, string> 
     revision: digest(JSON.stringify({ source: "claude-child-hook", root: digest(run.parentId),
       child: digest(run.id), event: start, activity: at })) };
 }
+/** A root certified by current native workspace, session identity and Orchid run records. */
+export interface NativeRootObservation {
+  readonly id: string;
+  readonly running: AgentObservedValue<boolean>;
+  readonly completed?: boolean;
+}
 export function buildAgentObservations(input: {
   readonly wireFamily?: TelemetryWireFamily;
   readonly dispatches: readonly DispatchEvidence[];
@@ -74,6 +80,7 @@ export function buildAgentObservations(input: {
   readonly sourceBound: boolean;
   readonly dispatchComplete: boolean;
   readonly nativeComplete: boolean;
+  readonly nativeRoots?: ReadonlyMap<string, NativeRootObservation>;
   /** Private, already screened latest Start events keyed by exact parent session and child ID. */
   readonly claudeChildStarts?: ReadonlyMap<string, string>;
   /** The dispatch host's private native-root join; without one, only an explicit dispatch reference binds. */
@@ -108,9 +115,11 @@ export function buildAgentObservations(input: {
     const [owner, name] = d.issue.repo.split("/");
     if (!owner || !name) { reason = "binding_unavailable"; break; }
     const observedAt = d.observedAt;
-    const external = input.host?.resolveNativeRoot(d, input.runs)?.id ?? d.external;
+    const proof = input.nativeRoots?.get(d.runId);
+    const external = proof?.id ?? input.host?.resolveNativeRoot(d, input.runs)?.id ?? d.external;
     const routeObservedReasons = d.routeObservedReasons ?? unavailableOrchidRouteReasons();
     const revision = digest(JSON.stringify({ dispatch: d.revision, binding: external === null ? null : digest(external), routeObservedReasons,
+      ...(proof === undefined ? {} : { nativeRoot: proof.running.revision }),
       ...(wireFamily === "harness" ? { wireFamily } : {}) }));
     const reference = (value: string | undefined): AgentObservedValue<string> => value === undefined ? missing()
       : { value, reason: null, observedAt, validUntil: null, revision };
@@ -120,25 +129,27 @@ export function buildAgentObservations(input: {
       parentAgentId: external === null
         ? { state: "unavailable", value: null, reason: "identity_unavailable" }
         : { state: "confirmed-root", value: null, reason: null },
-      workspace: reference(d.location?.workspaceId), pane: reference(d.location?.paneId), tab: missing(), terminal: missing(), running: missing(external === null ? "observer-unavailable" : "identity_unavailable"),
+      workspace: reference(d.location?.workspaceId), pane: reference(d.location?.paneId), tab: missing(), terminal: missing(), running: proof?.running ?? missing(external === null ? "observer-unavailable" : "identity_unavailable"),
       route: projectRouteIdentity(d.route), routeObservedReasons, cost: producerAgentCost("source_not_bound", wireFamily), observedAt, revision,
     };
     agents.push(root);
     if (external === null || d.source === null) { reason = "ancestry_unavailable"; continue; }
     const key = nativeKey(d.source, external);
-    if (roots.has(key) || duplicates.has(key) || !native.has(key) || native.get(key)?.parentId !== null) { reason = "ancestry_unavailable"; continue; }
+    if (roots.has(key) || duplicates.has(key) || (!proof && (!native.has(key) || native.get(key)?.parentId !== null))) { reason = "ancestry_unavailable"; continue; }
     roots.set(key, root);
   }
   if (reason !== null) return finish();
-  if (roots.size > 0 && !input.nativeComplete) { reason = "ancestry_unavailable"; return finish(); }
+  if (roots.size > 0 && !input.nativeComplete && dispatches.some(d => !input.nativeRoots?.has(d.runId))) { reason = "ancestry_unavailable"; return finish(); }
   // Bind only after every root identity and completeness fence has passed.
   for (const [key, root] of roots) {
-    const run = native.get(key)!;
+    const run = native.get(key);
+    if (run === undefined) continue;
     const cost = projectAgentCost(run, input.observedAt, wireFamily);
     const sourceDispatch = dispatches.find(d => opaque("agent", d.runId) === root.agentId);
     const nativeRunning = measuredRunning(run, input.observedAt);
-    const running = nativeRunning.value === true || sourceDispatch?.source !== "claude" ? nativeRunning
-      : claudeStatusRunning(sourceDispatch, input.observedAt);
+    const running = input.nativeRoots?.get(sourceDispatch?.runId ?? "")?.running ??
+      (nativeRunning.value === true || sourceDispatch?.source !== "claude" ? nativeRunning
+        : claudeStatusRunning(sourceDispatch, input.observedAt));
     const nativeRoute = sourceDispatch?.source === "opencode" ? projectRouteIdentity({ ...root.route,
       observed: {
         provider: { value: run.identity.provider, source: "opencode.message.providerID" },

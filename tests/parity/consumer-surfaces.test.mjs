@@ -130,6 +130,8 @@ const RAW_SOURCES = {
 test("cockpit: the pinned native reader's Orchid host entry exports its private evidence seam", async () => {
   assertExports(COCKPIT, "packages/hosts/orchid/mod.ts", await load("packages/hosts/orchid/dist/mod.js"), {
     ...kinds("object", "orchidHost"),
+    ...kinds("function", "lookupOrchidNativeRuns"),
+    ...kinds("number", "NATIVE_RUN_BATCH_LIMIT"),
     ...kinds("function", "readOrchidDispatches readOrchidTeardownObservation"),
   });
 });

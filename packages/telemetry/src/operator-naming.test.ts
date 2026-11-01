@@ -68,13 +68,16 @@ it("canonical filename selection is explicit and rejects arbitrary paths", () =>
     assert.throws(() => resolveObservability("/fixture/home", { HARNESS_TELEMETRY_LOG_NAME: name }));
   }
 });
-it("canonical private binding works and contradictory/blank bindings remain unavailable", async () => {
+it("canonical source bindings resolve and contradictory/blank bindings remain unavailable", async () => {
   await fixture(async (home, directory) => {
     await chmod(directory, 0o700);
     const collect = (env: Record<string, string>) => collectIssueAgentTree({ home, limit: 50, now: at, env });
-    assert.equal((await collect({ HARNESS_TELEMETRY_DISPATCH_ROOT: directory })).complete, true);
-    assert.equal((await collect({ DSH_TELEMETRY_DISPATCH_ROOT: directory })).complete, true);
-    for (const key of ["DISPATCH_ROOT", "CLAUDE_CHILD_EVENT_ROOT", "PLACEMENT_HOST"]) {
+    const canonicalRead = await collect({ HARNESS_TELEMETRY_DISPATCH_ROOT: directory });
+    assert.equal(canonicalRead.complete, true, "without socket configuration the previous source still collects");
+    assert.equal(canonicalRead.reason, null);
+    assert.deepEqual(canonicalRead.issues, []);
+    assert.deepEqual(await collect({ DSH_TELEMETRY_DISPATCH_ROOT: directory }), canonicalRead);
+    for (const key of ["DISPATCH_ROOT", "ORCHID_RUN_SOCKET", "CLAUDE_CHILD_EVENT_ROOT", "PLACEMENT_HOST"]) {
       const result = await collect({ HARNESS_TELEMETRY_DISPATCH_ROOT: directory,
         [`HARNESS_TELEMETRY_${key}`]: "CANONICAL-PRIVATE-CANARY",
         [`DSH_TELEMETRY_${key}`]: "LEGACY-PRIVATE-CANARY" });

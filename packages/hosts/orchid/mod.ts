@@ -5,6 +5,7 @@
  * This file is the package's only entry and re-exports its public API, nothing else. `orchidHost` is the
  * implementation a consumer passes where it needs Orchid reads; the named functions are the same API.
  */
+import { lookupOrchidNativeRuns } from "./src/adapters/native-run-client.js";
 import { readOrchidDispatches } from "./src/adapters/dispatch-reader.js";
 import { verifyOrchidOpenCodeBinding } from "./src/adapters/native-binding-reader.js";
 import { bindOrchidDispatchEvidence } from "./src/application/bind-dispatch-evidence.js";
@@ -23,6 +24,7 @@ export {
 /** The Orchid reads a telemetry composition root injects. */
 export const orchidHost = Object.freeze({
   readDispatches: readOrchidDispatches,
+  lookupNativeRuns: lookupOrchidNativeRuns,
   bindDispatchEvidence: bindOrchidDispatchEvidence,
   resolveNativeRoot: resolveOrchidNativeRoot,
   matchesNativeRootIdentity: matchesOrchidNativeRootIdentity,
@@ -30,3 +32,5 @@ export const orchidHost = Object.freeze({
   openCodeSessionID: orchidOpenCodeSessionID,
   verifyOpenCodeBinding: verifyOrchidOpenCodeBinding,
 });
+
+export { lookupOrchidNativeRuns, NATIVE_RUN_BATCH_LIMIT, type NativeRunQuery, type NativeRunRecord, type NativeRunLookup } from "./src/adapters/native-run-client.js";

@@ -5,6 +5,7 @@ export const OPERATOR_ENV = {
   maxBytes: "HARNESS_TELEMETRY_MAX_BYTES",
   generations: "HARNESS_TELEMETRY_GENERATIONS",
   dispatchRoot: "HARNESS_TELEMETRY_DISPATCH_ROOT",
+  orchidRunSocket: "HARNESS_TELEMETRY_ORCHID_RUN_SOCKET",
   claudeChildEventRoot: "HARNESS_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT",
   placementHost: "HARNESS_TELEMETRY_PLACEMENT_HOST",
   nativeHome: "HARNESS_TELEMETRY_NATIVE_HOME",
@@ -15,6 +16,7 @@ export const LEGACY_OPERATOR_ENV = {
   maxBytes: "DSH_TELEMETRY_MAX_BYTES",
   generations: "DSH_TELEMETRY_GENERATIONS",
   dispatchRoot: "DSH_TELEMETRY_DISPATCH_ROOT",
+  orchidRunSocket: "DSH_TELEMETRY_ORCHID_RUN_SOCKET",
   claudeChildEventRoot: "DSH_TELEMETRY_CLAUDE_CHILD_EVENT_ROOT",
   placementHost: "DSH_TELEMETRY_PLACEMENT_HOST",
   nativeHome: "DSH_TELEMETRY_NATIVE_HOME",
@@ -40,6 +42,7 @@ export function resolveOperatorSetting(env: OperatorEnvironment, setting: Operat
 export function resolveNativeOperatorBindings(env: OperatorEnvironment) {
   return {
     dispatchRoot: resolveOperatorSetting(env, "dispatchRoot"),
+    orchidRunSocket: resolveOperatorSetting(env, "orchidRunSocket"),
     claudeChildEventRoot: resolveOperatorSetting(env, "claudeChildEventRoot"),
     placementHost: resolveOperatorSetting(env, "placementHost"),
   };

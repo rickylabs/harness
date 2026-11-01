@@ -75,13 +75,14 @@ it("P0 sanitized #552/#559/#561 receipts remain readable, honest and strictly de
     const snapshot = await collectIssueAgentTree({ home: f.root, limit: 20, now: f.now,
       env: { DSH_TELEMETRY_DISPATCH_ROOT: f.root } });
     assert.equal(readIssueAgentTreeSnapshot(snapshot).ok, true);
-    for (const shape of shapes) {
-      const issue = snapshot.issues.find(row => row.issueNumber === shape.number)!;
-      assert.ok(issue); assert.equal(issue.complete, false); assert.equal(issue.reason, "binding_unavailable");
-      assert.deepEqual(issue.dispatches, []); // No native acceptance, running or Done is invented.
+    assert.equal(snapshot.complete, false);
+    assert.equal(snapshot.reason, "binding_unavailable");
+    assert.equal(snapshot.issues.length, 4);
+    for (const issue of snapshot.issues.filter(issue => issue.issueNumber !== 545)) {
+      assert.equal(issue.complete, false);
+      assert.deepEqual(issue.dispatches, [], "missing native identities never invent an executing run");
     }
-    const neighbour = snapshot.issues.find(row => row.issueNumber === 545)!;
-    assert.equal(neighbour.complete, true); assert.equal(neighbour.launchRefusal?.reason, "routing-invalid");
+    assert.equal(snapshot.issues.find(issue => issue.issueNumber === 545)?.launchRefusal?.reason, "routing-invalid");
     const after = await Promise.all(f.files.map(path => readFile(path)));
     assert.deepEqual(after, before, "read must never modify the receipts or their durable fences");
   } finally { await f.close(); }

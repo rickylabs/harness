@@ -160,59 +160,10 @@ A native parent link does not invent child location, router or running observati
 contract or decoder change is required. See [cost attribution](../../../docs/rfcs/0002-agent-cost-attribution.md)
 for shared-run refusal, repeated-dispatch handling, source timestamps and limits.
 
-AGY live issue collection uses the private `NativeSessionID` conversation ID and
-`NativeStore` from the same dispatched reservation. It reads only that retained
-store, never the global AGY history or a directory/title/time match. The installed
-1.2.14 adapter opens fixed SQLite tables read-only with WAL visibility and byte,
-session and step bounds. The conversation's `cascade_id` must match its bound ID;
-the separate trajectory ID must match the native protobuf summary. Only typed
-planner response text reaches the existing screening function. User prompts,
-thinking, tool output, titles, native IDs and store paths never enter the feed.
-A coherent latest user turn, native final status/stop reason and completion time
-are required for an end; idle, mtime and an empty response cannot prove Done.
-Current summary activity clears prior success, error and cancellation ends even
-when the trajectory has not yet recorded the resumed turn. Unreadable/unknown
-stores affect only their issue.
-AGY token/quota measurements remain unavailable. Contracts 0.34.0 adds `agy` and
-`agy-transcript` plus AGY direct-route decoding; upgrade the consumer decoder and
-reader before enabling the Orchid writer. Bound database/WAL watches are hints
-for a fresh read, with the periodic safety scan retained.
+## Native issue-agent reads
 
-OpenCode issue collection joins the dispatched reservation's private
-`NativeSessionID` to one root in the explicitly configured native database.
-The legacy adapter decides the store family from its structure, never from the
-OpenCode CLI version: the session/message/part tables must carry every column it
-reads (checked before any row is read), no next-family row may be bound to the
-session, and every row and part must pass the strict validation. The version
-label is only checked to be bounded and non-empty. It reads those fixed columns
-read-only with WAL visibility and per-issue/session/row/byte limits. It excludes unbound history, titles, paths,
-user text, reasoning and tool output. Unknown or mixed next-schema rows affect
-only their bound issue. Native database/WAL watches trigger rereads; they never
-prove a message or terminal state.
-
-Only persisted assistant text parts reach the existing screening function.
-Native token deltas are live-only, so this SQLite reader does not promise
-per-token updates. Stable step IDs replace the same persisted part on a reread.
-Success requires the latest user turn's final nonempty assistant stop, an exact
-native completion clock and no continuation tool. Resumed turns and pending
-children clear the root's prior end. Known native error/cancellation retain
-their own clock; unknown/empty/tool finishes and contradictory clocks cannot
-become Done. Typed provider/model/variant observations stay separate from the
-requested route; usage, quota and spend are not fabricated.
-
-Contracts 0.35.0 adds `opencode-transcript`, direct OpenCode route decoding and
-bounded model-specific syntax for exact qualified identifiers. Model observation
-provenance `opencode.message.providerID+modelID` records the exact native field
-pair used to format the qualified ID; provider and variant carry their own native
-message provenance. Public path/secret screening stays in place. Publish after
-0.34.0, and upgrade the reader/decoder before enabling the writer binding.
-
-`node scripts/check-orchid-native-live-pair.mjs --live` is an opt-in integration control. It reads
-a bounded native header sample using the normal home (or privately configured
-`HARNESS_TELEMETRY_NATIVE_HOME`), exercises one real parent/child pair under an explicitly synthetic
-assignment in a temporary private store, and deletes that store. It never modifies the live
-receipt store or claims that the selected pair belongs to a live issue. Its separate live-issue
-verdict preserves incomplete ancestry. Output contains only counts and closed reasons.
+The native issue-agent join, its coverage reasons and the deployment order are in
+[native issue-agent reads](native-issue-agents.md).
 
 ## Codex thread reads and goal notifications
 
@@ -242,8 +193,8 @@ child that completes or fails on its own carries `endedAt` from the exact time o
 `task_complete`, `error`, `stream_error` or `turn_aborted` record, never from its last activity; a
 later `task_started` clears it. Without such a record, `endedAt` stays unavailable. Unsafe, stale,
 absent or unmatched files leave the child unknown.
-The reader watches that directory for new events. A 12-second safety scan
-recovers missed filesystem events before the 15-second freshness deadline. A heartbeat between
+The CLI performs a 12-second safety scan for supplemental source changes. It
+recovers supplemental source changes before the 15-second freshness deadline. A heartbeat between
 scans keeps the original `observedAt` and `validUntil`; it never renews evidence by itself.
 Each process has a fresh generation and sequence starting at zero; a restarted
 consumer gets a new full snapshot. The cockpit backend, not this process, persists and replays

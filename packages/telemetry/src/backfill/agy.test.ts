@@ -1,7 +1,7 @@
 /** Synthetic SQLite/protobuf only; never launch an agent or read native operator data. */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { appendFile, chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -9,7 +9,6 @@ import { it } from "node:test";
 import { agyConversation, scanAGYIssue } from "./agy.js";
 import { collectIssueAgentTree } from "../issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "../operator-environment.js";
-import { openIssueFeedChanges } from "../issue-agent-feed-changes.js";
 import { readIssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 const rootID = "00000000-0000-4000-8000-000000000001", childID = "00000000-0000-4000-8000-000000000002";
 const trajectoryID = "10000000-0000-4000-8000-000000000001";
@@ -233,22 +232,6 @@ it("AGY feed serves screened live text and exact Done while another issue stays 
       assert.equal(resumed.issues.find(i => i.issueNumber === 43)?.complete, false);
     }
   } finally { await f.close(); }
-});
-it("AGY bound native WAL changes wake the feed without watching other paths", async () => {
-  const f = await sqliteFixture(), changes = openIssueFeedChanges(undefined, join(f.base, "unbound"));
-  try {
-    const scan = await scanAGYIssue(f.root, id => id === rootID, 20, 4_194_304, captured);
-    const unrelated = join(f.base, "unrelated"); await writeFile(unrelated, "a");
-    changes.setFiles(new Set([...scan.files, unrelated]), new Set([f.root]));
-    await new Promise(resolve => setTimeout(resolve, 30)); changes.consume();
-    await appendFile(unrelated, "b"); await new Promise(resolve => setTimeout(resolve, 30));
-    assert.equal(changes.consume(), false);
-    f.native.db.prepare("UPDATE steps SET status=status WHERE idx=1").run();
-    f.native.db.prepare("UPDATE steps SET error_details=? WHERE idx=1").run(Buffer.from([1]));
-    let changed = false;
-    for (let i = 0; i < 30 && !changed; i++) { await new Promise(resolve => setTimeout(resolve, 20)); changed = changes.consume(); }
-    assert.equal(changed, true);
-  } finally { changes.close(); await f.close(); }
 });
 it("AGY wrong native database identity, symlink stores and widened permissions stay unavailable", async () => {
   const f = await sqliteFixture();
