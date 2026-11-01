@@ -24,6 +24,10 @@ Token-extension sign-off against committed 4745909489faf1535a76d4e8ce773a9ea7922
 returned PASS with telemetry at 810 pass and 0 fail; see the final section of
 `review.md` for the substantive result and evidence.
 
+Coverage-repair sign-off against committed e0c7bd455625dc509e9c6fc28042508bf0c09fdf
+returned PASS with telemetry at 811 pass and 0 fail; see the coverage-review
+section of `review.md` for the substantive result and evidence.
+
 ## Coverage re-review supersedes earlier READY
 
 The review at `44af55096` found unknown negative coverage and fixture-only replay inputs. The current

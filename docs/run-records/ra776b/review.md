@@ -88,3 +88,36 @@ Limitations carry forward from above, plus: Orchid #134 stays separately
 authored and reviewed with its own Go gates outside this review; the 808-count
 receipts are historical evidence for b6dda35 only, superseded here by the 810
 gate run for this head.
+
+## Coverage-review repair (separate)
+
+Repair source: e0c7bd455625dc509e9c6fc28042508bf0c09fdf, diffed against the
+signed 44af550 and reviewed file by file with the prior native proof.
+Verdict: PASS.
+
+- Global native coverage is now honestly incomplete. The collector's local
+  `complete` bookkeeping is removed; the run bundle, binding coverage and the
+  projected tree report incomplete with `binding_unavailable` until Orchid #135
+  supplies a covered active set or replay. Verified selected issue rows stay
+  complete with their agents, and real overflow stays `scan_limit`.
+- The unwired replay inputs are gone from the public input type, with zero
+  remaining references repository-wide outside build output. No new backend,
+  cache, contract or bound was added. Current-label native completion still
+  works for all vendor forms.
+- Herdr snapshot acquisition moved inside the collector's failure boundary, so
+  a failing snapshot command still yields independent admission refusals and
+  blocks with no execution fallback. Snapshot combination now explicitly
+  carries block evidence alongside entries that have no execution row.
+- The new controls fail on the prior production source and pass after repair:
+  empty census, partial census, real-CLI Herdr failure for both refusal and
+  block, and the stale-stop proof rewritten against the actual previous
+  producer with no attachment callback. Focused native suite 23 pass, 0 fail.
+- Evidence: all five root gates exit 0 with telemetry at 811 pass and 0 fail.
+  The selection revert control re-ran on this head with exact-byte restore,
+  and the tagged 0.36 decoder covers five real producer frames including the
+  empty and partial censuses, with the opted-bounded negative retained. Leak
+  and link checks on these docs are clean.
+
+Limits: the 810-count receipts supersede the 808 ones for readiness; Orchid
+#133/#134 were untouched during their coordinator re-review and remain outside
+this verdict; no live deployment or privileged check is claimed.

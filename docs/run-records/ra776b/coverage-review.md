@@ -41,3 +41,8 @@ then proves current native working evidence wins; it no longer uses an attachmen
 
 No contract, limit, dependency, live service or Orchid source is changed. Independent review and
 supervisor sign-off reconcile the committed source before READY.
+
+Reviewer reconciliation: the independent reviewer verified committed
+e0c7bd455625dc509e9c6fc28042508bf0c09fdf as a bounded diff, confirmed every
+claim above against the listed logs, and records PASS in `review.md`. The 808
+and 810 gate receipts remain historical evidence for their exact heads only.

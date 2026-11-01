@@ -41,6 +41,13 @@ then reviewed as a bounded diff against the signed prior head. Root gates all ex
 with telemetry at 810 pass and 0 fail; token red/green, selection revert and 0.36
 compatibility receipts match their logs. Result PASS.
 
+Coverage reconciliation: HEAD e0c7bd455625dc509e9c6fc28042508bf0c09fdf verified,
+then reviewed as a bounded diff against the signed prior head. Empty and partial
+censuses report global incomplete while keeping verified rows; unwired replay inputs
+are removed; Herdr failure preserves admissions through the real CLI. Root gates all
+exit 0 with telemetry at 811 pass and 0 fail; red/green, revert and 0.36 receipts
+match their logs. Result PASS.
+
 Coverage re-review: the coordinator found that positive keyed reads did not certify a covered
 active set, and the replay inputs had no production callers. The independent plan evaluation passed.
 Global coverage now remains incomplete pending Orchid #135, verified rows survive, and unwired
