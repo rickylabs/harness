@@ -29,6 +29,7 @@ async function fixture(run: (f: {
   failedHerdr(): Promise<{ snapshot: IssueAgentTreeSnapshot; exit: number | null }>;
   hiddenRun(): Promise<void>;
   sharedReceipt(): void;
+  receiptMismatch(): Promise<void>;
   collect(issueKey?: string, partialTrees?: boolean): ReturnType<typeof collectIssueAgentTree>;
   status(state: string): void;
   mismatch(): void;
@@ -138,6 +139,8 @@ async function fixture(run: (f: {
       async hiddenRun() { hiddenId = randomUUID(); hiddenKey = await receipt(777, hiddenId); },
       // A second labelled Orchid run that claims the same receipt as 701.
       sharedReceipt() { hiddenId = randomUUID(); hiddenKey = key; shared = true; },
+      // The receipt records a different native session than Orchid and the seat agree on.
+      async receiptMismatch() { await receipt(776, randomUUID()); },
       restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
       complete() { phase = "completed"; }, status(value) { status = value; },
       mismatch() { seatId = randomUUID(); }, duplicate() { duplicated = true; }, disappear() { disappeared = true; },
@@ -211,6 +214,10 @@ it("duplicate native seats stay unresolved instead of selecting one", () => fixt
   f.duplicate();
   assertUnattached(await f.collect());
 }));
+it("a receipt whose native identity disagrees with Orchid leaves its issue uncovered", () => fixture(async f => {
+  await f.receiptMismatch();
+  assertUnattached(await f.collect());
+}));
 it("two Orchid runs claiming one receipt leave their issue uncovered instead of dropping it", () => fixture(async f => {
   f.sharedReceipt();
   assertUnattached(await f.collect());
@@ -231,7 +238,9 @@ it("an empty Herdr census cannot certify zero active Orchid runs", () => fixture
   assert((await compatibilityRead(result)).ok);
 }));
 it("a partial Herdr census keeps positive roots but never certifies an issue with a hidden active run", () => fixture(async f => {
-  await f.hiddenRun(); // The active 702 record on #776 has no workspace; only 701 can be selected.
+  // The active 702 record on #776 has no workspace; only 701 can be selected. Keyed lookups cannot see
+  // 702 at all, which is why no native issue row is ever complete until Orchid #135 covers the active set.
+  await f.hiddenRun();
   const result = await f.collect(undefined, false);
   assert.deepEqual(f.requests, [["701"]]);
   assert.equal(result.complete, false);

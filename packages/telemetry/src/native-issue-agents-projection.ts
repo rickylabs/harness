@@ -1,8 +1,8 @@
 /** Preserve feed facets while current native joins retain sole authority over root execution. */
 import { homedir } from "node:os";
 import { orchidHost } from "@rickylabs/host-orchid";
-import { type AgentObservations, type DispatchEvidence, type IssueAgentTree, type IssueAgentTreeSnapshot,
-  type IssuePartialForestReason } from "@rickylabs/harness-contracts";
+import { readIssueAgentTreeSnapshot, type AgentObservations, type DispatchEvidence, type IssueAgentTree,
+  type IssueAgentTreeSnapshot, type IssuePartialForestReason } from "@rickylabs/harness-contracts";
 import { buildAgentObservations, type NativeRootObservation } from "./agent-observations.js";
 import { buildIssueAgentTreeSnapshot, combineIssueAgentTreeSnapshots } from "./issue-agent-feed.js";
 import { readIssueAgentMetadata, MAX_FRAME_METADATA_BYTES } from "./issue-agent-feed-metadata.js";
@@ -17,11 +17,6 @@ import type { RunRecord } from "./model.js";
 export interface NativeIssueRef { readonly repo: string; readonly number: number }
 /** Until Orchid exposes a covered active set (orchid#135), native coverage names this reason. */
 export const UNCOVERED_ISSUE_REASON = "binding_unavailable" satisfies IssuePartialForestReason;
-const publicRepo = (repo: string): IssueAgentTree["repo"] | null => {
-  const [owner, name, extra] = repo.split("/");
-  return extra === undefined && owner !== undefined && name !== undefined && owner.length <= 39 && name.length <= 100 &&
-    /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(owner) && /^(?!\.{1,2}$)[A-Za-z0-9._-]+$/.test(name) ? { owner, name } : null;
-};
 /** Native mode reads admission files alone; retained dispatch history cannot select live roots. */
 export async function projectNativeIssueAgentFacets(input: {
   readonly dispatches: readonly DispatchEvidence[];
@@ -79,9 +74,13 @@ export async function projectNativeIssueAgentFacets(input: {
       : uncoveredReason ?? (admissions.degraded ? "source_unavailable" : null) });
   const issues = new Map(tree.issues.map(issue => [issue.repo.owner.toLowerCase() + "/" + issue.repo.name.toLowerCase() + "#" + issue.issueNumber, issue]));
   for (const ref of input.unattachedIssues ?? []) {
-    const key = ref.repo.toLowerCase() + "#" + ref.number, repo = publicRepo(ref.repo);
-    if (repo === null || issues.has(key) || (input.issueKey !== undefined && key !== input.issueKey)) continue;
-    issues.set(key, { repo, issueNumber: ref.number, complete: false, reason: uncoveredReason ?? UNCOVERED_ISSUE_REASON, dispatches: [] });
+    const key = ref.repo.toLowerCase() + "#" + ref.number;
+    if (issues.has(key) || (input.issueKey !== undefined && key !== input.issueKey)) continue;
+    const [owner = "", name = ""] = ref.repo.split("/");
+    const row: IssueAgentTree = { repo: { owner, name }, issueNumber: ref.number, complete: false,
+      reason: uncoveredReason ?? UNCOVERED_ISSUE_REASON, dispatches: [] };
+    // The contract decoder owns public repository identity; a row it refuses stays out of the frame.
+    if (readIssueAgentTreeSnapshot({ ...tree, complete: false, reason: row.reason, issues: [row] }).ok) issues.set(key, row);
   }
   for (const launch of admissions.launchStates) {
     if (!["refused", "blocked"].includes(launch.state) || launch.observedAt > input.now) continue;

@@ -32,3 +32,16 @@ assumes a 0.36 reader rejects an opted `scan_limit` forest; 0.37+ accepts it by 
 
 Doctrine rule 4: the touched contract decoder (810 lines), its test (558) and the guide (503)
 were split; no public export changed (`index.ts` re-exports the same module).
+
+## Slice c: review follow-ups
+
+See `review.md`: identity-mismatch regression (mutation-checked), contract-owned repo validation
+for unattached rows, hidden-run test comment, final newline. Restart suite 25/25.
+
+## Gates
+
+The host has npm 12.1.0, whose `npm pack --json` is an object keyed by package name rather than an
+array; with it `check:publish` is inconclusive (exit 2) and routing's pack test fails, independent
+of this change. `/ephemeral` (the session TMPDIR) is mounted noexec, so routing's fake-CLI tests fail
+there. Gates were therefore run with npm 11.21.1 first on PATH and an exec-capable TMPDIR; the
+results are in the PR body.
