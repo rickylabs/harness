@@ -42,6 +42,11 @@ for unattached rows, hidden-run test comment, final newline. Restart suite 25/25
 
 The host has npm 12.1.0, whose `npm pack --json` is an object keyed by package name rather than an
 array; with it `check:publish` is inconclusive (exit 2) and routing's pack test fails, independent
-of this change. `/ephemeral` (the session TMPDIR) is mounted noexec, so routing's fake-CLI tests fail
+of this change. The session TMPDIR is mounted noexec, so routing's fake-CLI tests fail
 there. Gates were therefore run with npm 11.21.1 first on PATH and an exec-capable TMPDIR; the
 results are in the PR body.
+
+Final head gates: frozen install 0; typecheck 0 (5 stages); build 0 (15 stages, contracts 0.42.0
+publish check ok); test 0 (8 stages; contracts 421, telemetry 813, routing 635, all 0 fail);
+`check:leaks` 0 after removing a host path from this worklog. Item 1 re-proved on the final head:
+0 of 30 serial runs failed.
