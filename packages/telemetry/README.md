@@ -413,3 +413,5 @@ deep-comparing the runs, which is the property the whole no-cursor design rests 
   [`@rickylabs/governance`](../governance/README.md); this package wires them (`src/governance-wiring.ts`).
 - [Native reads](docs/native-reads.md): the selected repository run observation, Codex thread reads,
   account quota and session token usage, provider meters, and producer naming.
+- [Native issue-agent reads](docs/native-issue-agents.md): the Herdr/Orchid/receipt join behind
+  `issue-agents`, its coverage reasons, and the deployment order.

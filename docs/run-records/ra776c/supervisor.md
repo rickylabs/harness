@@ -8,10 +8,12 @@ Worker: one Claude Opus 5.5 session (operator-assigned, feature tier). Orchid is
 (Orchid #134 is merged and live); no Orchid file changes.
 
 Write surface:
-- `packages/contracts/src/issue-agent-tree.ts`, its test, `package.json` (0.42.0) and
-  `docs/agent-trees-and-stop-state.md`;
+- `packages/contracts/src/issue-agent-tree*.ts` (the touched 810-line decoder and 558-line test
+  are split under doctrine rule 4 into `-shapes`, `-rows`, `-fixture.test` and `-partial.test`),
+  `package.json` (0.42.0) and `docs/agent-trees-and-stop-state.md`;
 - `packages/telemetry/src/issue-agent-feed.ts`, `native-issue-agents.ts`,
-  `native-issue-agents-projection.ts`, `issue-agents-restart.test.ts`, `docs/native-reads.md`;
+  `native-issue-agents-projection.ts`, `issue-agents-restart.test.ts`, `README.md`,
+  `docs/native-reads.md` and the new `docs/native-issue-agents.md` (split from it, rule 4);
 - this run directory.
 
 Routing: no matrix CLI is installed in this environment, so the matrix route could not be queried

@@ -4,9 +4,9 @@ import { node, verifiedClaudeSidechain } from "./issue-agent-tree-node.js";
 import { digest, opaque, publicLabel, time, event, orderedEvents } from "./issue-agent-tree-values.js";
 import type { NativeRootObservation } from "./agent-observations.js";
 import { readAgentObservations, readIssueAgentTreeSnapshot, MAX_AGENT_OBSERVATIONS,
-  MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, projectRouteIdentity, publicOpenCodeModel,
-  type AgentObservation, type AgentObservations, type IssueLaunchBlock, type IssueAgentTree,
-  type IssueAgentTreeAgent, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
+  MAX_ISSUE_AGENT_TREE_BYTES, ISSUE_AGENT_TREE_FRESH_MS, ISSUE_PARTIAL_FOREST_REASONS, projectRouteIdentity, publicOpenCodeModel,
+  type AgentObservation, type AgentObservations, type IssueLaunchBlock, type IssueLaunchRefusal, type IssueAgentTree,
+  type IssueAgentTreeAgent, type IssueAgentTreeSnapshot, type IssuePartialForestReason } from "@rickylabs/harness-contracts";
 import type { NativeRootResolver } from "./host-reads.js";
 import type { HostCapacityReading } from "./host-capacity.js";
 import type { DispatchEvidence } from "@rickylabs/harness-contracts";
@@ -37,6 +37,11 @@ export function buildIssueAgentTreeSnapshot(input: {
    * `scan_limit` and keep the agents read, never a complete claim. Contract 0.37 and later.
    */
   readonly bounded?: boolean;
+  /**
+   * The source cannot enumerate every active run on an issue, so the verified roots are not the
+   * whole issue: rows say `binding_unavailable` and keep the agents read. Contract 0.42 and later.
+   */
+  readonly uncovered?: boolean;
   readonly nativeRoots?: ReadonlyMap<string, NativeRootObservation>;
   /** The dispatch host's private native-root join; without one, only an explicit dispatch reference binds. */
   readonly host?: NativeRootResolver;
@@ -90,9 +95,10 @@ export function buildIssueAgentTreeSnapshot(input: {
       input.actions ?? [], input.actionsComplete ?? false, verifiedClaudeChild, childCompletion, wireFamily,
       observation.parentAgentId.state === "known-parent" ? undefined : input.nativeRoots?.get(dispatch.runId)));
   }
-  const bounded = input.bounded === true;
+  const partialReason: IssuePartialForestReason | null = input.bounded === true ? "scan_limit"
+    : input.uncovered === true ? "binding_unavailable" : null;
   const rows: IssueAgentTree[] = [...issues.values()].map(issue => ({ repo: issue.repo, issueNumber: issue.issueNumber,
-    complete: !bounded, reason: bounded ? "scan_limit" as const : null,
+    complete: partialReason === null, reason: partialReason,
     dispatches: [...issue.dispatches].map(([dispatchId, agents]) => {
       const root = agents.find(agent => agent.observation.parentAgentId.state === "confirmed-root");
       const childEvents = root === undefined ? [] : agents.filter(agent => agent.observation.parentAgentId.value === root.observation.agentId &&
@@ -108,7 +114,7 @@ export function buildIssueAgentTreeSnapshot(input: {
   const snapshot: IssueAgentTreeSnapshot = { schema: 1, protocol: 1, observedAt: observations.observedAt,
     validUntil: new Date(Date.parse(observations.observedAt) + ISSUE_AGENT_TREE_FRESH_MS).toISOString(),
     revision: digest(JSON.stringify({ observation: observations.revision, issues: rows })),
-    complete: observations.complete && !bounded, reason: observations.reason ?? (bounded ? "scan_limit" : null), issues: rows };
+    complete: observations.complete && partialReason === null, reason: observations.reason ?? partialReason, issues: rows };
   const decoded = readIssueAgentTreeSnapshot(snapshot);
   return decoded.ok ? decoded.snapshot : empty(decoded.reason === "oversized" ? "scan_limit" : "ancestry_unavailable");
 }
@@ -117,7 +123,9 @@ export function buildIssueAgentTreeSnapshot(input: {
 export function combineIssueAgentTreeSnapshots(input: {
   readonly observedAt: string;
   readonly entries: readonly { readonly repo: IssueAgentTree["repo"]; readonly issueNumber: number;
-    readonly snapshot: IssueAgentTreeSnapshot; readonly launchBlock?: IssueLaunchBlock }[];
+    readonly snapshot: IssueAgentTreeSnapshot; readonly launchBlock?: IssueLaunchBlock;
+    /** A verified refusal survives an issue whose agent coverage is incomplete, exactly like a block. */
+    readonly launchRefusal?: IssueLaunchRefusal }[];
   readonly globalReason?: IssueAgentTreeSnapshot["reason"];
 }): IssueAgentTreeSnapshot {
   const issues: IssueAgentTree[] = [];
@@ -138,14 +146,15 @@ export function combineIssueAgentTreeSnapshots(input: {
       read.snapshot.issues.length === 1 && read.snapshot.issues[0]?.repo.owner === entry.repo.owner &&
       read.snapshot.issues[0]?.repo.name === entry.repo.name && read.snapshot.issues[0]?.issueNumber === entry.issueNumber
       ? read.snapshot.issues[0]! : null;
-    // A bounded tree keeps the agents it read; any other incomplete snapshot keeps none.
-    const issue = row !== null && read.ok && (read.snapshot.complete ||
-      (!row.complete && row.reason === "scan_limit" && read.snapshot.reason === "scan_limit" && row.dispatches.length > 0))
+    // A bounded or uncovered tree keeps the agents it read; any other incomplete snapshot keeps none.
+    const issue = row !== null && read.ok && (read.snapshot.complete || (!row.complete && row.dispatches.length > 0 &&
+      ISSUE_PARTIAL_FOREST_REASONS.some(reason => reason === row.reason && reason === read.snapshot.reason)))
       ? row : null;
     const ids = issue?.dispatches.flatMap(dispatch => dispatch.agents.map(agent => agent.observation.agentId)) ?? [];
     const unavailable: IssueAgentTree = { repo: entry.repo, issueNumber: entry.issueNumber, complete: false,
       reason: read.ok && !read.snapshot.complete ? read.snapshot.reason : "binding_unavailable", dispatches: [],
-      ...(entry.launchBlock === undefined ? {} : { launchBlock: entry.launchBlock }) };
+      ...(entry.launchBlock === undefined ? {} : { launchBlock: entry.launchBlock }),
+      ...(entry.launchRefusal === undefined ? {} : { launchRefusal: entry.launchRefusal }) };
     const tree = issue !== null && ids.every(id => !agentIds.has(id)) ? issue : unavailable;
     // The receipt proves the block independently of native coverage. Count it in the byte cap.
     const candidate = entry.launchBlock === undefined ? tree : { ...tree, launchBlock: entry.launchBlock };

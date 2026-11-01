@@ -96,6 +96,20 @@ GPU never becomes a zero reading. Version 0.7.0 adds optional per-card VRAM read
 sum must equal the aggregate. The decoder accepts 0.5.x observations without the fourth row
 and normalizes it to unavailable. Version 0.6.0 was published from its tagged merge.
 
+## Uncovered issue trees in 0.42.0
+
+An issue row may now be `complete: false` with reason `binding_unavailable` and still carry
+dispatches: the closed, verified forest a producer read when its source cannot enumerate every
+active run on the issue (for example, a second run with no native workspace label). Those agents
+are validated exactly like a complete row's, and neither the row nor the snapshot is complete
+around them. `ISSUE_PARTIAL_FOREST_REASONS` lists the reasons that may carry a forest
+(`scan_limit`, `binding_unavailable`); every other incomplete reason still carries none, and an
+incomplete row with no dispatches decodes as before. Schema and protocol remain 1.
+
+A 0.41 or older reader rejects a whole snapshot that holds an uncovered row with dispatches.
+Telemetry emits one only under `issue-agents --partial-trees`; without it an uncovered issue is
+`binding_unavailable` with no agents, which every earlier reader accepts.
+
 ## Bounded issue trees in 0.37.0
 
 An issue row may now be `complete: false` with reason `scan_limit` and still carry dispatches: the

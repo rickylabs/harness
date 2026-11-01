@@ -28,6 +28,7 @@ async function fixture(run: (f: {
   failedNative(): ReturnType<typeof collectIssueAgentTree>;
   failedHerdr(): Promise<{ snapshot: IssueAgentTreeSnapshot; exit: number | null }>;
   hiddenRun(): Promise<void>;
+  sharedReceipt(): void;
   collect(issueKey?: string, partialTrees?: boolean): ReturnType<typeof collectIssueAgentTree>;
   status(state: string): void;
   mismatch(): void;
@@ -45,7 +46,7 @@ async function fixture(run: (f: {
   const id = source === "opencode" ? "ses_" + randomUUID() : randomUUID(); let seatId = id, status = "working", duplicated = false; let key = "", workspace = "original-workspace", pane = "original-pane", phase = "active";
   let disappeared = false;
   let clutter: { workspace_id: string; label: string }[] = [];
-  let hiddenKey = "", hiddenId = "";
+  let hiddenKey = "", hiddenId = "", shared = false;
   const requests: string[][] = [];
   const server = createServer(conn => {
     conn.setEncoding("utf8"); let bytes = "";
@@ -135,6 +136,8 @@ async function fixture(run: (f: {
     };
     await run({ receipt, staleStop, facets, legacy, failedNative, failedHerdr, requests, nativeId: id,
       async hiddenRun() { hiddenId = randomUUID(); hiddenKey = await receipt(777, hiddenId); },
+      // A second labelled Orchid run that claims the same receipt as 701.
+      sharedReceipt() { hiddenId = randomUUID(); hiddenKey = key; shared = true; },
       restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
       complete() { phase = "completed"; }, status(value) { status = value; },
       mismatch() { seatId = randomUUID(); }, duplicate() { duplicated = true; }, disappear() { disappeared = true; },
@@ -145,7 +148,8 @@ async function fixture(run: (f: {
           agent_session: { source: source === "agy" ? "herdr:antigravity_cli" : `herdr:${source}`, agent: source, kind: "id", value: seatId } };
         const options = { home, limit: 20, now, partialTrees, ...(issueKey ? { issueKey } : {}),
           env: { [OPERATOR_ENV.dispatchRoot]: receipts, [OPERATOR_ENV.placementHost]: "fixture-node", HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: socket },
-          nativeSnapshot: { workspaces: disappeared ? [] : [...clutter, { workspace_id: workspace, label: `${recordedAgent}-701` }],
+          nativeSnapshot: { workspaces: disappeared ? [] : [...clutter, { workspace_id: workspace, label: `${recordedAgent}-701` },
+            ...(shared ? [{ workspace_id: "shared-workspace", label: `${recordedAgent}-702` }] : [])],
             agents: disappeared ? [] : duplicated ? [agent, { ...agent, pane_id: "duplicate-pane", terminal_id: "duplicate-terminal" }] : [agent] } };
         return collectIssueAgentTree(options);
       } });
@@ -192,17 +196,25 @@ it("native idle, done and blocked are stopped turns, never final assignment outc
   f.status("unknown");
   assert.equal((await f.collect()).issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "unknown");
 }));
+/** Orchid's active run that this read cannot attach leaves its issue uncovered, never absent or complete. */
+function assertUnattached(result: IssueAgentTreeSnapshot) {
+  assert.equal(result.complete, false);
+  assert.equal(result.reason, "binding_unavailable");
+  assert.deepEqual(result.issues.map(issue => [issue.issueNumber, issue.complete, issue.reason, issue.dispatches.length]),
+    [[776, false, "binding_unavailable", 0]]);
+}
 it("a restored label cannot bind a different native session", () => fixture(async f => {
   f.restore(); f.mismatch();
-  const result = await f.collect();
-  assert.equal(result.complete, false);
-  assert.deepEqual(result.issues, []);
+  assertUnattached(await f.collect());
 }));
 it("duplicate native seats stay unresolved instead of selecting one", () => fixture(async f => {
   f.duplicate();
-  const result = await f.collect();
-  assert.equal(result.complete, false);
-  assert.deepEqual(result.issues, []);
+  assertUnattached(await f.collect());
+}));
+it("two Orchid runs claiming one receipt leave their issue uncovered instead of dropping it", () => fixture(async f => {
+  f.sharedReceipt();
+  assertUnattached(await f.collect());
+  assert.deepEqual(f.requests, [["701", "702"]]);
 }));
 it("native source scoping selects the canonical issue without consulting other receipts", () => fixture(async f => {
   assert.equal((await f.collect("example/project#776")).issues[0]?.issueNumber, 776);
@@ -218,15 +230,22 @@ it("an empty Herdr census cannot certify zero active Orchid runs", () => fixture
   assert.deepEqual(result.issues, []);
   assert((await compatibilityRead(result)).ok);
 }));
-it("a partial Herdr census preserves positive roots without certifying the active Orchid set", () => fixture(async f => {
-  await f.hiddenRun(); // The active 702 record has no workspace; only 701 can be selected.
+it("a partial Herdr census keeps positive roots but never certifies an issue with a hidden active run", () => fixture(async f => {
+  await f.hiddenRun(); // The active 702 record on #776 has no workspace; only 701 can be selected.
   const result = await f.collect(undefined, false);
   assert.deepEqual(f.requests, [["701"]]);
   assert.equal(result.complete, false);
   assert.equal(result.reason, "binding_unavailable");
-  assert.equal(result.issues[0]?.complete, true, "selected positive rows remain complete and readable");
-  assert.equal(result.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  assert.equal(result.issues[0]?.complete, false, "two runs are active on #776; one running row is not the whole issue");
+  assert.equal(result.issues[0]?.reason, "binding_unavailable");
+  assert.deepEqual(result.issues[0]?.dispatches, [], "default readers get no partial forest");
   assert((await compatibilityRead(result)).ok);
+  const opted = await f.collect(undefined, true);
+  assert.equal(opted.issues[0]?.complete, false);
+  assert.equal(opted.issues[0]?.reason, "binding_unavailable");
+  assert.equal(opted.issues[0]?.dispatches[0]?.agents.find(a => a.parentAgentId === null)?.liveness.state, "running",
+    "opted-in readers keep the verified root, never as a complete count");
+  assert(readIssueAgentTreeSnapshot(opted).ok);
 }));
 
 for (const source of ["codex", "claude", "agy", "opencode"] as const) {
@@ -261,13 +280,17 @@ it("a paired historical stop cannot end a resumed native working assignment", ()
   assert.equal(root?.terminalOutcome.value, null);
 }));
 
-it("an unbounded native snapshot preserves complete selected rows without certifying global coverage", () => fixture(async f => {
+it("an unbounded native snapshot certifies neither global nor per-issue coverage until Orchid covers the active set", () => fixture(async f => {
   const snapshot = await f.collect(undefined, false);
   assert.equal(snapshot.complete, false);
   assert.equal(snapshot.reason, "binding_unavailable");
-  assert.equal(snapshot.issues[0]?.complete, true);
-  assert.equal(snapshot.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  assert.equal(snapshot.issues[0]?.complete, false);
+  assert.equal(snapshot.issues[0]?.reason, "binding_unavailable");
+  assert.deepEqual(snapshot.issues[0]?.dispatches, []);
   assert((await compatibilityRead(snapshot)).ok);
+  const opted = await f.collect(undefined, true);
+  assert.equal(opted.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
+  if (process.env.HARNESS_ISSUE_TREE_READER_CONTROL !== undefined) assert.equal((await compatibilityRead(opted)).ok, false);
 }));
 it("real native overflow is scan_limit and default readers get no bounded forest", () => fixture(async f => {
   f.clutter();
@@ -284,9 +307,11 @@ it("real native overflow is scan_limit and default readers get no bounded forest
 }));
 it("native execution retains admission, actions, capacity, token costs and native children", () => fixture(async f => {
   await f.facets(); f.restore();
-  const snapshot = await f.collect(undefined, false);
+  assert((await compatibilityRead(await f.collect(undefined, false))).ok);
+  const snapshot = await f.collect(undefined, true);
   assert.equal(snapshot.complete, false);
   assert.equal(snapshot.reason, "binding_unavailable");
+  assert.equal(snapshot.issues[0]?.complete, false);
   assert.equal(snapshot.issues[0]?.launchRefusal?.reason, "routing-invalid");
   const agents = snapshot.issues[0]?.dispatches[0]?.agents ?? [];
   assert.equal(agents.length, 2);
@@ -301,7 +326,7 @@ it("native execution retains admission, actions, capacity, token costs and nativ
   assert(root.timeline?.events.some(event => event.kind === "action-accepted" && event.action === "stop"));
   assert.equal(child.parentAgentId, root.observation.agentId);
   assert.equal(child.observation.cost.runTokens.availability, "available");
-  assert((await compatibilityRead(snapshot)).ok);
+  assert(readIssueAgentTreeSnapshot(snapshot).ok);
 }));
 
 it("an absent optional socket preserves previous feed data; a configured failed socket stays unavailable", () => fixture(async f => {
@@ -326,13 +351,13 @@ it("native launch blocks coexist with an already running assignment", () => fixt
 for (const [source, recordedAgent] of [["codex", "codex-run"], ["opencode", "opencode-run"]] as const) {
   it(`${recordedAgent}: preserves the exact recorded label while matching the canonical native integration`, () => fixture(async f => {
     f.restore();
-    const before = await f.collect(undefined, false);
+    const before = await f.collect(undefined, true);
     const root = before.issues[0]?.dispatches[0]?.agents[0];
     assert.equal(root?.harness.value, source);
     assert.equal(root?.liveness.state, "running");
     assert.deepEqual(f.requests, [["701"]]);
     f.complete();
-    const ended = (await f.collect(undefined, false)).issues[0]?.dispatches[0]?.agents[0];
+    const ended = (await f.collect(undefined, true)).issues[0]?.dispatches[0]?.agents[0];
     assert.equal(ended?.liveness.state, "ended");
     assert.equal(ended?.observation.assignment.id, root?.observation.assignment.id);
     assert.ok(!JSON.stringify(before).includes(f.nativeId));

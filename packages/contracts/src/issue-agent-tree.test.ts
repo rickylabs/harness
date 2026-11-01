@@ -1,33 +1,9 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
 import { projectRouteIdentity } from "./route.js";
-import { ISSUE_AGENT_TREE_FRESH_MS, readIssueAgentTreeSnapshot, type IssueAgentTreeSnapshot } from "./issue-agent-tree.js";
-import { unavailableAgentCost, type AgentObservation } from "./agent-observations.js";
-
-const at = "2026-01-01T00:00:00.000Z", rev = "a".repeat(64), dispatchId = "assignment_" + "b".repeat(64);
-const absent = () => ({ value: null, reason: "source_not_bound", observedAt: null, validUntil: null, revision: null } as const);
-const observation: AgentObservation = { agentId: "agent_" + "c".repeat(64), repo: { owner: "example", name: "project" }, issueNumber: 42,
-  assignment: { id: dispatchId, dispatcher: "divybot", basis: "dispatcher-confirmed" },
-  parentAgentId: { state: "confirmed-root", value: null, reason: null }, workspace: absent(), pane: absent(), tab: absent(), terminal: absent(),
-  running: absent(), route: projectRouteIdentity(null), cost: unavailableAgentCost(), observedAt: at, revision: rev };
-const unknown = { value: null, source: "unavailable", reason: "source_not_bound" } as const;
-const unplaced = { value: null, basis: "unavailable", observedAt: null, reason: "source_not_bound" } as const;
-const node = { dispatchId, observation, harness: { value: "codex", source: "dispatch", reason: null }, provider: unknown,
-  router: unknown, routePolicy: { value: null, digest: null, source: "unavailable", reason: "source_not_bound" },
-  model: unknown, location: { host: unplaced, container: unplaced, seat: unplaced },
-  nativeDepth: unknown,
-  budget: { tokenLimit: null, source: "unavailable", reason: "source_not_bound" }, quotaRegime: { value: "subscription", reason: null },
-  liveness: { state: "unknown", evidence: null, observedAt: null, reason: "measurement_missing" },
-  actionState: { state: "unknown", observedAt: null, reason: "source_not_bound" }, endedBy: null,
-  terminalOutcome: { value: null, source: "unavailable", observedAt: null, reason: "measurement_missing" },
-  startedAt: null, startedAtReason: "run_not_found", endedAt: null, endedAtReason: "measurement_missing",
-  transcript: { value: null, reason: "source_not_bound" },
-  history: [{ dispatchId, kind: "dispatch-observed", at }], historyTruncated: false } as const;
-const snapshot = (): IssueAgentTreeSnapshot => ({ schema: 1, protocol: 1, observedAt: at,
-  validUntil: "2026-01-01T00:00:15.000Z", revision: rev, complete: true, reason: null,
-  issues: [{ repo: observation.repo, issueNumber: 42, complete: true, reason: null,
-    dispatches: [{ dispatchId, agents: [node] }] }] });
-const read = (value: unknown) => readIssueAgentTreeSnapshot(value);
+import { ISSUE_AGENT_TREE_FRESH_MS } from "./issue-agent-tree.js";
+import { unavailableAgentCost } from "./agent-observations.js";
+import { at, rev, dispatchId, absent, observation, unknown, node, snapshot, read } from "./issue-agent-tree-fixture.test.js";
 
 it("decodes screened AGY native message activity and rejects private text", () => {
   const s = snapshot();
@@ -392,58 +368,6 @@ it("reads a 0.5.0 frame without routePolicy as typed unavailable", () => {
   assert.equal(result.ok, true);
   if (result.ok) assert.deepEqual(result.snapshot.issues[0]?.dispatches[0]?.agents[0]?.routePolicy,
     { value: null, digest: null, source: "unavailable", reason: "source_not_bound" });
-});
-it("retains a complete issue beside a typed incomplete issue", () => {
-  const s = snapshot();
-  const partial = { ...s, complete: false, reason: "ancestry_unavailable" as const,
-    issues: [...s.issues, { repo: { owner: "example", name: "project" }, issueNumber: 43,
-      complete: false, reason: "ancestry_unavailable" as const, dispatches: [] }] };
-  const result = read(partial);
-  assert.equal(result.ok, true);
-  if (result.ok) {
-    assert.equal(result.snapshot.issues.length, 2);
-    assert.equal(result.snapshot.issues[0]?.complete, true);
-    assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents.length, 1);
-    assert.deepEqual(result.snapshot.issues[1], partial.issues[1]);
-  }
-  assert.equal(read({ ...partial, complete: true, reason: null }).ok, false);
-  assert.equal(read({ ...partial, issues: [s.issues[0], { ...partial.issues[1], dispatches: s.issues[0]?.dispatches }] }).ok, false);
-});
-it("decodes a bounded issue that keeps the closed tree it read (0.37)", () => {
-  const s = snapshot();
-  const bounded = { ...s, complete: false, reason: "scan_limit" as const,
-    issues: [{ ...s.issues[0]!, complete: false, reason: "scan_limit" as const }] };
-  const result = read(bounded);
-  assert.equal(result.ok, true);
-  if (result.ok) {
-    assert.equal(result.snapshot.issues[0]?.complete, false);
-    assert.equal(result.snapshot.issues[0]?.reason, "scan_limit");
-    assert.equal(result.snapshot.issues[0]?.dispatches[0]?.agents.length, 1);
-  }
-  // Never a complete claim around a bounded issue.
-  assert.equal(read({ ...bounded, complete: true, reason: null }).ok, false);
-  // Only a bound may carry agents: every failure reason still carries none.
-  for (const reason of ["source_not_bound", "source_unavailable", "binding_unavailable", "ancestry_unavailable"] as const) {
-    assert.equal(read({ ...bounded, reason, issues: [{ ...bounded.issues[0], reason }] }).ok, false, reason);
-  }
-});
-it("still decodes an incomplete issue row with no dispatches", () => {
-  const s = snapshot();
-  for (const reason of ["scan_limit", "source_unavailable", "binding_unavailable", "ancestry_unavailable"] as const) {
-    const old = { ...s, complete: false, reason, issues: [{ ...s.issues[0]!, complete: false, reason, dispatches: [] }] };
-    const result = read(old);
-    assert.equal(result.ok, true, reason);
-    if (result.ok) assert.deepEqual(result.snapshot.issues[0]?.dispatches, []);
-  }
-});
-it("validates a bounded issue's agents exactly like a complete issue's", () => {
-  const s = snapshot();
-  // Running liveness with no running observation: caught only by the tree-level checks.
-  const invalid = { ...node, liveness: { state: "running", evidence: "runtime-observation", observedAt: at, reason: null } };
-  const tree = (complete: boolean) => ({ ...s, complete, reason: complete ? null : "scan_limit",
-    issues: [{ ...s.issues[0]!, complete, reason: complete ? null : "scan_limit", dispatches: [{ dispatchId, agents: [invalid] }] }] });
-  assert.equal(read(tree(true)).ok, false, "control: the complete row refuses it");
-  assert.equal(read(tree(false)).ok, false, "the bounded row refuses it too");
 });
 it("normalizes 0.5.1 issue rows without per-issue status as complete", () => {
   const s = snapshot();

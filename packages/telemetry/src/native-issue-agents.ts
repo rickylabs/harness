@@ -6,7 +6,7 @@ import { orchidHost, NATIVE_RUN_BATCH_LIMIT, type NativeRunQuery, type NativeRun
 import { ISSUE_AGENT_TREE_FRESH_MS, MAX_AGENT_OBSERVATIONS, readIssueAgentTreeSnapshot,
   type AgentObservations, type DispatchEvidence, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { buildAgentObservations, type NativeRootObservation } from "./agent-observations.js";
-import { projectNativeIssueAgentFacets } from "./native-issue-agents-projection.js";
+import { projectNativeIssueAgentFacets, type NativeIssueRef } from "./native-issue-agents-projection.js";
 import type { RunRecord } from "./model.js";
 import { resolveNativeOperatorBindings, type OperatorEnvironment } from "./operator-environment.js";
 import { publicThreadId } from "./codex-thread-project.js";
@@ -129,6 +129,7 @@ export async function collectNativeIssueAgents(input: {
       keySourceAvailable = true;
     }
     const dispatches: DispatchEvidence[] = [], metadataDispatches: DispatchEvidence[] = [], roots = new Map<string, NativeRootObservation>();
+    const unattached: NativeIssueRef[] = [];
     // Each batch validates its private root once, rather than walking Git ancestors for each run.
     const receiptByKey = new Map<string, DispatchEvidence>();
     const keys = [...new Set(records.map(record => record.dispatchKey))];
@@ -149,12 +150,13 @@ export async function collectNativeIssueAgents(input: {
       const seat = candidate && !ambiguousKeys.has(record.key) && candidate.id === record.nativeSessionId && candidate.source === source &&
         seats.filter(other => other.pane === candidate.pane || other.terminal === candidate.terminal ||
           other.source === source && other.id === candidate.id).length === 1 ? candidate : undefined;
-      if (duplicatedReceipts.has(record.dispatchKey)) continue;
+      // A run Orchid reports but this read cannot attach still names its issue as uncovered, never absent.
+      if (duplicatedReceipts.has(record.dispatchKey)) { unattached.push(record.issue); continue; }
       // An occupied but conflicting seat is never attached.
-      if (!seat && record.phase === "active" && matchingSeats.length > 0) continue;
+      if (!seat && record.phase === "active" && matchingSeats.length > 0) { unattached.push(record.issue); continue; }
       const receipt = receiptByKey.get(record.dispatchKey);
-      if (!receipt || receipt.runId !== "orchid-" + record.dispatchKey ||
-          receipt.source !== source || !orchidHost.matchesNativeRootIdentity(receipt, record.nativeSessionId, source)) continue;
+      if (!receipt || receipt.runId !== "orchid-" + record.dispatchKey || receipt.source !== source ||
+          !orchidHost.matchesNativeRootIdentity(receipt, record.nativeSessionId, source)) { unattached.push(record.issue); continue; }
       // Native records own canonical issue identity. Native final phase carries no invented success or end time.
       const { claudeStatus: _status, stop: _stop, teardown: _teardown, ...provenance } = receipt;
       const dispatch: DispatchEvidence = { ...provenance, issue: record.issue,
@@ -183,7 +185,8 @@ export async function collectNativeIssueAgents(input: {
       lookups[lookups.indexOf(lookup)] = { ...lookup, outcome: "bound" };
     }
     // Keyed lookups certify positive records, not the absence of unlabelled active runs.
-    const projection = await projectNativeIssueAgentFacets({ ...input, dispatches, metadataDispatches, roots, complete: false, overflow });
+    const projection = await projectNativeIssueAgentFacets({ ...input, dispatches, metadataDispatches, roots,
+      complete: false, overflow, unattachedIssues: unattached });
     tree = projection.tree;
     const decoded = readIssueAgentTreeSnapshot(tree);
     if (!decoded.ok) throw Error();

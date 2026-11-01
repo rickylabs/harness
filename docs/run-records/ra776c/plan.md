@@ -23,8 +23,10 @@ Blocking items from the CHANGES review at `b82bbb835`:
    (telemetry projection) replace the `"scan_limit"`/`"binding_unavailable"` literals on this path.
 5. **Commit slices.** (a) test root by ancestry — gate: restart test x30 serial, 0 failures;
    (b) contract 0.42 + producer uncovered rows + docs — gates: contracts and restart tests, red on
-   the previous source, green after exact restore, then the five root gates; (c) review sign-off.
+   the previous source, green after exact restore, then the five root gates. The touched files
+   over 500 lines are split in the same slice (doctrine rule 4), public entry points unchanged;
+   (c) independent review and sign-off.
 6. **Deferred scope.** A covered active set needs Orchid #135; until then no native issue can be
    complete. Cockpit #951 opts into partial trees on its own schedule; no cockpit change here.
    Non-blocking review notes (Herdr package move, splitting `collectNativeIssueAgents`) stay open.
-7. **Contributor path.** `packages/telemetry/docs/native-reads.md`, section "Native issue-agent reads".
+7. **Contributor path.** `packages/telemetry/docs/native-issue-agents.md`.
