@@ -22,7 +22,8 @@ const snapshot = (complete: boolean): IssueAgentTreeSnapshot => ({ schema: 1, pr
 it("emits sequenced full snapshots, heartbeat, and degradation after success", async () => {
   const output = new Capture(); let calls = 0, waits = 0;
   let dirty = false;
-  const changes: IssueFeedChanges = { consume() { const value = dirty; dirty = false; return value; }, close() {} };
+  const changes: IssueFeedChanges = { consume() { const value = dirty; dirty = false; return value; },
+    wait: () => new Promise(() => {}), close() {} };
   const code = await issueAgentFeedCommand(["--watch", "--interval-ms", "100"], {
     output, now: () => at, generation: () => "generation-a", env: {}, changes,
     collect: async () => { calls++; if (calls === 3) throw Error("PRIVATE-PATH-CANARY"); return snapshot(true); },
@@ -39,7 +40,7 @@ it("emits sequenced full snapshots, heartbeat, and degradation after success", a
 it("heartbeats retain the last observation and a missed event recovers by the safety deadline", async () => {
   const output = new Capture(); let elapsed = 0, scans = 0;
   const times: number[] = [];
-  const changes: IssueFeedChanges = { consume: () => false, close() {} };
+  const changes: IssueFeedChanges = { consume: () => false, wait: () => new Promise(() => {}), close() {} };
   const code = await issueAgentFeedCommand(["--watch", "--interval-ms", "5000"], {
     output, changes, generation: () => "generation-safety", elapsed: () => elapsed,
     now: () => new Date(Date.parse(at) + elapsed).toISOString(),
@@ -59,9 +60,10 @@ it("heartbeats retain the last observation and a missed event recovers by the sa
     new Date(Date.parse(at) + 12_000).toISOString(), new Date(Date.parse(at) + 24_000).toISOString()]);
   assert.ok(frames.every(f => f.snapshot.complete));
 });
-it("a source change collects at the next heartbeat without waiting for the safety scan", async () => {
+it("a dirty hint is consumed once even when its event is missed", async () => {
   const output = new Capture(); let elapsed = 0, dirty = false, scans = 0;
-  const changes: IssueFeedChanges = { consume() { const changed = dirty; dirty = false; return changed; }, close() {} };
+  const changes: IssueFeedChanges = { consume() { const changed = dirty; dirty = false; return changed; },
+    wait: () => new Promise(() => {}), close() {} };
   const code = await issueAgentFeedCommand(["--watch"], {
     output, changes, elapsed: () => elapsed, now: () => new Date(Date.parse(at) + elapsed).toISOString(),
     collect: async options => { scans++; return { ...snapshot(true), observedAt: options.now,

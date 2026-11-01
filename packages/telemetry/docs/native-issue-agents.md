@@ -79,3 +79,34 @@ snapshots within freshness limits. Cockpit #951 uses its own typed subscribed na
 its existing worker/durable-stream/TTL-KV pipeline. Home reads prepared projections; it performs no
 external source calls. Neither native path derives root execution from terminal text, process
 ancestry or transcript history. No live deployment is performed by this change.
+
+## Watch wake and repair
+
+`issue-agents --watch` publishes an initial validated snapshot, then wakes immediately on Orchid's
+`run.subscribe` acknowledgment or `runs_changed` event. Loss of an acknowledged subscription also
+wakes a reread: a hint invalidates the cache but never establishes execution facts. The subscription
+is the only native change source; the CLI and cockpit add no filesystem watcher.
+
+`--interval-ms` remains the heartbeat interval (default 5000 ms, accepted range 100–10000 ms).
+A heartbeat repeats the cached snapshot without renewing `observedAt` or `validUntil`. Unchanged
+evidence causes no extra event publication or scan. A 12-second safety reread repairs missed events
+or an unavailable subscription; the next wait is clipped to that deadline. Collection and output
+backpressure can add time to publication, so these bounds do not promise deployed client latency.
+
+Reconnect uses one retry timer at 1000 ms and a 5000-ms unacknowledged-connection inactivity timeout.
+Failed attempts before acknowledgment do not invalidate again. A successful acknowledgment wakes
+one reread to recover any gap. SIGINT, SIGTERM and output closure abort the pending wait, remove its
+listeners and close the owned socket and retry timer. Each event/heartbeat also cancels the losing
+timer or event wait.
+
+Producer load is one bounded reread per coalesced hint batch, serialized with the output write
+callback. A single dirty bit coalesces bursts; hints arriving during collection or backpressure
+survive until the next read, including before a waiter registers. Orchid owns the event rate. A
+sustained stream of distinct batches can therefore cause back-to-back reads; there is no additional
+polling loop or event queue. Keep the default heartbeat; lowering it is unnecessary for event wake.
+
+Extend this behavior in `src/issue-agent-feed-changes.ts` (subscription and abortable notification)
+and `src/issue-agent-feed-cli.ts` (validated collection, backpressure, heartbeat and safety).
+`src/issue-agent-feed-wake.test.ts` controls monotonic deadlines while using real Unix subscription
+events; `src/issue-agent-feed-changes.test.ts` covers notification, reconnect, malformed frames and
+cleanup. Run the package build before invoking the compiled tests; repository gates remain required.

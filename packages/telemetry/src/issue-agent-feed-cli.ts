@@ -138,7 +138,14 @@ export async function issueAgentFeedCommand(args: readonly string[], deps: Issue
       } else await write(snapshot);
       if (!watch) return snapshot.complete ? 0 : 3;
       const untilSafety = Math.max(1, SAFETY_RESCAN_MS - (elapsed() - scannedAt));
-      try { await wait(Math.min(intervalMs, untilSafety), abort.signal); } catch { if (!stopped) throw Error(); }
+      const waiting = new AbortController();
+      const signal = AbortSignal.any([abort.signal, waiting.signal]);
+      try {
+        const timer = wait(Math.min(intervalMs, untilSafety), signal);
+        await (changes ? Promise.race([timer, changes.wait(signal)]) : timer);
+      } catch { if (!stopped) throw Error(); }
+      // Each heartbeat/event cancels its losing waiter; neither timers nor listeners accumulate.
+      finally { waiting.abort(); }
     } while (!stopped);
     return 0;
   } catch { process.stderr.write("issue-agents: output unavailable\n"); return 3; }
