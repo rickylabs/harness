@@ -251,9 +251,11 @@ it("reported native work wins capacity over unoccupied restored workspace labels
 
 it("a paired historical stop cannot end a resumed native working assignment", () => fixture(async f => {
   await f.facets(); f.restore();
+  // Agents are ordered by opaque id, so the native child can sort first: select the root by ancestry.
   const previous = await f.legacy();
-  assert.equal(previous.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "ended", "the previous producer validates the historical paired stop");
-  const root = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
+  assert.equal(previous.issues[0]?.dispatches[0]?.agents.find(a => a.parentAgentId === null)?.liveness.state, "ended",
+    "the previous producer validates the historical paired stop");
+  const root = (await f.collect()).issues[0]?.dispatches[0]?.agents.find(a => a.parentAgentId === null);
   assert.equal(root?.liveness.state, "running");
   assert.equal(root?.observation.running.value, true);
   assert.equal(root?.terminalOutcome.value, null);
