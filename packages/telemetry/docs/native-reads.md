@@ -183,10 +183,17 @@ for missing native child/usage signals. Admission-only receipt reads preserve re
 without reading historical dispatches; [Orchid #136](https://github.com/rickylabs/orchid/issues/136)
 tracks their missing native API. Existing sources remain until those upstream signals are available.
 [Orchid #135](https://github.com/rickylabs/orchid/issues/135) tracks identity-negative coverage and
-durable completion replay. Remembered coordinates are replay hints, never running evidence.
+durable completion replay. This CLI has no persisted replay-coordinate source: after a workspace
+label disappears it cannot discover that run or report its later completion. Cockpit #951 owns its
+separate checkpoint; that does not provide replay to this producer.
 
-A complete read has `complete:true, reason:null`; roots existing never makes it bounded. Real
-key/agent/metadata/transport overflow is `scan_limit`. With `--partial-trees`, a bounded issue keeps
+Global native coverage remains `complete:false, reason:binding_unavailable` until Orchid #135
+supplies a covered active set or replay. A successful keyless lookup proves source health alone;
+empty or partial Herdr labels cannot prove there are no other active runs. Verified selected issue
+rows can remain complete and retain their agents; their presence never makes the read bounded.
+A native one-shot `issue-agents --json` consequently exits 3 for incomplete global coverage even
+when its selected rows are healthy.
+Real key/agent/metadata/transport overflow is `scan_limit`. With `--partial-trees`, a bounded issue keeps
 its closed observed forest using the existing contract 0.37 shape. Without that flag, an incomplete
 bounded issue has no dispatch rows, so readers at 0.36 or older accept the snapshot. Independent
 good issues stay available when another issue cannot be resolved. Opaque public identities and
@@ -195,7 +202,8 @@ wire protocol are unchanged.
 Without the socket setting, `src/issue-agent-feed-legacy.ts` supplies the previous bounded producer,
 using the shared metadata reader and projector. It preserves admission, children, actions, cost,
 capacity and existing scope/partial-tree behavior. A configured native source that fails reports
-unavailable; it never silently switches execution authority. The fallback is a rollout constraint,
+unavailable and preserves independent admission refusals and blocks, including when the Herdr
+snapshot command fails; it never silently switches execution authority. The fallback is a rollout constraint,
 not evidence that native restart recovery is deployed. Its history bounds remain as documented below.
 
 Deploy in this order:

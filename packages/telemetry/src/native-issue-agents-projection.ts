@@ -79,6 +79,7 @@ export async function projectNativeIssueAgentFacets(input: {
   }
   tree = combineIssueAgentTreeSnapshots({ observedAt: input.now,
     entries: [...issues.values()].map(issue => ({ repo: issue.repo, issueNumber: issue.issueNumber,
+      ...(issue.launchBlock === undefined ? {} : { launchBlock: issue.launchBlock }),
       snapshot: { ...tree, issues: [issue], complete: issue.complete, reason: issue.reason } })),
     globalReason: tree.reason });
   return { tree, observations, runs: allRuns };

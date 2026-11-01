@@ -19,3 +19,13 @@ The independent plan evaluation returned PASS before source mutation.
 No live native failure silently changes execution authority. The absence of optional socket
 configuration selects the previous collector. Its tests call production code; the duplicate
 historical test collector is removed. No source cap is raised and no run is dispatched again.
+
+## Coverage re-review amendment
+
+The independent plan evaluator passed the coordinator-requested repair before mutation. This
+amends item 1: global native coverage is incomplete with `binding_unavailable` until Orchid #135
+supplies an active set or replay. Selected positive issue rows remain complete when their evidence
+is complete; bounds still use `scan_limit`. Remove the unwired replay inputs and their test-only
+claims. Test empty/partial censuses with active Orchid records hidden from Herdr, and exercise
+Herdr read failure through the real CLI while preserving independent admissions. No Orchid change
+is authorized during its coordinator re-review.

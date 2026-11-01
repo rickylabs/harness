@@ -53,31 +53,28 @@ export async function readHerdrNativeSnapshot(): Promise<unknown> {
 }
 /** Input is private structured Herdr data, never terminal content or a public request payload. */
 export async function collectNativeIssueAgents(input: {
-  readonly nativeSnapshot: unknown; readonly env: OperatorEnvironment; readonly now: string; readonly issueKey?: string;
+  readonly nativeSnapshot?: unknown; readonly env: OperatorEnvironment; readonly now: string; readonly issueKey?: string;
   readonly home?: string; readonly limit?: number; readonly partialTrees?: boolean;
-  /** Private attachment metadata may reuse the certified receipt; it supplies no execution facts. */
-  readonly knownRuns?: readonly NativeRunQuery[];
-  readonly onBinding?: (receipt: DispatchEvidence, binding: Readonly<Binding>) => Promise<void>;
 }): Promise<NativeIssueAgentRead> {
   let tree = unavailableNativeTree(input.now);
   const bindings: Binding[] = [], lookups: Lookup[] = [];
   const unseatedRuns: { agentId: string; dispatchId: string }[] = [];
   let runKeys: NativeRunQuery[] = [], keySourceAvailable = false;
   const completedRuns: { agentId: string; dispatchId: string }[] = [];
-  let complete = true;
   let selectedDispatches: DispatchEvidence[] = [], selectedObservations: AgentObservations | null = null;
   let selectedRuns: readonly RunRecord[] = [];
   const threadBindings: { agentId: string; threadId: string | null }[] = [];
   const finish = (): NativeIssueAgentRead => ({ issueAgentTree: tree,
-    runs: { generatedAt: input.now, complete: complete && keySourceAvailable, dispatches: selectedDispatches, runs: selectedRuns, agentObservations: selectedObservations },
+    // Orchid #135 must supply a covered active set before any native census can be complete.
+    runs: { generatedAt: input.now, complete: false, dispatches: selectedDispatches, runs: selectedRuns, agentObservations: selectedObservations },
     threadBindings: { observation: selectedObservations, bindings: threadBindings.slice(0, 128),
-      reason: complete && threadBindings.length <= 128 ? null : "source_incomplete" }, bindings, lookups,
-    coverage: { complete }, completedRuns, unseatedRuns, runKeys, keySourceAvailable, rootMetadata: { observedAt: tree.observedAt, validUntil: tree.validUntil, revision: tree.revision,
+      reason: "source_incomplete" }, bindings, lookups,
+    coverage: { complete: false }, completedRuns, unseatedRuns, runKeys, keySourceAvailable, rootMetadata: { observedAt: tree.observedAt, validUntil: tree.validUntil, revision: tree.revision,
       issues: tree.issues.map(({ repo, issueNumber, dispatches }) => ({ repo, issueNumber, dispatches })) } });
   try {
     const config = resolveNativeOperatorBindings(input.env), wireFamily = resolveWireFamily(input.env);
-    if (!config.dispatchRoot || !config.orchidRunSocket) { complete = false; return finish(); }
-    const raw = input.nativeSnapshot;
+    if (!config.dispatchRoot || !config.orchidRunSocket) return finish();
+    const raw = input.nativeSnapshot ?? await readHerdrNativeSnapshot();
     if (!object(raw) || !Array.isArray(raw.workspaces) || !Array.isArray(raw.agents)) throw Error();
     // This is a current native census bound, independent of retained receipts. Never select a history prefix.
     const censusOverflow = raw.agents.length > MAX_AGENT_OBSERVATIONS;
@@ -90,7 +87,7 @@ export async function collectNativeIssueAgents(input: {
     const seats: Seat[] = [];
     for (const row of raw.agents) {
       if (!object(row) || !handle(row.workspace_id) || !handle(row.pane_id) || !handle(row.terminal_id) ||
-          !["codex", "claude", "agy", "opencode"].includes(row.agent as string)) { complete = false; continue; }
+          !["codex", "claude", "agy", "opencode"].includes(row.agent as string)) continue;
       const session = row.agent_session;
       const nativeId = object(session) && session.agent === row.agent && session.kind === "id" &&
         typeof session.source === "string" && /^herdr:[a-z][a-z0-9_-]*$/.test(session.source) && id(session.value) ? session.value : null;
@@ -107,49 +104,36 @@ export async function collectNativeIssueAgents(input: {
       current.set(match[2]!, { key: match[2]!, label: workspaceLabel });
       if (ambiguous.has(workspace)) ambiguousKeys.add(match[2]!);
     }
-    const known = input.knownRuns ?? [];
-    if (!Array.isArray(known) || known.length > MAX_AGENT_OBSERVATIONS || new Set(known.map(q => q.key)).size !== known.length ||
-        known.some(q => !q || typeof q.label !== "string" || label.exec(q.label)?.[2] !== q.key ||
-          !Number.isSafeInteger(Number(q.key)))) throw Error();
-    // Coordinates remembered in KV are replay hints, never a running signal. Current labels win capacity.
     // Prioritize reported native work before idle workspace records; this is a source fact, never file age.
     const nativeWorking = (query: NativeRunQuery) => seats.some(seat =>
       workspaces.get(seat.workspace) === query.label && seat.state === "working" && seat.id !== null);
     const all = new Map([...current].sort((a, b) => Number(nativeWorking(b[1])) - Number(nativeWorking(a[1]))));
-    for (const query of known) if (!all.has(query.key)) all.set(query.key, query);
     const overflow = censusOverflow || all.size > MAX_AGENT_OBSERVATIONS;
     const selected = [...all.values()].slice(0, MAX_AGENT_OBSERVATIONS);
-    if (overflow || ambiguousKeys.size) complete = false;
     for (const seat of seats) {
       const workspaceLabel = workspaces.get(seat.workspace);
       lookups.push({ terminalId: seat.terminal, paneId: seat.pane,
         outcome: label.test(workspaceLabel ?? "") ? "unresolved" : !seat.id ? "not_looked_up"
           : workspaceLabel === undefined ? "unverified" : "none" });
     }
-    // Hints may be retained during source failure; they never assert a binding or execution state.
     runKeys = selected;
-    const records: NativeRunRecord[] = [], absent = new Set<string>();
+    const records: NativeRunRecord[] = [];
     if (selected.length === 0) {
       const health = await orchidHost.lookupNativeRuns(config.orchidRunSocket, []);
-      if (!health.complete) complete = false;
       keySourceAvailable = health.complete;
     }
     for (let at = 0; at < selected.length; at += NATIVE_RUN_BATCH_LIMIT) {
       const read = await orchidHost.lookupNativeRuns(config.orchidRunSocket, selected.slice(at, at + NATIVE_RUN_BATCH_LIMIT));
       if (!read.complete) throw Error();
-      if (read.missing.length) complete = false;
-      for (const row of read.missing) if (row.reason === "run_not_found") absent.add(row.key);
       records.push(...read.records);
       keySourceAvailable = true;
     }
-    runKeys = selected.filter(q => current.has(q.key) || !absent.has(q.key));
     const dispatches: DispatchEvidence[] = [], metadataDispatches: DispatchEvidence[] = [], roots = new Map<string, NativeRootObservation>();
     // Each batch validates its private root once, rather than walking Git ancestors for each run.
     const receiptByKey = new Map<string, DispatchEvidence>();
     const keys = [...new Set(records.map(record => record.dispatchKey))];
     for (let at = 0; at < keys.length; at += NATIVE_RUN_BATCH_LIMIT) {
       const read = await orchidHost.readDispatches(config.dispatchRoot, { keys: keys.slice(at, at + NATIVE_RUN_BATCH_LIMIT) });
-      if (read.degraded) complete = false;
       for (const receipt of read.dispatches) receiptByKey.set(receipt.runId.slice("orchid-".length), receipt);
     }
     const duplicatedReceipts = new Set(records.filter((row, i) => records.some((other, j) =>
@@ -165,14 +149,12 @@ export async function collectNativeIssueAgents(input: {
       const seat = candidate && !ambiguousKeys.has(record.key) && candidate.id === record.nativeSessionId && candidate.source === source &&
         seats.filter(other => other.pane === candidate.pane || other.terminal === candidate.terminal ||
           other.source === source && other.id === candidate.id).length === 1 ? candidate : undefined;
-      if (duplicatedReceipts.has(record.dispatchKey)) { complete = false; continue; }
-      // An occupied but conflicting seat is never attached. A prior coordinate may retain its run as Unknown.
-      if (!seat && record.phase === "active" && matchingSeats.length > 0 && !known.some(q => q.key === record.key)) {
-        complete = false; continue;
-      }
+      if (duplicatedReceipts.has(record.dispatchKey)) continue;
+      // An occupied but conflicting seat is never attached.
+      if (!seat && record.phase === "active" && matchingSeats.length > 0) continue;
       const receipt = receiptByKey.get(record.dispatchKey);
       if (!receipt || receipt.runId !== "orchid-" + record.dispatchKey ||
-          receipt.source !== source || !orchidHost.matchesNativeRootIdentity(receipt, record.nativeSessionId, source)) { complete = false; continue; }
+          receipt.source !== source || !orchidHost.matchesNativeRootIdentity(receipt, record.nativeSessionId, source)) continue;
       // Native records own canonical issue identity. Native final phase carries no invented success or end time.
       const { claudeStatus: _status, stop: _stop, teardown: _teardown, ...provenance } = receipt;
       const dispatch: DispatchEvidence = { ...provenance, issue: record.issue,
@@ -187,23 +169,21 @@ export async function collectNativeIssueAgents(input: {
       dispatches.push(dispatch); metadataDispatches.push(receipt);
       const observation = buildAgentObservations({ dispatches: [dispatch], runs: [], nativeRoots: roots,
         observedAt: input.now, sourceBound: true, dispatchComplete: true, nativeComplete: true, wireFamily }).agents[0];
-      if (!observation) { complete = false; continue; }
+      if (!observation) continue;
       const identity = { agentId: observation.agentId, dispatchId: observation.assignment.id };
       threadBindings.push({ agentId: observation.agentId, threadId: source === "codex" ? publicThreadId(record.nativeSessionId) : null });
       if (record.phase === "completed") completedRuns.push(identity);
       if (!seat) {
         unseatedRuns.push(identity);
-        if (record.phase === "active") complete = false;
         continue;
       }
       const binding = { ...identity, terminalId: seat.terminal, paneId: seat.pane };
       bindings.push(binding);
-      try { await input.onBinding?.(receipt, binding); } catch { /* Attachment metadata cannot erase native execution proof. */ }
       const lookup = lookups.find(row => row.terminalId === seat.terminal && row.paneId === seat.pane)!;
       lookups[lookups.indexOf(lookup)] = { ...lookup, outcome: "bound" };
     }
-    if (lookups.some(row => row.outcome !== "bound" && row.outcome !== "none")) complete = false;
-    const projection = await projectNativeIssueAgentFacets({ ...input, dispatches, metadataDispatches, roots, complete, overflow });
+    // Keyed lookups certify positive records, not the absence of unlabelled active runs.
+    const projection = await projectNativeIssueAgentFacets({ ...input, dispatches, metadataDispatches, roots, complete: false, overflow });
     tree = projection.tree;
     const decoded = readIssueAgentTreeSnapshot(tree);
     if (!decoded.ok) throw Error();
@@ -211,7 +191,7 @@ export async function collectNativeIssueAgents(input: {
     selectedDispatches = dispatches; selectedObservations = projection.observations; selectedRuns = projection.runs;
     return finish();
   } catch {
-    complete = false; tree = unavailableNativeTree(input.now);
+    tree = unavailableNativeTree(input.now);
     bindings.length = 0; completedRuns.length = 0; unseatedRuns.length = 0;
     keySourceAvailable = false; threadBindings.length = 0;
     selectedDispatches = []; selectedObservations = null; selectedRuns = [];

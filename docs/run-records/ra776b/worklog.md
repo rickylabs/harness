@@ -40,3 +40,15 @@ Extension reconciliation: HEAD 4745909489faf1535a76d4e8ce773a9ea7922ec5 verified
 then reviewed as a bounded diff against the signed prior head. Root gates all exit 0
 with telemetry at 810 pass and 0 fail; token red/green, selection revert and 0.36
 compatibility receipts match their logs. Result PASS.
+
+Coverage re-review: the coordinator found that positive keyed reads did not certify a covered
+active set, and the replay inputs had no production callers. The independent plan evaluation passed.
+Global coverage now remains incomplete pending Orchid #135, verified rows survive, and unwired
+inputs/fixture guarantees are removed. Four new controls compiled then failed at runtime before
+repair; all 23 focused native tests now pass. Herdr read failure also retains refusals and blocks
+through the real CLI. Prior completeness/replay assertions are superseded by `coverage-review.md`.
+
+Coverage repair gates: frozen install, typecheck (5 stages), build (15), test (8; telemetry 811/811)
+and leak scan all exit 0. Actual tagged 0.36 decoder passes 5 producer controls. Previous-collector
+revert compiles, fails both required regressions at runtime, restores exact bytes, compiles and
+passes both. Removed-input search returns zero matches. Independent committed-head review follows.

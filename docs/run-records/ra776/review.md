@@ -1,3 +1,6 @@
+> Coverage re-review supersedes the production replay and global completeness claims below.
+> See [the repair record](../ra776b/coverage-review.md). Earlier verdicts apply only to their exact historical sources.
+
 # Native revision review
 
 Earlier scan-based PASS and READY conclusions are superseded. The revised native plan passed independent review. Orchid PR #133 has a separate supervisor sign-off and full Go validation. Earlier "cockpit pending / NOT READY" statements below are historical phase notes; the final end-to-end sign-off at the end of this file supersedes them for the reviewed chain.
@@ -17,22 +20,21 @@ build and full test all exit 0; leak scan exit 0. Cockpit integration leaf
 remains pending. Complete end-to-end task is NOT certified until the cockpit
 and downstream proof land.
 
-## Certified-receipt port supervisor sign-off
+## Historical receipt attachment experiment (removed after re-review)
 
 Reviewed author head: 649c15dd72a58c31587788e817ab4fa05b3bfb02 against prior
 sign-off 7a17e944eead8a289773bc114416b7094515a374. Verdict: PASS for this
-source slice. Delta is only the optional `onBinding` port (certified receipt
-plus binding, invoked after proof, failures swallowed so metadata can never
-erase native execution), the seventh regression (unchanged receipt versus
-restored handle, running survives metadata failure with no leak, no callback
-on mismatched session), and worklog. Focused build and seven native tests
-exit 0. Broad root gates pending until verified; no failure assumed.
+source slice. It covered an optional attachment callback and fixture-only metadata checks.
+The later coverage re-review found no production caller. That callback and its test-only
+claims are removed; this historical PASS did not prove production integration.
 
-## Native replay extension supervisor sign-off
+## Historical native replay experiment
 
 Reviewed author head: add2eda4611bd3c38c6dcdcd3cf3ad3913afa07d, whose
 committed source matches the reviewed uncommitted delta. Verdict: PASS for the
-Harness native replay slice. Current labels plus bounded remembered
+fixture replay slice. The later re-review found that this producer had no persisted coordinate
+source; its replay inputs and disappearance guarantees are removed. The following describes the
+historical test experiment, not the current CLI: current labels plus bounded remembered
 coordinates with working-first priority and keyed batches only; final native
 record plus exact receipt retains the ended root without a seat while active
 absent-seat stays unknown; legacy stop/teardown/Claude-status facts stripped

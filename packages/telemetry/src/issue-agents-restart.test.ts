@@ -1,13 +1,14 @@
 /** Native-source regressions: no transcript, process ancestry or history scan can supply these facts. */
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { delimiter, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { it } from "node:test";
-import { MAX_AGENT_OBSERVATIONS, readIssueAgentTreeSnapshot, type DispatchEvidence } from "@rickylabs/harness-contracts";
+import { MAX_AGENT_OBSERVATIONS, readIssueAgentTreeSnapshot, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { collectIssueAgentTree } from "./issue-agent-feed-cli.js";
 import { OPERATOR_ENV } from "./operator-environment.js";
 
@@ -25,6 +26,8 @@ async function fixture(run: (f: {
   facets(state?: "refused" | "blocked"): Promise<void>;
   legacy(): ReturnType<typeof collectIssueAgentTree>;
   failedNative(): ReturnType<typeof collectIssueAgentTree>;
+  failedHerdr(): Promise<{ snapshot: IssueAgentTreeSnapshot; exit: number | null }>;
+  hiddenRun(): Promise<void>;
   collect(issueKey?: string, partialTrees?: boolean): ReturnType<typeof collectIssueAgentTree>;
   status(state: string): void;
   mismatch(): void;
@@ -34,7 +37,6 @@ async function fixture(run: (f: {
   staleStop(): Promise<void>;
   restore(): void;
   complete(): void;
-  metadata(read: (receipt: DispatchEvidence, binding: { readonly paneId: string }) => Promise<void>): void;
   readonly requests: string[][];
   readonly nativeId: string;
 }) => Promise<void>, source: "codex" | "claude" | "agy" | "opencode" = "codex", recordedAgent: string = source) {
@@ -43,9 +45,8 @@ async function fixture(run: (f: {
   const id = source === "opencode" ? "ses_" + randomUUID() : randomUUID(); let seatId = id, status = "working", duplicated = false; let key = "", workspace = "original-workspace", pane = "original-pane", phase = "active";
   let disappeared = false;
   let clutter: { workspace_id: string; label: string }[] = [];
-  const knownRuns: { key: string; label: string }[] = [];
+  let hiddenKey = "", hiddenId = "";
   const requests: string[][] = [];
-  let metadata: ((receipt: DispatchEvidence, binding: { readonly paneId: string }) => Promise<void>) | undefined;
   const server = createServer(conn => {
     conn.setEncoding("utf8"); let bytes = "";
     conn.on("data", chunk => {
@@ -53,13 +54,15 @@ async function fixture(run: (f: {
       if (!bytes.includes("\n")) return;
       const rpc = JSON.parse(bytes);
       requests.push(rpc.params.keys.map((q: { key: string }) => q.key));
+      // Orchid still owns these active records when Herdr has lost their workspaces.
+      const records = [{ key: "701", issue: { repo, number: 776 }, dispatchKey: key, nativeSessionId: id,
+        agent: recordedAgent, label: `${recordedAgent}-701`, phase, observedAt: now },
+        ...(hiddenKey ? [{ key: "702", issue: { repo, number: 776 }, dispatchKey: hiddenKey, nativeSessionId: hiddenId,
+          agent: recordedAgent, label: `${recordedAgent}-702`, phase: "active", observedAt: now }] : [])];
       conn.end(JSON.stringify({ id: rpc.id, result: { type: "run_lookup", schemaVersion: 1,
         generation: "fixture-generation", revision: 1, complete: true,
-        missing: rpc.params.keys.filter((q: { key: string }) => q.key !== "701").map((q: { key: string }) => ({ key: q.key, reason: "run_not_found" })),
-        records: rpc.params.keys.some((q: { key: string }) => q.key === "701") ? [{
-          key: "701", issue: { repo, number: 776 }, dispatchKey: key, nativeSessionId: id,
-          agent: recordedAgent, label: `${recordedAgent}-701`, phase, observedAt: now,
-        }] : [] } }) + "\n");
+        missing: rpc.params.keys.filter((q: { key: string }) => !records.some(r => r.key === q.key)).map((q: { key: string }) => ({ key: q.key, reason: "run_not_found" })),
+        records: records.filter(r => rpc.params.keys.some((q: { key: string }) => q.key === r.key)) } }) + "\n");
     });
   });
   try {
@@ -119,7 +122,20 @@ async function fixture(run: (f: {
     const failedNative = () => collectIssueAgentTree({ home, limit: 20, now,
       env: { [OPERATOR_ENV.dispatchRoot]: receipts, HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: join(home, "unavailable.sock") },
       nativeSnapshot: { workspaces: [], agents: [] } });
-    await run({ receipt, staleStop, facets, legacy, failedNative, requests, nativeId: id, metadata(read) { metadata = read; }, restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
+    const failedHerdr = async () => {
+      const bin = join(home, "bin");
+      await mkdir(bin, { mode: 0o700 });
+      await writeFile(join(bin, "herdr"), "#!/bin/sh\necho PRIVATE-HERDR-FAILURE >&2\nexit 1\n", { mode: 0o700 });
+      const result = spawnSync(process.execPath, [fileURLToPath(new URL("./cli.js", import.meta.url)),
+        "issue-agents", "--json", "--home", home], { encoding: "utf8", env: {
+        PATH: bin + delimiter + process.env.PATH, HOME: home, [OPERATOR_ENV.dispatchRoot]: receipts,
+        HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: socket } });
+      assert.ok(!result.stdout.includes("PRIVATE-HERDR-FAILURE"));
+      return { snapshot: JSON.parse(result.stdout) as IssueAgentTreeSnapshot, exit: result.status };
+    };
+    await run({ receipt, staleStop, facets, legacy, failedNative, failedHerdr, requests, nativeId: id,
+      async hiddenRun() { hiddenId = randomUUID(); hiddenKey = await receipt(777, hiddenId); },
+      restore() { workspace = "restored-workspace"; pane = "restored-pane"; },
       complete() { phase = "completed"; }, status(value) { status = value; },
       mismatch() { seatId = randomUUID(); }, duplicate() { duplicated = true; }, disappear() { disappeared = true; },
       clutter() { clutter = Array.from({ length: MAX_AGENT_OBSERVATIONS + 40 }, (_, n) => ({ workspace_id: `old-workspace-${n}`, label: `${source}-${1000 + n}` })); }, collect(issueKey, partialTrees = true) {
@@ -128,10 +144,6 @@ async function fixture(run: (f: {
           agent_status: status, revision: 3, state_change_seq: 4,
           agent_session: { source: source === "agy" ? "herdr:antigravity_cli" : `herdr:${source}`, agent: source, kind: "id", value: seatId } };
         const options = { home, limit: 20, now, partialTrees, ...(issueKey ? { issueKey } : {}),
-          knownRuns: [...knownRuns], onBinding: async (receipt: DispatchEvidence, binding: { readonly paneId: string }) => {
-            if (!knownRuns.length) knownRuns.push({ key: "701", label: `${recordedAgent}-701` });
-            await metadata?.(receipt, binding);
-          },
           env: { [OPERATOR_ENV.dispatchRoot]: receipts, [OPERATOR_ENV.placementHost]: "fixture-node", HARNESS_TELEMETRY_ORCHID_RUN_SOCKET: socket },
           nativeSnapshot: { workspaces: disappeared ? [] : [...clutter, { workspace_id: workspace, label: `${recordedAgent}-701` }],
             agents: disappeared ? [] : duplicated ? [agent, { ...agent, pane_id: "duplicate-pane", terminal_id: "duplicate-terminal" }] : [agent] } };
@@ -197,39 +209,24 @@ it("native source scoping selects the canonical issue without consulting other r
   assert.deepEqual((await f.collect("example/project#777")).issues, []);
 }));
 
-it("private attachment metadata sees only a certified receipt, and its failure cannot change execution", () => fixture(async f => {
-  const observed: string[] = [];
-  f.restore();
-  f.metadata(async (receipt, binding) => {
-    assert.equal(receipt.location?.paneId, "original-pane", "the receipt is unchanged, for independent scope validation");
-    assert.equal(binding.paneId, "restored-pane");
-    observed.push(receipt.runId);
-    throw Error("PRIVATE-ATTACHMENT-CANARY");
-  });
-  const result = await f.collect();
-  assert.equal(observed.length, 1);
+it("an empty Herdr census cannot certify zero active Orchid runs", () => fixture(async f => {
+  f.disappear(); // Orchid still has the active 701 record; its key is no longer discoverable here.
+  const result = await f.collect(undefined, false);
+  assert.deepEqual(f.requests, [[]], "a keyless health ping is not an active-run census");
+  assert.equal(result.complete, false);
+  assert.equal(result.reason, "binding_unavailable");
+  assert.deepEqual(result.issues, []);
+  assert((await compatibilityRead(result)).ok);
+}));
+it("a partial Herdr census preserves positive roots without certifying the active Orchid set", () => fixture(async f => {
+  await f.hiddenRun(); // The active 702 record has no workspace; only 701 can be selected.
+  const result = await f.collect(undefined, false);
+  assert.deepEqual(f.requests, [["701"]]);
+  assert.equal(result.complete, false);
+  assert.equal(result.reason, "binding_unavailable");
+  assert.equal(result.issues[0]?.complete, true, "selected positive rows remain complete and readable");
   assert.equal(result.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
-  assert.ok(!JSON.stringify(result).includes("PRIVATE-"));
-  f.mismatch(); await f.collect();
-  assert.equal(observed.length, 1, "unverified receipts never reach the metadata reader");
-}));
-
-it("a remembered native coordinate resolves final assignment end after its workspace disappears", () => fixture(async f => {
-  const before = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
-  assert.equal(before?.liveness.state, "running");
-  f.disappear(); f.complete();
-  const after = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
-  assert.equal(after?.observation.assignment.id, before?.observation.assignment.id);
-  assert.equal(after?.liveness.state, "ended");
-  assert.equal(after?.terminalOutcome.value, null, "a final fence does not invent success");
-  assert.equal(after?.endedAt, null, "read time is not the exact native end time");
-}));
-it("a remembered active run without a native seat is unknown, never running or ended", () => fixture(async f => {
-  assert.equal((await f.collect()).issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
-  f.disappear();
-  const after = await f.collect();
-  assert.equal(after.complete, false);
-  assert.equal(after.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "unknown");
+  assert((await compatibilityRead(result)).ok);
 }));
 
 for (const source of ["codex", "claude", "agy", "opencode"] as const) {
@@ -238,7 +235,7 @@ for (const source of ["codex", "claude", "agy", "opencode"] as const) {
     const root = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
     assert.equal(root?.harness.value, source);
     assert.equal(root?.liveness.state, "running");
-    f.disappear(); f.complete();
+    f.complete();
     assert.equal((await f.collect()).issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "ended");
   }, source));
 }
@@ -253,20 +250,19 @@ it("reported native work wins capacity over unoccupied restored workspace labels
 }));
 
 it("a paired historical stop cannot end a resumed native working assignment", () => fixture(async f => {
-  await f.staleStop(); f.restore();
-  let certified = false;
-  f.metadata(async receipt => { assert.equal(receipt.stop?.seatObservedAt, dispatched); assert.equal(receipt.stop?.processObservedAt, dispatched); certified = true; });
+  await f.facets(); f.restore();
+  const previous = await f.legacy();
+  assert.equal(previous.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "ended", "the previous producer validates the historical paired stop");
   const root = (await f.collect()).issues[0]?.dispatches[0]?.agents[0];
-  assert(certified, "the stale paired stop was actually read and validated");
   assert.equal(root?.liveness.state, "running");
   assert.equal(root?.observation.running.value, true);
   assert.equal(root?.terminalOutcome.value, null);
 }));
 
-it("an unbounded native snapshot is complete and the default needs no partial-tree capability", () => fixture(async f => {
+it("an unbounded native snapshot preserves complete selected rows without certifying global coverage", () => fixture(async f => {
   const snapshot = await f.collect(undefined, false);
-  assert.equal(snapshot.complete, true);
-  assert.equal(snapshot.reason, null);
+  assert.equal(snapshot.complete, false);
+  assert.equal(snapshot.reason, "binding_unavailable");
   assert.equal(snapshot.issues[0]?.complete, true);
   assert.equal(snapshot.issues[0]?.dispatches[0]?.agents[0]?.liveness.state, "running");
   assert((await compatibilityRead(snapshot)).ok);
@@ -287,7 +283,8 @@ it("real native overflow is scan_limit and default readers get no bounded forest
 it("native execution retains admission, actions, capacity, token costs and native children", () => fixture(async f => {
   await f.facets(); f.restore();
   const snapshot = await f.collect(undefined, false);
-  assert.equal(snapshot.complete, true);
+  assert.equal(snapshot.complete, false);
+  assert.equal(snapshot.reason, "binding_unavailable");
   assert.equal(snapshot.issues[0]?.launchRefusal?.reason, "routing-invalid");
   const agents = snapshot.issues[0]?.dispatches[0]?.agents ?? [];
   assert.equal(agents.length, 2);
@@ -338,4 +335,18 @@ for (const [source, recordedAgent] of [["codex", "codex-run"], ["opencode", "ope
     assert.equal(ended?.observation.assignment.id, root?.observation.assignment.id);
     assert.ok(!JSON.stringify(before).includes(f.nativeId));
   }, source, recordedAgent));
+}
+
+for (const state of ["refused", "blocked"] as const) {
+  it(`a failed Herdr snapshot preserves ${state} admission through the real CLI`, () => fixture(async f => {
+    await f.facets(state);
+    const { snapshot, exit } = await f.failedHerdr();
+    assert.equal(exit, 3);
+    assert.equal(snapshot.complete, false);
+    assert.equal(snapshot.reason, "source_unavailable");
+    assert.deepEqual(snapshot.issues[0]?.dispatches, []);
+    assert.equal(state === "refused" ? snapshot.issues[0]?.launchRefusal?.reason : snapshot.issues[0]?.launchBlock?.reason,
+      state === "refused" ? "routing-invalid" : "goal-prompt-unconfirmed");
+    assert(readIssueAgentTreeSnapshot(snapshot).ok);
+  }));
 }

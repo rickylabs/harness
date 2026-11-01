@@ -10,7 +10,7 @@ import type { Writable } from "node:stream";
 import { MAX_ISSUE_AGENT_TREE_BYTES, readIssueAgentTreeSnapshot,
   type IssueAgentTreeFrame, type IssueAgentTreeSnapshot } from "@rickylabs/harness-contracts";
 import { collectLegacyIssueAgentTree } from "./issue-agent-feed-legacy.js";
-import { collectNativeIssueAgents, readHerdrNativeSnapshot, unavailableNativeTree } from "./native-issue-agents.js";
+import { collectNativeIssueAgents, unavailableNativeTree } from "./native-issue-agents.js";
 import { openIssueFeedChanges, type IssueFeedChanges } from "./issue-agent-feed-changes.js";
 
 export interface IssueAgentFeedOptions {
@@ -33,8 +33,7 @@ export async function collectIssueAgentTree(options: IssueAgentFeedOptions): Pro
     if (bindings.dispatchRoot !== undefined && !isAbsolute(bindings.dispatchRoot)) throw Error();
     if (bindings.dispatchRoot === undefined) return unavailableNativeTree(options.now, "source_not_bound");
     if (bindings.orchidRunSocket === undefined) return await collectLegacyIssueAgentTree(options);
-    const nativeSnapshot = options.nativeSnapshot ?? await readHerdrNativeSnapshot();
-    return (await collectNativeIssueAgents({ ...options, nativeSnapshot })).issueAgentTree;
+    return (await collectNativeIssueAgents(options)).issueAgentTree;
   } catch { return unavailableNativeTree(options.now); }
 }
 const unavailableSnapshot = unavailableNativeTree;

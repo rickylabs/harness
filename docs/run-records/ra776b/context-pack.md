@@ -23,3 +23,15 @@ source; the final reviewer records the token extension's committed source and ga
 Token-extension sign-off against committed 4745909489faf1535a76d4e8ce773a9ea7922ec5
 returned PASS with telemetry at 810 pass and 0 fail; see the final section of
 `review.md` for the substantive result and evidence.
+
+## Coverage re-review supersedes earlier READY
+
+The review at `44af55096` found unknown negative coverage and fixture-only replay inputs. The current
+repair reports global `binding_unavailable`, keeps verified rows, removes unwired replay/attachment
+inputs and their claims, and preserves admissions through Herdr failure. Read `coverage-review.md`
+for the final gate and supervisor evidence. Orchid #133/#134 remain unchanged during coordinator
+re-review. No production completion replay is claimed for this CLI.
+
+Coverage repair local gates are complete: all five root commands exit 0, telemetry 811/811,
+actual tagged 0.36 controls 5/5 and source-selection runtime revert 2 red then 2 green with exact
+restoration. The committed-source review remains the final step before the new READY head.
