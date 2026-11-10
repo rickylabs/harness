@@ -29,4 +29,5 @@ export { REASON_CODES, ROUTE_FIELDS, SCOPE, validateReceipt } from './src/domain
 export type { ReceiptFinding, ReceiptResult, ReceiptVerdict } from './src/domain/receipts/route-receipt.ts';
 export type { DuplicateKeyCheck, DuplicateKeyVerdict } from './src/ports/duplicate-keys.ts';
 export type { MilestonePrSource } from './src/ports/milestone-pr-source.ts';
+export type { MilestoneIdentity, RepositorySnapshot } from './src/domain/milestone/identity.ts';
 export type { RunDirectory } from './src/ports/run-directory.ts';

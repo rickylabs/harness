@@ -1,5 +1,7 @@
 {
   "schemaVersion": 2,
+  "repo": "rickylabs/netscript",
+  "defaultBranch": "main",
   "milestone": "0.0.x",
   "baselineMainSha": "0000000000000000000000000000000000000000",
   "currentMainSha": "0000000000000000000000000000000000000000",

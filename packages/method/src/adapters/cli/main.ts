@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { checkReceipts } from "../../application/check-receipts.ts";
 import { renderMilestoneRun } from "../../application/render-milestone.ts";
-import { unavailableMilestonePrSource, validateMilestoneRun } from "../../application/validate-milestone-cluster.ts";
+import { parseMilestoneJson, unavailableMilestonePrSource, validateMilestoneRun } from "../../application/validate-milestone-cluster.ts";
 import { MILESTONE_FILES } from "../../domain/milestone/vocabulary.ts";
 import type { MilestonePrSource } from "../../ports/milestone-pr-source.ts";
 import { milestonePrSourceFromExport } from "../github-pr-export.ts";
@@ -37,7 +37,9 @@ usage:
   harness-method milestone render <run-dir> [--check]
       write milestone-status.md from milestone-cluster-state.json; --check compares instead
   harness-method milestone validate <run-dir> [--github-prs <export.json>]
-      validate the five cluster artifacts and reconcile leaves against a captured PR export;
+      validate shared repo/defaultBranch identity and reconcile leaves against a fresh repository/PR export;
+      export.repository is gh repo view --json nameWithOwner,defaultBranchRef; capturedAt covers PRs too;
+      require intake.capturedAt <= inventory.capturedAt <= state.updatedAt <= export.capturedAt <= now;
       without an export, reconciliation is unavailable and the run does not pass
   harness-method receipts <receipt.json>...
       check route receipts: structure and requested/observed agreement only; prints JSON
@@ -85,14 +87,14 @@ async function validate(args: readonly string[], io: Io): Promise<number> {
   );
   if (typeof exportPath === "string") {
     try {
-      source = milestonePrSourceFromExport(JSON.parse(await readFile(exportPath, "utf8")));
+      source = milestonePrSourceFromExport(parseMilestoneJson(await readFile(exportPath, "utf8"), jsYamlDuplicateKeys));
     } catch (error) {
       source = unavailableMilestonePrSource(`GitHub PR reconciliation input is unavailable: ${message(error)}`);
     }
   }
   let result;
   try {
-    result = await validateMilestoneRun(nodeRunDirectory(String(positionals[0])), source);
+    result = await validateMilestoneRun(nodeRunDirectory(String(positionals[0])), source, jsYamlDuplicateKeys);
   } catch (error) {
     io.err(`error: unable to validate milestone cluster: ${message(error)}\n`);
     return EXIT.failed;

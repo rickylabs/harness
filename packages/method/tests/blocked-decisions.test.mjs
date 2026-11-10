@@ -11,7 +11,7 @@ function fixture() {
   const inventory = load('inventory');
   const dag = load('dependency-dag');
   const state = load('cluster-state');
-  intake.repo = inventory.repo = 'example/fixture';
+  intake.repo = inventory.repo = dag.repo = state.repo = 'example/fixture';
   intake.ownerRatifiedAt = inventory.ownerRatifiedAt = intake.capturedAt;
   intake.candidates = [{ number: 101, source: 'targetMilestone', decision: 'include', reason: 'Synthetic admitted issue', evidence: ['fixture-evidence'], ownerRatified: true }];
   inventory.targetIssueCount = 1;
@@ -45,6 +45,7 @@ function leaf(f) {
 function source(f) {
   const prs = f.state.leaves.map((entry) => ({ number: entry.prNumber, issueNumbers: entry.issueNumbers, lane: entry.lane, baseBranch: entry.baseBranch, headSha: entry.headSha, state: 'open', role: 'leaf' }));
   return {
+    async readRepository() { return { repo: f.state.repo, defaultBranch: f.state.defaultBranch, capturedAt: f.state.updatedAt }; },
     async listOpenMilestonePrs() { return prs; },
     async readPrHead(_repo, number) {
       const pr = prs.find((entry) => entry.number === number);

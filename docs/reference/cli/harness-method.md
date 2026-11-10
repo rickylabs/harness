@@ -28,7 +28,9 @@ usage:
   harness-method milestone render <run-dir> [--check]
       write milestone-status.md from milestone-cluster-state.json; --check compares instead
   harness-method milestone validate <run-dir> [--github-prs <export.json>]
-      validate the five cluster artifacts and reconcile leaves against a captured PR export;
+      validate shared repo/defaultBranch identity and reconcile leaves against a fresh repository/PR export;
+      export.repository is gh repo view --json nameWithOwner,defaultBranchRef; capturedAt covers PRs too;
+      require intake.capturedAt <= inventory.capturedAt <= state.updatedAt <= export.capturedAt <= now;
       without an export, reconciliation is unavailable and the run does not pass
   harness-method receipts <receipt.json>...
       check route receipts: structure and requested/observed agreement only; prints JSON

@@ -1,6 +1,7 @@
-import { isRecord, type JsonRecord, nonEmpty } from '../domain/json.ts';
+import { isRecord, type JsonRecord } from '../domain/json.ts';
 import { validateDag } from '../domain/milestone/dag.ts';
-import { requireSharedIdentity, validateIntake, validateIntakeInventoryCrossing, validateInventory } from '../domain/milestone/intake.ts';
+import { validateIntake, validateIntakeInventoryCrossing, validateInventory } from '../domain/milestone/intake.ts';
+import { requireSharedIdentity, validateCaptureAnchors } from '../domain/milestone/identity.ts';
 import { validateState } from '../domain/milestone/state.ts';
 import { renderMilestoneStatus } from '../domain/milestone/status-page.ts';
 import {
@@ -11,11 +12,13 @@ import {
 } from '../domain/milestone/vocabulary.ts';
 import type { MilestonePrSource } from '../ports/milestone-pr-source.ts';
 import type { RunDirectory } from '../ports/run-directory.ts';
+import type { DuplicateKeyCheck } from '../ports/duplicate-keys.ts';
 import { reconcileMilestonePrs } from './reconcile-milestone-prs.ts';
 
 export function unavailableMilestonePrSource(detail: string): MilestonePrSource {
   const unavailable = () => Promise.reject<never>(new Error(detail));
   return {
+    readRepository: unavailable,
     listOpenMilestonePrs: unavailable,
     readPrHead: unavailable,
   };
@@ -39,16 +42,17 @@ export async function validateMilestoneCluster(
   const inventory = artifacts.inventory as JsonRecord;
   const dag = artifacts.dag as JsonRecord;
   const state = artifacts.state as JsonRecord;
-  requireSharedIdentity(errors, intake, inventory, dag, state);
+  const identity = requireSharedIdentity(errors, intake, inventory, dag, state);
+  const updatedAt = validateCaptureAnchors(errors, intake, inventory, state);
   const candidates = validateIntake(errors, intake);
   const inventoryIssues = validateInventory(errors, inventory);
   validateIntakeInventoryCrossing(errors, intake, candidates, inventoryIssues);
   const activeIssues = inventoryIssues.filter((issue) => issue.disposition === 'active');
   validateDag(errors, dag, activeIssues);
-  validateState(errors, state, activeIssues);
+  validateState(errors, state, activeIssues, identity?.defaultBranch);
 
-  if (nonEmpty(intake.repo) && nonEmpty(state.milestone)) {
-    findings.push(...await reconcileMilestonePrs(state, intake.repo, state.milestone, source));
+  if (identity && updatedAt !== undefined) {
+    findings.push(...await reconcileMilestonePrs(state, identity, updatedAt, source));
   } else {
     findings.push({
       kind: 'source-unavailable',
@@ -57,7 +61,7 @@ export async function validateMilestoneCluster(
       lane: null,
       recordedHead: null,
       liveHead: null,
-      detail: 'cluster artifacts do not provide a repository and milestone for reconciliation',
+      detail: 'cluster artifacts do not provide consistent repository/defaultBranch identity and capture anchors',
     });
   }
 
@@ -72,8 +76,9 @@ export async function validateMilestoneCluster(
 export async function validateMilestoneRun(
   dir: RunDirectory,
   source: MilestonePrSource,
+  duplicateKeys: DuplicateKeyCheck,
 ): Promise<ValidationResult> {
-  const json = async (name: string): Promise<unknown> => JSON.parse(await dir.readText(name));
+  const json = async (name: string): Promise<unknown> => parseMilestoneJson(await dir.readText(name), duplicateKeys);
   return await validateMilestoneCluster({
     intake: await json(MILESTONE_FILES.intake),
     inventory: await json(MILESTONE_FILES.inventory),
@@ -81,4 +86,13 @@ export async function validateMilestoneRun(
     state: await json(MILESTONE_FILES.state),
     status: await dir.readText(MILESTONE_FILES.status),
   }, source);
+}
+
+/** Use the same semantic duplicate-key primitive for artifact and export JSON text. */
+export function parseMilestoneJson(text: string, duplicateKeys: DuplicateKeyCheck): unknown {
+  let value: unknown;
+  try { value = JSON.parse(text); }
+  catch { throw new Error('milestone input is invalid JSON'); }
+  if (duplicateKeys(text) !== 'ok') throw new Error('milestone input has ambiguous or unsupported JSON keys');
+  return value;
 }

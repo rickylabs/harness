@@ -7,6 +7,7 @@ import {
   topicLane,
 } from '../domain/milestone/vocabulary.ts';
 import type { MilestonePrSource } from '../ports/milestone-pr-source.ts';
+import { type MilestoneIdentity, requireRepositorySnapshot } from '../domain/milestone/identity.ts';
 
 function firstIssueNumber(value: unknown): number | null {
   return integers(value)[0] ?? null;
@@ -14,12 +15,14 @@ function firstIssueNumber(value: unknown): number | null {
 
 export async function reconcileMilestonePrs(
   state: JsonRecord,
-  repo: string,
-  milestone: string,
+  identity: MilestoneIdentity,
+  updatedAt: number,
   source: MilestonePrSource,
 ): Promise<ReconciliationFinding[]> {
+  const { repo, milestone, defaultBranch } = identity;
   let openPullRequests: readonly LiveMilestonePr[];
   try {
+    requireRepositorySnapshot(await source.readRepository(repo), identity, updatedAt, Date.now());
     openPullRequests = await source.listOpenMilestonePrs(repo, milestone);
   } catch (error) {
     return [{
@@ -42,7 +45,7 @@ export async function reconcileMilestonePrs(
 
   for (const leaf of leaves) {
     if (
-      TERMINAL_LEAF_PHASES.has(String(leaf.phase)) || leaf.baseBranch !== 'main' ||
+      TERMINAL_LEAF_PHASES.has(String(leaf.phase)) ||
       !issueNumber(leaf.prNumber)
     ) {
       continue;
@@ -61,6 +64,18 @@ export async function reconcileMilestonePrs(
         detail: error instanceof Error ? error.message : String(error),
       });
       continue;
+    }
+    // A corrupt recorded base must not hide a stale head; reconcile it and refuse its identity.
+    if (leaf.baseBranch !== defaultBranch || livePullRequest.baseBranch !== defaultBranch) {
+      findings.push({
+        kind: 'source-unavailable',
+        issueNumber: firstIssueNumber(leaf.issueNumbers),
+        prNumber: leaf.prNumber,
+        lane: topicLane(leaf.lane) ? leaf.lane : null,
+        recordedHead: nonEmpty(leaf.headSha) ? leaf.headSha : null,
+        liveHead: livePullRequest.headSha,
+        detail: 'recorded and live PR bases must match the verified repository defaultBranch',
+      });
     }
     if (
       livePullRequest.state === 'open' && nonEmpty(leaf.headSha) &&
@@ -86,7 +101,7 @@ export async function reconcileMilestonePrs(
   for (const pullRequest of openPullRequests) {
     if (
       seenOpenPrNumbers.has(pullRequest.number) || pullRequest.state !== 'open' ||
-      pullRequest.baseBranch !== 'main' || pullRequest.role === 'coordinator-artifact'
+      pullRequest.baseBranch !== defaultBranch || pullRequest.role === 'coordinator-artifact'
     ) {
       continue;
     }
