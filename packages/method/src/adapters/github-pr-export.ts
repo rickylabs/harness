@@ -1,6 +1,7 @@
 import { duplicateValues, integers, isRecord, issueNumber, nonEmpty, oneOf, records } from '../domain/json.ts';
 import { type LiveMilestonePr, topicLane } from '../domain/milestone/vocabulary.ts';
 import type { MilestonePrSource } from '../ports/milestone-pr-source.ts';
+import { branchName, captureTime } from '../domain/milestone/identity.ts';
 
 /** Build the read-only reconciliation port from a freshly captured PR export. */
 export function milestonePrSourceFromExport(value: unknown): MilestonePrSource {
@@ -9,6 +10,20 @@ export function milestonePrSourceFromExport(value: unknown): MilestonePrSource {
   }
   if (!nonEmpty(value.repo) || !nonEmpty(value.milestone) || !nonEmpty(value.capturedAt)) {
     throw new Error('GitHub PR export requires repo, milestone, and capturedAt');
+  }
+  const repository = isRecord(value.repository) ? value.repository : {};
+  const branch = isRecord(repository.defaultBranchRef) ? repository.defaultBranchRef.name : undefined;
+  if (repository.nameWithOwner !== value.repo) {
+    throw new Error('GitHub repository metadata must match export.repo');
+  }
+  if (Object.hasOwn(value, 'defaultBranch') || Object.hasOwn(repository, 'capturedAt')) {
+    throw new Error('GitHub PR export must not contain competing branch or capture evidence');
+  }
+  if (!branchName(branch)) {
+    throw new Error('GitHub repository metadata requires one valid defaultBranchRef.name');
+  }
+  if (captureTime(value.capturedAt) === null) {
+    throw new Error('GitHub PR export capturedAt must be a real UTC timestamp');
   }
   const entries = records(value.pullRequests);
   if (!Array.isArray(value.pullRequests) || entries.length !== value.pullRequests.length) {
@@ -43,6 +58,7 @@ export function milestonePrSourceFromExport(value: unknown): MilestonePrSource {
 
   const exportRepo = value.repo;
   const exportMilestone = value.milestone;
+  const snapshot = Object.freeze({ repo: exportRepo, defaultBranch: branch, capturedAt: value.capturedAt });
   function requireIdentity(repo: string, milestone?: string): void {
     if (repo !== exportRepo || (milestone !== undefined && milestone !== exportMilestone)) {
       throw new Error(
@@ -51,6 +67,10 @@ export function milestonePrSourceFromExport(value: unknown): MilestonePrSource {
     }
   }
   return {
+    readRepository: (repo) => {
+      requireIdentity(repo);
+      return Promise.resolve(snapshot);
+    },
     listOpenMilestonePrs: (repo, milestone) => {
       requireIdentity(repo, milestone);
       return Promise.resolve(

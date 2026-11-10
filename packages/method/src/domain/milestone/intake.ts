@@ -1,28 +1,6 @@
 import { duplicateValues, isRecord, issueNumber, type JsonRecord, nonEmpty, oneOf, records, strings } from '../json.ts';
 import { ADMISSION_PREDICATES, DISPOSITIONS, INTAKE_SOURCES, TOPIC_LANES } from './vocabulary.ts';
 
-export function requireSharedIdentity(
-  errors: string[],
-  intake: JsonRecord,
-  inventory: JsonRecord,
-  dag: JsonRecord,
-  state: JsonRecord,
-): void {
-  const milestones = [intake.milestone, inventory.milestone, dag.milestone, state.milestone];
-  if (!milestones.every(nonEmpty) || new Set(milestones).size !== 1) {
-    errors.push('all artifacts must name the same non-empty milestone');
-  }
-  const baselines = [
-    intake.baselineMainSha,
-    inventory.baselineMainSha,
-    dag.baselineMainSha,
-    state.baselineMainSha,
-  ];
-  if (!baselines.every(nonEmpty) || new Set(baselines).size !== 1) {
-    errors.push('all artifacts must use the same non-empty baselineMainSha');
-  }
-}
-
 export function validateIntake(errors: string[], intake: JsonRecord): JsonRecord[] {
   if (intake.schemaVersion !== 1) errors.push('intake.schemaVersion must be 1');
   if (!nonEmpty(intake.ownerRatifiedAt)) {

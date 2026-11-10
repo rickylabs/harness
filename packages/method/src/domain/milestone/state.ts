@@ -9,6 +9,7 @@ export function validateState(
   errors: string[],
   state: JsonRecord,
   activeIssues: JsonRecord[],
+  defaultBranch: string | undefined,
 ): void {
   if (state.schemaVersion !== 1 && state.schemaVersion !== 2) {
     errors.push('state.schemaVersion must be 1 or 2');
@@ -94,7 +95,9 @@ export function validateState(
     const id = nonEmpty(leaf.id) ? leaf.id : '?';
     if (!oneOf(leaf.lane, TOPIC_LANES)) errors.push(`leaf ${id} has an invalid lane`);
     if (!oneOf(leaf.phase, LEAF_PHASES)) errors.push(`leaf ${id} has an invalid phase`);
-    if (leaf.baseBranch !== 'main') errors.push(`leaf ${id} must target main directly`);
+    if (defaultBranch === undefined || leaf.baseBranch !== defaultBranch) {
+      errors.push(`leaf ${id} must target the verified repository defaultBranch directly`);
+    }
     if (!issueNumber(leaf.prNumber)) errors.push(`leaf ${id} needs a positive prNumber`);
     if (!nonEmpty(leaf.headSha)) errors.push(`leaf ${id} needs an immutable headSha`);
     if (
